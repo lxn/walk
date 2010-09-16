@@ -1,3 +1,7 @@
+// Copyright 2010 The Walk Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 #define _WIN32_WINNT 0x501 // XP
 #define _WIN32_IE 0x501
 
