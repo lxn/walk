@@ -48,27 +48,27 @@ var (
 )
 
 func CloseMsgId() uint {
-    return closeMsgId
+	return closeMsgId
 }
 
 func CommandMsgId() uint {
-    return commandMsgId
+	return commandMsgId
 }
 
 func ContextMenuMsgId() uint {
-    return contextMenuMsgId
+	return contextMenuMsgId
 }
 
 func ItemActivateMsgId() uint {
-    return itemActivateMsgId
+	return itemActivateMsgId
 }
 
 func ItemChangedMsgId() uint {
-    return itemChangedMsgId
+	return itemChangedMsgId
 }
 
 func ResizeMsgId() uint {
-    return resizeMsgId
+	return resizeMsgId
 }
 
 type Message struct {

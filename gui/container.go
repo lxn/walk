@@ -9,7 +9,7 @@ import (
 )
 
 import (
-    "walk/crutches"
+	"walk/crutches"
 	. "walk/winapi/user32"
 )
 

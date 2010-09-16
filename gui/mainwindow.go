@@ -12,7 +12,7 @@ import (
 )
 
 import (
-    "walk/crutches"
+	"walk/crutches"
 	"walk/drawing"
 	. "walk/winapi/comctl32"
 	. "walk/winapi/kernel32"

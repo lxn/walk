@@ -73,7 +73,7 @@ func (mw *MainWindow) drawStuff() {
 func runMainWindow() {
 	mainWnd, err := gui.NewMainWindow()
 	panicIfErr(err)
-    defer mainWnd.Dispose()
+	defer mainWnd.Dispose()
 
 	mw := &MainWindow{MainWindow: mainWnd}
 
