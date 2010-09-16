@@ -1,0 +1,83 @@
+About Walk
+==========
+
+Walk is a "Windows Application Library Kit" for the Go Programming Language.
+
+It includes packages for 2-D drawing, graphical user interfaces, printing and more.
+The goal is to have a library that makes developing a Windows Desktop application
+using the Go Programming Language an easy walk.
+
+For now it will be restricted to those apis that are available out of the box on
+Windows XP SP3.
+
+Is it ready for production work?
+================================
+
+No, there is a lot of stuff missing and some existing parts may need to be redone.
+Don't rely on anything here to be stable yet, it will take some time.
+
+Setup
+=====
+
+As the Go toolchain makes crosscompiling very easy, I code and build on Linux and
+use Windows only to run the executables. Follow this guide if you want to do the
+same: http://groups.google.com/group/golang-nuts/msg/c940bb15ef1d2b4e
+
+Now clone the Walk git repo:
+git clone http://github.com/lxn/walk.git
+
+Currently no makefiles are provided, because I prefer building my Go stuff with
+gobuild. For a list of Go build tools see http://go-lang.cat-v.org/dev-utils.
+
+With gobuild I use a directory structure like this:
+goprojects/
+    pgsql/
+    walk/
+    mycoolapp1/
+        subpkg1/
+        subpkg2/
+        subpkg3/
+        mycoolapp1.go
+    someotherapp/
+        subpkg1/
+        subpkg2/
+        someotherapp.go
+
+To build mycoolapp1 you will want to do something like this:
+cd goprojects
+gobuild -o mycoolapp1.exe mycoolapp1/mycoolapp1.go
+
+This assumes mycoolapp1.go contains the main func of that app.
+
+Presently there is one nasty caveat: Windows apps will need window procedures to do
+the nice gui stuff, which means Windows will have to call a callback function in
+your Go code. This is currently not possible though, so there is an ugly workaround
+in the form of a helper dll. The code comes as part of Walk in the crutches directory.
+Copy all non-go crutches.* files to a Windows box and build a dll from it.
+
+Once the crutches.dll is built, copy it into the same directory as your app executable.
+
+Here is hope the situation will improve soonish: http://codereview.appspot.com/1696051/
+
+Some features of the Walk gui package require an application manifest file alongside
+your executable, to make use of common controls 6.0. See the examples directory for
+such a file.
+
+Using Walk
+==========
+
+See the examples directory for inspiration. Docs may appear as time permits ;)
+
+You should be aware that this project is far from being mature - anything could break
+or change without warning.
+
+Please open an issue on the bug tracker if you encounter a bug.
+
+Contribute
+==========
+
+This project is quite an undertaking and cannot be done by a single developer (who
+has many other projects to complete btw). If this project is of utility to you and
+you want to see it improve, please consider to contribute.
+
+Thank You!

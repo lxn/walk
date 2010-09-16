@@ -1,0 +1,4 @@
+EXPORTS
+    GetCustomMessage
+    GetRegisteredMessageId
+    RegisterWindowClass
