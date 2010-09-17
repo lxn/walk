@@ -13,7 +13,6 @@ import (
 	. "walk/winapi"
 	. "walk/winapi/gdi32"
 	. "walk/winapi/kernel32"
-	. "walk/winapi/ole32"
 	. "walk/winapi/user32"
 )
 
@@ -145,6 +144,7 @@ const START_PAGE_GENERAL = 0xffffffff
 type (
 	LPOFNHOOKPROC  uintptr
 	HPROPSHEETPAGE HANDLE
+	LPUNKNOWN      uintptr
 )
 
 type OPENFILENAME struct {
