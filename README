@@ -53,7 +53,19 @@ Presently there is one nasty caveat: Windows apps will need window procedures to
 the nice gui stuff, which means Windows will have to call a callback function in
 your Go code. This is currently not possible though, so there is an ugly workaround
 in the form of a helper dll. The code comes as part of Walk in the crutches directory.
-Copy all non-go crutches.* files to a Windows box and build a dll from it.
+
+For your convenience, a build of crutches.dll, that was statically linked against version
+3.4.5 of the MinGW runtime, is now included in the crutches directory as well.
+
+If you prefer to build it yourself, maybe because you want to add stuff to the dll, copy 
+all non-go crutches.* files to a Windows box and build a dll from it. The way I do that is
+using the Qt SDK 2009.04, which you can download here:
+ftp://ftp.qt.nokia.com/qtsdk/qt-sdk-win-opensource-2009.04.exe
+
+The included version 3.4.5 of MinGW allows for easy static linking, so no further dlls are 
+needed. Just remove all occurrences of -mthreads from this file:
+C:\Qt\2009.04\qt\mkspecs\win32-g++\qmake.conf. Then open the crutches.pro file with 
+Qt Creator and do a release build.
 
 Once the crutches.dll is built, copy it into the same directory as your app executable.
 
