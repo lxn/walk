@@ -129,7 +129,7 @@ func (s *Surface) withBrushAndPen(brush Brush, pen Pen, f func() os.Error) os.Er
 	})
 }
 
-func (s *Surface) ellipse(brush Brush, pen Pen, bounds *Rectangle) os.Error {
+func (s *Surface) ellipse(brush Brush, pen Pen, bounds Rectangle) os.Error {
 	return s.withBrushAndPen(brush, pen, func() os.Error {
 		if !Ellipse(s.hdc, bounds.X, bounds.Y, bounds.X+bounds.Width, bounds.Y+bounds.Height) {
 			return newError("Ellipse failed")
@@ -139,11 +139,11 @@ func (s *Surface) ellipse(brush Brush, pen Pen, bounds *Rectangle) os.Error {
 	})
 }
 
-func (s *Surface) DrawEllipse(pen Pen, bounds *Rectangle) os.Error {
+func (s *Surface) DrawEllipse(pen Pen, bounds Rectangle) os.Error {
 	return s.ellipse(nullBrushSingleton, pen, bounds)
 }
 
-func (s *Surface) FillEllipse(brush Brush, bounds *Rectangle) os.Error {
+func (s *Surface) FillEllipse(brush Brush, bounds Rectangle) os.Error {
 	return s.ellipse(brush, nullPenSingleton, bounds)
 }
 
@@ -161,7 +161,7 @@ func (s *Surface) DrawLine(pen Pen, from, to Point) os.Error {
 	})
 }
 
-func (s *Surface) rectangle(brush Brush, pen Pen, bounds *Rectangle) os.Error {
+func (s *Surface) rectangle(brush Brush, pen Pen, bounds Rectangle) os.Error {
 	return s.withBrushAndPen(brush, pen, func() os.Error {
 		if !Rectangle_(s.hdc, bounds.X, bounds.Y, bounds.X+bounds.Width, bounds.Y+bounds.Height) {
 			return newError("Rectangle_ failed")
@@ -171,17 +171,18 @@ func (s *Surface) rectangle(brush Brush, pen Pen, bounds *Rectangle) os.Error {
 	})
 }
 
-func (s *Surface) DrawRectangle(pen Pen, bounds *Rectangle) os.Error {
+func (s *Surface) DrawRectangle(pen Pen, bounds Rectangle) os.Error {
 	return s.rectangle(nullBrushSingleton, pen, bounds)
 }
 
-func (s *Surface) FillRectangle(brush Brush, bounds *Rectangle) os.Error {
+func (s *Surface) FillRectangle(brush Brush, bounds Rectangle) os.Error {
 	return s.rectangle(brush, nullPenSingleton, bounds)
 }
 
-func (s *Surface) DrawText(text string, font *Font, color Color, bounds *Rectangle, format DrawTextFormat) os.Error {
+func (s *Surface) DrawText(text string, font *Font, color Color, bounds Rectangle, format DrawTextFormat) os.Error {
 	return s.withFontAndTextColor(font, color, func() os.Error {
-		ret := DrawTextEx(s.hdc, syscall.StringToUTF16Ptr(text), -1, bounds.toRECT(), uint(format), nil)
+		rect := bounds.toRECT()
+		ret := DrawTextEx(s.hdc, syscall.StringToUTF16Ptr(text), -1, &rect, uint(format), nil)
 		if ret == 0 {
 			return newError("DrawTextEx failed")
 		}

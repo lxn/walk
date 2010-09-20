@@ -32,9 +32,9 @@ const (
 
 type IWidget interface {
 	Handle() HWND
-	Bounds() (*drawing.Rectangle, os.Error)
-	SetBounds(value *drawing.Rectangle) os.Error
-	ClientBounds() (*drawing.Rectangle, os.Error)
+	Bounds() (drawing.Rectangle, os.Error)
+	SetBounds(value drawing.Rectangle) os.Error
+	ClientBounds() (drawing.Rectangle, os.Error)
 	ContextMenu() *Menu
 	SetContextMenu(value *Menu)
 	Dispose()
@@ -286,19 +286,19 @@ func (w *Widget) SetVisible(value bool) os.Error {
 	return nil
 }
 
-func (w *Widget) Bounds() (*drawing.Rectangle, os.Error) {
+func (w *Widget) Bounds() (drawing.Rectangle, os.Error) {
 	var r RECT
 
 	if !GetWindowRect(w.hWnd, &r) {
-		return nil, lastError("GetWindowRect")
+		return drawing.Rectangle{}, lastError("GetWindowRect")
 	}
 
-	b := &drawing.Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}
+	b := drawing.Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}
 
 	if w.parent != nil {
 		p := POINT{b.X, b.Y}
 		if !ScreenToClient(w.hWnd, &p) {
-			return nil, newError("ScreenToClient failed")
+			return drawing.Rectangle{}, newError("ScreenToClient failed")
 		}
 		b.X = p.X
 		b.Y = p.Y
@@ -307,7 +307,7 @@ func (w *Widget) Bounds() (*drawing.Rectangle, os.Error) {
 	return b, nil
 }
 
-func (w *Widget) SetBounds(bounds *drawing.Rectangle) os.Error {
+func (w *Widget) SetBounds(bounds drawing.Rectangle) os.Error {
 	if !MoveWindow(w.hWnd, bounds.X, bounds.Y, bounds.Width, bounds.Height, true) {
 		return lastError("MoveWindow")
 	}
@@ -477,14 +477,14 @@ func (w *Widget) SetHeight(value int) (err os.Error) {
 	return w.SetBounds(bounds)
 }
 
-func (w *Widget) ClientBounds() (*drawing.Rectangle, os.Error) {
+func (w *Widget) ClientBounds() (drawing.Rectangle, os.Error) {
 	var r RECT
 
 	if !GetClientRect(w.hWnd, &r) {
-		return nil, lastError("GetClientRect")
+		return drawing.Rectangle{}, lastError("GetClientRect")
 	}
 
-	return &drawing.Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}, nil
+	return drawing.Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}, nil
 }
 
 func (w *Widget) SetFocus() os.Error {

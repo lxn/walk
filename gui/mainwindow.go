@@ -139,7 +139,7 @@ func (mw *MainWindow) ToolBar() *ToolBar {
 	return mw.toolBar
 }
 
-func (mw *MainWindow) ClientBounds() (bounds *drawing.Rectangle, err os.Error) {
+func (mw *MainWindow) ClientBounds() (bounds drawing.Rectangle, err os.Error) {
 	tlbBounds, err := mw.toolBar.Bounds()
 	if err != nil {
 		return

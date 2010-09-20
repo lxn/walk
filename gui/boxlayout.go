@@ -208,7 +208,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 				}
 			}
 
-			bounds := &drawing.Rectangle{cb.X + l.margins.Left, y, reqW, h}
+			bounds := drawing.Rectangle{cb.X + l.margins.Left, y, reqW, h}
 
 			//            log.Stdoutf("*BoxLayout.Update: bounds: %+v", bounds)
 
@@ -260,7 +260,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 				}
 			}
 
-			bounds := &drawing.Rectangle{x, cb.Y + l.margins.Top, w, reqH}
+			bounds := drawing.Rectangle{x, cb.Y + l.margins.Top, w, reqH}
 
 			//            log.Stdoutf("*BoxLayout.Update: bounds: %+v", bounds)
 
