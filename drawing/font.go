@@ -46,8 +46,7 @@ type Font struct {
 	style     FontStyle
 }
 
-// NewFont returns a new Font, initialized using the contents of the specified
-// FontInfo.
+// NewFont returns a new Font with the specified attributes.
 func NewFont(family string, pointSize float, style FontStyle) (*Font, os.Error) {
 	if style > FontBold|FontItalic|FontUnderline|FontStrikeOut {
 		return nil, newError("invalid style")
