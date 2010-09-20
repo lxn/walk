@@ -83,7 +83,6 @@ type Widget struct {
 	hWnd                HWND
 	parent              IContainer
 	font                *drawing.Font
-	fontChangedHandler  drawing.FontChangeHandler
 	contextMenu         *Menu
 	keyDownHandlers     vector.Vector
 	mouseDownHandlers   vector.Vector
@@ -173,23 +172,9 @@ func (w *Widget) Font() *drawing.Font {
 
 func (w *Widget) SetFont(value *drawing.Font) {
 	if value != w.font {
-		if w.font != nil {
-			w.font.RemoveChangedHandler(w.fontChangedHandler)
-		}
-
 		SendMessage(w.hWnd, WM_SETFONT, uintptr(value.Handle()), 1)
 
 		w.font = value
-
-		if value != nil {
-			if w.fontChangedHandler == nil {
-				w.fontChangedHandler = func(font *drawing.Font) {
-					w.onFontChanged(font)
-				}
-			}
-
-			value.AddChangedHandler(w.fontChangedHandler)
-		}
 	}
 }
 
@@ -626,10 +611,6 @@ func (w *Widget) raiseEvent(msg *MSG) os.Error {
 	}
 
 	return nil
-}
-
-func (w *Widget) onFontChanged(font *drawing.Font) {
-	SendMessage(w.hWnd, WM_SETFONT, uintptr(font.Handle()), 1)
 }
 
 func (w *Widget) runMessageLoop() os.Error {

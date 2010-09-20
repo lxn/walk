@@ -5,6 +5,10 @@
 package gui
 
 import (
+	"os"
+)
+
+import (
 	"walk/drawing"
 )
 
@@ -12,7 +16,9 @@ var defaultFont *drawing.Font
 
 func init() {
 	// Initialize default font
-	defaultFont = drawing.NewFont()
-	defaultFont.SetFamily("Tahoma")
-	defaultFont.SetPointSize(10)
+	var err os.Error
+	defaultFont, err = drawing.NewFont(&drawing.FontInfo{Family: "Tahoma", PointSize: 10})
+	if err != nil {
+		panic("failed to create default font")
+	}
 }

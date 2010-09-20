@@ -41,12 +41,8 @@ func (mw *MainWindow) drawStuff() {
 
 	panicIfErr(surface.DrawRectangle(rectPen, bounds))
 
-	font := drawing.NewFont()
-	font.BeginEdit()
-	font.SetFamily("Tahoma")
-	font.SetPointSize(36)
-	font.SetBold(true)
-	panicIfErr(font.EndEdit())
+	font, err := drawing.NewFont(&drawing.FontInfo{Family: "Tahoma", PointSize: 36, Bold: true})
+	panicIfErr(err)
 	defer font.Dispose()
 
 	text := strings.Repeat("Hello! ", 10)
