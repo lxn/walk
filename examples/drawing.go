@@ -41,7 +41,7 @@ func (mw *MainWindow) drawStuff() {
 
 	panicIfErr(surface.DrawRectangle(rectPen, bounds))
 
-	font, err := drawing.NewFont(&drawing.FontInfo{Family: "Tahoma", PointSize: 36, Bold: true})
+	font, err := drawing.NewFont("Tahoma", 36, drawing.FontBold)
 	panicIfErr(err)
 	defer font.Dispose()
 

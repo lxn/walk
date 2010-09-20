@@ -17,7 +17,7 @@ var defaultFont *drawing.Font
 func init() {
 	// Initialize default font
 	var err os.Error
-	defaultFont, err = drawing.NewFont(&drawing.FontInfo{Family: "Tahoma", PointSize: 10})
+	defaultFont, err = drawing.NewFont("Tahoma", 10, 0)
 	if err != nil {
 		panic("failed to create default font")
 	}
