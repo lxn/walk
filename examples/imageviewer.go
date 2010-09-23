@@ -40,6 +40,8 @@ func (mw *MainWindow) openBitmap() {
 		return
 	}
 
+	mw.prevFilePath = dlg.FilePath
+
 	bmp, err := drawing.NewBitmapFromFile(dlg.FilePath)
 	panicIfErr(err)
 	defer bmp.Dispose()
