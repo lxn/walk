@@ -632,6 +632,45 @@ const (
 	OPAQUE      = 2
 )
 
+// Ternary raster operations
+const (
+	SRCCOPY        = 0x00CC0020
+	SRCPAINT       = 0x00EE0086
+	SRCAND         = 0x008800C6
+	SRCINVERT      = 0x00660046
+	SRCERASE       = 0x00440328
+	NOTSRCCOPY     = 0x00330008
+	NOTSRCERASE    = 0x001100A6
+	MERGECOPY      = 0x00C000CA
+	MERGEPAINT     = 0x00BB0226
+	PATCOPY        = 0x00F00021
+	PATPAINT       = 0x00FB0A09
+	PATINVERT      = 0x005A0049
+	DSTINVERT      = 0x00550009
+	BLACKNESS      = 0x00000042
+	WHITENESS      = 0x00FF0062
+	NOMIRRORBITMAP = 0x80000000
+	CAPTUREBLT     = 0x40000000
+)
+
+// Bitmap compression constants
+const (
+	BI_RGB       = 0
+	BI_RLE8      = 1
+	BI_RLE4      = 2
+	BI_BITFIELDS = 3
+	BI_JPEG      = 4
+	BI_PNG       = 5
+)
+
+// Bitmap color table usage
+const (
+	DIB_RGB_COLORS = 0
+	DIB_PAL_COLORS = 1
+)
+
+const CBM_INIT = 4
+
 const CLR_INVALID = 0xFFFFFFFF
 
 type (
@@ -749,14 +788,61 @@ type LOGBRUSH struct {
 	LbHatch uintptr
 }
 
+type BITMAPINFOHEADER struct {
+	BiSize          uint
+	BiWidth         int
+	BiHeight        int
+	BiPlanes        uint16
+	BiBitCount      uint16
+	BiCompression   uint
+	BiSizeImage     uint
+	BiXPelsPerMeter int
+	BiYPelsPerMeter int
+	BiClrUsed       uint
+	BiClrImportant  uint
+}
+
+type RGBQUAD struct {
+	RgbBlue     byte
+	RgbGreen    byte
+	RgbRed      byte
+	RgbReserved byte
+}
+
+type BITMAPINFO struct {
+	BmiHeader BITMAPINFOHEADER
+	BmiColors *RGBQUAD
+}
+
+type BITMAP struct {
+	BmType       int
+	BmWidth      int
+	BmHeight     int
+	BmWidthBytes int
+	BmPlanes     uint16
+	BmBitsPixel  uint16
+	BmBits       unsafe.Pointer
+}
+
+type DIBSECTION struct {
+	DsBm        BITMAP
+	DsBmih      BITMAPINFOHEADER
+	DsBitfields [3]uint
+	DshSection  HANDLE
+	DsOffset    uint
+}
+
 var (
 	// Library
 	lib uint32
 
 	// Functions
 	abortDoc             uint32
+	bitBlt               uint32
 	createBrushIndirect  uint32
+	createCompatibleDC   uint32
 	createDC             uint32
+	createDIBSection     uint32
 	createFontIndirect   uint32
 	createIC             uint32
 	deleteDC             uint32
@@ -766,6 +852,7 @@ var (
 	endPage              uint32
 	extCreatePen         uint32
 	getDeviceCaps        uint32
+	getObject            uint32
 	getStockObject       uint32
 	getTextExtentPoint32 uint32
 	getTextMetrics       uint32
@@ -778,6 +865,7 @@ var (
 	setTextColor         uint32
 	startDoc             uint32
 	startPage            uint32
+	stretchBlt           uint32
 )
 
 func init() {
@@ -786,8 +874,11 @@ func init() {
 
 	// Functions
 	abortDoc = MustGetProcAddress(lib, "AbortDoc")
+	bitBlt = MustGetProcAddress(lib, "BitBlt")
 	createBrushIndirect = MustGetProcAddress(lib, "CreateBrushIndirect")
+	createCompatibleDC = MustGetProcAddress(lib, "CreateCompatibleDC")
 	createDC = MustGetProcAddress(lib, "CreateDCW")
+	createDIBSection = MustGetProcAddress(lib, "CreateDIBSection")
 	createFontIndirect = MustGetProcAddress(lib, "CreateFontIndirectW")
 	createIC = MustGetProcAddress(lib, "CreateICW")
 	deleteDC = MustGetProcAddress(lib, "DeleteDC")
@@ -797,6 +888,7 @@ func init() {
 	endPage = MustGetProcAddress(lib, "EndPage")
 	extCreatePen = MustGetProcAddress(lib, "ExtCreatePen")
 	getDeviceCaps = MustGetProcAddress(lib, "GetDeviceCaps")
+	getObject = MustGetProcAddress(lib, "GetObjectW")
 	getStockObject = MustGetProcAddress(lib, "GetStockObject")
 	getTextExtentPoint32 = MustGetProcAddress(lib, "GetTextExtentPoint32W")
 	getTextMetrics = MustGetProcAddress(lib, "GetTextMetricsW")
@@ -809,6 +901,7 @@ func init() {
 	setTextColor = MustGetProcAddress(lib, "SetTextColor")
 	startDoc = MustGetProcAddress(lib, "StartDocW")
 	startPage = MustGetProcAddress(lib, "StartPage")
+	stretchBlt = MustGetProcAddress(lib, "StretchBlt")
 }
 
 func AbortDoc(hdc HDC) int {
@@ -820,6 +913,21 @@ func AbortDoc(hdc HDC) int {
 	return int(ret)
 }
 
+func BitBlt(hdcDest HDC, nXDest, nYDest, nWidth, nHeight int, hdcSrc HDC, nXSrc, nYSrc int, dwRop uint) bool {
+	ret, _, _ := syscall.Syscall9(uintptr(bitBlt),
+		uintptr(hdcDest),
+		uintptr(nXDest),
+		uintptr(nYDest),
+		uintptr(nWidth),
+		uintptr(nHeight),
+		uintptr(hdcSrc),
+		uintptr(nXSrc),
+		uintptr(nYSrc),
+		uintptr(dwRop))
+
+	return ret != 0
+}
+
 func CreateBrushIndirect(lplb *LOGBRUSH) HBRUSH {
 	ret, _, _ := syscall.Syscall(uintptr(createBrushIndirect),
 		uintptr(unsafe.Pointer(lplb)),
@@ -827,6 +935,15 @@ func CreateBrushIndirect(lplb *LOGBRUSH) HBRUSH {
 		0)
 
 	return HBRUSH(ret)
+}
+
+func CreateCompatibleDC(hdc HDC) HDC {
+	ret, _, _ := syscall.Syscall(uintptr(createCompatibleDC),
+		uintptr(hdc),
+		0,
+		0)
+
+	return HDC(ret)
 }
 
 func CreateDC(lpszDriver, lpszDevice, lpszOutput *uint16, lpInitData *DEVMODE) HDC {
@@ -839,6 +956,18 @@ func CreateDC(lpszDriver, lpszDevice, lpszOutput *uint16, lpInitData *DEVMODE) H
 		0)
 
 	return HDC(ret)
+}
+
+func CreateDIBSection(hdc HDC, pbmi *BITMAPINFO, iUsage uint, ppvBits *unsafe.Pointer, hSection HANDLE, dwOffset uint) HBITMAP {
+	ret, _, _ := syscall.Syscall6(uintptr(createDIBSection),
+		uintptr(hdc),
+		uintptr(unsafe.Pointer(pbmi)),
+		uintptr(iUsage),
+		uintptr(unsafe.Pointer(ppvBits)),
+		uintptr(hSection),
+		uintptr(dwOffset))
+
+	return HBITMAP(ret)
 }
 
 func CreateFontIndirect(lplf *LOGFONT) HFONT {
@@ -927,6 +1056,15 @@ func GetDeviceCaps(hdc HDC, nIndex int) int {
 		uintptr(hdc),
 		uintptr(nIndex),
 		0)
+
+	return int(ret)
+}
+
+func GetObject(hgdiobj HGDIOBJ, cbBuffer int, lpvObject unsafe.Pointer) int {
+	ret, _, _ := syscall.Syscall(uintptr(getObject),
+		uintptr(hgdiobj),
+		uintptr(cbBuffer),
+		uintptr(lpvObject))
 
 	return int(ret)
 }
@@ -1046,4 +1184,22 @@ func StartPage(hdc HDC) int {
 		0)
 
 	return int(ret)
+}
+
+func StretchBlt(hdcDest HDC, nXOriginDest, nYOriginDest, nWidthDest, nHeightDest int, hdcSrc HDC, nXOriginSrc, nYOriginSrc, nWidthSrc, nHeightSrc int, dwRop uint) bool {
+	ret, _, _ := syscall.Syscall12(uintptr(stretchBlt),
+		uintptr(hdcDest),
+		uintptr(nXOriginDest),
+		uintptr(nYOriginDest),
+		uintptr(nWidthDest),
+		uintptr(nHeightDest),
+		uintptr(hdcSrc),
+		uintptr(nXOriginSrc),
+		uintptr(nYOriginSrc),
+		uintptr(nWidthSrc),
+		uintptr(nHeightSrc),
+		uintptr(dwRop),
+		0)
+
+	return ret != 0
 }

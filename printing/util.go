@@ -13,7 +13,6 @@ import (
 )
 
 import (
-	. "walk/winapi"
 	. "walk/winapi/kernel32"
 )
 
@@ -68,7 +67,7 @@ func toError(x interface{}) os.Error {
 }
 
 func newError(message string) os.Error {
-	return os.NewError(fmt.Sprintf("%s\nCall Stack:\n", message, callStack()))
+	return os.NewError(fmt.Sprintf("%s\nCall Stack:\n%s", message, callStack()))
 }
 
 func lastError(win32FuncName string) os.Error {

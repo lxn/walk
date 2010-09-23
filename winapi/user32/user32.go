@@ -812,6 +812,7 @@ var (
 	insertMenuItem     uint32
 	isDialogMessage    uint32
 	loadCursor         uint32
+	loadImage          uint32
 	messageBox         uint32
 	moveWindow         uint32
 	postMessage        uint32
@@ -855,6 +856,7 @@ func init() {
 	isDialogMessage = MustGetProcAddress(lib, "IsDialogMessageW")
 	insertMenuItem = MustGetProcAddress(lib, "InsertMenuItemW")
 	loadCursor = MustGetProcAddress(lib, "LoadCursorW")
+	loadImage = MustGetProcAddress(lib, "LoadImageW")
 	messageBox = MustGetProcAddress(lib, "MessageBoxW")
 	moveWindow = MustGetProcAddress(lib, "MoveWindow")
 	postMessage = MustGetProcAddress(lib, "PostMessageW")
@@ -1053,6 +1055,18 @@ func LoadCursor(hInstance HINSTANCE, lpCursorName *uint16) HCURSOR {
 		0)
 
 	return HCURSOR(ret)
+}
+
+func LoadImage(hinst HINSTANCE, lpszName *uint16, uType uint, cxDesired, cyDesired int, fuLoad uint) HANDLE {
+	ret, _, _ := syscall.Syscall6(uintptr(loadImage),
+		uintptr(hinst),
+		uintptr(unsafe.Pointer(lpszName)),
+		uintptr(uType),
+		uintptr(cxDesired),
+		uintptr(cyDesired),
+		uintptr(fuLoad))
+
+	return HANDLE(ret)
 }
 
 func MessageBox(hWnd HWND, lpText, lpCaption *uint16, uType uint) int {

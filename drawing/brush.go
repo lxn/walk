@@ -142,3 +142,43 @@ func (b *HatchBrush) logbrush() *LOGBRUSH {
 func (b *HatchBrush) Style() HatchStyle {
 	return b.style
 }
+
+type BitmapBrush struct {
+	hBrush HBRUSH
+	bitmap *Bitmap
+}
+
+func NewBitmapBrush(bitmap *Bitmap) (*BitmapBrush, os.Error) {
+	if bitmap == nil {
+		return nil, newError("bitmap cannot be nil")
+	}
+
+	lb := &LOGBRUSH{LbStyle: BS_DIBPATTERN, LbColor: DIB_RGB_COLORS, LbHatch: uintptr(bitmap.hPackedDIB)}
+
+	hBrush := CreateBrushIndirect(lb)
+	if hBrush == 0 {
+		return nil, newError("CreateBrushIndirect failed")
+	}
+
+	return &BitmapBrush{hBrush: hBrush, bitmap: bitmap}, nil
+}
+
+func (b *BitmapBrush) Dispose() {
+	if b.hBrush != 0 {
+		DeleteObject(HGDIOBJ(b.hBrush))
+
+		b.hBrush = 0
+	}
+}
+
+func (b *BitmapBrush) handle() HBRUSH {
+	return b.hBrush
+}
+
+func (b *BitmapBrush) logbrush() *LOGBRUSH {
+	return &LOGBRUSH{LbStyle: BS_DIBPATTERN, LbColor: DIB_RGB_COLORS, LbHatch: uintptr(b.bitmap.hPackedDIB)}
+}
+
+func (b *BitmapBrush) Bitmap() *Bitmap {
+	return b.bitmap
+}

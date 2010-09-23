@@ -11,13 +11,6 @@ import (
 )
 
 const (
-	ERROR_SUCCESS             = 0
-	ERROR_FILE_NOT_FOUND      = 2
-	ERROR_INSUFFICIENT_BUFFER = 122
-	ERROR_MORE_DATA           = 234
-)
-
-const (
 	FALSE = 0
 	TRUE  = 1
 )

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"strings"
 )
 
 import (
@@ -27,7 +26,39 @@ func panicIfErr(err os.Error) {
 	}
 }
 
+func createBitmap() *drawing.Bitmap {
+	bounds := drawing.Rectangle{Width: 200, Height: 200}
+
+	bmp, err := drawing.NewBitmap(bounds.Size())
+	panicIfErr(err)
+
+	surface, err := drawing.NewSurfaceFromBitmap(bmp)
+	panicIfErr(err)
+	defer surface.Dispose()
+
+	brushBmp, err := drawing.NewBitmapFromFile("plus.bmp")
+	panicIfErr(err)
+	defer brushBmp.Dispose()
+
+	brush, err := drawing.NewBitmapBrush(brushBmp)
+	panicIfErr(err)
+	defer brush.Dispose()
+
+	panicIfErr(surface.FillRectangle(brush, bounds))
+
+	font, err := drawing.NewFont("Times New Roman", 48, drawing.FontBold|drawing.FontItalic)
+	panicIfErr(err)
+	defer font.Dispose()
+
+	panicIfErr(surface.DrawText("Runtime Created Bitmap", font, drawing.RGB(0, 0, 0), bounds, drawing.TextWordbreak))
+
+	return bmp
+}
+
 func (mw *MainWindow) drawStuff() {
+	bmp := createBitmap()
+	defer bmp.Dispose()
+
 	bounds, err := mw.treeView.ClientBounds()
 	panicIfErr(err)
 
@@ -40,13 +71,6 @@ func (mw *MainWindow) drawStuff() {
 	defer rectPen.Dispose()
 
 	panicIfErr(surface.DrawRectangle(rectPen, bounds))
-
-	font, err := drawing.NewFont("Tahoma", 36, drawing.FontBold)
-	panicIfErr(err)
-	defer font.Dispose()
-
-	text := strings.Repeat("Hello! ", 10)
-	panicIfErr(surface.DrawText(text, font, drawing.RGB(255, 192, 128), bounds, drawing.TextWordbreak))
 
 	ellipseBrush, err := drawing.NewHatchBrush(drawing.RGB(0, 255, 0), drawing.HatchCross)
 	panicIfErr(err)
@@ -64,6 +88,12 @@ func (mw *MainWindow) drawStuff() {
 
 	panicIfErr(surface.DrawLine(linesPen, drawing.Point{bounds.X, bounds.Y}, drawing.Point{bounds.Width, bounds.Height}))
 	panicIfErr(surface.DrawLine(linesPen, drawing.Point{bounds.X, bounds.Height}, drawing.Point{bounds.Width, bounds.Y}))
+
+	for x := 0; x < 2; x++ {
+		for y := 0; y < 2; y++ {
+			panicIfErr(surface.DrawImage(bmp, drawing.Point{x*300 + 150, y*250 + 20}))
+		}
+	}
 }
 
 func runMainWindow() {

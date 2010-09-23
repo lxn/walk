@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"fmt"
 	"os"
 	"syscall"
 )
@@ -28,15 +29,15 @@ func loadImageList(filePath string, imageWidth int, transparentColor COLORREF) H
 		8,
 		transparentColor,
 		IMAGE_BITMAP,
-		LR_LOADFROMFILE)
+		LR_CREATEDIBSECTION|LR_LOADFROMFILE)
 
 	return hIml
 }
 
-func NewImageList(fileName string, imageWidth int, color drawing.Color) (*ImageList, os.Error) {
-	hIml := loadImageList(fileName, imageWidth, COLORREF(color))
+func NewImageList(filePath string, imageWidth int, color drawing.Color) (*ImageList, os.Error) {
+	hIml := loadImageList(filePath, imageWidth, COLORREF(color))
 	if hIml == 0 {
-		return nil, newError("ImageList_LoadImage failed")
+		return nil, newError(fmt.Sprintf("ImageList_LoadImage failed for file '%s'", filePath))
 	}
 
 	return &ImageList{hIml: hIml}, nil

@@ -15,6 +15,15 @@ import (
 
 const MAX_PATH = 260
 
+// Error codes
+const (
+	ERROR_SUCCESS             = 0
+	ERROR_FILE_NOT_FOUND      = 2
+	ERROR_INVALID_PARAMETER   = 87
+	ERROR_INSUFFICIENT_BUFFER = 122
+	ERROR_MORE_DATA           = 234
+)
+
 // GlobalAlloc flags
 const (
 	GHND          = 0x0042

@@ -525,7 +525,7 @@ func (w *Widget) SetGroupStart(value bool) os.Error {
 }
 
 func (w *Widget) GetDrawingSurface() (*drawing.Surface, os.Error) {
-	return drawing.NewWidgetSurface(w.hWnd)
+	return drawing.NewSurfaceFromWidget(w.hWnd)
 }
 
 func (w *Widget) AddKeyDownHandler(handler KeyEventHandler) {

@@ -49,11 +49,33 @@ type Surface struct {
 	hwnd HWND
 }
 
-func NewCompatibleBitmapSurface(size Size) (*Surface, os.Error) {
-	return nil, newError("not implemented")
+func NewSurfaceFromBitmap(bmp *Bitmap) (*Surface, os.Error) {
+	hdc := CreateCompatibleDC(0)
+	if hdc == 0 {
+		return nil, newError("CreateCompatibleDC failed")
+	}
+	succeeded := false
+
+	defer func() {
+		if !succeeded {
+			DeleteDC(hdc)
+		}
+	}()
+
+	if SelectObject(hdc, HGDIOBJ(bmp.hBmp)) == 0 {
+		return nil, newError("SelectObject failed")
+	}
+
+	if SetBkMode(hdc, TRANSPARENT) == 0 {
+		return nil, newError("SetBkMode failed")
+	}
+
+	succeeded = true
+
+	return &Surface{hdc: hdc}, nil
 }
 
-func NewDeviceSurface(driver, device string, devMode *DEVMODE) (*Surface, os.Error) {
+func NewSurfaceFromDevice(driver, device string, devMode *DEVMODE) (*Surface, os.Error) {
 	hdc := CreateDC(syscall.StringToUTF16Ptr(driver), syscall.StringToUTF16Ptr(device), nil, devMode)
 	if hdc == 0 {
 		return nil, newError("CreateDC failed")
@@ -66,7 +88,7 @@ func NewDeviceSurface(driver, device string, devMode *DEVMODE) (*Surface, os.Err
 	return &Surface{hdc: hdc}, nil
 }
 
-func NewWidgetSurface(hwnd HWND) (*Surface, os.Error) {
+func NewSurfaceFromWidget(hwnd HWND) (*Surface, os.Error) {
 	hdc := GetDC(hwnd)
 	if hdc == 0 {
 		return nil, newError("GetDC failed")
@@ -129,9 +151,9 @@ func (s *Surface) withBrushAndPen(brush Brush, pen Pen, f func() os.Error) os.Er
 	})
 }
 
-func (s *Surface) ellipse(brush Brush, pen Pen, bounds Rectangle) os.Error {
+func (s *Surface) ellipse(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) os.Error {
 	return s.withBrushAndPen(brush, pen, func() os.Error {
-		if !Ellipse(s.hdc, bounds.X, bounds.Y, bounds.X+bounds.Width, bounds.Y+bounds.Height) {
+		if !Ellipse(s.hdc, bounds.X, bounds.Y, bounds.X+bounds.Width+sizeCorrection, bounds.Y+bounds.Height+sizeCorrection) {
 			return newError("Ellipse failed")
 		}
 
@@ -140,11 +162,27 @@ func (s *Surface) ellipse(brush Brush, pen Pen, bounds Rectangle) os.Error {
 }
 
 func (s *Surface) DrawEllipse(pen Pen, bounds Rectangle) os.Error {
-	return s.ellipse(nullBrushSingleton, pen, bounds)
+	return s.ellipse(nullBrushSingleton, pen, bounds, 0)
 }
 
 func (s *Surface) FillEllipse(brush Brush, bounds Rectangle) os.Error {
-	return s.ellipse(brush, nullPenSingleton, bounds)
+	return s.ellipse(brush, nullPenSingleton, bounds, 1)
+}
+
+func (s *Surface) DrawImage(image Image, location Point) os.Error {
+	if image == nil {
+		return newError("image cannot be nil")
+	}
+
+	return image.draw(s.hdc, location)
+}
+
+func (s *Surface) DrawImageStretched(image Image, bounds Rectangle) os.Error {
+	if image == nil {
+		return newError("image cannot be nil")
+	}
+
+	return image.drawStretched(s.hdc, bounds)
 }
 
 func (s *Surface) DrawLine(pen Pen, from, to Point) os.Error {
@@ -161,9 +199,9 @@ func (s *Surface) DrawLine(pen Pen, from, to Point) os.Error {
 	})
 }
 
-func (s *Surface) rectangle(brush Brush, pen Pen, bounds Rectangle) os.Error {
+func (s *Surface) rectangle(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) os.Error {
 	return s.withBrushAndPen(brush, pen, func() os.Error {
-		if !Rectangle_(s.hdc, bounds.X, bounds.Y, bounds.X+bounds.Width, bounds.Y+bounds.Height) {
+		if !Rectangle_(s.hdc, bounds.X, bounds.Y, bounds.X+bounds.Width+sizeCorrection, bounds.Y+bounds.Height+sizeCorrection) {
 			return newError("Rectangle_ failed")
 		}
 
@@ -172,11 +210,11 @@ func (s *Surface) rectangle(brush Brush, pen Pen, bounds Rectangle) os.Error {
 }
 
 func (s *Surface) DrawRectangle(pen Pen, bounds Rectangle) os.Error {
-	return s.rectangle(nullBrushSingleton, pen, bounds)
+	return s.rectangle(nullBrushSingleton, pen, bounds, 0)
 }
 
 func (s *Surface) FillRectangle(brush Brush, bounds Rectangle) os.Error {
-	return s.rectangle(brush, nullPenSingleton, bounds)
+	return s.rectangle(brush, nullPenSingleton, bounds, 1)
 }
 
 func (s *Surface) DrawText(text string, font *Font, color Color, bounds Rectangle, format DrawTextFormat) os.Error {
