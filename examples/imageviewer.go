@@ -13,7 +13,6 @@ import (
 import (
 	"walk/drawing"
 	"walk/gui"
-	"walk/winapi/user32"
 )
 
 type MainWindow struct {
@@ -28,7 +27,7 @@ func panicIfErr(err os.Error) {
 }
 
 func (mw *MainWindow) openBitmap() {
-	dlg := new(gui.FileDialog)
+	dlg := &gui.FileDialog{}
 
 	dlg.FilePath = mw.prevFilePath
 	dlg.Filter = "Bitmap Files (*.bmp)|*.bmp"
@@ -95,7 +94,7 @@ func runMainWindow() {
 	aboutAction := gui.NewAction()
 	aboutAction.SetText("About")
 	aboutAction.AddTriggeredHandler(func(args gui.EventArgs) {
-		gui.MsgBox(mw, "About", "Simple Image Viewer Example", user32.MB_OK|user32.MB_ICONINFORMATION)
+		gui.MsgBox(mw, "About", "Simple Image Viewer Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
 	})
 	helpMenu.Actions().Add(aboutAction)
 

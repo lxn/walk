@@ -36,7 +36,7 @@ func hPackedDIBFromHBITMAP(hBmp HBITMAP) (HGLOBAL, os.Error) {
 	bmihSize := uintptr(unsafe.Sizeof(dib.DsBmih))
 	pixelsSize := uintptr(int(dib.DsBmih.BiBitCount) * dib.DsBmih.BiWidth * dib.DsBmih.BiHeight)
 
-	totalSize := uintptr(bmihSize + pixelsSize)
+	totalSize := bmihSize + pixelsSize
 
 	hPackedDIB := GlobalAlloc(GHND, totalSize)
 	dest := GlobalLock(hPackedDIB)
