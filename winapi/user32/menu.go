@@ -61,6 +61,26 @@ const (
 	HBMMENU_POPUP_MINIMIZE  = 11
 )
 
+// MENUINFO mask constants
+const (
+	MIM_APPLYTOSUBMENUS = 0x80000000
+	MIM_BACKGROUND      = 0x00000002
+	MIM_HELPID          = 0x00000004
+	MIM_MAXHEIGHT       = 0x00000001
+	MIM_MENUDATA        = 0x00000008
+	MIM_STYLE           = 0x00000010
+)
+
+// MENUINFO style constants
+const (
+	MNS_AUTODISMISS = 0x10000000
+	MNS_CHECKORBMP  = 0x04000000
+	MNS_DRAGDROP    = 0x20000000
+	MNS_MODELESS    = 0x40000000
+	MNS_NOCHECK     = 0x80000000
+	MNS_NOTIFYBYPOS = 0x08000000
+)
+
 type MENUITEMINFO struct {
 	CbSize        uint
 	FMask         uint
@@ -74,4 +94,14 @@ type MENUITEMINFO struct {
 	DwTypeData    *uint16
 	Cch           uint
 	HbmpItem      HBITMAP
+}
+
+type MENUINFO struct {
+	CbSize          uint
+	FMask           uint
+	DwStyle         uint
+	CyMax           uint
+	HbrBack         HBRUSH
+	DwContextHelpID uint
+	DwMenuData      uintptr
 }

@@ -153,8 +153,18 @@ func (tb *ToolBar) onActionChanged(action *Action) (err os.Error) {
 }
 
 func (tb *ToolBar) onInsertingAction(index int, action *Action) (err os.Error) {
+	image := action.image
+	imageIndex := -1
+	if image != nil {
+		// FIXME: Protect against duplicate insertion
+		imageIndex, err = tb.imageList.AddMasked(image)
+		if err != nil {
+			return
+		}
+	}
+
 	tbb := TBBUTTON{
-		IBitmap:   action.ImageIndex(),
+		IBitmap:   imageIndex,
 		IdCommand: int(action.id),
 		FsState:   TBSTATE_ENABLED | TBSTATE_WRAP,
 		FsStyle:/*BTNS_AUTOSIZE |*/ BTNS_BUTTON,

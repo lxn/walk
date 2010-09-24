@@ -38,6 +38,20 @@ func NewMenu() (*Menu, os.Error) {
 		return nil, lastError("CreatePopupMenu")
 	}
 
+	var mi MENUINFO
+	mi.CbSize = uint(unsafe.Sizeof(mi))
+
+	if !GetMenuInfo(hMenu, &mi) {
+		return nil, lastError("GetMenuInfo")
+	}
+
+	mi.FMask |= MIM_STYLE
+	mi.DwStyle = MNS_CHECKORBMP
+
+	if !SetMenuInfo(hMenu, &mi) {
+		return nil, lastError("SetMenuInfo")
+	}
+
 	m := &Menu{hMenu: hMenu}
 	m.actions = newActionList(m)
 
@@ -62,6 +76,10 @@ func (m *Menu) Actions() *ActionList {
 func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 	mii.CbSize = uint(unsafe.Sizeof(*mii))
 	mii.FMask = MIIM_FTYPE | MIIM_ID | MIIM_STRING
+	if action.image != nil {
+		mii.FMask |= MIIM_BITMAP
+		mii.HbmpItem = action.image.Handle()
+	}
 	mii.FType = MFT_STRING
 	mii.WID = uint(action.id)
 	mii.DwTypeData = syscall.StringToUTF16Ptr(action.Text())

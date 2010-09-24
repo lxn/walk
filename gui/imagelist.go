@@ -15,16 +15,17 @@ import (
 )
 
 type ImageList struct {
-	hIml HIMAGELIST
+	hIml      HIMAGELIST
+	maskColor drawing.Color
 }
 
-func NewImageList(imageSize drawing.Size) (*ImageList, os.Error) {
+func NewImageList(imageSize drawing.Size, maskColor drawing.Color) (*ImageList, os.Error) {
 	hIml := ImageList_Create(imageSize.Width, imageSize.Height, ILC_COLOR24, 8, 8)
 	if hIml == 0 {
 		return nil, newError("ImageList_Create failed")
 	}
 
-	return &ImageList{hIml: hIml}, nil
+	return &ImageList{hIml: hIml, maskColor: maskColor}, nil
 }
 
 func (il *ImageList) Add(bitmap, maskBitmap *drawing.Bitmap) (int, os.Error) {
@@ -45,12 +46,12 @@ func (il *ImageList) Add(bitmap, maskBitmap *drawing.Bitmap) (int, os.Error) {
 	return index, nil
 }
 
-func (il *ImageList) AddMasked(bitmap *drawing.Bitmap, maskColor drawing.Color) (int, os.Error) {
+func (il *ImageList) AddMasked(bitmap *drawing.Bitmap) (int, os.Error) {
 	if bitmap == nil {
 		return 0, newError("bitmap cannot be nil")
 	}
 
-	index := ImageList_AddMasked(il.hIml, bitmap.Handle(), COLORREF(maskColor))
+	index := ImageList_AddMasked(il.hIml, bitmap.Handle(), COLORREF(il.maskColor))
 	if index == -1 {
 		return 0, newError("ImageList_AddMasked failed")
 	}
@@ -63,4 +64,8 @@ func (il *ImageList) Dispose() {
 		ImageList_Destroy(il.hIml)
 		il.hIml = 0
 	}
+}
+
+func (il *ImageList) MaskColor() drawing.Color {
+	return il.maskColor
 }

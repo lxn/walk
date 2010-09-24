@@ -9,6 +9,10 @@ import (
 	"os"
 )
 
+import (
+	"walk/drawing"
+)
+
 type actionChangedHandler interface {
 	onActionChanged(action *Action) (err os.Error)
 }
@@ -27,7 +31,7 @@ type Action struct {
 	changedHandlers   vector.Vector
 	text              string
 	toolTip           string
-	imageIndex        int
+	image             *drawing.Bitmap
 	enabled           bool
 	visible           bool
 	id                uint16
@@ -63,19 +67,19 @@ func (a *Action) SetEnabled(value bool) (err os.Error) {
 	return
 }
 
-func (a *Action) ImageIndex() int {
-	return a.imageIndex
+func (a *Action) Image() *drawing.Bitmap {
+	return a.image
 }
 
-func (a *Action) SetImageIndex(value int) (err os.Error) {
-	if value != a.imageIndex {
-		old := a.imageIndex
+func (a *Action) SetImage(value *drawing.Bitmap) (err os.Error) {
+	if value != a.image {
+		old := a.image
 
-		a.imageIndex = value
+		a.image = value
 
 		err = a.raiseChanged()
 		if err != nil {
-			a.imageIndex = old
+			a.image = old
 			a.raiseChanged()
 		}
 	}

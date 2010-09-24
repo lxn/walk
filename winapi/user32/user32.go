@@ -805,6 +805,7 @@ var (
 	getAncestor        uint32
 	getClientRect      uint32
 	getDC              uint32
+	getMenuInfo        uint32
 	getMessage         uint32
 	getWindowLong      uint32
 	getWindowPlacement uint32
@@ -823,6 +824,7 @@ var (
 	sendMessage        uint32
 	setFocus           uint32
 	setMenu            uint32
+	setMenuInfo        uint32
 	setMenuItemInfo    uint32
 	setParent          uint32
 	setWindowLong      uint32
@@ -849,6 +851,7 @@ func init() {
 	getAncestor = MustGetProcAddress(lib, "GetAncestor")
 	getClientRect = MustGetProcAddress(lib, "GetClientRect")
 	getDC = MustGetProcAddress(lib, "GetDC")
+	getMenuInfo = MustGetProcAddress(lib, "GetMenuInfo")
 	getMessage = MustGetProcAddress(lib, "GetMessageW")
 	getWindowLong = MustGetProcAddress(lib, "GetWindowLongW")
 	getWindowPlacement = MustGetProcAddress(lib, "GetWindowPlacement")
@@ -867,6 +870,7 @@ func init() {
 	sendMessage = MustGetProcAddress(lib, "SendMessageW")
 	setFocus = MustGetProcAddress(lib, "SetFocus")
 	setMenu = MustGetProcAddress(lib, "SetMenu")
+	setMenuInfo = MustGetProcAddress(lib, "SetMenuInfo")
 	setMenuItemInfo = MustGetProcAddress(lib, "SetMenuItemInfoW")
 	setParent = MustGetProcAddress(lib, "SetParent")
 	setWindowLong = MustGetProcAddress(lib, "SetWindowLongW")
@@ -986,6 +990,15 @@ func GetDC(hWnd HWND) HDC {
 		0)
 
 	return HDC(ret)
+}
+
+func GetMenuInfo(hmenu HMENU, lpcmi *MENUINFO) bool {
+	ret, _, _ := syscall.Syscall(uintptr(getMenuInfo),
+		uintptr(hmenu),
+		uintptr(unsafe.Pointer(lpcmi)),
+		0)
+
+	return ret != 0
 }
 
 func GetMessage(msg *MSG, hWnd HWND, msgFilterMin, msgFilterMax uint) BOOL {
@@ -1164,6 +1177,15 @@ func SetMenu(hWnd HWND, hMenu HMENU) bool {
 	ret, _, _ := syscall.Syscall(uintptr(setMenu),
 		uintptr(hWnd),
 		uintptr(hMenu),
+		0)
+
+	return ret != 0
+}
+
+func SetMenuInfo(hmenu HMENU, lpcmi *MENUINFO) bool {
+	ret, _, _ := syscall.Syscall(uintptr(setMenuInfo),
+		uintptr(hmenu),
+		uintptr(unsafe.Pointer(lpcmi)),
 		0)
 
 	return ret != 0

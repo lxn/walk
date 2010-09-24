@@ -63,15 +63,9 @@ func runMainWindow() {
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.SetText("Simple Image Viewer"))
 
-	imageList, err := gui.NewImageList(drawing.Size{16, 16})
+	imageList, err := gui.NewImageList(drawing.Size{16, 16}, drawing.RGB(255, 0, 255))
 	panicIfErr(err)
 	mw.ToolBar().SetImageList(imageList)
-
-	openBmp, err := drawing.NewBitmapFromFile("img/open.png")
-	panicIfErr(err)
-
-	_, err = imageList.AddMasked(openBmp, drawing.RGB(255, 0, 255))
-	panicIfErr(err)
 
 	fileMenu, err := gui.NewMenu()
 	panicIfErr(err)
@@ -79,8 +73,11 @@ func runMainWindow() {
 	panicIfErr(err)
 	fileMenuAction.SetText("File")
 
+	openBmp, err := drawing.NewBitmapFromFile("img/open.png")
+	panicIfErr(err)
+
 	openAction := gui.NewAction()
-	openAction.SetImageIndex(0)
+	openAction.SetImage(openBmp)
 	openAction.SetText("Open")
 	openAction.AddTriggeredHandler(func(args gui.EventArgs) { mw.openBitmap() })
 	fileMenu.Actions().Add(openAction)
