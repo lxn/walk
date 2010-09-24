@@ -36,7 +36,7 @@ func createBitmap() *drawing.Bitmap {
 	panicIfErr(err)
 	defer surface.Dispose()
 
-	brushBmp, err := drawing.NewBitmapFromFile("plus.bmp")
+	brushBmp, err := drawing.NewBitmapFromFile("img/plus.png")
 	panicIfErr(err)
 	defer brushBmp.Dispose()
 

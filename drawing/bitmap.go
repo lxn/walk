@@ -164,6 +164,10 @@ func (bmp *Bitmap) drawStretched(hdc HDC, bounds Rectangle) os.Error {
 	})
 }
 
+func (bmp *Bitmap) Handle() HBITMAP {
+	return bmp.hBmp
+}
+
 func (bmp *Bitmap) Dispose() {
 	if bmp.hBmp != 0 {
 		DeleteObject(HGDIOBJ(bmp.hBmp))

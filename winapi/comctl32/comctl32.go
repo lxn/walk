@@ -122,6 +122,21 @@ const (
 	PBS_VERTICAL    = 4
 )
 
+// ImageList creation flags
+const (
+	ILC_MASK          = 0x00000001
+	ILC_COLOR         = 0x00000000
+	ILC_COLORDDB      = 0x000000FE
+	ILC_COLOR4        = 0x00000004
+	ILC_COLOR8        = 0x00000008
+	ILC_COLOR16       = 0x00000010
+	ILC_COLOR24       = 0x00000018
+	ILC_COLOR32       = 0x00000020
+	ILC_PALETTE       = 0x00000800
+	ILC_MIRROR        = 0x00002000
+	ILC_PERITEMMIRROR = 0x00008000
+)
+
 type HIMAGELIST HANDLE
 
 type INITCOMMONCONTROLSEX struct {
@@ -133,8 +148,10 @@ var (
 	lib uint32
 
 	// Functions
+	imageList_Add        uint32
+	imageList_AddMasked  uint32
+	imageList_Create     uint32
 	imageList_Destroy    uint32
-	imageList_LoadImage  uint32
 	initCommonControlsEx uint32
 )
 
@@ -143,8 +160,10 @@ func init() {
 	lib = MustLoadLibrary("comctl32.dll")
 
 	// Functions
+	imageList_Add = MustGetProcAddress(lib, "ImageList_Add")
+	imageList_AddMasked = MustGetProcAddress(lib, "ImageList_AddMasked")
+	imageList_Create = MustGetProcAddress(lib, "ImageList_Create")
 	imageList_Destroy = MustGetProcAddress(lib, "ImageList_Destroy")
-	imageList_LoadImage = MustGetProcAddress(lib, "ImageList_LoadImageW")
 	initCommonControlsEx = MustGetProcAddress(lib, "InitCommonControlsEx")
 
 	// Initialize the common controls we support
@@ -155,6 +174,36 @@ func init() {
 	InitCommonControlsEx(&initCtrls)
 }
 
+func ImageList_Add(himl HIMAGELIST, hbmImage, hbmMask HBITMAP) int {
+	ret, _, _ := syscall.Syscall(uintptr(imageList_Add),
+		uintptr(himl),
+		uintptr(hbmImage),
+		uintptr(hbmMask))
+
+	return int(ret)
+}
+
+func ImageList_AddMasked(himl HIMAGELIST, hbmImage HBITMAP, crMask COLORREF) int {
+	ret, _, _ := syscall.Syscall(uintptr(imageList_AddMasked),
+		uintptr(himl),
+		uintptr(hbmImage),
+		uintptr(crMask))
+
+	return int(ret)
+}
+
+func ImageList_Create(cx, cy int, flags uint, cInitial, cGrow int) HIMAGELIST {
+	ret, _, _ := syscall.Syscall6(uintptr(imageList_Create),
+		uintptr(cx),
+		uintptr(cy),
+		uintptr(flags),
+		uintptr(cInitial),
+		uintptr(cGrow),
+		0)
+
+	return HIMAGELIST(ret)
+}
+
 func ImageList_Destroy(hIml HIMAGELIST) bool {
 	ret, _, _ := syscall.Syscall(uintptr(imageList_Destroy),
 		uintptr(hIml),
@@ -162,21 +211,6 @@ func ImageList_Destroy(hIml HIMAGELIST) bool {
 		0)
 
 	return ret != 0
-}
-
-func ImageList_LoadImage(hi HINSTANCE, lpbmp *uint16, cx, cGrow int, crMask COLORREF, uType, uFlags uint) HIMAGELIST {
-	ret, _, _ := syscall.Syscall9(uintptr(imageList_LoadImage),
-		uintptr(hi),
-		uintptr(unsafe.Pointer(lpbmp)),
-		uintptr(cx),
-		uintptr(cGrow),
-		uintptr(crMask),
-		uintptr(uType),
-		uintptr(uFlags),
-		0,
-		0)
-
-	return HIMAGELIST(ret)
 }
 
 func InitCommonControlsEx(lpInitCtrls *INITCOMMONCONTROLSEX) bool {

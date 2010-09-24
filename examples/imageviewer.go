@@ -63,9 +63,15 @@ func runMainWindow() {
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.SetText("Simple Image Viewer"))
 
-	imageList, err := gui.NewImageList("imagelist.bmp", 16, drawing.RGB(255, 0, 255))
+	imageList, err := gui.NewImageList(drawing.Size{16, 16})
 	panicIfErr(err)
 	mw.ToolBar().SetImageList(imageList)
+
+	openBmp, err := drawing.NewBitmapFromFile("img/open.png")
+	panicIfErr(err)
+
+	_, err = imageList.AddMasked(openBmp, drawing.RGB(255, 0, 255))
+	panicIfErr(err)
 
 	fileMenu, err := gui.NewMenu()
 	panicIfErr(err)
