@@ -30,7 +30,7 @@ func (mw *MainWindow) openBitmap() {
 	dlg := &gui.FileDialog{}
 
 	dlg.FilePath = mw.prevFilePath
-	dlg.Filter = "Bitmap Files (*.bmp)|*.bmp"
+	dlg.Filter = "Bitmap Files (*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff)|*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff"
 	dlg.Title = "Select a Bitmap"
 
 	ok, err := dlg.ShowOpen(mw)

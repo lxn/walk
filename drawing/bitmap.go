@@ -13,8 +13,8 @@ import (
 
 import (
 	. "walk/winapi/gdi32"
+	. "walk/winapi/gdiplus"
 	. "walk/winapi/kernel32"
-	. "walk/winapi/user32"
 )
 
 func withCompatibleDC(f func(hdc HDC) os.Error) os.Error {
@@ -114,27 +114,18 @@ func NewBitmap(size Size) (bmp *Bitmap, err os.Error) {
 }
 
 func NewBitmapFromFile(filePath string) (*Bitmap, os.Error) {
-	hBmp := HBITMAP(LoadImage(0, syscall.StringToUTF16Ptr(filePath), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION|LR_LOADFROMFILE))
-	if hBmp == 0 {
-		return nil, newError(fmt.Sprintf("LoadImage failed for file '%s'", filePath))
+	var gpBmp *GpBitmap
+	if status := GdipCreateBitmapFromFile(syscall.StringToUTF16Ptr(filePath), &gpBmp); status != Ok {
+		return nil, newError(fmt.Sprintf("GdipCreateBitmapFromFile failed with status '%s' for file '%s'", status, filePath))
+	}
+	defer GdipDisposeImage((*GpImage)(gpBmp))
+
+	var hBmp HBITMAP
+	if status := GdipCreateHBITMAPFromBitmap(gpBmp, &hBmp, 0); status != Ok {
+		return nil, newError(fmt.Sprintf("GdipCreateHBITMAPFromBitmap failed with status '%s' for file '%s'", status, filePath))
 	}
 
-	succeeded := false
-
-	defer func() {
-		if !succeeded {
-			DeleteObject(HGDIOBJ(hBmp))
-		}
-	}()
-
-	bmp, err := newBitmapFromHBITMAP(hBmp)
-	if err != nil {
-		return nil, err
-	}
-
-	succeeded = true
-
-	return bmp, nil
+	return newBitmapFromHBITMAP(hBmp)
 }
 
 func (bmp *Bitmap) withSelectedIntoMemDC(f func(hdcMem HDC) os.Error) os.Error {
