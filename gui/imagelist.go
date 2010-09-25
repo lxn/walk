@@ -20,7 +20,7 @@ type ImageList struct {
 }
 
 func NewImageList(imageSize drawing.Size, maskColor drawing.Color) (*ImageList, os.Error) {
-	hIml := ImageList_Create(imageSize.Width, imageSize.Height, ILC_COLOR24, 8, 8)
+	hIml := ImageList_Create(imageSize.Width, imageSize.Height, ILC_MASK|ILC_COLOR24, 8, 8)
 	if hIml == 0 {
 		return nil, newError("ImageList_Create failed")
 	}

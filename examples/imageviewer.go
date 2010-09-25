@@ -63,7 +63,7 @@ func runMainWindow() {
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.SetText("Simple Image Viewer"))
 
-	imageList, err := gui.NewImageList(drawing.Size{16, 16}, drawing.RGB(255, 0, 255))
+	imageList, err := gui.NewImageList(drawing.Size{16, 16}, 0)
 	panicIfErr(err)
 	mw.ToolBar().SetImageList(imageList)
 
