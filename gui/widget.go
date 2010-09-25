@@ -617,6 +617,9 @@ func (w *Widget) runMessageLoop() os.Error {
 	var msg MSG
 	var cm crutches.Message
 
+	// Copy handle for later use when closing the window.
+	hWnd := w.hWnd
+
 	for {
 		ret := GetMessage(&msg, 0, 0, 0)
 
@@ -673,7 +676,8 @@ func (w *Widget) runMessageLoop() os.Error {
 
 		switch msg.Message {
 		case crutches.CloseMsgId():
-			if msg.HWnd == w.hWnd {
+			// We compare to local var, because Dispose has zeroed the original.
+			if msg.HWnd == hWnd {
 				return nil
 			}
 
