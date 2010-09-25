@@ -11,8 +11,8 @@ import (
 )
 
 import (
-	. "walk/winapi"
 	. "walk/winapi/advapi32"
+	. "walk/winapi/kernel32"
 )
 
 type Key struct {

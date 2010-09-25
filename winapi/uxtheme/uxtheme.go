@@ -11,7 +11,6 @@ import (
 
 import (
 	. "walk/winapi"
-	. "walk/winapi/ole32"
 	. "walk/winapi/user32"
 )
 

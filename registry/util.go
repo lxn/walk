@@ -13,7 +13,6 @@ import (
 )
 
 import (
-	. "walk/winapi"
 	. "walk/winapi/kernel32"
 )
 

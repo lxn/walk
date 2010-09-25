@@ -23,31 +23,9 @@ As the Go toolchain makes crosscompiling very easy, I code and build on Linux an
 use Windows only to run the executables. Follow this guide if you want to do the
 same: http://groups.google.com/group/golang-nuts/msg/c940bb15ef1d2b4e
 
-Now clone the Walk git repo:
-git clone http://github.com/lxn/walk.git
-
-Currently no makefiles are provided, because I prefer building my Go stuff with
-gobuild. For a list of Go build tools see http://go-lang.cat-v.org/dev-utils.
-
-With gobuild I use a directory structure like this:
-goprojects/
-    pgsql/
-    walk/
-    mycoolapp1/
-        subpkg1/
-        subpkg2/
-        subpkg3/
-        mycoolapp1.go
-    someotherapp/
-        subpkg1/
-        subpkg2/
-        someotherapp.go
-
-To build mycoolapp1 you will want to do something like this:
-cd goprojects
-gobuild -o mycoolapp1.exe mycoolapp1/mycoolapp1.go
-
-This assumes mycoolapp1.go contains the main func of that app.
+Now clone the Walk git repo and run make:
+$ git clone http://github.com/lxn/walk.git
+$ cd walk && gomake
 
 Presently there is one nasty caveat: Windows apps will need window procedures to do
 the nice gui stuff, which means Windows will have to call a callback function in
