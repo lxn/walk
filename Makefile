@@ -1,4 +1,4 @@
-all:
+all: clean
 	make -C winapi               install
 	make -C winapi/kernel32      install
 	make -C winapi/gdi32         install
@@ -19,7 +19,7 @@ all:
 	make -C examples/drawing
 	make -C examples/imageviewer
 
-test:
+test: clean
 	make -C drawing              test
 	make -C gui                  test
 	make -C path                 test
