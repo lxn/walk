@@ -140,18 +140,20 @@ func (mw *MainWindow) ToolBar() *ToolBar {
 }
 
 func (mw *MainWindow) ClientBounds() (bounds drawing.Rectangle, err os.Error) {
-	tlbBounds, err := mw.toolBar.Bounds()
-	if err != nil {
-		return
-	}
-	toolBarHeight := tlbBounds.Height
-
 	bounds, err = mw.Widget.ClientBounds()
 	if err != nil {
 		return
 	}
-	bounds.Y += toolBarHeight
-	bounds.Height -= toolBarHeight
+
+	if mw.toolBar.Actions().Len() > 0 {
+		tlbBounds, err := mw.toolBar.Bounds()
+		if err != nil {
+			return
+		}
+
+		bounds.Y += tlbBounds.Height
+		bounds.Height -= tlbBounds.Height
+	}
 
 	return
 }

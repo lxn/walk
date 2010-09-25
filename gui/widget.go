@@ -271,8 +271,16 @@ func (w *Widget) SetVisible(value bool) os.Error {
 	}
 
 	if value {
+		if style&WS_VISIBLE > 0 {
+			return nil
+		}
+
 		style |= WS_VISIBLE
 	} else {
+		if style&WS_VISIBLE == 0 {
+			return nil
+		}
+
 		style &^= WS_VISIBLE
 	}
 

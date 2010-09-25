@@ -34,7 +34,7 @@ func newToolBar(parent IContainer, style uint) (*ToolBar, os.Error) {
 
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("ToolbarWindow32"), nil,
-		WS_CHILD|WS_VISIBLE|style,
+		WS_CHILD|style,
 		0, 0, 0, 0, parent.Handle(), 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
@@ -73,6 +73,10 @@ func (tb *ToolBar) LayoutFlags() LayoutFlags {
 }
 
 func (tb *ToolBar) PreferredSize() drawing.Size {
+	if tb.actions.Len() == 0 {
+		return drawing.Size{}
+	}
+
 	style := GetWindowLong(tb.hWnd, GWL_STYLE)
 
 	if style&CCS_VERT > 0 && tb.minButtonWidth > 0 {
@@ -170,6 +174,8 @@ func (tb *ToolBar) onInsertingAction(index int, action *Action) (err os.Error) {
 		FsStyle:/*BTNS_AUTOSIZE |*/ BTNS_BUTTON,
 		IString: uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(action.Text()))),
 	}
+
+	tb.SetVisible(true)
 
 	SendMessage(tb.hWnd, TB_BUTTONSTRUCTSIZE, uintptr(unsafe.Sizeof(tbb)), 0)
 	SendMessage(tb.hWnd, TB_ADDBUTTONSW, uintptr(1), uintptr(unsafe.Pointer(&tbb)))

@@ -26,6 +26,16 @@ func panicIfErr(err os.Error) {
 	}
 }
 
+func (mw *MainWindow) updateTitle(filePath string) {
+	title := "Walk Image Viewer Example"
+
+	if filePath != "" {
+		title += fmt.Sprintf(" [%s]", filePath)
+	}
+
+	panicIfErr(mw.SetText(title))
+}
+
 func (mw *MainWindow) openBitmap() {
 	dlg := &gui.FileDialog{}
 
@@ -53,6 +63,8 @@ func (mw *MainWindow) openBitmap() {
 	panicIfErr(err)
 
 	panicIfErr(surface.DrawImageStretched(bmp, bounds))
+
+	mw.updateTitle(dlg.FilePath)
 }
 
 func runMainWindow() {
@@ -61,7 +73,7 @@ func runMainWindow() {
 	defer mainWnd.Dispose()
 
 	mw := &MainWindow{MainWindow: mainWnd}
-	panicIfErr(mw.SetText("Simple Image Viewer"))
+	mw.updateTitle("")
 
 	imageList, err := gui.NewImageList(drawing.Size{16, 16}, 0)
 	panicIfErr(err)
@@ -97,7 +109,7 @@ func runMainWindow() {
 	aboutAction := gui.NewAction()
 	aboutAction.SetText("About")
 	aboutAction.AddTriggeredHandler(func(args gui.EventArgs) {
-		gui.MsgBox(mw, "About", "Simple Image Viewer Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
+		gui.MsgBox(mw, "About", "Walk Image Viewer Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
 	})
 	helpMenu.Actions().Add(aboutAction)
 

@@ -102,7 +102,7 @@ func runMainWindow() {
 	defer mainWnd.Dispose()
 
 	mw := &MainWindow{MainWindow: mainWnd}
-
+	panicIfErr(mw.SetText("Walk Drawing Example"))
 	mw.ClientArea().SetLayout(gui.NewVBoxLayout())
 
 	drawButton, err := gui.NewPushButton(mw.ClientArea())
