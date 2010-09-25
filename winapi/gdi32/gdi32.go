@@ -653,6 +653,19 @@ const (
 	CAPTUREBLT     = 0x40000000
 )
 
+// StretchBlt modes
+const (
+	BLACKONWHITE        = 1
+	WHITEONBLACK        = 2
+	COLORONCOLOR        = 3
+	HALFTONE            = 4
+	MAXSTRETCHBLTMODE   = 4
+	STRETCH_ANDSCANS    = BLACKONWHITE
+	STRETCH_ORSCANS     = WHITEONBLACK
+	STRETCH_DELETESCANS = COLORONCOLOR
+	STRETCH_HALFTONE    = HALFTONE
+)
+
 // Bitmap compression constants
 const (
 	BI_RGB       = 0
@@ -862,6 +875,8 @@ var (
 	resetDC              uint32
 	selectObject         uint32
 	setBkMode            uint32
+	setBrushOrgEx        uint32
+	setStretchBltMode    uint32
 	setTextColor         uint32
 	startDoc             uint32
 	startPage            uint32
@@ -898,6 +913,8 @@ func init() {
 	resetDC = MustGetProcAddress(lib, "ResetDCW")
 	selectObject = MustGetProcAddress(lib, "SelectObject")
 	setBkMode = MustGetProcAddress(lib, "SetBkMode")
+	setBrushOrgEx = MustGetProcAddress(lib, "SetBrushOrgEx")
+	setStretchBltMode = MustGetProcAddress(lib, "SetStretchBltMode")
 	setTextColor = MustGetProcAddress(lib, "SetTextColor")
 	startDoc = MustGetProcAddress(lib, "StartDocW")
 	startPage = MustGetProcAddress(lib, "StartPage")
@@ -1154,6 +1171,27 @@ func SetBkMode(hdc HDC, iBkMode int) int {
 	ret, _, _ := syscall.Syscall(uintptr(setBkMode),
 		uintptr(hdc),
 		uintptr(iBkMode),
+		0)
+
+	return int(ret)
+}
+
+func SetBrushOrgEx(hdc HDC, nXOrg, nYOrg int, lppt *POINT) bool {
+	ret, _, _ := syscall.Syscall6(uintptr(setBrushOrgEx),
+		uintptr(hdc),
+		uintptr(nXOrg),
+		uintptr(nYOrg),
+		uintptr(unsafe.Pointer(lppt)),
+		0,
+		0)
+
+	return ret != 0
+}
+
+func SetStretchBltMode(hdc HDC, iStretchMode int) int {
+	ret, _, _ := syscall.Syscall(uintptr(setStretchBltMode),
+		uintptr(hdc),
+		uintptr(iStretchMode),
 		0)
 
 	return int(ret)

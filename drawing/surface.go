@@ -11,6 +11,7 @@ import (
 
 import (
 	. "walk/winapi/gdi32"
+	. "walk/winapi/kernel32"
 	. "walk/winapi/user32"
 )
 
@@ -49,6 +50,23 @@ type Surface struct {
 	hwnd HWND
 }
 
+func initHDC(hdc HDC) os.Error {
+	if SetBkMode(hdc, TRANSPARENT) == 0 {
+		return newError("SetBkMode failed")
+	}
+
+	switch SetStretchBltMode(hdc, HALFTONE) {
+	case 0, ERROR_INVALID_PARAMETER:
+		return newError("SetStretchBltMode failed")
+	}
+
+	if !SetBrushOrgEx(hdc, 0, 0, nil) {
+		return newError("SetBrushOrgEx failed")
+	}
+
+	return nil
+}
+
 func NewSurfaceFromBitmap(bmp *Bitmap) (*Surface, os.Error) {
 	hdc := CreateCompatibleDC(0)
 	if hdc == 0 {
@@ -66,8 +84,8 @@ func NewSurfaceFromBitmap(bmp *Bitmap) (*Surface, os.Error) {
 		return nil, newError("SelectObject failed")
 	}
 
-	if SetBkMode(hdc, TRANSPARENT) == 0 {
-		return nil, newError("SetBkMode failed")
+	if err := initHDC(hdc); err != nil {
+		return nil, err
 	}
 
 	succeeded = true
@@ -81,8 +99,8 @@ func NewSurfaceFromDevice(driver, device string, devMode *DEVMODE) (*Surface, os
 		return nil, newError("CreateDC failed")
 	}
 
-	if SetBkMode(hdc, TRANSPARENT) == 0 {
-		return nil, newError("SetBkMode failed")
+	if err := initHDC(hdc); err != nil {
+		return nil, err
 	}
 
 	return &Surface{hdc: hdc}, nil
@@ -94,8 +112,8 @@ func NewSurfaceFromWidget(hwnd HWND) (*Surface, os.Error) {
 		return nil, newError("GetDC failed")
 	}
 
-	if SetBkMode(hdc, TRANSPARENT) == 0 {
-		return nil, newError("SetBkMode failed")
+	if err := initHDC(hdc); err != nil {
+		return nil, err
 	}
 
 	return &Surface{hdc: hdc, hwnd: hwnd}, nil
