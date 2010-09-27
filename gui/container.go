@@ -9,6 +9,7 @@ import (
 )
 
 import (
+	. "walk/winapi"
 	. "walk/winapi/user32"
 )
 
@@ -79,14 +80,25 @@ func (c *Container) wndProc(msg *MSG) uintptr {
 	        }*/
 
 	case WM_COMMAND:
-		hWnd := HWND(msg.LParam)
-		if widget, ok := widgetsByHWnd[hWnd]; ok {
-			if clickableWidget, ok := widget.(clickable); ok {
-				clickableWidget.raiseClicked()
+		switch HIWORD(uint(msg.WParam)) {
+		case 0:
+			// menu
+			actionId := uint16(LOWORD(uint(msg.WParam)))
+			if action, ok := actionsById[actionId]; ok {
+				action.raiseTriggered()
+				return 0
 			}
-			return 0
-		} else {
-			break
+
+		default:
+			hWnd := HWND(msg.LParam)
+			if widget, ok := widgetsByHWnd[hWnd]; ok {
+				if clickableWidget, ok := widget.(clickable); ok {
+					clickableWidget.raiseClicked()
+				}
+				return 0
+			} else {
+				break
+			}
 		}
 
 	case WM_SIZE, WM_SIZING:

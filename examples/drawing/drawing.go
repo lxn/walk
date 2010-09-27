@@ -17,7 +17,7 @@ import (
 
 type MainWindow struct {
 	*gui.MainWindow
-	treeView *gui.TreeView
+	paintWidget *gui.CustomWidget
 }
 
 func panicIfErr(err os.Error) {
@@ -55,16 +55,9 @@ func createBitmap() *drawing.Bitmap {
 	return bmp
 }
 
-func (mw *MainWindow) drawStuff() {
+func drawStuff(surface *drawing.Surface, bounds drawing.Rectangle) os.Error {
 	bmp := createBitmap()
 	defer bmp.Dispose()
-
-	bounds, err := mw.treeView.ClientBounds()
-	panicIfErr(err)
-
-	surface, err := mw.treeView.GetDrawingSurface()
-	panicIfErr(err)
-	defer surface.Dispose()
 
 	rectPen, err := drawing.NewCosmeticPen(drawing.PenSolid, drawing.RGB(255, 0, 0))
 	panicIfErr(err)
@@ -89,11 +82,10 @@ func (mw *MainWindow) drawStuff() {
 	panicIfErr(surface.DrawLine(linesPen, drawing.Point{bounds.X, bounds.Y}, drawing.Point{bounds.Width, bounds.Height}))
 	panicIfErr(surface.DrawLine(linesPen, drawing.Point{bounds.X, bounds.Height}, drawing.Point{bounds.Width, bounds.Y}))
 
-	for x := 0; x < 2; x++ {
-		for y := 0; y < 2; y++ {
-			panicIfErr(surface.DrawImage(bmp, drawing.Point{x*300 + 150, y*250 + 20}))
-		}
-	}
+	bmpSize := bmp.Size()
+	panicIfErr(surface.DrawImage(bmp, drawing.Point{bounds.Width/2 - bmpSize.Width/2, bounds.Height/2 - bmpSize.Height/2}))
+
+	return nil
 }
 
 func runMainWindow() {
@@ -103,14 +95,10 @@ func runMainWindow() {
 
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.SetText("Walk Drawing Example"))
+
 	mw.ClientArea().SetLayout(gui.NewVBoxLayout())
 
-	drawButton, err := gui.NewPushButton(mw.ClientArea())
-	panicIfErr(err)
-	panicIfErr(drawButton.SetText("Draw Stuff!"))
-	drawButton.AddClickedHandler(func(args gui.EventArgs) { mw.drawStuff() })
-
-	mw.treeView, err = gui.NewTreeView(mw.ClientArea())
+	mw.paintWidget, err = gui.NewCustomWidget(mw.ClientArea(), 0, drawStuff)
 	panicIfErr(err)
 
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))

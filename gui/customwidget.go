@@ -45,6 +45,10 @@ func NewCustomWidget(parent IContainer, style uint, paint PaintFunc) (*CustomWid
 		return nil, newError("parent cannot be nil")
 	}
 
+	if customWidgetsByHWND == nil {
+		customWidgetsByHWND = make(map[HWND]*CustomWidget)
+	}
+
 	ensureRegisteredWindowClass(customWidgetWindowClass, customWidgetWndProc, &customWidgetWndProcCallback)
 
 	hWnd := CreateWindowEx(
@@ -65,6 +69,14 @@ func NewCustomWidget(parent IContainer, style uint, paint PaintFunc) (*CustomWid
 	parent.Children().Add(cw)
 
 	return cw, nil
+}
+
+func (*CustomWidget) LayoutFlags() LayoutFlags {
+	return ShrinkHorz | GrowHorz | ShrinkVert | GrowVert
+}
+
+func (cw *CustomWidget) PreferredSize() drawing.Size {
+	return cw.dialogBaseUnitsToPixels(drawing.Size{100, 100})
 }
 
 func (cw *CustomWidget) wndProc(msg *MSG) uintptr {
@@ -92,7 +104,7 @@ func (cw *CustomWidget) wndProc(msg *MSG) uintptr {
 		defer surface.Dispose()
 
 		r := &ps.RcPaint
-		err = cw.paint(surface, drawing.Rectangle{r.Left, r.Top, r.Right - r.Left + 1, r.Bottom - r.Top + 1})
+		err = cw.paint(surface, drawing.Rectangle{r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top})
 		if err != nil {
 			// TODO: log?
 			break

@@ -129,6 +129,7 @@ func ensureRegisteredWindowClass(className string, windowProc syscall.CallbackFu
 	wc.HCursor = hCursor
 	wc.HbrBackground = COLOR_BTNFACE + 1
 	wc.LpszClassName = syscall.StringToUTF16Ptr(className)
+	wc.Style = CS_VREDRAW | CS_HREDRAW
 
 	if atom := RegisterClassEx(&wc); atom == 0 {
 		panic("RegisterClassEx")
@@ -631,8 +632,8 @@ func (w *Widget) raiseSizeChanged() {
 }
 
 func (w *Widget) wndProc(msg *MSG) uintptr {
-	widget := widgetsByHWnd[w.hWnd]
-	fmt.Printf("*Widget.wndProc: type: %T, msg: %+v\n", widget, msg)
+	//	widget := widgetsByHWnd[w.hWnd]
+	//	fmt.Printf("*Widget.wndProc: type: %T, msg: %+v\n", widget, msg)
 
 	switch msg.Message {
 	case WM_LBUTTONDOWN:

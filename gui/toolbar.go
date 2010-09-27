@@ -122,7 +122,6 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 }
 
 func (tb *ToolBar) wndProc(msg *MSG) uintptr {
-
 	switch msg.Message {
 	case WM_NOTIFY:
 		fmt.Printf("ToolBar.raiseEvent: WM_NOTIFY, msg: %v\n", msg)

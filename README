@@ -1,3 +1,11 @@
+CALLBACKS BRANCH WARNING
+========================
+
+It seems right now there are some stack overflow problems when using callbacks.
+
+Maybe you want to check out the master branch instead, which requires a helper
+dll, but is currently more "stable".
+
 About Walk
 ==========
 
