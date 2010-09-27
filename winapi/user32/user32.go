@@ -855,6 +855,7 @@ var (
 	getWindowPlacement uint32
 	getWindowRect      uint32
 	insertMenuItem     uint32
+	invalidateRect     uint32
 	isDialogMessage    uint32
 	loadCursor         uint32
 	loadIcon           uint32
@@ -904,8 +905,9 @@ func init() {
 	getWindowLong = MustGetProcAddress(lib, "GetWindowLongW")
 	getWindowPlacement = MustGetProcAddress(lib, "GetWindowPlacement")
 	getWindowRect = MustGetProcAddress(lib, "GetWindowRect")
-	isDialogMessage = MustGetProcAddress(lib, "IsDialogMessageW")
 	insertMenuItem = MustGetProcAddress(lib, "InsertMenuItemW")
+	invalidateRect = MustGetProcAddress(lib, "InvalidateRect")
+	isDialogMessage = MustGetProcAddress(lib, "IsDialogMessageW")
 	loadCursor = MustGetProcAddress(lib, "LoadCursorW")
 	loadIcon = MustGetProcAddress(lib, "LoadIconW")
 	loadImage = MustGetProcAddress(lib, "LoadImageW")
@@ -1119,15 +1121,6 @@ func GetWindowRect(hWnd HWND, rect *RECT) bool {
 	return ret != 0
 }
 
-func IsDialogMessage(hWnd HWND, msg *MSG) bool {
-	ret, _, _ := syscall.Syscall(uintptr(isDialogMessage),
-		uintptr(hWnd),
-		uintptr(unsafe.Pointer(msg)),
-		0)
-
-	return ret != 0
-}
-
 func InsertMenuItem(hMenu HMENU, uItem uint, fByPosition bool, lpmii *MENUITEMINFO) bool {
 	ret, _, _ := syscall.Syscall6(uintptr(insertMenuItem),
 		uintptr(hMenu),
@@ -1135,6 +1128,24 @@ func InsertMenuItem(hMenu HMENU, uItem uint, fByPosition bool, lpmii *MENUITEMIN
 		uintptr(BoolToBOOL(fByPosition)),
 		uintptr(unsafe.Pointer(lpmii)),
 		0,
+		0)
+
+	return ret != 0
+}
+
+func InvalidateRect(hWnd HWND, lpRect *RECT, bErase bool) bool {
+	ret, _, _ := syscall.Syscall(uintptr(invalidateRect),
+		uintptr(hWnd),
+		uintptr(unsafe.Pointer(lpRect)),
+		uintptr(BoolToBOOL(bErase)))
+
+	return ret != 0
+}
+
+func IsDialogMessage(hWnd HWND, msg *MSG) bool {
+	ret, _, _ := syscall.Syscall(uintptr(isDialogMessage),
+		uintptr(hWnd),
+		uintptr(unsafe.Pointer(msg)),
 		0)
 
 	return ret != 0

@@ -19,6 +19,7 @@ GOFILES=\
 	groupbox.go\
 	gui.go\
 	imagelist.go\
+	imageview.go\
 	label.go\
 	lineedit.go\
 	listviewcolumn.go\

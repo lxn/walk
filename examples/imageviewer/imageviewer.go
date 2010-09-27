@@ -17,6 +17,7 @@ import (
 
 type MainWindow struct {
 	*gui.MainWindow
+	imageView    *gui.ImageView
 	prevFilePath string
 }
 
@@ -53,16 +54,13 @@ func (mw *MainWindow) openBitmap() {
 
 	bmp, err := drawing.NewBitmapFromFile(dlg.FilePath)
 	panicIfErr(err)
-	defer bmp.Dispose()
 
-	surface, err := mw.GetDrawingSurface()
-	panicIfErr(err)
-	defer surface.Dispose()
+	prevImage := mw.imageView.Image()
+	if prevImage != nil {
+		prevImage.Dispose()
+	}
 
-	bounds, err := mw.ClientBounds()
-	panicIfErr(err)
-
-	panicIfErr(surface.DrawImageStretched(bmp, bounds))
+	panicIfErr(mw.imageView.SetImage(bmp))
 
 	mw.updateTitle(dlg.FilePath)
 }
@@ -73,7 +71,11 @@ func runMainWindow() {
 	defer mainWnd.Dispose()
 
 	mw := &MainWindow{MainWindow: mainWnd}
+	mw.ClientArea().SetLayout(gui.NewVBoxLayout())
 	mw.updateTitle("")
+
+	mw.imageView, err = gui.NewImageView(mw.ClientArea())
+	panicIfErr(err)
 
 	imageList, err := gui.NewImageList(drawing.Size{16, 16}, 0)
 	panicIfErr(err)

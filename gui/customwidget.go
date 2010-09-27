@@ -76,7 +76,7 @@ func (*CustomWidget) LayoutFlags() LayoutFlags {
 }
 
 func (cw *CustomWidget) PreferredSize() drawing.Size {
-	return cw.dialogBaseUnitsToPixels(drawing.Size{100, 100})
+	return drawing.Size{100, 100}
 }
 
 func (cw *CustomWidget) wndProc(msg *MSG) uintptr {
