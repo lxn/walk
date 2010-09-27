@@ -9,7 +9,6 @@ import (
 )
 
 import (
-	"walk/crutches"
 	. "walk/winapi/user32"
 )
 
@@ -67,7 +66,7 @@ func (c *Container) SetLayout(value Layout) {
 	}
 }
 
-func (c *Container) raiseEvent(msg *MSG) os.Error {
+func (c *Container) wndProc(msg *MSG) uintptr {
 	switch msg.Message {
 	/*    case _WM_USER_NOTIFY:
 	//        nmh := (*_NMHDR)(unsafe.Pointer(msg.lParam))
@@ -79,13 +78,24 @@ func (c *Container) raiseEvent(msg *MSG) os.Error {
 	            source.raiseEvent(msg)
 	        }*/
 
-	case crutches.ResizeMsgId():
+	case WM_COMMAND:
+		hWnd := HWND(msg.LParam)
+		if widget, ok := widgetsByHWnd[hWnd]; ok {
+			if clickableWidget, ok := widget.(clickable); ok {
+				clickableWidget.raiseClicked()
+			}
+			return 0
+		} else {
+			break
+		}
+
+	case WM_SIZE, WM_SIZING:
 		if c.layout != nil {
 			c.layout.Update(false)
 		}
 	}
 
-	return c.Widget.raiseEvent(msg)
+	return c.Widget.wndProc(msg)
 }
 
 func (c *Container) onInsertingWidget(index int, widget IWidget) (err os.Error) {

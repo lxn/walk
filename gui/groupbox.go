@@ -49,6 +49,6 @@ func (gb *GroupBox) PreferredSize() drawing.Size {
 	return gb.dialogBaseUnitsToPixels(drawing.Size{100, 100})
 }
 
-func (gb *GroupBox) raiseEvent(msg *MSG) os.Error {
-	return gb.Widget.raiseEvent(msg)
+func (gb *GroupBox) wndProc(msg *MSG) uintptr {
+	return gb.Widget.wndProc(msg)
 }

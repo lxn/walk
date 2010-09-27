@@ -49,6 +49,6 @@ func (rb *RadioButton) PreferredSize() drawing.Size {
 	return rb.dialogBaseUnitsToPixels(drawing.Size{50, 10})
 }
 
-func (rb *RadioButton) raiseEvent(msg *MSG) os.Error {
-	return rb.Button.raiseEvent(msg)
+func (rb *RadioButton) wndProc(msg *MSG) uintptr {
+	return rb.Button.wndProc(msg)
 }

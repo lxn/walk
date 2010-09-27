@@ -20,6 +20,23 @@ const (
 	Vertical
 )
 
+const splitterWindowClass = `\o/ Walk_Splitter_Class \o/`
+
+var splitterWndProcCallback *syscall.Callback
+
+func splitterWndProc(args *uintptr) uintptr {
+	msg := msgFromCallbackArgs(args)
+
+	s, ok := widgetsByHWnd[msg.HWnd].(*Splitter)
+	if !ok {
+		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
+		// FIXME: Find a way to properly handle this.
+		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+	}
+
+	return s.wndProc(msg)
+}
+
 type Splitter struct {
 	Container
 	orientation Orientation
@@ -30,10 +47,10 @@ func NewSplitter(parent IContainer) (*Splitter, os.Error) {
 		return nil, newError("parent cannot be nil")
 	}
 
-	ensureMainWindowInitialized()
+	ensureRegisteredWindowClass(splitterWindowClass, splitterWndProc, &splitterWndProcCallback)
 
 	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr("Container_WindowClass"), nil,
+		0, syscall.StringToUTF16Ptr(splitterWindowClass), nil,
 		WS_CHILD|WS_VISIBLE,
 		0, 0, 200, 100, parent.Handle(), 0, 0, nil)
 	if hWnd == 0 {
@@ -51,6 +68,10 @@ func NewSplitter(parent IContainer) (*Splitter, os.Error) {
 	parent.Children().Add(s)
 
 	return s, nil
+}
+
+func (s *Splitter) wndProc(msg *MSG) uintptr {
+	return s.Container.wndProc(msg)
 }
 
 func (s *Splitter) onInsertingWidget(index int, widget IWidget) (err os.Error) {

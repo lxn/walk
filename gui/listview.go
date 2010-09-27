@@ -15,7 +15,6 @@ import (
 )
 
 import (
-	"walk/crutches"
 	"walk/drawing"
 	. "walk/winapi"
 	. "walk/winapi/comctl32"
@@ -148,16 +147,16 @@ func (lv *ListView) RestoreState(s string) os.Error {
 	return nil
 }
 
-func (lv *ListView) raiseEvent(msg *MSG) os.Error {
+func (lv *ListView) wndProc(msg *MSG) uintptr {
 	switch msg.Message {
-	case crutches.ItemChangedMsgId():
-		if selIndex := lv.SelectedIndex(); selIndex != lv.prevSelIndex {
-			lv.raiseSelectedIndexChanged()
-			lv.prevSelIndex = selIndex
-		}
+	/*	case crutches.ItemChangedMsgId():
+			if selIndex := lv.SelectedIndex(); selIndex != lv.prevSelIndex {
+				lv.raiseSelectedIndexChanged()
+				lv.prevSelIndex = selIndex
+			}
 
-	case crutches.ItemActivateMsgId():
-		lv.raiseItemActivated()
+		case crutches.ItemActivateMsgId():
+			lv.raiseItemActivated()*/
 
 	case WM_KEYDOWN:
 		if msg.WParam == VK_RETURN && lv.SelectedIndex() > -1 {
@@ -165,7 +164,7 @@ func (lv *ListView) raiseEvent(msg *MSG) os.Error {
 		}
 	}
 
-	return nil
+	return lv.Widget.wndProc(msg)
 }
 
 func (lv *ListView) onListViewColumnChanged(column *ListViewColumn) {

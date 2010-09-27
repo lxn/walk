@@ -12,16 +12,28 @@ import (
 )
 
 import (
-	"walk/crutches"
 	"walk/drawing"
 	. "walk/winapi/comctl32"
 	. "walk/winapi/kernel32"
 	. "walk/winapi/user32"
 )
 
-var (
-	containerWindowClassAtom ATOM
-)
+const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
+
+var mainWindowWndProcCallback *syscall.Callback
+
+func mainWindowWndProc(args *uintptr) uintptr {
+	msg := msgFromCallbackArgs(args)
+
+	mw, ok := widgetsByHWnd[msg.HWnd].(*MainWindow)
+	if !ok {
+		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
+		// FIXME: Find a way to properly handle this.
+		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+	}
+
+	return mw.wndProc(msg)
+}
 
 type MainWindow struct {
 	Container
@@ -31,24 +43,11 @@ type MainWindow struct {
 	clientArea *Composite
 }
 
-func ensureMainWindowInitialized() {
-	if containerWindowClassAtom != 0 {
-		return
-	}
-
-	hInst := GetHInstance()
-
-	containerWindowClassAtom = crutches.RegisterWindowClass(hInst)
-	if containerWindowClassAtom == 0 {
-		panic("registerWindowClass for MainWindow window class failed.")
-	}
-}
-
 func NewMainWindow() (mw *MainWindow, err os.Error) {
-	ensureMainWindowInitialized()
+	ensureRegisteredWindowClass(mainWindowWindowClass, mainWindowWndProc, &mainWindowWndProcCallback)
 
 	hWnd := CreateWindowEx(
-		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr("Container_WindowClass"), nil,
+		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(mainWindowWindowClass), nil,
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, 400, 300, 0, 0, 0, nil)
 	if hWnd == 0 {
@@ -213,24 +212,16 @@ func (mw *MainWindow) RestoreState(s string) os.Error {
 	return nil
 }
 
-func (mw *MainWindow) raiseEvent(msg *MSG) (err os.Error) {
+func (mw *MainWindow) wndProc(msg *MSG) uintptr {
 	switch msg.Message {
-	case crutches.CloseMsgId():
+	case WM_CLOSE:
+		fmt.Println("*MainWindow.wndProc: WM_CLOSE")
 		mw.Close()
+		return 0
 
-		/*	case commandMsgId:
-			switch HIWORD(DWORD(msg.WParam)) {
-			case 0:
-				// menu
-				actionId := uint16(LOWORD(DWORD(msg.WParam)))
-				if action, ok := actionsById[actionId]; ok {
-					action.raiseTriggered()
-				}
-			}*/
-
-	case crutches.ResizeMsgId():
+	case WM_SIZE, WM_SIZING:
 		SendMessage(mw.toolBar.hWnd, TB_AUTOSIZE, 0, 0)
 	}
 
-	return mw.Container.raiseEvent(msg)
+	return mw.Container.wndProc(msg)
 }

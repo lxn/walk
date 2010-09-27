@@ -54,8 +54,8 @@ func (cb *ComboBox) PreferredSize() drawing.Size {
 	return cb.dialogBaseUnitsToPixels(drawing.Size{50, 14})
 }
 
-func (cb *ComboBox) raiseEvent(msg *MSG) os.Error {
-	return cb.Widget.raiseEvent(msg)
+func (cb *ComboBox) wndProc(msg *MSG) uintptr {
+	return cb.Widget.wndProc(msg)
 }
 
 func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) (err os.Error) {

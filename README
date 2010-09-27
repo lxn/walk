@@ -3,9 +3,9 @@ About Walk
 
 Walk is a "Windows Application Library Kit" for the Go Programming Language.
 
-It includes packages for 2-D drawing, graphical user interfaces, printing and more.
-The goal is to have a library that makes developing a Windows Desktop application
-using the Go Programming Language an easy walk.
+It includes packages for 2-D drawing, graphical user interfaces, printing and
+more. The goal is to have a library that makes developing a Windows Desktop
+application using the Go Programming Language an easy walk.
 
 For now it will be restricted to those apis that are available out of the box on
 Windows XP SP3.
@@ -13,61 +13,44 @@ Windows XP SP3.
 Is it ready for production work?
 ================================
 
-No, there is a lot of stuff missing and some existing parts may need to be redone.
-Don't rely on anything here to be stable yet, it will take some time.
+No, there is a lot of stuff missing and some existing parts may need to be
+redone. Don't rely on anything here to be stable yet, it will take some time.
 
 Setup
 =====
 
-As the Go toolchain makes crosscompiling very easy, I code and build on Linux and
-use Windows only to run the executables. Follow this guide if you want to do the
-same: http://groups.google.com/group/golang-nuts/msg/c940bb15ef1d2b4e
+As the Go toolchain makes crosscompiling very easy, I code and build on Linux
+and use Windows only to run the executables. Follow this guide if you want to do
+the same: http://groups.google.com/group/golang-nuts/msg/c940bb15ef1d2b4e
 
 Now clone the Walk git repo and run make:
 $ git clone http://github.com/lxn/walk.git
 $ cd walk && gomake
 
-Presently there is one nasty caveat: Windows apps will need window procedures to do
+Presently there is one caveat: Windows apps will need window procedures to do
 the nice gui stuff, which means Windows will have to call a callback function in
-your Go code. This is currently not possible though, so there is an ugly workaround
-in the form of a helper dll. The code comes as part of Walk in the crutches directory.
+the Go code. This is not possible in the current release of Go though, so there
+is an extra hurdle to overcome: You have to apply this patch to your Go
+installation and then rebuild it: http://codereview.appspot.com/1696051/
 
-For your convenience, a build of crutches.dll, that was statically linked against version
-3.4.5 of the MinGW runtime, is now included in the crutches directory as well.
-
-If you prefer to build it yourself, maybe because you want to add stuff to the dll, copy 
-all non-go crutches.* files to a Windows box and build a dll from it. The way I do that is
-using the Qt SDK 2009.04, which you can download here:
-ftp://ftp.qt.nokia.com/qtsdk/qt-sdk-win-opensource-2009.04.exe
-
-The included version 3.4.5 of MinGW allows for easy static linking, so no further dlls are 
-needed. Just remove all occurrences of -mthreads from this file:
-C:\Qt\2009.04\qt\mkspecs\win32-g++\qmake.conf. Then open the crutches.pro file with 
-Qt Creator and do a release build.
-
-Once the crutches.dll is built, copy it into the same directory as your app executable.
-
-Here is hope the situation will improve soonish: http://codereview.appspot.com/1696051/
-
-Some features of the Walk gui package require an application manifest file alongside
-your executable, to make use of common controls 6.0. See the examples directory for
-such a file.
+Some features of the Walk gui package require an application manifest file
+alongside your executable, to make use of common controls 6.0. See the examples
+directory for such a file.
 
 Using Walk
 ==========
 
 See the examples directory for inspiration. Docs may appear as time permits ;)
 
-You should be aware that this project is far from being mature - anything could break
-or change without warning.
+You should be aware that this project is far from being mature - anything could
+break or change without warning.
 
-Please open an issue on the bug tracker if you encounter a bug.
+Please open an issue on the tracker if you encounter a bug.
 
 Contribute
 ==========
 
-This project is quite an undertaking and cannot be done by a single developer (who
-has many other projects to complete btw). If this project is of utility to you and
-you want to see it improve, please consider to contribute.
+Contributions in form of design, code, documentation, bug reporting or other
+ways you see fit are very welcome.
 
 Thank You!

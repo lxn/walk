@@ -68,6 +68,6 @@ func (le *LineEdit) PreferredSize() drawing.Size {
 	return le.dialogBaseUnitsToPixels(drawing.Size{50, 14})
 }
 
-func (le *LineEdit) raiseEvent(msg *MSG) os.Error {
-	return le.Widget.raiseEvent(msg)
+func (le *LineEdit) wndProc(msg *MSG) uintptr {
+	return le.Widget.wndProc(msg)
 }

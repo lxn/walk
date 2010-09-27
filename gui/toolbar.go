@@ -12,7 +12,6 @@ import (
 )
 
 import (
-	"walk/crutches"
 	"walk/drawing"
 	. "walk/winapi"
 	. "walk/winapi/comctl32"
@@ -122,11 +121,7 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 	tb.imageList = value
 }
 
-func (tb *ToolBar) raiseEvent(msg *MSG) (err os.Error) {
-	err = tb.Widget.raiseEvent(msg)
-	if err != nil {
-		return
-	}
+func (tb *ToolBar) wndProc(msg *MSG) uintptr {
 
 	switch msg.Message {
 	case WM_NOTIFY:
@@ -136,20 +131,22 @@ func (tb *ToolBar) raiseEvent(msg *MSG) (err os.Error) {
 		case NM_CLICK:
 			nmm := (*NMMOUSE)(unsafe.Pointer(msg.LParam))
 			fmt.Printf("ToolBar.raiseEvent: WM_NOTIFY, NM_CLICK, nmm: %v\n", nmm)
+			return 0
 		}
 
-	case WM_COMMAND, crutches.CommandMsgId():
+	case WM_COMMAND:
 		switch HIWORD(uint(msg.WParam)) {
 		case 0:
 			// menu
 			actionId := uint16(LOWORD(uint(msg.WParam)))
 			if action, ok := actionsById[actionId]; ok {
 				action.raiseTriggered()
+				return 0
 			}
 		}
 	}
 
-	return
+	return tb.Widget.wndProc(msg)
 }
 
 func (tb *ToolBar) onActionChanged(action *Action) (err os.Error) {

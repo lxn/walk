@@ -49,6 +49,6 @@ func (te *TextEdit) PreferredSize() drawing.Size {
 	return te.dialogBaseUnitsToPixels(drawing.Size{100, 100})
 }
 
-func (te *TextEdit) raiseEvent(msg *MSG) os.Error {
-	return te.Widget.raiseEvent(msg)
+func (te *TextEdit) wndProc(msg *MSG) uintptr {
+	return te.Widget.wndProc(msg)
 }

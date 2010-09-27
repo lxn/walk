@@ -81,9 +81,9 @@ func GetLastError() uint {
 	return uint(ret)
 }
 
-func GetHInstance() HINSTANCE {
+func GetModuleHandle(lpModuleName *uint16) HINSTANCE {
 	ret, _, _ := syscall.Syscall(uintptr(getModuleHandle),
-		0,
+		uintptr(unsafe.Pointer(lpModuleName)),
 		0,
 		0)
 

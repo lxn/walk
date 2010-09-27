@@ -13,7 +13,6 @@ import (
 )
 
 import (
-	"walk/crutches"
 	"walk/drawing"
 	. "walk/winapi"
 	. "walk/winapi/gdi32"
@@ -76,7 +75,7 @@ type IWidget interface {
 
 type widgetInternal interface {
 	IWidget
-	raiseEvent(msg *MSG) os.Error
+	wndProc(msg *MSG) uintptr
 }
 
 type Widget struct {
@@ -95,6 +94,57 @@ var (
 	trackedMouseDownHWnd HWND
 	widgetsByHWnd        map[HWND]widgetInternal = make(map[HWND]widgetInternal)
 )
+
+func ensureRegisteredWindowClass(className string, windowProc syscall.CallbackFunc, callback **syscall.Callback) {
+	if callback == nil {
+		panic("callback cannot be nil")
+	}
+
+	if *callback != nil {
+		return
+	}
+
+	hInst := GetModuleHandle(nil)
+	if hInst == 0 {
+		panic("GetModuleHandle failed")
+	}
+
+	hIcon := LoadIcon(0, (*uint16)(unsafe.Pointer(uintptr(IDI_APPLICATION))))
+	if hIcon == 0 {
+		panic("LoadIcon failed")
+	}
+
+	hCursor := LoadCursor(0, (*uint16)(unsafe.Pointer(uintptr(IDC_ARROW))))
+	if hCursor == 0 {
+		panic("LoadCursor failed")
+	}
+
+	*callback = syscall.NewCallback(windowProc, 4*4)
+
+	var wc WNDCLASSEX
+	wc.CbSize = uint(unsafe.Sizeof(wc))
+	wc.LpfnWndProc = uintptr((*callback).ExtFnEntry())
+	wc.HInstance = hInst
+	wc.HIcon = hIcon
+	wc.HCursor = hCursor
+	wc.HbrBackground = COLOR_BTNFACE + 1
+	wc.LpszClassName = syscall.StringToUTF16Ptr(className)
+
+	if atom := RegisterClassEx(&wc); atom == 0 {
+		panic("RegisterClassEx")
+	}
+}
+
+func msgFromCallbackArgs(args *uintptr) *MSG {
+	p := (*[4]int32)(unsafe.Pointer(args))
+
+	return &MSG{
+		HWnd:    HWND(p[0]),
+		Message: uint(p[1]),
+		WParam:  uintptr(p[2]),
+		LParam:  uintptr(p[3]),
+	}
+}
 
 func rootWidget(w IWidget) RootWidget {
 	if w == nil {
@@ -580,7 +630,10 @@ func (w *Widget) raiseSizeChanged() {
 	}
 }
 
-func (w *Widget) raiseEvent(msg *MSG) os.Error {
+func (w *Widget) wndProc(msg *MSG) uintptr {
+	widget := widgetsByHWnd[w.hWnd]
+	fmt.Printf("*Widget.wndProc: type: %T, msg: %+v\n", widget, msg)
+
 	switch msg.Message {
 	case WM_LBUTTONDOWN:
 		for _, handlerIface := range w.mouseDownHandlers {
@@ -588,9 +641,15 @@ func (w *Widget) raiseEvent(msg *MSG) os.Error {
 			handler(&mouseEventArgs{eventArgs: eventArgs{sender: widgetsByHWnd[w.hWnd]}})
 		}
 
-	case crutches.ContextMenuMsgId():
-		hWnd := HWND(msg.WParam)
-		sourceWidget := widgetsByHWnd[hWnd]
+		trackedMouseDownHWnd = w.hWnd
+		return 0
+
+	case WM_LBUTTONUP:
+		trackedMouseDownHWnd = 0
+		return 0
+
+	case WM_CONTEXTMENU:
+		sourceWidget := widgetsByHWnd[w.hWnd]
 		x := int(GET_X_LPARAM(msg.LParam))
 		y := int(GET_Y_LPARAM(msg.LParam))
 
@@ -599,15 +658,17 @@ func (w *Widget) raiseEvent(msg *MSG) os.Error {
 		if contextMenu != nil {
 			TrackPopupMenuEx(contextMenu.hMenu, TPM_NOANIMATION, x, y, rootWidget(sourceWidget).Handle(), nil)
 		}
-		//		MessageBox(rootWidget(w), "WM_CONTEXTMENU", "The context menu would go here.", MB_OK|MB_ICONINFORMATION)
+		return 0
 
 	case WM_KEYDOWN:
 		w.raiseKeyDown(&keyEventArgs{eventArgs: eventArgs{widgetsByHWnd[w.hWnd]}, key: int(msg.WParam)})
+		return 0
 
-	case crutches.ResizeMsgId():
+	case WM_SIZE, WM_SIZING:
 		w.raiseSizeChanged()
+		return 0
 
-	case /*WM_COMMAND,*/ crutches.CommandMsgId():
+	case WM_COMMAND:
 		switch HIWORD(uint(msg.WParam)) {
 		case 0:
 			// menu
@@ -616,30 +677,19 @@ func (w *Widget) raiseEvent(msg *MSG) os.Error {
 				action.raiseTriggered()
 			}
 		}
+		return 0
 	}
 
-	return nil
+	return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
 }
 
 func (w *Widget) runMessageLoop() os.Error {
 	var msg MSG
-	var cm crutches.Message
 
-	// Copy handle for later use when closing the window.
-	hWnd := w.hWnd
-
-	for {
+	for w.hWnd != 0 {
 		ret := GetMessage(&msg, 0, 0, 0)
 
-		switch msg.Message {
-		case WM_MOUSEMOVE, WM_PAINT, WM_TIMER:
-
-			//        case WM_COMMAND, commandMsgId:
-			//			fmt.Printf("Widget.runMessageLoop: WM_COMMAND, commandMsgId: msg: %v\n", msg)
-
-			//        default:
-			//            fmt.Printf("Widget.runMessageLoop: msg: %v\n", msg)
-		}
+		//		fmt.Printf("*Widget.runMessageLoop: msg: %+v\n", msg)
 
 		switch ret {
 		case 0:
@@ -658,42 +708,6 @@ func (w *Widget) runMessageLoop() os.Error {
 		if !IsDialogMessage(rootHWnd, &msg) {
 			TranslateMessage(&msg)
 			DispatchMessage(&msg)
-		}
-
-		if widget, ok := widgetsByHWnd[msg.HWnd]; ok {
-			widget.raiseEvent(&msg)
-		}
-
-		for {
-			if crutches.GetCustomMessage(&cm) < 1 {
-				break
-			}
-
-			//			fmt.Printf("Widget.runMessageLoop: cm: %v\n", cm)
-
-			var cmMsg MSG
-			cmMsg.HWnd = cm.Hwnd
-			cmMsg.Message = cm.Msg
-			cmMsg.WParam = cm.WParam
-			cmMsg.LParam = cm.LParam
-
-			if widget, ok := widgetsByHWnd[cmMsg.HWnd]; ok {
-				widget.raiseEvent(&cmMsg)
-			}
-		}
-
-		switch msg.Message {
-		case crutches.CloseMsgId():
-			// We compare to local var, because Dispose has zeroed the original.
-			if msg.HWnd == hWnd {
-				return nil
-			}
-
-		case WM_LBUTTONDOWN:
-			trackedMouseDownHWnd = msg.HWnd
-
-		case WM_LBUTTONUP:
-			trackedMouseDownHWnd = 0
 		}
 	}
 

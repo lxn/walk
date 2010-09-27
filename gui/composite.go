@@ -5,7 +5,6 @@
 package gui
 
 import (
-	//    "log"
 	"os"
 	"syscall"
 )
@@ -14,6 +13,23 @@ import (
 	"walk/drawing"
 	. "walk/winapi/user32"
 )
+
+const compositeWindowClass = `\o/ Walk_Composite_Class \o/`
+
+var compositeWindowWndProcCallback *syscall.Callback
+
+func compositeWndProc(args *uintptr) uintptr {
+	msg := msgFromCallbackArgs(args)
+
+	c, ok := widgetsByHWnd[msg.HWnd].(*Composite)
+	if !ok {
+		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
+		// FIXME: Find a way to properly handle this.
+		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+	}
+
+	return c.wndProc(msg)
+}
 
 type Composite struct {
 	Container
@@ -24,10 +40,10 @@ func NewCompositeWithStyle(parent IContainer, style uint) (*Composite, os.Error)
 		return nil, newError("parent cannot be nil")
 	}
 
-	ensureMainWindowInitialized()
+	ensureRegisteredWindowClass(compositeWindowClass, compositeWndProc, &compositeWindowWndProcCallback)
 
 	hWnd := CreateWindowEx(
-		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr("Container_WindowClass"), nil,
+		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(compositeWindowClass), nil,
 		WS_CHILD|WS_VISIBLE|style,
 		0, 0, 0, 0, parent.Handle(), 0, 0, nil)
 	if hWnd == 0 {
@@ -89,11 +105,6 @@ func (c *Composite) PreferredSize() drawing.Size {
 	return drawing.Size{maxW, maxH}
 }
 
-func (c *Composite) raiseEvent(msg *MSG) (err os.Error) {
-	/*    switch msg.Message {
-		case resizeMsgId:
-	        log.Stdout("*Composite.raiseEvent: resizeMsgId")
-	    }*/
-
-	return c.Container.raiseEvent(msg)
+func (c *Composite) wndProc(msg *MSG) uintptr {
+	return c.Container.wndProc(msg)
 }

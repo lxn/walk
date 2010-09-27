@@ -49,6 +49,6 @@ func (cb *CheckBox) PreferredSize() drawing.Size {
 	return cb.dialogBaseUnitsToPixels(drawing.Size{50, 10})
 }
 
-func (cb *CheckBox) raiseEvent(msg *MSG) os.Error {
-	return cb.Button.raiseEvent(msg)
+func (cb *CheckBox) wndProc(msg *MSG) uintptr {
+	return cb.Button.wndProc(msg)
 }

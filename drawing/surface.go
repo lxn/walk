@@ -46,8 +46,9 @@ const (
 )
 
 type Surface struct {
-	hdc  HDC
-	hwnd HWND
+	hdc          HDC
+	hwnd         HWND
+	doNotDispose bool
 }
 
 func initHDC(hdc HDC) os.Error {
@@ -119,8 +120,20 @@ func NewSurfaceFromWidget(hwnd HWND) (*Surface, os.Error) {
 	return &Surface{hdc: hdc, hwnd: hwnd}, nil
 }
 
+func NewSurfaceFromHDC(hdc HDC) (*Surface, os.Error) {
+	if hdc == 0 {
+		return nil, newError("invalid hdc")
+	}
+
+	if err := initHDC(hdc); err != nil {
+		return nil, err
+	}
+
+	return &Surface{hdc: hdc, doNotDispose: true}, nil
+}
+
 func (s *Surface) Dispose() {
-	if s.hdc != 0 {
+	if !s.doNotDispose && s.hdc != 0 {
 		if s.hwnd == 0 {
 			DeleteDC(s.hdc)
 		} else {

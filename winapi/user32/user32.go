@@ -188,6 +188,19 @@ const (
 	HWND_MESSAGE   = ^HWND(2) // -3
 )
 
+// Predefined icon constants
+const (
+	IDI_APPLICATION = 32512
+	IDI_HAND        = 32513
+	IDI_QUESTION    = 32514
+	IDI_EXCLAMATION = 32515
+	IDI_ASTERISK    = 32516
+	IDI_WINLOGO     = 32517
+	IDI_WARNING     = IDI_EXCLAMATION
+	IDI_ERROR       = IDI_HAND
+	IDI_INFORMATION = IDI_ASTERISK
+)
+
 // Predefined cursor constants
 const (
 	IDC_ARROW       = 32512
@@ -781,6 +794,15 @@ type DRAWTEXTPARAMS struct {
 	UiLengthDrawn uint
 }
 
+type PAINTSTRUCT struct {
+	Hdc         HDC
+	FErase      BOOL
+	RcPaint     RECT
+	FRestore    BOOL
+	FIncUpdate  BOOL
+	RgbReserved [32]byte
+}
+
 func GET_X_LPARAM(lp uintptr) int {
 	return int(LOWORD(uint(lp)))
 }
@@ -794,14 +816,17 @@ var (
 	lib uint32
 
 	// Functions
+	beginPaint         uint32
 	createMenu         uint32
 	createPopupMenu    uint32
 	createWindowEx     uint32
+	defWindowProc      uint32
 	destroyMenu        uint32
 	destroyWindow      uint32
 	dispatchMessage    uint32
 	drawMenuBar        uint32
 	drawTextEx         uint32
+	endPaint           uint32
 	getAncestor        uint32
 	getClientRect      uint32
 	getDC              uint32
@@ -813,6 +838,7 @@ var (
 	insertMenuItem     uint32
 	isDialogMessage    uint32
 	loadCursor         uint32
+	loadIcon           uint32
 	loadImage          uint32
 	messageBox         uint32
 	moveWindow         uint32
@@ -840,14 +866,17 @@ func init() {
 	lib = MustLoadLibrary("user32.dll")
 
 	// Functions
+	beginPaint = MustGetProcAddress(lib, "BeginPaint")
 	createMenu = MustGetProcAddress(lib, "CreateMenu")
 	createPopupMenu = MustGetProcAddress(lib, "CreatePopupMenu")
 	createWindowEx = MustGetProcAddress(lib, "CreateWindowExW")
+	defWindowProc = MustGetProcAddress(lib, "DefWindowProcW")
 	destroyMenu = MustGetProcAddress(lib, "DestroyMenu")
 	destroyWindow = MustGetProcAddress(lib, "DestroyWindow")
 	dispatchMessage = MustGetProcAddress(lib, "DispatchMessageW")
 	drawMenuBar = MustGetProcAddress(lib, "DrawMenuBar")
 	drawTextEx = MustGetProcAddress(lib, "DrawTextExW")
+	endPaint = MustGetProcAddress(lib, "EndPaint")
 	getAncestor = MustGetProcAddress(lib, "GetAncestor")
 	getClientRect = MustGetProcAddress(lib, "GetClientRect")
 	getDC = MustGetProcAddress(lib, "GetDC")
@@ -859,6 +888,7 @@ func init() {
 	isDialogMessage = MustGetProcAddress(lib, "IsDialogMessageW")
 	insertMenuItem = MustGetProcAddress(lib, "InsertMenuItemW")
 	loadCursor = MustGetProcAddress(lib, "LoadCursorW")
+	loadIcon = MustGetProcAddress(lib, "LoadIconW")
 	loadImage = MustGetProcAddress(lib, "LoadImageW")
 	messageBox = MustGetProcAddress(lib, "MessageBoxW")
 	moveWindow = MustGetProcAddress(lib, "MoveWindow")
@@ -879,6 +909,15 @@ func init() {
 	showWindow = MustGetProcAddress(lib, "ShowWindow")
 	trackPopupMenuEx = MustGetProcAddress(lib, "TrackPopupMenuEx")
 	translateMessage = MustGetProcAddress(lib, "TranslateMessage")
+}
+
+func BeginPaint(hwnd HWND, lpPaint *PAINTSTRUCT) HDC {
+	ret, _, _ := syscall.Syscall(uintptr(beginPaint),
+		uintptr(hwnd),
+		uintptr(unsafe.Pointer(lpPaint)),
+		0)
+
+	return HDC(ret)
 }
 
 func CreateMenu() HMENU {
@@ -915,6 +954,18 @@ func CreateWindowEx(dwExStyle uint, lpClassName, lpWindowName *uint16, dwStyle u
 		uintptr(lpParam))
 
 	return HWND(ret)
+}
+
+func DefWindowProc(hWnd HWND, Msg uint, wParam, lParam uintptr) uintptr {
+	ret, _, _ := syscall.Syscall6(uintptr(defWindowProc),
+		uintptr(hWnd),
+		uintptr(Msg),
+		wParam,
+		lParam,
+		0,
+		0)
+
+	return ret
 }
 
 func DestroyMenu(hMenu HMENU) bool {
@@ -963,6 +1014,15 @@ func DrawTextEx(hdc HDC, lpchText *uint16, cchText int, lprc *RECT, dwDTFormat u
 		uintptr(unsafe.Pointer(lpDTParams)))
 
 	return int(ret)
+}
+
+func EndPaint(hwnd HWND, lpPaint *PAINTSTRUCT) bool {
+	ret, _, _ := syscall.Syscall(uintptr(endPaint),
+		uintptr(hwnd),
+		uintptr(unsafe.Pointer(lpPaint)),
+		0)
+
+	return ret != 0
 }
 
 func GetAncestor(hWnd HWND, gaFlags uint) HWND {
@@ -1068,6 +1128,15 @@ func LoadCursor(hInstance HINSTANCE, lpCursorName *uint16) HCURSOR {
 		0)
 
 	return HCURSOR(ret)
+}
+
+func LoadIcon(hInstance HINSTANCE, lpIconName *uint16) HICON {
+	ret, _, _ := syscall.Syscall(uintptr(loadIcon),
+		uintptr(hInstance),
+		uintptr(unsafe.Pointer(lpIconName)),
+		0)
+
+	return HICON(ret)
 }
 
 func LoadImage(hinst HINSTANCE, lpszName *uint16, uType uint, cxDesired, cyDesired int, fuLoad uint) HANDLE {

@@ -14,15 +14,32 @@ import (
 	. "walk/winapi/user32"
 )
 
+const dialogWindowClass = `\o/ Walk_Dialog_Class \o/`
+
+var dialogWndProcCallback *syscall.Callback
+
+func dialogWndProc(args *uintptr) uintptr {
+	msg := msgFromCallbackArgs(args)
+
+	dlg, ok := widgetsByHWnd[msg.HWnd].(*Dialog)
+	if !ok {
+		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
+		// FIXME: Find a way to properly handle this.
+		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+	}
+
+	return dlg.wndProc(msg)
+}
+
 type Dialog struct {
 	Container
 }
 
 func NewDialog() (*Dialog, os.Error) {
-	ensureMainWindowInitialized()
+	ensureRegisteredWindowClass(dialogWindowClass, dialogWndProc, &dialogWndProcCallback)
 
 	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr("Container_WindowClass"), nil,
+		0, syscall.StringToUTF16Ptr(dialogWindowClass), nil,
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, 400, 300, 0, 0, 0, nil)
 	if hWnd == 0 {
@@ -61,6 +78,6 @@ func (d *Dialog) Show() {
 	ShowWindow(d.hWnd, SW_SHOW)
 }
 
-func (d *Dialog) raiseEvent(msg *MSG) os.Error {
-	return d.Container.raiseEvent(msg)
+func (d *Dialog) wndProc(msg *MSG) uintptr {
+	return d.Container.wndProc(msg)
 }

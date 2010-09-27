@@ -10,7 +10,6 @@ all: clean
 	make -C winapi/shell32       install
 	make -C winapi/uxtheme       install
 	make -C winapi/winspool      install
-	make -C crutches             install
 	make -C drawing              install
 	make -C gui                  install
 	make -C path                 install
@@ -38,7 +37,6 @@ clean:
 	make -C winapi/shell32       clean
 	make -C winapi/uxtheme       clean
 	make -C winapi/winspool      clean
-	make -C crutches             clean
 	make -C drawing              clean
 	make -C gui                  clean
 	make -C path                 clean

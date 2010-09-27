@@ -6,12 +6,15 @@ package gui
 
 import (
 	"container/vector"
-	"os"
 )
 
 import (
 	. "walk/winapi/user32"
 )
+
+type clickable interface {
+	raiseClicked()
+}
 
 type Button struct {
 	Widget
@@ -54,9 +57,7 @@ func (b *Button) raiseClicked() {
 	}
 }
 
-func (b *Button) raiseEvent(msg *MSG) os.Error {
-	b.Widget.raiseEvent(msg)
-
+func (b *Button) wndProc(msg *MSG) uintptr {
 	switch msg.Message {
 	case WM_KEYUP:
 		if msg.WParam != VK_SPACE {
@@ -64,6 +65,7 @@ func (b *Button) raiseEvent(msg *MSG) os.Error {
 		}
 
 		b.raiseClicked()
+		return 0
 
 	case WM_LBUTTONUP:
 		if trackedMouseDownHWnd != b.Widget.hWnd {
@@ -71,7 +73,8 @@ func (b *Button) raiseEvent(msg *MSG) os.Error {
 		}
 		bounds, err := b.ClientBounds()
 		if err != nil {
-			return err
+			// TODO: log?
+			break
 		}
 
 		x, y := GET_X_LPARAM(msg.LParam), GET_Y_LPARAM(msg.LParam)
@@ -80,7 +83,8 @@ func (b *Button) raiseEvent(msg *MSG) os.Error {
 		}
 
 		b.raiseClicked()
+		return 0
 	}
 
-	return nil
+	return b.Widget.wndProc(msg)
 }
