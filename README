@@ -1,11 +1,3 @@
-CALLBACKS BRANCH WARNING
-========================
-
-It seems right now there are some stack overflow problems when using callbacks.
-
-Maybe you want to check out the master branch instead, which requires a helper
-dll, but is currently more "stable".
-
 About Walk
 ==========
 
@@ -41,14 +33,19 @@ the Go code. This is not possible in the current release of Go though, so there
 is an extra hurdle to overcome: You have to apply this patch to your Go
 installation and then rebuild it: http://codereview.appspot.com/1696051/
 
-Some features of the Walk gui package require an application manifest file
-alongside your executable, to make use of common controls 6.0. See the examples
-directory for such a file.
+It seems right now there are some stack overflow problems when using callbacks.
+
+Maybe you want to check out the crutches branch instead, which requires a helper
+dll, but is currently more "stable".
 
 Using Walk
 ==========
 
 See the examples directory for inspiration. Docs may appear as time permits ;)
+
+Some features of the Walk gui package require an application manifest file
+alongside your executable, to make use of common controls 6.0. See the examples
+directory for such a file.
 
 You should be aware that this project is far from being mature - anything could
 break or change without warning.
