@@ -15,21 +15,24 @@ import (
 )
 
 type ImageView struct {
-	*CustomWidget
+	CustomWidget
 	image drawing.Image
 }
 
 func NewImageView(parent IContainer) (*ImageView, os.Error) {
 	iv := &ImageView{}
 
-	cw, err := NewCustomWidget(parent, 0, func(surface *drawing.Surface, bounds drawing.Rectangle) os.Error {
-		return iv.drawImage(surface, bounds)
+	cw, err := NewCustomWidget(parent, 0, func(surface *drawing.Surface, updateBounds drawing.Rectangle) os.Error {
+		return iv.drawImage(surface, updateBounds)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	iv.CustomWidget = cw
+	iv.CustomWidget = *cw
+
+	widgetsByHWnd[iv.hWnd] = iv
+	customWidgetsByHWND[iv.hWnd] = &iv.CustomWidget
 
 	return iv, nil
 }
@@ -55,9 +58,14 @@ func (iv *ImageView) SetImage(value drawing.Image) os.Error {
 	return nil
 }
 
-func (iv *ImageView) drawImage(surface *drawing.Surface, bounds drawing.Rectangle) os.Error {
+func (iv *ImageView) drawImage(surface *drawing.Surface, updateBounds drawing.Rectangle) os.Error {
 	if iv.image == nil {
 		return nil
+	}
+
+	bounds, err := iv.ClientBounds()
+	if err != nil {
+		return err
 	}
 
 	return surface.DrawImageStretched(iv.image, bounds)

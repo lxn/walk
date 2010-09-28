@@ -31,7 +31,7 @@ func customWidgetWndProc(args *uintptr) uintptr {
 	return cw.wndProc(msg)
 }
 
-type PaintFunc func(surface *drawing.Surface, bounds drawing.Rectangle) os.Error
+type PaintFunc func(surface *drawing.Surface, updateBounds drawing.Rectangle) os.Error
 
 type CustomWidget struct {
 	Widget

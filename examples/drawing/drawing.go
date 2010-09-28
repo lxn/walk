@@ -55,9 +55,12 @@ func createBitmap() *drawing.Bitmap {
 	return bmp
 }
 
-func drawStuff(surface *drawing.Surface, bounds drawing.Rectangle) os.Error {
+func (mw *MainWindow) drawStuff(surface *drawing.Surface, updateBounds drawing.Rectangle) os.Error {
 	bmp := createBitmap()
 	defer bmp.Dispose()
+
+	bounds, err := mw.paintWidget.ClientBounds()
+	panicIfErr(err)
 
 	rectPen, err := drawing.NewCosmeticPen(drawing.PenSolid, drawing.RGB(255, 0, 0))
 	panicIfErr(err)
@@ -98,7 +101,9 @@ func runMainWindow() {
 
 	mw.ClientArea().SetLayout(gui.NewVBoxLayout())
 
-	mw.paintWidget, err = gui.NewCustomWidget(mw.ClientArea(), 0, drawStuff)
+	mw.paintWidget, err = gui.NewCustomWidget(mw.ClientArea(), 0, func(surface *drawing.Surface, updateBounds drawing.Rectangle) os.Error {
+		return mw.drawStuff(surface, updateBounds)
+	})
 	panicIfErr(err)
 
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
