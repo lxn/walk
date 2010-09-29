@@ -35,7 +35,9 @@ type PaintFunc func(surface *drawing.Surface, updateBounds drawing.Rectangle) os
 
 type CustomWidget struct {
 	Widget
-	paint PaintFunc
+	paint               PaintFunc
+	clearsBackground    bool
+	invalidatesOnResize bool
 }
 
 var customWidgetsByHWND map[HWND]*CustomWidget
@@ -79,6 +81,22 @@ func (cw *CustomWidget) PreferredSize() drawing.Size {
 	return drawing.Size{100, 100}
 }
 
+func (cw *CustomWidget) ClearsBackground() bool {
+	return cw.clearsBackground
+}
+
+func (cw *CustomWidget) SetClearsBackground(value bool) {
+	cw.clearsBackground = value
+}
+
+func (cw *CustomWidget) InvalidatesOnResize() bool {
+	return cw.invalidatesOnResize
+}
+
+func (cw *CustomWidget) SetInvalidatesOnResize(value bool) {
+	cw.invalidatesOnResize = value
+}
+
 func (cw *CustomWidget) wndProc(msg *MSG) uintptr {
 	switch msg.Message {
 	case WM_PAINT:
@@ -111,6 +129,16 @@ func (cw *CustomWidget) wndProc(msg *MSG) uintptr {
 		}
 
 		return 0
+
+	case WM_ERASEBKGND:
+		if !cw.ClearsBackground() {
+			return 1
+		}
+
+	case WM_SIZE, WM_SIZING:
+		if cw.InvalidatesOnResize() {
+			cw.Invalidate()
+		}
 	}
 
 	return cw.Widget.wndProc(msg)

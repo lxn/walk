@@ -105,7 +105,10 @@ func runMainWindow() {
 		return mw.drawStuff(surface, updateBounds)
 	})
 	panicIfErr(err)
+	mw.paintWidget.SetClearsBackground(true)
+	mw.paintWidget.SetInvalidatesOnResize(true)
 
+	panicIfErr(mw.SetMinSize(drawing.Size{320, 240}))
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
 	mw.Show()
 

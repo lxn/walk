@@ -822,6 +822,14 @@ type PAINTSTRUCT struct {
 	RgbReserved [32]byte
 }
 
+type MINMAXINFO struct {
+	PtReserved     POINT
+	PtMaxSize      POINT
+	PtMaxPosition  POINT
+	PtMinTrackSize POINT
+	PtMaxTrackSize POINT
+}
+
 func GET_X_LPARAM(lp uintptr) int {
 	return int(LOWORD(uint(lp)))
 }

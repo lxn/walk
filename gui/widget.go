@@ -129,7 +129,6 @@ func ensureRegisteredWindowClass(className string, windowProc syscall.CallbackFu
 	wc.HCursor = hCursor
 	wc.HbrBackground = COLOR_BTNFACE + 1
 	wc.LpszClassName = syscall.StringToUTF16Ptr(className)
-	wc.Style = CS_VREDRAW | CS_HREDRAW
 
 	if atom := RegisterClassEx(&wc); atom == 0 {
 		panic("RegisterClassEx")
@@ -227,6 +226,21 @@ func (w *Widget) SetFont(value *drawing.Font) {
 
 		w.font = value
 	}
+}
+
+func (w *Widget) Invalidate() os.Error {
+	cb, err := w.ClientBounds()
+	if err != nil {
+		return err
+	}
+
+	r := &RECT{cb.X, cb.Y, cb.X + cb.Width, cb.Y + cb.Height}
+
+	if !InvalidateRect(w.hWnd, r, true) {
+		return newError("InvalidateRect failed")
+	}
+
+	return nil
 }
 
 func (w *Widget) Parent() IContainer {
@@ -679,6 +693,10 @@ func (w *Widget) wndProc(msg *MSG) uintptr {
 			}
 		}
 		return 0
+
+	case WM_GETMINMAXINFO:
+		mmi := (*MINMAXINFO)(unsafe.Pointer(msg.LParam))
+		mmi.PtMinTrackSize = POINT{w.minSize.Width, w.minSize.Height}
 	}
 
 	return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)

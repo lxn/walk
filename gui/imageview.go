@@ -10,8 +10,6 @@ import (
 
 import (
 	"walk/drawing"
-	. "walk/winapi/gdi32"
-	. "walk/winapi/user32"
 )
 
 type ImageView struct {
@@ -31,6 +29,8 @@ func NewImageView(parent IContainer) (*ImageView, os.Error) {
 
 	iv.CustomWidget = *cw
 
+	iv.SetInvalidatesOnResize(true)
+
 	widgetsByHWnd[iv.hWnd] = iv
 	customWidgetsByHWND[iv.hWnd] = &iv.CustomWidget
 
@@ -44,18 +44,7 @@ func (iv *ImageView) Image() drawing.Image {
 func (iv *ImageView) SetImage(value drawing.Image) os.Error {
 	iv.image = value
 
-	cb, err := iv.ClientBounds()
-	if err != nil {
-		return err
-	}
-
-	r := &RECT{cb.X, cb.Y, cb.X + cb.Width - 1, cb.Y + cb.Height - 1}
-
-	if !InvalidateRect(iv.hWnd, r, true) {
-		return newError("InvalidateRect failed")
-	}
-
-	return nil
+	return iv.Invalidate()
 }
 
 func (iv *ImageView) drawImage(surface *drawing.Surface, updateBounds drawing.Rectangle) os.Error {

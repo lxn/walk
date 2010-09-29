@@ -215,7 +215,6 @@ func (mw *MainWindow) RestoreState(s string) os.Error {
 func (mw *MainWindow) wndProc(msg *MSG) uintptr {
 	switch msg.Message {
 	case WM_CLOSE:
-		fmt.Println("*MainWindow.wndProc: WM_CLOSE")
 		mw.Close()
 		return 0
 

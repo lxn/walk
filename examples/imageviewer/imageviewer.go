@@ -115,6 +115,7 @@ func runMainWindow() {
 	})
 	helpMenu.Actions().Add(aboutAction)
 
+	panicIfErr(mw.SetMinSize(drawing.Size{320, 240}))
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
 	mw.Show()
 
