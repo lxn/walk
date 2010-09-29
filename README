@@ -33,11 +33,6 @@ the Go code. This is not possible in the current release of Go though, so there
 is an extra hurdle to overcome: You have to apply this patch to your Go
 installation and then rebuild it: http://codereview.appspot.com/1696051/
 
-It seems right now there are some stack overflow problems when using callbacks.
-
-Maybe you want to check out the crutches branch instead, which requires a helper
-dll, but is currently more "stable".
-
 Using Walk
 ==========
 

@@ -118,10 +118,6 @@ func runMainWindow() {
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
 	mw.Show()
 
-	// TEST
-	gui.MsgBox(mw, "Test", "If you are on Windows 7 (or Vista?) opening an image from outside of any window proc, as will be attempted automatically after clicking OK, should work.\n\nIf you try to open another image afterwards, the programm will crash.", gui.MsgBoxOK|gui.MsgBoxIconInformation)
-	mw.openBitmap()
-
 	panicIfErr(mw.RunMessageLoop())
 }
 
