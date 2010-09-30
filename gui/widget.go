@@ -697,6 +697,7 @@ func (w *Widget) wndProc(msg *MSG) uintptr {
 	case WM_GETMINMAXINFO:
 		mmi := (*MINMAXINFO)(unsafe.Pointer(msg.LParam))
 		mmi.PtMinTrackSize = POINT{w.minSize.Width, w.minSize.Height}
+		return 0
 	}
 
 	return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)

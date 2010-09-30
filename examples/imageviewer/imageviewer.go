@@ -65,6 +65,10 @@ func (mw *MainWindow) openBitmap() {
 	mw.updateTitle(dlg.FilePath)
 }
 
+func dummy(size drawing.Size) os.Error {
+	return nil
+}
+
 func runMainWindow() {
 	mainWnd, err := gui.NewMainWindow()
 	panicIfErr(err)
@@ -114,6 +118,16 @@ func runMainWindow() {
 		gui.MsgBox(mw, "About", "Walk Image Viewer Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
 	})
 	helpMenu.Actions().Add(aboutAction)
+
+	// If you comment out at least one of these 8 (or some other) lines, the crash may go away.
+	panicIfErr(dummy(drawing.Size{100, 100}))
+	panicIfErr(dummy(drawing.Size{100, 100}))
+	panicIfErr(dummy(drawing.Size{100, 100}))
+	panicIfErr(dummy(drawing.Size{100, 100}))
+	panicIfErr(dummy(drawing.Size{100, 100}))
+	panicIfErr(dummy(drawing.Size{100, 100}))
+	panicIfErr(dummy(drawing.Size{100, 100}))
+	panicIfErr(dummy(drawing.Size{100, 100}))
 
 	panicIfErr(mw.SetMinSize(drawing.Size{320, 240}))
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
