@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"container/vector"
 	"os"
 	"syscall"
 	"unsafe"
@@ -16,9 +17,29 @@ import (
 	. "walk/winapi/user32"
 )
 
+type TreeViewItemEventArgs interface {
+	EventArgs
+	Item() *TreeViewItem
+}
+
+type treeViewItemEventArgs struct {
+	eventArgs
+	item *TreeViewItem
+}
+
+func (a *treeViewItemEventArgs) Item() *TreeViewItem {
+	return a.item
+}
+
+type TreeViewItemEventHandler func(args TreeViewItemEventArgs)
+
 type TreeView struct {
 	Widget
-	items *TreeViewItemList
+	items                  *TreeViewItemList
+	itemCollapsedHandlers  vector.Vector
+	itemCollapsingHandlers vector.Vector
+	itemExpandedHandlers   vector.Vector
+	itemExpandingHandlers  vector.Vector
 }
 
 func NewTreeView(parent IContainer) (*TreeView, os.Error) {
@@ -59,11 +80,137 @@ func (tv *TreeView) Items() *TreeViewItemList {
 	return tv.items
 }
 
+func (tv *TreeView) AddItemCollapsedHandler(handler TreeViewItemEventHandler) {
+	tv.itemCollapsedHandlers.Push(handler)
+}
+
+func (tv *TreeView) RemoveItemCollapsedHandler(handler TreeViewItemEventHandler) {
+	for i, h := range tv.itemCollapsedHandlers {
+		if h.(TreeViewItemEventHandler) == handler {
+			tv.itemCollapsedHandlers.Delete(i)
+			break
+		}
+	}
+}
+
+func (tv *TreeView) raiseItemCollapsed(item *TreeViewItem) {
+	for _, handlerIface := range tv.itemCollapsedHandlers {
+		handler := handlerIface.(TreeViewItemEventHandler)
+		handler(&treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item})
+	}
+}
+
+func (tv *TreeView) AddItemCollapsingHandler(handler TreeViewItemEventHandler) {
+	tv.itemCollapsingHandlers.Push(handler)
+}
+
+func (tv *TreeView) RemoveItemCollapsingHandler(handler TreeViewItemEventHandler) {
+	for i, h := range tv.itemCollapsingHandlers {
+		if h.(TreeViewItemEventHandler) == handler {
+			tv.itemCollapsingHandlers.Delete(i)
+			break
+		}
+	}
+}
+
+func (tv *TreeView) raiseItemCollapsing(item *TreeViewItem) {
+	for _, handlerIface := range tv.itemCollapsingHandlers {
+		handler := handlerIface.(TreeViewItemEventHandler)
+		handler(&treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item})
+	}
+}
+
+func (tv *TreeView) AddItemExpandedHandler(handler TreeViewItemEventHandler) {
+	tv.itemExpandedHandlers.Push(handler)
+}
+
+func (tv *TreeView) RemoveItemExpandedHandler(handler TreeViewItemEventHandler) {
+	for i, h := range tv.itemExpandedHandlers {
+		if h.(TreeViewItemEventHandler) == handler {
+			tv.itemExpandedHandlers.Delete(i)
+			break
+		}
+	}
+}
+
+func (tv *TreeView) raiseItemExpanded(item *TreeViewItem) {
+	for _, handlerIface := range tv.itemExpandedHandlers {
+		handler := handlerIface.(TreeViewItemEventHandler)
+		handler(&treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item})
+	}
+}
+
+func (tv *TreeView) AddItemExpandingHandler(handler TreeViewItemEventHandler) {
+	tv.itemExpandingHandlers.Push(handler)
+}
+
+func (tv *TreeView) RemoveItemExpandingHandler(handler TreeViewItemEventHandler) {
+	for i, h := range tv.itemExpandingHandlers {
+		if h.(TreeViewItemEventHandler) == handler {
+			tv.itemExpandingHandlers.Delete(i)
+			break
+		}
+	}
+}
+
+func (tv *TreeView) raiseItemExpanding(item *TreeViewItem) {
+	for _, handlerIface := range tv.itemExpandingHandlers {
+		handler := handlerIface.(TreeViewItemEventHandler)
+		handler(&treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item})
+	}
+}
+
+func (tv *TreeView) wndProc(msg *MSG) uintptr {
+	switch msg.Message {
+	case WM_NOTIFY:
+		nmtv := (*NMTREEVIEW)(unsafe.Pointer(msg.LParam))
+
+		switch nmtv.Hdr.Code {
+		case TVN_ITEMEXPANDED:
+			item := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
+
+			switch nmtv.Action {
+			case TVE_COLLAPSE:
+				tv.raiseItemCollapsed(item)
+
+			case TVE_COLLAPSERESET:
+
+			case TVE_EXPAND:
+				tv.raiseItemExpanded(item)
+
+			case TVE_EXPANDPARTIAL:
+
+			case TVE_TOGGLE:
+			}
+
+		case TVN_ITEMEXPANDING:
+			item := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
+
+			switch nmtv.Action {
+			case TVE_COLLAPSE:
+				tv.raiseItemCollapsing(item)
+
+			case TVE_COLLAPSERESET:
+
+			case TVE_EXPAND:
+				tv.raiseItemExpanding(item)
+
+			case TVE_EXPANDPARTIAL:
+
+			case TVE_TOGGLE:
+			}
+		}
+	}
+
+	return tv.Widget.wndProc(msg)
+}
+
 func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) (err os.Error) {
 	var tvi TVITEM
 	var tvins TVINSERTSTRUCT
 
-	tvi.Mask = TVIF_TEXT
+	tvi.LParam = uintptr(unsafe.Pointer(item))
+	tvi.Mask = TVIF_TEXT | TVIF_PARAM
 	tvi.PszText = syscall.StringToUTF16Ptr(item.text)
 
 	tvins.Item = tvi

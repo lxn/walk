@@ -119,16 +119,6 @@ func runMainWindow() {
 	})
 	helpMenu.Actions().Add(aboutAction)
 
-	// If you comment out at least one of these 8 (or some other) lines, the crash may go away.
-	panicIfErr(dummy(drawing.Size{100, 100}))
-	panicIfErr(dummy(drawing.Size{100, 100}))
-	panicIfErr(dummy(drawing.Size{100, 100}))
-	panicIfErr(dummy(drawing.Size{100, 100}))
-	panicIfErr(dummy(drawing.Size{100, 100}))
-	panicIfErr(dummy(drawing.Size{100, 100}))
-	panicIfErr(dummy(drawing.Size{100, 100}))
-	panicIfErr(dummy(drawing.Size{100, 100}))
-
 	panicIfErr(mw.SetMinSize(drawing.Size{320, 240}))
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
 	mw.Show()

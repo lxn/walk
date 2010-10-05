@@ -5,7 +5,9 @@
 package gui
 
 import (
+	"fmt"
 	"os"
+	"unsafe"
 )
 
 import (
@@ -69,36 +71,35 @@ func (c *Container) SetLayout(value Layout) {
 
 func (c *Container) wndProc(msg *MSG) uintptr {
 	switch msg.Message {
-	/*    case _WM_USER_NOTIFY:
-	//        nmh := (*_NMHDR)(unsafe.Pointer(msg.lParam))
-	        nmh := (*_NMITEMACTIVATE)(unsafe.Pointer(msg.lParam))
-	        fmt.Printf("Container.raiseEvent: _WM_USER_NOTIFY: nmh: %+v\n", nmh)
-
-	        if source, ok := eventSourcesByHWnd[nmh.hdr.hwndFrom]; ok {
-	            // The widget that sent the message shall handle it itself.
-	            source.raiseEvent(msg)
-	        }*/
-
 	case WM_COMMAND:
+		fmt.Printf("*Container.wndProc: WM_COMMAND: msg: %+v\n", msg)
 		switch HIWORD(uint(msg.WParam)) {
 		case 0:
-			// menu
+			// Menu
 			actionId := uint16(LOWORD(uint(msg.WParam)))
 			if action, ok := actionsById[actionId]; ok {
 				action.raiseTriggered()
 				return 0
 			}
 
-		default:
+		case 1:
+			// Accelerator
+
+		BN_CLICKED:
 			hWnd := HWND(msg.LParam)
 			if widget, ok := widgetsByHWnd[hWnd]; ok {
 				if clickableWidget, ok := widget.(clickable); ok {
 					clickableWidget.raiseClicked()
 				}
 				return 0
-			} else {
-				break
 			}
+		}
+
+	case WM_NOTIFY:
+		nmh := (*NMHDR)(unsafe.Pointer(msg.LParam))
+		if widget, ok := widgetsByHWnd[nmh.HwndFrom]; ok {
+			// The widget that sent the notification shall handle it itself.
+			widget.wndProc(msg)
 		}
 
 	case WM_SIZE, WM_SIZING:

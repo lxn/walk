@@ -124,12 +124,12 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 func (tb *ToolBar) wndProc(msg *MSG) uintptr {
 	switch msg.Message {
 	case WM_NOTIFY:
-		fmt.Printf("ToolBar.raiseEvent: WM_NOTIFY, msg: %v\n", msg)
+		fmt.Printf("ToolBar.wndProc: WM_NOTIFY, msg: %v\n", msg)
 
 		switch ((*NMHDR)(unsafe.Pointer(msg.LParam))).Code {
 		case NM_CLICK:
 			nmm := (*NMMOUSE)(unsafe.Pointer(msg.LParam))
-			fmt.Printf("ToolBar.raiseEvent: WM_NOTIFY, NM_CLICK, nmm: %v\n", nmm)
+			fmt.Printf("ToolBar.wndProc: WM_NOTIFY, NM_CLICK, nmm: %v\n", nmm)
 			return 0
 		}
 
@@ -174,7 +174,7 @@ func (tb *ToolBar) onInsertingAction(index int, action *Action) (err os.Error) {
 	tb.SetVisible(true)
 
 	SendMessage(tb.hWnd, TB_BUTTONSTRUCTSIZE, uintptr(unsafe.Sizeof(tbb)), 0)
-	SendMessage(tb.hWnd, TB_ADDBUTTONSW, uintptr(1), uintptr(unsafe.Pointer(&tbb)))
+	SendMessage(tb.hWnd, TB_ADDBUTTONSW, 1, uintptr(unsafe.Pointer(&tbb)))
 	SendMessage(tb.hWnd, TB_AUTOSIZE, 0, 0)
 
 	return

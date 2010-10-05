@@ -5,7 +5,9 @@
 package comctl32
 
 import (
+	. "walk/winapi/gdi32"
 	. "walk/winapi/kernel32"
+	. "walk/winapi/user32"
 )
 
 // TreeView styles
@@ -185,4 +187,12 @@ type TVINSERTSTRUCT struct {
 	HInsertAfter HTREEITEM
 	Item         TVITEM
 	//	itemex       TVITEMEX
+}
+
+type NMTREEVIEW struct {
+	Hdr     NMHDR
+	Action  uint
+	ItemOld TVITEM
+	ItemNew TVITEM
+	PtDrag  POINT
 }
