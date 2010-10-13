@@ -41,14 +41,14 @@ type PageInfo struct {
 	resolution  *Resolution
 	colorMode   ColorMode
 	orientation Orientation
-	margins     *Margins
+	margins     Margins
 }
 
 func NewPageInfo() *PageInfo {
-	return &PageInfo{margins: &Margins{}}
+	return &PageInfo{}
 }
 
-func (p *PageInfo) Bounds() (val *drawing.Rectangle, err os.Error) {
+func (p *PageInfo) Bounds() (val drawing.Rectangle, err os.Error) {
 	defer func() {
 		if x := recover(); x != nil {
 			err = toError(x)
@@ -125,11 +125,11 @@ func (p *PageInfo) SetOrientation(value Orientation) (err os.Error) {
 	return
 }
 
-func (p *PageInfo) Margins() *Margins {
+func (p *PageInfo) Margins() Margins {
 	return p.margins
 }
 
-func (p *PageInfo) SetMargins(value *Margins) {
+func (p *PageInfo) SetMargins(value Margins) {
 	p.margins = value
 }
 
@@ -303,14 +303,14 @@ func (p *PageInfo) mergeHDevMode(hDevMode HGLOBAL) {
 	}
 }
 
-func (p *PageInfo) boundsFromHDevMode(hDevMode HGLOBAL) *drawing.Rectangle {
+func (p *PageInfo) boundsFromHDevMode(hDevMode HGLOBAL) drawing.Rectangle {
 	size := p.paperSizeFallbackHDevMode(hDevMode)
 
 	if p.orientationFallbackHDevMode(hDevMode) == OrientLandscape {
-		return &drawing.Rectangle{Width: size.height, Height: size.width}
+		return drawing.Rectangle{Width: size.height, Height: size.width}
 	}
 
-	return &drawing.Rectangle{Width: size.width, Height: size.height}
+	return drawing.Rectangle{Width: size.width, Height: size.height}
 }
 
 func (p *PageInfo) orientationFallbackHDevMode(hDevMode HGLOBAL) Orientation {
@@ -404,4 +404,27 @@ func (p *PageInfo) initFromHDevMode(hDevMode HGLOBAL) (err os.Error) {
 	p.resolution = p.resolutionFromDevMode(devMode)
 
 	return nil
+}
+
+func (p *PageInfo) createDC() HDC {
+	hDevMode := p.printerInfo.hDevMode()
+	defer GlobalFree(hDevMode)
+
+	p.mergeHDevMode(hDevMode)
+
+	return p.printerInfo.createDCFromHDevMode(hDevMode)
+}
+
+func (p *PageInfo) resetDC(hdc HDC) {
+	hDevMode := p.printerInfo.hDevMode()
+	defer GlobalFree(hDevMode)
+
+	p.mergeHDevMode(hDevMode)
+
+	devMode := (*DEVMODE)(GlobalLock(hDevMode))
+	defer GlobalUnlock(hDevMode)
+
+	if hdcOrig := ResetDC(hdc, devMode); hdcOrig == 0 {
+		panic("ResetDC failed")
+	}
 }

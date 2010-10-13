@@ -222,7 +222,7 @@ func (w *Widget) Font() *drawing.Font {
 
 func (w *Widget) SetFont(value *drawing.Font) {
 	if value != w.font {
-		SendMessage(w.hWnd, WM_SETFONT, uintptr(value.Handle()), 1)
+		SendMessage(w.hWnd, WM_SETFONT, uintptr(value.HandleForDPI(0)), 1)
 
 		w.font = value
 	}
@@ -598,7 +598,7 @@ func (w *Widget) SetGroupStart(value bool) os.Error {
 }
 
 func (w *Widget) GetDrawingSurface() (*drawing.Surface, os.Error) {
-	return drawing.NewSurfaceFromWidget(w.hWnd)
+	return drawing.NewSurfaceFromHWND(w.hWnd)
 }
 
 func (w *Widget) AddKeyDownHandler(handler KeyEventHandler) {

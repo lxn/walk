@@ -4,23 +4,119 @@
 
 package drawing
 
-/*import (
+import (
 	"os"
+	"syscall"
+	"unsafe"
 )
 
 import (
 	. "walk/winapi/gdi32"
+	. "walk/winapi/user32"
 )
 
 type Metafile struct {
-    hEmf HEMF
+	hdc  HDC
+	hemf HENHMETAFILE
+	size Size
+}
+
+func NewMetafile(referenceSurface *Surface) (*Metafile, os.Error) {
+	var rc RECT
+
+	hdc := CreateEnhMetaFile(referenceSurface.hdc, nil, &rc, nil)
+	if hdc == 0 {
+		return nil, newError("CreateEnhMetaFile failed")
+	}
+
+	return &Metafile{hdc: hdc}, nil
+}
+
+func NewMetafileFromFile(filePath string) (*Metafile, os.Error) {
+	hemf := HENHMETAFILE(LoadImage(0, syscall.StringToUTF16Ptr(filePath), IMAGE_ENHMETAFILE, 0, 0, LR_LOADFROMFILE))
+	if hemf == 0 {
+		return nil, lastError("LoadImage")
+	}
+
+	mf := &Metafile{hemf: hemf}
+
+	err := mf.readSizeFromHeader()
+	if err != nil {
+		return nil, err
+	}
+
+	return mf, nil
 }
 
 func (mf *Metafile) Dispose() {
-    if mf.hEmf != 0 {
-        DeleteObject(mf.hEmf)
+	mf.ensureFinished()
 
-        mf.hEmf = 0
-    }
+	if mf.hemf != 0 {
+		DeleteEnhMetaFile(mf.hemf)
+
+		mf.hemf = 0
+	}
 }
-*/
+
+func (mf *Metafile) Save(filePath string) os.Error {
+	hemf := CopyEnhMetaFile(mf.hemf, syscall.StringToUTF16Ptr(filePath))
+	if hemf == 0 {
+		return newError("CopyEnhMetaFile failed")
+	}
+
+	DeleteEnhMetaFile(hemf)
+
+	return nil
+}
+
+func (mf *Metafile) readSizeFromHeader() os.Error {
+	var hdr ENHMETAHEADER
+
+	if GetEnhMetaFileHeader(mf.hemf, uint(unsafe.Sizeof(hdr)), &hdr) == 0 {
+		return newError("GetEnhMetaFileHeader failed")
+	}
+
+	mf.size = Size{
+		hdr.RclBounds.Right - hdr.RclBounds.Left,
+		hdr.RclBounds.Bottom - hdr.RclBounds.Top,
+	}
+
+	return nil
+}
+
+func (mf *Metafile) ensureFinished() os.Error {
+	if mf.hdc == 0 {
+		if mf.hemf == 0 {
+			return newError("already disposed")
+		} else {
+			return nil
+		}
+	}
+
+	mf.hemf = CloseEnhMetaFile(mf.hdc)
+	if mf.hemf == 0 {
+		return newError("CloseEnhMetaFile failed")
+	}
+
+	mf.hdc = 0
+
+	return mf.readSizeFromHeader()
+}
+
+func (mf *Metafile) Size() Size {
+	return mf.size
+}
+
+func (mf *Metafile) draw(hdc HDC, location Point) os.Error {
+	return mf.drawStretched(hdc, Rectangle{location.X, location.Y, mf.size.Width, mf.size.Height})
+}
+
+func (mf *Metafile) drawStretched(hdc HDC, bounds Rectangle) os.Error {
+	rc := bounds.toRECT()
+
+	if !PlayEnhMetaFile(hdc, mf.hemf, &rc) {
+		return newError("PlayEnhMetaFile failed")
+	}
+
+	return nil
+}

@@ -7,6 +7,7 @@ package drawing
 import (
 	"os"
 	"syscall"
+	"unsafe"
 )
 
 import (
@@ -45,79 +46,62 @@ const (
 	TextPrefixOnly           DrawTextFormat = DT_PREFIXONLY
 )
 
+var gM = syscall.StringToUTF16Ptr("gM")
+
 type Surface struct {
-	hdc          HDC
-	hwnd         HWND
-	doNotDispose bool
+	hdc                 HDC
+	hwnd                HWND
+	dpix                int
+	dpiy                int
+	doNotDispose        bool
+	recordingMetafile   *Metafile
+	measureTextMetafile *Metafile
 }
 
-func initHDC(hdc HDC) os.Error {
-	if SetBkMode(hdc, TRANSPARENT) == 0 {
-		return newError("SetBkMode failed")
-	}
-
-	switch SetStretchBltMode(hdc, HALFTONE) {
-	case 0, ERROR_INVALID_PARAMETER:
-		return newError("SetStretchBltMode failed")
-	}
-
-	if !SetBrushOrgEx(hdc, 0, 0, nil) {
-		return newError("SetBrushOrgEx failed")
-	}
-
-	return nil
-}
-
-func NewSurfaceFromBitmap(bmp *Bitmap) (*Surface, os.Error) {
-	hdc := CreateCompatibleDC(0)
-	if hdc == 0 {
-		return nil, newError("CreateCompatibleDC failed")
-	}
-	succeeded := false
-
-	defer func() {
-		if !succeeded {
-			DeleteDC(hdc)
+func NewSurfaceFromImage(image Image) (*Surface, os.Error) {
+	switch img := image.(type) {
+	case *Bitmap:
+		hdc := CreateCompatibleDC(0)
+		if hdc == 0 {
+			return nil, newError("CreateCompatibleDC failed")
 		}
-	}()
+		succeeded := false
 
-	if SelectObject(hdc, HGDIOBJ(bmp.hBmp)) == 0 {
-		return nil, newError("SelectObject failed")
+		defer func() {
+			if !succeeded {
+				DeleteDC(hdc)
+			}
+		}()
+
+		if SelectObject(hdc, HGDIOBJ(img.hBmp)) == 0 {
+			return nil, newError("SelectObject failed")
+		}
+
+		succeeded = true
+
+		return (&Surface{hdc: hdc}).init()
+
+	case *Metafile:
+		surface, err := NewSurfaceFromHDC(img.hdc)
+		if err != nil {
+			return nil, err
+		}
+
+		surface.recordingMetafile = img
+
+		return surface, nil
 	}
 
-	if err := initHDC(hdc); err != nil {
-		return nil, err
-	}
-
-	succeeded = true
-
-	return &Surface{hdc: hdc}, nil
+	return nil, newError("unsupported image type")
 }
 
-func NewSurfaceFromDevice(driver, device string, devMode *DEVMODE) (*Surface, os.Error) {
-	hdc := CreateDC(syscall.StringToUTF16Ptr(driver), syscall.StringToUTF16Ptr(device), nil, devMode)
-	if hdc == 0 {
-		return nil, newError("CreateDC failed")
-	}
-
-	if err := initHDC(hdc); err != nil {
-		return nil, err
-	}
-
-	return &Surface{hdc: hdc}, nil
-}
-
-func NewSurfaceFromWidget(hwnd HWND) (*Surface, os.Error) {
+func NewSurfaceFromHWND(hwnd HWND) (*Surface, os.Error) {
 	hdc := GetDC(hwnd)
 	if hdc == 0 {
 		return nil, newError("GetDC failed")
 	}
 
-	if err := initHDC(hdc); err != nil {
-		return nil, err
-	}
-
-	return &Surface{hdc: hdc, hwnd: hwnd}, nil
+	return (&Surface{hdc: hdc, hwnd: hwnd}).init()
 }
 
 func NewSurfaceFromHDC(hdc HDC) (*Surface, os.Error) {
@@ -125,11 +109,27 @@ func NewSurfaceFromHDC(hdc HDC) (*Surface, os.Error) {
 		return nil, newError("invalid hdc")
 	}
 
-	if err := initHDC(hdc); err != nil {
-		return nil, err
+	return (&Surface{hdc: hdc, doNotDispose: true}).init()
+}
+
+func (s *Surface) init() (*Surface, os.Error) {
+	s.dpix = GetDeviceCaps(s.hdc, LOGPIXELSX)
+	s.dpiy = GetDeviceCaps(s.hdc, LOGPIXELSY)
+
+	if SetBkMode(s.hdc, TRANSPARENT) == 0 {
+		return nil, newError("SetBkMode failed")
 	}
 
-	return &Surface{hdc: hdc, doNotDispose: true}, nil
+	switch SetStretchBltMode(s.hdc, HALFTONE) {
+	case 0, ERROR_INVALID_PARAMETER:
+		return nil, newError("SetStretchBltMode failed")
+	}
+
+	if !SetBrushOrgEx(s.hdc, 0, 0, nil) {
+		return nil, newError("SetBrushOrgEx failed")
+	}
+
+	return s, nil
 }
 
 func (s *Surface) Dispose() {
@@ -141,6 +141,16 @@ func (s *Surface) Dispose() {
 		}
 
 		s.hdc = 0
+	}
+
+	if s.recordingMetafile != nil {
+		s.recordingMetafile.ensureFinished()
+		s.recordingMetafile = nil
+	}
+
+	if s.measureTextMetafile != nil {
+		s.measureTextMetafile.Dispose()
+		s.measureTextMetafile = nil
 	}
 }
 
@@ -159,7 +169,7 @@ func (s *Surface) withBrush(brush Brush, f func() os.Error) os.Error {
 }
 
 func (s *Surface) withFontAndTextColor(font *Font, color Color, f func() os.Error) os.Error {
-	return s.withGdiObj(HGDIOBJ(font.hFont), func() os.Error {
+	return s.withGdiObj(HGDIOBJ(font.HandleForDPI(s.dpiy)), func() os.Error {
 		oldColor := SetTextColor(s.hdc, COLORREF(color))
 		if oldColor == CLR_INVALID {
 			return newError("SetTextColor failed")
@@ -170,6 +180,13 @@ func (s *Surface) withFontAndTextColor(font *Font, color Color, f func() os.Erro
 
 		return f()
 	})
+}
+
+func (s *Surface) Bounds() Rectangle {
+	return Rectangle{
+		Width:  GetDeviceCaps(s.hdc, HORZRES),
+		Height: GetDeviceCaps(s.hdc, VERTRES),
+	}
 }
 
 func (s *Surface) withPen(pen Pen, f func() os.Error) os.Error {
@@ -251,11 +268,68 @@ func (s *Surface) FillRectangle(brush Brush, bounds Rectangle) os.Error {
 func (s *Surface) DrawText(text string, font *Font, color Color, bounds Rectangle, format DrawTextFormat) os.Error {
 	return s.withFontAndTextColor(font, color, func() os.Error {
 		rect := bounds.toRECT()
-		ret := DrawTextEx(s.hdc, syscall.StringToUTF16Ptr(text), -1, &rect, uint(format), nil)
+		ret := DrawTextEx(s.hdc, syscall.StringToUTF16Ptr(text), -1, &rect, uint(format)|DT_EDITCONTROL, nil)
 		if ret == 0 {
 			return newError("DrawTextEx failed")
 		}
 
 		return nil
 	})
+}
+
+func (s *Surface) FontHeight(font *Font) (height int, err os.Error) {
+	err = s.withFontAndTextColor(font, 0, func() os.Error {
+		var size SIZE
+		if !GetTextExtentPoint32(s.hdc, gM, 2, &size) {
+			return newError("GetTextExtentPoint32 failed")
+		}
+
+		height = size.CY
+		if height == 0 {
+			return newError("invalid font height")
+		}
+
+		return nil
+	})
+
+	return
+}
+
+func (s *Surface) MeasureText(text string, font *Font, bounds Rectangle, format DrawTextFormat) (boundsMeasured Rectangle, runesFitted int, err os.Error) {
+	// HACK: We don't want to actually draw on the surface here, but if we use
+	// the DT_CALCRECT flag to avoid drawing, DRAWTEXTPARAMS.UiLengthDrawn will
+	// not contain a useful value. To work around this, we create an in-memory
+	// metafile and draw into that instead.
+	if s.measureTextMetafile == nil {
+		s.measureTextMetafile, err = NewMetafile(s)
+		if err != nil {
+			return
+		}
+	}
+
+	hFont := HGDIOBJ(font.HandleForDPI(s.dpiy))
+	oldHandle := SelectObject(s.measureTextMetafile.hdc, hFont)
+	if oldHandle == 0 {
+		err = newError("SelectObject failed")
+		return
+	}
+	defer SelectObject(s.measureTextMetafile.hdc, oldHandle)
+
+	rect := &RECT{bounds.X, bounds.Y, bounds.X + bounds.Width, bounds.Y + bounds.Height}
+	var params DRAWTEXTPARAMS
+	params.CbSize = uint(unsafe.Sizeof(params))
+
+	strPtr := syscall.StringToUTF16Ptr(text)
+	dtfmt := uint(format) | DT_EDITCONTROL | DT_WORDBREAK
+
+	height := DrawTextEx(s.measureTextMetafile.hdc, strPtr, -1, rect, dtfmt, &params)
+	if height == 0 {
+		err = newError("DrawTextEx failed")
+		return
+	}
+
+	boundsMeasured = Rectangle{rect.Left, rect.Top, rect.Right - rect.Left, height} //rect.Bottom - rect.Top}
+	runesFitted = int(params.UiLengthDrawn)
+
+	return
 }

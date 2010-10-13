@@ -17,6 +17,7 @@ all: clean
 	make -C registry             install
 	make -C examples/drawing
 	make -C examples/imageviewer
+	make -C examples/printing
 
 test: clean
 	make -C drawing              test
@@ -44,6 +45,7 @@ clean:
 	make -C registry             clean
 	make -C examples/drawing     clean
 	make -C examples/imageviewer clean
+	make -C examples/printing    clean
 
 format:
 	gofmt -w .

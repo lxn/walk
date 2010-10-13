@@ -32,7 +32,7 @@ func createBitmap() *drawing.Bitmap {
 	bmp, err := drawing.NewBitmap(bounds.Size())
 	panicIfErr(err)
 
-	surface, err := drawing.NewSurfaceFromBitmap(bmp)
+	surface, err := drawing.NewSurfaceFromImage(bmp)
 	panicIfErr(err)
 	defer surface.Dispose()
 
@@ -46,7 +46,7 @@ func createBitmap() *drawing.Bitmap {
 
 	panicIfErr(surface.FillRectangle(brush, bounds))
 
-	font, err := drawing.NewFont("Times New Roman", 48, drawing.FontBold|drawing.FontItalic)
+	font, err := drawing.NewFont("Times New Roman", 40, drawing.FontBold|drawing.FontItalic)
 	panicIfErr(err)
 	defer font.Dispose()
 

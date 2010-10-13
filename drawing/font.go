@@ -40,7 +40,7 @@ func init() {
 // Font represents a typographic typeface that is used for text drawing
 // operations and on many GUI widgets.
 type Font struct {
-	hFont     HFONT
+	dpi2hFont map[int]HFONT
 	family    string
 	pointSize float
 	style     FontStyle
@@ -52,23 +52,40 @@ func NewFont(family string, pointSize float, style FontStyle) (*Font, os.Error) 
 		return nil, newError("invalid style")
 	}
 
-	font := &Font{family: family, pointSize: pointSize, style: style}
+	font := &Font{
+		family:    family,
+		pointSize: pointSize,
+		style:     style,
+		dpi2hFont: make(map[int]HFONT),
+	}
 
+	hFont := font.createForDPI(screenDPIY)
+	if hFont == 0 {
+		return nil, newError("CreateFontIndirect failed")
+	}
+
+	font.dpi2hFont[screenDPIY] = hFont
+	font.dpi2hFont[0] = hFont // Make HFONT for screen easier accessible.
+
+	return font, nil
+}
+
+func (f *Font) createForDPI(dpi int) HFONT {
 	var lf LOGFONT
 
-	lf.LfHeight = int(pointSize * float(screenDPIY) / float(72))
-	if style&FontBold > 0 {
+	lf.LfHeight = -int(f.pointSize * float(dpi) / 72)
+	if f.style&FontBold > 0 {
 		lf.LfWeight = FW_BOLD
 	} else {
 		lf.LfWeight = FW_NORMAL
 	}
-	if style&FontItalic > 0 {
+	if f.style&FontItalic > 0 {
 		lf.LfItalic = 1
 	}
-	if style&FontUnderline > 0 {
+	if f.style&FontUnderline > 0 {
 		lf.LfUnderline = 1
 	}
-	if style&FontStrikeOut > 0 {
+	if f.style&FontStrikeOut > 0 {
 		lf.LfStrikeOut = 1
 	}
 	lf.LfCharSet = DEFAULT_CHARSET
@@ -77,16 +94,11 @@ func NewFont(family string, pointSize float, style FontStyle) (*Font, os.Error) 
 	lf.LfQuality = CLEARTYPE_QUALITY
 	lf.LfPitchAndFamily = VARIABLE_PITCH | FF_SWISS
 
-	src := syscall.StringToUTF16(family)
-	dest := lf.LfFaceName[0:]
+	src := syscall.StringToUTF16(f.family)
+	dest := lf.LfFaceName[:]
 	copy(dest, src)
 
-	font.hFont = CreateFontIndirect(&lf)
-	if font.hFont == 0 {
-		return nil, newError("CreateFontIndirect failed")
-	}
-
-	return font, nil
+	return CreateFontIndirect(&lf)
 }
 
 // Bold returns if text drawn using the Font appears with
@@ -100,9 +112,12 @@ func (f *Font) Bold() bool {
 // The Font can no longer be used for drawing operations or with GUI widgets
 // after calling this method. It is safe to call Dispose multiple times.
 func (f *Font) Dispose() {
-	if f.hFont != 0 {
-		DeleteObject(HGDIOBJ(f.hFont))
-		f.hFont = 0
+	for dpi, hFont := range f.dpi2hFont {
+		if dpi != 0 {
+			DeleteObject(HGDIOBJ(hFont))
+		}
+
+		f.dpi2hFont[dpi] = 0, false
 	}
 }
 
@@ -116,9 +131,18 @@ func (f *Font) Italic() bool {
 	return f.style&FontItalic > 0
 }
 
-// Handle returns the os resource handle of the font.
-func (f *Font) Handle() HFONT {
-	return f.hFont
+// HandleForDPI returns the os resource handle of the font for the specified
+// DPI value.
+//
+// A value of 0 returns a HFONT suitable for the screen.
+func (f *Font) HandleForDPI(dpi int) HFONT {
+	hFont := f.dpi2hFont[dpi]
+	if hFont == 0 {
+		hFont = f.createForDPI(dpi)
+		f.dpi2hFont[dpi] = hFont
+	}
+
+	return hFont
 }
 
 // StrikeOut returns if text drawn using the Font appears striked out.

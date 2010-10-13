@@ -687,15 +687,16 @@ const CBM_INIT = 4
 const CLR_INVALID = 0xFFFFFFFF
 
 type (
-	COLORREF uint
-	HBITMAP  HGDIOBJ
-	HBRUSH   HGDIOBJ
-	HDC      HANDLE
-	HFONT    HGDIOBJ
-	HGDIOBJ  HANDLE
-	HPALETTE HGDIOBJ
-	HPEN     HGDIOBJ
-	HREGION  HGDIOBJ
+	COLORREF     uint
+	HBITMAP      HGDIOBJ
+	HBRUSH       HGDIOBJ
+	HDC          HANDLE
+	HFONT        HGDIOBJ
+	HGDIOBJ      HANDLE
+	HENHMETAFILE HANDLE
+	HPALETTE     HGDIOBJ
+	HPEN         HGDIOBJ
+	HREGION      HGDIOBJ
 )
 
 type LOGFONT struct {
@@ -845,6 +846,28 @@ type DIBSECTION struct {
 	DsOffset    uint
 }
 
+type ENHMETAHEADER struct {
+	IType          uint
+	NSize          uint
+	RclBounds      RECT
+	RclFrame       RECT
+	DSignature     uint
+	NVersion       uint
+	NBytes         uint
+	NRecords       uint
+	NHandles       uint16
+	SReserved      uint16
+	NDescription   uint
+	OffDescription uint
+	NPalEntries    uint
+	SzlDevice      SIZE
+	SzlMillimeters SIZE
+	CbPixelFormat  uint
+	OffPixelFormat uint
+	BOpenGL        uint
+	SzlMicrometers SIZE
+}
+
 var (
 	// Library
 	lib uint32
@@ -852,25 +875,32 @@ var (
 	// Functions
 	abortDoc             uint32
 	bitBlt               uint32
+	closeEnhMetaFile     uint32
+	copyEnhMetaFile      uint32
 	createBrushIndirect  uint32
 	createCompatibleDC   uint32
 	createDC             uint32
 	createDIBSection     uint32
 	createFontIndirect   uint32
+	createEnhMetaFile    uint32
 	createIC             uint32
 	deleteDC             uint32
+	deleteEnhMetaFile    uint32
 	deleteObject         uint32
 	ellipse              uint32
 	endDoc               uint32
 	endPage              uint32
 	extCreatePen         uint32
 	getDeviceCaps        uint32
+	getEnhMetaFileHeader uint32
 	getObject            uint32
 	getStockObject       uint32
+	getTextExtentExPoint uint32
 	getTextExtentPoint32 uint32
 	getTextMetrics       uint32
 	lineTo               uint32
 	moveToEx             uint32
+	playEnhMetaFile      uint32
 	rectangle            uint32
 	resetDC              uint32
 	selectObject         uint32
@@ -890,25 +920,32 @@ func init() {
 	// Functions
 	abortDoc = MustGetProcAddress(lib, "AbortDoc")
 	bitBlt = MustGetProcAddress(lib, "BitBlt")
+	closeEnhMetaFile = MustGetProcAddress(lib, "CloseEnhMetaFile")
+	copyEnhMetaFile = MustGetProcAddress(lib, "CopyEnhMetaFileW")
 	createBrushIndirect = MustGetProcAddress(lib, "CreateBrushIndirect")
 	createCompatibleDC = MustGetProcAddress(lib, "CreateCompatibleDC")
 	createDC = MustGetProcAddress(lib, "CreateDCW")
 	createDIBSection = MustGetProcAddress(lib, "CreateDIBSection")
+	createEnhMetaFile = MustGetProcAddress(lib, "CreateEnhMetaFileW")
 	createFontIndirect = MustGetProcAddress(lib, "CreateFontIndirectW")
 	createIC = MustGetProcAddress(lib, "CreateICW")
 	deleteDC = MustGetProcAddress(lib, "DeleteDC")
+	deleteEnhMetaFile = MustGetProcAddress(lib, "DeleteEnhMetaFile")
 	deleteObject = MustGetProcAddress(lib, "DeleteObject")
 	ellipse = MustGetProcAddress(lib, "Ellipse")
 	endDoc = MustGetProcAddress(lib, "EndDoc")
 	endPage = MustGetProcAddress(lib, "EndPage")
 	extCreatePen = MustGetProcAddress(lib, "ExtCreatePen")
 	getDeviceCaps = MustGetProcAddress(lib, "GetDeviceCaps")
+	getEnhMetaFileHeader = MustGetProcAddress(lib, "GetEnhMetaFileHeader")
 	getObject = MustGetProcAddress(lib, "GetObjectW")
 	getStockObject = MustGetProcAddress(lib, "GetStockObject")
+	getTextExtentExPoint = MustGetProcAddress(lib, "GetTextExtentExPointW")
 	getTextExtentPoint32 = MustGetProcAddress(lib, "GetTextExtentPoint32W")
 	getTextMetrics = MustGetProcAddress(lib, "GetTextMetricsW")
 	lineTo = MustGetProcAddress(lib, "LineTo")
 	moveToEx = MustGetProcAddress(lib, "MoveToEx")
+	playEnhMetaFile = MustGetProcAddress(lib, "PlayEnhMetaFile")
 	rectangle = MustGetProcAddress(lib, "Rectangle")
 	resetDC = MustGetProcAddress(lib, "ResetDCW")
 	selectObject = MustGetProcAddress(lib, "SelectObject")
@@ -943,6 +980,24 @@ func BitBlt(hdcDest HDC, nXDest, nYDest, nWidth, nHeight int, hdcSrc HDC, nXSrc,
 		uintptr(dwRop))
 
 	return ret != 0
+}
+
+func CloseEnhMetaFile(hdc HDC) HENHMETAFILE {
+	ret, _, _ := syscall.Syscall(uintptr(closeEnhMetaFile),
+		uintptr(hdc),
+		0,
+		0)
+
+	return HENHMETAFILE(ret)
+}
+
+func CopyEnhMetaFile(hemfSrc HENHMETAFILE, lpszFile *uint16) HENHMETAFILE {
+	ret, _, _ := syscall.Syscall(uintptr(copyEnhMetaFile),
+		uintptr(hemfSrc),
+		uintptr(unsafe.Pointer(lpszFile)),
+		0)
+
+	return HENHMETAFILE(ret)
 }
 
 func CreateBrushIndirect(lplb *LOGBRUSH) HBRUSH {
@@ -987,6 +1042,18 @@ func CreateDIBSection(hdc HDC, pbmi *BITMAPINFO, iUsage uint, ppvBits *unsafe.Po
 	return HBITMAP(ret)
 }
 
+func CreateEnhMetaFile(hdcRef HDC, lpFilename *uint16, lpRect *RECT, lpDescription *uint16) HDC {
+	ret, _, _ := syscall.Syscall6(uintptr(createEnhMetaFile),
+		uintptr(hdcRef),
+		uintptr(unsafe.Pointer(lpFilename)),
+		uintptr(unsafe.Pointer(lpRect)),
+		uintptr(unsafe.Pointer(lpDescription)),
+		0,
+		0)
+
+	return HDC(ret)
+}
+
 func CreateFontIndirect(lplf *LOGFONT) HFONT {
 	ret, _, _ := syscall.Syscall(uintptr(createFontIndirect),
 		uintptr(unsafe.Pointer(lplf)),
@@ -1011,6 +1078,15 @@ func CreateIC(lpszDriver, lpszDevice, lpszOutput *uint16, lpdvmInit *DEVMODE) HD
 func DeleteDC(hdc HDC) bool {
 	ret, _, _ := syscall.Syscall(uintptr(deleteDC),
 		uintptr(hdc),
+		0,
+		0)
+
+	return ret != 0
+}
+
+func DeleteEnhMetaFile(hemf HENHMETAFILE) bool {
+	ret, _, _ := syscall.Syscall(uintptr(deleteEnhMetaFile),
+		uintptr(hemf),
 		0,
 		0)
 
@@ -1077,6 +1153,15 @@ func GetDeviceCaps(hdc HDC, nIndex int) int {
 	return int(ret)
 }
 
+func GetEnhMetaFileHeader(hemf HENHMETAFILE, cbBuffer uint, lpemh *ENHMETAHEADER) uint {
+	ret, _, _ := syscall.Syscall(uintptr(getEnhMetaFileHeader),
+		uintptr(hemf),
+		uintptr(cbBuffer),
+		uintptr(unsafe.Pointer(lpemh)))
+
+	return uint(ret)
+}
+
 func GetObject(hgdiobj HGDIOBJ, cbBuffer int, lpvObject unsafe.Pointer) int {
 	ret, _, _ := syscall.Syscall(uintptr(getObject),
 		uintptr(hgdiobj),
@@ -1093,6 +1178,21 @@ func GetStockObject(fnObject int) HGDIOBJ {
 		0)
 
 	return HGDIOBJ(ret)
+}
+
+func GetTextExtentExPoint(hdc HDC, lpszStr *uint16, cchString, nMaxExtent int, lpnFit, alpDx *int, lpSize *SIZE) bool {
+	ret, _, _ := syscall.Syscall9(uintptr(getTextExtentExPoint),
+		uintptr(hdc),
+		uintptr(unsafe.Pointer(lpszStr)),
+		uintptr(cchString),
+		uintptr(nMaxExtent),
+		uintptr(unsafe.Pointer(lpnFit)),
+		uintptr(unsafe.Pointer(alpDx)),
+		uintptr(unsafe.Pointer(lpSize)),
+		0,
+		0)
+
+	return ret != 0
 }
 
 func GetTextExtentPoint32(hdc HDC, lpString *uint16, c int, lpSize *SIZE) bool {
@@ -1133,6 +1233,15 @@ func MoveToEx(hdc HDC, x, y int, lpPoint *POINT) bool {
 		uintptr(unsafe.Pointer(lpPoint)),
 		0,
 		0)
+
+	return ret != 0
+}
+
+func PlayEnhMetaFile(hdc HDC, hemf HENHMETAFILE, lpRect *RECT) bool {
+	ret, _, _ := syscall.Syscall(uintptr(playEnhMetaFile),
+		uintptr(hdc),
+		uintptr(hemf),
+		uintptr(unsafe.Pointer(lpRect)))
 
 	return ret != 0
 }

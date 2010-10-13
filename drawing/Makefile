@@ -7,6 +7,7 @@ GOFILES=\
 	color.go\
 	font.go\
 	image.go\
+	metafile.go\
 	pen.go\
 	point.go\
 	rectangle.go\
