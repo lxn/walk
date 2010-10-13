@@ -680,17 +680,6 @@ func (w *Widget) wndProc(msg *MSG) uintptr {
 		w.raiseSizeChanged()
 		return 0
 
-	case WM_COMMAND:
-		switch HIWORD(uint(msg.WParam)) {
-		case 0:
-			// menu
-			actionId := uint16(LOWORD(uint(msg.WParam)))
-			if action, ok := actionsById[actionId]; ok {
-				action.raiseTriggered()
-			}
-		}
-		return 0
-
 	case WM_GETMINMAXINFO:
 		mmi := (*MINMAXINFO)(unsafe.Pointer(msg.LParam))
 		mmi.PtMinTrackSize = POINT{w.minSize.Width, w.minSize.Height}

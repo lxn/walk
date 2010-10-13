@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"fmt"
 	"os"
 	"syscall"
 	"unsafe"
@@ -122,29 +121,6 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 }
 
 func (tb *ToolBar) wndProc(msg *MSG) uintptr {
-	switch msg.Message {
-	case WM_NOTIFY:
-		fmt.Printf("ToolBar.wndProc: WM_NOTIFY, msg: %v\n", msg)
-
-		switch ((*NMHDR)(unsafe.Pointer(msg.LParam))).Code {
-		case NM_CLICK:
-			nmm := (*NMMOUSE)(unsafe.Pointer(msg.LParam))
-			fmt.Printf("ToolBar.wndProc: WM_NOTIFY, NM_CLICK, nmm: %v\n", nmm)
-			return 0
-		}
-
-	case WM_COMMAND:
-		switch HIWORD(uint(msg.WParam)) {
-		case 0:
-			// menu
-			actionId := uint16(LOWORD(uint(msg.WParam)))
-			if action, ok := actionsById[actionId]; ok {
-				action.raiseTriggered()
-				return 0
-			}
-		}
-	}
-
 	return tb.Widget.wndProc(msg)
 }
 
