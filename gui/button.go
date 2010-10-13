@@ -58,33 +58,5 @@ func (b *Button) raiseClicked() {
 }
 
 func (b *Button) wndProc(msg *MSG) uintptr {
-	switch msg.Message {
-	case WM_KEYUP:
-		if msg.WParam != VK_SPACE {
-			break
-		}
-
-		b.raiseClicked()
-		return 0
-
-	case WM_LBUTTONUP:
-		if trackedMouseDownHWnd != b.Widget.hWnd {
-			break
-		}
-		bounds, err := b.ClientBounds()
-		if err != nil {
-			// TODO: log?
-			break
-		}
-
-		x, y := GET_X_LPARAM(msg.LParam), GET_Y_LPARAM(msg.LParam)
-		if x < 0 || x >= bounds.Width || y < 0 || y >= bounds.Height {
-			break
-		}
-
-		b.raiseClicked()
-		return 0
-	}
-
 	return b.Widget.wndProc(msg)
 }

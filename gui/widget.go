@@ -91,8 +91,7 @@ type Widget struct {
 }
 
 var (
-	trackedMouseDownHWnd HWND
-	widgetsByHWnd        map[HWND]widgetInternal = make(map[HWND]widgetInternal)
+	widgetsByHWnd map[HWND]widgetInternal = make(map[HWND]widgetInternal)
 )
 
 func ensureRegisteredWindowClass(className string, windowProc syscall.CallbackFunc, callback **syscall.Callback) {
@@ -656,11 +655,9 @@ func (w *Widget) wndProc(msg *MSG) uintptr {
 			handler(&mouseEventArgs{eventArgs: eventArgs{sender: widgetsByHWnd[w.hWnd]}})
 		}
 
-		trackedMouseDownHWnd = w.hWnd
 		return 0
 
 	case WM_LBUTTONUP:
-		trackedMouseDownHWnd = 0
 		return 0
 
 	case WM_CONTEXTMENU:

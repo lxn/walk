@@ -53,6 +53,21 @@ const (
 	BM_SETSTYLE = 244
 )
 
+// Button notifications
+const (
+	BN_CLICKED       = 0
+	BN_PAINT         = 1
+	BN_HILITE        = 2
+	BN_PUSHED        = BN_HILITE
+	BN_UNHILITE      = 3
+	BN_UNPUSHED      = BN_UNHILITE
+	BN_DISABLE       = 4
+	BN_DOUBLECLICKED = 5
+	BN_DBLCLK        = BN_DOUBLECLICKED
+	BN_SETFOCUS      = 6
+	BN_KILLFOCUS     = 7
+)
+
 const (
 	IMAGE_BITMAP      = 0
 	IMAGE_ICON        = 1

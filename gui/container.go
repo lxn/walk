@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"fmt"
 	"os"
 	"unsafe"
 )
@@ -72,9 +71,18 @@ func (c *Container) SetLayout(value Layout) {
 func (c *Container) wndProc(msg *MSG) uintptr {
 	switch msg.Message {
 	case WM_COMMAND:
-		fmt.Printf("*Container.wndProc: WM_COMMAND: msg: %+v\n", msg)
 		switch HIWORD(uint(msg.WParam)) {
 		case 0:
+			hWnd := HWND(msg.LParam)
+			if hWnd != 0 {
+				if widget, ok := widgetsByHWnd[hWnd]; ok {
+					if clickableWidget, ok := widget.(clickable); ok {
+						clickableWidget.raiseClicked()
+						return 0
+					}
+				}
+			}
+
 			// Menu
 			actionId := uint16(LOWORD(uint(msg.WParam)))
 			if action, ok := actionsById[actionId]; ok {
@@ -84,15 +92,6 @@ func (c *Container) wndProc(msg *MSG) uintptr {
 
 		case 1:
 			// Accelerator
-
-		BN_CLICKED:
-			hWnd := HWND(msg.LParam)
-			if widget, ok := widgetsByHWnd[hWnd]; ok {
-				if clickableWidget, ok := widget.(clickable); ok {
-					clickableWidget.raiseClicked()
-				}
-				return 0
-			}
 		}
 
 	case WM_NOTIFY:

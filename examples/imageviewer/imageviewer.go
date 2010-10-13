@@ -65,10 +65,6 @@ func (mw *MainWindow) openBitmap() {
 	mw.updateTitle(dlg.FilePath)
 }
 
-func dummy(size drawing.Size) os.Error {
-	return nil
-}
-
 func runMainWindow() {
 	mainWnd, err := gui.NewMainWindow()
 	panicIfErr(err)
