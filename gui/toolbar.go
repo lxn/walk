@@ -41,6 +41,8 @@ func newToolBar(parent IContainer, style uint) (*ToolBar, os.Error) {
 	tb := &ToolBar{Widget: Widget{hWnd: hWnd, parent: parent}}
 	tb.actions = newActionList(tb)
 
+	tb.SetFont(defaultFont)
+
 	widgetsByHWnd[hWnd] = tb
 
 	//	exStyle := SendMessage(hWnd, TB_GETEXTENDEDSTYLE, 0, 0)

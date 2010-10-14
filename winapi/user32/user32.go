@@ -769,6 +769,11 @@ const (
 	CS_DROPSHADOW      = 0x00020000
 )
 
+// SystemParametersInfo actions
+const (
+	SPI_GETNONCLIENTMETRICS = 0x0029
+)
+
 type (
 	HCURSOR HANDLE
 	HICON   HANDLE
@@ -845,6 +850,24 @@ type MINMAXINFO struct {
 	PtMaxTrackSize POINT
 }
 
+type NONCLIENTMETRICS struct {
+	CbSize           uint
+	IBorderWidth     int
+	IScrollWidth     int
+	IScrollHeight    int
+	ICaptionWidth    int
+	ICaptionHeight   int
+	LfCaptionFont    LOGFONT
+	ISmCaptionWidth  int
+	ISmCaptionHeight int
+	LfSmCaptionFont  LOGFONT
+	IMenuWidth       int
+	IMenuHeight      int
+	LfMenuFont       LOGFONT
+	LfStatusFont     LOGFONT
+	LfMessageFont    LOGFONT
+}
+
 func GET_X_LPARAM(lp uintptr) int {
 	return int(LOWORD(uint(lp)))
 }
@@ -858,50 +881,51 @@ var (
 	lib uint32
 
 	// Functions
-	beginPaint         uint32
-	createMenu         uint32
-	createPopupMenu    uint32
-	createWindowEx     uint32
-	defWindowProc      uint32
-	destroyMenu        uint32
-	destroyWindow      uint32
-	dispatchMessage    uint32
-	drawMenuBar        uint32
-	drawTextEx         uint32
-	endPaint           uint32
-	getAncestor        uint32
-	getClientRect      uint32
-	getDC              uint32
-	getMenuInfo        uint32
-	getMessage         uint32
-	getWindowLong      uint32
-	getWindowPlacement uint32
-	getWindowRect      uint32
-	insertMenuItem     uint32
-	invalidateRect     uint32
-	isDialogMessage    uint32
-	loadCursor         uint32
-	loadIcon           uint32
-	loadImage          uint32
-	messageBox         uint32
-	moveWindow         uint32
-	postMessage        uint32
-	postQuitMessage    uint32
-	registerClassEx    uint32
-	releaseDC          uint32
-	screenToClient     uint32
-	sendMessage        uint32
-	setFocus           uint32
-	setMenu            uint32
-	setMenuInfo        uint32
-	setMenuItemInfo    uint32
-	setParent          uint32
-	setWindowLong      uint32
-	setWindowPlacement uint32
-	setWindowPos       uint32
-	showWindow         uint32
-	trackPopupMenuEx   uint32
-	translateMessage   uint32
+	beginPaint           uint32
+	createMenu           uint32
+	createPopupMenu      uint32
+	createWindowEx       uint32
+	defWindowProc        uint32
+	destroyMenu          uint32
+	destroyWindow        uint32
+	dispatchMessage      uint32
+	drawMenuBar          uint32
+	drawTextEx           uint32
+	endPaint             uint32
+	getAncestor          uint32
+	getClientRect        uint32
+	getDC                uint32
+	getMenuInfo          uint32
+	getMessage           uint32
+	getWindowLong        uint32
+	getWindowPlacement   uint32
+	getWindowRect        uint32
+	insertMenuItem       uint32
+	invalidateRect       uint32
+	isDialogMessage      uint32
+	loadCursor           uint32
+	loadIcon             uint32
+	loadImage            uint32
+	messageBox           uint32
+	moveWindow           uint32
+	postMessage          uint32
+	postQuitMessage      uint32
+	registerClassEx      uint32
+	releaseDC            uint32
+	screenToClient       uint32
+	sendMessage          uint32
+	setFocus             uint32
+	setMenu              uint32
+	setMenuInfo          uint32
+	setMenuItemInfo      uint32
+	setParent            uint32
+	setWindowLong        uint32
+	setWindowPlacement   uint32
+	setWindowPos         uint32
+	showWindow           uint32
+	systemParametersInfo uint32
+	trackPopupMenuEx     uint32
+	translateMessage     uint32
 )
 
 func init() {
@@ -951,6 +975,7 @@ func init() {
 	setWindowPlacement = MustGetProcAddress(lib, "SetWindowPlacement")
 	setWindowPos = MustGetProcAddress(lib, "SetWindowPos")
 	showWindow = MustGetProcAddress(lib, "ShowWindow")
+	systemParametersInfo = MustGetProcAddress(lib, "SystemParametersInfoW")
 	trackPopupMenuEx = MustGetProcAddress(lib, "TrackPopupMenuEx")
 	translateMessage = MustGetProcAddress(lib, "TranslateMessage")
 }
@@ -1371,6 +1396,18 @@ func ShowWindow(hWnd HWND, nCmdShow int) bool {
 	ret, _, _ := syscall.Syscall(uintptr(showWindow),
 		uintptr(hWnd),
 		uintptr(nCmdShow),
+		0)
+
+	return ret != 0
+}
+
+func SystemParametersInfo(uiAction, uiParam uint, pvParam unsafe.Pointer, fWinIni uint) bool {
+	ret, _, _ := syscall.Syscall6(uintptr(systemParametersInfo),
+		uintptr(uiAction),
+		uintptr(uiParam),
+		uintptr(pvParam),
+		uintptr(fWinIni),
+		0,
 		0)
 
 	return ret != 0

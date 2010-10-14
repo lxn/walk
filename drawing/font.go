@@ -11,6 +11,7 @@ import (
 
 import (
 	. "walk/winapi/gdi32"
+	. "walk/winapi/kernel32"
 	. "walk/winapi/user32"
 )
 
@@ -73,7 +74,7 @@ func NewFont(family string, pointSize float, style FontStyle) (*Font, os.Error) 
 func (f *Font) createForDPI(dpi int) HFONT {
 	var lf LOGFONT
 
-	lf.LfHeight = -int(f.pointSize * float(dpi) / 72)
+	lf.LfHeight = -MulDiv(int(f.pointSize), dpi, 72)
 	if f.style&FontBold > 0 {
 		lf.LfWeight = FW_BOLD
 	} else {
