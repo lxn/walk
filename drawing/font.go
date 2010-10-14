@@ -10,6 +10,7 @@ import (
 )
 
 import (
+	. "walk/winapi"
 	. "walk/winapi/gdi32"
 	. "walk/winapi/kernel32"
 	. "walk/winapi/user32"
@@ -69,6 +70,34 @@ func NewFont(family string, pointSize float, style FontStyle) (*Font, os.Error) 
 	font.dpi2hFont[0] = hFont // Make HFONT for screen easier accessible.
 
 	return font, nil
+}
+
+func NewFontFromLOGFONT(lf *LOGFONT, dpi int) (*Font, os.Error) {
+	if lf == nil {
+		return nil, newError("lf cannot be nil")
+	}
+
+	family := UTF16PtrToString(&lf.LfFaceName[0])
+	pointSize := float(MulDiv(lf.LfHeight, 72, dpi))
+	if pointSize < 0 {
+		pointSize = -pointSize
+	}
+
+	var style FontStyle
+	if lf.LfWeight > FW_NORMAL {
+		style |= FontBold
+	}
+	if lf.LfItalic == TRUE {
+		style |= FontItalic
+	}
+	if lf.LfUnderline == TRUE {
+		style |= FontUnderline
+	}
+	if lf.LfStrikeOut == TRUE {
+		style |= FontStrikeOut
+	}
+
+	return NewFont(family, pointSize, style)
 }
 
 func (f *Font) createForDPI(dpi int) HFONT {

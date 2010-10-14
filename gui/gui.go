@@ -11,9 +11,7 @@ import (
 
 import (
 	"walk/drawing"
-	. "walk/winapi"
 	. "walk/winapi/gdi32"
-	. "walk/winapi/kernel32"
 	. "walk/winapi/user32"
 )
 
@@ -33,28 +31,8 @@ func init() {
 	dpi := GetDeviceCaps(hdc, LOGPIXELSY)
 
 	// FIXME: Find out how to get dialog item font and use that.
-	family := UTF16PtrToString(&ncm.LfMenuFont.LfFaceName[0])
-	pointSize := float(MulDiv(ncm.LfMenuFont.LfHeight, 72, dpi))
-	if pointSize < 0 {
-		pointSize = -pointSize
-	}
-
-	var style drawing.FontStyle
-	if ncm.LfMenuFont.LfWeight > FW_NORMAL {
-		style |= drawing.FontBold
-	}
-	if ncm.LfMenuFont.LfItalic == TRUE {
-		style |= drawing.FontItalic
-	}
-	if ncm.LfMenuFont.LfUnderline == TRUE {
-		style |= drawing.FontUnderline
-	}
-	if ncm.LfMenuFont.LfStrikeOut == TRUE {
-		style |= drawing.FontStrikeOut
-	}
-
 	var err os.Error
-	defaultFont, err = drawing.NewFont(family, pointSize, style)
+	defaultFont, err = drawing.NewFontFromLOGFONT(&ncm.LfMenuFont, dpi)
 	if err != nil {
 		panic("failed to create default font")
 	}
