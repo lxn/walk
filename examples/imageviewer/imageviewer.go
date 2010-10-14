@@ -37,12 +37,12 @@ func (mw *MainWindow) updateTitle(filePath string) {
 	panicIfErr(mw.SetText(title))
 }
 
-func (mw *MainWindow) openBitmap() {
+func (mw *MainWindow) openImage() {
 	dlg := &gui.FileDialog{}
 
 	dlg.FilePath = mw.prevFilePath
-	dlg.Filter = "Bitmap Files (*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff)|*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff"
-	dlg.Title = "Select a Bitmap"
+	dlg.Filter = "Image Files (*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff)|*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff"
+	dlg.Title = "Select an Image"
 
 	ok, err := dlg.ShowOpen(mw)
 	panicIfErr(err)
@@ -52,7 +52,7 @@ func (mw *MainWindow) openBitmap() {
 
 	mw.prevFilePath = dlg.FilePath
 
-	bmp, err := drawing.NewBitmapFromFile(dlg.FilePath)
+	img, err := drawing.NewImageFromFile(dlg.FilePath)
 	panicIfErr(err)
 
 	prevImage := mw.imageView.Image()
@@ -60,7 +60,7 @@ func (mw *MainWindow) openBitmap() {
 		prevImage.Dispose()
 	}
 
-	panicIfErr(mw.imageView.SetImage(bmp))
+	panicIfErr(mw.imageView.SetImage(img))
 
 	mw.updateTitle(dlg.FilePath)
 }
@@ -93,7 +93,7 @@ func runMainWindow() {
 	openAction := gui.NewAction()
 	openAction.SetImage(openBmp)
 	openAction.SetText("Open")
-	openAction.AddTriggeredHandler(func(args gui.EventArgs) { mw.openBitmap() })
+	openAction.AddTriggeredHandler(func(args gui.EventArgs) { mw.openImage() })
 	fileMenu.Actions().Add(openAction)
 	mw.ToolBar().Actions().Add(openAction)
 

@@ -6,6 +6,7 @@ package drawing
 
 import (
 	"os"
+	"strings"
 )
 
 import (
@@ -17,4 +18,12 @@ type Image interface {
 	drawStretched(hdc HDC, bounds Rectangle) os.Error
 	Dispose()
 	Size() Size
+}
+
+func NewImageFromFile(filePath string) (Image, os.Error) {
+	if strings.HasSuffix(filePath, ".emf") {
+		return NewMetafileFromFile(filePath)
+	}
+
+	return NewBitmapFromFile(filePath)
 }
