@@ -39,8 +39,22 @@ func init() {
 		pointSize = -pointSize
 	}
 
+	var style drawing.FontStyle
+	if ncm.LfMenuFont.LfWeight > FW_NORMAL {
+		style |= drawing.FontBold
+	}
+	if ncm.LfMenuFont.LfItalic == TRUE {
+		style |= drawing.FontItalic
+	}
+	if ncm.LfMenuFont.LfUnderline == TRUE {
+		style |= drawing.FontUnderline
+	}
+	if ncm.LfMenuFont.LfStrikeOut == TRUE {
+		style |= drawing.FontStrikeOut
+	}
+
 	var err os.Error
-	defaultFont, err = drawing.NewFont(family, pointSize, 0)
+	defaultFont, err = drawing.NewFont(family, pointSize, style)
 	if err != nil {
 		panic("failed to create default font")
 	}
