@@ -37,12 +37,12 @@ const (
 	MsgBoxDefButton4        MsgBoxStyle = MB_DEFBUTTON4
 )
 
-func MsgBox(owner RootWidget, title, message string, style MsgBoxStyle) int {
+func MsgBox(owner RootWidget, title, message string, style MsgBoxStyle) DialogCommandId {
 	var ownerHWnd HWND
 
 	if owner != nil {
 		ownerHWnd = owner.Handle()
 	}
 
-	return MessageBox(ownerHWnd, syscall.StringToUTF16Ptr(message), syscall.StringToUTF16Ptr(title), uint(style))
+	return DialogCommandId(MessageBox(ownerHWnd, syscall.StringToUTF16Ptr(message), syscall.StringToUTF16Ptr(title), uint(style)))
 }

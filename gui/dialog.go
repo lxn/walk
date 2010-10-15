@@ -10,8 +10,24 @@ import (
 )
 
 import (
-	"walk/drawing"
 	. "walk/winapi/user32"
+)
+
+type DialogCommandId int
+
+const (
+	DlgCmdOK       DialogCommandId = IDOK
+	DlgCmdCancel   DialogCommandId = IDCANCEL
+	DlgCmdAbort    DialogCommandId = IDABORT
+	DlgCmdRetry    DialogCommandId = IDRETRY
+	DlgCmdIgnore   DialogCommandId = IDIGNORE
+	DlgCmdYes      DialogCommandId = IDYES
+	DlgCmdNo       DialogCommandId = IDNO
+	DlgCmdClose    DialogCommandId = IDCLOSE
+	DlgCmdHelp     DialogCommandId = IDHELP
+	DlgCmdTryAgain DialogCommandId = IDTRYAGAIN
+	DlgCmdContinue DialogCommandId = IDCONTINUE
+	DlgCmdTimeout  DialogCommandId = IDTIMEOUT
 )
 
 const dialogWindowClass = `\o/ Walk_Dialog_Class \o/`
@@ -32,7 +48,7 @@ func dialogWndProc(args *uintptr) uintptr {
 }
 
 type Dialog struct {
-	Container
+	TopLevelWindow
 }
 
 func NewDialog() (*Dialog, os.Error) {
@@ -46,7 +62,7 @@ func NewDialog() (*Dialog, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	d := &Dialog{Container: Container{Widget: Widget{hWnd: hWnd}}}
+	d := &Dialog{TopLevelWindow: TopLevelWindow{Container: Container{Widget: Widget{hWnd: hWnd}}}}
 
 	d.children = newObservedWidgetList(d)
 
@@ -56,28 +72,4 @@ func NewDialog() (*Dialog, os.Error) {
 	SendMessage(hWnd, WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
 	return d, nil
-}
-
-func (*Dialog) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz | ShrinkVert | GrowVert
-}
-
-func (d *Dialog) PreferredSize() drawing.Size {
-	return d.dialogBaseUnitsToPixels(drawing.Size{252, 218})
-}
-
-func (d *Dialog) RunMessageLoop() os.Error {
-	return d.runMessageLoop()
-}
-
-func (d *Dialog) Hide() {
-	ShowWindow(d.hWnd, SW_HIDE)
-}
-
-func (d *Dialog) Show() {
-	ShowWindow(d.hWnd, SW_SHOW)
-}
-
-func (d *Dialog) wndProc(msg *MSG) uintptr {
-	return d.Container.wndProc(msg)
 }

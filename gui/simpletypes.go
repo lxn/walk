@@ -12,6 +12,7 @@ const (
 	CenterAlignment
 )
 
+
 type EventArgs interface {
 	Sender() interface{}
 }
@@ -25,6 +26,7 @@ func (a *eventArgs) Sender() interface{} {
 }
 
 type EventHandler func(args EventArgs)
+
 
 type KeyEventArgs interface {
 	EventArgs
@@ -41,6 +43,7 @@ func (a *keyEventArgs) Key() int {
 }
 
 type KeyEventHandler func(args KeyEventArgs)
+
 
 type MouseButton int
 
@@ -75,5 +78,26 @@ func (a *mouseEventArgs) Button() MouseButton {
 	return a.button
 }
 
-
 type MouseEventHandler func(args MouseEventArgs)
+
+
+type CancelEventArgs interface {
+	EventArgs
+	Canceled() bool
+	SetCanceled(value bool)
+}
+
+type cancelEventArgs struct {
+	eventArgs
+	canceled bool
+}
+
+func (a *cancelEventArgs) Canceled() bool {
+	return a.canceled
+}
+
+func (a *cancelEventArgs) SetCanceled(value bool) {
+	a.canceled = value
+}
+
+type CancelEventHandler func(args CancelEventArgs)

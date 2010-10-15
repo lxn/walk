@@ -5,16 +5,13 @@
 package gui
 
 import (
-	"fmt"
 	"os"
 	"syscall"
-	"unsafe"
 )
 
 import (
 	"walk/drawing"
 	. "walk/winapi/comctl32"
-	. "walk/winapi/kernel32"
 	. "walk/winapi/user32"
 )
 
@@ -36,11 +33,9 @@ func mainWindowWndProc(args *uintptr) uintptr {
 }
 
 type MainWindow struct {
-	Container
-	owner      *MainWindow
-	menu       *Menu
-	toolBar    *ToolBar
-	clientArea *Composite
+	TopLevelWindow
+	menu    *Menu
+	toolBar *ToolBar
 }
 
 func NewMainWindow() (mw *MainWindow, err os.Error) {
@@ -54,7 +49,7 @@ func NewMainWindow() (mw *MainWindow, err os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	wnd := &MainWindow{Container: Container{Widget: Widget{hWnd: hWnd}}}
+	wnd := &MainWindow{TopLevelWindow: TopLevelWindow{Container: Container{Widget: Widget{hWnd: hWnd}}}}
 
 	defer func() {
 		if x := recover(); x != nil {
@@ -94,42 +89,6 @@ func NewMainWindow() (mw *MainWindow, err os.Error) {
 	return
 }
 
-func (mw *MainWindow) ClientArea() *Composite {
-	return mw.clientArea
-}
-
-func (*MainWindow) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz | ShrinkVert | GrowVert
-}
-
-func (mw *MainWindow) PreferredSize() drawing.Size {
-	return mw.dialogBaseUnitsToPixels(drawing.Size{252, 218})
-}
-
-func (mw *MainWindow) RunMessageLoop() os.Error {
-	return mw.runMessageLoop()
-}
-
-func (mw *MainWindow) Owner() *MainWindow {
-	return mw.owner
-}
-
-func (mw *MainWindow) SetOwner(value *MainWindow) os.Error {
-	mw.owner = value
-
-	var ownerHWnd HWND
-	if value != nil {
-		ownerHWnd = value.hWnd
-	}
-
-	SetLastError(0)
-	if 0 == SetWindowLong(mw.hWnd, GWL_HWNDPARENT, int(ownerHWnd)) {
-		return lastError("SetWindowLong")
-	}
-
-	return nil
-}
-
 func (mw *MainWindow) Menu() *Menu {
 	return mw.menu
 }
@@ -157,70 +116,11 @@ func (mw *MainWindow) ClientBounds() (bounds drawing.Rectangle, err os.Error) {
 	return
 }
 
-func (mw *MainWindow) Hide() {
-	ShowWindow(mw.hWnd, SW_HIDE)
-}
-
-func (mw *MainWindow) Show() {
-	ShowWindow(mw.hWnd, SW_SHOW)
-}
-
-func (mw *MainWindow) Close() (err os.Error) {
-	// FIXME: Remove this and children from widgetsByHWnd
-	mw.Dispose()
-
-	return
-}
-
-func (mw *MainWindow) SaveState() (string, os.Error) {
-	var wp WINDOWPLACEMENT
-
-	wp.Length = uint(unsafe.Sizeof(wp))
-
-	if !GetWindowPlacement(mw.hWnd, &wp) {
-		return "", lastError("GetWindowPlacement")
-	}
-
-	return fmt.Sprint(
-		wp.Flags, wp.ShowCmd,
-		wp.PtMinPosition.X, wp.PtMinPosition.Y,
-		wp.PtMaxPosition.X, wp.PtMaxPosition.Y,
-		wp.RcNormalPosition.Left, wp.RcNormalPosition.Top,
-		wp.RcNormalPosition.Right, wp.RcNormalPosition.Bottom),
-		nil
-}
-
-func (mw *MainWindow) RestoreState(s string) os.Error {
-	var wp WINDOWPLACEMENT
-
-	_, err := fmt.Sscan(s,
-		&wp.Flags, &wp.ShowCmd,
-		&wp.PtMinPosition.X, &wp.PtMinPosition.Y,
-		&wp.PtMaxPosition.X, &wp.PtMaxPosition.Y,
-		&wp.RcNormalPosition.Left, &wp.RcNormalPosition.Top,
-		&wp.RcNormalPosition.Right, &wp.RcNormalPosition.Bottom)
-	if err != nil {
-		return err
-	}
-
-	wp.Length = uint(unsafe.Sizeof(wp))
-
-	if !SetWindowPlacement(mw.hWnd, &wp) {
-		return lastError("SetWindowPlacement")
-	}
-
-	return nil
-}
-
 func (mw *MainWindow) wndProc(msg *MSG) uintptr {
 	switch msg.Message {
-	case WM_CLOSE:
-		mw.Close()
-		return 0
-
 	case WM_SIZE, WM_SIZING:
 		SendMessage(mw.toolBar.hWnd, TB_AUTOSIZE, 0, 0)
 	}
 
-	return mw.Container.wndProc(msg)
+	return mw.TopLevelWindow.wndProc(msg)
 }

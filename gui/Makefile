@@ -39,6 +39,7 @@ GOFILES=\
 	textedit.go\
 	toolbar.go\
 	tooltip.go\
+	toplevelwindow.go\
 	treeview.go\
 	treeviewitem.go\
 	treeviewitemlist.go\
