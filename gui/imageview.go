@@ -44,6 +44,9 @@ func (iv *ImageView) Image() drawing.Image {
 func (iv *ImageView) SetImage(value drawing.Image) os.Error {
 	iv.image = value
 
+	_, isMetafile := value.(*drawing.Metafile)
+	iv.SetClearsBackground(isMetafile)
+
 	return iv.Invalidate()
 }
 

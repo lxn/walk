@@ -12,7 +12,6 @@ import (
 
 import (
 	. "walk/winapi/gdi32"
-	. "walk/winapi/user32"
 )
 
 type Metafile struct {
@@ -33,9 +32,9 @@ func NewMetafile(referenceSurface *Surface) (*Metafile, os.Error) {
 }
 
 func NewMetafileFromFile(filePath string) (*Metafile, os.Error) {
-	hemf := HENHMETAFILE(LoadImage(0, syscall.StringToUTF16Ptr(filePath), IMAGE_ENHMETAFILE, 0, 0, LR_LOADFROMFILE))
+	hemf := GetEnhMetaFile(syscall.StringToUTF16Ptr(filePath))
 	if hemf == 0 {
-		return nil, lastError("LoadImage")
+		return nil, newError("GetEnhMetaFile failed")
 	}
 
 	mf := &Metafile{hemf: hemf}

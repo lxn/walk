@@ -892,6 +892,7 @@ var (
 	endPage              uint32
 	extCreatePen         uint32
 	getDeviceCaps        uint32
+	getEnhMetaFile       uint32
 	getEnhMetaFileHeader uint32
 	getObject            uint32
 	getStockObject       uint32
@@ -937,6 +938,7 @@ func init() {
 	endPage = MustGetProcAddress(lib, "EndPage")
 	extCreatePen = MustGetProcAddress(lib, "ExtCreatePen")
 	getDeviceCaps = MustGetProcAddress(lib, "GetDeviceCaps")
+	getEnhMetaFile = MustGetProcAddress(lib, "GetEnhMetaFileW")
 	getEnhMetaFileHeader = MustGetProcAddress(lib, "GetEnhMetaFileHeader")
 	getObject = MustGetProcAddress(lib, "GetObjectW")
 	getStockObject = MustGetProcAddress(lib, "GetStockObject")
@@ -1151,6 +1153,15 @@ func GetDeviceCaps(hdc HDC, nIndex int) int {
 		0)
 
 	return int(ret)
+}
+
+func GetEnhMetaFile(lpszMetaFile *uint16) HENHMETAFILE {
+	ret, _, _ := syscall.Syscall(uintptr(getEnhMetaFile),
+		uintptr(unsafe.Pointer(lpszMetaFile)),
+		0,
+		0)
+
+	return HENHMETAFILE(ret)
 }
 
 func GetEnhMetaFileHeader(hemf HENHMETAFILE, cbBuffer uint, lpemh *ENHMETAHEADER) uint {
