@@ -28,7 +28,7 @@ func compositeWndProc(args *uintptr) uintptr {
 		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
 	}
 
-	return c.wndProc(msg)
+	return c.wndProc(msg, 0)
 }
 
 type Composite struct {
@@ -103,8 +103,4 @@ func (c *Composite) PreferredSize() drawing.Size {
 	}
 
 	return drawing.Size{maxW, maxH}
-}
-
-func (c *Composite) wndProc(msg *MSG) uintptr {
-	return c.Container.wndProc(msg)
 }

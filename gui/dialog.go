@@ -44,7 +44,7 @@ func dialogWndProc(args *uintptr) uintptr {
 		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
 	}
 
-	return dlg.wndProc(msg)
+	return dlg.wndProc(msg, 0)
 }
 
 type Dialog struct {

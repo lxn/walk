@@ -13,6 +13,7 @@ import (
 )
 
 import (
+	. "walk/winapi"
 	. "walk/winapi/kernel32"
 )
 
@@ -76,6 +77,10 @@ func lastError(win32FuncName string) os.Error {
 	}
 
 	return nil
+}
+
+func errorFromHRESULT(funcName string, hr HRESULT) os.Error {
+	return newError(fmt.Sprintf("%s: %s", funcName, syscall.Errstr(int(hr))))
 }
 
 func boolToInt(value bool) int {

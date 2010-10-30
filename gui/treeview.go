@@ -49,13 +49,17 @@ func NewTreeView(parent IContainer) (*TreeView, os.Error) {
 
 	hWnd := CreateWindowEx(
 		WS_EX_CLIENTEDGE, syscall.StringToUTF16Ptr("SysTreeView32"), nil,
-		TVS_HASBUTTONS|TVS_HASLINES|TVS_LINESATROOT|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
+		TVS_HASBUTTONS|TVS_HASLINES|TVS_LINESATROOT|TVS_SHOWSELALWAYS|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
 		0, 0, 0, 0, parent.Handle(), 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
 
 	tv := &TreeView{Widget: Widget{hWnd: hWnd, parent: parent}}
+
+	if err := tv.setTheme("Explorer"); err != nil {
+		return nil, err
+	}
 
 	tv.items = newTreeViewItemList(tv)
 
@@ -160,7 +164,7 @@ func (tv *TreeView) raiseItemExpanding(item *TreeViewItem) {
 	}
 }
 
-func (tv *TreeView) wndProc(msg *MSG) uintptr {
+func (tv *TreeView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
 	case WM_NOTIFY:
 		nmtv := (*NMTREEVIEW)(unsafe.Pointer(msg.LParam))
@@ -202,7 +206,7 @@ func (tv *TreeView) wndProc(msg *MSG) uintptr {
 		}
 	}
 
-	return tv.Widget.wndProc(msg)
+	return tv.Widget.wndProc(msg, origWndProcPtr)
 }
 
 func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) (err os.Error) {

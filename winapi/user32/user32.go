@@ -814,7 +814,23 @@ const (
 	SPI_GETNONCLIENTMETRICS = 0x0029
 )
 
+// WM_GETDLGCODE return values
+const (
+	DLGC_BUTTON          = 0x2000
+	DLGC_DEFPUSHBUTTON   = 0x0010
+	DLGC_HASSETSEL       = 0x0008
+	DLGC_RADIOBUTTON     = 0x0040
+	DLGC_STATIC          = 0x0100
+	DLGC_UNDEFPUSHBUTTON = 0x0020
+	DLGC_WANTALLKEYS     = 0x0004
+	DLGC_WANTARROWS      = 0x0001
+	DLGC_WANTCHARS       = 0x0080
+	DLGC_WANTMESSAGE     = 0x0004
+	DLGC_WANTTAB         = 0x0002
+)
+
 type (
+	HACCEL  HANDLE
 	HCURSOR HANDLE
 	HICON   HANDLE
 	HMENU   HANDLE
@@ -922,6 +938,7 @@ var (
 
 	// Functions
 	beginPaint           uint32
+	callWindowProc       uint32
 	createMenu           uint32
 	createPopupMenu      uint32
 	createWindowEx       uint32
@@ -974,6 +991,7 @@ func init() {
 
 	// Functions
 	beginPaint = MustGetProcAddress(lib, "BeginPaint")
+	callWindowProc = MustGetProcAddress(lib, "CallWindowProcW")
 	createMenu = MustGetProcAddress(lib, "CreateMenu")
 	createPopupMenu = MustGetProcAddress(lib, "CreatePopupMenu")
 	createWindowEx = MustGetProcAddress(lib, "CreateWindowExW")
@@ -1027,6 +1045,18 @@ func BeginPaint(hwnd HWND, lpPaint *PAINTSTRUCT) HDC {
 		0)
 
 	return HDC(ret)
+}
+
+func CallWindowProc(lpPrevWndFunc uintptr, hWnd HWND, Msg uint, wParam, lParam uintptr) uintptr {
+	ret, _, _ := syscall.Syscall6(uintptr(callWindowProc),
+		lpPrevWndFunc,
+		uintptr(hWnd),
+		uintptr(Msg),
+		wParam,
+		lParam,
+		0)
+
+	return ret
 }
 
 func CreateMenu() HMENU {

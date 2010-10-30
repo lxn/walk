@@ -34,7 +34,7 @@ func splitterWndProc(args *uintptr) uintptr {
 		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
 	}
 
-	return s.wndProc(msg)
+	return s.wndProc(msg, 0)
 }
 
 type Splitter struct {
@@ -68,10 +68,6 @@ func NewSplitter(parent IContainer) (*Splitter, os.Error) {
 	parent.Children().Add(s)
 
 	return s, nil
-}
-
-func (s *Splitter) wndProc(msg *MSG) uintptr {
-	return s.Container.wndProc(msg)
 }
 
 func (s *Splitter) onInsertingWidget(index int, widget IWidget) (err os.Error) {

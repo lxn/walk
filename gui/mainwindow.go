@@ -29,7 +29,7 @@ func mainWindowWndProc(args *uintptr) uintptr {
 		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
 	}
 
-	return mw.wndProc(msg)
+	return mw.wndProc(msg, 0)
 }
 
 type MainWindow struct {
@@ -116,11 +116,11 @@ func (mw *MainWindow) ClientBounds() (bounds drawing.Rectangle, err os.Error) {
 	return
 }
 
-func (mw *MainWindow) wndProc(msg *MSG) uintptr {
+func (mw *MainWindow) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
 	case WM_SIZE, WM_SIZING:
 		SendMessage(mw.toolBar.hWnd, TB_AUTOSIZE, 0, 0)
 	}
 
-	return mw.TopLevelWindow.wndProc(msg)
+	return mw.TopLevelWindow.wndProc(msg, origWndProcPtr)
 }

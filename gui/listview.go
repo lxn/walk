@@ -44,10 +44,14 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 	}
 
 	exStyle := SendMessage(hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
-	exStyle |= LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES
+	exStyle |= LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT //| LVS_EX_GRIDLINES
 	SendMessage(hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 
 	lv := &ListView{Widget: Widget{hWnd: hWnd, parent: parent}}
+
+	if err := lv.setTheme("Explorer"); err != nil {
+		return nil, err
+	}
 
 	lv.columns = newListViewColumnList(lv)
 	lv.items = newListViewItemList(lv)
@@ -147,7 +151,7 @@ func (lv *ListView) RestoreState(s string) os.Error {
 	return nil
 }
 
-func (lv *ListView) wndProc(msg *MSG) uintptr {
+func (lv *ListView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
 	/*	case crutches.ItemChangedMsgId():
 			if selIndex := lv.SelectedIndex(); selIndex != lv.prevSelIndex {
@@ -164,7 +168,7 @@ func (lv *ListView) wndProc(msg *MSG) uintptr {
 		}
 	}
 
-	return lv.Widget.wndProc(msg)
+	return lv.Widget.wndProc(msg, origWndProcPtr)
 }
 
 func (lv *ListView) onListViewColumnChanged(column *ListViewColumn) {

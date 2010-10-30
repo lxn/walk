@@ -56,7 +56,3 @@ func (b *Button) raiseClicked() {
 		handler(&eventArgs{widgetsByHWnd[b.hWnd]})
 	}
 }
-
-func (b *Button) wndProc(msg *MSG) uintptr {
-	return b.Widget.wndProc(msg)
-}

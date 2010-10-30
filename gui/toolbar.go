@@ -122,10 +122,6 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 	tb.imageList = value
 }
 
-func (tb *ToolBar) wndProc(msg *MSG) uintptr {
-	return tb.Widget.wndProc(msg)
-}
-
 func (tb *ToolBar) onActionChanged(action *Action) (err os.Error) {
 	panic("not implemented")
 }

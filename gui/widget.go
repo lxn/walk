@@ -18,6 +18,7 @@ import (
 	. "walk/winapi/gdi32"
 	. "walk/winapi/kernel32"
 	. "walk/winapi/user32"
+	. "walk/winapi/uxtheme"
 )
 
 type LayoutFlags byte
@@ -75,7 +76,7 @@ type IWidget interface {
 
 type widgetInternal interface {
 	IWidget
-	wndProc(msg *MSG) uintptr
+	wndProc(msg *MSG, origWndProcPtr uintptr) uintptr
 }
 
 type Widget struct {
@@ -600,6 +601,14 @@ func (w *Widget) GetDrawingSurface() (*drawing.Surface, os.Error) {
 	return drawing.NewSurfaceFromHWND(w.hWnd)
 }
 
+func (w *Widget) setTheme(appName string) os.Error {
+	if hr := SetWindowTheme(w.hWnd, syscall.StringToUTF16Ptr(appName), nil); FAILED(hr) {
+		return errorFromHRESULT("SetWindowTheme", hr)
+	}
+
+	return nil
+}
+
 func (w *Widget) AddKeyDownHandler(handler KeyEventHandler) {
 	w.keyDownHandlers.Push(handler)
 }
@@ -644,7 +653,7 @@ func (w *Widget) raiseSizeChanged() {
 	}
 }
 
-func (w *Widget) wndProc(msg *MSG) uintptr {
+func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	//	widget := widgetsByHWnd[w.hWnd]
 	//	fmt.Printf("*Widget.wndProc: type: %T, msg: %+v\n", widget, msg)
 
@@ -654,11 +663,6 @@ func (w *Widget) wndProc(msg *MSG) uintptr {
 			handler := handlerIface.(MouseEventHandler)
 			handler(&mouseEventArgs{eventArgs: eventArgs{sender: widgetsByHWnd[w.hWnd]}})
 		}
-
-		return 0
-
-	case WM_LBUTTONUP:
-		return 0
 
 	case WM_CONTEXTMENU:
 		sourceWidget := widgetsByHWnd[w.hWnd]
@@ -674,16 +678,18 @@ func (w *Widget) wndProc(msg *MSG) uintptr {
 
 	case WM_KEYDOWN:
 		w.raiseKeyDown(&keyEventArgs{eventArgs: eventArgs{widgetsByHWnd[w.hWnd]}, key: int(msg.WParam)})
-		return 0
 
 	case WM_SIZE, WM_SIZING:
 		w.raiseSizeChanged()
-		return 0
 
 	case WM_GETMINMAXINFO:
 		mmi := (*MINMAXINFO)(unsafe.Pointer(msg.LParam))
 		mmi.PtMinTrackSize = POINT{w.minSize.Width, w.minSize.Height}
 		return 0
+	}
+
+	if origWndProcPtr != 0 {
+		return CallWindowProc(origWndProcPtr, msg.HWnd, msg.Message, msg.WParam, msg.LParam)
 	}
 
 	return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)

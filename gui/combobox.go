@@ -54,10 +54,6 @@ func (cb *ComboBox) PreferredSize() drawing.Size {
 	return cb.dialogBaseUnitsToPixels(drawing.Size{50, 14})
 }
 
-func (cb *ComboBox) wndProc(msg *MSG) uintptr {
-	return cb.Widget.wndProc(msg)
-}
-
 func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) (err os.Error) {
 	if CB_ERR == SendMessage(cb.hWnd, CB_INSERTSTRING, uintptr(index), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item.text)))) {
 		err = newError("CB_INSERTSTRING failed")

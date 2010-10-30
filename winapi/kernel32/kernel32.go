@@ -40,6 +40,7 @@ var (
 	// Functions
 	getLastError    uint32
 	getModuleHandle uint32
+	getThreadLocale uint32
 	globalAlloc     uint32
 	globalFree      uint32
 	globalLock      uint32
@@ -54,6 +55,7 @@ type (
 	HANDLE    uintptr
 	HGLOBAL   HANDLE
 	HINSTANCE HANDLE
+	LCID      uint
 )
 
 func init() {
@@ -63,6 +65,7 @@ func init() {
 	// Functions
 	getLastError = MustGetProcAddress(lib, "GetLastError")
 	getModuleHandle = MustGetProcAddress(lib, "GetModuleHandleW")
+	getThreadLocale = MustGetProcAddress(lib, "GetThreadLocale")
 	globalAlloc = MustGetProcAddress(lib, "GlobalAlloc")
 	globalFree = MustGetProcAddress(lib, "GlobalFree")
 	globalLock = MustGetProcAddress(lib, "GlobalLock")
@@ -88,6 +91,15 @@ func GetModuleHandle(lpModuleName *uint16) HINSTANCE {
 		0)
 
 	return HINSTANCE(ret)
+}
+
+func GetThreadLocale() LCID {
+	ret, _, _ := syscall.Syscall(uintptr(getThreadLocale),
+		0,
+		0,
+		0)
+
+	return LCID(ret)
 }
 
 func GlobalAlloc(uFlags uint, dwBytes uintptr) HGLOBAL {

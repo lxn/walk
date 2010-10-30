@@ -28,7 +28,7 @@ func customWidgetWndProc(args *uintptr) uintptr {
 		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
 	}
 
-	return cw.wndProc(msg)
+	return cw.wndProc(msg, 0)
 }
 
 type PaintFunc func(surface *drawing.Surface, updateBounds drawing.Rectangle) os.Error
@@ -97,7 +97,7 @@ func (cw *CustomWidget) SetInvalidatesOnResize(value bool) {
 	cw.invalidatesOnResize = value
 }
 
-func (cw *CustomWidget) wndProc(msg *MSG) uintptr {
+func (cw *CustomWidget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
 	case WM_PAINT:
 		if cw.paint == nil {
@@ -141,5 +141,5 @@ func (cw *CustomWidget) wndProc(msg *MSG) uintptr {
 		}
 	}
 
-	return cw.Widget.wndProc(msg)
+	return cw.Widget.wndProc(msg, origWndProcPtr)
 }

@@ -68,7 +68,7 @@ func (c *Container) SetLayout(value Layout) {
 	}
 }
 
-func (c *Container) wndProc(msg *MSG) uintptr {
+func (c *Container) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
 	case WM_COMMAND:
 		switch HIWORD(uint(msg.WParam)) {
@@ -98,7 +98,7 @@ func (c *Container) wndProc(msg *MSG) uintptr {
 		nmh := (*NMHDR)(unsafe.Pointer(msg.LParam))
 		if widget, ok := widgetsByHWnd[nmh.HwndFrom]; ok {
 			// The widget that sent the notification shall handle it itself.
-			widget.wndProc(msg)
+			widget.wndProc(msg, 0)
 		}
 
 	case WM_SIZE, WM_SIZING:
@@ -107,7 +107,7 @@ func (c *Container) wndProc(msg *MSG) uintptr {
 		}
 	}
 
-	return c.Widget.wndProc(msg)
+	return c.Widget.wndProc(msg, origWndProcPtr)
 }
 
 func (c *Container) onInsertingWidget(index int, widget IWidget) (err os.Error) {

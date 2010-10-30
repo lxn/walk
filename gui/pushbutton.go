@@ -54,7 +54,3 @@ func (pb *PushButton) PreferredSize() drawing.Size {
 
 	return s
 }
-
-func (pb *PushButton) wndProc(msg *MSG) uintptr {
-	return pb.Button.wndProc(msg)
-}

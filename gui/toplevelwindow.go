@@ -93,11 +93,17 @@ func (tlw *TopLevelWindow) Show() {
 	ShowWindow(tlw.hWnd, SW_SHOW)
 }
 
-func (tlw *TopLevelWindow) Close() (err os.Error) {
+func (tlw *TopLevelWindow) close() os.Error {
 	// FIXME: Remove this and children from widgetsByHWnd
 	tlw.Dispose()
 
-	return
+	return nil
+}
+
+func (tlw *TopLevelWindow) Close() os.Error {
+	SendMessage(tlw.hWnd, WM_CLOSE, 0, 0)
+
+	return nil
 }
 
 func (tlw *TopLevelWindow) SaveState() (string, os.Error) {
@@ -160,7 +166,7 @@ func (tlw *TopLevelWindow) raiseClosing(args *closingEventArgs) {
 	}
 }
 
-func (tlw *TopLevelWindow) wndProc(msg *MSG) uintptr {
+func (tlw *TopLevelWindow) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
 	case WM_CLOSE:
 		args := &closingEventArgs{
@@ -171,9 +177,10 @@ func (tlw *TopLevelWindow) wndProc(msg *MSG) uintptr {
 			},
 			reason: tlw.closeReason,
 		}
+		tlw.closeReason = CloseReasonUnknown
 		tlw.raiseClosing(args)
 		if !args.Canceled() {
-			tlw.Close()
+			tlw.close()
 		}
 		return 0
 
@@ -183,5 +190,5 @@ func (tlw *TopLevelWindow) wndProc(msg *MSG) uintptr {
 		}
 	}
 
-	return tlw.Container.wndProc(msg)
+	return tlw.Container.wndProc(msg, origWndProcPtr)
 }

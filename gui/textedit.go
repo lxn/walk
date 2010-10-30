@@ -48,7 +48,3 @@ func (*TextEdit) LayoutFlags() LayoutFlags {
 func (te *TextEdit) PreferredSize() drawing.Size {
 	return te.dialogBaseUnitsToPixels(drawing.Size{100, 100})
 }
-
-func (te *TextEdit) wndProc(msg *MSG) uintptr {
-	return te.Widget.wndProc(msg)
-}
