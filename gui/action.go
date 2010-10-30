@@ -34,17 +34,64 @@ type Action struct {
 	image             *drawing.Bitmap
 	enabled           bool
 	visible           bool
+	checkable         bool
+	checked           bool
+	exclusive         bool
 	id                uint16
 }
 
 func NewAction() *Action {
-	a := &Action{id: nextActionId}
+	a := &Action{
+		enabled: true,
+		id:      nextActionId,
+		visible: true,
+	}
 
 	actionsById[a.id] = a
 
 	nextActionId++
 
 	return a
+}
+
+func (a *Action) Checkable() bool {
+	return a.checkable
+}
+
+func (a *Action) SetCheckable(value bool) (err os.Error) {
+	if value != a.checkable {
+		old := a.checkable
+
+		a.checkable = value
+
+		err = a.raiseChanged()
+		if err != nil {
+			a.checkable = old
+			a.raiseChanged()
+		}
+	}
+
+	return
+}
+
+func (a *Action) Checked() bool {
+	return a.checked
+}
+
+func (a *Action) SetChecked(value bool) (err os.Error) {
+	if value != a.checked {
+		old := a.checked
+
+		a.checked = value
+
+		err = a.raiseChanged()
+		if err != nil {
+			a.checked = old
+			a.raiseChanged()
+		}
+	}
+
+	return
 }
 
 func (a *Action) Enabled() bool {
@@ -60,6 +107,26 @@ func (a *Action) SetEnabled(value bool) (err os.Error) {
 		err = a.raiseChanged()
 		if err != nil {
 			a.enabled = old
+			a.raiseChanged()
+		}
+	}
+
+	return
+}
+
+func (a *Action) Exclusive() bool {
+	return a.exclusive
+}
+
+func (a *Action) SetExclusive(value bool) (err os.Error) {
+	if value != a.exclusive {
+		old := a.exclusive
+
+		a.exclusive = value
+
+		err = a.raiseChanged()
+		if err != nil {
+			a.exclusive = old
 			a.raiseChanged()
 		}
 	}

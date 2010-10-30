@@ -122,13 +122,8 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 	tb.imageList = value
 }
 
-func (tb *ToolBar) onActionChanged(action *Action) (err os.Error) {
-	panic("not implemented")
-}
-
-func (tb *ToolBar) onInsertingAction(index int, action *Action) (err os.Error) {
-	image := action.image
-	imageIndex := -1
+func (tb *ToolBar) imageIndex(image *drawing.Bitmap) (imageIndex int, err os.Error) {
+	imageIndex = -1
 	if image != nil {
 		// FIXME: Protect against duplicate insertion
 		imageIndex, err = tb.imageList.AddMasked(image)
@@ -137,27 +132,97 @@ func (tb *ToolBar) onInsertingAction(index int, action *Action) (err os.Error) {
 		}
 	}
 
+	return
+}
+
+func (tb *ToolBar) onActionChanged(action *Action) (err os.Error) {
+	imageIndex, err := tb.imageIndex(action.image)
+	if err != nil {
+		return
+	}
+
+	tbbi := TBBUTTONINFO{
+		DwMask:  TBIF_BYINDEX | TBIF_IMAGE | TBIF_STATE | TBIF_STYLE | TBIF_TEXT,
+		IImage:  imageIndex,
+		FsState: TBSTATE_WRAP,
+		FsStyle: BTNS_BUTTON,
+		PszText: syscall.StringToUTF16Ptr(action.Text()),
+	}
+	tbbi.CbSize = uint(unsafe.Sizeof(tbbi))
+	if action.checked {
+		tbbi.FsState |= TBSTATE_CHECKED
+	}
+	if action.enabled {
+		tbbi.FsState |= TBSTATE_ENABLED
+	}
+	if action.checkable {
+		tbbi.FsStyle |= BTNS_CHECK
+	}
+	if action.exclusive {
+		tbbi.FsStyle |= BTNS_GROUP
+	}
+
+	if 0 == SendMessage(tb.hWnd, TB_SETBUTTONINFO, uintptr(tb.actions.IndexOf(action)), uintptr(unsafe.Pointer(&tbbi))) {
+		err = newError("SendMessage(TB_SETBUTTONINFO) failed")
+	}
+
+	return
+}
+
+func (tb *ToolBar) onInsertingAction(index int, action *Action) (err os.Error) {
+	imageIndex, err := tb.imageIndex(action.image)
+	if err != nil {
+		return
+	}
+
 	tbb := TBBUTTON{
 		IBitmap:   imageIndex,
 		IdCommand: int(action.id),
-		FsState:   TBSTATE_ENABLED | TBSTATE_WRAP,
+		FsState:   TBSTATE_WRAP,
 		FsStyle:/*BTNS_AUTOSIZE |*/ BTNS_BUTTON,
 		IString: uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(action.Text()))),
+	}
+	if action.checked {
+		tbb.FsState |= TBSTATE_CHECKED
+	}
+	if action.enabled {
+		tbb.FsState |= TBSTATE_ENABLED
+	}
+	if action.checkable {
+		tbb.FsStyle |= BTNS_CHECK
+	}
+	if action.exclusive {
+		tbb.FsStyle |= BTNS_GROUP
 	}
 
 	tb.SetVisible(true)
 
 	SendMessage(tb.hWnd, TB_BUTTONSTRUCTSIZE, uintptr(unsafe.Sizeof(tbb)), 0)
-	SendMessage(tb.hWnd, TB_ADDBUTTONSW, 1, uintptr(unsafe.Pointer(&tbb)))
+	SendMessage(tb.hWnd, TB_ADDBUTTONS, 1, uintptr(unsafe.Pointer(&tbb)))
 	SendMessage(tb.hWnd, TB_AUTOSIZE, 0, 0)
 
 	return
 }
 
-func (tb *ToolBar) onRemovingAction(index int, action *Action) (err os.Error) {
-	panic("not implemented")
+func (tb *ToolBar) removeAt(index int) (err os.Error) {
+	if 0 == SendMessage(tb.hWnd, TB_DELETEBUTTON, uintptr(index), 0) {
+		err = newError("SendMessage(TB_DELETEBUTTON) failed")
+	}
+
+	return
+}
+
+func (tb *ToolBar) onRemovingAction(index int, action *Action) os.Error {
+	return tb.removeAt(index)
 }
 
 func (tb *ToolBar) onClearingActions() (err os.Error) {
-	panic("not implemented")
+	for i := tb.actions.Len() - 1; i >= 0; i-- {
+		err = tb.removeAt(i)
+		if err != nil {
+			return
+		}
+	}
+
+	return
 }

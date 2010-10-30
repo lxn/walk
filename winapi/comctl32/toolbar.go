@@ -26,19 +26,13 @@ const (
 	TB_SETSTATE              = WM_USER + 17
 	TB_GETSTATE              = WM_USER + 18
 	TB_ADDBITMAP             = WM_USER + 19
-	TB_ADDBUTTONSA           = WM_USER + 20
-	TB_INSERTBUTTONA         = WM_USER + 21
-	TB_ADDBUTTONS            = WM_USER + 20
-	TB_INSERTBUTTON          = WM_USER + 21
 	TB_DELETEBUTTON          = WM_USER + 22
 	TB_GETBUTTON             = WM_USER + 23
 	TB_BUTTONCOUNT           = WM_USER + 24
 	TB_COMMANDTOINDEX        = WM_USER + 25
-	TB_SAVERESTOREA          = WM_USER + 26
-	TB_SAVERESTOREW          = WM_USER + 76
+	TB_SAVERESTORE           = WM_USER + 76
 	TB_CUSTOMIZE             = WM_USER + 27
-	TB_ADDSTRINGA            = WM_USER + 28
-	TB_ADDSTRINGW            = WM_USER + 77
+	TB_ADDSTRING             = WM_USER + 77
 	TB_GETITEMRECT           = WM_USER + 29
 	TB_BUTTONSTRUCTSIZE      = WM_USER + 30
 	TB_SETBUTTONSIZE         = WM_USER + 31
@@ -53,8 +47,7 @@ const (
 	TB_SETCMDID              = WM_USER + 42
 	TB_CHANGEBITMAP          = WM_USER + 43
 	TB_GETBITMAP             = WM_USER + 44
-	TB_GETBUTTONTEXTA        = WM_USER + 45
-	TB_GETBUTTONTEXTW        = WM_USER + 75
+	TB_GETBUTTONTEXT         = WM_USER + 75
 	TB_REPLACEBITMAP         = WM_USER + 46
 	TB_GETBUTTONSIZE         = WM_USER + 58
 	TB_SETBUTTONWIDTH        = WM_USER + 59
@@ -72,19 +65,16 @@ const (
 	TB_SETMAXTEXTROWS        = WM_USER + 60
 	TB_GETTEXTROWS           = WM_USER + 61
 	TB_GETOBJECT             = WM_USER + 62
-	TB_GETBUTTONINFOW        = WM_USER + 63
-	TB_SETBUTTONINFOW        = WM_USER + 64
-	TB_GETBUTTONINFOA        = WM_USER + 65
-	TB_SETBUTTONINFOA        = WM_USER + 66
-	TB_INSERTBUTTONW         = WM_USER + 67
-	TB_ADDBUTTONSW           = WM_USER + 68
+	TB_GETBUTTONINFO         = WM_USER + 63
+	TB_SETBUTTONINFO         = WM_USER + 64
+	TB_INSERTBUTTON          = WM_USER + 67
+	TB_ADDBUTTONS            = WM_USER + 68
 	TB_HITTEST               = WM_USER + 69
 	TB_SETDRAWTEXTFLAGS      = WM_USER + 70
 	TB_GETHOTITEM            = WM_USER + 71
 	TB_SETHOTITEM            = WM_USER + 72
 	TB_SETANCHORHIGHLIGHT    = WM_USER + 73
 	TB_GETANCHORHIGHLIGHT    = WM_USER + 74
-	TB_MAPACCELERATORA       = WM_USER + 78
 	TB_GETINSERTMARK         = WM_USER + 79
 	TB_SETINSERTMARK         = WM_USER + 80
 	TB_INSERTMARKHITTEST     = WM_USER + 81
@@ -96,9 +86,8 @@ const (
 	TB_SETPADDING            = WM_USER + 87
 	TB_SETINSERTMARKCOLOR    = WM_USER + 88
 	TB_GETINSERTMARKCOLOR    = WM_USER + 89
-	TB_MAPACCELERATORW       = WM_USER + 90
-	TB_GETSTRINGW            = WM_USER + 91
-	TB_GETSTRINGA            = WM_USER + 92
+	TB_MAPACCELERATOR        = WM_USER + 90
+	TB_GETSTRING             = WM_USER + 91
 	TB_SETCOLORSCHEME        = CCM_SETCOLORSCHEME
 	TB_GETCOLORSCHEME        = CCM_GETCOLORSCHEME
 	TB_SETUNICODEFORMAT      = CCM_SETUNICODEFORMAT
@@ -159,6 +148,18 @@ const (
 	BTNS_SHOWTEXT      = 0x0040
 )
 
+// TBBUTTONINFO mask flags
+const (
+	TBIF_IMAGE   = 0x00000001
+	TBIF_TEXT    = 0x00000002
+	TBIF_STATE   = 0x00000004
+	TBIF_STYLE   = 0x00000008
+	TBIF_LPARAM  = 0x00000010
+	TBIF_COMMAND = 0x00000020
+	TBIF_SIZE    = 0x00000040
+	TBIF_BYINDEX = 0x80000000
+)
+
 type NMMOUSE struct {
 	Hdr        NMHDR
 	DwItemSpec uintptr
@@ -179,4 +180,17 @@ type TBBUTTON struct {
 	//#endif
 	DwData  uintptr
 	IString uintptr
+}
+
+type TBBUTTONINFO struct {
+	CbSize    uint
+	DwMask    uint
+	IdCommand int
+	IImage    int
+	FsState   byte
+	FsStyle   byte
+	Cx        uint16
+	LParam    uintptr
+	PszText   *uint16
+	CchText   int
 }
