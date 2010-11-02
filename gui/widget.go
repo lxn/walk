@@ -665,7 +665,7 @@ func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		}
 
 	case WM_CONTEXTMENU:
-		sourceWidget := widgetsByHWnd[w.hWnd]
+		sourceWidget := widgetsByHWnd[HWND(msg.WParam)]
 		x := int(GET_X_LPARAM(msg.LParam))
 		y := int(GET_Y_LPARAM(msg.LParam))
 
