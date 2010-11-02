@@ -21,6 +21,23 @@ import (
 	. "walk/winapi/user32"
 )
 
+var listViewSubclassWndProcCallback *syscall.Callback
+var listViewSubclassWndProcPtr uintptr
+var listViewOrigWndProcPtr uintptr
+
+func listViewSubclassWndProc(args *uintptr) uintptr {
+	msg := msgFromCallbackArgs(args)
+
+	lv, ok := widgetsByHWnd[msg.HWnd].(*ListView)
+	if !ok {
+		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
+		// FIXME: Find a way to properly handle this.
+		return CallWindowProc(listViewOrigWndProcPtr, msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+	}
+
+	return lv.wndProc(msg, listViewOrigWndProcPtr)
+}
+
 type ListView struct {
 	Widget
 	columns                      *ListViewColumnList
@@ -35,12 +52,22 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 		return nil, newError("parent cannot be nil")
 	}
 
+	if listViewSubclassWndProcCallback == nil {
+		listViewSubclassWndProcCallback = syscall.NewCallback(listViewSubclassWndProc, 4+4+4+4)
+		listViewSubclassWndProcPtr = uintptr(listViewSubclassWndProcCallback.ExtFnEntry())
+	}
+
 	hWnd := CreateWindowEx(
 		WS_EX_CLIENTEDGE, syscall.StringToUTF16Ptr("SysListView32"), nil,
 		LVS_SINGLESEL|LVS_SHOWSELALWAYS|LVS_REPORT|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
 		0, 0, 0, 0, parent.Handle(), 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
+	}
+
+	listViewOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(listViewSubclassWndProcPtr)))
+	if listViewOrigWndProcPtr == 0 {
+		return nil, lastError("SetWindowLong")
 	}
 
 	exStyle := SendMessage(hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
@@ -153,22 +180,30 @@ func (lv *ListView) RestoreState(s string) os.Error {
 
 func (lv *ListView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
-	/*	case crutches.ItemChangedMsgId():
-			if selIndex := lv.SelectedIndex(); selIndex != lv.prevSelIndex {
-				lv.raiseSelectedIndexChanged()
-				lv.prevSelIndex = selIndex
-			}
-
-		case crutches.ItemActivateMsgId():
-			lv.raiseItemActivated()*/
+	case WM_GETDLGCODE:
+		if msg.WParam == VK_RETURN {
+			return DLGC_WANTALLKEYS
+		}
 
 	case WM_KEYDOWN:
 		if msg.WParam == VK_RETURN && lv.SelectedIndex() > -1 {
 			lv.raiseItemActivated()
 		}
+
+	case WM_NOTIFY:
+		switch int(((*NMHDR)(unsafe.Pointer(msg.LParam))).Code) {
+		case LVN_ITEMCHANGED:
+			if selIndex := lv.SelectedIndex(); selIndex != lv.prevSelIndex {
+				lv.raiseSelectedIndexChanged()
+				lv.prevSelIndex = selIndex
+			}
+
+		case LVN_ITEMACTIVATE:
+			lv.raiseItemActivated()
+		}
 	}
 
-	return lv.Widget.wndProc(msg, origWndProcPtr)
+	return lv.Widget.wndProc(msg, listViewOrigWndProcPtr)
 }
 
 func (lv *ListView) onListViewColumnChanged(column *ListViewColumn) {
