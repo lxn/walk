@@ -13,6 +13,7 @@ import (
 
 import (
 	"walk/drawing"
+	. "walk/winapi"
 	. "walk/winapi/kernel32"
 	. "walk/winapi/user32"
 )
@@ -47,6 +48,7 @@ type TopLevelWindow struct {
 	clientArea      *Composite
 	closingHandlers vector.Vector
 	closeReason     CloseReason
+	prevFocusHWnd   HWND
 }
 
 func (tlw *TopLevelWindow) ClientArea() *Composite {
@@ -78,7 +80,7 @@ func (tlw *TopLevelWindow) SetOwner(value *MainWindow) os.Error {
 	}
 
 	SetLastError(0)
-	if 0 == SetWindowLong(tlw.hWnd, GWL_HWNDPARENT, int(ownerHWnd)) {
+	if 0 == SetWindowLong(tlw.hWnd, GWL_HWNDPARENT, int(ownerHWnd)) && GetLastError() != 0 {
 		return lastError("SetWindowLong")
 	}
 
@@ -168,6 +170,18 @@ func (tlw *TopLevelWindow) raiseClosing(args *closingEventArgs) {
 
 func (tlw *TopLevelWindow) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
+	case WM_ACTIVATE:
+		switch LOWORD(uint(msg.WParam)) {
+		case WA_ACTIVE, WA_CLICKACTIVE:
+			if tlw.prevFocusHWnd != 0 {
+				SetFocus(tlw.prevFocusHWnd)
+			}
+
+		case WA_INACTIVE:
+			tlw.prevFocusHWnd = GetFocus()
+		}
+		return 0
+
 	case WM_CLOSE:
 		args := &closingEventArgs{
 			cancelEventArgs: cancelEventArgs{

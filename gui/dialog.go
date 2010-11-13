@@ -51,25 +51,51 @@ type Dialog struct {
 	TopLevelWindow
 }
 
-func NewDialog() (*Dialog, os.Error) {
+func NewDialog(owner *MainWindow) (*Dialog, os.Error) {
 	ensureRegisteredWindowClass(dialogWindowClass, dialogWndProc, &dialogWndProcCallback)
 
+	var ownerHWnd HWND
+	if owner != nil {
+		ownerHWnd = owner.hWnd
+	}
+
 	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr(dialogWindowClass), nil,
-		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 400, 300, 0, 0, 0, nil)
+		WS_EX_CONTROLPARENT|WS_EX_DLGMODALFRAME, syscall.StringToUTF16Ptr(dialogWindowClass), nil,
+		WS_CAPTION|WS_POPUPWINDOW,
+		CW_USEDEFAULT, CW_USEDEFAULT, 400, 300, ownerHWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	d := &Dialog{TopLevelWindow: TopLevelWindow{Container: Container{Widget: Widget{hWnd: hWnd}}}}
+	dlg := &Dialog{
+		TopLevelWindow: TopLevelWindow{
+			Container: Container{
+				Widget: Widget{
+					hWnd: hWnd,
+				},
+			},
+			owner: owner,
+		},
+	}
 
-	d.children = newObservedWidgetList(d)
+	dlg.children = newObservedWidgetList(dlg)
 
-	widgetsByHWnd[hWnd] = d
+	widgetsByHWnd[hWnd] = dlg
 
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	SendMessage(hWnd, WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
-	return d, nil
+	return dlg, nil
+}
+
+func (dlg *Dialog) RunMessageLoop() os.Error {
+	if dlg.owner != nil {
+		dlg.owner.SetEnabled(false)
+		defer func() {
+			dlg.owner.SetEnabled(true)
+			SetWindowPos(dlg.owner.hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE)
+		}()
+	}
+
+	return dlg.TopLevelWindow.RunMessageLoop()
 }

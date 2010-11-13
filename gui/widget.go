@@ -39,8 +39,8 @@ type IWidget interface {
 	SetContextMenu(value *Menu)
 	Dispose()
 	IsDisposed() bool
-	Enabled() (bool, os.Error)
-	SetEnabled(value bool) os.Error
+	Enabled() bool
+	SetEnabled(value bool)
 	Font() *drawing.Font
 	SetFont(value *drawing.Font)
 	GroupStart() (bool, os.Error)
@@ -185,35 +185,12 @@ func (w *Widget) SetContextMenu(value *Menu) {
 	w.contextMenu = value
 }
 
-func (w *Widget) Enabled() (bool, os.Error) {
-	ret := GetWindowLong(w.hWnd, GWL_STYLE)
-	if ret == 0 {
-		return false, lastError("GetWindowLong")
-	}
-
-	return (ret & WS_DISABLED) == 0, nil
+func (w *Widget) Enabled() bool {
+	return IsWindowEnabled(w.hWnd)
 }
 
-func (w *Widget) SetEnabled(value bool) os.Error {
-	style := GetWindowLong(w.hWnd, GWL_STYLE)
-	if style == 0 {
-		return lastError("GetWindowLong")
-	}
-	if value {
-		style &^= WS_DISABLED
-	} else {
-		style |= WS_DISABLED
-	}
-
-	SetLastError(0)
-	ret := SetWindowLong(w.hWnd, GWL_STYLE, style)
-	if ret == 0 {
-		return lastError("SetWindowLong")
-	}
-
-	SendMessage(w.hWnd, WM_ENABLE, uintptr(BoolToBOOL(value)), 0)
-
-	return nil
+func (w *Widget) SetEnabled(value bool) {
+	EnableWindow(w.hWnd, value)
 }
 
 func (w *Widget) Font() *drawing.Font {
@@ -712,12 +689,7 @@ func (w *Widget) runMessageLoop() os.Error {
 			return newError("GetMessage returned -1")
 		}
 
-		rootHWnd := GetAncestor(msg.HWnd, GA_ROOT)
-		if rootHWnd == 0 {
-			rootHWnd = msg.HWnd
-		}
-
-		if !IsDialogMessage(rootHWnd, &msg) {
+		if !IsDialogMessage(w.hWnd, &msg) {
 			TranslateMessage(&msg)
 			DispatchMessage(&msg)
 		}

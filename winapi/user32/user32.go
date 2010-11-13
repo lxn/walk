@@ -814,6 +814,26 @@ const (
 	SPI_GETNONCLIENTMETRICS = 0x0029
 )
 
+// Dialog styles
+const (
+	DS_ABSALIGN      = 0x0001
+	DS_SYSMODAL      = 0x0002
+	DS_3DLOOK        = 0x0004
+	DS_FIXEDSYS      = 0x0008
+	DS_NOFAILCREATE  = 0x0010
+	DS_LOCALEDIT     = 0x0020
+	DS_SETFONT       = 0x0040
+	DS_MODALFRAME    = 0x0080
+	DS_NOIDLEMSG     = 0x0100
+	DS_SETFOREGROUND = 0x0200
+	DS_CONTROL       = 0x0400
+	DS_CENTER        = 0x0800
+	DS_CENTERMOUSE   = 0x1000
+	DS_CONTEXTHELP   = 0x2000
+	DS_USEPIXELS     = 0x8000
+	DS_SHELLFONT     = (DS_SETFONT | DS_FIXEDSYS)
+)
+
 // WM_GETDLGCODE return values
 const (
 	DLGC_BUTTON          = 0x2000
@@ -827,6 +847,13 @@ const (
 	DLGC_WANTCHARS       = 0x0080
 	DLGC_WANTMESSAGE     = 0x0004
 	DLGC_WANTTAB         = 0x0002
+)
+
+// WM_ACTIVATE codes
+const (
+	WA_ACTIVE      = 1
+	WA_CLICKACTIVE = 2
+	WA_INACTIVE    = 0
 )
 
 type (
@@ -948,10 +975,12 @@ var (
 	dispatchMessage      uint32
 	drawMenuBar          uint32
 	drawTextEx           uint32
+	enableWindow         uint32
 	endPaint             uint32
 	getAncestor          uint32
 	getClientRect        uint32
 	getDC                uint32
+	getFocus             uint32
 	getMenuInfo          uint32
 	getMessage           uint32
 	getWindowLong        uint32
@@ -960,6 +989,7 @@ var (
 	insertMenuItem       uint32
 	invalidateRect       uint32
 	isDialogMessage      uint32
+	isWindowEnabled      uint32
 	loadCursor           uint32
 	loadIcon             uint32
 	loadImage            uint32
@@ -971,6 +1001,7 @@ var (
 	releaseDC            uint32
 	screenToClient       uint32
 	sendMessage          uint32
+	setActiveWindow      uint32
 	setFocus             uint32
 	setMenu              uint32
 	setMenuInfo          uint32
@@ -1001,10 +1032,12 @@ func init() {
 	dispatchMessage = MustGetProcAddress(lib, "DispatchMessageW")
 	drawMenuBar = MustGetProcAddress(lib, "DrawMenuBar")
 	drawTextEx = MustGetProcAddress(lib, "DrawTextExW")
+	enableWindow = MustGetProcAddress(lib, "EnableWindow")
 	endPaint = MustGetProcAddress(lib, "EndPaint")
 	getAncestor = MustGetProcAddress(lib, "GetAncestor")
 	getClientRect = MustGetProcAddress(lib, "GetClientRect")
 	getDC = MustGetProcAddress(lib, "GetDC")
+	getFocus = MustGetProcAddress(lib, "GetFocus")
 	getMenuInfo = MustGetProcAddress(lib, "GetMenuInfo")
 	getMessage = MustGetProcAddress(lib, "GetMessageW")
 	getWindowLong = MustGetProcAddress(lib, "GetWindowLongW")
@@ -1013,6 +1046,7 @@ func init() {
 	insertMenuItem = MustGetProcAddress(lib, "InsertMenuItemW")
 	invalidateRect = MustGetProcAddress(lib, "InvalidateRect")
 	isDialogMessage = MustGetProcAddress(lib, "IsDialogMessageW")
+	isWindowEnabled = MustGetProcAddress(lib, "IsWindowEnabled")
 	loadCursor = MustGetProcAddress(lib, "LoadCursorW")
 	loadIcon = MustGetProcAddress(lib, "LoadIconW")
 	loadImage = MustGetProcAddress(lib, "LoadImageW")
@@ -1024,6 +1058,7 @@ func init() {
 	releaseDC = MustGetProcAddress(lib, "ReleaseDC")
 	screenToClient = MustGetProcAddress(lib, "ScreenToClient")
 	sendMessage = MustGetProcAddress(lib, "SendMessageW")
+	setActiveWindow = MustGetProcAddress(lib, "SetActiveWindow")
 	setFocus = MustGetProcAddress(lib, "SetFocus")
 	setMenu = MustGetProcAddress(lib, "SetMenu")
 	setMenuInfo = MustGetProcAddress(lib, "SetMenuInfo")
@@ -1155,6 +1190,15 @@ func DrawTextEx(hdc HDC, lpchText *uint16, cchText int, lprc *RECT, dwDTFormat u
 	return int(ret)
 }
 
+func EnableWindow(hWnd HWND, bEnable bool) bool {
+	ret, _, _ := syscall.Syscall(uintptr(enableWindow),
+		uintptr(hWnd),
+		uintptr(BoolToBOOL(bEnable)),
+		0)
+
+	return ret != 0
+}
+
 func EndPaint(hwnd HWND, lpPaint *PAINTSTRUCT) bool {
 	ret, _, _ := syscall.Syscall(uintptr(endPaint),
 		uintptr(hwnd),
@@ -1189,6 +1233,15 @@ func GetDC(hWnd HWND) HDC {
 		0)
 
 	return HDC(ret)
+}
+
+func GetFocus() HWND {
+	ret, _, _ := syscall.Syscall(uintptr(getFocus),
+		0,
+		0,
+		0)
+
+	return HWND(ret)
 }
 
 func GetMenuInfo(hmenu HMENU, lpcmi *MENUINFO) bool {
@@ -1264,6 +1317,15 @@ func IsDialogMessage(hWnd HWND, msg *MSG) bool {
 	ret, _, _ := syscall.Syscall(uintptr(isDialogMessage),
 		uintptr(hWnd),
 		uintptr(unsafe.Pointer(msg)),
+		0)
+
+	return ret != 0
+}
+
+func IsWindowEnabled(hWnd HWND) bool {
+	ret, _, _ := syscall.Syscall(uintptr(isWindowEnabled),
+		uintptr(hWnd),
+		0,
 		0)
 
 	return ret != 0
@@ -1379,6 +1441,15 @@ func SendMessage(hWnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 		0)
 
 	return ret
+}
+
+func SetActiveWindow(hWnd HWND) HWND {
+	ret, _, _ := syscall.Syscall(uintptr(setActiveWindow),
+		uintptr(hWnd),
+		0,
+		0)
+
+	return HWND(ret)
 }
 
 func SetFocus(hWnd HWND) HWND {
