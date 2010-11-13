@@ -91,7 +91,7 @@ func (mw *MainWindow) drawStuff(surface *drawing.Surface, updateBounds drawing.R
 	return nil
 }
 
-func runMainWindow() {
+func runMainWindow() (int, os.Error) {
 	mainWnd, err := gui.NewMainWindow()
 	panicIfErr(err)
 	defer mainWnd.Dispose()
@@ -112,7 +112,7 @@ func runMainWindow() {
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
 	mw.Show()
 
-	panicIfErr(mw.RunMessageLoop())
+	return mw.RunMessageLoop()
 }
 
 func main() {
@@ -124,5 +124,7 @@ func main() {
 		}
 	}()
 
-	runMainWindow()
+	exitCode, err := runMainWindow()
+	panicIfErr(err)
+	os.Exit(exitCode)
 }

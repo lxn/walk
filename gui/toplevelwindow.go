@@ -44,7 +44,7 @@ type ClosingEventHandler func(args ClosingEventArgs)
 
 type TopLevelWindow struct {
 	Container
-	owner           *MainWindow
+	owner           RootWidget
 	clientArea      *Composite
 	closingHandlers vector.Vector
 	closeReason     CloseReason
@@ -63,20 +63,20 @@ func (tlw *TopLevelWindow) PreferredSize() drawing.Size {
 	return tlw.dialogBaseUnitsToPixels(drawing.Size{252, 218})
 }
 
-func (tlw *TopLevelWindow) RunMessageLoop() os.Error {
+func (tlw *TopLevelWindow) RunMessageLoop() (int, os.Error) {
 	return tlw.runMessageLoop()
 }
 
-func (tlw *TopLevelWindow) Owner() *MainWindow {
+func (tlw *TopLevelWindow) Owner() RootWidget {
 	return tlw.owner
 }
 
-func (tlw *TopLevelWindow) SetOwner(value *MainWindow) os.Error {
+func (tlw *TopLevelWindow) SetOwner(value RootWidget) os.Error {
 	tlw.owner = value
 
 	var ownerHWnd HWND
 	if value != nil {
-		ownerHWnd = value.hWnd
+		ownerHWnd = value.Handle()
 	}
 
 	SetLastError(0)

@@ -51,12 +51,12 @@ type Dialog struct {
 	TopLevelWindow
 }
 
-func NewDialog(owner *MainWindow) (*Dialog, os.Error) {
+func NewDialog(owner RootWidget) (*Dialog, os.Error) {
 	ensureRegisteredWindowClass(dialogWindowClass, dialogWndProc, &dialogWndProcCallback)
 
 	var ownerHWnd HWND
 	if owner != nil {
-		ownerHWnd = owner.hWnd
+		ownerHWnd = owner.Handle()
 	}
 
 	hWnd := CreateWindowEx(
@@ -88,12 +88,12 @@ func NewDialog(owner *MainWindow) (*Dialog, os.Error) {
 	return dlg, nil
 }
 
-func (dlg *Dialog) RunMessageLoop() os.Error {
+func (dlg *Dialog) RunMessageLoop() (int, os.Error) {
 	if dlg.owner != nil {
 		dlg.owner.SetEnabled(false)
 		defer func() {
 			dlg.owner.SetEnabled(true)
-			SetWindowPos(dlg.owner.hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE)
+			SetWindowPos(dlg.owner.Handle(), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE)
 		}()
 	}
 

@@ -6,7 +6,6 @@ package gui
 
 import (
 	"container/vector"
-	"fmt"
 	"os"
 	"syscall"
 	"unsafe"
@@ -672,21 +671,16 @@ func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
 }
 
-func (w *Widget) runMessageLoop() os.Error {
+func (w *Widget) runMessageLoop() (int, os.Error) {
 	var msg MSG
 
 	for w.hWnd != 0 {
-		ret := GetMessage(&msg, 0, 0, 0)
-
-		//		fmt.Printf("*Widget.runMessageLoop: msg: %+v\n", msg)
-
-		switch ret {
+		switch GetMessage(&msg, 0, 0, 0) {
 		case 0:
-			fmt.Println("Widget.runMessageLoop: GetMessage returned 0, exiting")
-			return nil
+			return int(msg.WParam), nil
 
 		case -1:
-			return newError("GetMessage returned -1")
+			return -1, lastError("GetMessage")
 		}
 
 		if !IsDialogMessage(w.hWnd, &msg) {
@@ -695,5 +689,5 @@ func (w *Widget) runMessageLoop() os.Error {
 		}
 	}
 
-	return nil
+	return 0, nil
 }
