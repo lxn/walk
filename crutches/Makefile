@@ -3,7 +3,6 @@ include $(GOROOT)/src/Make.inc
 TARG=walk/crutches
 GOFILES=\
 	crutches.go\
-	crutch.go\
 
 OFILES=\
 	crutch.$O\

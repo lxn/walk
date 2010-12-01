@@ -57,7 +57,7 @@ void
     p.args[0] = 0;
     p.args[1] = 0;
     p.args[2] = 0;
-    p.args[3] = 0;
+    p.args[3] = 0; // note: zeroes up to here are important
     p.args[4] = 0;
     p.args[5] = 0;
     p.n = 6;
@@ -67,21 +67,6 @@ void
     // TODO: handle error in CreateEvent (panic?)
 
     qhead = qlen = 0;
-
-    // // DEBUG/TEST
-    // qhead = 98;
-    // qdata[98] = 11;
-    // qdata[99] = 10;
-    // qdata[0] = 9;
-    // qdata[1] = 8;
-    // qlen = 4;
-
-    // p.fn = SetEvent;
-    // p.args[0] = qhasdataevent;
-    // p.args[1] = 0;
-    // p.args[2] = 0;
-    // p.n = 3;
-    // runtime·syscall(&p);
 }
 
 #pragma textflag 7
@@ -93,33 +78,21 @@ crutches·nosplit_enqueue(Message* msg) {
         qdata[qtail] = *msg;
         qlen++;
     }
+    // TODO: remove the event if the evented approach is not needed
     crutches·wildcall(SetEvent, 1, qhasdataevent);
     crutches·wildcall(LeaveCriticalSection, 1, qlock);
     // FIXME: handle full queue
-
-/*
-    crutches·wildcall(EnterCriticalSection, 1, qlock);
-    if(qlen < qmaxsize) {
-        int32 qtail = (qhead+qlen) % qmaxsize;
-        qdata[qtail] = msg;
-        qlen++;
-    }
-    crutches·wildcall(SetEvent, 1, qhasdataevent);
-    crutches·wildcall(LeaveCriticalSection, 1, qlock);
     // IMPLEM. NOTE: take care not to "empty" the list by overflowing
-    // FIXME: handle full queue
-*/
 }
 
 #pragma textflag 7
 int32
 crutches·nosplit_dequeue(Message* msg) {
-    //Message* msg = (Message*)msgPointer;
     if(0 == msg) {
-        //SetLastError(ERROR_INVALID_PARAMETER);
+        // TODO: SetLastError(ERROR_INVALID_PARAMETER);
         return -1;
     }
-    
+
     crutches·wildcall(EnterCriticalSection, 1, qlock);
     // TODO: error if qlen < 0
     int32 result = qlen;

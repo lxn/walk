@@ -6,18 +6,26 @@
 
 uintptr crutches·stdcall_return(uintptr retval, void* addr_of_caller_first_arg, uint32 no_of_caller_args);
 
-/*
-#pragma textflag 7
-int32
-crutches·foobar(int32 arg) {
-    //crutches·wildcall(crutches·nosplit_enqueue, 1, arg+100);
-    crutches·nosplit_enqueue(arg+100);
-    return (int32)crutches·stdcall_return(arg+100, &arg, 1);
-}
-*/
-
-void *PostMessageW;
 void *DefDlgProcW;
+void *GetClassInfoExW;
+void *LoadCursorW;
+void *LoadIconW;
+void *PostMessageW;
+void *RegisterClassExW;
+void *RegisterWindowMessageW;
+
+void
+·initcrutch(void) {
+    // TODO: make sure that 'runtime·osinit()' was already called,
+    // or use their approach with 'get_proc_addr2()'
+    DefDlgProcW = runtime·get_proc_addr("user32.dll", "DefDlgProcW");
+    GetClassInfoExW = runtime·get_proc_addr("user32.dll", "GetClassInfoExW");
+    LoadCursorW = runtime·get_proc_addr("user32.dll", "LoadCursorW");
+    LoadIconW = runtime·get_proc_addr("user32.dll", "LoadIconW");
+    PostMessageW = runtime·get_proc_addr("user32.dll", "PostMessageW");
+    RegisterClassExW = runtime·get_proc_addr("user32.dll", "RegisterClassExW");
+    RegisterWindowMessageW = runtime·get_proc_addr("user32.dll", "RegisterWindowMessageW");
+}
 
 enum {
     WM_RESIZE_KEY = 0,
@@ -101,7 +109,7 @@ internalContainerWndProc(HANDLE hwnd, uint32 uMsg, uint32 wParam, uint32 lParam)
         crutches·wildcall(PostMessageW, 4, hwnd, msgIds[WM_CONTEXTMENU_KEY], wParam, lParam);
         // FIXME: is the lack of "break;" here intentional?
 
-    case WM_COMMAND:        
+    case WM_COMMAND:
         crutches·wildcall(PostMessageW, 4, hwnd, msgIds[WM_COMMAND_KEY], wParam, lParam);
         break;
 
@@ -175,9 +183,9 @@ struct WNDCLASSEX {
 };
 
 uintptr
-Syscall3(void* dllname, void* funcname, uint32 arg0, uint32 arg1, uint32 arg2) {
+Syscall3(void* func, uint32 arg0, uint32 arg1, uint32 arg2) {
     StdcallParams p;
-    p.fn = (void*)runtime·get_proc_addr(dllname, funcname);
+    p.fn = func;
     p.args[0] = arg0;
     p.args[1] = arg1;
     p.args[2] = arg2;
@@ -191,9 +199,9 @@ void
     WNDCLASSEX wcButton;
     WNDCLASSEX wc;
 
-    wc.hCursor       = Syscall3("user32.dll", "LoadCursorW", hInst, 32512, 0); //IDC_ARROW
+    wc.hCursor       = Syscall3(LoadCursorW, hInst, 32512, 0); //IDC_ARROW
 
-    if(Syscall3("user32.dll", "GetClassInfoExW", hInst, (uint32)L"BUTTON", (uint32)&wcButton)) {
+    if(Syscall3(GetClassInfoExW, hInst, (uint32)L"BUTTON", (uint32)&wcButton)) {
         wc.hCursor = wcButton.hCursor;
     }
 
@@ -203,82 +211,38 @@ void
     wc.cbClsExtra    = 0;
     wc.cbWndExtra    = 30; //DLGWINDOWEXTRA;
     wc.hInstance     = hInst;
-    wc.hIcon         = Syscall3("user32.dll", "LoadIconW", hInst, 32512, 0); //IDI_APPLICATION
+    wc.hIcon         = Syscall3(LoadIconW, hInst, 32512, 0); //IDI_APPLICATION
 //    wc.hCursor       = LoadCursor(hInst, IDC_ARROW);
     wc.hbrBackground = 15+1; //COLOR_3DFACE+1
     wc.lpszMenuName  = 0;
     wc.lpszClassName = (byte*)L"Container_WindowClass";
-    wc.hIconSm       = Syscall3("user32.dll", "LoadIconW", hInst, 32512, 0); //IDI_APPLICATION
+    wc.hIconSm       = Syscall3(LoadIconW, hInst, 32512, 0); //IDI_APPLICATION
 
-    r1 = Syscall3("user32.dll", "RegisterClassExW", (uint32)&wc, 0, 0);
+    r1 = Syscall3(RegisterClassExW, (uint32)&wc, 0, 0);
     FLUSH(&r1);
-
-/*
-	StdcallParams p;
-	p.fn = (void*)procaddr;
-	p.args[0] = ms;
-	p.args[1] = times;
-	p.args[2] = (uintptr)crutches·foobar; // 0;
-	p.args[3] = 0;
-	p.args[4] = 0;
-	p.args[5] = 0;
-	p.n = 6;
-	runtime·syscall(&p);
-	r1 = p.r;
-	//r2 = 0;
-	//err = p.err;
-	FLUSH(&r1);
-	//FLUSH(&r2);
-	//FLUSH(&err);
-*/
 }
 
 void
 ·getCustomMessage(uintptr msgPointer, uintptr r1) {
-	StdcallParams p;
-	p.fn = (void*)crutches·nosplit_dequeue;
-	p.args[0] = msgPointer;
-	p.args[1] = 0;
-	p.args[2] = 0;
-	p.n = 3;
-	runtime·syscall(&p);
-	r1 = p.r;
-	//r2 = 0;
-	//err = p.err;
-	FLUSH(&r1);
-	//FLUSH(&r2);
-	//FLUSH(&err);
-}
-
-void *RegisterWindowMessageW;
-
-void
-·initcrutch(void) {
-    // TODO: make sure that 'runtime·osinit()' was already called,
-    // or use their approach with 'get_proc_addr2()'
-    RegisterWindowMessageW = runtime·get_proc_addr("user32.dll", "RegisterWindowMessageW");
-    PostMessageW = runtime·get_proc_addr("user32.dll", "PostMessageW");
-    DefDlgProcW = runtime·get_proc_addr("user32.dll", "DefDlgProcW");
+    r1 = Syscall3(crutches·nosplit_dequeue, msgPointer, 0, 0);
+    FLUSH(&r1);
 }
 
 void
-·getRegisteredMessage3(uint32 key, uint32 r1)
+·getRegisteredMessageId(uint32 key, uint32 r1)
 {
     if( key >= NUM_WM_KEYS ) {
         r1 = 0;
         FLUSH(&r1);
         return;
     }
-        
+
     if( 0 == msgIds[key] ) {
-        StdcallParams p;
-        p.fn = RegisterWindowMessageW;
-        p.args[0] = (uintptr)msgClsids[key];
-        p.args[1] = 0;
-        p.args[2] = 0;
-        p.n = 3;
-        runtime·syscall(&p);
-        msgIds[key] = p.r;
+        msgIds[key] = Syscall3(
+            RegisterWindowMessageW,
+            (uintptr)msgClsids[key],
+            0, 
+            0);
     }
 
     r1 = msgIds[key];
