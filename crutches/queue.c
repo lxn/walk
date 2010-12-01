@@ -20,34 +20,33 @@ void* CreateEvent;
 void* WaitForSingleObject;
 void* SetEvent;
 
-void
-newqueue(Queue* q, Message* buffer, int32 capacity) {
-    q->data = buffer;
-    q->capacity = capacity;
-
+static uintptr
+Syscall6(void* func, uint32 arg0, uint32 arg1, uint32 arg2, uint32 arg3, uint32 arg4, uint32 arg5) {
     StdcallParams p;
-    p.fn = InitializeCriticalSectionAndSpinCount;
-    p.args[0] = (uintptr)q->lock;
-    p.args[1] = 0;
-    p.args[2] = 0;
-    p.n = 3;
-    runtime·syscall(&p);
-    // TODO: handle error in InitializeCriticalSection somehow... (panic?)
-
-    p.fn = CreateEvent;
-    p.args[0] = 0;
-    p.args[1] = 0;
-    p.args[2] = 0;
-    p.args[3] = 0; // note: zeroes up to here are important
-    p.args[4] = 0;
-    p.args[5] = 0;
+    p.fn = func;
+    p.args[0] = arg0;
+    p.args[1] = arg1;
+    p.args[2] = arg2;
+    p.args[3] = arg3;
+    p.args[4] = arg4;
+    p.args[5] = arg5;
     p.n = 6;
     runtime·syscall(&p);
-    q->hasdataEvent = p.r;
+    return p.r;
+}
+
+void
+crutches·newqueue(Queue* q, Message* buffer, int32 capacity) {
+    q->data = buffer;
+    q->capacity = capacity;
+    q->head = q->len = 0;
+
+    Syscall6(InitializeCriticalSectionAndSpinCount, (uintptr)q->lock, 0, 0, 0, 0, 0);
+    // TODO: handle error in InitializeCriticalSection somehow... (panic?)
+
+    q->hasdataEvent = Syscall6(CreateEvent, 0, 0, 0, 0, 0, 0);
     //q->hasdataEvent = CreateEvent(0, 0, 0, 0);
     // TODO: handle error in CreateEvent (panic?)
-
-    q->head = q->len = 0;
 }
 
 #pragma textflag 7
@@ -66,15 +65,14 @@ crutches·nosplit_enqueue(Queue* q, Message* msg) {
     // IMPLEM. NOTE: take care not to "empty" the list by overflowing
 }
 
-#pragma textflag 7
 int32
-crutches·nosplit_dequeue(Queue* q, Message* msg) {
+crutches·cansplit_dequeue(Queue* q, Message* msg) {
     if(0 == msg) {
         // TODO: SetLastError(ERROR_INVALID_PARAMETER);
         return -1;
     }
 
-    crutches·wildcall(EnterCriticalSection, 1, q->lock);
+    Syscall6(EnterCriticalSection, (uint32)q->lock, 0, 0, 0, 0, 0);
     // TODO: error if qlen < 0
     int32 result = q->len;
     if(q->len > 0) {
@@ -83,9 +81,19 @@ crutches·nosplit_dequeue(Queue* q, Message* msg) {
         q->head++;
         q->head = q->head % q->capacity;
     }
-    crutches·wildcall(LeaveCriticalSection, 1, q->lock);
+    Syscall6(LeaveCriticalSection, (uint32)q->lock, 0, 0, 0, 0, 0);
     return result;
+}
+
 /*
+#pragma textflag 7
+int32
+crutches·nosplit_dequeue_blocking(Queue* q, Message* msg) {
+    if(0 == msg) {
+        // TODO: SetLastError(ERROR_INVALID_PARAMETER);
+        return -1;
+    }
+
     crutches·wildcall(EnterCriticalSection, 1, q->lock);
     for(;;) {
         if(q->len > 0) {
@@ -101,8 +109,8 @@ crutches·nosplit_dequeue(Queue* q, Message* msg) {
             crutches·wildcall(EnterCriticalSection, 1, q->lock);
         }
     }
-*/
 }
+*/
 
 // TODO: build using some dynamic malloc to reduce executable size [?]
 #define qqmaxsize 500
@@ -120,6 +128,6 @@ void
     WaitForSingleObject = runtime·get_proc_addr("kernel32.dll", "WaitForSingleObject");
     SetEvent = runtime·get_proc_addr("kernel32.dll", "SetEvent");
 
-    newqueue(&queue, qqdata, qqmaxsize);
+    crutches·newqueue(&queue, qqdata, qqmaxsize);
 }
 

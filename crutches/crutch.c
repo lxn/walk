@@ -182,7 +182,7 @@ struct WNDCLASSEX {
   HANDLE    hIconSm;
 };
 
-uintptr
+static uintptr
 Syscall3(void* func, uint32 arg0, uint32 arg1, uint32 arg2) {
     StdcallParams p;
     p.fn = func;
@@ -224,7 +224,7 @@ void
 
 void
 ·getCustomMessage(uintptr msgPointer, uintptr r1) {
-    r1 = Syscall3(crutches·nosplit_dequeue, (uint32)&queue, msgPointer, 0);
+    r1 = crutches·cansplit_dequeue(&queue, (Message*)msgPointer);
     FLUSH(&r1);
 }
 

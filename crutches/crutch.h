@@ -35,4 +35,4 @@ struct Queue {
 extern Queue queue;
 
 void crutches·nosplit_enqueue(Queue* q, Message* msg);
-int32 crutches·nosplit_dequeue(Queue* q, Message* msg);
+int32 crutches·cansplit_dequeue(Queue* q, Message* msg);
