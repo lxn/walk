@@ -7,6 +7,12 @@
 
 void* crutches·wildcall(void* fn, int32 count, ...);
 
+// some WinApi struct
+// internal structure doesn't matter for us
+// 15*uint32 should be enough based on quick overview of the fields
+typedef byte PCRITICAL_SECTION[4*15];
+typedef PCRITICAL_SECTION CriticalSection;
+
 typedef uintptr HANDLE;
 
 typedef struct Message Message;
@@ -17,8 +23,16 @@ struct Message {
 	uintptr lParam;
 };
 
-void crutches·nosplit_enqueue(Message* msg);
-int32 crutches·nosplit_dequeue(Message* msg);
+typedef struct Queue Queue;
+struct Queue {
+    Message *data;
+    int32 capacity;
+    int32 head, len;
+    CriticalSection lock;
+    uintptr hasdataEvent;
+};
 
-//void crutches·nosplit_enqueue(int32 msg);
-//int32 crutches·nosplit_dequeue(void);
+extern Queue queue;
+
+void crutches·nosplit_enqueue(Queue* q, Message* msg);
+int32 crutches·nosplit_dequeue(Queue* q, Message* msg);

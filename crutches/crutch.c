@@ -124,7 +124,7 @@ internalContainerWndProc(HANDLE hwnd, uint32 uMsg, uint32 wParam, uint32 lParam)
                 m.wParam = 0;
                 m.lParam = nmlv->iItem;
 
-                crutches·nosplit_enqueue(&m);
+                crutches·nosplit_enqueue(&queue, &m);
                 break;
             }
 
@@ -137,7 +137,7 @@ internalContainerWndProc(HANDLE hwnd, uint32 uMsg, uint32 wParam, uint32 lParam)
                 m.wParam = 0;
                 m.lParam = nmia->iItem;
 
-                crutches·nosplit_enqueue(&m);
+                crutches·nosplit_enqueue(&queue, &m);
                 break;
             }
         }
@@ -224,7 +224,7 @@ void
 
 void
 ·getCustomMessage(uintptr msgPointer, uintptr r1) {
-    r1 = Syscall3(crutches·nosplit_dequeue, msgPointer, 0, 0);
+    r1 = Syscall3(crutches·nosplit_dequeue, (uint32)&queue, msgPointer, 0);
     FLUSH(&r1);
 }
 
@@ -241,7 +241,7 @@ void
         msgIds[key] = Syscall3(
             RegisterWindowMessageW,
             (uintptr)msgClsids[key],
-            0, 
+            0,
             0);
     }
 
