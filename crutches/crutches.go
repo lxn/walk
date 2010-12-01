@@ -27,16 +27,16 @@ const (
 
 // Library
 var (
-	crutches uint32
+	//crutches uint32
 	user32   uint32
 )
 
 // Functions
 var (
-	_getCustomMessage       uint32
+	//_getCustomMessage       uint32
 	_getRegisteredMessageId uint32
-	_registerWindowClass    uint32
-	_registerWindowMessage  uint32
+	//_registerWindowClass    uint32
+	_registerWindowMessage uint32
 )
 
 // Registered message ids
@@ -48,6 +48,10 @@ var (
 	itemChangedMsgId  uint
 	resizeMsgId       uint
 )
+
+// internal 8c functions
+func getCustomMessage(msgPointer uintptr) uintptr
+func registerWindowClass(hInstance uintptr) uintptr
 
 func CloseMsgId() uint {
 	return closeMsgId
@@ -82,14 +86,14 @@ type Message struct {
 
 func init() {
 	// Library
-	crutches = MustLoadLibrary("crutches.dll")
+	//crutches = MustLoadLibrary("crutches.dll")
 	user32 = MustLoadLibrary("user32.dll")
 	initcrutch()
 
 	// Functions
-	_getCustomMessage = MustGetProcAddress(crutches, "GetCustomMessage@4")
-	_getRegisteredMessageId = MustGetProcAddress(crutches, "GetRegisteredMessageId@4")
-	_registerWindowClass = MustGetProcAddress(crutches, "RegisterWindowClass@4")
+	//_getCustomMessage = MustGetProcAddress(crutches, "GetCustomMessage@4")
+	//_getRegisteredMessageId = MustGetProcAddress(crutches, "GetRegisteredMessageId@4")
+	//_registerWindowClass = MustGetProcAddress(crutches, "RegisterWindowClass@4")
 	_registerWindowMessage = MustGetProcAddress(user32, "RegisterWindowMessageW")
 
 	resizeMsgId = getRegisteredMessage3(_WM_RESIZE_KEY)
@@ -101,17 +105,13 @@ func init() {
 	closeMsgId = getRegisteredMessage3(_WM_CLOSE_KEY)
 
 	// initialize in "crutches.dll"
-	for i := uint(0); i < 6; i++ {
-		getRegisteredMessageId(i)
-	}
+	//for i := uint(0); i < 6; i++ {
+	//	getRegisteredMessageId(i)
+	//}
 }
 
 func GetCustomMessage(msg *Message) int {
-	ret, _, _ := syscall.Syscall(uintptr(_getCustomMessage),
-		uintptr(unsafe.Pointer(msg)),
-		0,
-		0)
-
+	ret := getCustomMessage(uintptr(unsafe.Pointer(msg)))
 	return int(ret)
 }
 /*
@@ -135,10 +135,6 @@ func getRegisteredMessageId(key uint) uint {
 }
 
 func RegisterWindowClass(hInstance HINSTANCE) ATOM {
-	ret, _, _ := syscall.Syscall(uintptr(_registerWindowClass),
-		uintptr(hInstance),
-		0,
-		0)
-
+	ret := registerWindowClass(uintptr(hInstance))
 	return ATOM(ret)
 }

@@ -26,8 +26,8 @@ void* WaitForSingleObject;
 void* SetEvent;
 
 // TODO: build using some dynamic malloc to reduce executable size [?]
-#define qmaxsize 100
-int32 qdata[qmaxsize];
+#define qmaxsize 500
+Message qdata[qmaxsize];
 int32 qhead, qlen;
 CriticalSection qlock;
 uintptr qhasdataevent;
@@ -51,7 +51,7 @@ void
     p.n = 3;
     runtime·syscall(&p);
     // TODO: handle error in InitializeCriticalSection somehow... (panic?)
-    
+
     p.fn = CreateEvent;
     p.args[0] = 0;
     p.args[1] = 0;
@@ -66,26 +66,37 @@ void
     // TODO: handle error in CreateEvent (panic?)
 
     qhead = qlen = 0;
-    
-    // DEBUG/TEST
-    qhead = 98;
-    qdata[98] = 11;
-    qdata[99] = 10;
-    qdata[0] = 9;
-    qdata[1] = 8;
-    qlen = 4;
-    
-    p.fn = SetEvent;
-    p.args[0] = qhasdataevent;
-    p.args[1] = 0;
-    p.args[2] = 0;
-    p.n = 3;
-    runtime·syscall(&p);
+
+    // // DEBUG/TEST
+    // qhead = 98;
+    // qdata[98] = 11;
+    // qdata[99] = 10;
+    // qdata[0] = 9;
+    // qdata[1] = 8;
+    // qlen = 4;
+
+    // p.fn = SetEvent;
+    // p.args[0] = qhasdataevent;
+    // p.args[1] = 0;
+    // p.args[2] = 0;
+    // p.n = 3;
+    // runtime·syscall(&p);
 }
 
 #pragma textflag 7
 void
-crutches·nosplit_enqueue(int32 msg) {
+crutches·nosplit_enqueue(Message* msg) {
+    crutches·wildcall(EnterCriticalSection, 1, qlock);
+    if(qlen < qmaxsize) {
+        int32 qtail = (qhead+qlen) % qmaxsize;
+        qdata[qtail] = *msg;
+        qlen++;
+    }
+    crutches·wildcall(SetEvent, 1, qhasdataevent);
+    crutches·wildcall(LeaveCriticalSection, 1, qlock);
+    // FIXME: handle full queue
+
+/*
     crutches·wildcall(EnterCriticalSection, 1, qlock);
     if(qlen < qmaxsize) {
         int32 qtail = (qhead+qlen) % qmaxsize;
@@ -96,11 +107,30 @@ crutches·nosplit_enqueue(int32 msg) {
     crutches·wildcall(LeaveCriticalSection, 1, qlock);
     // IMPLEM. NOTE: take care not to "empty" the list by overflowing
     // FIXME: handle full queue
+*/
 }
 
 #pragma textflag 7
 int32
-crutches·nosplit_dequeue(void) {
+crutches·nosplit_dequeue(Message* msg) {
+    //Message* msg = (Message*)msgPointer;
+    if(0 == msg) {
+        //SetLastError(ERROR_INVALID_PARAMETER);
+        return -1;
+    }
+    
+    crutches·wildcall(EnterCriticalSection, 1, qlock);
+    // TODO: error if qlen < 0
+    int32 result = qlen;
+    if(qlen > 0) {
+        *msg = qdata[qhead];
+        qlen--;
+        qhead++;
+        qhead = qhead % qmaxsize;
+    }
+    crutches·wildcall(LeaveCriticalSection, 1, qlock);
+    return result;
+/*
     crutches·wildcall(EnterCriticalSection, 1, qlock);
     for(;;) {
         if(qlen > 0) {
@@ -116,5 +146,6 @@ crutches·nosplit_dequeue(void) {
             crutches·wildcall(EnterCriticalSection, 1, qlock);
         }
     }
+*/
 }
 

@@ -3,8 +3,8 @@
 
 package crutches
 
-func Callme(procaddr, ms, times uintptr) uintptr
-func WaitForMessage() uintptr
+// func Callme(procaddr, ms, times uintptr) uintptr
+// func WaitForMessage() uintptr
 func initqueue()
 func initcrutch()
 
