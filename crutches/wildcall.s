@@ -1,5 +1,6 @@
-// by Mateusz Czapliński
-// <czapkofan@gmail.com>
+// Copyright 2010 The Walk Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 // 'wildcall()' - call into non-8c stdcall code, trying to restore some
 // invariants on return ('cld' seems to be enough as of now?)
