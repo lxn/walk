@@ -12,13 +12,13 @@ crutches·wildcall(void* fn, int32 count, ...) {
     return crutches·wildcall_raw(fn, count, (uintptr*)(&count+1));
 }
 
-void* InitializeCriticalSectionAndSpinCount;
-void* EnterCriticalSection;
-void* LeaveCriticalSection;
-//void* DeleteCriticalSection;
-void* CreateEvent;
-void* WaitForSingleObject;
-void* SetEvent;
+static void* InitializeCriticalSectionAndSpinCount;
+static void* EnterCriticalSection;
+static void* LeaveCriticalSection;
+//static void* DeleteCriticalSection;
+static void* CreateEvent;
+static void* WaitForSingleObject;
+static void* SetEvent;
 
 static uintptr
 Syscall6(void* func, uint32 arg0, uint32 arg1, uint32 arg2, uint32 arg3, uint32 arg4, uint32 arg5) {
@@ -114,8 +114,8 @@ crutches·nosplit_dequeue_blocking(Queue* q, Message* msg) {
 
 // TODO: build using some dynamic malloc to reduce executable size [?]
 #define qqmaxsize 500
-Message qqdata[qqmaxsize];
-Queue queue;
+static Message qqdata[qqmaxsize];
+Queue crutches·queue;
 
 void
 ·initqueue(void) {
@@ -128,6 +128,6 @@ void
     WaitForSingleObject = runtime·get_proc_addr("kernel32.dll", "WaitForSingleObject");
     SetEvent = runtime·get_proc_addr("kernel32.dll", "SetEvent");
 
-    crutches·newqueue(&queue, qqdata, qqmaxsize);
+    crutches·newqueue(&crutches·queue, qqdata, qqmaxsize);
 }
 

@@ -37,8 +37,8 @@ enum {
     NUM_WM_KEYS = 6
 };
 
-uint32 msgIds[NUM_WM_KEYS];
-byte* msgClsids[NUM_WM_KEYS] = {
+static uint32 msgIds[NUM_WM_KEYS];
+static byte* msgClsids[NUM_WM_KEYS] = {
     (byte*)L"resize_0b0f95e6-7ef7-4767-b484-940e7a3cf4f1",
     (byte*)L"command_442946bf-f806-434b-baa3-98439930eecd",
     (byte*)L"contextmenu_50fe6189-a94b-4826-8dc3-48e179f89ffc",
@@ -124,7 +124,7 @@ internalContainerWndProc(HANDLE hwnd, uint32 uMsg, uint32 wParam, uint32 lParam)
                 m.wParam = 0;
                 m.lParam = nmlv->iItem;
 
-                crutches·nosplit_enqueue(&queue, &m);
+                crutches·nosplit_enqueue(&crutches·queue, &m);
                 break;
             }
 
@@ -137,7 +137,7 @@ internalContainerWndProc(HANDLE hwnd, uint32 uMsg, uint32 wParam, uint32 lParam)
                 m.wParam = 0;
                 m.lParam = nmia->iItem;
 
-                crutches·nosplit_enqueue(&queue, &m);
+                crutches·nosplit_enqueue(&crutches·queue, &m);
                 break;
             }
         }
@@ -158,8 +158,8 @@ internalContainerWndProc(HANDLE hwnd, uint32 uMsg, uint32 wParam, uint32 lParam)
 }
 
 #pragma textflag 7
-uint32
-crutches·containerWndProc(HANDLE hwnd, uint32 uMsg, uint32 wParam, uint32 lParam) {
+static uint32
+containerWndProc(HANDLE hwnd, uint32 uMsg, uint32 wParam, uint32 lParam) {
     return (uint32)crutches·stdcall_return(
         internalContainerWndProc(hwnd, uMsg, wParam, lParam),
         &hwnd,
@@ -207,7 +207,7 @@ void
 
     wc.cbSize        = sizeof(WNDCLASSEX);
     wc.style         = 0;
-    wc.lpfnWndProc   = (void*)crutches·containerWndProc;
+    wc.lpfnWndProc   = (void*)containerWndProc;
     wc.cbClsExtra    = 0;
     wc.cbWndExtra    = 30; //DLGWINDOWEXTRA;
     wc.hInstance     = hInst;
@@ -224,7 +224,7 @@ void
 
 void
 ·getCustomMessage(uintptr msgPointer, uintptr r1) {
-    r1 = crutches·cansplit_dequeue(&queue, (Message*)msgPointer);
+    r1 = crutches·cansplit_dequeue(&crutches·queue, (Message*)msgPointer);
     FLUSH(&r1);
 }
 

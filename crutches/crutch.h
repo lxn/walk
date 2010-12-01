@@ -32,7 +32,7 @@ struct Queue {
     uintptr hasdataEvent;
 };
 
-extern Queue queue;
+extern Queue crutches·queue;
 
 void crutches·nosplit_enqueue(Queue* q, Message* msg);
 int32 crutches·cansplit_dequeue(Queue* q, Message* msg);
