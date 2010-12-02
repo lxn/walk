@@ -107,7 +107,7 @@ internalContainerWndProc(HANDLE hwnd, uint32 uMsg, uint32 wParam, uint32 lParam)
 
     case WM_CONTEXTMENU:
         crutches·wildcall(PostMessageW, 4, hwnd, msgIds[WM_CONTEXTMENU_KEY], wParam, lParam);
-        // FIXME: is the lack of "break;" here intentional?
+        break;
 
     case WM_COMMAND:
         crutches·wildcall(PostMessageW, 4, hwnd, msgIds[WM_COMMAND_KEY], wParam, lParam);
