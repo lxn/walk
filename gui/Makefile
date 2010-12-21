@@ -44,6 +44,11 @@ GOFILES=\
 	treeviewitem.go\
 	treeviewitemlist.go\
 	util.go\
+	webview.go\
+	webview_idochostuihandler.go\
+	webview_ioleclientsite.go\
+	webview_ioleinplaceframe.go\
+	webview_ioleinplacesite.go\
 	widget.go
 
 include $(GOROOT)/src/Make.pkg
