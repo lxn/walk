@@ -45,6 +45,7 @@ GOFILES=\
 	treeviewitemlist.go\
 	util.go\
 	webview.go\
+	webview_dwebbrowserevents2.go\
 	webview_idochostuihandler.go\
 	webview_ioleclientsite.go\
 	webview_ioleinplaceframe.go\

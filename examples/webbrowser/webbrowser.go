@@ -11,13 +11,18 @@ import (
 )
 
 import (
+	"walk/winapi/user32"
+)
+
+import (
 	"walk/drawing"
 	"walk/gui"
 )
 
 type MainWindow struct {
 	*gui.MainWindow
-	webView *gui.WebView
+	urlLineEdit *gui.LineEdit
+	webView     *gui.WebView
 }
 
 func panicIfErr(err os.Error) {
@@ -32,6 +37,7 @@ func runMainWindow() (int, os.Error) {
 	defer mainWnd.Dispose()
 
 	mw := &MainWindow{MainWindow: mainWnd}
+	panicIfErr(mw.SetText("Walk Web Browser Example"))
 	mw.ClientArea().SetLayout(gui.NewVBoxLayout())
 
 	fileMenu, err := gui.NewMenu()
@@ -57,6 +63,14 @@ func runMainWindow() (int, os.Error) {
 		gui.MsgBox(mw, "About", "Walk Web Browser Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
 	})
 	helpMenu.Actions().Add(aboutAction)
+
+	mw.urlLineEdit, err = gui.NewLineEdit(mw.ClientArea())
+	panicIfErr(err)
+	mw.urlLineEdit.AddKeyDownHandler(func(args gui.KeyEventArgs) {
+		if args.Key() == user32.VK_RETURN {
+			panicIfErr(mw.webView.SetURL(mw.urlLineEdit.Text()))
+		}
+	})
 
 	mw.webView, err = gui.NewWebView(mw.ClientArea())
 	panicIfErr(err)

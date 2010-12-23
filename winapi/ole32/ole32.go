@@ -72,12 +72,13 @@ type REFIID *IID
 type REFCLSID *CLSID
 
 var (
-	IID_IClassFactory     = IID{0x00000001, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
-	IID_IOleClientSite    = IID{0x00000118, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
-	IID_IOleInPlaceObject = IID{0x00000113, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
-	IID_IOleInPlaceSite   = IID{0x00000119, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
-	IID_IOleObject        = IID{0x00000112, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
-	IID_IUnknown          = IID{0x00000000, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
+	IID_IClassFactory             = IID{0x00000001, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
+	IID_IConnectionPointContainer = IID{0xB196B284, 0xBAB4, 0x101A, [8]byte{0xB6, 0x9C, 0x00, 0xAA, 0x00, 0x34, 0x1D, 0x07}}
+	IID_IOleClientSite            = IID{0x00000118, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
+	IID_IOleInPlaceObject         = IID{0x00000113, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
+	IID_IOleInPlaceSite           = IID{0x00000119, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
+	IID_IOleObject                = IID{0x00000112, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
+	IID_IUnknown                  = IID{0x00000000, 0x0000, 0x0000, [8]byte{0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}}
 )
 
 func EqualREFIID(a, b REFIID) bool {
@@ -130,6 +131,69 @@ func (cf *IClassFactory) CreateInstance(pUnkOuter *IUnknown, riid REFIID, ppvObj
 		uintptr(unsafe.Pointer(ppvObject)),
 		0,
 		0)
+
+	return HRESULT(ret)
+}
+
+type IConnectionPointVtbl struct {
+	QueryInterface              uintptr
+	AddRef                      uintptr
+	Release                     uintptr
+	Advise                      uintptr
+	EnumConnections             uintptr
+	GetConnectionInterface      uintptr
+	GetConnectionPointContainer uintptr
+	Unadvise                    uintptr
+}
+
+type IConnectionPoint struct {
+	LpVtbl *IConnectionPointVtbl
+}
+
+func (cp *IConnectionPoint) Release() uint {
+	ret, _, _ := syscall.Syscall(cp.LpVtbl.Release,
+		uintptr(unsafe.Pointer(cp)),
+		0,
+		0)
+
+	return uint(ret)
+}
+
+func (cp *IConnectionPoint) Advise(pUnkSink unsafe.Pointer, pdwCookie *uint) HRESULT {
+	ret, _, _ := syscall.Syscall(cp.LpVtbl.Advise,
+		uintptr(unsafe.Pointer(cp)),
+		uintptr(pUnkSink),
+		uintptr(unsafe.Pointer(pdwCookie)))
+
+	return HRESULT(ret)
+}
+
+type IConnectionPointContainerVtbl struct {
+	QueryInterface       uintptr
+	AddRef               uintptr
+	Release              uintptr
+	EnumConnectionPoints uintptr
+	FindConnectionPoint  uintptr
+}
+
+type IConnectionPointContainer struct {
+	LpVtbl *IConnectionPointContainerVtbl
+}
+
+func (cpc *IConnectionPointContainer) Release() uint {
+	ret, _, _ := syscall.Syscall(cpc.LpVtbl.Release,
+		uintptr(unsafe.Pointer(cpc)),
+		0,
+		0)
+
+	return uint(ret)
+}
+
+func (cpc *IConnectionPointContainer) FindConnectionPoint(riid REFIID, ppCP **IConnectionPoint) HRESULT {
+	ret, _, _ := syscall.Syscall(cpc.LpVtbl.FindConnectionPoint,
+		uintptr(unsafe.Pointer(cpc)),
+		uintptr(unsafe.Pointer(riid)),
+		uintptr(unsafe.Pointer(ppCP)))
 
 	return HRESULT(ret)
 }

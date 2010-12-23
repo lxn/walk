@@ -70,10 +70,63 @@ const (
 )
 
 var (
-	CLSID_WebBrowser      = CLSID{0x8856F961, 0x340A, 0x11D0, [8]byte{0xA9, 0x6B, 0x00, 0xC0, 0x4F, 0xD7, 0x05, 0xA2}}
-	IID_IWebBrowser2      = IID{0xD30C1661, 0xCDAF, 0x11D0, [8]byte{0x8A, 0x3E, 0x00, 0xC0, 0x4F, 0xC9, 0xE2, 0x6E}}
-	IID_IDocHostUIHandler = IID{0xBD3F23C0, 0xD43E, 0x11CF, [8]byte{0x89, 0x3B, 0x00, 0xAA, 0x00, 0xBD, 0xCE, 0x1A}}
+	CLSID_WebBrowser        = CLSID{0x8856F961, 0x340A, 0x11D0, [8]byte{0xA9, 0x6B, 0x00, 0xC0, 0x4F, 0xD7, 0x05, 0xA2}}
+	DIID_DWebBrowserEvents2 = IID{0x34A715A0, 0x6587, 0x11D0, [8]byte{0x92, 0x4A, 0x00, 0x20, 0xAF, 0xC7, 0xAC, 0x4D}}
+	IID_IWebBrowser2        = IID{0xD30C1661, 0xCDAF, 0x11D0, [8]byte{0x8A, 0x3E, 0x00, 0xC0, 0x4F, 0xC9, 0xE2, 0x6E}}
+	IID_IDocHostUIHandler   = IID{0xBD3F23C0, 0xD43E, 0x11CF, [8]byte{0x89, 0x3B, 0x00, 0xAA, 0x00, 0xBD, 0xCE, 0x1A}}
 )
+
+type DWebBrowserEvents2Vtbl struct {
+	QueryInterface             uintptr
+	AddRef                     uintptr
+	Release                    uintptr
+	GetTypeInfoCount           uintptr
+	GetTypeInfo                uintptr
+	GetIDsOfNames              uintptr
+	Invoke                     uintptr
+	BeforeNavigate2            uintptr
+	ClientToHostWindow         uintptr
+	CommandStateChange         uintptr
+	DocumentComplete           uintptr
+	DownloadBegin              uintptr
+	DownloadComplete           uintptr
+	FileDownload               uintptr
+	NavigateComplete2          uintptr
+	NavigateError              uintptr
+	NewProcess                 uintptr
+	NewWindow2                 uintptr
+	NewWindow3                 uintptr
+	OnFullScreen               uintptr
+	OnMenuBar                  uintptr
+	OnQuit                     uintptr
+	OnStatusBar                uintptr
+	OnTheaterMode              uintptr
+	OnToolBar                  uintptr
+	OnVisible                  uintptr
+	PrintTemplateInstantiation uintptr
+	PrintTemplateTeardown      uintptr
+	PrivacyImpactedStateChange uintptr
+	ProgressChange             uintptr
+	PropertyChange             uintptr
+	RedirectXDomainBlocked     uintptr
+	SetPhishingFilterStatus    uintptr
+	SetSecureLockIcon          uintptr
+	StatusTextChange           uintptr
+	ThirdPartyUrlBlocked       uintptr
+	TitleChange                uintptr
+	UpdatePageStatus           uintptr
+	WindowClosing              uintptr
+	WindowSetHeight            uintptr
+	WindowSetLeft              uintptr
+	WindowSetResizable         uintptr
+	WindowSetTop               uintptr
+	WindowSetWidth             uintptr
+	WindowStateChanged         uintptr
+}
+
+type DWebBrowserEvents2 struct {
+	LpVtbl *DWebBrowserEvents2Vtbl
+}
 
 type IWebBrowser2Vtbl struct {
 	QueryInterface           uintptr
@@ -153,6 +206,15 @@ type IWebBrowser2 struct {
 	LpVtbl *IWebBrowser2Vtbl
 }
 
+func (wb2 *IWebBrowser2) Release() HRESULT {
+	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Release,
+		uintptr(unsafe.Pointer(wb2)),
+		0,
+		0)
+
+	return HRESULT(ret)
+}
+
 func (wb2 *IWebBrowser2) Put_Left(Left int) HRESULT {
 	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Left,
 		uintptr(unsafe.Pointer(wb2)),
@@ -211,24 +273,24 @@ func (wb2 *IWebBrowser2) Navigate2(URL *VAR_BSTR, Flags *VAR_I4, TargetFrameName
 }
 
 type IDocHostUIHandlerVtbl struct {
-	QueryInterface        uint32
-	AddRef                uint32
-	Release               uint32
-	ShowContextMenu       uint32
-	GetHostInfo           uint32
-	ShowUI                uint32
-	HideUI                uint32
-	UpdateUI              uint32
-	EnableModeless        uint32
-	OnDocWindowActivate   uint32
-	OnFrameWindowActivate uint32
-	ResizeBorder          uint32
-	TranslateAccelerator  uint32
-	GetOptionKeyPath      uint32
-	GetDropTarget         uint32
-	GetExternal           uint32
-	TranslateUrl          uint32
-	FilterDataObject      uint32
+	QueryInterface        uintptr
+	AddRef                uintptr
+	Release               uintptr
+	ShowContextMenu       uintptr
+	GetHostInfo           uintptr
+	ShowUI                uintptr
+	HideUI                uintptr
+	UpdateUI              uintptr
+	EnableModeless        uintptr
+	OnDocWindowActivate   uintptr
+	OnFrameWindowActivate uintptr
+	ResizeBorder          uintptr
+	TranslateAccelerator  uintptr
+	GetOptionKeyPath      uintptr
+	GetDropTarget         uintptr
+	GetExternal           uintptr
+	TranslateUrl          uintptr
+	FilterDataObject      uintptr
 }
 
 type IDocHostUIHandler struct {
@@ -241,13 +303,4 @@ type DOCHOSTUIINFO struct {
 	DwDoubleClick uint
 	PchHostCss    *uint16
 	PchHostNS     *uint16
-}
-
-func (iwb2 *IWebBrowser2) Release() HRESULT {
-	ret, _, _ := syscall.Syscall(iwb2.LpVtbl.Release,
-		uintptr(unsafe.Pointer(iwb2)),
-		0,
-		0)
-
-	return HRESULT(ret)
 }

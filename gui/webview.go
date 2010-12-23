@@ -74,6 +74,11 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 					LpVtbl: webViewIDocHostUIHandlerVtbl,
 				},
 			},
+			webBrowserEvents2: webViewDWebBrowserEvents2{
+				DWebBrowserEvents2: DWebBrowserEvents2{
+					LpVtbl: webViewDWebBrowserEvents2Vtbl,
+				},
+			},
 		},
 	}
 
@@ -149,9 +154,35 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 
 	log.Println("NewWebView #7")
 
-	wv.onResize()
+	var cpcPtr unsafe.Pointer
+	if hr := browserObject.QueryInterface(&IID_IConnectionPointContainer, &cpcPtr); FAILED(hr) {
+		return nil, errorFromHRESULT("IOleObject.QueryInterface(IID_IConnectionPointContainer)", hr)
+	}
+	cpc := (*IConnectionPointContainer)(cpcPtr)
+	defer cpc.Release()
 
 	log.Println("NewWebView #8")
+
+	var cp *IConnectionPoint
+	if hr := cpc.FindConnectionPoint(&DIID_DWebBrowserEvents2, &cp); FAILED(hr) {
+		return nil, errorFromHRESULT("IConnectionPointContainer.FindConnectionPoint(DIID_DWebBrowserEvents2)", hr)
+	}
+	defer cp.Release()
+
+	log.Println("NewWebView #9")
+
+	var cookie uint
+	if hr := cp.Advise(unsafe.Pointer(&wv.clientSite.webBrowserEvents2), &cookie); FAILED(hr) {
+		return nil, errorFromHRESULT("IConnectionPoint.Advise", hr)
+	}
+
+	log.Println("cookie:", cookie)
+
+	log.Println("NewWebView #10")
+
+	wv.onResize()
+
+	log.Println("NewWebView #11")
 
 	wv.SetFont(defaultFont)
 
@@ -161,7 +192,7 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 
 	succeeded = true
 
-	log.Println("NewWebView #9")
+	log.Println("NewWebView #12")
 
 	return wv, nil
 }

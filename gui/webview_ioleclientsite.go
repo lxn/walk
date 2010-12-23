@@ -13,6 +13,7 @@ import (
 import (
 	. "walk/winapi"
 	. "walk/winapi/ole32"
+	. "walk/winapi/oleaut32"
 	. "walk/winapi/shdocvw"
 )
 
@@ -58,26 +59,35 @@ func init() {
 
 type webViewIOleClientSite struct {
 	IOleClientSite
-	inPlaceSite      webViewIOleInPlaceSite
-	docHostUIHandler webViewIDocHostUIHandler
+	inPlaceSite       webViewIOleInPlaceSite
+	docHostUIHandler  webViewIDocHostUIHandler
+	webBrowserEvents2 webViewDWebBrowserEvents2
 }
 
 func webView_IOleClientSite_QueryInterface(args *uintptr) uintptr {
-	log.Println("webView_IOleClientSite_QueryInterface")
-
 	p := (*struct {
 		clientSite *webViewIOleClientSite
 		riid       REFIID
 		ppvObject  *unsafe.Pointer
 	})(unsafe.Pointer(args))
 
-	if EqualREFIID(p.riid, &IID_IUnknown) || EqualREFIID(p.riid, &IID_IOleClientSite) {
+	if EqualREFIID(p.riid, &IID_IUnknown) {
+		log.Println("webView_IOleClientSite_QueryInterface (IID_IUnknown)")
+		*p.ppvObject = unsafe.Pointer(p.clientSite)
+	} else if EqualREFIID(p.riid, &IID_IOleClientSite) {
+		log.Println("webView_IOleClientSite_QueryInterface (IID_IOleClientSite)")
 		*p.ppvObject = unsafe.Pointer(p.clientSite)
 	} else if EqualREFIID(p.riid, &IID_IOleInPlaceSite) {
+		log.Println("webView_IOleClientSite_QueryInterface (IID_IOleInPlaceSite)")
 		*p.ppvObject = unsafe.Pointer(&p.clientSite.inPlaceSite)
 	} else if EqualREFIID(p.riid, &IID_IDocHostUIHandler) {
+		log.Println("webView_IOleClientSite_QueryInterface (IID_IDocHostUIHandler)")
 		*p.ppvObject = unsafe.Pointer(&p.clientSite.docHostUIHandler)
+	} else if EqualREFIID(p.riid, &IID_IDispatch) {
+		log.Println("webView_IOleClientSite_QueryInterface (IID_IDispatch)")
+		*p.ppvObject = unsafe.Pointer(&p.clientSite.webBrowserEvents2)
 	} else {
+		log.Println("webView_IOleClientSite_QueryInterface (?)")
 		*p.ppvObject = nil
 		return E_NOINTERFACE
 	}
