@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"container/vector"
 	"os"
 )
 
@@ -16,7 +15,7 @@ type comboBoxItemListObserver interface {
 }
 
 type ComboBoxItemList struct {
-	items    vector.Vector
+	items    []*ComboBoxItem
 	observer comboBoxItemListObserver
 }
 
@@ -25,7 +24,7 @@ func newComboBoxItemList(observer comboBoxItemListObserver) *ComboBoxItemList {
 }
 
 func (l *ComboBoxItemList) Add(item *ComboBoxItem) (index int, err os.Error) {
-	index = l.items.Len()
+	index = len(l.items)
 	err = l.Insert(index, item)
 	if err != nil {
 		return
@@ -35,7 +34,7 @@ func (l *ComboBoxItemList) Add(item *ComboBoxItem) (index int, err os.Error) {
 }
 
 func (l *ComboBoxItemList) At(index int) *ComboBoxItem {
-	return l.items[index].(*ComboBoxItem)
+	return l.items[index]
 }
 
 func (l *ComboBoxItemList) Clear() (err os.Error) {
@@ -47,14 +46,14 @@ func (l *ComboBoxItemList) Clear() (err os.Error) {
 		}
 	}
 
-	l.items.Resize(0, 8)
+	l.items = l.items[:0]
 
 	return
 }
 
 func (l *ComboBoxItemList) IndexOf(item *ComboBoxItem) int {
 	for i, tvi := range l.items {
-		if tvi.(*ComboBoxItem) == item {
+		if tvi == item {
 			return i
 		}
 	}
@@ -71,13 +70,13 @@ func (l *ComboBoxItemList) Insert(index int, item *ComboBoxItem) (err os.Error) 
 		}
 	}
 
-	l.items.Insert(index, item)
+	l.items = append(append(l.items[:index], item), l.items[index:]...)
 
 	return
 }
 
 func (l *ComboBoxItemList) Len() int {
-	return l.items.Len()
+	return len(l.items)
 }
 
 func (l *ComboBoxItemList) Remove(item *ComboBoxItem) (err os.Error) {
@@ -92,14 +91,14 @@ func (l *ComboBoxItemList) Remove(item *ComboBoxItem) (err os.Error) {
 func (l *ComboBoxItemList) RemoveAt(index int) (err os.Error) {
 	observer := l.observer
 	if observer != nil {
-		item := l.items[index].(*ComboBoxItem)
+		item := l.items[index]
 		err = observer.onRemovingComboBoxItem(index, item)
 		if err != nil {
 			return
 		}
 	}
 
-	l.items.Delete(index)
+	l.items = append(l.items[:index], l.items[index+1:]...)
 
 	return
 }

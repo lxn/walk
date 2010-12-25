@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"container/vector"
 	"os"
 )
 
@@ -16,7 +15,7 @@ type actionListObserver interface {
 }
 
 type ActionList struct {
-	actions  vector.Vector
+	actions  []*Action
 	observer actionListObserver
 }
 
@@ -25,7 +24,7 @@ func newActionList(observer actionListObserver) *ActionList {
 }
 
 func (l *ActionList) Add(action *Action) (index int, err os.Error) {
-	index = l.actions.Len()
+	index = len(l.actions)
 	err = l.Insert(index, action)
 	if err != nil {
 		return
@@ -35,7 +34,7 @@ func (l *ActionList) Add(action *Action) (index int, err os.Error) {
 }
 
 func (l *ActionList) AddMenu(menu *Menu) (index int, action *Action, err os.Error) {
-	index = l.actions.Len()
+	index = len(l.actions)
 	action, err = l.InsertMenu(index, menu)
 	if err != nil {
 		return
@@ -45,7 +44,7 @@ func (l *ActionList) AddMenu(menu *Menu) (index int, action *Action, err os.Erro
 }
 
 func (l *ActionList) At(index int) *Action {
-	return l.actions[index].(*Action)
+	return l.actions[index]
 }
 
 func (l *ActionList) Clear() (err os.Error) {
@@ -57,14 +56,14 @@ func (l *ActionList) Clear() (err os.Error) {
 		}
 	}
 
-	l.actions.Resize(0, 8)
+	l.actions = l.actions[:0]
 
 	return
 }
 
 func (l *ActionList) IndexOf(action *Action) int {
 	for i, a := range l.actions {
-		if a.(*Action) == action {
+		if a == action {
 			return i
 		}
 	}
@@ -81,30 +80,24 @@ func (l *ActionList) Insert(index int, action *Action) (err os.Error) {
 		}
 	}
 
-	l.actions.Insert(index, action)
+	l.actions = append(append(l.actions[:index], action), l.actions[index:]...)
 
 	return
 }
 
-func (l *ActionList) InsertMenu(index int, menu *Menu) (action *Action, err os.Error) {
-	action = NewAction()
+func (l *ActionList) InsertMenu(index int, menu *Menu) (*Action, os.Error) {
+	action := NewAction()
 	action.menu = menu
 
-	observer := l.observer
-	if observer != nil {
-		err = observer.onInsertingAction(index, action)
-		if err != nil {
-			return
-		}
+	if err := l.Insert(index, action); err != nil {
+		return nil, err
 	}
 
-	l.actions.Insert(index, action)
-
-	return
+	return action, nil
 }
 
 func (l *ActionList) Len() int {
-	return l.actions.Len()
+	return len(l.actions)
 }
 
 func (l *ActionList) Remove(action *Action) (err os.Error) {
@@ -119,14 +112,14 @@ func (l *ActionList) Remove(action *Action) (err os.Error) {
 func (l *ActionList) RemoveAt(index int) (err os.Error) {
 	observer := l.observer
 	if observer != nil {
-		action := l.actions[index].(*Action)
+		action := l.actions[index]
 		err = observer.onRemovingAction(index, action)
 		if err != nil {
 			return
 		}
 	}
 
-	l.actions.Delete(index)
+	l.actions = append(l.actions[:index], l.actions[index+1:]...)
 
 	return
 }

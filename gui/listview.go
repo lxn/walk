@@ -6,7 +6,6 @@ package gui
 
 import (
 	"bytes"
-	"container/vector"
 	"os"
 	"strconv"
 	"strings"
@@ -43,8 +42,8 @@ type ListView struct {
 	columns                      *ListViewColumnList
 	items                        *ListViewItemList
 	prevSelIndex                 int
-	selectedIndexChangedHandlers vector.Vector
-	itemActivatedHandlers        vector.Vector
+	selectedIndexChangedHandlers []EventHandler
+	itemActivatedHandlers        []EventHandler
 }
 
 func NewListView(parent IContainer) (*ListView, os.Error) {
@@ -290,41 +289,41 @@ func (lv *ListView) onClearingListViewItems() os.Error {
 }
 
 func (lv *ListView) AddSelectedIndexChangedHandler(handler EventHandler) {
-	lv.selectedIndexChangedHandlers.Push(handler)
+	lv.selectedIndexChangedHandlers = append(lv.selectedIndexChangedHandlers, handler)
 }
 
 func (lv *ListView) RemoveSelectedIndexChangedHandler(handler EventHandler) {
 	for i, h := range lv.selectedIndexChangedHandlers {
-		if h.(EventHandler) == handler {
-			lv.selectedIndexChangedHandlers.Delete(i)
+		if h == handler {
+			lv.selectedIndexChangedHandlers = append(lv.selectedIndexChangedHandlers[:i], lv.selectedIndexChangedHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (lv *ListView) raiseSelectedIndexChanged() {
-	for _, handlerIface := range lv.selectedIndexChangedHandlers {
-		handler := handlerIface.(EventHandler)
-		handler(&eventArgs{widgetsByHWnd[lv.hWnd]})
+	args := &eventArgs{widgetsByHWnd[lv.hWnd]}
+	for _, handler := range lv.selectedIndexChangedHandlers {
+		handler(args)
 	}
 }
 
 func (lv *ListView) AddItemActivatedHandler(handler EventHandler) {
-	lv.itemActivatedHandlers.Push(handler)
+	lv.itemActivatedHandlers = append(lv.itemActivatedHandlers, handler)
 }
 
 func (lv *ListView) RemoveItemActivatedHandler(handler EventHandler) {
 	for i, h := range lv.itemActivatedHandlers {
-		if h.(EventHandler) == handler {
-			lv.itemActivatedHandlers.Delete(i)
+		if h == handler {
+			lv.itemActivatedHandlers = append(lv.itemActivatedHandlers[:i], lv.itemActivatedHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (lv *ListView) raiseItemActivated() {
-	for _, handlerIface := range lv.itemActivatedHandlers {
-		handler := handlerIface.(EventHandler)
-		handler(&eventArgs{widgetsByHWnd[lv.hWnd]})
+	args := &eventArgs{widgetsByHWnd[lv.hWnd]}
+	for _, handler := range lv.itemActivatedHandlers {
+		handler(args)
 	}
 }

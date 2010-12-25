@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"container/vector"
 	"os"
 )
 
@@ -23,7 +22,7 @@ type widgetListObserver interface {
 }
 
 type ObservedWidgetList struct {
-	items    vector.Vector
+	items    []IWidget
 	observer widgetListObserver
 }
 
@@ -32,7 +31,7 @@ func newObservedWidgetList(observer widgetListObserver) *ObservedWidgetList {
 }
 
 func (l *ObservedWidgetList) Add(item IWidget) (index int, err os.Error) {
-	index = l.items.Len()
+	index = len(l.items)
 	err = l.Insert(index, item)
 	if err != nil {
 		return
@@ -42,7 +41,7 @@ func (l *ObservedWidgetList) Add(item IWidget) (index int, err os.Error) {
 }
 
 func (l *ObservedWidgetList) At(index int) IWidget {
-	return l.items[index].(IWidget)
+	return l.items[index]
 }
 
 func (l *ObservedWidgetList) Clear() (err os.Error) {
@@ -54,25 +53,23 @@ func (l *ObservedWidgetList) Clear() (err os.Error) {
 		}
 	}
 
-	oldLen := l.items.Len()
-	l.items = vector.Vector(l.items[0:0])
+	oldItems := l.items
+	l.items = l.items[:0]
 
 	if observer != nil {
 		err = observer.onClearedWidgets()
 		if err != nil {
-			l.items = vector.Vector(l.items[0:oldLen])
+			l.items = oldItems
 			return
 		}
 	}
-
-	l.items.Resize(0, 8)
 
 	return
 }
 
 func (l *ObservedWidgetList) IndexOf(item IWidget) int {
 	for i, lvi := range l.items {
-		if lvi.(IWidget) == item {
+		if lvi == item {
 			return i
 		}
 	}
@@ -86,7 +83,7 @@ func (l *ObservedWidgetList) Contains(item IWidget) bool {
 
 func (l *ObservedWidgetList) IndexOfHandle(handle HWND) int {
 	for i, lvi := range l.items {
-		if lvi.(IWidget).Handle() == handle {
+		if lvi.Handle() == handle {
 			return i
 		}
 	}
@@ -107,12 +104,12 @@ func (l *ObservedWidgetList) Insert(index int, item IWidget) (err os.Error) {
 		}
 	}
 
-	l.items.Insert(index, item)
+	l.items = append(append(l.items[:index], item), l.items[index:]...)
 
 	if observer != nil {
 		err = observer.onInsertedWidget(index, item)
 		if err != nil {
-			l.items.Delete(index)
+			l.items = append(l.items[:index], l.items[index+1:]...)
 			return
 		}
 	}
@@ -121,7 +118,7 @@ func (l *ObservedWidgetList) Insert(index int, item IWidget) (err os.Error) {
 }
 
 func (l *ObservedWidgetList) Len() int {
-	return l.items.Len()
+	return len(l.items)
 }
 
 func (l *ObservedWidgetList) Remove(item IWidget) (err os.Error) {
@@ -135,7 +132,7 @@ func (l *ObservedWidgetList) Remove(item IWidget) (err os.Error) {
 
 func (l *ObservedWidgetList) RemoveAt(index int) (err os.Error) {
 	observer := l.observer
-	item := l.items[index].(IWidget)
+	item := l.items[index]
 	if observer != nil {
 		err = observer.onRemovingWidget(index, item)
 		if err != nil {
@@ -143,12 +140,12 @@ func (l *ObservedWidgetList) RemoveAt(index int) (err os.Error) {
 		}
 	}
 
-	l.items.Delete(index)
+	l.items = append(l.items[:index], l.items[index+1:]...)
 
 	if observer != nil {
 		err = observer.onRemovedWidget(index, item)
 		if err != nil {
-			l.items.Insert(index, item)
+			l.items = append(append(l.items[:index], item), l.items[index:]...)
 			return
 		}
 	}

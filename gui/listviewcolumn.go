@@ -4,10 +4,6 @@
 
 package gui
 
-import (
-	"container/vector"
-)
-
 type listViewColumnChangedHandler interface {
 	onListViewColumnChanged(column *ListViewColumn)
 }
@@ -16,7 +12,7 @@ type ListViewColumn struct {
 	alignment       HorizontalAlignment
 	width           int
 	title           string
-	changedHandlers vector.Vector
+	changedHandlers []listViewColumnChangedHandler
 }
 
 func NewListViewColumn() *ListViewColumn {
@@ -60,21 +56,20 @@ func (c *ListViewColumn) SetWidth(value int) {
 }
 
 func (c *ListViewColumn) addChangedHandler(handler listViewColumnChangedHandler) {
-	c.changedHandlers.Push(handler)
+	c.changedHandlers = append(c.changedHandlers, handler)
 }
 
 func (c *ListViewColumn) removeChangedHandler(handler listViewColumnChangedHandler) {
 	for i, h := range c.changedHandlers {
-		if h.(listViewColumnChangedHandler) == handler {
-			c.changedHandlers.Delete(i)
+		if h == handler {
+			c.changedHandlers = append(c.changedHandlers[:i], c.changedHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (c *ListViewColumn) raiseChanged() {
-	for _, handlerIface := range c.changedHandlers {
-		handler := handlerIface.(listViewColumnChangedHandler)
+	for _, handler := range c.changedHandlers {
 		handler.onListViewColumnChanged(c)
 	}
 }

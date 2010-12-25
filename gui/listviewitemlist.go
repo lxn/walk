@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"container/vector"
 	"os"
 )
 
@@ -16,7 +15,7 @@ type listViewItemListObserver interface {
 }
 
 type ListViewItemList struct {
-	items    vector.Vector
+	items    []*ListViewItem
 	observer listViewItemListObserver
 }
 
@@ -25,7 +24,7 @@ func newListViewItemList(observer listViewItemListObserver) *ListViewItemList {
 }
 
 func (l *ListViewItemList) Add(item *ListViewItem) (index int, err os.Error) {
-	index = l.items.Len()
+	index = len(l.items)
 	err = l.Insert(index, item)
 	if err != nil {
 		return
@@ -35,7 +34,7 @@ func (l *ListViewItemList) Add(item *ListViewItem) (index int, err os.Error) {
 }
 
 func (l *ListViewItemList) At(index int) *ListViewItem {
-	return l.items[index].(*ListViewItem)
+	return l.items[index]
 }
 
 func (l *ListViewItemList) Clear() (err os.Error) {
@@ -47,14 +46,14 @@ func (l *ListViewItemList) Clear() (err os.Error) {
 		}
 	}
 
-	l.items.Resize(0, 8)
+	l.items = l.items[:0]
 
 	return
 }
 
 func (l *ListViewItemList) IndexOf(item *ListViewItem) int {
 	for i, lvi := range l.items {
-		if lvi.(*ListViewItem) == item {
+		if lvi == item {
 			return i
 		}
 	}
@@ -71,13 +70,13 @@ func (l *ListViewItemList) Insert(index int, item *ListViewItem) (err os.Error) 
 		}
 	}
 
-	l.items.Insert(index, item)
+	l.items = append(append(l.items[:index], item), l.items[index:]...)
 
 	return
 }
 
 func (l *ListViewItemList) Len() int {
-	return l.items.Len()
+	return len(l.items)
 }
 
 func (l *ListViewItemList) Remove(item *ListViewItem) (err os.Error) {
@@ -92,14 +91,14 @@ func (l *ListViewItemList) Remove(item *ListViewItem) (err os.Error) {
 func (l *ListViewItemList) RemoveAt(index int) (err os.Error) {
 	observer := l.observer
 	if observer != nil {
-		item := l.items[index].(*ListViewItem)
+		item := l.items[index]
 		err = observer.onRemovingListViewItem(index, item)
 		if err != nil {
 			return
 		}
 	}
 
-	l.items.Delete(index)
+	l.items = append(l.items[:index], l.items[index+1:]...)
 
 	return
 }

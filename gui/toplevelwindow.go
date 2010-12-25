@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"container/vector"
 	"fmt"
 	"os"
 	"unsafe"
@@ -46,7 +45,7 @@ type TopLevelWindow struct {
 	Container
 	owner           RootWidget
 	clientArea      *Composite
-	closingHandlers vector.Vector
+	closingHandlers []ClosingEventHandler
 	closeReason     CloseReason
 	prevFocusHWnd   HWND
 }
@@ -149,21 +148,20 @@ func (tlw *TopLevelWindow) RestoreState(s string) os.Error {
 }
 
 func (tlw *TopLevelWindow) AddClosingHandler(handler ClosingEventHandler) {
-	tlw.closingHandlers.Push(handler)
+	tlw.closingHandlers = append(tlw.closingHandlers, handler)
 }
 
 func (tlw *TopLevelWindow) RemoveClosingHandler(handler ClosingEventHandler) {
 	for i, h := range tlw.closingHandlers {
-		if h.(ClosingEventHandler) == handler {
-			tlw.closingHandlers.Delete(i)
+		if h == handler {
+			tlw.closingHandlers = append(tlw.closingHandlers[:i], tlw.closingHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (tlw *TopLevelWindow) raiseClosing(args *closingEventArgs) {
-	for _, handlerIface := range tlw.closingHandlers {
-		handler := handlerIface.(ClosingEventHandler)
+	for _, handler := range tlw.closingHandlers {
 		handler(args)
 	}
 }

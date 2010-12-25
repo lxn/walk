@@ -5,10 +5,6 @@
 package gui
 
 import (
-	"container/vector"
-)
-
-import (
 	. "walk/winapi/user32"
 )
 
@@ -18,7 +14,7 @@ type clickable interface {
 
 type Button struct {
 	Widget
-	clickedHandlers vector.Vector
+	clickedHandlers []EventHandler
 }
 
 func (b *Button) Checked() bool {
@@ -38,21 +34,21 @@ func (b *Button) SetChecked(value bool) {
 }
 
 func (b *Button) AddClickedHandler(handler EventHandler) {
-	b.clickedHandlers.Push(handler)
+	b.clickedHandlers = append(b.clickedHandlers, handler)
 }
 
 func (b *Button) RemoveClickedHandler(handler EventHandler) {
 	for i, h := range b.clickedHandlers {
-		if h.(EventHandler) == handler {
-			b.clickedHandlers.Delete(i)
+		if h == handler {
+			b.clickedHandlers = append(b.clickedHandlers[:i], b.clickedHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (b *Button) raiseClicked() {
-	for _, handlerIface := range b.clickedHandlers {
-		handler := handlerIface.(EventHandler)
-		handler(&eventArgs{widgetsByHWnd[b.hWnd]})
+	args := &eventArgs{widgetsByHWnd[b.hWnd]}
+	for _, handler := range b.clickedHandlers {
+		handler(args)
 	}
 }

@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"container/vector"
 	"os"
 )
 
@@ -27,8 +26,8 @@ var (
 
 type Action struct {
 	menu              *Menu
-	triggeredHandlers vector.Vector
-	changedHandlers   vector.Vector
+	triggeredHandlers []EventHandler
+	changedHandlers   []actionChangedHandler
 	text              string
 	toolTip           string
 	image             *drawing.Bitmap
@@ -215,41 +214,40 @@ func (a *Action) SetVisible(value bool) (err os.Error) {
 }
 
 func (a *Action) AddTriggeredHandler(handler EventHandler) {
-	a.triggeredHandlers.Push(handler)
+	a.triggeredHandlers = append(a.triggeredHandlers, handler)
 }
 
 func (a *Action) RemoveTriggeredHandler(handler EventHandler) {
 	for i, h := range a.triggeredHandlers {
-		if h.(EventHandler) == handler {
-			a.triggeredHandlers.Delete(i)
+		if h == handler {
+			a.triggeredHandlers = append(a.triggeredHandlers[:i], a.triggeredHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (a *Action) raiseTriggered() {
-	for _, handlerIface := range a.triggeredHandlers {
-		handler := handlerIface.(EventHandler)
-		handler(&eventArgs{a})
+	args := &eventArgs{a}
+	for _, handler := range a.triggeredHandlers {
+		handler(args)
 	}
 }
 
 func (a *Action) addChangedHandler(handler actionChangedHandler) {
-	a.changedHandlers.Push(handler)
+	a.changedHandlers = append(a.changedHandlers, handler)
 }
 
 func (a *Action) removeChangedHandler(handler actionChangedHandler) {
 	for i, h := range a.changedHandlers {
-		if h.(actionChangedHandler) == handler {
-			a.changedHandlers.Delete(i)
+		if h == handler {
+			a.changedHandlers = append(a.changedHandlers[:i], a.changedHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (a *Action) raiseChanged() (err os.Error) {
-	for _, handlerIface := range a.changedHandlers {
-		handler := handlerIface.(actionChangedHandler)
+	for _, handler := range a.changedHandlers {
 		err = handler.onActionChanged(a)
 		if err != nil {
 			return

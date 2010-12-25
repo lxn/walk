@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"container/vector"
 	"os"
 )
 
@@ -16,7 +15,7 @@ type listViewColumnListObserver interface {
 }
 
 type ListViewColumnList struct {
-	columns  vector.Vector
+	columns  []*ListViewColumn
 	observer listViewColumnListObserver
 }
 
@@ -25,7 +24,7 @@ func newListViewColumnList(observer listViewColumnListObserver) *ListViewColumnL
 }
 
 func (l *ListViewColumnList) Add(column *ListViewColumn) (index int, err os.Error) {
-	index = l.columns.Len()
+	index = len(l.columns)
 	err = l.Insert(index, column)
 	if err != nil {
 		return
@@ -35,7 +34,7 @@ func (l *ListViewColumnList) Add(column *ListViewColumn) (index int, err os.Erro
 }
 
 func (l *ListViewColumnList) At(index int) *ListViewColumn {
-	return l.columns[index].(*ListViewColumn)
+	return l.columns[index]
 }
 
 func (l *ListViewColumnList) Clear() (err os.Error) {
@@ -47,14 +46,14 @@ func (l *ListViewColumnList) Clear() (err os.Error) {
 		}
 	}
 
-	l.columns.Resize(0, 8)
+	l.columns = l.columns[:0]
 
 	return
 }
 
 func (l *ListViewColumnList) IndexOf(column *ListViewColumn) int {
 	for i, c := range l.columns {
-		if c.(*ListViewColumn) == column {
+		if c == column {
 			return i
 		}
 	}
@@ -71,13 +70,13 @@ func (l *ListViewColumnList) Insert(index int, column *ListViewColumn) (err os.E
 		}
 	}
 
-	l.columns.Insert(index, column)
+	l.columns = append(append(l.columns[:index], column), l.columns[index:]...)
 
 	return
 }
 
 func (l *ListViewColumnList) Len() int {
-	return l.columns.Len()
+	return len(l.columns)
 }
 
 func (l *ListViewColumnList) Remove(column *ListViewColumn) (err os.Error) {
@@ -92,14 +91,14 @@ func (l *ListViewColumnList) Remove(column *ListViewColumn) (err os.Error) {
 func (l *ListViewColumnList) RemoveAt(index int) (err os.Error) {
 	observer := l.observer
 	if observer != nil {
-		column := l.columns[index].(*ListViewColumn)
+		column := l.columns[index]
 		err = observer.onRemovingListViewColumn(index, column)
 		if err != nil {
 			return
 		}
 	}
 
-	l.columns.Delete(index)
+	l.columns = append(l.columns[:index], l.columns[index+1:]...)
 
 	return
 }

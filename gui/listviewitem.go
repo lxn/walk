@@ -4,17 +4,13 @@
 
 package gui
 
-import (
-	"container/vector"
-)
-
 type listViewItemChangedHandler interface {
 	onListViewItemChanged(item *ListViewItem)
 }
 
 type ListViewItem struct {
 	texts           []string
-	changedHandlers vector.Vector
+	changedHandlers []listViewItemChangedHandler
 }
 
 func NewListViewItem() *ListViewItem {
@@ -32,21 +28,20 @@ func (lvi *ListViewItem) SetTexts(value []string) {
 }
 
 func (lvi *ListViewItem) addChangedHandler(handler listViewItemChangedHandler) {
-	lvi.changedHandlers.Push(handler)
+	lvi.changedHandlers = append(lvi.changedHandlers, handler)
 }
 
 func (lvi *ListViewItem) removeChangedHandler(handler listViewItemChangedHandler) {
 	for i, h := range lvi.changedHandlers {
-		if h.(listViewItemChangedHandler) == handler {
-			lvi.changedHandlers.Delete(i)
+		if h == handler {
+			lvi.changedHandlers = append(lvi.changedHandlers[:i], lvi.changedHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (lvi *ListViewItem) raiseChanged() {
-	for _, handlerIface := range lvi.changedHandlers {
-		handler := handlerIface.(listViewItemChangedHandler)
+	for _, handler := range lvi.changedHandlers {
 		handler.onListViewItemChanged(lvi)
 	}
 }

@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"container/vector"
 	"os"
 )
 
@@ -16,7 +15,7 @@ type treeViewItemListObserver interface {
 }
 
 type TreeViewItemList struct {
-	items    vector.Vector
+	items    []*TreeViewItem
 	observer treeViewItemListObserver
 	parent   *TreeViewItem
 }
@@ -26,7 +25,7 @@ func newTreeViewItemList(observer treeViewItemListObserver) *TreeViewItemList {
 }
 
 func (l *TreeViewItemList) Add(item *TreeViewItem) (index int, err os.Error) {
-	index = l.items.Len()
+	index = len(l.items)
 	err = l.Insert(index, item)
 	if err != nil {
 		return
@@ -36,7 +35,7 @@ func (l *TreeViewItemList) Add(item *TreeViewItem) (index int, err os.Error) {
 }
 
 func (l *TreeViewItemList) At(index int) *TreeViewItem {
-	return l.items[index].(*TreeViewItem)
+	return l.items[index]
 }
 
 func (l *TreeViewItemList) Clear() (err os.Error) {
@@ -48,14 +47,14 @@ func (l *TreeViewItemList) Clear() (err os.Error) {
 		}
 	}
 
-	l.items.Resize(0, 8)
+	l.items = l.items[:0]
 
 	return
 }
 
 func (l *TreeViewItemList) IndexOf(item *TreeViewItem) int {
 	for i, tvi := range l.items {
-		if tvi.(*TreeViewItem) == item {
+		if tvi == item {
 			return i
 		}
 	}
@@ -72,13 +71,13 @@ func (l *TreeViewItemList) Insert(index int, item *TreeViewItem) (err os.Error) 
 		}
 	}
 
-	l.items.Insert(index, item)
+	l.items = append(append(l.items[:index], item), l.items[index:]...)
 
 	return
 }
 
 func (l *TreeViewItemList) Len() int {
-	return l.items.Len()
+	return len(l.items)
 }
 
 func (l *TreeViewItemList) Remove(item *TreeViewItem) (err os.Error) {
@@ -93,14 +92,14 @@ func (l *TreeViewItemList) Remove(item *TreeViewItem) (err os.Error) {
 func (l *TreeViewItemList) RemoveAt(index int) (err os.Error) {
 	observer := l.observer
 	if observer != nil {
-		item := l.items[index].(*TreeViewItem)
+		item := l.items[index]
 		err = observer.onRemovingTreeViewItem(index, item)
 		if err != nil {
 			return
 		}
 	}
 
-	l.items.Delete(index)
+	l.items = append(l.items[:index], l.items[index+1:]...)
 
 	return
 }

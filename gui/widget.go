@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"container/vector"
 	"os"
 	"syscall"
 	"unsafe"
@@ -83,9 +82,9 @@ type Widget struct {
 	parent              IContainer
 	font                *drawing.Font
 	contextMenu         *Menu
-	keyDownHandlers     vector.Vector
-	mouseDownHandlers   vector.Vector
-	sizeChangedHandlers vector.Vector
+	keyDownHandlers     []KeyEventHandler
+	mouseDownHandlers   []MouseEventHandler
+	sizeChangedHandlers []EventHandler
 	maxSize             drawing.Size
 	minSize             drawing.Size
 }
@@ -586,46 +585,60 @@ func (w *Widget) setTheme(appName string) os.Error {
 }
 
 func (w *Widget) AddKeyDownHandler(handler KeyEventHandler) {
-	w.keyDownHandlers.Push(handler)
+	w.keyDownHandlers = append(w.keyDownHandlers, handler)
 }
 
 func (w *Widget) RemoveKeyDownHandler(handler KeyEventHandler) {
 	for i, h := range w.keyDownHandlers {
-		if h.(KeyEventHandler) == handler {
-			w.keyDownHandlers.Delete(i)
+		if h == handler {
+			w.keyDownHandlers = append(w.keyDownHandlers[:i], w.keyDownHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (w *Widget) raiseKeyDown(args KeyEventArgs) {
-	for _, handlerIface := range w.keyDownHandlers {
-		handler := handlerIface.(KeyEventHandler)
+	for _, handler := range w.keyDownHandlers {
 		handler(args)
 	}
 }
 
 func (w *Widget) AddMouseDownHandler(handler MouseEventHandler) {
-	w.mouseDownHandlers.Push(handler)
+	w.mouseDownHandlers = append(w.mouseDownHandlers, handler)
+}
+
+func (w *Widget) RemoveMouseDownHandler(handler MouseEventHandler) {
+	for i, h := range w.mouseDownHandlers {
+		if h == handler {
+			w.mouseDownHandlers = append(w.mouseDownHandlers[:i], w.mouseDownHandlers[i+1:]...)
+			break
+		}
+	}
+}
+
+func (w *Widget) raiseMouseDown(args MouseEventArgs) {
+	for _, handler := range w.mouseDownHandlers {
+		handler(args)
+	}
 }
 
 func (w *Widget) AddSizeChangedHandler(handler EventHandler) {
-	w.sizeChangedHandlers.Push(handler)
+	w.sizeChangedHandlers = append(w.sizeChangedHandlers, handler)
 }
 
 func (w *Widget) RemoveSizeChangedHandler(handler EventHandler) {
 	for i, h := range w.sizeChangedHandlers {
-		if h.(EventHandler) == handler {
-			w.sizeChangedHandlers.Delete(i)
+		if h == handler {
+			w.sizeChangedHandlers = append(w.sizeChangedHandlers[:i], w.sizeChangedHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (w *Widget) raiseSizeChanged() {
-	for _, handlerIface := range w.sizeChangedHandlers {
-		handler := handlerIface.(EventHandler)
-		handler(&eventArgs{widgetsByHWnd[w.hWnd]})
+	args := &eventArgs{widgetsByHWnd[w.hWnd]}
+	for _, handler := range w.sizeChangedHandlers {
+		handler(args)
 	}
 }
 
@@ -635,10 +648,7 @@ func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 
 	switch msg.Message {
 	case WM_LBUTTONDOWN:
-		for _, handlerIface := range w.mouseDownHandlers {
-			handler := handlerIface.(MouseEventHandler)
-			handler(&mouseEventArgs{eventArgs: eventArgs{sender: widgetsByHWnd[w.hWnd]}})
-		}
+		w.raiseMouseDown(&mouseEventArgs{eventArgs: eventArgs{sender: widgetsByHWnd[w.hWnd]}})
 
 	case WM_CONTEXTMENU:
 		sourceWidget := widgetsByHWnd[HWND(msg.WParam)]

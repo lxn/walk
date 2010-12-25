@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"container/vector"
 	"os"
 	"syscall"
 	"unsafe"
@@ -36,10 +35,10 @@ type TreeViewItemEventHandler func(args TreeViewItemEventArgs)
 type TreeView struct {
 	Widget
 	items                  *TreeViewItemList
-	itemCollapsedHandlers  vector.Vector
-	itemCollapsingHandlers vector.Vector
-	itemExpandedHandlers   vector.Vector
-	itemExpandingHandlers  vector.Vector
+	itemCollapsedHandlers  []TreeViewItemEventHandler
+	itemCollapsingHandlers []TreeViewItemEventHandler
+	itemExpandedHandlers   []TreeViewItemEventHandler
+	itemExpandingHandlers  []TreeViewItemEventHandler
 }
 
 func NewTreeView(parent IContainer) (*TreeView, os.Error) {
@@ -85,82 +84,82 @@ func (tv *TreeView) Items() *TreeViewItemList {
 }
 
 func (tv *TreeView) AddItemCollapsedHandler(handler TreeViewItemEventHandler) {
-	tv.itemCollapsedHandlers.Push(handler)
+	tv.itemCollapsedHandlers = append(tv.itemCollapsedHandlers, handler)
 }
 
 func (tv *TreeView) RemoveItemCollapsedHandler(handler TreeViewItemEventHandler) {
 	for i, h := range tv.itemCollapsedHandlers {
-		if h.(TreeViewItemEventHandler) == handler {
-			tv.itemCollapsedHandlers.Delete(i)
+		if h == handler {
+			tv.itemCollapsedHandlers = append(tv.itemCollapsedHandlers[:i], tv.itemCollapsedHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (tv *TreeView) raiseItemCollapsed(item *TreeViewItem) {
-	for _, handlerIface := range tv.itemCollapsedHandlers {
-		handler := handlerIface.(TreeViewItemEventHandler)
-		handler(&treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item})
+	args := &treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item}
+	for _, handler := range tv.itemCollapsedHandlers {
+		handler(args)
 	}
 }
 
 func (tv *TreeView) AddItemCollapsingHandler(handler TreeViewItemEventHandler) {
-	tv.itemCollapsingHandlers.Push(handler)
+	tv.itemCollapsingHandlers = append(tv.itemCollapsingHandlers, handler)
 }
 
 func (tv *TreeView) RemoveItemCollapsingHandler(handler TreeViewItemEventHandler) {
 	for i, h := range tv.itemCollapsingHandlers {
-		if h.(TreeViewItemEventHandler) == handler {
-			tv.itemCollapsingHandlers.Delete(i)
+		if h == handler {
+			tv.itemCollapsingHandlers = append(tv.itemCollapsingHandlers[:i], tv.itemCollapsingHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (tv *TreeView) raiseItemCollapsing(item *TreeViewItem) {
-	for _, handlerIface := range tv.itemCollapsingHandlers {
-		handler := handlerIface.(TreeViewItemEventHandler)
-		handler(&treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item})
+	args := &treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item}
+	for _, handler := range tv.itemCollapsingHandlers {
+		handler(args)
 	}
 }
 
 func (tv *TreeView) AddItemExpandedHandler(handler TreeViewItemEventHandler) {
-	tv.itemExpandedHandlers.Push(handler)
+	tv.itemExpandedHandlers = append(tv.itemExpandedHandlers, handler)
 }
 
 func (tv *TreeView) RemoveItemExpandedHandler(handler TreeViewItemEventHandler) {
 	for i, h := range tv.itemExpandedHandlers {
-		if h.(TreeViewItemEventHandler) == handler {
-			tv.itemExpandedHandlers.Delete(i)
+		if h == handler {
+			tv.itemExpandedHandlers = append(tv.itemExpandedHandlers[:i], tv.itemExpandedHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (tv *TreeView) raiseItemExpanded(item *TreeViewItem) {
-	for _, handlerIface := range tv.itemExpandedHandlers {
-		handler := handlerIface.(TreeViewItemEventHandler)
-		handler(&treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item})
+	args := &treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item}
+	for _, handler := range tv.itemExpandedHandlers {
+		handler(args)
 	}
 }
 
 func (tv *TreeView) AddItemExpandingHandler(handler TreeViewItemEventHandler) {
-	tv.itemExpandingHandlers.Push(handler)
+	tv.itemExpandingHandlers = append(tv.itemExpandingHandlers, handler)
 }
 
 func (tv *TreeView) RemoveItemExpandingHandler(handler TreeViewItemEventHandler) {
 	for i, h := range tv.itemExpandingHandlers {
-		if h.(TreeViewItemEventHandler) == handler {
-			tv.itemExpandingHandlers.Delete(i)
+		if h == handler {
+			tv.itemExpandingHandlers = append(tv.itemExpandingHandlers[:i], tv.itemExpandingHandlers[i+1:]...)
 			break
 		}
 	}
 }
 
 func (tv *TreeView) raiseItemExpanding(item *TreeViewItem) {
-	for _, handlerIface := range tv.itemExpandingHandlers {
-		handler := handlerIface.(TreeViewItemEventHandler)
-		handler(&treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item})
+	args := &treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item}
+	for _, handler := range tv.itemExpandingHandlers {
+		handler(args)
 	}
 }
 
