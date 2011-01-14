@@ -31,6 +31,12 @@ func createBitmap() *drawing.Bitmap {
 
 	bmp, err := drawing.NewBitmap(bounds.Size())
 	panicIfErr(err)
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			bmp.Dispose()
+		}
+	}()
 
 	surface, err := drawing.NewSurfaceFromImage(bmp)
 	panicIfErr(err)
@@ -50,8 +56,9 @@ func createBitmap() *drawing.Bitmap {
 	panicIfErr(err)
 	defer font.Dispose()
 
-	panicIfErr(surface.DrawText("Runtime Created Bitmap", font, drawing.RGB(0, 0, 0), bounds, drawing.TextWordbreak))
+	panicIfErr(surface.DrawText("Walk Drawing Example", font, drawing.RGB(0, 0, 0), bounds, drawing.TextWordbreak))
 
+	succeeded = true
 	return bmp
 }
 
@@ -86,7 +93,7 @@ func (mw *MainWindow) drawStuff(surface *drawing.Surface, updateBounds drawing.R
 	panicIfErr(surface.DrawLine(linesPen, drawing.Point{bounds.X, bounds.Height}, drawing.Point{bounds.Width, bounds.Y}))
 
 	bmpSize := bmp.Size()
-	panicIfErr(surface.DrawImage(bmp, drawing.Point{bounds.Width/2 - bmpSize.Width/2, bounds.Height/2 - bmpSize.Height/2}))
+	panicIfErr(surface.DrawImage(bmp, drawing.Point{(bounds.Width - bmpSize.Width) / 2, (bounds.Height - bmpSize.Height) / 2}))
 
 	return nil
 }
