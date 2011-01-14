@@ -32,13 +32,37 @@ func (a *treeViewItemEventArgs) Item() *TreeViewItem {
 
 type TreeViewItemEventHandler func(args TreeViewItemEventArgs)
 
+type TreeViewItemSelectionEventArgs interface {
+	EventArgs
+	Old() *TreeViewItem
+	New() *TreeViewItem
+}
+
+type treeViewItemSelectionEventArgs struct {
+	eventArgs
+	old *TreeViewItem
+	new *TreeViewItem
+}
+
+func (a *treeViewItemSelectionEventArgs) Old() *TreeViewItem {
+	return a.old
+}
+
+func (a *treeViewItemSelectionEventArgs) New() *TreeViewItem {
+	return a.new
+}
+
+type TreeViewItemSelectionEventHandler func(args TreeViewItemSelectionEventArgs)
+
 type TreeView struct {
 	Widget
-	items                  *TreeViewItemList
-	itemCollapsedHandlers  []TreeViewItemEventHandler
-	itemCollapsingHandlers []TreeViewItemEventHandler
-	itemExpandedHandlers   []TreeViewItemEventHandler
-	itemExpandingHandlers  []TreeViewItemEventHandler
+	items                     *TreeViewItemList
+	itemCollapsedHandlers     []TreeViewItemEventHandler
+	itemCollapsingHandlers    []TreeViewItemEventHandler
+	itemExpandedHandlers      []TreeViewItemEventHandler
+	itemExpandingHandlers     []TreeViewItemEventHandler
+	selectionChangedHandlers  []TreeViewItemSelectionEventHandler
+	selectionChangingHandlers []TreeViewItemSelectionEventHandler
 }
 
 func NewTreeView(parent IContainer) (*TreeView, os.Error) {
@@ -81,6 +105,14 @@ func (tv *TreeView) PreferredSize() drawing.Size {
 
 func (tv *TreeView) Items() *TreeViewItemList {
 	return tv.items
+}
+
+func (tv *TreeView) BeginUpdate() {
+	SendMessage(tv.hWnd, WM_SETREDRAW, 0, 0)
+}
+
+func (tv *TreeView) EndUpdate() {
+	SendMessage(tv.hWnd, WM_SETREDRAW, 1, 0)
 }
 
 func (tv *TreeView) AddItemCollapsedHandler(handler TreeViewItemEventHandler) {
@@ -163,6 +195,46 @@ func (tv *TreeView) raiseItemExpanding(item *TreeViewItem) {
 	}
 }
 
+func (tv *TreeView) AddSelectionChangingHandler(handler TreeViewItemSelectionEventHandler) {
+	tv.selectionChangingHandlers = append(tv.selectionChangingHandlers, handler)
+}
+
+func (tv *TreeView) RemoveSelectionChangingHandler(handler TreeViewItemSelectionEventHandler) {
+	for i, h := range tv.selectionChangingHandlers {
+		if h == handler {
+			tv.selectionChangingHandlers = append(tv.selectionChangingHandlers[:i], tv.selectionChangingHandlers[i+1:]...)
+			break
+		}
+	}
+}
+
+func (tv *TreeView) raiseSelectionChanging(old, new *TreeViewItem) {
+	args := &treeViewItemSelectionEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, old: old, new: new}
+	for _, handler := range tv.selectionChangingHandlers {
+		handler(args)
+	}
+}
+
+func (tv *TreeView) AddSelectionChangedHandler(handler TreeViewItemSelectionEventHandler) {
+	tv.selectionChangedHandlers = append(tv.selectionChangedHandlers, handler)
+}
+
+func (tv *TreeView) RemoveSelectionChangedHandler(handler TreeViewItemSelectionEventHandler) {
+	for i, h := range tv.selectionChangedHandlers {
+		if h == handler {
+			tv.selectionChangedHandlers = append(tv.selectionChangedHandlers[:i], tv.selectionChangedHandlers[i+1:]...)
+			break
+		}
+	}
+}
+
+func (tv *TreeView) raiseSelectionChanged(old, new *TreeViewItem) {
+	args := &treeViewItemSelectionEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, old: old, new: new}
+	for _, handler := range tv.selectionChangedHandlers {
+		handler(args)
+	}
+}
+
 func (tv *TreeView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
 	case WM_NOTIFY:
@@ -202,6 +274,16 @@ func (tv *TreeView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 
 			case TVE_TOGGLE:
 			}
+
+		case TVN_SELCHANGED:
+			old := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemOld.LParam))
+			new := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
+			tv.raiseSelectionChanged(old, new)
+
+		case TVN_SELCHANGING:
+			old := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemOld.LParam))
+			new := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
+			tv.raiseSelectionChanging(old, new)
 		}
 	}
 
@@ -243,13 +325,33 @@ func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, ite
 		item.children.observer = tv
 	}
 
+	if err == nil {
+		for i, child := range item.children.items {
+			err = tv.onInsertingTreeViewItem(item, i, child)
+			if err != nil {
+				return
+			}
+		}
+	}
+
 	return
 }
 
 func (tv *TreeView) onRemovingTreeViewItem(index int, item *TreeViewItem) (err os.Error) {
-	panic("not implemented")
+	if 0 == SendMessage(tv.hWnd, TVM_DELETEITEM, 0, uintptr(item.handle)) {
+		err = newError("SendMessage(TVM_DELETEITEM) failed")
+	}
+
+	return
 }
 
-func (tv *TreeView) onClearingTreeViewItems() (err os.Error) {
-	panic("not implemented")
+func (tv *TreeView) onClearingTreeViewItems(parent *TreeViewItem) (err os.Error) {
+	for i, child := range parent.children.items {
+		err = tv.onRemovingTreeViewItem(i, child)
+		if err != nil {
+			return
+		}
+	}
+
+	return
 }

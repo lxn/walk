@@ -19,6 +19,7 @@ all: clean
 	make -C printing             install
 	make -C registry             install
 	make -C examples/drawing
+	make -C examples/filebrowser
 	make -C examples/imageviewer
 	make -C examples/printing
 	make -C examples/webbrowser
@@ -51,6 +52,7 @@ clean:
 	make -C printing             clean
 	make -C registry             clean
 	make -C examples/drawing     clean
+	make -C examples/filebrowser clean
 	make -C examples/imageviewer clean
 	make -C examples/printing    clean
 	make -C examples/webbrowser  clean

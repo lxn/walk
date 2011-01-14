@@ -11,7 +11,7 @@ import (
 type treeViewItemListObserver interface {
 	onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) (err os.Error)
 	onRemovingTreeViewItem(index int, item *TreeViewItem) (err os.Error)
-	onClearingTreeViewItems() (err os.Error)
+	onClearingTreeViewItems(parent *TreeViewItem) (err os.Error)
 }
 
 type TreeViewItemList struct {
@@ -41,7 +41,7 @@ func (l *TreeViewItemList) At(index int) *TreeViewItem {
 func (l *TreeViewItemList) Clear() (err os.Error) {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onClearingTreeViewItems()
+		err = observer.onClearingTreeViewItems(l.parent)
 		if err != nil {
 			return
 		}
@@ -71,6 +71,7 @@ func (l *TreeViewItemList) Insert(index int, item *TreeViewItem) (err os.Error) 
 		}
 	}
 
+	item.parent = l.parent
 	l.items = append(append(l.items[:index], item), l.items[index:]...)
 
 	return

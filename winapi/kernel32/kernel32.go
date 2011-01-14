@@ -38,16 +38,17 @@ var (
 	lib uint32
 
 	// Functions
-	getLastError    uint32
-	getModuleHandle uint32
-	getThreadLocale uint32
-	globalAlloc     uint32
-	globalFree      uint32
-	globalLock      uint32
-	globalUnlock    uint32
-	moveMemory      uint32
-	mulDiv          uint32
-	setLastError    uint32
+	getLastError           uint32
+	getLogicalDriveStrings uint32
+	getModuleHandle        uint32
+	getThreadLocale        uint32
+	globalAlloc            uint32
+	globalFree             uint32
+	globalLock             uint32
+	globalUnlock           uint32
+	moveMemory             uint32
+	mulDiv                 uint32
+	setLastError           uint32
 )
 
 type (
@@ -64,6 +65,7 @@ func init() {
 
 	// Functions
 	getLastError = MustGetProcAddress(lib, "GetLastError")
+	getLogicalDriveStrings = MustGetProcAddress(lib, "GetLogicalDriveStringsW")
 	getModuleHandle = MustGetProcAddress(lib, "GetModuleHandleW")
 	getThreadLocale = MustGetProcAddress(lib, "GetThreadLocale")
 	globalAlloc = MustGetProcAddress(lib, "GlobalAlloc")
@@ -79,6 +81,15 @@ func GetLastError() uint {
 	ret, _, _ := syscall.Syscall(uintptr(setLastError),
 		0,
 		0,
+		0)
+
+	return uint(ret)
+}
+
+func GetLogicalDriveStrings(nBufferLength uint, lpBuffer *uint16) uint {
+	ret, _, _ := syscall.Syscall(uintptr(getLogicalDriveStrings),
+		uintptr(nBufferLength),
+		uintptr(unsafe.Pointer(lpBuffer)),
 		0)
 
 	return uint(ret)
