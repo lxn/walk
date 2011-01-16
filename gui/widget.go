@@ -38,6 +38,8 @@ type IWidget interface {
 	SetBounds(value drawing.Rectangle) os.Error
 	ClientBounds() (drawing.Rectangle, os.Error)
 	ContextMenu() *Menu
+	Cursor() Cursor
+	SetCursor(value Cursor)
 	SetContextMenu(value *Menu)
 	Dispose()
 	IsDisposed() bool
@@ -93,6 +95,7 @@ type Widget struct {
 	sizeChangedHandlers []EventHandler
 	maxSize             drawing.Size
 	minSize             drawing.Size
+	cursor              Cursor
 }
 
 var (
@@ -187,6 +190,14 @@ func (w *Widget) ContextMenu() *Menu {
 
 func (w *Widget) SetContextMenu(value *Menu) {
 	w.contextMenu = value
+}
+
+func (w *Widget) Cursor() Cursor {
+	return w.cursor
+}
+
+func (w *Widget) SetCursor(value Cursor) {
+	w.cursor = value
 }
 
 func (w *Widget) Enabled() bool {
@@ -719,6 +730,12 @@ func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 
 	case WM_MOUSEMOVE:
 		w.raiseMouseMove(w.mouseEventArgsFromMSG(msg))
+
+	case WM_SETCURSOR:
+		if w.cursor != nil {
+			SetCursor(w.cursor.handle())
+			return 0
+		}
 
 	case WM_CONTEXTMENU:
 		sourceWidget := widgetsByHWnd[HWND(msg.WParam)]

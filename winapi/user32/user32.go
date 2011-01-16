@@ -1004,6 +1004,7 @@ var (
 	sendMessage          uint32
 	setActiveWindow      uint32
 	setCapture           uint32
+	setCursor            uint32
 	setFocus             uint32
 	setMenu              uint32
 	setMenuInfo          uint32
@@ -1063,6 +1064,7 @@ func init() {
 	sendMessage = MustGetProcAddress(lib, "SendMessageW")
 	setActiveWindow = MustGetProcAddress(lib, "SetActiveWindow")
 	setCapture = MustGetProcAddress(lib, "SetCapture")
+	setCursor = MustGetProcAddress(lib, "SetCursor")
 	setFocus = MustGetProcAddress(lib, "SetFocus")
 	setMenu = MustGetProcAddress(lib, "SetMenu")
 	setMenuInfo = MustGetProcAddress(lib, "SetMenuInfo")
@@ -1472,6 +1474,15 @@ func SetCapture(hWnd HWND) HWND {
 		0)
 
 	return HWND(ret)
+}
+
+func SetCursor(hCursor HCURSOR) HCURSOR {
+	ret, _, _ := syscall.Syscall(uintptr(setCursor),
+		uintptr(hCursor),
+		0,
+		0)
+
+	return HCURSOR(ret)
 }
 
 func SetFocus(hWnd HWND) HWND {

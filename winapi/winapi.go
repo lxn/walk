@@ -78,6 +78,10 @@ func UTF16PtrToString(s *uint16) string {
 	return syscall.UTF16ToString((*[1 << 30]uint16)(unsafe.Pointer(s))[0:])
 }
 
+func MAKEINTRESOURCE(id uintptr) *uint16 {
+	return (*uint16)(unsafe.Pointer(id))
+}
+
 func BoolToBOOL(value bool) BOOL {
 	if value {
 		return 1

@@ -138,7 +138,13 @@ func (s *Splitter) onInsertingWidget(index int, widget IWidget) (err os.Error) {
 
 func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 	_, isHandle := widget.(*splitterHandle)
-	if !isHandle && s.children.Len()%2 == 0 {
+	if isHandle {
+		if s.Orientation() == Horizontal {
+			widget.SetCursor(CursorSizeWE())
+		} else {
+			widget.SetCursor(CursorSizeNS())
+		}
+	} else if s.children.Len()%2 == 0 {
 		defer func() {
 			if err != nil {
 				return

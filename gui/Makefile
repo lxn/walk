@@ -14,6 +14,7 @@ GOFILES=\
 	commondialogs.go\
 	composite.go\
 	container.go\
+	cursor.go\
 	customwidget.go\
 	dialog.go\
 	groupbox.go\
