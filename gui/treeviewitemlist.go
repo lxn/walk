@@ -72,7 +72,10 @@ func (l *TreeViewItemList) Insert(index int, item *TreeViewItem) (err os.Error) 
 	}
 
 	item.parent = l.parent
-	l.items = append(append(l.items[:index], item), l.items[index:]...)
+
+	l.items = append(l.items, nil)
+	copy(l.items[index+1:], l.items[index:])
+	l.items[index] = item
 
 	return
 }

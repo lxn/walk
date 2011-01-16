@@ -32,7 +32,7 @@ type IContainer interface {
 	IWidget
 	Children() *ObservedWidgetList
 	Layout() Layout
-	SetLayout(value Layout)
+	SetLayout(value Layout) os.Error
 }
 
 type RootWidget interface {
@@ -54,7 +54,7 @@ func (c *Container) Layout() Layout {
 	return c.layout
 }
 
-func (c *Container) SetLayout(value Layout) {
+func (c *Container) SetLayout(value Layout) os.Error {
 	if c.layout != value {
 		if c.layout != nil {
 			c.layout.SetContainer(nil)
@@ -66,6 +66,8 @@ func (c *Container) SetLayout(value Layout) {
 			value.SetContainer(c)
 		}
 	}
+
+	return nil
 }
 
 func (c *Container) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
@@ -116,7 +118,7 @@ func (c *Container) onInsertingWidget(index int, widget IWidget) (err os.Error) 
 
 func (c *Container) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 	if widget.Parent().Handle() != c.hWnd {
-		err = widget.SetParent(c)
+		err = widget.SetParent(widgetsByHWnd[c.hWnd].(IContainer))
 		if err != nil {
 			return
 		}
@@ -130,7 +132,7 @@ func (c *Container) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 }
 
 func (c *Container) onRemovingWidget(index int, widget IWidget) (err os.Error) {
-	if widget.Parent() == IContainer(c) {
+	if widget.Parent().Handle() == c.hWnd {
 		err = widget.SetParent(nil)
 	}
 

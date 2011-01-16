@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"log"
 	"os"
 	"syscall"
 	"unsafe"
@@ -30,6 +31,9 @@ const (
 
 type IWidget interface {
 	Handle() HWND
+	BeginUpdate()
+	EndUpdate()
+	Invalidate() os.Error
 	Bounds() (drawing.Rectangle, os.Error)
 	SetBounds(value drawing.Rectangle) os.Error
 	ClientBounds() (drawing.Rectangle, os.Error)
@@ -84,6 +88,8 @@ type Widget struct {
 	contextMenu         *Menu
 	keyDownHandlers     []KeyEventHandler
 	mouseDownHandlers   []MouseEventHandler
+	mouseUpHandlers     []MouseEventHandler
+	mouseMoveHandlers   []MouseEventHandler
 	sizeChangedHandlers []EventHandler
 	maxSize             drawing.Size
 	minSize             drawing.Size
@@ -201,6 +207,14 @@ func (w *Widget) SetFont(value *drawing.Font) {
 
 		w.font = value
 	}
+}
+
+func (w *Widget) BeginUpdate() {
+	SendMessage(w.hWnd, WM_SETREDRAW, 0, 0)
+}
+
+func (w *Widget) EndUpdate() {
+	SendMessage(w.hWnd, WM_SETREDRAW, 1, 0)
 }
 
 func (w *Widget) Invalidate() os.Error {
@@ -345,7 +359,7 @@ func (w *Widget) Bounds() (drawing.Rectangle, os.Error) {
 
 	if w.parent != nil {
 		p := POINT{b.X, b.Y}
-		if !ScreenToClient(w.hWnd, &p) {
+		if !ScreenToClient(w.parent.Handle(), &p) {
 			return drawing.Rectangle{}, newError("ScreenToClient failed")
 		}
 		b.X = p.X
@@ -622,6 +636,44 @@ func (w *Widget) raiseMouseDown(args MouseEventArgs) {
 	}
 }
 
+func (w *Widget) AddMouseUpHandler(handler MouseEventHandler) {
+	w.mouseUpHandlers = append(w.mouseUpHandlers, handler)
+}
+
+func (w *Widget) RemoveMouseUpHandler(handler MouseEventHandler) {
+	for i, h := range w.mouseUpHandlers {
+		if h == handler {
+			w.mouseUpHandlers = append(w.mouseUpHandlers[:i], w.mouseUpHandlers[i+1:]...)
+			break
+		}
+	}
+}
+
+func (w *Widget) raiseMouseUp(args MouseEventArgs) {
+	for _, handler := range w.mouseUpHandlers {
+		handler(args)
+	}
+}
+
+func (w *Widget) AddMouseMoveHandler(handler MouseEventHandler) {
+	w.mouseMoveHandlers = append(w.mouseMoveHandlers, handler)
+}
+
+func (w *Widget) RemoveMouseMoveHandler(handler MouseEventHandler) {
+	for i, h := range w.mouseMoveHandlers {
+		if h == handler {
+			w.mouseMoveHandlers = append(w.mouseMoveHandlers[:i], w.mouseMoveHandlers[i+1:]...)
+			break
+		}
+	}
+}
+
+func (w *Widget) raiseMouseMove(args MouseEventArgs) {
+	for _, handler := range w.mouseMoveHandlers {
+		handler(args)
+	}
+}
+
 func (w *Widget) AddSizeChangedHandler(handler EventHandler) {
 	w.sizeChangedHandlers = append(w.sizeChangedHandlers, handler)
 }
@@ -642,13 +694,31 @@ func (w *Widget) raiseSizeChanged() {
 	}
 }
 
+func (w *Widget) mouseEventArgsFromMSG(msg *MSG) *mouseEventArgs {
+	x := int(GET_X_LPARAM(msg.LParam))
+	y := int(GET_Y_LPARAM(msg.LParam))
+	args := eventArgs{sender: widgetsByHWnd[w.hWnd]}
+
+	return &mouseEventArgs{x: x, y: y, eventArgs: args}
+}
+
 func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	//	widget := widgetsByHWnd[w.hWnd]
 	//	fmt.Printf("*Widget.wndProc: type: %T, msg: %+v\n", widget, msg)
 
 	switch msg.Message {
 	case WM_LBUTTONDOWN:
-		w.raiseMouseDown(&mouseEventArgs{eventArgs: eventArgs{sender: widgetsByHWnd[w.hWnd]}})
+		SetCapture(w.hWnd)
+		w.raiseMouseDown(w.mouseEventArgsFromMSG(msg))
+
+	case WM_LBUTTONUP:
+		if !ReleaseCapture() {
+			log.Println(lastError("ReleaseCapture"))
+		}
+		w.raiseMouseUp(w.mouseEventArgsFromMSG(msg))
+
+	case WM_MOUSEMOVE:
+		w.raiseMouseMove(w.mouseEventArgsFromMSG(msg))
 
 	case WM_CONTEXTMENU:
 		sourceWidget := widgetsByHWnd[HWND(msg.WParam)]

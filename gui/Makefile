@@ -36,6 +36,7 @@ GOFILES=\
 	radiobutton.go\
 	simpletypes.go\
 	splitter.go\
+	splitterhandle.go\
 	textedit.go\
 	toolbar.go\
 	tooltip.go\

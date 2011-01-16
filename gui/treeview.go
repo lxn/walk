@@ -107,14 +107,6 @@ func (tv *TreeView) Items() *TreeViewItemList {
 	return tv.items
 }
 
-func (tv *TreeView) BeginUpdate() {
-	SendMessage(tv.hWnd, WM_SETREDRAW, 0, 0)
-}
-
-func (tv *TreeView) EndUpdate() {
-	SendMessage(tv.hWnd, WM_SETREDRAW, 1, 0)
-}
-
 func (tv *TreeView) AddItemCollapsedHandler(handler TreeViewItemEventHandler) {
 	tv.itemCollapsedHandlers = append(tv.itemCollapsedHandlers, handler)
 }

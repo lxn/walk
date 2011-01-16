@@ -80,7 +80,9 @@ func (l *ActionList) Insert(index int, action *Action) (err os.Error) {
 		}
 	}
 
-	l.actions = append(append(l.actions[:index], action), l.actions[index:]...)
+	l.actions = append(l.actions, nil)
+	copy(l.actions[index+1:], l.actions[index:])
+	l.actions[index] = action
 
 	return
 }

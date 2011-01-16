@@ -64,6 +64,19 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
+	lv := &ListView{
+		Widget: Widget{
+			hWnd:   hWnd,
+			parent: parent,
+		},
+	}
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			lv.Dispose()
+		}
+	}()
+
 	listViewOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(listViewSubclassWndProcPtr)))
 	if listViewOrigWndProcPtr == 0 {
 		return nil, lastError("SetWindowLong")
@@ -72,8 +85,6 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 	exStyle := SendMessage(hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	exStyle |= LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT //| LVS_EX_GRIDLINES
 	SendMessage(hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
-
-	lv := &ListView{Widget: Widget{hWnd: hWnd, parent: parent}}
 
 	if err := lv.setTheme("Explorer"); err != nil {
 		return nil, err
@@ -85,9 +96,13 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 
 	lv.SetFont(defaultFont)
 
+	if _, err := parent.Children().Add(lv); err != nil {
+		return nil, err
+	}
+
 	widgetsByHWnd[hWnd] = lv
 
-	parent.Children().Add(lv)
+	succeeded = true
 
 	return lv, nil
 }
@@ -106,14 +121,6 @@ func (lv *ListView) Columns() *ListViewColumnList {
 
 func (lv *ListView) Items() *ListViewItemList {
 	return lv.items
-}
-
-func (lv *ListView) BeginUpdate() {
-	SendMessage(lv.hWnd, WM_SETREDRAW, 0, 0)
-}
-
-func (lv *ListView) EndUpdate() {
-	SendMessage(lv.hWnd, WM_SETREDRAW, 1, 0)
 }
 
 func (lv *ListView) SelectedIndex() int {

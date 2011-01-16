@@ -70,7 +70,9 @@ func (l *ListViewColumnList) Insert(index int, column *ListViewColumn) (err os.E
 		}
 	}
 
-	l.columns = append(append(l.columns[:index], column), l.columns[index:]...)
+	l.columns = append(l.columns, nil)
+	copy(l.columns[index+1:], l.columns[index:])
+	l.columns[index] = column
 
 	return
 }

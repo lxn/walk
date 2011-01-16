@@ -5,7 +5,7 @@
 package gui
 
 import (
-	//    "log"
+	//"log"
 	"os"
 )
 
@@ -13,19 +13,26 @@ import (
 	"walk/drawing"
 )
 
+type Orientation byte
+
+const (
+	Horizontal Orientation = iota
+	Vertical
+)
+
 type BoxLayout struct {
-	container IContainer
-	margins   *Margins
-	spacing   int
-	vertical  bool
+	container   IContainer
+	margins     *Margins
+	spacing     int
+	orientation Orientation
 }
 
 func NewHBoxLayout() *BoxLayout {
-	return &BoxLayout{margins: &Margins{}}
+	return &BoxLayout{margins: &Margins{}, orientation: Horizontal}
 }
 
 func NewVBoxLayout() *BoxLayout {
-	return &BoxLayout{margins: &Margins{}, vertical: true}
+	return &BoxLayout{margins: &Margins{}, orientation: Vertical}
 }
 
 func (l *BoxLayout) Container() IContainer {
@@ -62,6 +69,27 @@ func (l *BoxLayout) SetMargins(value *Margins) os.Error {
 	return nil
 }
 
+func (l *BoxLayout) Orientation() Orientation {
+	return l.orientation
+}
+
+func (l *BoxLayout) SetOrientation(value Orientation) os.Error {
+	if value != l.orientation {
+		switch value {
+		case Horizontal, Vertical:
+
+		default:
+			return newError("invalid Orientation value")
+		}
+
+		l.orientation = value
+
+		l.Update(false)
+	}
+
+	return nil
+}
+
 func (l *BoxLayout) Spacing() int {
 	return l.spacing
 }
@@ -85,7 +113,10 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 		return
 	}
 
-	//    log.Stdout("*BoxLayout.Update")
+	/*log.Printf("*BoxLayout.Update: HWND: %d\n", l.container.Handle())
+	for i, child := range(l.container.Children().items) {
+		log.Printf("children: index: %d, type: %T\n", i, child)
+	}*/
 
 	widgets := make([]IWidget, 0, l.container.Children().Len())
 
@@ -163,7 +194,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 	spacingSum := (widgetCount - 1) * l.spacing
 
 	// Now do the actual layout thing.
-	if l.vertical {
+	if l.orientation == Vertical {
 		diff := cb.Height - l.margins.Top - prefSizeSum.Height - spacingSum - l.margins.Bottom
 
 		reqW := 0
@@ -188,7 +219,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 			}
 		}
 
-		//        log.Stdoutf("*BoxLayout.Update: widgetCount: %d, cb: %+v, prefSizeSum: %+v, diff: %d, change: %d, reqW: %d", widgetCount, cb, prefSizeSum, diff, change, reqW)
+		//log.Printf("*BoxLayout.Update: widgetCount: %d, cb: %+v, prefSizeSum: %+v, diff: %d, change: %d, reqW: %d", widgetCount, cb, prefSizeSum, diff, change, reqW)
 
 		y := cb.Y + l.margins.Top
 		for i := 0; i < widgetCount; i++ {
@@ -210,7 +241,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 
 			bounds := drawing.Rectangle{cb.X + l.margins.Left, y, reqW, h}
 
-			//            log.Stdoutf("*BoxLayout.Update: bounds: %+v", bounds)
+			//log.Printf("*BoxLayout.Update: bounds: %+v", bounds)
 
 			widget.SetBounds(bounds)
 
@@ -240,7 +271,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 			}
 		}
 
-		//        log.Stdoutf("*BoxLayout.Update: widgetCount: %d, cb: %+v, prefSizeSum: %+v, diff: %d, change: %d, reqH: %d", widgetCount, cb, prefSizeSum, diff, change, reqH)
+		//log.Printf("*BoxLayout.Update: widgetCount: %d, cb: %+v, prefSizeSum: %+v, diff: %d, change: %d, reqH: %d", widgetCount, cb, prefSizeSum, diff, change, reqH)
 
 		x := cb.X + l.margins.Left
 		for i := 0; i < widgetCount; i++ {
@@ -262,7 +293,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 
 			bounds := drawing.Rectangle{x, cb.Y + l.margins.Top, w, reqH}
 
-			//            log.Stdoutf("*BoxLayout.Update: bounds: %+v", bounds)
+			//log.Printf("*BoxLayout.Update: bounds: %+v", bounds)
 
 			widget.SetBounds(bounds)
 

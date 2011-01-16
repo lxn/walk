@@ -952,11 +952,11 @@ type NONCLIENTMETRICS struct {
 }
 
 func GET_X_LPARAM(lp uintptr) int {
-	return int(LOWORD(uint(lp)))
+	return int(int16(LOWORD(uint(lp))))
 }
 
 func GET_Y_LPARAM(lp uintptr) int {
-	return int(HIWORD(uint(lp)))
+	return int(int16(HIWORD(uint(lp))))
 }
 
 var (
@@ -998,10 +998,12 @@ var (
 	postMessage          uint32
 	postQuitMessage      uint32
 	registerClassEx      uint32
+	releaseCapture       uint32
 	releaseDC            uint32
 	screenToClient       uint32
 	sendMessage          uint32
 	setActiveWindow      uint32
+	setCapture           uint32
 	setFocus             uint32
 	setMenu              uint32
 	setMenuInfo          uint32
@@ -1055,10 +1057,12 @@ func init() {
 	postMessage = MustGetProcAddress(lib, "PostMessageW")
 	postQuitMessage = MustGetProcAddress(lib, "PostQuitMessage")
 	registerClassEx = MustGetProcAddress(lib, "RegisterClassExW")
+	releaseCapture = MustGetProcAddress(lib, "ReleaseCapture")
 	releaseDC = MustGetProcAddress(lib, "ReleaseDC")
 	screenToClient = MustGetProcAddress(lib, "ScreenToClient")
 	sendMessage = MustGetProcAddress(lib, "SendMessageW")
 	setActiveWindow = MustGetProcAddress(lib, "SetActiveWindow")
+	setCapture = MustGetProcAddress(lib, "SetCapture")
 	setFocus = MustGetProcAddress(lib, "SetFocus")
 	setMenu = MustGetProcAddress(lib, "SetMenu")
 	setMenuInfo = MustGetProcAddress(lib, "SetMenuInfo")
@@ -1413,6 +1417,15 @@ func RegisterClassEx(windowClass *WNDCLASSEX) ATOM {
 	return ATOM(ret)
 }
 
+func ReleaseCapture() bool {
+	ret, _, _ := syscall.Syscall(uintptr(releaseCapture),
+		0,
+		0,
+		0)
+
+	return ret != 0
+}
+
 func ReleaseDC(hWnd HWND, hDC HDC) bool {
 	ret, _, _ := syscall.Syscall(uintptr(releaseDC),
 		uintptr(hWnd),
@@ -1445,6 +1458,15 @@ func SendMessage(hWnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 
 func SetActiveWindow(hWnd HWND) HWND {
 	ret, _, _ := syscall.Syscall(uintptr(setActiveWindow),
+		uintptr(hWnd),
+		0,
+		0)
+
+	return HWND(ret)
+}
+
+func SetCapture(hWnd HWND) HWND {
+	ret, _, _ := syscall.Syscall(uintptr(setCapture),
 		uintptr(hWnd),
 		0,
 		0)

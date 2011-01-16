@@ -20,8 +20,10 @@ import (
 
 type MainWindow struct {
 	*gui.MainWindow
-	treeView *gui.TreeView
-	listView *gui.ListView
+	treeView   *gui.TreeView
+	selTvwItem *gui.TreeViewItem
+	listView   *gui.ListView
+	preview    *gui.WebView
 }
 
 func (mw *MainWindow) showError(err os.Error) {
@@ -170,9 +172,12 @@ func runMainWindow() (int, os.Error) {
 	})
 	helpMenu.Actions().Add(aboutAction)
 
-	mw.treeView, err = gui.NewTreeView(mw.ClientArea())
+	splitter, err := gui.NewSplitter(mw.ClientArea())
 	panicIfErr(err)
-	panicIfErr(mw.treeView.SetMaxSize(drawing.Size{200, 0}))
+
+	mw.treeView, err = gui.NewTreeView(splitter)
+	panicIfErr(err)
+	//	panicIfErr(mw.treeView.SetMaxSize(drawing.Size{200, 0}))
 
 	mw.treeView.AddItemExpandedHandler(func(args gui.TreeViewItemEventArgs) {
 		item := args.Item()
@@ -183,7 +188,8 @@ func runMainWindow() (int, os.Error) {
 	})
 
 	mw.treeView.AddSelectionChangedHandler(func(args gui.TreeViewItemSelectionEventArgs) {
-		mw.populateListView(pathForTreeViewItem(args.New()))
+		mw.selTvwItem = args.New()
+		mw.populateListView(pathForTreeViewItem(mw.selTvwItem))
 	})
 
 	drives, err := wpath.DriveNames()
@@ -197,8 +203,22 @@ func runMainWindow() (int, os.Error) {
 	}
 	mw.treeView.EndUpdate()
 
-	mw.listView, err = gui.NewListView(mw.ClientArea())
+	mw.listView, err = gui.NewListView(splitter)
 	panicIfErr(err)
+
+	mw.listView.AddSelectedIndexChangedHandler(func(args gui.EventArgs) {
+		index := mw.listView.SelectedIndex()
+		var url string
+		if index > -1 {
+			item := mw.listView.Items().At(index)
+			panicIfErr(err)
+
+			url = path.Join(pathForTreeViewItem(mw.selTvwItem), item.Texts()[0])
+		}
+
+		err := mw.preview.SetURL(url)
+		panicIfErr(err)
+	})
 
 	nameCol := gui.NewListViewColumn()
 	nameCol.SetTitle("Name")
@@ -216,6 +236,9 @@ func runMainWindow() (int, os.Error) {
 	lastModCol.SetTitle("Last Modified")
 	lastModCol.SetWidth(120)
 	_, err = mw.listView.Columns().Add(lastModCol)
+	panicIfErr(err)
+
+	mw.preview, err = gui.NewWebView(splitter)
 	panicIfErr(err)
 
 	panicIfErr(mw.SetMinSize(drawing.Size{600, 400}))

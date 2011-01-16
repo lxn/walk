@@ -70,7 +70,9 @@ func (l *ListViewItemList) Insert(index int, item *ListViewItem) (err os.Error) 
 		}
 	}
 
-	l.items = append(append(l.items[:index], item), l.items[index:]...)
+	l.items = append(l.items, nil)
+	copy(l.items[index+1:], l.items[index:])
+	l.items[index] = item
 
 	return
 }

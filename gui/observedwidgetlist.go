@@ -32,12 +32,7 @@ func newObservedWidgetList(observer widgetListObserver) *ObservedWidgetList {
 
 func (l *ObservedWidgetList) Add(item IWidget) (index int, err os.Error) {
 	index = len(l.items)
-	err = l.Insert(index, item)
-	if err != nil {
-		return
-	}
-
-	return
+	return index, l.Insert(index, item)
 }
 
 func (l *ObservedWidgetList) At(index int) IWidget {
@@ -104,7 +99,9 @@ func (l *ObservedWidgetList) Insert(index int, item IWidget) (err os.Error) {
 		}
 	}
 
-	l.items = append(append(l.items[:index], item), l.items[index:]...)
+	l.items = append(l.items, nil)
+	copy(l.items[index+1:], l.items[index:])
+	l.items[index] = item
 
 	if observer != nil {
 		err = observer.onInsertedWidget(index, item)

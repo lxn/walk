@@ -154,29 +154,30 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 
 	log.Println("NewWebView #7")
 
-	var cpcPtr unsafe.Pointer
-	if hr := browserObject.QueryInterface(&IID_IConnectionPointContainer, &cpcPtr); FAILED(hr) {
-		return nil, errorFromHRESULT("IOleObject.QueryInterface(IID_IConnectionPointContainer)", hr)
-	}
-	cpc := (*IConnectionPointContainer)(cpcPtr)
-	defer cpc.Release()
+	// FIXME: Reactivate when crash bug is gone
+	/*	var cpcPtr unsafe.Pointer
+		if hr := browserObject.QueryInterface(&IID_IConnectionPointContainer, &cpcPtr); FAILED(hr) {
+			return nil, errorFromHRESULT("IOleObject.QueryInterface(IID_IConnectionPointContainer)", hr)
+		}
+		cpc := (*IConnectionPointContainer)(cpcPtr)
+		defer cpc.Release()
 
-	log.Println("NewWebView #8")
+		log.Println("NewWebView #8")
 
-	var cp *IConnectionPoint
-	if hr := cpc.FindConnectionPoint(&DIID_DWebBrowserEvents2, &cp); FAILED(hr) {
-		return nil, errorFromHRESULT("IConnectionPointContainer.FindConnectionPoint(DIID_DWebBrowserEvents2)", hr)
-	}
-	defer cp.Release()
+		var cp *IConnectionPoint
+		if hr := cpc.FindConnectionPoint(&DIID_DWebBrowserEvents2, &cp); FAILED(hr) {
+			return nil, errorFromHRESULT("IConnectionPointContainer.FindConnectionPoint(DIID_DWebBrowserEvents2)", hr)
+		}
+		defer cp.Release()
 
-	log.Println("NewWebView #9")
+		log.Println("NewWebView #9")
 
-	var cookie uint
-	if hr := cp.Advise(unsafe.Pointer(&wv.clientSite.webBrowserEvents2), &cookie); FAILED(hr) {
-		return nil, errorFromHRESULT("IConnectionPoint.Advise", hr)
-	}
+		var cookie uint
+		if hr := cp.Advise(unsafe.Pointer(&wv.clientSite.webBrowserEvents2), &cookie); FAILED(hr) {
+			return nil, errorFromHRESULT("IConnectionPoint.Advise", hr)
+		}
 
-	log.Println("cookie:", cookie)
+		log.Println("cookie:", cookie)*/
 
 	log.Println("NewWebView #10")
 
