@@ -21,5 +21,8 @@ func (cbi *ComboBoxItem) Text() string {
 }
 
 func (cbi *ComboBoxItem) SetText(value string) os.Error {
-	panic("not implemented")
+	cbi.text = value
+
+	// FIXME: Update ComboBox
+	return nil
 }

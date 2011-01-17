@@ -27,7 +27,7 @@ func NewComboBox(parent IContainer) (*ComboBox, os.Error) {
 
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("COMBOBOX"), nil,
-		CBS_DROPDOWN|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
+		CBS_DROPDOWNLIST|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
 		0, 0, 0, 0, parent.Handle(), 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
@@ -52,6 +52,10 @@ func (*ComboBox) LayoutFlags() LayoutFlags {
 
 func (cb *ComboBox) PreferredSize() drawing.Size {
 	return cb.dialogBaseUnitsToPixels(drawing.Size{50, 14})
+}
+
+func (cb *ComboBox) Items() *ComboBoxItemList {
+	return cb.items
 }
 
 func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) (err os.Error) {
