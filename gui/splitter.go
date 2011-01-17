@@ -244,8 +244,10 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 						next := s.children.At(handleIndex + 1)
 
 						prev.BeginUpdate()
+						defer prev.Invalidate()
 						defer prev.EndUpdate()
 						next.BeginUpdate()
+						defer next.Invalidate()
 						defer next.EndUpdate()
 
 						bh, e := dragHandle.Bounds()
@@ -282,16 +284,6 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 						}
 
 						if e = next.SetBounds(bn); e != nil {
-							log.Println(e)
-							return
-						}
-
-						if e = prev.Invalidate(); e != nil {
-							log.Println(e)
-							return
-						}
-
-						if e = next.Invalidate(); e != nil {
 							log.Println(e)
 							return
 						}
