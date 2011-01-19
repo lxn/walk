@@ -38,6 +38,9 @@ GOFILES=\
 	simpletypes.go\
 	splitter.go\
 	splitterhandle.go\
+	tabpage.go\
+	tabpagelist.go\
+	tabwidget.go\
 	textedit.go\
 	toolbar.go\
 	tooltip.go\

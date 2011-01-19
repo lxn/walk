@@ -169,7 +169,7 @@ func init() {
 	// Initialize the common controls we support
 	var initCtrls INITCOMMONCONTROLSEX
 	initCtrls.DwSize = uint(unsafe.Sizeof(initCtrls))
-	initCtrls.DwICC = ICC_LISTVIEW_CLASSES | ICC_PROGRESS_CLASS
+	initCtrls.DwICC = ICC_LISTVIEW_CLASSES | ICC_PROGRESS_CLASS | ICC_TAB_CLASSES | ICC_TREEVIEW_CLASSES
 
 	InitCommonControlsEx(&initCtrls)
 }

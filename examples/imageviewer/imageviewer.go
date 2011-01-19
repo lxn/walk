@@ -7,7 +7,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 	"runtime"
+	"strings"
 )
 
 import (
@@ -17,7 +19,7 @@ import (
 
 type MainWindow struct {
 	*gui.MainWindow
-	imageView    *gui.ImageView
+	tabWidget    *gui.TabWidget
 	prevFilePath string
 }
 
@@ -25,16 +27,6 @@ func panicIfErr(err os.Error) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func (mw *MainWindow) updateTitle(filePath string) {
-	title := "Walk Image Viewer Example"
-
-	if filePath != "" {
-		title += fmt.Sprintf(" [%s]", filePath)
-	}
-
-	panicIfErr(mw.SetText(title))
 }
 
 func (mw *MainWindow) openImage() {
@@ -55,14 +47,20 @@ func (mw *MainWindow) openImage() {
 	img, err := drawing.NewImageFromFile(dlg.FilePath)
 	panicIfErr(err)
 
-	prevImage := mw.imageView.Image()
-	if prevImage != nil {
-		prevImage.Dispose()
-	}
+	page, err := gui.NewTabPage()
+	panicIfErr(err)
+	panicIfErr(page.SetText(path.Base(strings.Replace(dlg.FilePath, "\\", "/", -1))))
+	panicIfErr(page.SetLayout(gui.NewHBoxLayout()))
 
-	panicIfErr(mw.imageView.SetImage(img))
+	imageView, err := gui.NewImageView(page)
+	panicIfErr(err)
 
-	mw.updateTitle(dlg.FilePath)
+	panicIfErr(imageView.SetImage(img))
+
+	_, err = mw.tabWidget.Pages().Add(page)
+	panicIfErr(err)
+
+	panicIfErr(mw.tabWidget.SetCurrentPage(page))
 }
 
 func runMainWindow() (int, os.Error) {
@@ -72,9 +70,9 @@ func runMainWindow() (int, os.Error) {
 
 	mw := &MainWindow{MainWindow: mainWnd}
 	mw.ClientArea().SetLayout(gui.NewVBoxLayout())
-	mw.updateTitle("")
+	panicIfErr(mw.SetText("Walk Image Viewer Example"))
 
-	mw.imageView, err = gui.NewImageView(mw.ClientArea())
+	mw.tabWidget, err = gui.NewTabWidget(mw.ClientArea())
 	panicIfErr(err)
 
 	imageList, err := gui.NewImageList(drawing.Size{16, 16}, 0)

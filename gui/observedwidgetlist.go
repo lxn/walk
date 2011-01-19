@@ -90,6 +90,12 @@ func (l *ObservedWidgetList) ContainsHandle(handle HWND) bool {
 	return l.IndexOfHandle(handle) > -1
 }
 
+func (l *ObservedWidgetList) insertIntoSlice(index int, item IWidget) {
+	l.items = append(l.items, nil)
+	copy(l.items[index+1:], l.items[index:])
+	l.items[index] = item
+}
+
 func (l *ObservedWidgetList) Insert(index int, item IWidget) (err os.Error) {
 	observer := l.observer
 	if observer != nil {
@@ -99,9 +105,7 @@ func (l *ObservedWidgetList) Insert(index int, item IWidget) (err os.Error) {
 		}
 	}
 
-	l.items = append(l.items, nil)
-	copy(l.items[index+1:], l.items[index:])
-	l.items[index] = item
+	l.insertIntoSlice(index, item)
 
 	if observer != nil {
 		err = observer.onInsertedWidget(index, item)
@@ -142,7 +146,7 @@ func (l *ObservedWidgetList) RemoveAt(index int) (err os.Error) {
 	if observer != nil {
 		err = observer.onRemovedWidget(index, item)
 		if err != nil {
-			l.items = append(append(l.items[:index], item), l.items[index:]...)
+			l.insertIntoSlice(index, item)
 			return
 		}
 	}
