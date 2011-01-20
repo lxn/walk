@@ -165,12 +165,12 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 			err = s.children.Insert(handleIndex, handle)
 			if err == nil {
 				// FIXME: These handlers will be leaked, if widgets get removed.
-				handle.AddMouseDownHandler(func(args MouseEventArgs) {
+				handle.MouseDown().Subscribe(func(args *MouseEventArgs) {
 					s.draggedHandle = handle
 					s.mouseDownPos = drawing.Point{args.X(), args.Y()}
 				})
 
-				handle.AddMouseMoveHandler(func(args MouseEventArgs) {
+				handle.MouseMove().Subscribe(func(args *MouseEventArgs) {
 					if s.draggedHandle == nil {
 						return
 					}
@@ -234,7 +234,7 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 					}
 				})
 
-				handle.AddMouseUpHandler(func(args MouseEventArgs) {
+				handle.MouseUp().Subscribe(func(args *MouseEventArgs) {
 					if s.draggedHandle != nil {
 						dragHandle := s.draggedHandle
 						s.draggedHandle = nil

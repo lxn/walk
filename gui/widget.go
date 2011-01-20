@@ -72,8 +72,6 @@ type IWidget interface {
 	Y() (int, os.Error)
 	SetY(value int) os.Error
 	SetFocus() os.Error
-	AddSizeChangedHandler(handler EventHandler)
-	RemoveSizeChangedHandler(handler EventHandler)
 	RootWidget() RootWidget
 	GetDrawingSurface() (*drawing.Surface, os.Error)
 }
@@ -84,18 +82,18 @@ type widgetInternal interface {
 }
 
 type Widget struct {
-	hWnd                HWND
-	parent              IContainer
-	font                *drawing.Font
-	contextMenu         *Menu
-	keyDownHandlers     []KeyEventHandler
-	mouseDownHandlers   []MouseEventHandler
-	mouseUpHandlers     []MouseEventHandler
-	mouseMoveHandlers   []MouseEventHandler
-	sizeChangedHandlers []EventHandler
-	maxSize             drawing.Size
-	minSize             drawing.Size
-	cursor              Cursor
+	hWnd                 HWND
+	parent               IContainer
+	font                 *drawing.Font
+	contextMenu          *Menu
+	keyDownPublisher     KeyEventPublisher
+	mouseDownPublisher   MouseEventPublisher
+	mouseUpPublisher     MouseEventPublisher
+	mouseMovePublisher   MouseEventPublisher
+	sizeChangedPublisher EventPublisher
+	maxSize              drawing.Size
+	minSize              drawing.Size
+	cursor               Cursor
 }
 
 var (
@@ -609,108 +607,27 @@ func (w *Widget) setTheme(appName string) os.Error {
 	return nil
 }
 
-func (w *Widget) AddKeyDownHandler(handler KeyEventHandler) {
-	w.keyDownHandlers = append(w.keyDownHandlers, handler)
+func (w *Widget) KeyDown() *KeyEvent {
+	return w.keyDownPublisher.Event()
 }
 
-func (w *Widget) RemoveKeyDownHandler(handler KeyEventHandler) {
-	for i, h := range w.keyDownHandlers {
-		if h == handler {
-			w.keyDownHandlers = append(w.keyDownHandlers[:i], w.keyDownHandlers[i+1:]...)
-			break
-		}
-	}
+func (w *Widget) MouseDown() *MouseEvent {
+	return w.mouseDownPublisher.Event()
 }
 
-func (w *Widget) raiseKeyDown(args KeyEventArgs) {
-	for _, handler := range w.keyDownHandlers {
-		handler(args)
-	}
+func (w *Widget) MouseMove() *MouseEvent {
+	return w.mouseMovePublisher.Event()
 }
 
-func (w *Widget) AddMouseDownHandler(handler MouseEventHandler) {
-	w.mouseDownHandlers = append(w.mouseDownHandlers, handler)
+func (w *Widget) MouseUp() *MouseEvent {
+	return w.mouseUpPublisher.Event()
 }
 
-func (w *Widget) RemoveMouseDownHandler(handler MouseEventHandler) {
-	for i, h := range w.mouseDownHandlers {
-		if h == handler {
-			w.mouseDownHandlers = append(w.mouseDownHandlers[:i], w.mouseDownHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (w *Widget) raiseMouseDown(args MouseEventArgs) {
-	for _, handler := range w.mouseDownHandlers {
-		handler(args)
-	}
-}
-
-func (w *Widget) AddMouseUpHandler(handler MouseEventHandler) {
-	w.mouseUpHandlers = append(w.mouseUpHandlers, handler)
-}
-
-func (w *Widget) RemoveMouseUpHandler(handler MouseEventHandler) {
-	for i, h := range w.mouseUpHandlers {
-		if h == handler {
-			w.mouseUpHandlers = append(w.mouseUpHandlers[:i], w.mouseUpHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (w *Widget) raiseMouseUp(args MouseEventArgs) {
-	for _, handler := range w.mouseUpHandlers {
-		handler(args)
-	}
-}
-
-func (w *Widget) AddMouseMoveHandler(handler MouseEventHandler) {
-	w.mouseMoveHandlers = append(w.mouseMoveHandlers, handler)
-}
-
-func (w *Widget) RemoveMouseMoveHandler(handler MouseEventHandler) {
-	for i, h := range w.mouseMoveHandlers {
-		if h == handler {
-			w.mouseMoveHandlers = append(w.mouseMoveHandlers[:i], w.mouseMoveHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (w *Widget) raiseMouseMove(args MouseEventArgs) {
-	for _, handler := range w.mouseMoveHandlers {
-		handler(args)
-	}
-}
-
-func (w *Widget) AddSizeChangedHandler(handler EventHandler) {
-	w.sizeChangedHandlers = append(w.sizeChangedHandlers, handler)
-}
-
-func (w *Widget) RemoveSizeChangedHandler(handler EventHandler) {
-	for i, h := range w.sizeChangedHandlers {
-		if h == handler {
-			w.sizeChangedHandlers = append(w.sizeChangedHandlers[:i], w.sizeChangedHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (w *Widget) raiseSizeChanged() {
-	args := &eventArgs{widgetsByHWnd[w.hWnd]}
-	for _, handler := range w.sizeChangedHandlers {
-		handler(args)
-	}
-}
-
-func (w *Widget) mouseEventArgsFromMSG(msg *MSG) *mouseEventArgs {
+func (w *Widget) mouseEventArgsFromMSG(msg *MSG) *MouseEventArgs {
 	x := int(GET_X_LPARAM(msg.LParam))
 	y := int(GET_Y_LPARAM(msg.LParam))
-	args := eventArgs{sender: widgetsByHWnd[w.hWnd]}
 
-	return &mouseEventArgs{x: x, y: y, eventArgs: args}
+	return NewMouseEventArgs(widgetsByHWnd[w.hWnd], x, y, 0)
 }
 
 func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
@@ -720,16 +637,16 @@ func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
 	case WM_LBUTTONDOWN:
 		SetCapture(w.hWnd)
-		w.raiseMouseDown(w.mouseEventArgsFromMSG(msg))
+		w.mouseDownPublisher.Publish(w.mouseEventArgsFromMSG(msg))
 
 	case WM_LBUTTONUP:
 		if !ReleaseCapture() {
 			log.Println(lastError("ReleaseCapture"))
 		}
-		w.raiseMouseUp(w.mouseEventArgsFromMSG(msg))
+		w.mouseUpPublisher.Publish(w.mouseEventArgsFromMSG(msg))
 
 	case WM_MOUSEMOVE:
-		w.raiseMouseMove(w.mouseEventArgsFromMSG(msg))
+		w.mouseMovePublisher.Publish(w.mouseEventArgsFromMSG(msg))
 
 	case WM_SETCURSOR:
 		if w.cursor != nil {
@@ -750,10 +667,10 @@ func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		return 0
 
 	case WM_KEYDOWN:
-		w.raiseKeyDown(&keyEventArgs{eventArgs: eventArgs{widgetsByHWnd[w.hWnd]}, key: int(msg.WParam)})
+		w.keyDownPublisher.Publish(NewKeyEventArgs(widgetsByHWnd[w.hWnd], int(msg.WParam)))
 
 	case WM_SIZE, WM_SIZING:
-		w.raiseSizeChanged()
+		w.sizeChangedPublisher.Publish(NewEventArgs(widgetsByHWnd[w.hWnd]))
 
 	case WM_GETMINMAXINFO:
 		mmi := (*MINMAXINFO)(unsafe.Pointer(msg.LParam))

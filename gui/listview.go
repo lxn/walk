@@ -39,11 +39,11 @@ func listViewSubclassWndProc(args *uintptr) uintptr {
 
 type ListView struct {
 	Widget
-	columns                      *ListViewColumnList
-	items                        *ListViewItemList
-	prevSelIndex                 int
-	selectedIndexChangedHandlers []EventHandler
-	itemActivatedHandlers        []EventHandler
+	columns                       *ListViewColumnList
+	items                         *ListViewItemList
+	prevSelIndex                  int
+	selectedIndexChangedPublisher EventPublisher
+	itemActivatedPublisher        EventPublisher
 }
 
 func NewListView(parent IContainer) (*ListView, os.Error) {
@@ -184,6 +184,14 @@ func (lv *ListView) RestoreState(s string) os.Error {
 	return nil
 }
 
+func (lv *ListView) ItemActivated() *Event {
+	return lv.itemActivatedPublisher.Event()
+}
+
+func (lv *ListView) SelectedIndexChanged() *Event {
+	return lv.selectedIndexChangedPublisher.Event()
+}
+
 func (lv *ListView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
 	case WM_GETDLGCODE:
@@ -193,19 +201,19 @@ func (lv *ListView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 
 	case WM_KEYDOWN:
 		if msg.WParam == VK_RETURN && lv.SelectedIndex() > -1 {
-			lv.raiseItemActivated()
+			lv.itemActivatedPublisher.Publish(NewEventArgs(lv))
 		}
 
 	case WM_NOTIFY:
 		switch int(((*NMHDR)(unsafe.Pointer(msg.LParam))).Code) {
 		case LVN_ITEMCHANGED:
 			if selIndex := lv.SelectedIndex(); selIndex != lv.prevSelIndex {
-				lv.raiseSelectedIndexChanged()
+				lv.selectedIndexChangedPublisher.Publish(NewEventArgs(lv))
 				lv.prevSelIndex = selIndex
 			}
 
 		case LVN_ITEMACTIVATE:
-			lv.raiseItemActivated()
+			lv.itemActivatedPublisher.Publish(NewEventArgs(lv))
 		}
 	}
 
@@ -293,44 +301,4 @@ func (lv *ListView) onClearingListViewItems() os.Error {
 	}
 
 	return nil
-}
-
-func (lv *ListView) AddSelectedIndexChangedHandler(handler EventHandler) {
-	lv.selectedIndexChangedHandlers = append(lv.selectedIndexChangedHandlers, handler)
-}
-
-func (lv *ListView) RemoveSelectedIndexChangedHandler(handler EventHandler) {
-	for i, h := range lv.selectedIndexChangedHandlers {
-		if h == handler {
-			lv.selectedIndexChangedHandlers = append(lv.selectedIndexChangedHandlers[:i], lv.selectedIndexChangedHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (lv *ListView) raiseSelectedIndexChanged() {
-	args := &eventArgs{widgetsByHWnd[lv.hWnd]}
-	for _, handler := range lv.selectedIndexChangedHandlers {
-		handler(args)
-	}
-}
-
-func (lv *ListView) AddItemActivatedHandler(handler EventHandler) {
-	lv.itemActivatedHandlers = append(lv.itemActivatedHandlers, handler)
-}
-
-func (lv *ListView) RemoveItemActivatedHandler(handler EventHandler) {
-	for i, h := range lv.itemActivatedHandlers {
-		if h == handler {
-			lv.itemActivatedHandlers = append(lv.itemActivatedHandlers[:i], lv.itemActivatedHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (lv *ListView) raiseItemActivated() {
-	args := &eventArgs{widgetsByHWnd[lv.hWnd]}
-	for _, handler := range lv.itemActivatedHandlers {
-		handler(args)
-	}
 }

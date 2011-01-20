@@ -41,10 +41,10 @@ func tabWidgetWndProc(args *uintptr) uintptr {
 
 type TabWidget struct {
 	Widget
-	hWndTab                    HWND
-	pages                      *TabPageList
-	curPage                    *TabPage
-	currentPageChangedHandlers []EventHandler
+	hWndTab                     HWND
+	pages                       *TabPageList
+	curPage                     *TabPage
+	currentPageChangedPublisher EventPublisher
 }
 
 func NewTabWidget(parent IContainer) (*TabWidget, os.Error) {
@@ -138,24 +138,8 @@ func (tw *TabWidget) Pages() *TabPageList {
 	return tw.pages
 }
 
-func (tw *TabWidget) AddCurrentPageChangedHandler(handler EventHandler) {
-	tw.currentPageChangedHandlers = append(tw.currentPageChangedHandlers, handler)
-}
-
-func (tw *TabWidget) RemoveCurrentPageChangedHandler(handler EventHandler) {
-	for i, h := range tw.currentPageChangedHandlers {
-		if h == handler {
-			tw.currentPageChangedHandlers = append(tw.currentPageChangedHandlers[:i], tw.currentPageChangedHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (tw *TabWidget) raiseCurrentPageChanged() {
-	args := &eventArgs{widgetsByHWnd[tw.hWnd]}
-	for _, handler := range tw.currentPageChangedHandlers {
-		handler(args)
-	}
+func (tw *TabWidget) CurrentPageChanged() *Event {
+	return tw.currentPageChangedPublisher.Event()
 }
 
 func (tw *TabWidget) resizePages() {
@@ -208,7 +192,7 @@ func (tw *TabWidget) onSelChange() {
 		tw.curPage.Invalidate()
 	}
 
-	tw.raiseCurrentPageChanged()
+	tw.currentPageChangedPublisher.Publish(NewEventArgs(tw))
 }
 
 func (tw *TabWidget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {

@@ -91,13 +91,13 @@ func runMainWindow() (int, os.Error) {
 	openAction := gui.NewAction()
 	openAction.SetImage(openBmp)
 	openAction.SetText("Open")
-	openAction.AddTriggeredHandler(func(args gui.EventArgs) { mw.openImage() })
+	openAction.Triggered().Subscribe(func(args *gui.EventArgs) { mw.openImage() })
 	fileMenu.Actions().Add(openAction)
 	mw.ToolBar().Actions().Add(openAction)
 
 	exitAction := gui.NewAction()
 	exitAction.SetText("Exit")
-	exitAction.AddTriggeredHandler(func(args gui.EventArgs) { gui.Exit(0) })
+	exitAction.Triggered().Subscribe(func(args *gui.EventArgs) { gui.Exit(0) })
 	fileMenu.Actions().Add(exitAction)
 
 	helpMenu, err := gui.NewMenu()
@@ -108,7 +108,7 @@ func runMainWindow() (int, os.Error) {
 
 	aboutAction := gui.NewAction()
 	aboutAction.SetText("About")
-	aboutAction.AddTriggeredHandler(func(args gui.EventArgs) {
+	aboutAction.Triggered().Subscribe(func(args *gui.EventArgs) {
 		gui.MsgBox(mw, "About", "Walk Image Viewer Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
 	})
 	helpMenu.Actions().Add(aboutAction)

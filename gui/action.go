@@ -25,18 +25,18 @@ var (
 )
 
 type Action struct {
-	menu              *Menu
-	triggeredHandlers []EventHandler
-	changedHandlers   []actionChangedHandler
-	text              string
-	toolTip           string
-	image             *drawing.Bitmap
-	enabled           bool
-	visible           bool
-	checkable         bool
-	checked           bool
-	exclusive         bool
-	id                uint16
+	menu               *Menu
+	triggeredPublisher EventPublisher
+	changedHandlers    []actionChangedHandler
+	text               string
+	toolTip            string
+	image              *drawing.Bitmap
+	enabled            bool
+	visible            bool
+	checkable          bool
+	checked            bool
+	exclusive          bool
+	id                 uint16
 }
 
 func NewAction() *Action {
@@ -213,24 +213,12 @@ func (a *Action) SetVisible(value bool) (err os.Error) {
 	return
 }
 
-func (a *Action) AddTriggeredHandler(handler EventHandler) {
-	a.triggeredHandlers = append(a.triggeredHandlers, handler)
-}
-
-func (a *Action) RemoveTriggeredHandler(handler EventHandler) {
-	for i, h := range a.triggeredHandlers {
-		if h == handler {
-			a.triggeredHandlers = append(a.triggeredHandlers[:i], a.triggeredHandlers[i+1:]...)
-			break
-		}
-	}
+func (a *Action) Triggered() *Event {
+	return a.triggeredPublisher.Event()
 }
 
 func (a *Action) raiseTriggered() {
-	args := &eventArgs{a}
-	for _, handler := range a.triggeredHandlers {
-		handler(args)
-	}
+	a.triggeredPublisher.Publish(NewEventArgs(a))
 }
 
 func (a *Action) addChangedHandler(handler actionChangedHandler) {

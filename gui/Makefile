@@ -7,7 +7,9 @@ GOFILES=\
 	application.go\
 	boxlayout.go\
 	button.go\
+	cancelevent.go\
 	checkbox.go\
+	closeevent.go\
 	combobox.go\
 	comboboxitem.go\
 	comboboxitemlist.go\
@@ -17,10 +19,12 @@ GOFILES=\
 	cursor.go\
 	customwidget.go\
 	dialog.go\
+	event.go\
 	groupbox.go\
 	gui.go\
 	imagelist.go\
 	imageview.go\
+	keyevent.go\
 	label.go\
 	lineedit.go\
 	listviewcolumn.go\
@@ -31,6 +35,7 @@ GOFILES=\
 	mainwindow.go\
 	menu.go\
 	messagebox.go\
+	mouseevent.go\
 	observedwidgetlist.go\
 	progressbar.go\
 	pushbutton.go\
@@ -47,6 +52,8 @@ GOFILES=\
 	toplevelwindow.go\
 	treeview.go\
 	treeviewitem.go\
+	treeviewitemevent.go\
+	treeviewitemselectionevent.go\
 	treeviewitemlist.go\
 	util.go\
 	webview.go\

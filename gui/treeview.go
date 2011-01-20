@@ -16,53 +16,15 @@ import (
 	. "walk/winapi/user32"
 )
 
-type TreeViewItemEventArgs interface {
-	EventArgs
-	Item() *TreeViewItem
-}
-
-type treeViewItemEventArgs struct {
-	eventArgs
-	item *TreeViewItem
-}
-
-func (a *treeViewItemEventArgs) Item() *TreeViewItem {
-	return a.item
-}
-
-type TreeViewItemEventHandler func(args TreeViewItemEventArgs)
-
-type TreeViewItemSelectionEventArgs interface {
-	EventArgs
-	Old() *TreeViewItem
-	New() *TreeViewItem
-}
-
-type treeViewItemSelectionEventArgs struct {
-	eventArgs
-	old *TreeViewItem
-	new *TreeViewItem
-}
-
-func (a *treeViewItemSelectionEventArgs) Old() *TreeViewItem {
-	return a.old
-}
-
-func (a *treeViewItemSelectionEventArgs) New() *TreeViewItem {
-	return a.new
-}
-
-type TreeViewItemSelectionEventHandler func(args TreeViewItemSelectionEventArgs)
-
 type TreeView struct {
 	Widget
-	items                     *TreeViewItemList
-	itemCollapsedHandlers     []TreeViewItemEventHandler
-	itemCollapsingHandlers    []TreeViewItemEventHandler
-	itemExpandedHandlers      []TreeViewItemEventHandler
-	itemExpandingHandlers     []TreeViewItemEventHandler
-	selectionChangedHandlers  []TreeViewItemSelectionEventHandler
-	selectionChangingHandlers []TreeViewItemSelectionEventHandler
+	items                      *TreeViewItemList
+	itemCollapsedPublisher     TreeViewItemEventPublisher
+	itemCollapsingPublisher    TreeViewItemEventPublisher
+	itemExpandedPublisher      TreeViewItemEventPublisher
+	itemExpandingPublisher     TreeViewItemEventPublisher
+	selectionChangedPublisher  TreeViewItemSelectionEventPublisher
+	selectionChangingPublisher TreeViewItemSelectionEventPublisher
 }
 
 func NewTreeView(parent IContainer) (*TreeView, os.Error) {
@@ -107,124 +69,28 @@ func (tv *TreeView) Items() *TreeViewItemList {
 	return tv.items
 }
 
-func (tv *TreeView) AddItemCollapsedHandler(handler TreeViewItemEventHandler) {
-	tv.itemCollapsedHandlers = append(tv.itemCollapsedHandlers, handler)
+func (tv *TreeView) ItemCollapsed() *TreeViewItemEvent {
+	return tv.itemCollapsedPublisher.Event()
 }
 
-func (tv *TreeView) RemoveItemCollapsedHandler(handler TreeViewItemEventHandler) {
-	for i, h := range tv.itemCollapsedHandlers {
-		if h == handler {
-			tv.itemCollapsedHandlers = append(tv.itemCollapsedHandlers[:i], tv.itemCollapsedHandlers[i+1:]...)
-			break
-		}
-	}
+func (tv *TreeView) ItemCollapsing() *TreeViewItemEvent {
+	return tv.itemCollapsingPublisher.Event()
 }
 
-func (tv *TreeView) raiseItemCollapsed(item *TreeViewItem) {
-	args := &treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item}
-	for _, handler := range tv.itemCollapsedHandlers {
-		handler(args)
-	}
+func (tv *TreeView) ItemExpanded() *TreeViewItemEvent {
+	return tv.itemExpandedPublisher.Event()
 }
 
-func (tv *TreeView) AddItemCollapsingHandler(handler TreeViewItemEventHandler) {
-	tv.itemCollapsingHandlers = append(tv.itemCollapsingHandlers, handler)
+func (tv *TreeView) ItemExpanding() *TreeViewItemEvent {
+	return tv.itemExpandingPublisher.Event()
 }
 
-func (tv *TreeView) RemoveItemCollapsingHandler(handler TreeViewItemEventHandler) {
-	for i, h := range tv.itemCollapsingHandlers {
-		if h == handler {
-			tv.itemCollapsingHandlers = append(tv.itemCollapsingHandlers[:i], tv.itemCollapsingHandlers[i+1:]...)
-			break
-		}
-	}
+func (tv *TreeView) SelectionChanged() *TreeViewItemSelectionEvent {
+	return tv.selectionChangedPublisher.Event()
 }
 
-func (tv *TreeView) raiseItemCollapsing(item *TreeViewItem) {
-	args := &treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item}
-	for _, handler := range tv.itemCollapsingHandlers {
-		handler(args)
-	}
-}
-
-func (tv *TreeView) AddItemExpandedHandler(handler TreeViewItemEventHandler) {
-	tv.itemExpandedHandlers = append(tv.itemExpandedHandlers, handler)
-}
-
-func (tv *TreeView) RemoveItemExpandedHandler(handler TreeViewItemEventHandler) {
-	for i, h := range tv.itemExpandedHandlers {
-		if h == handler {
-			tv.itemExpandedHandlers = append(tv.itemExpandedHandlers[:i], tv.itemExpandedHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (tv *TreeView) raiseItemExpanded(item *TreeViewItem) {
-	args := &treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item}
-	for _, handler := range tv.itemExpandedHandlers {
-		handler(args)
-	}
-}
-
-func (tv *TreeView) AddItemExpandingHandler(handler TreeViewItemEventHandler) {
-	tv.itemExpandingHandlers = append(tv.itemExpandingHandlers, handler)
-}
-
-func (tv *TreeView) RemoveItemExpandingHandler(handler TreeViewItemEventHandler) {
-	for i, h := range tv.itemExpandingHandlers {
-		if h == handler {
-			tv.itemExpandingHandlers = append(tv.itemExpandingHandlers[:i], tv.itemExpandingHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (tv *TreeView) raiseItemExpanding(item *TreeViewItem) {
-	args := &treeViewItemEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, item: item}
-	for _, handler := range tv.itemExpandingHandlers {
-		handler(args)
-	}
-}
-
-func (tv *TreeView) AddSelectionChangingHandler(handler TreeViewItemSelectionEventHandler) {
-	tv.selectionChangingHandlers = append(tv.selectionChangingHandlers, handler)
-}
-
-func (tv *TreeView) RemoveSelectionChangingHandler(handler TreeViewItemSelectionEventHandler) {
-	for i, h := range tv.selectionChangingHandlers {
-		if h == handler {
-			tv.selectionChangingHandlers = append(tv.selectionChangingHandlers[:i], tv.selectionChangingHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (tv *TreeView) raiseSelectionChanging(old, new *TreeViewItem) {
-	args := &treeViewItemSelectionEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, old: old, new: new}
-	for _, handler := range tv.selectionChangingHandlers {
-		handler(args)
-	}
-}
-
-func (tv *TreeView) AddSelectionChangedHandler(handler TreeViewItemSelectionEventHandler) {
-	tv.selectionChangedHandlers = append(tv.selectionChangedHandlers, handler)
-}
-
-func (tv *TreeView) RemoveSelectionChangedHandler(handler TreeViewItemSelectionEventHandler) {
-	for i, h := range tv.selectionChangedHandlers {
-		if h == handler {
-			tv.selectionChangedHandlers = append(tv.selectionChangedHandlers[:i], tv.selectionChangedHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (tv *TreeView) raiseSelectionChanged(old, new *TreeViewItem) {
-	args := &treeViewItemSelectionEventArgs{eventArgs: eventArgs{widgetsByHWnd[tv.hWnd]}, old: old, new: new}
-	for _, handler := range tv.selectionChangedHandlers {
-		handler(args)
-	}
+func (tv *TreeView) SelectionChanging() *TreeViewItemSelectionEvent {
+	return tv.selectionChangingPublisher.Event()
 }
 
 func (tv *TreeView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
@@ -238,12 +104,12 @@ func (tv *TreeView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 
 			switch nmtv.Action {
 			case TVE_COLLAPSE:
-				tv.raiseItemCollapsed(item)
+				tv.itemCollapsedPublisher.Publish(NewTreeViewItemEventArgs(tv, item))
 
 			case TVE_COLLAPSERESET:
 
 			case TVE_EXPAND:
-				tv.raiseItemExpanded(item)
+				tv.itemExpandedPublisher.Publish(NewTreeViewItemEventArgs(tv, item))
 
 			case TVE_EXPANDPARTIAL:
 
@@ -255,12 +121,12 @@ func (tv *TreeView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 
 			switch nmtv.Action {
 			case TVE_COLLAPSE:
-				tv.raiseItemCollapsing(item)
+				tv.itemCollapsingPublisher.Publish(NewTreeViewItemEventArgs(tv, item))
 
 			case TVE_COLLAPSERESET:
 
 			case TVE_EXPAND:
-				tv.raiseItemExpanding(item)
+				tv.itemExpandingPublisher.Publish(NewTreeViewItemEventArgs(tv, item))
 
 			case TVE_EXPANDPARTIAL:
 
@@ -270,12 +136,12 @@ func (tv *TreeView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		case TVN_SELCHANGED:
 			old := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemOld.LParam))
 			new := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
-			tv.raiseSelectionChanged(old, new)
+			tv.selectionChangedPublisher.Publish(NewTreeViewItemSelectionEventArgs(tv, old, new))
 
 		case TVN_SELCHANGING:
 			old := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemOld.LParam))
 			new := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
-			tv.raiseSelectionChanging(old, new)
+			tv.selectionChangingPublisher.Publish(NewTreeViewItemSelectionEventArgs(tv, old, new))
 		}
 	}
 

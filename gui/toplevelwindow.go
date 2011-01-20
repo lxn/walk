@@ -24,30 +24,13 @@ const (
 	CloseReasonUser
 )
 
-type ClosingEventArgs interface {
-	CancelEventArgs
-	Reason() CloseReason
-}
-
-type closingEventArgs struct {
-	cancelEventArgs
-	reason CloseReason
-}
-
-func (a *closingEventArgs) Reason() CloseReason {
-	return a.reason
-}
-
-type ClosingEventHandler func(args ClosingEventArgs)
-
-
 type TopLevelWindow struct {
 	Container
-	owner           RootWidget
-	clientArea      *Composite
-	closingHandlers []ClosingEventHandler
-	closeReason     CloseReason
-	prevFocusHWnd   HWND
+	owner            RootWidget
+	clientArea       *Composite
+	closingPublisher CloseEventPublisher
+	closeReason      CloseReason
+	prevFocusHWnd    HWND
 }
 
 func (tlw *TopLevelWindow) ClientArea() *Composite {
@@ -147,23 +130,8 @@ func (tlw *TopLevelWindow) RestoreState(s string) os.Error {
 	return nil
 }
 
-func (tlw *TopLevelWindow) AddClosingHandler(handler ClosingEventHandler) {
-	tlw.closingHandlers = append(tlw.closingHandlers, handler)
-}
-
-func (tlw *TopLevelWindow) RemoveClosingHandler(handler ClosingEventHandler) {
-	for i, h := range tlw.closingHandlers {
-		if h == handler {
-			tlw.closingHandlers = append(tlw.closingHandlers[:i], tlw.closingHandlers[i+1:]...)
-			break
-		}
-	}
-}
-
-func (tlw *TopLevelWindow) raiseClosing(args *closingEventArgs) {
-	for _, handler := range tlw.closingHandlers {
-		handler(args)
-	}
+func (tlw *TopLevelWindow) Closing() *CloseEvent {
+	return tlw.closingPublisher.Event()
 }
 
 func (tlw *TopLevelWindow) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
@@ -181,16 +149,9 @@ func (tlw *TopLevelWindow) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		return 0
 
 	case WM_CLOSE:
-		args := &closingEventArgs{
-			cancelEventArgs: cancelEventArgs{
-				eventArgs: eventArgs{
-					widgetsByHWnd[tlw.hWnd],
-				},
-			},
-			reason: tlw.closeReason,
-		}
+		args := NewCloseEventArgs(widgetsByHWnd[tlw.hWnd], tlw.closeReason)
 		tlw.closeReason = CloseReasonUnknown
-		tlw.raiseClosing(args)
+		tlw.closingPublisher.Publish(args)
 		if !args.Canceled() {
 			tlw.close()
 		}
