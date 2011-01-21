@@ -44,12 +44,12 @@ func init() {
 type Font struct {
 	dpi2hFont map[int]HFONT
 	family    string
-	pointSize float
+	pointSize int
 	style     FontStyle
 }
 
 // NewFont returns a new Font with the specified attributes.
-func NewFont(family string, pointSize float, style FontStyle) (*Font, os.Error) {
+func NewFont(family string, pointSize int, style FontStyle) (*Font, os.Error) {
 	if style > FontBold|FontItalic|FontUnderline|FontStrikeOut {
 		return nil, newError("invalid style")
 	}
@@ -78,7 +78,7 @@ func NewFontFromLOGFONT(lf *LOGFONT, dpi int) (*Font, os.Error) {
 	}
 
 	family := UTF16PtrToString(&lf.LfFaceName[0])
-	pointSize := float(MulDiv(lf.LfHeight, 72, dpi))
+	pointSize := MulDiv(lf.LfHeight, 72, dpi)
 	if pointSize < 0 {
 		pointSize = -pointSize
 	}
@@ -103,7 +103,7 @@ func NewFontFromLOGFONT(lf *LOGFONT, dpi int) (*Font, os.Error) {
 func (f *Font) createForDPI(dpi int) HFONT {
 	var lf LOGFONT
 
-	lf.LfHeight = -MulDiv(int(f.pointSize), dpi, 72)
+	lf.LfHeight = -MulDiv(f.pointSize, dpi, 72)
 	if f.style&FontBold > 0 {
 		lf.LfWeight = FW_BOLD
 	} else {
@@ -191,6 +191,6 @@ func (f *Font) Underline() bool {
 }
 
 // PointSize returns the size of the Font in point units.
-func (f *Font) PointSize() float {
+func (f *Font) PointSize() int {
 	return f.pointSize
 }
