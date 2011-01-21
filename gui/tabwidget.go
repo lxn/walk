@@ -143,13 +143,19 @@ func (tw *TabWidget) CurrentPageChanged() *Event {
 }
 
 func (tw *TabWidget) resizePages() {
-	b, err := tw.Bounds()
-	if err != nil {
-		log.Println(err)
+	var r RECT
+	if !GetWindowRect(tw.hWndTab, &r) {
+		log.Println(lastError("GetWindowRect"))
 		return
 	}
 
-	r := RECT{b.X, b.Y, b.X + b.Width, b.Y + b.Height}
+	p := POINT{r.Left, r.Top}
+	if !ScreenToClient(tw.hWnd, &p) {
+		log.Println(newError("ScreenToClient failed"))
+		return
+	}
+
+	r = RECT{p.X, p.Y, r.Right - r.Left + p.X, r.Bottom - r.Top + p.Y}
 
 	SendMessage(tw.hWndTab, TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
