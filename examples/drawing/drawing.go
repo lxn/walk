@@ -106,7 +106,7 @@ func runMainWindow() (int, os.Error) {
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.SetText("Walk Drawing Example"))
 
-	mw.ClientArea().SetLayout(gui.NewVBoxLayout())
+	panicIfErr(mw.ClientArea().SetLayout(gui.NewVBoxLayout()))
 
 	mw.paintWidget, err = gui.NewCustomWidget(mw.ClientArea(), 0, func(surface *drawing.Surface, updateBounds drawing.Rectangle) os.Error {
 		return mw.drawStuff(surface, updateBounds)

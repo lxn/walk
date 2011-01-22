@@ -38,31 +38,31 @@ func runMainWindow() (int, os.Error) {
 
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.SetText("Walk Web Browser Example"))
-	mw.ClientArea().SetLayout(gui.NewVBoxLayout())
+	panicIfErr(mw.ClientArea().SetLayout(gui.NewVBoxLayout()))
 
 	fileMenu, err := gui.NewMenu()
 	panicIfErr(err)
-	_, fileMenuAction, err := mw.Menu().Actions().AddMenu(fileMenu)
+	fileMenuAction, err := mw.Menu().Actions().AddMenu(fileMenu)
 	panicIfErr(err)
-	fileMenuAction.SetText("File")
+	panicIfErr(fileMenuAction.SetText("File"))
 
 	exitAction := gui.NewAction()
-	exitAction.SetText("Exit")
+	panicIfErr(exitAction.SetText("Exit"))
 	exitAction.Triggered().Subscribe(func(args *gui.EventArgs) { gui.Exit(0) })
-	fileMenu.Actions().Add(exitAction)
+	panicIfErr(fileMenu.Actions().Add(exitAction))
 
 	helpMenu, err := gui.NewMenu()
 	panicIfErr(err)
-	_, helpMenuAction, err := mw.Menu().Actions().AddMenu(helpMenu)
+	helpMenuAction, err := mw.Menu().Actions().AddMenu(helpMenu)
 	panicIfErr(err)
-	helpMenuAction.SetText("Help")
+	panicIfErr(helpMenuAction.SetText("Help"))
 
 	aboutAction := gui.NewAction()
-	aboutAction.SetText("About")
+	panicIfErr(aboutAction.SetText("About"))
 	aboutAction.Triggered().Subscribe(func(args *gui.EventArgs) {
 		gui.MsgBox(mw, "About", "Walk Web Browser Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
 	})
-	helpMenu.Actions().Add(aboutAction)
+	panicIfErr(helpMenu.Actions().Add(aboutAction))
 
 	mw.urlLineEdit, err = gui.NewLineEdit(mw.ClientArea())
 	panicIfErr(err)

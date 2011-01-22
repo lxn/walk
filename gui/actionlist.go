@@ -9,9 +9,9 @@ import (
 )
 
 type actionListObserver interface {
-	onInsertingAction(index int, action *Action) (err os.Error)
-	onRemovingAction(index int, action *Action) (err os.Error)
-	onClearingActions() (err os.Error)
+	onInsertingAction(index int, action *Action) os.Error
+	onRemovingAction(index int, action *Action) os.Error
+	onClearingActions() os.Error
 }
 
 type ActionList struct {
@@ -23,45 +23,32 @@ func newActionList(observer actionListObserver) *ActionList {
 	return &ActionList{observer: observer}
 }
 
-func (l *ActionList) Add(action *Action) (index int, err os.Error) {
-	index = len(l.actions)
-	err = l.Insert(index, action)
-	if err != nil {
-		return
-	}
-
-	return
+func (l *ActionList) Add(action *Action) os.Error {
+	return l.Insert(len(l.actions), action)
 }
 
-func (l *ActionList) AddMenu(menu *Menu) (index int, action *Action, err os.Error) {
-	index = len(l.actions)
-	action, err = l.InsertMenu(index, menu)
-	if err != nil {
-		return
-	}
-
-	return
+func (l *ActionList) AddMenu(menu *Menu) (*Action, os.Error) {
+	return l.InsertMenu(len(l.actions), menu)
 }
 
 func (l *ActionList) At(index int) *Action {
 	return l.actions[index]
 }
 
-func (l *ActionList) Clear() (err os.Error) {
+func (l *ActionList) Clear() os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onClearingActions()
-		if err != nil {
-			return
+		if err := observer.onClearingActions(); err != nil {
+			return err
 		}
 	}
 
 	l.actions = l.actions[:0]
 
-	return
+	return nil
 }
 
-func (l *ActionList) IndexOf(action *Action) int {
+func (l *ActionList) Index(action *Action) int {
 	for i, a := range l.actions {
 		if a == action {
 			return i
@@ -71,12 +58,11 @@ func (l *ActionList) IndexOf(action *Action) int {
 	return -1
 }
 
-func (l *ActionList) Insert(index int, action *Action) (err os.Error) {
+func (l *ActionList) Insert(index int, action *Action) os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onInsertingAction(index, action)
-		if err != nil {
-			return
+		if err := observer.onInsertingAction(index, action); err != nil {
+			return err
 		}
 	}
 
@@ -84,7 +70,7 @@ func (l *ActionList) Insert(index int, action *Action) (err os.Error) {
 	copy(l.actions[index+1:], l.actions[index:])
 	l.actions[index] = action
 
-	return
+	return nil
 }
 
 func (l *ActionList) InsertMenu(index int, menu *Menu) (*Action, os.Error) {
@@ -102,26 +88,25 @@ func (l *ActionList) Len() int {
 	return len(l.actions)
 }
 
-func (l *ActionList) Remove(action *Action) (err os.Error) {
-	index := l.IndexOf(action)
+func (l *ActionList) Remove(action *Action) os.Error {
+	index := l.Index(action)
 	if index == -1 {
-		return
+		return nil
 	}
 
 	return l.RemoveAt(index)
 }
 
-func (l *ActionList) RemoveAt(index int) (err os.Error) {
+func (l *ActionList) RemoveAt(index int) os.Error {
 	observer := l.observer
 	if observer != nil {
 		action := l.actions[index]
-		err = observer.onRemovingAction(index, action)
-		if err != nil {
-			return
+		if err := observer.onRemovingAction(index, action); err != nil {
+			return err
 		}
 	}
 
 	l.actions = append(l.actions[:index], l.actions[index+1:]...)
 
-	return
+	return nil
 }

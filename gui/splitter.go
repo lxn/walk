@@ -81,7 +81,7 @@ func NewSplitter(parent IContainer) (*Splitter, os.Error) {
 
 	s.SetFont(defaultFont)
 
-	if _, err := parent.Children().Add(s); err != nil {
+	if err := parent.Children().Add(s); err != nil {
 		return nil, err
 	}
 
@@ -175,7 +175,7 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 						return
 					}
 
-					handleIndex := s.children.IndexOf(s.draggedHandle)
+					handleIndex := s.children.Index(s.draggedHandle)
 					prev := s.children.At(handleIndex - 1)
 					next := s.children.At(handleIndex + 1)
 
@@ -239,7 +239,7 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 						dragHandle := s.draggedHandle
 						s.draggedHandle = nil
 
-						handleIndex := s.children.IndexOf(dragHandle)
+						handleIndex := s.children.Index(dragHandle)
 						prev := s.children.At(handleIndex - 1)
 						next := s.children.At(handleIndex + 1)
 

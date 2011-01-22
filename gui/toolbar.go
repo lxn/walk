@@ -162,7 +162,7 @@ func (tb *ToolBar) onActionChanged(action *Action) (err os.Error) {
 		tbbi.FsStyle |= BTNS_GROUP
 	}
 
-	if 0 == SendMessage(tb.hWnd, TB_SETBUTTONINFO, uintptr(tb.actions.IndexOf(action)), uintptr(unsafe.Pointer(&tbbi))) {
+	if 0 == SendMessage(tb.hWnd, TB_SETBUTTONINFO, uintptr(tb.actions.Index(action)), uintptr(unsafe.Pointer(&tbbi))) {
 		err = newError("SendMessage(TB_SETBUTTONINFO) failed")
 	}
 

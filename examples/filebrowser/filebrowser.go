@@ -34,7 +34,7 @@ func (mw *MainWindow) populateTreeViewItem(parent *gui.TreeViewItem) {
 	defer mw.treeView.EndUpdate()
 
 	// Remove dummy child
-	parent.Children().Clear()
+	panicIfErr(parent.Children().Clear())
 
 	dirPath := pathForTreeViewItem(parent)
 
@@ -55,8 +55,7 @@ func (mw *MainWindow) populateTreeViewItem(parent *gui.TreeViewItem) {
 		if !excludePath(name) && fi.IsDirectory() {
 			child := newTreeViewItem(name)
 
-			_, err = parent.Children().Add(child)
-			panicIfErr(err)
+			panicIfErr(parent.Children().Add(child))
 		}
 	}
 }
@@ -65,7 +64,7 @@ func (mw *MainWindow) populateListView(dirPath string) {
 	mw.listView.BeginUpdate()
 	defer mw.listView.EndUpdate()
 
-	mw.listView.Items().Clear()
+	panicIfErr(mw.listView.Items().Clear())
 
 	dir, err := os.Open(dirPath, os.O_RDONLY, 0)
 	if err != nil {
@@ -97,8 +96,7 @@ func (mw *MainWindow) populateListView(dirPath string) {
 			texts := []string{name, size, lastMod}
 			item.SetTexts(texts)
 
-			_, err = mw.listView.Items().Add(item)
-			panicIfErr(err)
+			panicIfErr(mw.listView.Items().Add(item))
 		}
 	}
 }
@@ -132,8 +130,7 @@ func newTreeViewItem(text string) *gui.TreeViewItem {
 	item.SetText(text)
 
 	// For now, we add a dummy child to make the item expandable.
-	_, err := item.Children().Add(gui.NewTreeViewItem())
-	panicIfErr(err)
+	panicIfErr(item.Children().Add(gui.NewTreeViewItem()))
 
 	return item
 }
@@ -145,31 +142,31 @@ func runMainWindow() (int, os.Error) {
 
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.SetText("Walk File Browser Example"))
-	mw.ClientArea().SetLayout(gui.NewHBoxLayout())
+	panicIfErr(mw.ClientArea().SetLayout(gui.NewHBoxLayout()))
 
 	fileMenu, err := gui.NewMenu()
 	panicIfErr(err)
-	_, fileMenuAction, err := mw.Menu().Actions().AddMenu(fileMenu)
+	fileMenuAction, err := mw.Menu().Actions().AddMenu(fileMenu)
 	panicIfErr(err)
-	fileMenuAction.SetText("File")
+	panicIfErr(fileMenuAction.SetText("File"))
 
 	exitAction := gui.NewAction()
-	exitAction.SetText("Exit")
+	panicIfErr(exitAction.SetText("Exit"))
 	exitAction.Triggered().Subscribe(func(args *gui.EventArgs) { gui.Exit(0) })
-	fileMenu.Actions().Add(exitAction)
+	panicIfErr(fileMenu.Actions().Add(exitAction))
 
 	helpMenu, err := gui.NewMenu()
 	panicIfErr(err)
-	_, helpMenuAction, err := mw.Menu().Actions().AddMenu(helpMenu)
+	helpMenuAction, err := mw.Menu().Actions().AddMenu(helpMenu)
 	panicIfErr(err)
-	helpMenuAction.SetText("Help")
+	panicIfErr(helpMenuAction.SetText("Help"))
 
 	aboutAction := gui.NewAction()
-	aboutAction.SetText("About")
+	panicIfErr(aboutAction.SetText("About"))
 	aboutAction.Triggered().Subscribe(func(args *gui.EventArgs) {
 		gui.MsgBox(mw, "About", "Walk File Browser Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
 	})
-	helpMenu.Actions().Add(aboutAction)
+	panicIfErr(helpMenu.Actions().Add(aboutAction))
 
 	splitter, err := gui.NewSplitter(mw.ClientArea())
 	panicIfErr(err)
@@ -197,8 +194,7 @@ func runMainWindow() (int, os.Error) {
 	mw.treeView.BeginUpdate()
 	for _, drive := range drives {
 		driveItem := newTreeViewItem(drive[:2])
-		_, err = mw.treeView.Items().Add(driveItem)
-		panicIfErr(err)
+		panicIfErr(mw.treeView.Items().Add(driveItem))
 	}
 	mw.treeView.EndUpdate()
 
@@ -208,21 +204,18 @@ func runMainWindow() (int, os.Error) {
 	nameCol := gui.NewListViewColumn()
 	nameCol.SetTitle("Name")
 	nameCol.SetWidth(260)
-	_, err = mw.listView.Columns().Add(nameCol)
-	panicIfErr(err)
+	panicIfErr(mw.listView.Columns().Add(nameCol))
 
 	sizeCol := gui.NewListViewColumn()
 	sizeCol.SetTitle("Size")
 	sizeCol.SetWidth(80)
 	sizeCol.SetAlignment(gui.RightAlignment)
-	_, err = mw.listView.Columns().Add(sizeCol)
-	panicIfErr(err)
+	panicIfErr(mw.listView.Columns().Add(sizeCol))
 
 	modCol := gui.NewListViewColumn()
 	modCol.SetTitle("Modified")
 	modCol.SetWidth(120)
-	_, err = mw.listView.Columns().Add(modCol)
-	panicIfErr(err)
+	panicIfErr(mw.listView.Columns().Add(modCol))
 
 	panicIfErr(mw.SetMinSize(drawing.Size{600, 400}))
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))

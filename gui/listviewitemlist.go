@@ -9,9 +9,9 @@ import (
 )
 
 type listViewItemListObserver interface {
-	onInsertingListViewItem(index int, item *ListViewItem) (err os.Error)
-	onRemovingListViewItem(index int, item *ListViewItem) (err os.Error)
-	onClearingListViewItems() (err os.Error)
+	onInsertingListViewItem(index int, item *ListViewItem) os.Error
+	onRemovingListViewItem(index int, item *ListViewItem) os.Error
+	onClearingListViewItems() os.Error
 }
 
 type ListViewItemList struct {
@@ -23,35 +23,28 @@ func newListViewItemList(observer listViewItemListObserver) *ListViewItemList {
 	return &ListViewItemList{observer: observer}
 }
 
-func (l *ListViewItemList) Add(item *ListViewItem) (index int, err os.Error) {
-	index = len(l.items)
-	err = l.Insert(index, item)
-	if err != nil {
-		return
-	}
-
-	return
+func (l *ListViewItemList) Add(item *ListViewItem) os.Error {
+	return l.Insert(len(l.items), item)
 }
 
 func (l *ListViewItemList) At(index int) *ListViewItem {
 	return l.items[index]
 }
 
-func (l *ListViewItemList) Clear() (err os.Error) {
+func (l *ListViewItemList) Clear() os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onClearingListViewItems()
-		if err != nil {
-			return
+		if err := observer.onClearingListViewItems(); err != nil {
+			return err
 		}
 	}
 
 	l.items = l.items[:0]
 
-	return
+	return nil
 }
 
-func (l *ListViewItemList) IndexOf(item *ListViewItem) int {
+func (l *ListViewItemList) Index(item *ListViewItem) int {
 	for i, lvi := range l.items {
 		if lvi == item {
 			return i
@@ -61,12 +54,11 @@ func (l *ListViewItemList) IndexOf(item *ListViewItem) int {
 	return -1
 }
 
-func (l *ListViewItemList) Insert(index int, item *ListViewItem) (err os.Error) {
+func (l *ListViewItemList) Insert(index int, item *ListViewItem) os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onInsertingListViewItem(index, item)
-		if err != nil {
-			return
+		if err := observer.onInsertingListViewItem(index, item); err != nil {
+			return err
 		}
 	}
 
@@ -74,33 +66,32 @@ func (l *ListViewItemList) Insert(index int, item *ListViewItem) (err os.Error) 
 	copy(l.items[index+1:], l.items[index:])
 	l.items[index] = item
 
-	return
+	return nil
 }
 
 func (l *ListViewItemList) Len() int {
 	return len(l.items)
 }
 
-func (l *ListViewItemList) Remove(item *ListViewItem) (err os.Error) {
-	index := l.IndexOf(item)
+func (l *ListViewItemList) Remove(item *ListViewItem) os.Error {
+	index := l.Index(item)
 	if index == -1 {
-		return
+		return nil
 	}
 
 	return l.RemoveAt(index)
 }
 
-func (l *ListViewItemList) RemoveAt(index int) (err os.Error) {
+func (l *ListViewItemList) RemoveAt(index int) os.Error {
 	observer := l.observer
 	if observer != nil {
 		item := l.items[index]
-		err = observer.onRemovingListViewItem(index, item)
-		if err != nil {
-			return
+		if err := observer.onRemovingListViewItem(index, item); err != nil {
+			return err
 		}
 	}
 
 	l.items = append(l.items[:index], l.items[index+1:]...)
 
-	return
+	return nil
 }

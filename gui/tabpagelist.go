@@ -13,12 +13,12 @@ import (
 )
 
 type tabPageListObserver interface {
-	onInsertingPage(index int, page *TabPage) (err os.Error)
-	onInsertedPage(index int, page *TabPage) (err os.Error)
-	onRemovingPage(index int, page *TabPage) (err os.Error)
-	onRemovedPage(index int, page *TabPage) (err os.Error)
-	onClearingPages() (err os.Error)
-	onClearedPages() (err os.Error)
+	onInsertingPage(index int, page *TabPage) os.Error
+	onInsertedPage(index int, page *TabPage) os.Error
+	onRemovingPage(index int, page *TabPage) os.Error
+	onRemovedPage(index int, page *TabPage) os.Error
+	onClearingPages() os.Error
+	onClearedPages() os.Error
 }
 
 type TabPageList struct {
@@ -30,21 +30,19 @@ func newTabPageList(observer tabPageListObserver) *TabPageList {
 	return &TabPageList{observer: observer}
 }
 
-func (l *TabPageList) Add(item *TabPage) (index int, err os.Error) {
-	index = len(l.items)
-	return index, l.Insert(index, item)
+func (l *TabPageList) Add(item *TabPage) os.Error {
+	return l.Insert(len(l.items), item)
 }
 
 func (l *TabPageList) At(index int) *TabPage {
 	return l.items[index]
 }
 
-func (l *TabPageList) Clear() (err os.Error) {
+func (l *TabPageList) Clear() os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onClearingPages()
-		if err != nil {
-			return
+		if err := observer.onClearingPages(); err != nil {
+			return err
 		}
 	}
 
@@ -52,17 +50,16 @@ func (l *TabPageList) Clear() (err os.Error) {
 	l.items = l.items[:0]
 
 	if observer != nil {
-		err = observer.onClearedPages()
-		if err != nil {
+		if err := observer.onClearedPages(); err != nil {
 			l.items = oldItems
-			return
+			return err
 		}
 	}
 
-	return
+	return nil
 }
 
-func (l *TabPageList) IndexOf(item *TabPage) int {
+func (l *TabPageList) Index(item *TabPage) int {
 	for i, lvi := range l.items {
 		if lvi == item {
 			return i
@@ -73,10 +70,10 @@ func (l *TabPageList) IndexOf(item *TabPage) int {
 }
 
 func (l *TabPageList) Contains(item *TabPage) bool {
-	return l.IndexOf(item) > -1
+	return l.Index(item) > -1
 }
 
-func (l *TabPageList) IndexOfHandle(handle HWND) int {
+func (l *TabPageList) IndexHandle(handle HWND) int {
 	for i, lvi := range l.items {
 		if lvi.Handle() == handle {
 			return i
@@ -87,7 +84,7 @@ func (l *TabPageList) IndexOfHandle(handle HWND) int {
 }
 
 func (l *TabPageList) ContainsHandle(handle HWND) bool {
-	return l.IndexOfHandle(handle) > -1
+	return l.IndexHandle(handle) > -1
 }
 
 func (l *TabPageList) insertIntoSlice(index int, item *TabPage) {
@@ -96,60 +93,56 @@ func (l *TabPageList) insertIntoSlice(index int, item *TabPage) {
 	l.items[index] = item
 }
 
-func (l *TabPageList) Insert(index int, item *TabPage) (err os.Error) {
+func (l *TabPageList) Insert(index int, item *TabPage) os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onInsertingPage(index, item)
-		if err != nil {
-			return
+		if err := observer.onInsertingPage(index, item); err != nil {
+			return err
 		}
 	}
 
 	l.insertIntoSlice(index, item)
 
 	if observer != nil {
-		err = observer.onInsertedPage(index, item)
-		if err != nil {
+		if err := observer.onInsertedPage(index, item); err != nil {
 			l.items = append(l.items[:index], l.items[index+1:]...)
-			return
+			return err
 		}
 	}
 
-	return
+	return nil
 }
 
 func (l *TabPageList) Len() int {
 	return len(l.items)
 }
 
-func (l *TabPageList) Remove(item *TabPage) (err os.Error) {
-	index := l.IndexOf(item)
+func (l *TabPageList) Remove(item *TabPage) os.Error {
+	index := l.Index(item)
 	if index == -1 {
-		return
+		return nil
 	}
 
 	return l.RemoveAt(index)
 }
 
-func (l *TabPageList) RemoveAt(index int) (err os.Error) {
+func (l *TabPageList) RemoveAt(index int) os.Error {
 	observer := l.observer
 	item := l.items[index]
 	if observer != nil {
-		err = observer.onRemovingPage(index, item)
-		if err != nil {
-			return
+		if err := observer.onRemovingPage(index, item); err != nil {
+			return err
 		}
 	}
 
 	l.items = append(l.items[:index], l.items[index+1:]...)
 
 	if observer != nil {
-		err = observer.onRemovedPage(index, item)
-		if err != nil {
+		if err := observer.onRemovedPage(index, item); err != nil {
 			l.insertIntoSlice(index, item)
-			return
+			return err
 		}
 	}
 
-	return
+	return nil
 }

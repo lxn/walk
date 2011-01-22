@@ -47,20 +47,38 @@ func (mw *MainWindow) openImage() {
 	img, err := drawing.NewImageFromFile(dlg.FilePath)
 	panicIfErr(err)
 
+	var succeeded bool
+	defer func() {
+		if !succeeded {
+			img.Dispose()
+		}
+	}()
+
 	page, err := gui.NewTabPage()
 	panicIfErr(err)
 	panicIfErr(page.SetText(path.Base(strings.Replace(dlg.FilePath, "\\", "/", -1))))
 	panicIfErr(page.SetLayout(gui.NewHBoxLayout()))
 
+	defer func() {
+		if !succeeded {
+			page.Dispose()
+		}
+	}()
+
 	imageView, err := gui.NewImageView(page)
 	panicIfErr(err)
 
+	defer func() {
+		if !succeeded {
+			imageView.Dispose()
+		}
+	}()
+
 	panicIfErr(imageView.SetImage(img))
-
-	_, err = mw.tabWidget.Pages().Add(page)
-	panicIfErr(err)
-
+	panicIfErr(mw.tabWidget.Pages().Add(page))
 	panicIfErr(mw.tabWidget.SetCurrentPage(page))
+
+	succeeded = true
 }
 
 func runMainWindow() (int, os.Error) {
@@ -69,7 +87,7 @@ func runMainWindow() (int, os.Error) {
 	defer mainWnd.Dispose()
 
 	mw := &MainWindow{MainWindow: mainWnd}
-	mw.ClientArea().SetLayout(gui.NewVBoxLayout())
+	panicIfErr(mw.ClientArea().SetLayout(gui.NewVBoxLayout()))
 	panicIfErr(mw.SetText("Walk Image Viewer Example"))
 
 	mw.tabWidget, err = gui.NewTabWidget(mw.ClientArea())
@@ -81,37 +99,37 @@ func runMainWindow() (int, os.Error) {
 
 	fileMenu, err := gui.NewMenu()
 	panicIfErr(err)
-	_, fileMenuAction, err := mw.Menu().Actions().AddMenu(fileMenu)
+	fileMenuAction, err := mw.Menu().Actions().AddMenu(fileMenu)
 	panicIfErr(err)
-	fileMenuAction.SetText("File")
+	panicIfErr(fileMenuAction.SetText("File"))
 
 	openBmp, err := drawing.NewBitmapFromFile("img/open.png")
 	panicIfErr(err)
 
 	openAction := gui.NewAction()
 	openAction.SetImage(openBmp)
-	openAction.SetText("Open")
+	panicIfErr(openAction.SetText("Open"))
 	openAction.Triggered().Subscribe(func(args *gui.EventArgs) { mw.openImage() })
-	fileMenu.Actions().Add(openAction)
-	mw.ToolBar().Actions().Add(openAction)
+	panicIfErr(fileMenu.Actions().Add(openAction))
+	panicIfErr(mw.ToolBar().Actions().Add(openAction))
 
 	exitAction := gui.NewAction()
-	exitAction.SetText("Exit")
+	panicIfErr(exitAction.SetText("Exit"))
 	exitAction.Triggered().Subscribe(func(args *gui.EventArgs) { gui.Exit(0) })
-	fileMenu.Actions().Add(exitAction)
+	panicIfErr(fileMenu.Actions().Add(exitAction))
 
 	helpMenu, err := gui.NewMenu()
 	panicIfErr(err)
-	_, helpMenuAction, err := mw.Menu().Actions().AddMenu(helpMenu)
+	helpMenuAction, err := mw.Menu().Actions().AddMenu(helpMenu)
 	panicIfErr(err)
-	helpMenuAction.SetText("Help")
+	panicIfErr(helpMenuAction.SetText("Help"))
 
 	aboutAction := gui.NewAction()
-	aboutAction.SetText("About")
+	panicIfErr(aboutAction.SetText("About"))
 	aboutAction.Triggered().Subscribe(func(args *gui.EventArgs) {
 		gui.MsgBox(mw, "About", "Walk Image Viewer Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
 	})
-	helpMenu.Actions().Add(aboutAction)
+	panicIfErr(helpMenu.Actions().Add(aboutAction))
 
 	panicIfErr(mw.SetMinSize(drawing.Size{320, 240}))
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))

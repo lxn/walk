@@ -9,9 +9,9 @@ import (
 )
 
 type treeViewItemListObserver interface {
-	onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) (err os.Error)
-	onRemovingTreeViewItem(index int, item *TreeViewItem) (err os.Error)
-	onClearingTreeViewItems(parent *TreeViewItem) (err os.Error)
+	onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) os.Error
+	onRemovingTreeViewItem(index int, item *TreeViewItem) os.Error
+	onClearingTreeViewItems(parent *TreeViewItem) os.Error
 }
 
 type TreeViewItemList struct {
@@ -24,35 +24,28 @@ func newTreeViewItemList(observer treeViewItemListObserver) *TreeViewItemList {
 	return &TreeViewItemList{observer: observer}
 }
 
-func (l *TreeViewItemList) Add(item *TreeViewItem) (index int, err os.Error) {
-	index = len(l.items)
-	err = l.Insert(index, item)
-	if err != nil {
-		return
-	}
-
-	return
+func (l *TreeViewItemList) Add(item *TreeViewItem) os.Error {
+	return l.Insert(len(l.items), item)
 }
 
 func (l *TreeViewItemList) At(index int) *TreeViewItem {
 	return l.items[index]
 }
 
-func (l *TreeViewItemList) Clear() (err os.Error) {
+func (l *TreeViewItemList) Clear() os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onClearingTreeViewItems(l.parent)
-		if err != nil {
-			return
+		if err := observer.onClearingTreeViewItems(l.parent); err != nil {
+			return err
 		}
 	}
 
 	l.items = l.items[:0]
 
-	return
+	return nil
 }
 
-func (l *TreeViewItemList) IndexOf(item *TreeViewItem) int {
+func (l *TreeViewItemList) Index(item *TreeViewItem) int {
 	for i, tvi := range l.items {
 		if tvi == item {
 			return i
@@ -62,12 +55,11 @@ func (l *TreeViewItemList) IndexOf(item *TreeViewItem) int {
 	return -1
 }
 
-func (l *TreeViewItemList) Insert(index int, item *TreeViewItem) (err os.Error) {
+func (l *TreeViewItemList) Insert(index int, item *TreeViewItem) os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onInsertingTreeViewItem(l.parent, index, item)
-		if err != nil {
-			return
+		if err := observer.onInsertingTreeViewItem(l.parent, index, item); err != nil {
+			return err
 		}
 	}
 
@@ -77,33 +69,32 @@ func (l *TreeViewItemList) Insert(index int, item *TreeViewItem) (err os.Error) 
 	copy(l.items[index+1:], l.items[index:])
 	l.items[index] = item
 
-	return
+	return nil
 }
 
 func (l *TreeViewItemList) Len() int {
 	return len(l.items)
 }
 
-func (l *TreeViewItemList) Remove(item *TreeViewItem) (err os.Error) {
-	index := l.IndexOf(item)
+func (l *TreeViewItemList) Remove(item *TreeViewItem) os.Error {
+	index := l.Index(item)
 	if index == -1 {
-		return
+		return nil
 	}
 
 	return l.RemoveAt(index)
 }
 
-func (l *TreeViewItemList) RemoveAt(index int) (err os.Error) {
+func (l *TreeViewItemList) RemoveAt(index int) os.Error {
 	observer := l.observer
 	if observer != nil {
 		item := l.items[index]
-		err = observer.onRemovingTreeViewItem(index, item)
-		if err != nil {
-			return
+		if err := observer.onRemovingTreeViewItem(index, item); err != nil {
+			return err
 		}
 	}
 
 	l.items = append(l.items[:index], l.items[index+1:]...)
 
-	return
+	return nil
 }

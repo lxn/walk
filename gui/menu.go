@@ -97,7 +97,7 @@ func (m *Menu) onActionChanged(action *Action) (err os.Error) {
 
 	m.initMenuItemInfoFromAction(&mii, action)
 
-	if !SetMenuItemInfo(m.hMenu, uint(m.actions.IndexOf(action)), true, &mii) {
+	if !SetMenuItemInfo(m.hMenu, uint(m.actions.Index(action)), true, &mii) {
 		err = newError("SetMenuItemInfo failed")
 	}
 

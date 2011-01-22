@@ -87,7 +87,7 @@ func NewTabWidget(parent IContainer) (*TabWidget, os.Error) {
 
 	tw.SetFont(defaultFont)
 
-	if _, err := parent.Children().Add(tw); err != nil {
+	if err := parent.Children().Add(tw); err != nil {
 		return nil, err
 	}
 
@@ -117,7 +117,7 @@ func (tw *TabWidget) SetCurrentPage(page *TabPage) os.Error {
 		return nil
 	}
 
-	index := tw.pages.IndexOf(page)
+	index := tw.pages.Index(page)
 	if index == -1 {
 		return newError("invalid page")
 	}

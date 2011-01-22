@@ -9,9 +9,9 @@ import (
 )
 
 type listViewColumnListObserver interface {
-	onInsertingListViewColumn(index int, column *ListViewColumn) (err os.Error)
-	onRemovingListViewColumn(index int, column *ListViewColumn) (err os.Error)
-	onClearingListViewColumns() (err os.Error)
+	onInsertingListViewColumn(index int, column *ListViewColumn) os.Error
+	onRemovingListViewColumn(index int, column *ListViewColumn) os.Error
+	onClearingListViewColumns() os.Error
 }
 
 type ListViewColumnList struct {
@@ -23,35 +23,28 @@ func newListViewColumnList(observer listViewColumnListObserver) *ListViewColumnL
 	return &ListViewColumnList{observer: observer}
 }
 
-func (l *ListViewColumnList) Add(column *ListViewColumn) (index int, err os.Error) {
-	index = len(l.columns)
-	err = l.Insert(index, column)
-	if err != nil {
-		return
-	}
-
-	return
+func (l *ListViewColumnList) Add(column *ListViewColumn) os.Error {
+	return l.Insert(len(l.columns), column)
 }
 
 func (l *ListViewColumnList) At(index int) *ListViewColumn {
 	return l.columns[index]
 }
 
-func (l *ListViewColumnList) Clear() (err os.Error) {
+func (l *ListViewColumnList) Clear() os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onClearingListViewColumns()
-		if err != nil {
-			return
+		if err := observer.onClearingListViewColumns(); err != nil {
+			return err
 		}
 	}
 
 	l.columns = l.columns[:0]
 
-	return
+	return nil
 }
 
-func (l *ListViewColumnList) IndexOf(column *ListViewColumn) int {
+func (l *ListViewColumnList) Index(column *ListViewColumn) int {
 	for i, c := range l.columns {
 		if c == column {
 			return i
@@ -61,12 +54,11 @@ func (l *ListViewColumnList) IndexOf(column *ListViewColumn) int {
 	return -1
 }
 
-func (l *ListViewColumnList) Insert(index int, column *ListViewColumn) (err os.Error) {
+func (l *ListViewColumnList) Insert(index int, column *ListViewColumn) os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onInsertingListViewColumn(index, column)
-		if err != nil {
-			return
+		if err := observer.onInsertingListViewColumn(index, column); err != nil {
+			return err
 		}
 	}
 
@@ -74,33 +66,32 @@ func (l *ListViewColumnList) Insert(index int, column *ListViewColumn) (err os.E
 	copy(l.columns[index+1:], l.columns[index:])
 	l.columns[index] = column
 
-	return
+	return nil
 }
 
 func (l *ListViewColumnList) Len() int {
 	return len(l.columns)
 }
 
-func (l *ListViewColumnList) Remove(column *ListViewColumn) (err os.Error) {
-	index := l.IndexOf(column)
+func (l *ListViewColumnList) Remove(column *ListViewColumn) os.Error {
+	index := l.Index(column)
 	if index == -1 {
-		return
+		return nil
 	}
 
 	return l.RemoveAt(index)
 }
 
-func (l *ListViewColumnList) RemoveAt(index int) (err os.Error) {
+func (l *ListViewColumnList) RemoveAt(index int) os.Error {
 	observer := l.observer
 	if observer != nil {
 		column := l.columns[index]
-		err = observer.onRemovingListViewColumn(index, column)
-		if err != nil {
-			return
+		if err := observer.onRemovingListViewColumn(index, column); err != nil {
+			return err
 		}
 	}
 
 	l.columns = append(l.columns[:index], l.columns[index+1:]...)
 
-	return
+	return nil
 }

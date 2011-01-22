@@ -96,7 +96,7 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 
 	lv.SetFont(defaultFont)
 
-	if _, err := parent.Children().Add(lv); err != nil {
+	if err := parent.Children().Add(lv); err != nil {
 		return nil, err
 	}
 

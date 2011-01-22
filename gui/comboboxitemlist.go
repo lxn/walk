@@ -9,9 +9,9 @@ import (
 )
 
 type comboBoxItemListObserver interface {
-	onInsertingComboBoxItem(index int, item *ComboBoxItem) (err os.Error)
-	onRemovingComboBoxItem(index int, item *ComboBoxItem) (err os.Error)
-	onClearingComboBoxItems() (err os.Error)
+	onInsertingComboBoxItem(index int, item *ComboBoxItem) os.Error
+	onRemovingComboBoxItem(index int, item *ComboBoxItem) os.Error
+	onClearingComboBoxItems() os.Error
 }
 
 type ComboBoxItemList struct {
@@ -23,35 +23,28 @@ func newComboBoxItemList(observer comboBoxItemListObserver) *ComboBoxItemList {
 	return &ComboBoxItemList{observer: observer}
 }
 
-func (l *ComboBoxItemList) Add(item *ComboBoxItem) (index int, err os.Error) {
-	index = len(l.items)
-	err = l.Insert(index, item)
-	if err != nil {
-		return
-	}
-
-	return
+func (l *ComboBoxItemList) Add(item *ComboBoxItem) os.Error {
+	return l.Insert(len(l.items), item)
 }
 
 func (l *ComboBoxItemList) At(index int) *ComboBoxItem {
 	return l.items[index]
 }
 
-func (l *ComboBoxItemList) Clear() (err os.Error) {
+func (l *ComboBoxItemList) Clear() os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onClearingComboBoxItems()
-		if err != nil {
-			return
+		if err := observer.onClearingComboBoxItems(); err != nil {
+			return err
 		}
 	}
 
 	l.items = l.items[:0]
 
-	return
+	return nil
 }
 
-func (l *ComboBoxItemList) IndexOf(item *ComboBoxItem) int {
+func (l *ComboBoxItemList) Index(item *ComboBoxItem) int {
 	for i, tvi := range l.items {
 		if tvi == item {
 			return i
@@ -61,12 +54,11 @@ func (l *ComboBoxItemList) IndexOf(item *ComboBoxItem) int {
 	return -1
 }
 
-func (l *ComboBoxItemList) Insert(index int, item *ComboBoxItem) (err os.Error) {
+func (l *ComboBoxItemList) Insert(index int, item *ComboBoxItem) os.Error {
 	observer := l.observer
 	if observer != nil {
-		err = observer.onInsertingComboBoxItem(index, item)
-		if err != nil {
-			return
+		if err := observer.onInsertingComboBoxItem(index, item); err != nil {
+			return err
 		}
 	}
 
@@ -74,33 +66,32 @@ func (l *ComboBoxItemList) Insert(index int, item *ComboBoxItem) (err os.Error) 
 	copy(l.items[index+1:], l.items[index:])
 	l.items[index] = item
 
-	return
+	return nil
 }
 
 func (l *ComboBoxItemList) Len() int {
 	return len(l.items)
 }
 
-func (l *ComboBoxItemList) Remove(item *ComboBoxItem) (err os.Error) {
-	index := l.IndexOf(item)
+func (l *ComboBoxItemList) Remove(item *ComboBoxItem) os.Error {
+	index := l.Index(item)
 	if index == -1 {
-		return
+		return nil
 	}
 
 	return l.RemoveAt(index)
 }
 
-func (l *ComboBoxItemList) RemoveAt(index int) (err os.Error) {
+func (l *ComboBoxItemList) RemoveAt(index int) os.Error {
 	observer := l.observer
 	if observer != nil {
 		item := l.items[index]
-		err = observer.onRemovingComboBoxItem(index, item)
-		if err != nil {
-			return
+		if err := observer.onRemovingComboBoxItem(index, item); err != nil {
+			return err
 		}
 	}
 
 	l.items = append(l.items[:index], l.items[index+1:]...)
 
-	return
+	return nil
 }
