@@ -23,7 +23,6 @@ type MainWindow struct {
 	treeView   *gui.TreeView
 	selTvwItem *gui.TreeViewItem
 	listView   *gui.ListView
-	preview    *gui.WebView
 }
 
 func (mw *MainWindow) showError(err os.Error) {
@@ -177,7 +176,7 @@ func runMainWindow() (int, os.Error) {
 
 	mw.treeView, err = gui.NewTreeView(splitter)
 	panicIfErr(err)
-	//	panicIfErr(mw.treeView.SetMaxSize(drawing.Size{200, 0}))
+	panicIfErr(mw.treeView.SetMaxSize(drawing.Size{300, 0}))
 
 	mw.treeView.ItemExpanded().Subscribe(func(args *gui.TreeViewItemEventArgs) {
 		item := args.Item()
@@ -206,39 +205,23 @@ func runMainWindow() (int, os.Error) {
 	mw.listView, err = gui.NewListView(splitter)
 	panicIfErr(err)
 
-	mw.listView.SelectedIndexChanged().Subscribe(func(args *gui.EventArgs) {
-		index := mw.listView.SelectedIndex()
-		var url string
-		if index > -1 {
-			item := mw.listView.Items().At(index)
-			panicIfErr(err)
-
-			url = path.Join(pathForTreeViewItem(mw.selTvwItem), item.Texts()[0])
-		}
-
-		err := mw.preview.SetURL(url)
-		panicIfErr(err)
-	})
-
 	nameCol := gui.NewListViewColumn()
 	nameCol.SetTitle("Name")
-	nameCol.SetWidth(300)
+	nameCol.SetWidth(260)
 	_, err = mw.listView.Columns().Add(nameCol)
 	panicIfErr(err)
 
 	sizeCol := gui.NewListViewColumn()
 	sizeCol.SetTitle("Size")
+	sizeCol.SetWidth(80)
 	sizeCol.SetAlignment(gui.RightAlignment)
 	_, err = mw.listView.Columns().Add(sizeCol)
 	panicIfErr(err)
 
-	lastModCol := gui.NewListViewColumn()
-	lastModCol.SetTitle("Last Modified")
-	lastModCol.SetWidth(120)
-	_, err = mw.listView.Columns().Add(lastModCol)
-	panicIfErr(err)
-
-	mw.preview, err = gui.NewWebView(splitter)
+	modCol := gui.NewListViewColumn()
+	modCol.SetTitle("Modified")
+	modCol.SetWidth(120)
+	_, err = mw.listView.Columns().Add(modCol)
 	panicIfErr(err)
 
 	panicIfErr(mw.SetMinSize(drawing.Size{600, 400}))
