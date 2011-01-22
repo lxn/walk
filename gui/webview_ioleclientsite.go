@@ -13,7 +13,7 @@ import (
 import (
 	. "walk/winapi"
 	. "walk/winapi/ole32"
-	//	. "walk/winapi/oleaut32"
+	. "walk/winapi/oleaut32"
 	. "walk/winapi/shdocvw"
 )
 
@@ -83,10 +83,9 @@ func webView_IOleClientSite_QueryInterface(args *uintptr) uintptr {
 	} else if EqualREFIID(p.riid, &IID_IDocHostUIHandler) {
 		log.Println("webView_IOleClientSite_QueryInterface (IID_IDocHostUIHandler)")
 		*p.ppvObject = unsafe.Pointer(&p.clientSite.docHostUIHandler)
-		// FIXME: Reactivate when crash bug is gone
-		/*} else if EqualREFIID(p.riid, &IID_IDispatch) {
+	} else if EqualREFIID(p.riid, &IID_IDispatch) {
 		log.Println("webView_IOleClientSite_QueryInterface (IID_IDispatch)")
-		*p.ppvObject = unsafe.Pointer(&p.clientSite.webBrowserEvents2)*/
+		*p.ppvObject = unsafe.Pointer(&p.clientSite.webBrowserEvents2)
 	} else {
 		log.Println("webView_IOleClientSite_QueryInterface (?)")
 		*p.ppvObject = nil
