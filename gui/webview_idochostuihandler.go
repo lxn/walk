@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"log"
 	"syscall"
 	"unsafe"
 )
@@ -88,8 +87,6 @@ type webViewIDocHostUIHandler struct {
 }
 
 func webView_IDocHostUIHandler_QueryInterface(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_QueryInterface")
-
 	p := (*struct {
 		object    uintptr
 		riid      REFIID
@@ -110,26 +107,18 @@ func webView_IDocHostUIHandler_QueryInterface(args *uintptr) uintptr {
 }
 
 func webView_IDocHostUIHandler_AddRef(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_AddRef")
-
 	return 1
 }
 
 func webView_IDocHostUIHandler_Release(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_Release")
-
 	return 1
 }
 
 func webView_IDocHostUIHandler_ShowContextMenu(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_ShowContextMenu")
-
 	return S_OK
 }
 
 func webView_IDocHostUIHandler_GetHostInfo(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_GetHostInfo")
-
 	p := (*struct {
 		docHostUIHandler *webViewIDocHostUIHandler
 		pInfo            *DOCHOSTUIINFO
@@ -143,68 +132,46 @@ func webView_IDocHostUIHandler_GetHostInfo(args *uintptr) uintptr {
 }
 
 func webView_IDocHostUIHandler_ShowUI(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_ShowUI")
-
 	return S_OK
 }
 
 func webView_IDocHostUIHandler_HideUI(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_HideUI")
-
 	return S_OK
 }
 
 func webView_IDocHostUIHandler_UpdateUI(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_UpdateUI")
-
 	return S_OK
 }
 
 func webView_IDocHostUIHandler_EnableModeless(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_EnableModeless")
-
 	return S_OK
 }
 
 func webView_IDocHostUIHandler_OnDocWindowActivate(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_OnDocWindowActivate")
-
 	return S_OK
 }
 
 func webView_IDocHostUIHandler_OnFrameWindowActivate(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_OnFrameWindowActivate")
-
 	return S_OK
 }
 
 func webView_IDocHostUIHandler_ResizeBorder(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_ResizeBorder")
-
 	return S_OK
 }
 
 func webView_IDocHostUIHandler_TranslateAccelerator(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_TranslateAccelerator")
-
 	return S_FALSE
 }
 
 func webView_IDocHostUIHandler_GetOptionKeyPath(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_GetOptionKeyPath")
-
 	return S_FALSE
 }
 
 func webView_IDocHostUIHandler_GetDropTarget(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_GetDropTarget")
-
 	return S_FALSE
 }
 
 func webView_IDocHostUIHandler_GetExternal(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_GetExternal")
-
 	p := (*struct {
 		docHostUIHandler *webViewIDocHostUIHandler
 		ppDispatch       *unsafe.Pointer
@@ -216,8 +183,6 @@ func webView_IDocHostUIHandler_GetExternal(args *uintptr) uintptr {
 }
 
 func webView_IDocHostUIHandler_TranslateUrl(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_TranslateUrl")
-
 	p := (*struct {
 		docHostUIHandler *webViewIDocHostUIHandler
 		dwTranslate      uint
@@ -231,8 +196,6 @@ func webView_IDocHostUIHandler_TranslateUrl(args *uintptr) uintptr {
 }
 
 func webView_IDocHostUIHandler_FilterDataObject(args *uintptr) uintptr {
-	log.Println("webView_IDocHostUIHandler_FilterDataObject")
-
 	p := (*struct {
 		docHostUIHandler *webViewIDocHostUIHandler
 		pDO              unsafe.Pointer

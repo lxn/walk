@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"log"
 	"syscall"
 	"unsafe"
 )
@@ -81,8 +80,6 @@ type webViewIOleInPlaceSite struct {
 }
 
 func webView_IOleInPlaceSite_QueryInterface(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_QueryInterface")
-
 	p := (*struct {
 		object    uintptr
 		riid      REFIID
@@ -100,20 +97,14 @@ func webView_IOleInPlaceSite_QueryInterface(args *uintptr) uintptr {
 }
 
 func webView_IOleInPlaceSite_AddRef(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_AddRef")
-
 	return 1
 }
 
 func webView_IOleInPlaceSite_Release(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_Release")
-
 	return 1
 }
 
 func webView_IOleInPlaceSite_GetWindow(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_GetWindow")
-
 	p := (*struct {
 		inPlaceSite *webViewIOleInPlaceSite
 		lphwnd      *HWND
@@ -125,32 +116,22 @@ func webView_IOleInPlaceSite_GetWindow(args *uintptr) uintptr {
 }
 
 func webView_IOleInPlaceSite_ContextSensitiveHelp(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_ContextSensitiveHelp")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleInPlaceSite_CanInPlaceActivate(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_CanInPlaceActivate")
-
 	return S_OK
 }
 
 func webView_IOleInPlaceSite_OnInPlaceActivate(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_OnInPlaceActivate")
-
 	return S_OK
 }
 
 func webView_IOleInPlaceSite_OnUIActivate(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_OnUIActivate")
-
 	return S_OK
 }
 
 func webView_IOleInPlaceSite_GetWindowContext(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_GetWindowContext")
-
 	p := (*struct {
 		inPlaceSite  *webViewIOleInPlaceSite
 		lplpFrame    **webViewIOleInPlaceFrame
@@ -172,38 +153,26 @@ func webView_IOleInPlaceSite_GetWindowContext(args *uintptr) uintptr {
 }
 
 func webView_IOleInPlaceSite_Scroll(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_Scroll")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleInPlaceSite_OnUIDeactivate(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_OnUIDeactivate")
-
 	return S_OK
 }
 
 func webView_IOleInPlaceSite_OnInPlaceDeactivate(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_OnInPlaceDeactivate")
-
 	return S_OK
 }
 
 func webView_IOleInPlaceSite_DiscardUndoState(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_DiscardUndoState")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleInPlaceSite_DeactivateAndUndo(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_DeactivateAndUndo")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleInPlaceSite_OnPosRectChange(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceSite_OnPosRectChange")
-
 	p := (*struct {
 		inPlaceSite *webViewIOleInPlaceSite
 		lprcPosRect *RECT

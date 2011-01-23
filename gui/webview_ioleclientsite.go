@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"log"
 	"syscall"
 	"unsafe"
 )
@@ -72,22 +71,16 @@ func webView_IOleClientSite_QueryInterface(args *uintptr) uintptr {
 	})(unsafe.Pointer(args))
 
 	if EqualREFIID(p.riid, &IID_IUnknown) {
-		log.Println("webView_IOleClientSite_QueryInterface (IID_IUnknown)")
 		*p.ppvObject = unsafe.Pointer(p.clientSite)
 	} else if EqualREFIID(p.riid, &IID_IOleClientSite) {
-		log.Println("webView_IOleClientSite_QueryInterface (IID_IOleClientSite)")
 		*p.ppvObject = unsafe.Pointer(p.clientSite)
 	} else if EqualREFIID(p.riid, &IID_IOleInPlaceSite) {
-		log.Println("webView_IOleClientSite_QueryInterface (IID_IOleInPlaceSite)")
 		*p.ppvObject = unsafe.Pointer(&p.clientSite.inPlaceSite)
 	} else if EqualREFIID(p.riid, &IID_IDocHostUIHandler) {
-		log.Println("webView_IOleClientSite_QueryInterface (IID_IDocHostUIHandler)")
 		*p.ppvObject = unsafe.Pointer(&p.clientSite.docHostUIHandler)
 	} else if EqualREFIID(p.riid, &IID_IDispatch) {
-		log.Println("webView_IOleClientSite_QueryInterface (IID_IDispatch)")
 		*p.ppvObject = unsafe.Pointer(&p.clientSite.webBrowserEvents2)
 	} else {
-		log.Println("webView_IOleClientSite_QueryInterface (?)")
 		*p.ppvObject = nil
 		return E_NOINTERFACE
 	}
@@ -96,32 +89,22 @@ func webView_IOleClientSite_QueryInterface(args *uintptr) uintptr {
 }
 
 func webView_IOleClientSite_AddRef(args *uintptr) uintptr {
-	log.Println("webView_IOleClientSite_AddRef")
-
 	return 1
 }
 
 func webView_IOleClientSite_Release(args *uintptr) uintptr {
-	log.Println("webView_IOleClientSite_Release")
-
 	return 1
 }
 
 func webView_IOleClientSite_SaveObject(args *uintptr) uintptr {
-	log.Println("webView_IOleClientSite_SaveObject")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleClientSite_GetMoniker(args *uintptr) uintptr {
-	log.Println("webView_IOleClientSite_GetMoniker")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleClientSite_GetContainer(args *uintptr) uintptr {
-	log.Println("webView_IOleClientSite_GetContainer")
-
 	p := (*struct {
 		clientSite  *webViewIOleClientSite
 		ppContainer *unsafe.Pointer
@@ -133,19 +116,13 @@ func webView_IOleClientSite_GetContainer(args *uintptr) uintptr {
 }
 
 func webView_IOleClientSite_ShowObject(args *uintptr) uintptr {
-	log.Println("webView_IOleClientSite_ShowObject")
-
 	return S_OK
 }
 
 func webView_IOleClientSite_OnShowWindow(args *uintptr) uintptr {
-	log.Println("webView_IOleClientSite_OnShowWindow")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleClientSite_RequestNewObjectLayout(args *uintptr) uintptr {
-	log.Println("webView_IOleClientSite_RequestNewObjectLayout")
-
 	return E_NOTIMPL
 }

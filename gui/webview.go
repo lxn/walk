@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"log"
 	"os"
 	"syscall"
 	"unsafe"
@@ -101,16 +100,12 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 		}
 	}()
 
-	log.Println("NewWebView #1")
-
 	var classFactoryPtr unsafe.Pointer
 	if hr := CoGetClassObject(&CLSID_WebBrowser, CLSCTX_INPROC_HANDLER|CLSCTX_INPROC_SERVER, nil, &IID_IClassFactory, &classFactoryPtr); FAILED(hr) {
 		return nil, errorFromHRESULT("CoGetClassObject", hr)
 	}
 	classFactory := (*IClassFactory)(classFactoryPtr)
 	defer classFactory.Release()
-
-	log.Println("NewWebView #2")
 
 	var browserObjectPtr unsafe.Pointer
 	if hr := classFactory.CreateInstance(nil, &IID_IOleObject, &browserObjectPtr); FAILED(hr) {
@@ -120,30 +115,17 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 
 	wv.browserObject = browserObject
 
-	log.Println("NewWebView #3")
-	log.Printf("IOleClientSite.LpVtbl: %+v\n", wv.clientSite.IOleClientSite.LpVtbl)
-	log.Printf("IOleInPlaceSite.LpVtbl: %+v\n", wv.clientSite.inPlaceSite.IOleInPlaceSite.LpVtbl)
-	log.Printf("IOleInPlaceFrame.LpVtbl: %+v\n", wv.clientSite.inPlaceSite.inPlaceFrame.IOleInPlaceFrame.LpVtbl)
-	log.Printf("IDocHostUIHandler.LpVtbl: %+v\n", wv.clientSite.docHostUIHandler.IDocHostUIHandler.LpVtbl)
-	log.Printf("browserObject.LpVtbl: %+v\n", browserObject.LpVtbl)
-
 	if hr := browserObject.SetClientSite((*IOleClientSite)(unsafe.Pointer(&wv.clientSite))); FAILED(hr) {
 		return nil, errorFromHRESULT("IOleObject.SetClientSite", hr)
 	}
-
-	log.Println("NewWebView #4")
 
 	if hr := browserObject.SetHostNames(syscall.StringToUTF16Ptr("Walk.WebView"), nil); FAILED(hr) {
 		return nil, errorFromHRESULT("IOleObject.SetHostNames", hr)
 	}
 
-	log.Println("NewWebView #5")
-
 	if hr := OleSetContainedObject((*IUnknown)(unsafe.Pointer(browserObject)), true); FAILED(hr) {
 		return nil, errorFromHRESULT("OleSetContainedObject", hr)
 	}
-
-	log.Println("NewWebView #6")
 
 	var rect RECT
 	GetClientRect(hWnd, &rect)
@@ -152,8 +134,6 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 		return nil, errorFromHRESULT("IOleObject.DoVerb", hr)
 	}
 
-	log.Println("NewWebView #7")
-
 	var cpcPtr unsafe.Pointer
 	if hr := browserObject.QueryInterface(&IID_IConnectionPointContainer, &cpcPtr); FAILED(hr) {
 		return nil, errorFromHRESULT("IOleObject.QueryInterface(IID_IConnectionPointContainer)", hr)
@@ -161,28 +141,18 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 	cpc := (*IConnectionPointContainer)(cpcPtr)
 	defer cpc.Release()
 
-	log.Println("NewWebView #8")
-
 	var cp *IConnectionPoint
 	if hr := cpc.FindConnectionPoint(&DIID_DWebBrowserEvents2, &cp); FAILED(hr) {
 		return nil, errorFromHRESULT("IConnectionPointContainer.FindConnectionPoint(DIID_DWebBrowserEvents2)", hr)
 	}
 	defer cp.Release()
 
-	log.Println("NewWebView #9")
-
 	var cookie uint
 	if hr := cp.Advise(unsafe.Pointer(&wv.clientSite.webBrowserEvents2), &cookie); FAILED(hr) {
 		return nil, errorFromHRESULT("IConnectionPoint.Advise", hr)
 	}
 
-	log.Println("cookie:", cookie)
-
-	log.Println("NewWebView #10")
-
 	wv.onResize()
-
-	log.Println("NewWebView #11")
 
 	wv.SetFont(defaultFont)
 
@@ -191,8 +161,6 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 	parent.Children().Add(wv)
 
 	succeeded = true
-
-	log.Println("NewWebView #12")
 
 	return wv, nil
 }

@@ -5,7 +5,6 @@
 package ole32
 
 import (
-	"log"
 	"syscall"
 	"unsafe"
 )
@@ -342,8 +341,6 @@ func (obj *IOleObject) Release() uint {
 }
 
 func (obj *IOleObject) SetClientSite(pClientSite *IOleClientSite) HRESULT {
-	log.Printf("*IOleObject.SetClientSite: pClientSite: %d, obj.LpVtbl.SetClientSite: %d", pClientSite, obj.LpVtbl.SetClientSite)
-
 	ret, _, _ := syscall.Syscall(obj.LpVtbl.SetClientSite,
 		uintptr(unsafe.Pointer(obj)),
 		uintptr(unsafe.Pointer(pClientSite)),

@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"log"
 	"syscall"
 	"unsafe"
 )
@@ -157,8 +156,6 @@ type webViewDWebBrowserEvents2 struct {
 }
 
 func webView_DWebBrowserEvents2_QueryInterface(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_QueryInterface")
-
 	p := (*struct {
 		object    uintptr
 		riid      REFIID
@@ -180,20 +177,14 @@ func webView_DWebBrowserEvents2_QueryInterface(args *uintptr) uintptr {
 }
 
 func webView_DWebBrowserEvents2_AddRef(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_AddRef")
-
 	return 1
 }
 
 func webView_DWebBrowserEvents2_Release(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_Release")
-
 	return 1
 }
 
 func webView_DWebBrowserEvents2_GetTypeInfoCount(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_GetTypeInfoCount")
-
 	/*	p := (*struct {
 			wbe2    *webViewDWebBrowserEvents2
 			pctinfo *uint
@@ -207,8 +198,6 @@ func webView_DWebBrowserEvents2_GetTypeInfoCount(args *uintptr) uintptr {
 }
 
 func webView_DWebBrowserEvents2_GetTypeInfo(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_GetTypeInfo")
-
 	/*	p := (*struct {
 				wbe2         *webViewDWebBrowserEvents2
 			})(unsafe.Pointer(args))
@@ -221,8 +210,6 @@ func webView_DWebBrowserEvents2_GetTypeInfo(args *uintptr) uintptr {
 }
 
 func webView_DWebBrowserEvents2_GetIDsOfNames(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_GetIDsOfNames")
-
 	/*	p := (*struct {
 				wbe2         *webViewDWebBrowserEvents2
 			})(unsafe.Pointer(args))
@@ -237,219 +224,149 @@ func webView_DWebBrowserEvents2_GetIDsOfNames(args *uintptr) uintptr {
 }
 
 func webView_DWebBrowserEvents2_Invoke(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_Invoke")
-
-	p := (*struct {
+	/*p := (*struct {
 		wbe2         *webViewDWebBrowserEvents2
 		dispIdMember DISPID
 		riid         REFIID
-		lcid         uint /* LCID */
+		lcid         uint // LCID
 		wFlags       uint16
 		pDispParams  *DISPPARAMS
 		pVarResult   *VARIANT
-		pExcepInfo   unsafe.Pointer /* *EXCEPINFO */
+		pExcepInfo   unsafe.Pointer // *EXCEPINFO
 		puArgErr     *uint
-	})(unsafe.Pointer(args))
-
-	log.Printf("p: %+v\n", p)
+	})(unsafe.Pointer(args))*/
 
 	return DISP_E_MEMBERNOTFOUND
 }
 
 func webView_DWebBrowserEvents2_BeforeNavigate2(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_BeforeNavigate2")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_ClientToHostWindow(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_ClientToHostWindow")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_CommandStateChange(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_CommandStateChange")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_DocumentComplete(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_DocumentComplete")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_DownloadBegin(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_DownloadBegin")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_DownloadComplete(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_DownloadComplete")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_FileDownload(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_FileDownload")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_NavigateComplete2(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_NavigateComplete2")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_NavigateError(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_NavigateError")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_NewWindow2(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_NewWindow2")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_NewWindow3(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_NewWindow3")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_OnFullScreen(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_OnFullScreen")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_OnMenuBar(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_OnMenuBar")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_OnQuit(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_OnQuit")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_OnStatusBar(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_OnStatusBar")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_OnTheaterMode(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_OnTheaterMode")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_OnToolBar(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_OnToolBar")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_OnVisible(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_OnVisible")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_PrintTemplateInstantiation(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_PrintTemplateInstantiation")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_PrintTemplateTeardown(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_PrintTemplateTeardown")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_PrivacyImpactedStateChange(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_PrivacyImpactedStateChange")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_ProgressChange(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_ProgressChange")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_PropertyChange(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_PropertyChange")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_SetSecureLockIcon(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_SetSecureLockIcon")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_StatusTextChange(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_StatusTextChange")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_TitleChange(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_TitleChange")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_UpdatePageStatus(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_UpdatePageStatus")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_WindowClosing(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_WindowClosing")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_WindowSetHeight(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_WindowSetHeight")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_WindowSetLeft(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_WindowSetLeft")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_WindowSetResizable(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_WindowSetResizable")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_WindowSetTop(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_WindowSetTop")
-
 	return 0
 }
 
 func webView_DWebBrowserEvents2_WindowSetWidth(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_WindowSetWidth")
-
 	return 0
 }

@@ -5,7 +5,6 @@
 package gui
 
 import (
-	"log"
 	"syscall"
 	"unsafe"
 )
@@ -80,26 +79,18 @@ type webViewIOleInPlaceFrame struct {
 }
 
 func webView_IOleInPlaceFrame_QueryInterface(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_QueryInterface")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleInPlaceFrame_AddRef(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_AddRef")
-
 	return 1
 }
 
 func webView_IOleInPlaceFrame_Release(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_Release")
-
 	return 1
 }
 
 func webView_IOleInPlaceFrame_GetWindow(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_GetWindow")
-
 	p := (*struct {
 		inPlaceFrame *webViewIOleInPlaceFrame
 		hwnd         *HWND
@@ -111,67 +102,45 @@ func webView_IOleInPlaceFrame_GetWindow(args *uintptr) uintptr {
 }
 
 func webView_IOleInPlaceFrame_ContextSensitiveHelp(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_ContextSensitiveHelp")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleInPlaceFrame_GetBorder(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_GetBorder")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleInPlaceFrame_RequestBorderSpace(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_RequestBorderSpace")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleInPlaceFrame_SetBorderSpace(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_SetBorderSpace")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleInPlaceFrame_SetActiveObject(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_SetActiveObject")
-
 	return S_OK
 }
 
 func webView_IOleInPlaceFrame_InsertMenus(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_InsertMenus")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleInPlaceFrame_SetMenu(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_SetMenu")
-
 	return S_OK
 }
 
 func webView_IOleInPlaceFrame_RemoveMenus(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_RemoveMenus")
-
 	return E_NOTIMPL
 }
 
 func webView_IOleInPlaceFrame_SetStatusText(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_SetStatusText")
-
 	return S_OK
 }
 
 func webView_IOleInPlaceFrame_EnableModeless(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_EnableModeless")
-
 	return S_OK
 }
 
 func webView_IOleInPlaceFrame_TranslateAccelerator(args *uintptr) uintptr {
-	log.Println("webView_IOleInPlaceFrame_TranslateAccelerator")
-
 	return E_NOTIMPL
 }
