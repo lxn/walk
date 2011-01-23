@@ -43,7 +43,7 @@ func NewLineEdit(parent IContainer) (*LineEdit, os.Error) {
 	}
 
 	if lineEditSubclassWndProcCallback == nil {
-		lineEditSubclassWndProcCallback = syscall.NewCallback(lineEditSubclassWndProc, 4+4+4+4)
+		lineEditSubclassWndProcCallback = syscall.NewCallback(lineEditSubclassWndProc, 4)
 		lineEditSubclassWndProcPtr = uintptr(lineEditSubclassWndProcCallback.ExtFnEntry())
 	}
 

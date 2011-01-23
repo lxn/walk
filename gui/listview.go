@@ -52,7 +52,7 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 	}
 
 	if listViewSubclassWndProcCallback == nil {
-		listViewSubclassWndProcCallback = syscall.NewCallback(listViewSubclassWndProc, 4+4+4+4)
+		listViewSubclassWndProcCallback = syscall.NewCallback(listViewSubclassWndProc, 4)
 		listViewSubclassWndProcPtr = uintptr(listViewSubclassWndProcCallback.ExtFnEntry())
 	}
 
