@@ -37,13 +37,13 @@ type PRINTER_INFO_4 struct {
 
 var (
 	// Library
-	lib uint32
+	lib uintptr
 
 	// Functions
-	deviceCapabilities uint32
-	documentProperties uint32
-	enumPrinters       uint32
-	getDefaultPrinter  uint32
+	deviceCapabilities uintptr
+	documentProperties uintptr
+	enumPrinters       uintptr
+	getDefaultPrinter  uintptr
 )
 
 func init() {
@@ -58,7 +58,7 @@ func init() {
 }
 
 func DeviceCapabilities(pDevice, pPort *uint16, fwCapability uint16, pOutput *uint16, pDevMode *DEVMODE) uint {
-	ret, _, _ := syscall.Syscall6(uintptr(deviceCapabilities),
+	ret, _, _ := syscall.Syscall6(deviceCapabilities,
 		uintptr(unsafe.Pointer(pDevice)),
 		uintptr(unsafe.Pointer(pPort)),
 		uintptr(fwCapability),
@@ -70,7 +70,7 @@ func DeviceCapabilities(pDevice, pPort *uint16, fwCapability uint16, pOutput *ui
 }
 
 func DocumentProperties(hWnd HWND, hPrinter HANDLE, pDeviceName *uint16, pDevModeOutput, pDevModeInput *DEVMODE, fMode uint) int {
-	ret, _, _ := syscall.Syscall6(uintptr(documentProperties),
+	ret, _, _ := syscall.Syscall6(documentProperties,
 		uintptr(hWnd),
 		uintptr(hPrinter),
 		uintptr(unsafe.Pointer(pDeviceName)),
@@ -82,7 +82,7 @@ func DocumentProperties(hWnd HWND, hPrinter HANDLE, pDeviceName *uint16, pDevMod
 }
 
 func EnumPrinters(Flags uint, Name *uint16, Level uint, pPrinterEnum *byte, cbBuf uint, pcbNeeded, pcReturned *uint) bool {
-	ret, _, _ := syscall.Syscall9(uintptr(enumPrinters),
+	ret, _, _ := syscall.Syscall9(enumPrinters,
 		uintptr(Flags),
 		uintptr(unsafe.Pointer(Name)),
 		uintptr(Level),
@@ -97,7 +97,7 @@ func EnumPrinters(Flags uint, Name *uint16, Level uint, pPrinterEnum *byte, cbBu
 }
 
 func GetDefaultPrinter(pszBuffer *uint16, pcchBuffer *uint) bool {
-	ret, _, _ := syscall.Syscall(uintptr(getDefaultPrinter),
+	ret, _, _ := syscall.Syscall(getDefaultPrinter,
 		uintptr(unsafe.Pointer(pszBuffer)),
 		uintptr(unsafe.Pointer(pcchBuffer)),
 		0)

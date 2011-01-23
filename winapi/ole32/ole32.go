@@ -432,13 +432,13 @@ type COSERVERINFO struct {
 
 var (
 	// Library
-	lib uint32
+	lib uintptr
 
 	// Functions
-	coGetClassObject      uint32
-	oleInitialize         uint32
-	oleSetContainedObject uint32
-	oleUninitialize       uint32
+	coGetClassObject      uintptr
+	oleInitialize         uintptr
+	oleSetContainedObject uintptr
+	oleUninitialize       uintptr
 )
 
 func init() {
@@ -460,7 +460,7 @@ func init() {
 }
 
 func CoGetClassObject(rclsid REFCLSID, dwClsContext uint, pServerInfo *COSERVERINFO, riid REFIID, ppv *unsafe.Pointer) HRESULT {
-	ret, _, _ := syscall.Syscall6(uintptr(coGetClassObject),
+	ret, _, _ := syscall.Syscall6(coGetClassObject,
 		uintptr(unsafe.Pointer(rclsid)),
 		uintptr(dwClsContext),
 		uintptr(unsafe.Pointer(pServerInfo)),
@@ -472,7 +472,7 @@ func CoGetClassObject(rclsid REFCLSID, dwClsContext uint, pServerInfo *COSERVERI
 }
 
 func OleInitialize() HRESULT {
-	ret, _, _ := syscall.Syscall(uintptr(oleInitialize),
+	ret, _, _ := syscall.Syscall(oleInitialize,
 		0,
 		0,
 		0)
@@ -481,7 +481,7 @@ func OleInitialize() HRESULT {
 }
 
 func OleSetContainedObject(pUnknown *IUnknown, fContained bool) HRESULT {
-	ret, _, _ := syscall.Syscall(uintptr(oleSetContainedObject),
+	ret, _, _ := syscall.Syscall(oleSetContainedObject,
 		uintptr(unsafe.Pointer(pUnknown)),
 		uintptr(BoolToBOOL(fContained)),
 		0)
@@ -490,7 +490,7 @@ func OleSetContainedObject(pUnknown *IUnknown, fContained bool) HRESULT {
 }
 
 func OleUninitialize() {
-	syscall.Syscall(uintptr(oleUninitialize),
+	syscall.Syscall(oleUninitialize,
 		0,
 		0,
 		0)

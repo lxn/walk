@@ -145,14 +145,14 @@ type INITCOMMONCONTROLSEX struct {
 
 var (
 	// Library
-	lib uint32
+	lib uintptr
 
 	// Functions
-	imageList_Add        uint32
-	imageList_AddMasked  uint32
-	imageList_Create     uint32
-	imageList_Destroy    uint32
-	initCommonControlsEx uint32
+	imageList_Add        uintptr
+	imageList_AddMasked  uintptr
+	imageList_Create     uintptr
+	imageList_Destroy    uintptr
+	initCommonControlsEx uintptr
 )
 
 func init() {
@@ -175,7 +175,7 @@ func init() {
 }
 
 func ImageList_Add(himl HIMAGELIST, hbmImage, hbmMask HBITMAP) int {
-	ret, _, _ := syscall.Syscall(uintptr(imageList_Add),
+	ret, _, _ := syscall.Syscall(imageList_Add,
 		uintptr(himl),
 		uintptr(hbmImage),
 		uintptr(hbmMask))
@@ -184,7 +184,7 @@ func ImageList_Add(himl HIMAGELIST, hbmImage, hbmMask HBITMAP) int {
 }
 
 func ImageList_AddMasked(himl HIMAGELIST, hbmImage HBITMAP, crMask COLORREF) int {
-	ret, _, _ := syscall.Syscall(uintptr(imageList_AddMasked),
+	ret, _, _ := syscall.Syscall(imageList_AddMasked,
 		uintptr(himl),
 		uintptr(hbmImage),
 		uintptr(crMask))
@@ -193,7 +193,7 @@ func ImageList_AddMasked(himl HIMAGELIST, hbmImage HBITMAP, crMask COLORREF) int
 }
 
 func ImageList_Create(cx, cy int, flags uint, cInitial, cGrow int) HIMAGELIST {
-	ret, _, _ := syscall.Syscall6(uintptr(imageList_Create),
+	ret, _, _ := syscall.Syscall6(imageList_Create,
 		uintptr(cx),
 		uintptr(cy),
 		uintptr(flags),
@@ -205,7 +205,7 @@ func ImageList_Create(cx, cy int, flags uint, cInitial, cGrow int) HIMAGELIST {
 }
 
 func ImageList_Destroy(hIml HIMAGELIST) bool {
-	ret, _, _ := syscall.Syscall(uintptr(imageList_Destroy),
+	ret, _, _ := syscall.Syscall(imageList_Destroy,
 		uintptr(hIml),
 		0,
 		0)
@@ -214,7 +214,7 @@ func ImageList_Destroy(hIml HIMAGELIST) bool {
 }
 
 func InitCommonControlsEx(lpInitCtrls *INITCOMMONCONTROLSEX) bool {
-	ret, _, _ := syscall.Syscall(uintptr(initCommonControlsEx),
+	ret, _, _ := syscall.Syscall(initCommonControlsEx,
 		uintptr(unsafe.Pointer(lpInitCtrls)),
 		0,
 		0)

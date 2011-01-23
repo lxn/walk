@@ -83,10 +83,10 @@ const (
 
 var (
 	// Library
-	lib uint32
+	lib uintptr
 
 	// Functions
-	shGetSpecialFolderPath uint32
+	shGetSpecialFolderPath uintptr
 )
 
 func init() {
@@ -98,7 +98,7 @@ func init() {
 }
 
 func ShGetSpecialFolderPath(hwndOwner HWND, lpszPath *uint16, csidl CSIDL, fCreate bool) bool {
-	ret, _, _ := syscall.Syscall6(uintptr(shGetSpecialFolderPath),
+	ret, _, _ := syscall.Syscall6(shGetSpecialFolderPath,
 		uintptr(hwndOwner),
 		uintptr(unsafe.Pointer(lpszPath)),
 		uintptr(csidl),

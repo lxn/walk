@@ -205,12 +205,12 @@ type DISPPARAMS struct {
 
 var (
 	// Library
-	lib uint32
+	lib uintptr
 
 	// Functions
-	sysAllocString uint32
-	sysFreeString  uint32
-	sysStringLen   uint32
+	sysAllocString uintptr
+	sysFreeString  uintptr
+	sysStringLen   uintptr
 )
 
 func init() {
@@ -224,7 +224,7 @@ func init() {
 }
 
 func SysAllocString(s string) *uint16 /*BSTR*/ {
-	ret, _, _ := syscall.Syscall(uintptr(sysAllocString),
+	ret, _, _ := syscall.Syscall(sysAllocString,
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(s))),
 		0,
 		0)
@@ -233,14 +233,14 @@ func SysAllocString(s string) *uint16 /*BSTR*/ {
 }
 
 func SysFreeString(bstr *uint16 /*BSTR*/ ) {
-	syscall.Syscall(uintptr(sysFreeString),
+	syscall.Syscall(sysFreeString,
 		uintptr(unsafe.Pointer(bstr)),
 		0,
 		0)
 }
 
 func SysStringLen(bstr *uint16 /*BSTR*/ ) uint {
-	ret, _, _ := syscall.Syscall(uintptr(sysStringLen),
+	ret, _, _ := syscall.Syscall(sysStringLen,
 		uintptr(unsafe.Pointer(bstr)),
 		0,
 		0)

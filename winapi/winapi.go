@@ -36,22 +36,22 @@ type (
 	HRESULT int32
 )
 
-func MustLoadLibrary(name string) uint32 {
+func MustLoadLibrary(name string) uintptr {
 	lib, errno := syscall.LoadLibrary(name)
 	if errno != 0 {
 		panic(fmt.Sprintf(`syscall.LoadLibrary("%s") failed: %s`, name, syscall.Errstr(errno)))
 	}
 
-	return lib
+	return uintptr(lib)
 }
 
-func MustGetProcAddress(lib uint32, name string) uint32 {
-	addr, errno := syscall.GetProcAddress(lib, name)
+func MustGetProcAddress(lib uintptr, name string) uintptr {
+	addr, errno := syscall.GetProcAddress(uint32(lib), name)
 	if errno != 0 {
 		panic(fmt.Sprintf(`syscall.GetProcAddress(%d, "%s") failed: %s`, lib, name, syscall.Errstr(errno)))
 	}
 
-	return addr
+	return uintptr(addr)
 }
 
 func SUCCEEDED(hr HRESULT) bool {

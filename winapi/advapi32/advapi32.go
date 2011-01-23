@@ -34,12 +34,12 @@ type (
 
 var (
 	// Library
-	lib uint32
+	lib uintptr
 
 	// Functions
-	regCloseKey     uint32
-	regOpenKeyEx    uint32
-	regQueryValueEx uint32
+	regCloseKey     uintptr
+	regOpenKeyEx    uintptr
+	regQueryValueEx uintptr
 )
 
 func init() {
@@ -53,7 +53,7 @@ func init() {
 }
 
 func RegCloseKey(hKey HKEY) int {
-	ret, _, _ := syscall.Syscall(uintptr(regCloseKey),
+	ret, _, _ := syscall.Syscall(regCloseKey,
 		uintptr(hKey),
 		0,
 		0)
@@ -62,7 +62,7 @@ func RegCloseKey(hKey HKEY) int {
 }
 
 func RegOpenKeyEx(hKey HKEY, lpSubKey *uint16, ulOptions uint, samDesired REGSAM, phkResult *HKEY) int {
-	ret, _, _ := syscall.Syscall6(uintptr(regOpenKeyEx),
+	ret, _, _ := syscall.Syscall6(regOpenKeyEx,
 		uintptr(hKey),
 		uintptr(unsafe.Pointer(lpSubKey)),
 		uintptr(ulOptions),
@@ -74,7 +74,7 @@ func RegOpenKeyEx(hKey HKEY, lpSubKey *uint16, ulOptions uint, samDesired REGSAM
 }
 
 func RegQueryValueEx(hKey HKEY, lpValueName *uint16, lpReserved, lpType *uint, lpData *byte, lpcbData *uint) int {
-	ret, _, _ := syscall.Syscall6(uintptr(regQueryValueEx),
+	ret, _, _ := syscall.Syscall6(regQueryValueEx,
 		uintptr(hKey),
 		uintptr(unsafe.Pointer(lpValueName)),
 		uintptr(unsafe.Pointer(lpReserved)),

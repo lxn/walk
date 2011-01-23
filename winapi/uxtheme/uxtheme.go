@@ -16,10 +16,10 @@ import (
 
 var (
 	// Library
-	lib uint32
+	lib uintptr
 
 	// Functions
-	setWindowTheme uint32
+	setWindowTheme uintptr
 )
 
 func init() {
@@ -31,7 +31,7 @@ func init() {
 }
 
 func SetWindowTheme(hwnd HWND, pszSubAppName, pszSubIdList *uint16) HRESULT {
-	ret, _, _ := syscall.Syscall(uintptr(setWindowTheme),
+	ret, _, _ := syscall.Syscall(setWindowTheme,
 		uintptr(hwnd),
 		uintptr(unsafe.Pointer(pszSubAppName)),
 		uintptr(unsafe.Pointer(pszSubIdList)))

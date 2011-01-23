@@ -212,13 +212,13 @@ type PRINTDLGEX struct {
 
 var (
 	// Library
-	lib uint32
+	lib uintptr
 
 	// Functions
-	commDlgExtendedError uint32
-	getOpenFileName      uint32
-	getSaveFileName      uint32
-	printDlgEx           uint32
+	commDlgExtendedError uintptr
+	getOpenFileName      uintptr
+	getSaveFileName      uintptr
+	printDlgEx           uintptr
 )
 
 func init() {
@@ -233,7 +233,7 @@ func init() {
 }
 
 func CommDlgExtendedError() uint {
-	ret, _, _ := syscall.Syscall(uintptr(commDlgExtendedError),
+	ret, _, _ := syscall.Syscall(commDlgExtendedError,
 		0,
 		0,
 		0)
@@ -242,7 +242,7 @@ func CommDlgExtendedError() uint {
 }
 
 func GetOpenFileName(lpofn *OPENFILENAME) bool {
-	ret, _, _ := syscall.Syscall(uintptr(getOpenFileName),
+	ret, _, _ := syscall.Syscall(getOpenFileName,
 		uintptr(unsafe.Pointer(lpofn)),
 		0,
 		0)
@@ -251,7 +251,7 @@ func GetOpenFileName(lpofn *OPENFILENAME) bool {
 }
 
 func GetSaveFileName(lpofn *OPENFILENAME) bool {
-	ret, _, _ := syscall.Syscall(uintptr(getSaveFileName),
+	ret, _, _ := syscall.Syscall(getSaveFileName,
 		uintptr(unsafe.Pointer(lpofn)),
 		0,
 		0)
@@ -260,7 +260,7 @@ func GetSaveFileName(lpofn *OPENFILENAME) bool {
 }
 
 func PrintDlgEx(lppd *PRINTDLGEX) HRESULT {
-	ret, _, _ := syscall.Syscall(uintptr(printDlgEx),
+	ret, _, _ := syscall.Syscall(printDlgEx,
 		uintptr(unsafe.Pointer(lppd)),
 		0,
 		0)
