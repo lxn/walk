@@ -30,30 +30,30 @@ type webViewIOleClientSiteCallbacks struct {
 }
 
 var webViewIOleClientSiteCbs = &webViewIOleClientSiteCallbacks{
-	syscall.NewCallback(webView_IOleClientSite_QueryInterface, 4+4+4),
-	syscall.NewCallback(webView_IOleClientSite_AddRef, 4),
-	syscall.NewCallback(webView_IOleClientSite_Release, 4),
-	syscall.NewCallback(webView_IOleClientSite_SaveObject, 4),
-	syscall.NewCallback(webView_IOleClientSite_GetMoniker, 4+4+4+4),
-	syscall.NewCallback(webView_IOleClientSite_GetContainer, 4+4),
-	syscall.NewCallback(webView_IOleClientSite_ShowObject, 4),
-	syscall.NewCallback(webView_IOleClientSite_OnShowWindow, 4+4),
-	syscall.NewCallback(webView_IOleClientSite_RequestNewObjectLayout, 4),
+	syscall.NewCallback(webView_IOleClientSite_QueryInterface, 1+2),
+	syscall.NewCallback(webView_IOleClientSite_AddRef, 1+0),
+	syscall.NewCallback(webView_IOleClientSite_Release, 1+0),
+	syscall.NewCallback(webView_IOleClientSite_SaveObject, 1+0),
+	syscall.NewCallback(webView_IOleClientSite_GetMoniker, 1+3),
+	syscall.NewCallback(webView_IOleClientSite_GetContainer, 1+1),
+	syscall.NewCallback(webView_IOleClientSite_ShowObject, 1+0),
+	syscall.NewCallback(webView_IOleClientSite_OnShowWindow, 1+1),
+	syscall.NewCallback(webView_IOleClientSite_RequestNewObjectLayout, 1+0),
 }
 
 var webViewIOleClientSiteVtbl *IOleClientSiteVtbl
 
 func init() {
 	webViewIOleClientSiteVtbl = &IOleClientSiteVtbl{
-		uintptr(webViewIOleClientSiteCbs.QueryInterface.ExtFnEntry()),
-		uintptr(webViewIOleClientSiteCbs.AddRef.ExtFnEntry()),
-		uintptr(webViewIOleClientSiteCbs.Release.ExtFnEntry()),
-		uintptr(webViewIOleClientSiteCbs.SaveObject.ExtFnEntry()),
-		uintptr(webViewIOleClientSiteCbs.GetMoniker.ExtFnEntry()),
-		uintptr(webViewIOleClientSiteCbs.GetContainer.ExtFnEntry()),
-		uintptr(webViewIOleClientSiteCbs.ShowObject.ExtFnEntry()),
-		uintptr(webViewIOleClientSiteCbs.OnShowWindow.ExtFnEntry()),
-		uintptr(webViewIOleClientSiteCbs.RequestNewObjectLayout.ExtFnEntry()),
+		webViewIOleClientSiteCbs.QueryInterface.ExtFnEntry(),
+		webViewIOleClientSiteCbs.AddRef.ExtFnEntry(),
+		webViewIOleClientSiteCbs.Release.ExtFnEntry(),
+		webViewIOleClientSiteCbs.SaveObject.ExtFnEntry(),
+		webViewIOleClientSiteCbs.GetMoniker.ExtFnEntry(),
+		webViewIOleClientSiteCbs.GetContainer.ExtFnEntry(),
+		webViewIOleClientSiteCbs.ShowObject.ExtFnEntry(),
+		webViewIOleClientSiteCbs.OnShowWindow.ExtFnEntry(),
+		webViewIOleClientSiteCbs.RequestNewObjectLayout.ExtFnEntry(),
 	}
 }
 

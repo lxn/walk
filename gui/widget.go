@@ -124,11 +124,11 @@ func ensureRegisteredWindowClass(className string, windowProc syscall.CallbackFu
 		panic("LoadCursor failed")
 	}
 
-	*callback = syscall.NewCallback(windowProc, 4*4)
+	*callback = syscall.NewCallback(windowProc, 4)
 
 	var wc WNDCLASSEX
 	wc.CbSize = uint(unsafe.Sizeof(wc))
-	wc.LpfnWndProc = uintptr((*callback).ExtFnEntry())
+	wc.LpfnWndProc = (*callback).ExtFnEntry()
 	wc.HInstance = hInst
 	wc.HIcon = hIcon
 	wc.HCursor = hCursor

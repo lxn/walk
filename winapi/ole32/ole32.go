@@ -139,11 +139,11 @@ type IConnectionPointVtbl struct {
 	QueryInterface              uintptr
 	AddRef                      uintptr
 	Release                     uintptr
-	Advise                      uintptr
-	EnumConnections             uintptr
 	GetConnectionInterface      uintptr
 	GetConnectionPointContainer uintptr
+	Advise                      uintptr
 	Unadvise                    uintptr
+	EnumConnections             uintptr
 }
 
 type IConnectionPoint struct {

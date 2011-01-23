@@ -84,44 +84,39 @@ type DWebBrowserEvents2Vtbl struct {
 	GetTypeInfo                uintptr
 	GetIDsOfNames              uintptr
 	Invoke                     uintptr
-	BeforeNavigate2            uintptr
-	ClientToHostWindow         uintptr
+	StatusTextChange           uintptr
+	ProgressChange             uintptr
 	CommandStateChange         uintptr
-	DocumentComplete           uintptr
 	DownloadBegin              uintptr
 	DownloadComplete           uintptr
-	FileDownload               uintptr
-	NavigateComplete2          uintptr
-	NavigateError              uintptr
-	NewProcess                 uintptr
-	NewWindow2                 uintptr
-	NewWindow3                 uintptr
-	OnFullScreen               uintptr
-	OnMenuBar                  uintptr
-	OnQuit                     uintptr
-	OnStatusBar                uintptr
-	OnTheaterMode              uintptr
-	OnToolBar                  uintptr
-	OnVisible                  uintptr
-	PrintTemplateInstantiation uintptr
-	PrintTemplateTeardown      uintptr
-	PrivacyImpactedStateChange uintptr
-	ProgressChange             uintptr
-	PropertyChange             uintptr
-	RedirectXDomainBlocked     uintptr
-	SetPhishingFilterStatus    uintptr
-	SetSecureLockIcon          uintptr
-	StatusTextChange           uintptr
-	ThirdPartyUrlBlocked       uintptr
 	TitleChange                uintptr
-	UpdatePageStatus           uintptr
-	WindowClosing              uintptr
-	WindowSetHeight            uintptr
-	WindowSetLeft              uintptr
+	PropertyChange             uintptr
+	BeforeNavigate2            uintptr
+	NewWindow2                 uintptr
+	NavigateComplete2          uintptr
+	DocumentComplete           uintptr
+	OnQuit                     uintptr
+	OnVisible                  uintptr
+	OnToolBar                  uintptr
+	OnMenuBar                  uintptr
+	OnStatusBar                uintptr
+	OnFullScreen               uintptr
+	OnTheaterMode              uintptr
 	WindowSetResizable         uintptr
+	WindowSetLeft              uintptr
 	WindowSetTop               uintptr
 	WindowSetWidth             uintptr
-	WindowStateChanged         uintptr
+	WindowSetHeight            uintptr
+	WindowClosing              uintptr
+	ClientToHostWindow         uintptr
+	SetSecureLockIcon          uintptr
+	FileDownload               uintptr
+	NavigateError              uintptr
+	PrintTemplateInstantiation uintptr
+	PrintTemplateTeardown      uintptr
+	UpdatePageStatus           uintptr
+	PrivacyImpactedStateChange uintptr
+	NewWindow3                 uintptr
 }
 
 type DWebBrowserEvents2 struct {

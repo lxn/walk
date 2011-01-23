@@ -25,143 +25,130 @@ type webViewDWebBrowserEvents2Callbacks struct {
 	GetTypeInfo                *syscall.Callback
 	GetIDsOfNames              *syscall.Callback
 	Invoke                     *syscall.Callback
-	BeforeNavigate2            *syscall.Callback
-	ClientToHostWindow         *syscall.Callback
+	StatusTextChange           *syscall.Callback
+	ProgressChange             *syscall.Callback
 	CommandStateChange         *syscall.Callback
-	DocumentComplete           *syscall.Callback
 	DownloadBegin              *syscall.Callback
 	DownloadComplete           *syscall.Callback
-	FileDownload               *syscall.Callback
-	NavigateComplete2          *syscall.Callback
-	NavigateError              *syscall.Callback
-	NewProcess                 *syscall.Callback
-	NewWindow2                 *syscall.Callback
-	NewWindow3                 *syscall.Callback
-	OnFullScreen               *syscall.Callback
-	OnMenuBar                  *syscall.Callback
-	OnQuit                     *syscall.Callback
-	OnStatusBar                *syscall.Callback
-	OnTheaterMode              *syscall.Callback
-	OnToolBar                  *syscall.Callback
-	OnVisible                  *syscall.Callback
-	PrintTemplateInstantiation *syscall.Callback
-	PrintTemplateTeardown      *syscall.Callback
-	PrivacyImpactedStateChange *syscall.Callback
-	ProgressChange             *syscall.Callback
-	PropertyChange             *syscall.Callback
-	RedirectXDomainBlocked     *syscall.Callback
-	SetPhishingFilterStatus    *syscall.Callback
-	SetSecureLockIcon          *syscall.Callback
-	StatusTextChange           *syscall.Callback
-	ThirdPartyUrlBlocked       *syscall.Callback
 	TitleChange                *syscall.Callback
-	UpdatePageStatus           *syscall.Callback
-	WindowClosing              *syscall.Callback
-	WindowSetHeight            *syscall.Callback
-	WindowSetLeft              *syscall.Callback
+	PropertyChange             *syscall.Callback
+	BeforeNavigate2            *syscall.Callback
+	NewWindow2                 *syscall.Callback
+	NavigateComplete2          *syscall.Callback
+	DocumentComplete           *syscall.Callback
+	OnQuit                     *syscall.Callback
+	OnVisible                  *syscall.Callback
+	OnToolBar                  *syscall.Callback
+	OnMenuBar                  *syscall.Callback
+	OnStatusBar                *syscall.Callback
+	OnFullScreen               *syscall.Callback
+	OnTheaterMode              *syscall.Callback
 	WindowSetResizable         *syscall.Callback
+	WindowSetLeft              *syscall.Callback
 	WindowSetTop               *syscall.Callback
 	WindowSetWidth             *syscall.Callback
-	WindowStateChanged         *syscall.Callback
+	WindowSetHeight            *syscall.Callback
+	WindowClosing              *syscall.Callback
+	ClientToHostWindow         *syscall.Callback
+	SetSecureLockIcon          *syscall.Callback
+	FileDownload               *syscall.Callback
+	NavigateError              *syscall.Callback
+	PrintTemplateInstantiation *syscall.Callback
+	PrintTemplateTeardown      *syscall.Callback
+	UpdatePageStatus           *syscall.Callback
+	PrivacyImpactedStateChange *syscall.Callback
+	NewWindow3                 *syscall.Callback
 }
 
 var webViewDWebBrowserEvents2Cbs = &webViewDWebBrowserEvents2Callbacks{
-	syscall.NewCallback(webView_DWebBrowserEvents2_QueryInterface, 4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_AddRef, 4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_Release, 4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_GetTypeInfoCount, 4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_GetTypeInfo, 4+4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_GetIDsOfNames, 4+4+4+4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_Invoke, 4+4+4+4+2+4+4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_BeforeNavigate2, 4+4+4+4+4+4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_ClientToHostWindow, 4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_CommandStateChange, 4+4+2),
-	syscall.NewCallback(webView_DWebBrowserEvents2_DocumentComplete, 4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_DownloadBegin, 4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_DownloadComplete, 4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_FileDownload, 4+2+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_NavigateComplete2, 4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_NavigateError, 4+4+4+4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_NewProcess, 4+4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_NewWindow2, 4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_NewWindow3, 4+4+4+4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_OnFullScreen, 4+2),
-	syscall.NewCallback(webView_DWebBrowserEvents2_OnMenuBar, 4+2),
-	syscall.NewCallback(webView_DWebBrowserEvents2_OnQuit, 4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_OnStatusBar, 4+2),
-	syscall.NewCallback(webView_DWebBrowserEvents2_OnTheaterMode, 4+2),
-	syscall.NewCallback(webView_DWebBrowserEvents2_OnToolBar, 4+2),
-	syscall.NewCallback(webView_DWebBrowserEvents2_OnVisible, 4+2),
-	syscall.NewCallback(webView_DWebBrowserEvents2_PrintTemplateInstantiation, 4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_PrintTemplateTeardown, 4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_PrivacyImpactedStateChange, 4+16),
-	syscall.NewCallback(webView_DWebBrowserEvents2_ProgressChange, 4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_PropertyChange, 4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_RedirectXDomainBlocked, 4+4+4+4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_SetPhishingFilterStatus, 4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_SetSecureLockIcon, 4+16),
-	syscall.NewCallback(webView_DWebBrowserEvents2_StatusTextChange, 4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_ThirdPartyUrlBlocked, 4+4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_TitleChange, 4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_UpdatePageStatus, 4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_WindowClosing, 4+2+2),
-	syscall.NewCallback(webView_DWebBrowserEvents2_WindowSetHeight, 4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_WindowSetLeft, 4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_WindowSetResizable, 4+2),
-	syscall.NewCallback(webView_DWebBrowserEvents2_WindowSetTop, 4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_WindowSetWidth, 4+4),
-	syscall.NewCallback(webView_DWebBrowserEvents2_WindowStateChanged, 4+4+4),
+	syscall.NewCallback(webView_DWebBrowserEvents2_QueryInterface, 1+2),
+	syscall.NewCallback(webView_DWebBrowserEvents2_AddRef, 1+0),
+	syscall.NewCallback(webView_DWebBrowserEvents2_Release, 1+0),
+	syscall.NewCallback(webView_DWebBrowserEvents2_GetTypeInfoCount, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_GetTypeInfo, 1+3),
+	syscall.NewCallback(webView_DWebBrowserEvents2_GetIDsOfNames, 1+5),
+	syscall.NewCallback(webView_DWebBrowserEvents2_Invoke, 1+8),
+
+	syscall.NewCallback(webView_DWebBrowserEvents2_StatusTextChange, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_ProgressChange, 1+2),
+	syscall.NewCallback(webView_DWebBrowserEvents2_CommandStateChange, 1+2),
+	syscall.NewCallback(webView_DWebBrowserEvents2_DownloadBegin, 1+0),
+	syscall.NewCallback(webView_DWebBrowserEvents2_DownloadComplete, 1+0),
+	syscall.NewCallback(webView_DWebBrowserEvents2_TitleChange, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_PropertyChange, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_BeforeNavigate2, 1+7),
+	syscall.NewCallback(webView_DWebBrowserEvents2_NewWindow2, 1+2),
+	syscall.NewCallback(webView_DWebBrowserEvents2_NavigateComplete2, 1+2),
+	syscall.NewCallback(webView_DWebBrowserEvents2_DocumentComplete, 1+2),
+	syscall.NewCallback(webView_DWebBrowserEvents2_OnQuit, 1+0),
+	syscall.NewCallback(webView_DWebBrowserEvents2_OnVisible, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_OnToolBar, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_OnMenuBar, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_OnStatusBar, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_OnFullScreen, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_OnTheaterMode, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_WindowSetResizable, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_WindowSetLeft, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_WindowSetTop, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_WindowSetWidth, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_WindowSetHeight, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_WindowClosing, 1+2),
+	syscall.NewCallback(webView_DWebBrowserEvents2_ClientToHostWindow, 1+2),
+	syscall.NewCallback(webView_DWebBrowserEvents2_SetSecureLockIcon, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_FileDownload, 1+2),
+	syscall.NewCallback(webView_DWebBrowserEvents2_NavigateError, 1+5),
+	syscall.NewCallback(webView_DWebBrowserEvents2_PrintTemplateInstantiation, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_PrintTemplateTeardown, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_UpdatePageStatus, 1+0),
+	syscall.NewCallback(webView_DWebBrowserEvents2_PrivacyImpactedStateChange, 1+1),
+	syscall.NewCallback(webView_DWebBrowserEvents2_NewWindow3, 1+5),
 }
 
 var webViewDWebBrowserEvents2Vtbl *DWebBrowserEvents2Vtbl
 
 func init() {
 	webViewDWebBrowserEvents2Vtbl = &DWebBrowserEvents2Vtbl{
-		uintptr(webViewDWebBrowserEvents2Cbs.QueryInterface.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.AddRef.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.Release.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.GetTypeInfoCount.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.GetTypeInfo.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.GetIDsOfNames.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.Invoke.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.BeforeNavigate2.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.ClientToHostWindow.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.CommandStateChange.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.DocumentComplete.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.DownloadBegin.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.DownloadComplete.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.FileDownload.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.NavigateComplete2.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.NavigateError.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.NewProcess.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.NewWindow2.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.NewWindow3.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.OnFullScreen.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.OnMenuBar.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.OnQuit.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.OnStatusBar.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.OnTheaterMode.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.OnToolBar.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.OnVisible.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.PrintTemplateInstantiation.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.PrintTemplateTeardown.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.PrivacyImpactedStateChange.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.ProgressChange.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.PropertyChange.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.RedirectXDomainBlocked.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.SetPhishingFilterStatus.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.SetSecureLockIcon.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.StatusTextChange.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.ThirdPartyUrlBlocked.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.TitleChange.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.UpdatePageStatus.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.WindowClosing.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.WindowSetHeight.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.WindowSetLeft.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.WindowSetResizable.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.WindowSetTop.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.WindowSetWidth.ExtFnEntry()),
-		uintptr(webViewDWebBrowserEvents2Cbs.WindowStateChanged.ExtFnEntry()),
+		webViewDWebBrowserEvents2Cbs.QueryInterface.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.AddRef.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.Release.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.GetTypeInfoCount.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.GetTypeInfo.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.GetIDsOfNames.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.Invoke.ExtFnEntry(),
+
+		webViewDWebBrowserEvents2Cbs.StatusTextChange.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.ProgressChange.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.CommandStateChange.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.DownloadBegin.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.DownloadComplete.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.TitleChange.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.PropertyChange.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.BeforeNavigate2.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.NewWindow2.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.NavigateComplete2.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.DocumentComplete.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.OnQuit.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.OnVisible.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.OnToolBar.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.OnMenuBar.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.OnStatusBar.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.OnFullScreen.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.OnTheaterMode.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.WindowSetResizable.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.WindowSetLeft.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.WindowSetTop.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.WindowSetWidth.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.WindowSetHeight.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.WindowClosing.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.ClientToHostWindow.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.SetSecureLockIcon.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.FileDownload.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.NavigateError.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.PrintTemplateInstantiation.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.PrintTemplateTeardown.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.UpdatePageStatus.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.PrivacyImpactedStateChange.ExtFnEntry(),
+		webViewDWebBrowserEvents2Cbs.NewWindow3.ExtFnEntry(),
 	}
 }
 
@@ -323,12 +310,6 @@ func webView_DWebBrowserEvents2_NavigateError(args *uintptr) uintptr {
 	return 0
 }
 
-func webView_DWebBrowserEvents2_NewProcess(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_NewProcess")
-
-	return 0
-}
-
 func webView_DWebBrowserEvents2_NewWindow2(args *uintptr) uintptr {
 	log.Println("webView_DWebBrowserEvents2_NewWindow2")
 
@@ -413,18 +394,6 @@ func webView_DWebBrowserEvents2_PropertyChange(args *uintptr) uintptr {
 	return 0
 }
 
-func webView_DWebBrowserEvents2_RedirectXDomainBlocked(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_RedirectXDomainBlocked")
-
-	return 0
-}
-
-func webView_DWebBrowserEvents2_SetPhishingFilterStatus(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_SetPhishingFilterStatus")
-
-	return 0
-}
-
 func webView_DWebBrowserEvents2_SetSecureLockIcon(args *uintptr) uintptr {
 	log.Println("webView_DWebBrowserEvents2_SetSecureLockIcon")
 
@@ -433,12 +402,6 @@ func webView_DWebBrowserEvents2_SetSecureLockIcon(args *uintptr) uintptr {
 
 func webView_DWebBrowserEvents2_StatusTextChange(args *uintptr) uintptr {
 	log.Println("webView_DWebBrowserEvents2_StatusTextChange")
-
-	return 0
-}
-
-func webView_DWebBrowserEvents2_ThirdPartyUrlBlocked(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_ThirdPartyUrlBlocked")
 
 	return 0
 }
@@ -487,12 +450,6 @@ func webView_DWebBrowserEvents2_WindowSetTop(args *uintptr) uintptr {
 
 func webView_DWebBrowserEvents2_WindowSetWidth(args *uintptr) uintptr {
 	log.Println("webView_DWebBrowserEvents2_WindowSetWidth")
-
-	return 0
-}
-
-func webView_DWebBrowserEvents2_WindowStateChanged(args *uintptr) uintptr {
-	log.Println("webView_DWebBrowserEvents2_WindowStateChanged")
 
 	return 0
 }
