@@ -194,6 +194,9 @@ func (lv *ListView) SelectedIndexChanged() *Event {
 
 func (lv *ListView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
+	case WM_ERASEBKGND:
+		return 1
+
 	case WM_GETDLGCODE:
 		if msg.WParam == VK_RETURN {
 			return DLGC_WANTALLKEYS
@@ -292,7 +295,11 @@ func (lv *ListView) onInsertingListViewItem(index int, item *ListViewItem) (err 
 }
 
 func (lv *ListView) onRemovingListViewItem(index int, item *ListViewItem) (err os.Error) {
-	panic("not implemented")
+	if 0 == SendMessage(lv.hWnd, LVM_DELETEITEM, uintptr(index), 0) {
+		return newError("LVM_DELETEITEM failed")
+	}
+
+	return nil
 }
 
 func (lv *ListView) onClearingListViewItems() os.Error {
