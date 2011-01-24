@@ -156,11 +156,10 @@ func rootWidget(w IWidget) RootWidget {
 		return nil
 	}
 
-	for w.Parent() != nil {
-		w = w.Parent()
-	}
+	hWndRoot := GetAncestor(w.Handle(), GA_ROOT)
 
-	return widgetsByHWnd[w.Handle()].(RootWidget)
+	rw, _ := widgetsByHWnd[hWndRoot].(RootWidget)
+	return rw
 }
 
 func (w *Widget) Handle() HWND {
