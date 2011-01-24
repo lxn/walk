@@ -44,6 +44,7 @@ type ListView struct {
 	prevSelIndex                  int
 	selectedIndexChangedPublisher EventPublisher
 	itemActivatedPublisher        EventPublisher
+	lastColumnStretched           bool
 }
 
 func NewListView(parent IContainer) (*ListView, os.Error) {
@@ -147,6 +148,35 @@ func (lv *ListView) SetSelectedIndex(value int) os.Error {
 	return nil
 }
 
+func (lv *ListView) LastColumnStretched() bool {
+	return lv.lastColumnStretched
+}
+
+func (lv *ListView) SetLastColumnStretched(value bool) os.Error {
+	if value {
+		if err := lv.StretchLastColumn(); err != nil {
+			return err
+		}
+	}
+
+	lv.lastColumnStretched = value
+
+	return nil
+}
+
+func (lv *ListView) StretchLastColumn() os.Error {
+	colCount := lv.columns.Len()
+	if colCount == 0 {
+		return nil
+	}
+
+	if 0 == SendMessage(lv.hWnd, LVM_SETCOLUMNWIDTH, uintptr(colCount-1), LVSCW_AUTOSIZE_USEHEADER) {
+		return newError("LVM_SETCOLUMNWIDTH failed")
+	}
+
+	return nil
+}
+
 func (lv *ListView) SaveState() (string, os.Error) {
 	buf := bytes.NewBuffer(nil)
 
@@ -195,6 +225,9 @@ func (lv *ListView) SelectedIndexChanged() *Event {
 func (lv *ListView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	switch msg.Message {
 	case WM_ERASEBKGND:
+		if lv.lastColumnStretched {
+			lv.StretchLastColumn()
+		}
 		return 1
 
 	case WM_GETDLGCODE:

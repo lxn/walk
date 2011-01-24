@@ -9,6 +9,11 @@ import (
 	. "walk/winapi/user32"
 )
 
+const (
+	LVSCW_AUTOSIZE           = ^uintptr(0)
+	LVSCW_AUTOSIZE_USEHEADER = ^uintptr(1)
+)
+
 // ListView messages
 const (
 	LVM_FIRST                    = 0x1000
