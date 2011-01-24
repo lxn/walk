@@ -10,6 +10,7 @@ type listViewItemChangedHandler interface {
 
 type ListViewItem struct {
 	texts           []string
+	userData        interface{}
 	changedHandlers []listViewItemChangedHandler
 }
 
@@ -25,6 +26,14 @@ func (lvi *ListViewItem) SetTexts(value []string) {
 	lvi.texts = value
 
 	lvi.raiseChanged()
+}
+
+func (lvi *ListViewItem) UserData() interface{} {
+	return lvi.userData
+}
+
+func (lvi *ListViewItem) SetUserData(value interface{}) {
+	lvi.userData = value
 }
 
 func (lvi *ListViewItem) addChangedHandler(handler listViewItemChangedHandler) {
