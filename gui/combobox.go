@@ -12,12 +12,15 @@ import (
 
 import (
 	"walk/drawing"
+	. "walk/winapi"
 	. "walk/winapi/user32"
 )
 
 type ComboBox struct {
 	Widget
-	items *ComboBoxItemList
+	items                         *ComboBoxItemList
+	prevSelIndex                  int
+	selectedIndexChangedPublisher EventPublisher
 }
 
 func NewComboBox(parent IContainer) (*ComboBox, os.Error) {
@@ -56,6 +59,40 @@ func (cb *ComboBox) PreferredSize() drawing.Size {
 
 func (cb *ComboBox) Items() *ComboBoxItemList {
 	return cb.items
+}
+
+func (cb *ComboBox) SelectedIndex() int {
+	return int(SendMessage(cb.hWnd, CB_GETCURSEL, 0, 0))
+}
+
+func (cb *ComboBox) SetSelectedIndex(value int) os.Error {
+	index := int(SendMessage(cb.hWnd, CB_SETCURSEL, uintptr(value), 0))
+
+	if index != value {
+		return newError("invalid index")
+	}
+
+	return nil
+}
+
+func (cb *ComboBox) SelectedIndexChanged() *Event {
+	return cb.selectedIndexChangedPublisher.Event()
+}
+
+func (cb *ComboBox) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
+	switch msg.Message {
+	case WM_COMMAND:
+		switch HIWORD(uint(msg.WParam)) {
+		case CBN_SELENDOK:
+			if selIndex := cb.SelectedIndex(); selIndex != cb.prevSelIndex {
+				cb.selectedIndexChangedPublisher.Publish(NewEventArgs(cb))
+				cb.prevSelIndex = selIndex
+				return 0
+			}
+		}
+	}
+
+	return cb.Widget.wndProc(msg, origWndProcPtr)
 }
 
 func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) (err os.Error) {

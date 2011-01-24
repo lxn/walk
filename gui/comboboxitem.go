@@ -9,7 +9,8 @@ import (
 )
 
 type ComboBoxItem struct {
-	text string
+	text     string
+	userData interface{}
 }
 
 func NewComboBoxItem() *ComboBoxItem {
@@ -25,4 +26,12 @@ func (cbi *ComboBoxItem) SetText(value string) os.Error {
 
 	// FIXME: Update ComboBox
 	return nil
+}
+
+func (cbi *ComboBoxItem) UserData() interface{} {
+	return cbi.userData
+}
+
+func (cbi *ComboBoxItem) SetUserData(value interface{}) {
+	cbi.userData = value
 }

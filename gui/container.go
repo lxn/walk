@@ -94,6 +94,14 @@ func (c *Container) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 
 		case 1:
 			// Accelerator
+
+		default:
+			// The widget that sent the notification shall handle it itself.
+			hWnd := HWND(msg.LParam)
+			if widget, ok := widgetsByHWnd[hWnd]; ok {
+				widget.wndProc(msg, 0)
+				return 0
+			}
 		}
 
 	case WM_NOTIFY:
