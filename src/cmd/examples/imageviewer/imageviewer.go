@@ -103,7 +103,7 @@ func main() {
 	panicIfErr(err)
 	panicIfErr(fileMenuAction.SetText("File"))
 
-	openBmp, err := drawing.NewBitmapFromFile("img/open.png")
+	openBmp, err := drawing.NewBitmapFromFile("../img/open.png")
 	panicIfErr(err)
 
 	openAction := gui.NewAction()
