@@ -5,7 +5,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"runtime"
 )
@@ -31,6 +30,7 @@ func createBitmap() *drawing.Bitmap {
 
 	bmp, err := drawing.NewBitmap(bounds.Size())
 	panicIfErr(err)
+
 	succeeded := false
 	defer func() {
 		if !succeeded {
@@ -98,10 +98,11 @@ func (mw *MainWindow) drawStuff(surface *drawing.Surface, updateBounds drawing.R
 	return nil
 }
 
-func runMainWindow() (int, os.Error) {
+func main() {
+	runtime.LockOSThread()
+
 	mainWnd, err := gui.NewMainWindow()
 	panicIfErr(err)
-	defer mainWnd.Dispose()
 
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.SetText("Walk Drawing Example"))
@@ -119,19 +120,5 @@ func runMainWindow() (int, os.Error) {
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
 	mw.Show()
 
-	return mw.RunMessageLoop()
-}
-
-func main() {
-	runtime.LockOSThread()
-
-	defer func() {
-		if x := recover(); x != nil {
-			fmt.Println("Error:", x)
-		}
-	}()
-
-	exitCode, err := runMainWindow()
-	panicIfErr(err)
-	os.Exit(exitCode)
+	os.Exit(mw.Run())
 }

@@ -108,11 +108,17 @@ func (cb *ComboBox) onRemovingComboBoxItem(index int, item *ComboBoxItem) (err o
 		err = newError("CB_DELETESTRING failed")
 	}
 
+	if index == cb.prevSelIndex {
+		cb.prevSelIndex = -1
+	}
+
 	return
 }
 
 func (cb *ComboBox) onClearingComboBoxItems() (err os.Error) {
 	SendMessage(cb.hWnd, CB_RESETCONTENT, 0, 0)
+
+	cb.prevSelIndex = -1
 
 	return
 }

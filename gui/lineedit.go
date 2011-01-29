@@ -37,11 +37,7 @@ type LineEdit struct {
 	Widget
 }
 
-func NewLineEdit(parent IContainer) (*LineEdit, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
-
+func newLineEdit(parentHWND HWND) (*LineEdit, os.Error) {
 	if lineEditSubclassWndProcCallback == nil {
 		lineEditSubclassWndProcCallback = syscall.NewCallback(lineEditSubclassWndProc, 4)
 		lineEditSubclassWndProcPtr = uintptr(lineEditSubclassWndProcCallback.ExtFnEntry())
@@ -50,22 +46,57 @@ func NewLineEdit(parent IContainer) (*LineEdit, os.Error) {
 	hWnd := CreateWindowEx(
 		WS_EX_CLIENTEDGE, syscall.StringToUTF16Ptr("EDIT"), nil,
 		ES_AUTOHSCROLL|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
-		0, 0, 120, 24, parent.Handle(), 0, 0, nil)
+		0, 0, 120, 24, parentHWND, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
+
+	le := &LineEdit{Widget: Widget{hWnd: hWnd}}
+
+	var succeeded bool
+	defer func() {
+		if !succeeded {
+			le.Dispose()
+		}
+	}()
 
 	lineEditOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(lineEditSubclassWndProcPtr)))
 	if lineEditOrigWndProcPtr == 0 {
 		return nil, lastError("SetWindowLong")
 	}
 
-	le := &LineEdit{Widget: Widget{hWnd: hWnd, parent: parent}}
 	le.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = le
 
-	parent.Children().Add(le)
+	succeeded = true
+
+	return le, nil
+}
+
+func NewLineEdit(parent IContainer) (*LineEdit, os.Error) {
+	if parent == nil {
+		return nil, newError("parent cannot be nil")
+	}
+
+	le, err := newLineEdit(parent.Handle())
+	if err != nil {
+		return nil, err
+	}
+
+	var succeeded bool
+	defer func() {
+		if !succeeded {
+			le.Dispose()
+		}
+	}()
+
+	le.parent = parent
+	if err = parent.Children().Add(le); err != nil {
+		return nil, err
+	}
+
+	succeeded = true
 
 	return le, nil
 }

@@ -83,6 +83,7 @@ type widgetInternal interface {
 
 type Widget struct {
 	hWnd                 HWND
+	name                 string
 	parent               IContainer
 	font                 *drawing.Font
 	contextMenu          *Menu
@@ -160,6 +161,25 @@ func rootWidget(w IWidget) RootWidget {
 
 	rw, _ := widgetsByHWnd[hWndRoot].(RootWidget)
 	return rw
+}
+
+func (w *Widget) setAndUnsetStyleBits(set, unset uint) os.Error {
+	style := uint(GetWindowLong(w.hWnd, GWL_STYLE))
+	if style == 0 {
+		return lastError("GetWindowLong")
+	}
+
+	var newStyle uint
+	newStyle = (style | set) &^ unset
+
+	if newStyle != style {
+		SetLastError(0)
+		if SetWindowLong(w.hWnd, GWL_STYLE, int(newStyle)) == 0 {
+			return lastError("SetWindowLong")
+		}
+	}
+
+	return nil
 }
 
 func (w *Widget) Handle() HWND {
@@ -629,6 +649,10 @@ func (w *Widget) mouseEventArgsFromMSG(msg *MSG) *MouseEventArgs {
 	return NewMouseEventArgs(widgetsByHWnd[w.hWnd], x, y, 0)
 }
 
+func (w *Widget) SizeChanged() *Event {
+	return w.sizeChangedPublisher.Event()
+}
+
 func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	//	widget := widgetsByHWnd[w.hWnd]
 	//	fmt.Printf("*Widget.wndProc: type: %T, msg: %+v\n", widget, msg)
@@ -688,16 +712,16 @@ func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
 }
 
-func (w *Widget) runMessageLoop() (int, os.Error) {
+func (w *Widget) runMessageLoop() int {
 	var msg MSG
 
 	for w.hWnd != 0 {
 		switch GetMessage(&msg, 0, 0, 0) {
 		case 0:
-			return int(msg.WParam), nil
+			return int(msg.WParam)
 
 		case -1:
-			return -1, lastError("GetMessage")
+			return -1
 		}
 
 		if !IsDialogMessage(w.hWnd, &msg) {
@@ -706,5 +730,5 @@ func (w *Widget) runMessageLoop() (int, os.Error) {
 		}
 	}
 
-	return 0, nil
+	return 0
 }

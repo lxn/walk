@@ -303,3 +303,14 @@ type NMITEMACTIVATE struct {
 	LParam    uintptr
 	UKeyFlags uint
 }
+
+type NMLISTVIEW struct {
+	Hdr       NMHDR
+	IItem     int
+	ISubItem  int
+	UNewState uint
+	UOldState uint
+	UChanged  uint
+	PtAction  POINT
+	LParam    uintptr
+}

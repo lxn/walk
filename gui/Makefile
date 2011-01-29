@@ -36,6 +36,7 @@ GOFILES=\
 	menu.go\
 	messagebox.go\
 	mouseevent.go\
+	numberedit.go\
 	observedwidgetlist.go\
 	progressbar.go\
 	pushbutton.go\

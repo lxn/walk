@@ -6,6 +6,7 @@ package gui
 
 import (
 	"bytes"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -41,7 +42,7 @@ type ListView struct {
 	Widget
 	columns                       *ListViewColumnList
 	items                         *ListViewItemList
-	prevSelIndex                  int
+	selectedIndex                 int
 	selectedIndexChangedPublisher EventPublisher
 	itemActivatedPublisher        EventPublisher
 	lastColumnStretched           bool
@@ -93,7 +94,7 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 
 	lv.columns = newListViewColumnList(lv)
 	lv.items = newListViewItemList(lv)
-	lv.prevSelIndex = -1
+	lv.selectedIndex = -1
 
 	lv.SetFont(defaultFont)
 
@@ -125,12 +126,7 @@ func (lv *ListView) Items() *ListViewItemList {
 }
 
 func (lv *ListView) SelectedIndex() int {
-	selCount := int(SendMessage(lv.hWnd, LVM_GETSELECTEDCOUNT, 0, 0))
-	if selCount == 0 {
-		return -1
-	}
-
-	return int(SendMessage(lv.hWnd, LVM_GETNEXTITEM, ^uintptr(0), LVNI_SELECTED)) // ^uintptr(0) == -1
+	return lv.selectedIndex
 }
 
 func (lv *ListView) SetSelectedIndex(value int) os.Error {
@@ -143,6 +139,12 @@ func (lv *ListView) SetSelectedIndex(value int) os.Error {
 
 	if FALSE == SendMessage(lv.hWnd, LVM_SETITEMSTATE, uintptr(value), uintptr(unsafe.Pointer(&lvi))) {
 		return newError("failed to set selected item")
+	}
+
+	lv.selectedIndex = value
+
+	if value == -1 {
+		lv.selectedIndexChangedPublisher.Publish(NewEventArgs(lv))
 	}
 
 	return nil
@@ -243,9 +245,12 @@ func (lv *ListView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	case WM_NOTIFY:
 		switch int(((*NMHDR)(unsafe.Pointer(msg.LParam))).Code) {
 		case LVN_ITEMCHANGED:
-			if selIndex := lv.SelectedIndex(); selIndex != lv.prevSelIndex {
+			nmlv := (*NMLISTVIEW)(unsafe.Pointer(msg.LParam))
+			selectedNow := nmlv.UNewState&LVIS_SELECTED > 0
+			selectedBefore := nmlv.UOldState&LVIS_SELECTED > 0
+			if selectedNow && !selectedBefore {
+				lv.selectedIndex = nmlv.IItem
 				lv.selectedIndexChangedPublisher.Publish(NewEventArgs(lv))
-				lv.prevSelIndex = selIndex
 			}
 
 		case LVN_ITEMACTIVATE:
@@ -288,7 +293,29 @@ func (lv *ListView) onClearingListViewColumns() (err os.Error) {
 }
 
 func (lv *ListView) onListViewItemChanged(item *ListViewItem) {
-	panic("not implemented")
+	var lvi LVITEM
+
+	lvi.Mask = LVIF_TEXT
+	lvi.IItem = lv.Items().Index(item)
+
+	texts := item.Texts()
+
+	colCount := lv.columns.Len()
+
+	for colIndex := 0; colIndex < colCount; colIndex++ {
+		lvi.ISubItem = colIndex
+
+		if colIndex < len(texts) {
+			lvi.PszText = syscall.StringToUTF16Ptr(texts[colIndex])
+		} else {
+			lvi.PszText = nil
+		}
+
+		ret := SendMessage(lv.hWnd, LVM_SETITEM, 0, uintptr(unsafe.Pointer(&lvi)))
+		if ret == 0 {
+			log.Println(newError("ListView.onInsertingListViewItem: Failed to set sub item."))
+		}
+	}
 }
 
 func (lv *ListView) onInsertingListViewItem(index int, item *ListViewItem) (err os.Error) {
@@ -324,12 +351,20 @@ func (lv *ListView) onInsertingListViewItem(index int, item *ListViewItem) (err 
 		}
 	}
 
+	item.addChangedHandler(lv)
+
 	return
 }
 
 func (lv *ListView) onRemovingListViewItem(index int, item *ListViewItem) (err os.Error) {
 	if 0 == SendMessage(lv.hWnd, LVM_DELETEITEM, uintptr(index), 0) {
 		return newError("LVM_DELETEITEM failed")
+	}
+
+	item.removeChangedHandler(lv)
+
+	if index == lv.selectedIndex {
+		return lv.SetSelectedIndex(-1)
 	}
 
 	return nil
@@ -340,5 +375,9 @@ func (lv *ListView) onClearingListViewItems() os.Error {
 		return newError("LVM_DELETEALLITEMS failed")
 	}
 
-	return nil
+	for _, item := range lv.items.items {
+		item.removeChangedHandler(lv)
+	}
+
+	return lv.SetSelectedIndex(-1)
 }

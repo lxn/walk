@@ -7,6 +7,7 @@ GOFILES=\
 	tab.go\
 	toolbar.go\
 	tooltip.go\
-	treeview.go
+	treeview.go\
+	updown.go
 
 include $(GOROOT)/src/Make.pkg

@@ -10,6 +10,7 @@ import (
 )
 
 import (
+	"walk/drawing"
 	. "walk/winapi/user32"
 )
 
@@ -49,6 +50,8 @@ func dialogWndProc(args *uintptr) uintptr {
 
 type Dialog struct {
 	TopLevelWindow
+	result        DialogCommandId
+	defaultButton *PushButton
 }
 
 func NewDialog(owner RootWidget) (*Dialog, os.Error) {
@@ -60,9 +63,9 @@ func NewDialog(owner RootWidget) (*Dialog, os.Error) {
 	}
 
 	hWnd := CreateWindowEx(
-		WS_EX_CONTROLPARENT|WS_EX_DLGMODALFRAME, syscall.StringToUTF16Ptr(dialogWindowClass), nil,
-		WS_CAPTION|WS_POPUPWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 400, 300, ownerHWnd, 0, 0, nil)
+		WS_EX_DLGMODALFRAME, syscall.StringToUTF16Ptr(dialogWindowClass), nil,
+		WS_CAPTION|WS_SYSMENU,
+		-12345, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, ownerHWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
@@ -85,17 +88,82 @@ func NewDialog(owner RootWidget) (*Dialog, os.Error) {
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	SendMessage(hWnd, WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
+	dlg.result = DlgCmdClose
+
 	return dlg, nil
 }
 
-func (dlg *Dialog) RunMessageLoop() (int, os.Error) {
-	if dlg.owner != nil {
-		dlg.owner.SetEnabled(false)
+func (dlg *Dialog) DefaultButton() *PushButton {
+	return dlg.defaultButton
+}
+
+func (dlg *Dialog) SetDefaultButton(button *PushButton) os.Error {
+	if button != nil && !IsChild(dlg.hWnd, button.hWnd) {
+		return newError("not a descendant of the dialog")
+	}
+
+	succeeded := false
+	if dlg.defaultButton != nil {
+		if err := dlg.defaultButton.setAndUnsetStyleBits(BS_PUSHBUTTON, BS_DEFPUSHBUTTON); err != nil {
+			return err
+		}
 		defer func() {
-			dlg.owner.SetEnabled(true)
-			SetWindowPos(dlg.owner.Handle(), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE)
+			if !succeeded {
+				dlg.defaultButton.setAndUnsetStyleBits(BS_DEFPUSHBUTTON, BS_PUSHBUTTON)
+			}
 		}()
 	}
 
-	return dlg.TopLevelWindow.RunMessageLoop()
+	if button != nil {
+		if err := button.setAndUnsetStyleBits(BS_DEFPUSHBUTTON, BS_PUSHBUTTON); err != nil {
+			return err
+		}
+	}
+
+	dlg.defaultButton = button
+
+	succeeded = true
+
+	return nil
+}
+
+func (dlg *Dialog) Accept() {
+	dlg.Close(DlgCmdOK)
+}
+
+func (dlg *Dialog) Cancel() {
+	dlg.Close(DlgCmdCancel)
+}
+
+func (dlg *Dialog) Close(result DialogCommandId) {
+	dlg.result = result
+
+	dlg.TopLevelWindow.Close()
+}
+
+func (dlg *Dialog) Run() DialogCommandId {
+	if dlg.owner != nil {
+		ob, err := dlg.owner.Bounds()
+		if err == nil {
+			b, err := dlg.Bounds()
+			if err == nil && b.X == -12345 {
+				dlg.SetBounds(drawing.Rectangle{
+					ob.X + (ob.Width-b.Width)/2,
+					ob.Y + (ob.Height-b.Height)/2,
+					b.Width,
+					b.Height,
+				})
+			}
+		}
+	}
+
+	dlg.Show()
+
+	if dlg.owner != nil {
+		dlg.owner.SetEnabled(false)
+	}
+
+	dlg.TopLevelWindow.Run()
+
+	return dlg.result
 }

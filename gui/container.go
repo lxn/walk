@@ -37,7 +37,7 @@ type IContainer interface {
 
 type RootWidget interface {
 	IContainer
-	RunMessageLoop() (int, os.Error)
+	Run() int
 }
 
 type Container struct {

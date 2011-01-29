@@ -45,7 +45,7 @@ func (tlw *TopLevelWindow) PreferredSize() drawing.Size {
 	return tlw.dialogBaseUnitsToPixels(drawing.Size{252, 218})
 }
 
-func (tlw *TopLevelWindow) RunMessageLoop() (int, os.Error) {
+func (tlw *TopLevelWindow) Run() int {
 	return tlw.runMessageLoop()
 }
 
@@ -153,6 +153,10 @@ func (tlw *TopLevelWindow) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		tlw.closeReason = CloseReasonUnknown
 		tlw.closingPublisher.Publish(args)
 		if !args.Canceled() {
+			if tlw.owner != nil {
+				tlw.owner.SetEnabled(true)
+			}
+
 			tlw.close()
 		}
 		return 0

@@ -988,6 +988,7 @@ var (
 	getWindowRect        uintptr
 	insertMenuItem       uintptr
 	invalidateRect       uintptr
+	isChild              uintptr
 	isDialogMessage      uintptr
 	isWindowEnabled      uintptr
 	loadCursor           uintptr
@@ -1048,6 +1049,7 @@ func init() {
 	getWindowRect = MustGetProcAddress(lib, "GetWindowRect")
 	insertMenuItem = MustGetProcAddress(lib, "InsertMenuItemW")
 	invalidateRect = MustGetProcAddress(lib, "InvalidateRect")
+	isChild = MustGetProcAddress(lib, "IsChild")
 	isDialogMessage = MustGetProcAddress(lib, "IsDialogMessageW")
 	isWindowEnabled = MustGetProcAddress(lib, "IsWindowEnabled")
 	loadCursor = MustGetProcAddress(lib, "LoadCursorW")
@@ -1323,6 +1325,15 @@ func IsDialogMessage(hWnd HWND, msg *MSG) bool {
 	ret, _, _ := syscall.Syscall(isDialogMessage,
 		uintptr(hWnd),
 		uintptr(unsafe.Pointer(msg)),
+		0)
+
+	return ret != 0
+}
+
+func IsChild(hWndParent, hWnd HWND) bool {
+	ret, _, _ := syscall.Syscall(isChild,
+		uintptr(hWndParent),
+		uintptr(hWnd),
 		0)
 
 	return ret != 0

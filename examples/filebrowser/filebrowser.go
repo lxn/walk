@@ -136,10 +136,11 @@ func newTreeViewItem(text string) *gui.TreeViewItem {
 	return item
 }
 
-func runMainWindow() (int, os.Error) {
+func main() {
+	runtime.LockOSThread()
+
 	mainWnd, err := gui.NewMainWindow()
 	panicIfErr(err)
-	defer mainWnd.Dispose()
 
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.SetText("Walk File Browser Example"))
@@ -240,19 +241,5 @@ func runMainWindow() (int, os.Error) {
 	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
 	mw.Show()
 
-	return mw.RunMessageLoop()
-}
-
-func main() {
-	runtime.LockOSThread()
-
-	defer func() {
-		if x := recover(); x != nil {
-			fmt.Println("Error:", x)
-		}
-	}()
-
-	exitCode, err := runMainWindow()
-	panicIfErr(err)
-	os.Exit(exitCode)
+	os.Exit(mw.Run())
 }

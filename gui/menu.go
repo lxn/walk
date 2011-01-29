@@ -75,7 +75,7 @@ func (m *Menu) Actions() *ActionList {
 
 func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 	mii.CbSize = uint(unsafe.Sizeof(*mii))
-	mii.FMask = MIIM_FTYPE | MIIM_ID | MIIM_STRING
+	mii.FMask = MIIM_FTYPE | MIIM_ID | MIIM_STATE | MIIM_STRING
 	if action.image != nil {
 		mii.FMask |= MIIM_BITMAP
 		mii.HbmpItem = action.image.Handle()
@@ -84,6 +84,12 @@ func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 	mii.WID = uint(action.id)
 	mii.DwTypeData = syscall.StringToUTF16Ptr(action.Text())
 	mii.Cch = uint(len([]int(action.Text())))
+
+	if action.Enabled() {
+		mii.FState &^= MFS_DISABLED
+	} else {
+		mii.FState |= MFS_DISABLED
+	}
 
 	menu := action.menu
 	if menu != nil {
