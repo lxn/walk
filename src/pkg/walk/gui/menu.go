@@ -80,10 +80,14 @@ func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 		mii.FMask |= MIIM_BITMAP
 		mii.HbmpItem = action.image.Handle()
 	}
-	mii.FType = MFT_STRING
+	if action.text == "-" {
+		mii.FType = MFT_SEPARATOR
+	} else {
+		mii.FType = MFT_STRING
+		mii.DwTypeData = syscall.StringToUTF16Ptr(action.text)
+		mii.Cch = uint(len([]int(action.text)))
+	}
 	mii.WID = uint(action.id)
-	mii.DwTypeData = syscall.StringToUTF16Ptr(action.Text())
-	mii.Cch = uint(len([]int(action.Text())))
 
 	if action.Enabled() {
 		mii.FState &^= MFS_DISABLED
