@@ -31,6 +31,7 @@ type TopLevelWindow struct {
 	closingPublisher CloseEventPublisher
 	closeReason      CloseReason
 	prevFocusHWnd    HWND
+	isInRestoreState bool
 }
 
 func (tlw *TopLevelWindow) ClientArea() *Composite {
@@ -90,34 +91,54 @@ func (tlw *TopLevelWindow) Close() os.Error {
 	return nil
 }
 
-func (tlw *TopLevelWindow) SaveState() (string, os.Error) {
+func (tlw *TopLevelWindow) SaveState() os.Error {
 	var wp WINDOWPLACEMENT
 
 	wp.Length = uint(unsafe.Sizeof(wp))
 
 	if !GetWindowPlacement(tlw.hWnd, &wp) {
-		return "", lastError("GetWindowPlacement")
+		return lastError("GetWindowPlacement")
 	}
 
-	return fmt.Sprint(
+	state := fmt.Sprint(
 		wp.Flags, wp.ShowCmd,
 		wp.PtMinPosition.X, wp.PtMinPosition.Y,
 		wp.PtMaxPosition.X, wp.PtMaxPosition.Y,
 		wp.RcNormalPosition.Left, wp.RcNormalPosition.Top,
-		wp.RcNormalPosition.Right, wp.RcNormalPosition.Bottom),
-		nil
+		wp.RcNormalPosition.Right, wp.RcNormalPosition.Bottom)
+
+	if err := tlw.putState(state); err != nil {
+		return err
+	}
+
+	return tlw.Container.SaveState()
 }
 
-func (tlw *TopLevelWindow) RestoreState(s string) os.Error {
+func (tlw *TopLevelWindow) RestoreState() os.Error {
+	if tlw.isInRestoreState {
+		return nil
+	}
+	tlw.isInRestoreState = true
+	defer func() {
+		tlw.isInRestoreState = false
+	}()
+
+	state, err := tlw.getState()
+	if err != nil {
+		return err
+	}
+	if state == "" {
+		return nil
+	}
+
 	var wp WINDOWPLACEMENT
 
-	_, err := fmt.Sscan(s,
+	if _, err := fmt.Sscan(state,
 		&wp.Flags, &wp.ShowCmd,
 		&wp.PtMinPosition.X, &wp.PtMinPosition.Y,
 		&wp.PtMaxPosition.X, &wp.PtMaxPosition.Y,
 		&wp.RcNormalPosition.Left, &wp.RcNormalPosition.Top,
-		&wp.RcNormalPosition.Right, &wp.RcNormalPosition.Bottom)
-	if err != nil {
+		&wp.RcNormalPosition.Right, &wp.RcNormalPosition.Bottom); err != nil {
 		return err
 	}
 
@@ -125,6 +146,10 @@ func (tlw *TopLevelWindow) RestoreState(s string) os.Error {
 
 	if !SetWindowPlacement(tlw.hWnd, &wp) {
 		return lastError("SetWindowPlacement")
+	}
+
+	if err := tlw.Container.RestoreState(); err != nil {
+		return err
 	}
 
 	return nil

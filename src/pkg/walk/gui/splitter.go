@@ -77,6 +77,8 @@ func NewSplitter(parent IContainer) (*Splitter, os.Error) {
 		}
 	}()
 
+	s.SetPersistent(true)
+
 	s.children = newObservedWidgetList(s)
 
 	s.SetFont(defaultFont)

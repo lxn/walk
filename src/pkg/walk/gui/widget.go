@@ -5,6 +5,7 @@
 package gui
 
 import (
+	"bytes"
 	"log"
 	"os"
 	"syscall"
@@ -31,6 +32,8 @@ const (
 
 type IWidget interface {
 	Handle() HWND
+	Name() string
+	SetName(name string)
 	BeginUpdate()
 	EndUpdate()
 	Invalidate() os.Error
@@ -79,6 +82,8 @@ type IWidget interface {
 type widgetInternal interface {
 	IWidget
 	wndProc(msg *MSG, origWndProcPtr uintptr) uintptr
+	path() string
+	writePath(buf *bytes.Buffer)
 }
 
 type Widget struct {
@@ -180,6 +185,34 @@ func (w *Widget) setAndUnsetStyleBits(set, unset uint) os.Error {
 	}
 
 	return nil
+}
+
+func (w *Widget) Name() string {
+	return w.name
+}
+
+func (w *Widget) SetName(name string) {
+	w.name = name
+}
+
+func (w *Widget) writePath(buf *bytes.Buffer) {
+	hWndParent := GetAncestor(w.hWnd, GA_PARENT)
+	if pw, ok := widgetsByHWnd[hWndParent]; ok {
+		if pwi, ok := pw.(widgetInternal); ok {
+			pwi.writePath(buf)
+			buf.WriteByte('/')
+		}
+	}
+
+	buf.WriteString(w.name)
+}
+
+func (w *Widget) path() string {
+	buf := bytes.NewBuffer(nil)
+
+	w.writePath(buf)
+
+	return buf.String()
 }
 
 func (w *Widget) Handle() HWND {
@@ -653,6 +686,44 @@ func (w *Widget) SizeChanged() *Event {
 	return w.sizeChangedPublisher.Event()
 }
 
+func (w *Widget) persistState(restore bool) {
+	settings := appSingleton.settings
+	if settings != nil {
+		if widget, ok := widgetsByHWnd[w.hWnd]; ok {
+			if persistable, ok := widget.(Persistable); ok && persistable.Persistent() {
+				if restore {
+					if err := persistable.RestoreState(); err != nil {
+						log.Println(err)
+					}
+				} else {
+					if err := persistable.SaveState(); err != nil {
+						log.Println(err)
+					}
+				}
+			}
+		}
+	}
+}
+
+func (w *Widget) getState() (string, os.Error) {
+	settings := appSingleton.settings
+	if settings == nil {
+		return "", newError("App().Settings() must not be nil")
+	}
+
+	state, _ := settings.Get(w.path())
+	return state, nil
+}
+
+func (w *Widget) putState(state string) os.Error {
+	settings := appSingleton.settings
+	if settings == nil {
+		return newError("App().Settings() must not be nil")
+	}
+
+	return settings.Put(w.path(), state)
+}
+
 func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 	//	widget := widgetsByHWnd[w.hWnd]
 	//	fmt.Printf("*Widget.wndProc: type: %T, msg: %+v\n", widget, msg)
@@ -703,6 +774,12 @@ func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		mmi := (*MINMAXINFO)(unsafe.Pointer(msg.LParam))
 		mmi.PtMinTrackSize = POINT{w.minSize.Width, w.minSize.Height}
 		return 0
+
+	case WM_SHOWWINDOW:
+		w.persistState(msg.WParam != 0)
+
+	case WM_DESTROY:
+		w.persistState(false)
 	}
 
 	if origWndProcPtr != 0 {

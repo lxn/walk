@@ -7,6 +7,7 @@ package gui
 import (
 	"log"
 	"os"
+	"strconv"
 	"syscall"
 	"unsafe"
 )
@@ -45,6 +46,7 @@ type TabWidget struct {
 	pages                       *TabPageList
 	curPage                     *TabPage
 	currentPageChangedPublisher EventPublisher
+	persistent                  bool
 }
 
 func NewTabWidget(parent IContainer) (*TabWidget, os.Error) {
@@ -75,6 +77,8 @@ func NewTabWidget(parent IContainer) (*TabWidget, os.Error) {
 			tw.Dispose()
 		}
 	}()
+
+	tw.SetPersistent(true)
 
 	tw.hWndTab = CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("SysTabControl32"), nil,
@@ -140,6 +144,52 @@ func (tw *TabWidget) Pages() *TabPageList {
 
 func (tw *TabWidget) CurrentPageChanged() *Event {
 	return tw.currentPageChangedPublisher.Event()
+}
+
+func (tw *TabWidget) Persistent() bool {
+	return tw.persistent
+}
+
+func (tw *TabWidget) SetPersistent(value bool) {
+	tw.persistent = value
+}
+
+func (tw *TabWidget) SaveState() os.Error {
+	tw.putState(strconv.Itoa(tw.pages.Index(tw.CurrentPage())))
+
+	for _, page := range tw.pages.items {
+		if err := page.SaveState(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (tw *TabWidget) RestoreState() os.Error {
+	state, err := tw.getState()
+	if err != nil {
+		return err
+	}
+	if state == "" {
+		return nil
+	}
+
+	index, err := strconv.Atoi(state)
+	if err != nil {
+		return err
+	}
+	if err := tw.SetCurrentPage(tw.pages.At(index)); err != nil {
+		return err
+	}
+
+	for _, page := range tw.pages.items {
+		if err := page.RestoreState(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (tw *TabWidget) resizePages() {

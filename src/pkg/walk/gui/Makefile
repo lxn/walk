@@ -24,6 +24,7 @@ GOFILES=\
 	gui.go\
 	imagelist.go\
 	imageview.go\
+	inifilesettings.go\
 	keyevent.go\
 	label.go\
 	lineedit.go\

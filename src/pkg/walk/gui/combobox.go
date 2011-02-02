@@ -38,14 +38,24 @@ func NewComboBox(parent IContainer) (*ComboBox, os.Error) {
 
 	cb := &ComboBox{Widget: Widget{hWnd: hWnd, parent: parent}}
 
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			cb.Dispose()
+		}
+	}()
+
 	cb.items = newComboBoxItemList(cb)
 
 	cb.SetFont(defaultFont)
 
+	if err := parent.Children().Add(cb); err != nil {
+		return nil, err
+	}
+
 	widgetsByHWnd[hWnd] = cb
 
-	parent.Children().Add(cb)
-
+	succeeded = true
 	return cb, nil
 }
 

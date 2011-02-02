@@ -52,14 +52,26 @@ func NewCompositeWithStyle(parent IContainer, style uint) (*Composite, os.Error)
 
 	c := &Composite{Container: Container{Widget: Widget{hWnd: hWnd, parent: parent}}}
 
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			c.Dispose()
+		}
+	}()
+
+	c.SetPersistent(true)
+
 	c.children = newObservedWidgetList(c)
 
 	c.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = c
 
-	parent.Children().Add(c)
+	if err := parent.Children().Add(c); err != nil {
+		return nil, err
+	}
 
+	succeeded = true
 	return c, nil
 }
 

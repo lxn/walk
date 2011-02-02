@@ -46,6 +46,7 @@ type ListView struct {
 	selectedIndexChangedPublisher EventPublisher
 	itemActivatedPublisher        EventPublisher
 	lastColumnStretched           bool
+	persistent                    bool
 }
 
 func NewListView(parent IContainer) (*ListView, os.Error) {
@@ -72,12 +73,15 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 			parent: parent,
 		},
 	}
+
 	succeeded := false
 	defer func() {
 		if !succeeded {
 			lv.Dispose()
 		}
 	}()
+
+	lv.SetPersistent(true)
 
 	listViewOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(listViewSubclassWndProcPtr)))
 	if listViewOrigWndProcPtr == 0 {
@@ -179,7 +183,15 @@ func (lv *ListView) StretchLastColumn() os.Error {
 	return nil
 }
 
-func (lv *ListView) SaveState() (string, os.Error) {
+func (lv *ListView) Persistent() bool {
+	return lv.persistent
+}
+
+func (lv *ListView) SetPersistent(value bool) {
+	lv.persistent = value
+}
+
+func (lv *ListView) SaveState() os.Error {
 	buf := bytes.NewBuffer(nil)
 
 	count := lv.columns.Len()
@@ -190,17 +202,25 @@ func (lv *ListView) SaveState() (string, os.Error) {
 
 		width := SendMessage(lv.hWnd, LVM_GETCOLUMNWIDTH, uintptr(i), 0)
 		if width == 0 {
-			return "", newError("LVM_GETCOLUMNWIDTH failed")
+			return newError("LVM_GETCOLUMNWIDTH failed")
 		}
 
 		buf.WriteString(strconv.Itoa(int(width)))
 	}
 
-	return buf.String(), nil
+	return lv.putState(buf.String())
 }
 
-func (lv *ListView) RestoreState(s string) os.Error {
-	widthStrs := strings.Split(s, " ", -1)
+func (lv *ListView) RestoreState() os.Error {
+	state, err := lv.getState()
+	if err != nil {
+		return err
+	}
+	if state == "" {
+		return nil
+	}
+
+	widthStrs := strings.Split(state, " ", -1)
 
 	for i, str := range widthStrs {
 		width, err := strconv.Atoi(str)

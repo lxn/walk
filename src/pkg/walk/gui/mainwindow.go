@@ -38,7 +38,7 @@ type MainWindow struct {
 	toolBar *ToolBar
 }
 
-func NewMainWindow() (mw *MainWindow, err os.Error) {
+func NewMainWindow() (*MainWindow, os.Error) {
 	ensureRegisteredWindowClass(mainWindowWindowClass, mainWindowWndProc, &mainWindowWndProcCallback)
 
 	hWnd := CreateWindowEx(
@@ -49,44 +49,53 @@ func NewMainWindow() (mw *MainWindow, err os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	wnd := &MainWindow{TopLevelWindow: TopLevelWindow{Container: Container{Widget: Widget{hWnd: hWnd}}}}
+	mw := &MainWindow{
+		TopLevelWindow: TopLevelWindow{
+			Container: Container{
+				Widget: Widget{
+					hWnd: hWnd,
+				},
+			},
+		},
+	}
 
+	succeeded := false
 	defer func() {
-		if x := recover(); x != nil {
-			wnd.Dispose()
-
-			err = toError(x)
+		if !succeeded {
+			mw.Dispose()
 		}
 	}()
 
-	wnd.children = newObservedWidgetList(wnd)
+	mw.SetPersistent(true)
 
-	widgetsByHWnd[hWnd] = wnd
+	mw.children = newObservedWidgetList(mw)
 
-	wnd.SetLayout(NewVBoxLayout())
-
-	wnd.menu, err = newMenuBar()
+	err := mw.SetLayout(NewVBoxLayout())
 	if err != nil {
-		panic(err)
-	}
-	SetMenu(wnd.hWnd, wnd.menu.hMenu)
-
-	wnd.toolBar, err = NewToolBar(wnd)
-	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	wnd.clientArea, err = NewComposite(wnd)
-	if err != nil {
-		panic(err)
+	if mw.menu, err = newMenuBar(); err != nil {
+		return nil, err
 	}
+	SetMenu(mw.hWnd, mw.menu.hMenu)
+
+	if mw.toolBar, err = NewToolBar(mw); err != nil {
+		return nil, err
+	}
+
+	if mw.clientArea, err = NewComposite(mw); err != nil {
+		return nil, err
+	}
+	mw.clientArea.SetName("clientArea")
+
+	widgetsByHWnd[hWnd] = mw
 
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	SendMessage(hWnd, WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
-	mw = wnd
-
-	return
+	succeeded = true
+	return mw, nil
 }
 
 func (mw *MainWindow) Menu() *Menu {

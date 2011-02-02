@@ -42,8 +42,9 @@ type RootWidget interface {
 
 type Container struct {
 	Widget
-	layout   Layout
-	children *ObservedWidgetList
+	layout     Layout
+	children   *ObservedWidgetList
+	persistent bool
 }
 
 func (c *Container) Children() *ObservedWidgetList {
@@ -68,6 +69,38 @@ func (c *Container) SetLayout(value Layout) os.Error {
 	}
 
 	return nil
+}
+
+func (c *Container) forEachPersistableChild(f func(p Persistable) os.Error) os.Error {
+	for _, child := range c.children.items {
+		if persistable, ok := child.(Persistable); ok && persistable.Persistent() {
+			if err := f(persistable); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Container) Persistent() bool {
+	return c.persistent
+}
+
+func (c *Container) SetPersistent(value bool) {
+	c.persistent = value
+}
+
+func (c *Container) SaveState() os.Error {
+	return c.forEachPersistableChild(func(p Persistable) os.Error {
+		return p.SaveState()
+	})
+}
+
+func (c *Container) RestoreState() os.Error {
+	return c.forEachPersistableChild(func(p Persistable) os.Error {
+		return p.RestoreState()
+	})
 }
 
 func (c *Container) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {

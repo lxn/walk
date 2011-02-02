@@ -115,7 +115,7 @@ func main() {
 
 	exitAction := gui.NewAction()
 	panicIfErr(exitAction.SetText("Exit"))
-	exitAction.Triggered().Subscribe(func(args *gui.EventArgs) { gui.Exit(0) })
+	exitAction.Triggered().Subscribe(func(args *gui.EventArgs) { gui.App().Exit(0) })
 	panicIfErr(fileMenu.Actions().Add(exitAction))
 
 	helpMenu, err := gui.NewMenu()
