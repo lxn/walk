@@ -11,74 +11,34 @@ import (
 
 import (
 	. "walk/winapi"
+	. "walk/winapi/gdi32"
 	. "walk/winapi/ole32"
 	. "walk/winapi/shdocvw"
+	. "walk/winapi/user32"
 )
-
-type webViewIDocHostUIHandlerCallbacks struct {
-	QueryInterface        *syscall.Callback
-	AddRef                *syscall.Callback
-	Release               *syscall.Callback
-	ShowContextMenu       *syscall.Callback
-	GetHostInfo           *syscall.Callback
-	ShowUI                *syscall.Callback
-	HideUI                *syscall.Callback
-	UpdateUI              *syscall.Callback
-	EnableModeless        *syscall.Callback
-	OnDocWindowActivate   *syscall.Callback
-	OnFrameWindowActivate *syscall.Callback
-	ResizeBorder          *syscall.Callback
-	TranslateAccelerator  *syscall.Callback
-	GetOptionKeyPath      *syscall.Callback
-	GetDropTarget         *syscall.Callback
-	GetExternal           *syscall.Callback
-	TranslateUrl          *syscall.Callback
-	FilterDataObject      *syscall.Callback
-}
-
-var webViewIDocHostUIHandlerCbs = &webViewIDocHostUIHandlerCallbacks{
-	syscall.NewCallback(webView_IDocHostUIHandler_QueryInterface, 1+2),
-	syscall.NewCallback(webView_IDocHostUIHandler_AddRef, 1+0),
-	syscall.NewCallback(webView_IDocHostUIHandler_Release, 1+0),
-	syscall.NewCallback(webView_IDocHostUIHandler_ShowContextMenu, 1+4),
-	syscall.NewCallback(webView_IDocHostUIHandler_GetHostInfo, 1+1),
-	syscall.NewCallback(webView_IDocHostUIHandler_ShowUI, 1+5),
-	syscall.NewCallback(webView_IDocHostUIHandler_HideUI, 1+0),
-	syscall.NewCallback(webView_IDocHostUIHandler_UpdateUI, 1+0),
-	syscall.NewCallback(webView_IDocHostUIHandler_EnableModeless, 1+1),
-	syscall.NewCallback(webView_IDocHostUIHandler_OnDocWindowActivate, 1+1),
-	syscall.NewCallback(webView_IDocHostUIHandler_OnFrameWindowActivate, 1+1),
-	syscall.NewCallback(webView_IDocHostUIHandler_ResizeBorder, 1+3),
-	syscall.NewCallback(webView_IDocHostUIHandler_TranslateAccelerator, 1+3),
-	syscall.NewCallback(webView_IDocHostUIHandler_GetOptionKeyPath, 1+2),
-	syscall.NewCallback(webView_IDocHostUIHandler_GetDropTarget, 1+2),
-	syscall.NewCallback(webView_IDocHostUIHandler_GetExternal, 1+1),
-	syscall.NewCallback(webView_IDocHostUIHandler_TranslateUrl, 1+3),
-	syscall.NewCallback(webView_IDocHostUIHandler_FilterDataObject, 1+2),
-}
 
 var webViewIDocHostUIHandlerVtbl *IDocHostUIHandlerVtbl
 
 func init() {
 	webViewIDocHostUIHandlerVtbl = &IDocHostUIHandlerVtbl{
-		webViewIDocHostUIHandlerCbs.QueryInterface.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.AddRef.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.Release.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.ShowContextMenu.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.GetHostInfo.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.ShowUI.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.HideUI.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.UpdateUI.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.EnableModeless.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.OnDocWindowActivate.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.OnFrameWindowActivate.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.ResizeBorder.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.TranslateAccelerator.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.GetOptionKeyPath.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.GetDropTarget.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.GetExternal.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.TranslateUrl.ExtFnEntry(),
-		webViewIDocHostUIHandlerCbs.FilterDataObject.ExtFnEntry(),
+		syscall.NewCallback(webView_IDocHostUIHandler_QueryInterface),
+		syscall.NewCallback(webView_IDocHostUIHandler_AddRef),
+		syscall.NewCallback(webView_IDocHostUIHandler_Release),
+		syscall.NewCallback(webView_IDocHostUIHandler_ShowContextMenu),
+		syscall.NewCallback(webView_IDocHostUIHandler_GetHostInfo),
+		syscall.NewCallback(webView_IDocHostUIHandler_ShowUI),
+		syscall.NewCallback(webView_IDocHostUIHandler_HideUI),
+		syscall.NewCallback(webView_IDocHostUIHandler_UpdateUI),
+		syscall.NewCallback(webView_IDocHostUIHandler_EnableModeless),
+		syscall.NewCallback(webView_IDocHostUIHandler_OnDocWindowActivate),
+		syscall.NewCallback(webView_IDocHostUIHandler_OnFrameWindowActivate),
+		syscall.NewCallback(webView_IDocHostUIHandler_ResizeBorder),
+		syscall.NewCallback(webView_IDocHostUIHandler_TranslateAccelerator),
+		syscall.NewCallback(webView_IDocHostUIHandler_GetOptionKeyPath),
+		syscall.NewCallback(webView_IDocHostUIHandler_GetDropTarget),
+		syscall.NewCallback(webView_IDocHostUIHandler_GetExternal),
+		syscall.NewCallback(webView_IDocHostUIHandler_TranslateUrl),
+		syscall.NewCallback(webView_IDocHostUIHandler_FilterDataObject),
 	}
 }
 
@@ -86,13 +46,7 @@ type webViewIDocHostUIHandler struct {
 	IDocHostUIHandler
 }
 
-func webView_IDocHostUIHandler_QueryInterface(args *uintptr) uintptr {
-	p := (*struct {
-		object    uintptr
-		riid      REFIID
-		ppvObject *unsafe.Pointer
-	})(unsafe.Pointer(args))
-
+func webView_IDocHostUIHandler_QueryInterface(docHostUIHandler *webViewIDocHostUIHandler, riid REFIID, ppvObject *unsafe.Pointer) HRESULT {
 	// Just reuse the QueryInterface implementation we have for IOleClientSite.
 	// We need to adjust object, which initially points at our
 	// webViewIDocHostUIHandler, so it refers to the containing
@@ -100,109 +54,86 @@ func webView_IDocHostUIHandler_QueryInterface(args *uintptr) uintptr {
 	var clientSite IOleClientSite
 	var webViewInPlaceSite webViewIOleInPlaceSite
 
-	ptr := int(p.object) - unsafe.Sizeof(clientSite) - unsafe.Sizeof(webViewInPlaceSite)
-	p.object = uintptr(ptr)
+	ptr := uintptr(unsafe.Pointer(docHostUIHandler)) - uintptr(unsafe.Sizeof(clientSite)) -
+		uintptr(unsafe.Sizeof(webViewInPlaceSite))
 
-	return webView_IOleClientSite_QueryInterface(args)
+	return webView_IOleClientSite_QueryInterface((*webViewIOleClientSite)(unsafe.Pointer(ptr)), riid, ppvObject)
 }
 
-func webView_IDocHostUIHandler_AddRef(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_AddRef(docHostUIHandler *webViewIDocHostUIHandler) HRESULT {
 	return 1
 }
 
-func webView_IDocHostUIHandler_Release(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_Release(docHostUIHandler *webViewIDocHostUIHandler) HRESULT {
 	return 1
 }
 
-func webView_IDocHostUIHandler_ShowContextMenu(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_ShowContextMenu(docHostUIHandler *webViewIDocHostUIHandler, dwID uint, ppt *POINT, pcmdtReserved *IUnknown, pdispReserved uintptr) HRESULT {
 	return S_OK
 }
 
-func webView_IDocHostUIHandler_GetHostInfo(args *uintptr) uintptr {
-	p := (*struct {
-		docHostUIHandler *webViewIDocHostUIHandler
-		pInfo            *DOCHOSTUIINFO
-	})(unsafe.Pointer(args))
-
-	p.pInfo.CbSize = uint(unsafe.Sizeof(*p.pInfo))
-	p.pInfo.DwFlags = DOCHOSTUIFLAG_NO3DBORDER
-	p.pInfo.DwDoubleClick = DOCHOSTUIDBLCLK_DEFAULT
+func webView_IDocHostUIHandler_GetHostInfo(docHostUIHandler *webViewIDocHostUIHandler, pInfo *DOCHOSTUIINFO) HRESULT {
+	pInfo.CbSize = uint(unsafe.Sizeof(*pInfo))
+	pInfo.DwFlags = DOCHOSTUIFLAG_NO3DBORDER
+	pInfo.DwDoubleClick = DOCHOSTUIDBLCLK_DEFAULT
 
 	return S_OK
 }
 
-func webView_IDocHostUIHandler_ShowUI(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_ShowUI(docHostUIHandler *webViewIDocHostUIHandler, dwID uint, pActiveObject uintptr, pCommandTarget uintptr, pFrame *IOleInPlaceFrame, pDoc uintptr) HRESULT {
 	return S_OK
 }
 
-func webView_IDocHostUIHandler_HideUI(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_HideUI(docHostUIHandler *webViewIDocHostUIHandler) HRESULT {
 	return S_OK
 }
 
-func webView_IDocHostUIHandler_UpdateUI(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_UpdateUI(docHostUIHandler *webViewIDocHostUIHandler) HRESULT {
 	return S_OK
 }
 
-func webView_IDocHostUIHandler_EnableModeless(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_EnableModeless(docHostUIHandler *webViewIDocHostUIHandler, fEnable BOOL) HRESULT {
 	return S_OK
 }
 
-func webView_IDocHostUIHandler_OnDocWindowActivate(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_OnDocWindowActivate(docHostUIHandler *webViewIDocHostUIHandler, fActivate BOOL) HRESULT {
 	return S_OK
 }
 
-func webView_IDocHostUIHandler_OnFrameWindowActivate(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_OnFrameWindowActivate(docHostUIHandler *webViewIDocHostUIHandler, fActivate BOOL) HRESULT {
 	return S_OK
 }
 
-func webView_IDocHostUIHandler_ResizeBorder(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_ResizeBorder(docHostUIHandler *webViewIDocHostUIHandler, prcBorder *RECT, pUIWindow uintptr, fRameWindow BOOL) HRESULT {
 	return S_OK
 }
 
-func webView_IDocHostUIHandler_TranslateAccelerator(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_TranslateAccelerator(docHostUIHandler *webViewIDocHostUIHandler, lpMsg *MSG, pguidCmdGroup *GUID, nCmdID uint) HRESULT {
 	return S_FALSE
 }
 
-func webView_IDocHostUIHandler_GetOptionKeyPath(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_GetOptionKeyPath(docHostUIHandler *webViewIDocHostUIHandler, pchKey *uint16, dw uint) HRESULT {
 	return S_FALSE
 }
 
-func webView_IDocHostUIHandler_GetDropTarget(args *uintptr) uintptr {
+func webView_IDocHostUIHandler_GetDropTarget(docHostUIHandler *webViewIDocHostUIHandler, pDropTarget uintptr, ppDropTarget *uintptr) HRESULT {
 	return S_FALSE
 }
 
-func webView_IDocHostUIHandler_GetExternal(args *uintptr) uintptr {
-	p := (*struct {
-		docHostUIHandler *webViewIDocHostUIHandler
-		ppDispatch       *unsafe.Pointer
-	})(unsafe.Pointer(args))
-
-	*p.ppDispatch = nil
+func webView_IDocHostUIHandler_GetExternal(docHostUIHandler *webViewIDocHostUIHandler, ppDispatch *uintptr) HRESULT {
+	*ppDispatch = 0
 
 	return S_FALSE
 }
 
-func webView_IDocHostUIHandler_TranslateUrl(args *uintptr) uintptr {
-	p := (*struct {
-		docHostUIHandler *webViewIDocHostUIHandler
-		dwTranslate      uint
-		pchURLIn         *uint16
-		ppchURLOut       **uint16
-	})(unsafe.Pointer(args))
-
-	*p.ppchURLOut = nil
+func webView_IDocHostUIHandler_TranslateUrl(docHostUIHandler *webViewIDocHostUIHandler, dwTranslate uint, pchURLIn *uint16, ppchURLOut **uint16) HRESULT {
+	*ppchURLOut = nil
 
 	return S_FALSE
 }
 
-func webView_IDocHostUIHandler_FilterDataObject(args *uintptr) uintptr {
-	p := (*struct {
-		docHostUIHandler *webViewIDocHostUIHandler
-		pDO              unsafe.Pointer
-		ppDORet          *unsafe.Pointer
-	})(unsafe.Pointer(args))
-
-	*p.ppDORet = nil
+func webView_IDocHostUIHandler_FilterDataObject(docHostUIHandler *webViewIDocHostUIHandler, pDO uintptr, ppDORet *uintptr) HRESULT {
+	*ppDORet = 0
 
 	return S_FALSE
 }

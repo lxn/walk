@@ -81,7 +81,7 @@ type IWidget interface {
 
 type widgetInternal interface {
 	IWidget
-	wndProc(msg *MSG, origWndProcPtr uintptr) uintptr
+	wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr
 	path() string
 	writePath(buf *bytes.Buffer)
 }
@@ -106,12 +106,12 @@ var (
 	widgetsByHWnd map[HWND]widgetInternal = make(map[HWND]widgetInternal)
 )
 
-func ensureRegisteredWindowClass(className string, windowProc syscall.CallbackFunc, callback **syscall.Callback) {
+func ensureRegisteredWindowClass(className string, windowProc interface{}, callback *uintptr) {
 	if callback == nil {
 		panic("callback cannot be nil")
 	}
 
-	if *callback != nil {
+	if *callback != 0 {
 		return
 	}
 
@@ -130,11 +130,11 @@ func ensureRegisteredWindowClass(className string, windowProc syscall.CallbackFu
 		panic("LoadCursor failed")
 	}
 
-	*callback = syscall.NewCallback(windowProc, 4)
+	*callback = syscall.NewCallback(windowProc)
 
 	var wc WNDCLASSEX
 	wc.CbSize = uint(unsafe.Sizeof(wc))
-	wc.LpfnWndProc = (*callback).ExtFnEntry()
+	wc.LpfnWndProc = *callback
 	wc.HInstance = hInst
 	wc.HIcon = hIcon
 	wc.HCursor = hCursor
@@ -146,7 +146,7 @@ func ensureRegisteredWindowClass(className string, windowProc syscall.CallbackFu
 	}
 }
 
-func msgFromCallbackArgs(args *uintptr) *MSG {
+/*func msgFromCallbackArgs(args *uintptr) *MSG {
 	p := (*[4]int32)(unsafe.Pointer(args))
 
 	return &MSG{
@@ -155,7 +155,7 @@ func msgFromCallbackArgs(args *uintptr) *MSG {
 		WParam:  uintptr(p[2]),
 		LParam:  uintptr(p[3]),
 	}
-}
+}*/
 
 func rootWidget(w IWidget) RootWidget {
 	if w == nil {
@@ -675,9 +675,9 @@ func (w *Widget) MouseUp() *MouseEvent {
 	return w.mouseUpPublisher.Event()
 }
 
-func (w *Widget) mouseEventArgsFromMSG(msg *MSG) *MouseEventArgs {
-	x := int(GET_X_LPARAM(msg.LParam))
-	y := int(GET_Y_LPARAM(msg.LParam))
+func (w *Widget) mouseEventArgsFromMSG(wParam, lParam uintptr) *MouseEventArgs {
+	x := int(GET_X_LPARAM(lParam))
+	y := int(GET_Y_LPARAM(lParam))
 
 	return NewMouseEventArgs(widgetsByHWnd[w.hWnd], x, y, 0)
 }
@@ -724,23 +724,20 @@ func (w *Widget) putState(state string) os.Error {
 	return settings.Put(w.path(), state)
 }
 
-func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
-	//	widget := widgetsByHWnd[w.hWnd]
-	//	fmt.Printf("*Widget.wndProc: type: %T, msg: %+v\n", widget, msg)
-
-	switch msg.Message {
+func (w *Widget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
 	case WM_LBUTTONDOWN:
 		SetCapture(w.hWnd)
-		w.mouseDownPublisher.Publish(w.mouseEventArgsFromMSG(msg))
+		w.mouseDownPublisher.Publish(w.mouseEventArgsFromMSG(wParam, lParam))
 
 	case WM_LBUTTONUP:
 		if !ReleaseCapture() {
 			log.Println(lastError("ReleaseCapture"))
 		}
-		w.mouseUpPublisher.Publish(w.mouseEventArgsFromMSG(msg))
+		w.mouseUpPublisher.Publish(w.mouseEventArgsFromMSG(wParam, lParam))
 
 	case WM_MOUSEMOVE:
-		w.mouseMovePublisher.Publish(w.mouseEventArgsFromMSG(msg))
+		w.mouseMovePublisher.Publish(w.mouseEventArgsFromMSG(wParam, lParam))
 
 	case WM_SETCURSOR:
 		if w.cursor != nil {
@@ -749,13 +746,13 @@ func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		}
 
 	case WM_CONTEXTMENU:
-		sourceWidget := widgetsByHWnd[HWND(msg.WParam)]
+		sourceWidget := widgetsByHWnd[HWND(wParam)]
 		if sourceWidget == nil {
 			break
 		}
 
-		x := int(GET_X_LPARAM(msg.LParam))
-		y := int(GET_Y_LPARAM(msg.LParam))
+		x := int(GET_X_LPARAM(lParam))
+		y := int(GET_Y_LPARAM(lParam))
 
 		contextMenu := sourceWidget.ContextMenu()
 
@@ -765,28 +762,28 @@ func (w *Widget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		return 0
 
 	case WM_KEYDOWN:
-		w.keyDownPublisher.Publish(NewKeyEventArgs(widgetsByHWnd[w.hWnd], int(msg.WParam)))
+		w.keyDownPublisher.Publish(NewKeyEventArgs(widgetsByHWnd[w.hWnd], int(wParam)))
 
 	case WM_SIZE, WM_SIZING:
 		w.sizeChangedPublisher.Publish(NewEventArgs(widgetsByHWnd[w.hWnd]))
 
 	case WM_GETMINMAXINFO:
-		mmi := (*MINMAXINFO)(unsafe.Pointer(msg.LParam))
+		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))
 		mmi.PtMinTrackSize = POINT{w.minSize.Width, w.minSize.Height}
 		return 0
 
 	case WM_SHOWWINDOW:
-		w.persistState(msg.WParam != 0)
+		w.persistState(wParam != 0)
 
 	case WM_DESTROY:
 		w.persistState(false)
 	}
 
 	if origWndProcPtr != 0 {
-		return CallWindowProc(origWndProcPtr, msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+		return CallWindowProc(origWndProcPtr, hwnd, msg, wParam, lParam)
 	}
 
-	return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+	return DefWindowProc(hwnd, msg, wParam, lParam)
 }
 
 func (w *Widget) runMessageLoop() int {

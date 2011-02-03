@@ -98,7 +98,7 @@ func init() {
 }
 
 func ShGetSpecialFolderPath(hwndOwner HWND, lpszPath *uint16, csidl CSIDL, fCreate bool) bool {
-	ret, _, _ := syscall.Syscall6(shGetSpecialFolderPath,
+	ret, _, _ := syscall.Syscall6(shGetSpecialFolderPath, 4,
 		uintptr(hwndOwner),
 		uintptr(unsafe.Pointer(lpszPath)),
 		uintptr(csidl),

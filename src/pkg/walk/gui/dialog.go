@@ -33,19 +33,15 @@ const (
 
 const dialogWindowClass = `\o/ Walk_Dialog_Class \o/`
 
-var dialogWndProcCallback *syscall.Callback
+var dialogWndProcPtr uintptr
 
-func dialogWndProc(args *uintptr) uintptr {
-	msg := msgFromCallbackArgs(args)
-
-	dlg, ok := widgetsByHWnd[msg.HWnd].(*Dialog)
+func dialogWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	dlg, ok := widgetsByHWnd[hwnd].(*Dialog)
 	if !ok {
-		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
-		// FIXME: Find a way to properly handle this.
-		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	return dlg.wndProc(msg, 0)
+	return dlg.wndProc(hwnd, msg, wParam, lParam, 0)
 }
 
 type Dialog struct {
@@ -55,7 +51,7 @@ type Dialog struct {
 }
 
 func NewDialog(owner RootWidget) (*Dialog, os.Error) {
-	ensureRegisteredWindowClass(dialogWindowClass, dialogWndProc, &dialogWndProcCallback)
+	ensureRegisteredWindowClass(dialogWindowClass, dialogWndProc, &dialogWndProcPtr)
 
 	var ownerHWnd HWND
 	if owner != nil {

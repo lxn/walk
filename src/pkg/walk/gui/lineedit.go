@@ -16,21 +16,16 @@ import (
 	. "walk/winapi/user32"
 )
 
-var lineEditSubclassWndProcCallback *syscall.Callback
 var lineEditSubclassWndProcPtr uintptr
 var lineEditOrigWndProcPtr uintptr
 
-func lineEditSubclassWndProc(args *uintptr) uintptr {
-	msg := msgFromCallbackArgs(args)
-
-	le, ok := widgetsByHWnd[msg.HWnd].(*LineEdit)
+func lineEditSubclassWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	le, ok := widgetsByHWnd[hwnd].(*LineEdit)
 	if !ok {
-		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
-		// FIXME: Find a way to properly handle this.
-		return CallWindowProc(lineEditOrigWndProcPtr, msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+		return CallWindowProc(lineEditOrigWndProcPtr, hwnd, msg, wParam, lParam)
 	}
 
-	return le.wndProc(msg, lineEditOrigWndProcPtr)
+	return le.wndProc(hwnd, msg, wParam, lParam, lineEditOrigWndProcPtr)
 }
 
 type LineEdit struct {
@@ -38,9 +33,8 @@ type LineEdit struct {
 }
 
 func newLineEdit(parentHWND HWND) (*LineEdit, os.Error) {
-	if lineEditSubclassWndProcCallback == nil {
-		lineEditSubclassWndProcCallback = syscall.NewCallback(lineEditSubclassWndProc, 4)
-		lineEditSubclassWndProcPtr = uintptr(lineEditSubclassWndProcCallback.ExtFnEntry())
+	if lineEditSubclassWndProcPtr == 0 {
+		lineEditSubclassWndProcPtr = syscall.NewCallback(lineEditSubclassWndProc)
 	}
 
 	hWnd := CreateWindowEx(
@@ -126,13 +120,13 @@ func (le *LineEdit) PreferredSize() drawing.Size {
 	return le.dialogBaseUnitsToPixels(drawing.Size{50, 14})
 }
 
-func (le *LineEdit) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
-	switch msg.Message {
+func (le *LineEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
 	case WM_GETDLGCODE:
-		if msg.WParam == VK_RETURN {
+		if wParam == VK_RETURN {
 			return DLGC_WANTALLKEYS
 		}
 	}
 
-	return le.Widget.wndProc(msg, lineEditOrigWndProcPtr)
+	return le.Widget.wndProc(hwnd, msg, wParam, lParam, lineEditOrigWndProcPtr)
 }

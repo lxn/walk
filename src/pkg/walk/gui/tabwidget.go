@@ -25,19 +25,15 @@ import (
 
 const tabWidgetWindowClass = `\o/ Walk_TabWidget_Class \o/`
 
-var tabWidgetWndProcCallback *syscall.Callback
+var tabWidgetWndProcPtr uintptr
 
-func tabWidgetWndProc(args *uintptr) uintptr {
-	msg := msgFromCallbackArgs(args)
-
-	tw, ok := widgetsByHWnd[msg.HWnd].(*TabWidget)
+func tabWidgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	tw, ok := widgetsByHWnd[hwnd].(*TabWidget)
 	if !ok {
-		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
-		// FIXME: Find a way to properly handle this.
-		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	return tw.wndProc(msg, 0)
+	return tw.wndProc(hwnd, msg, wParam, lParam, 0)
 }
 
 type TabWidget struct {
@@ -54,7 +50,7 @@ func NewTabWidget(parent IContainer) (*TabWidget, os.Error) {
 		return nil, newError("parent cannot be nil")
 	}
 
-	ensureRegisteredWindowClass(tabWidgetWindowClass, tabWidgetWndProc, &tabWidgetWndProcCallback)
+	ensureRegisteredWindowClass(tabWidgetWindowClass, tabWidgetWndProc, &tabWidgetWndProcPtr)
 
 	hWnd := CreateWindowEx(
 		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(tabWidgetWindowClass), nil,
@@ -217,8 +213,8 @@ func (tw *TabWidget) resizePages() {
 	}
 }
 
-func (tw *TabWidget) onResize(msg *MSG) {
-	r := RECT{0, 0, GET_X_LPARAM(msg.LParam), GET_Y_LPARAM(msg.LParam)}
+func (tw *TabWidget) onResize(lParam uintptr) {
+	r := RECT{0, 0, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)}
 	if !MoveWindow(tw.hWndTab, r.Left, r.Top, r.Right-r.Left, r.Bottom-r.Top, true) {
 		log.Println(lastError("MoveWindow"))
 		return
@@ -251,13 +247,13 @@ func (tw *TabWidget) onSelChange() {
 	tw.currentPageChangedPublisher.Publish(NewEventArgs(tw))
 }
 
-func (tw *TabWidget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
-	switch msg.Message {
+func (tw *TabWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
 	case WM_SIZE, WM_SIZING:
-		tw.onResize(msg)
+		tw.onResize(lParam)
 
 	case WM_NOTIFY:
-		nmhdr := (*NMHDR)(unsafe.Pointer(msg.LParam))
+		nmhdr := (*NMHDR)(unsafe.Pointer(lParam))
 
 		switch int(nmhdr.Code) {
 		case TCN_SELCHANGE:
@@ -265,7 +261,7 @@ func (tw *TabWidget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		}
 	}
 
-	return tw.Widget.wndProc(msg, origWndProcPtr)
+	return tw.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }
 
 func (tw *TabWidget) onInsertingPage(index int, page *TabPage) (err os.Error) {

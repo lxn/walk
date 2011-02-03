@@ -159,10 +159,10 @@ func (tlw *TopLevelWindow) Closing() *CloseEvent {
 	return tlw.closingPublisher.Event()
 }
 
-func (tlw *TopLevelWindow) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
-	switch msg.Message {
+func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
 	case WM_ACTIVATE:
-		switch LOWORD(uint(msg.WParam)) {
+		switch LOWORD(uint(wParam)) {
 		case WA_ACTIVE, WA_CLICKACTIVE:
 			if tlw.prevFocusHWnd != 0 {
 				SetFocus(tlw.prevFocusHWnd)
@@ -187,10 +187,10 @@ func (tlw *TopLevelWindow) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		return 0
 
 	case WM_SYSCOMMAND:
-		if msg.WParam == SC_CLOSE {
+		if wParam == SC_CLOSE {
 			tlw.closeReason = CloseReasonUser
 		}
 	}
 
-	return tlw.Container.wndProc(msg, origWndProcPtr)
+	return tlw.Container.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }

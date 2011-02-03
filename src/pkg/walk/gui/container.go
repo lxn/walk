@@ -103,12 +103,12 @@ func (c *Container) RestoreState() os.Error {
 	})
 }
 
-func (c *Container) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
-	switch msg.Message {
+func (c *Container) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
 	case WM_COMMAND:
-		switch HIWORD(uint(msg.WParam)) {
+		switch HIWORD(uint(wParam)) {
 		case 0:
-			hWnd := HWND(msg.LParam)
+			hWnd := HWND(lParam)
 			if hWnd != 0 {
 				if widget, ok := widgetsByHWnd[hWnd]; ok {
 					if clickableWidget, ok := widget.(clickable); ok {
@@ -119,7 +119,7 @@ func (c *Container) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 			}
 
 			// Menu
-			actionId := uint16(LOWORD(uint(msg.WParam)))
+			actionId := uint16(LOWORD(uint(wParam)))
 			if action, ok := actionsById[actionId]; ok {
 				action.raiseTriggered()
 				return 0
@@ -130,18 +130,18 @@ func (c *Container) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 
 		default:
 			// The widget that sent the notification shall handle it itself.
-			hWnd := HWND(msg.LParam)
+			hWnd := HWND(lParam)
 			if widget, ok := widgetsByHWnd[hWnd]; ok {
-				widget.wndProc(msg, 0)
+				widget.wndProc(hwnd, msg, wParam, lParam, 0)
 				return 0
 			}
 		}
 
 	case WM_NOTIFY:
-		nmh := (*NMHDR)(unsafe.Pointer(msg.LParam))
+		nmh := (*NMHDR)(unsafe.Pointer(lParam))
 		if widget, ok := widgetsByHWnd[nmh.HwndFrom]; ok {
 			// The widget that sent the notification shall handle it itself.
-			widget.wndProc(msg, 0)
+			widget.wndProc(hwnd, msg, wParam, lParam, 0)
 		}
 
 	case WM_SIZE, WM_SIZING:
@@ -150,7 +150,7 @@ func (c *Container) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		}
 	}
 
-	return c.Widget.wndProc(msg, origWndProcPtr)
+	return c.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }
 
 func (c *Container) onInsertingWidget(index int, widget IWidget) (err os.Error) {

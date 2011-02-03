@@ -22,19 +22,15 @@ import (
 
 const webViewWindowClass = `\o/ Walk_WebView_Class \o/`
 
-var webViewWndProcCallback *syscall.Callback
+var webViewWndProcPtr uintptr
 
-func webViewWndProc(args *uintptr) uintptr {
-	msg := msgFromCallbackArgs(args)
-
-	wv, ok := widgetsByHWnd[msg.HWnd].(*WebView)
+func webViewWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	wv, ok := widgetsByHWnd[hwnd].(*WebView)
 	if !ok {
-		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
-		// FIXME: Find a way to properly handle this.
-		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	return wv.wndProc(msg, 0)
+	return wv.wndProc(hwnd, msg, wParam, lParam, 0)
 }
 
 type WebView struct {
@@ -48,7 +44,7 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 		return nil, newError("parent cannot be nil")
 	}
 
-	ensureRegisteredWindowClass(webViewWindowClass, webViewWndProc, &webViewWndProcCallback)
+	ensureRegisteredWindowClass(webViewWindowClass, webViewWndProc, &webViewWndProcPtr)
 
 	wv := &WebView{
 		Widget: Widget{
@@ -134,23 +130,24 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 		return nil, errorFromHRESULT("IOleObject.DoVerb", hr)
 	}
 
-	var cpcPtr unsafe.Pointer
-	if hr := browserObject.QueryInterface(&IID_IConnectionPointContainer, &cpcPtr); FAILED(hr) {
-		return nil, errorFromHRESULT("IOleObject.QueryInterface(IID_IConnectionPointContainer)", hr)
-	}
-	cpc := (*IConnectionPointContainer)(cpcPtr)
-	defer cpc.Release()
+	// FIXME: Reactivate after fixing crash
+	/*	var cpcPtr unsafe.Pointer
+		if hr := browserObject.QueryInterface(&IID_IConnectionPointContainer, &cpcPtr); FAILED(hr) {
+			return nil, errorFromHRESULT("IOleObject.QueryInterface(IID_IConnectionPointContainer)", hr)
+		}
+		cpc := (*IConnectionPointContainer)(cpcPtr)
+		defer cpc.Release()
 
-	var cp *IConnectionPoint
-	if hr := cpc.FindConnectionPoint(&DIID_DWebBrowserEvents2, &cp); FAILED(hr) {
-		return nil, errorFromHRESULT("IConnectionPointContainer.FindConnectionPoint(DIID_DWebBrowserEvents2)", hr)
-	}
-	defer cp.Release()
+		var cp *IConnectionPoint
+		if hr := cpc.FindConnectionPoint(&DIID_DWebBrowserEvents2, &cp); FAILED(hr) {
+			return nil, errorFromHRESULT("IConnectionPointContainer.FindConnectionPoint(DIID_DWebBrowserEvents2)", hr)
+		}
+		defer cp.Release()
 
-	var cookie uint
-	if hr := cp.Advise(unsafe.Pointer(&wv.clientSite.webBrowserEvents2), &cookie); FAILED(hr) {
-		return nil, errorFromHRESULT("IConnectionPoint.Advise", hr)
-	}
+		var cookie uint
+		if hr := cp.Advise(unsafe.Pointer(&wv.clientSite.webBrowserEvents2), &cookie); FAILED(hr) {
+			return nil, errorFromHRESULT("IConnectionPoint.Advise", hr)
+		}*/
 
 	wv.onResize()
 
@@ -242,11 +239,11 @@ func (wv *WebView) onResize() {
 	})
 }
 
-func (wv *WebView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
-	switch msg.Message {
+func (wv *WebView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
 	case WM_SIZE, WM_SIZING:
 		wv.onResize()
 	}
 
-	return wv.Widget.wndProc(msg, origWndProcPtr)
+	return wv.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }

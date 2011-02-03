@@ -6,70 +6,34 @@ package gui
 
 import (
 	"syscall"
-	"unsafe"
 )
 
 import (
 	. "walk/winapi"
+	. "walk/winapi/gdi32"
 	. "walk/winapi/ole32"
 	. "walk/winapi/user32"
 )
-
-type webViewIOleInPlaceFrameCallbacks struct {
-	QueryInterface       *syscall.Callback
-	AddRef               *syscall.Callback
-	Release              *syscall.Callback
-	GetWindow            *syscall.Callback
-	ContextSensitiveHelp *syscall.Callback
-	GetBorder            *syscall.Callback
-	RequestBorderSpace   *syscall.Callback
-	SetBorderSpace       *syscall.Callback
-	SetActiveObject      *syscall.Callback
-	InsertMenus          *syscall.Callback
-	SetMenu              *syscall.Callback
-	RemoveMenus          *syscall.Callback
-	SetStatusText        *syscall.Callback
-	EnableModeless       *syscall.Callback
-	TranslateAccelerator *syscall.Callback
-}
-
-var webViewIOleInPlaceFrameCbs = &webViewIOleInPlaceFrameCallbacks{
-	syscall.NewCallback(webView_IOleInPlaceFrame_QueryInterface, 1+2),
-	syscall.NewCallback(webView_IOleInPlaceFrame_AddRef, 1+0),
-	syscall.NewCallback(webView_IOleInPlaceFrame_Release, 1+0),
-	syscall.NewCallback(webView_IOleInPlaceFrame_GetWindow, 1+1),
-	syscall.NewCallback(webView_IOleInPlaceFrame_ContextSensitiveHelp, 1+1),
-	syscall.NewCallback(webView_IOleInPlaceFrame_GetBorder, 1+1),
-	syscall.NewCallback(webView_IOleInPlaceFrame_RequestBorderSpace, 1+1),
-	syscall.NewCallback(webView_IOleInPlaceFrame_SetBorderSpace, 1+1),
-	syscall.NewCallback(webView_IOleInPlaceFrame_SetActiveObject, 1+2),
-	syscall.NewCallback(webView_IOleInPlaceFrame_InsertMenus, 1+2),
-	syscall.NewCallback(webView_IOleInPlaceFrame_SetMenu, 1+3),
-	syscall.NewCallback(webView_IOleInPlaceFrame_RemoveMenus, 1+1),
-	syscall.NewCallback(webView_IOleInPlaceFrame_SetStatusText, 1+1),
-	syscall.NewCallback(webView_IOleInPlaceFrame_EnableModeless, 1+1),
-	syscall.NewCallback(webView_IOleInPlaceFrame_TranslateAccelerator, 1+2),
-}
 
 var webViewIOleInPlaceFrameVtbl *IOleInPlaceFrameVtbl
 
 func init() {
 	webViewIOleInPlaceFrameVtbl = &IOleInPlaceFrameVtbl{
-		webViewIOleInPlaceFrameCbs.QueryInterface.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.AddRef.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.Release.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.GetWindow.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.ContextSensitiveHelp.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.GetBorder.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.RequestBorderSpace.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.SetBorderSpace.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.SetActiveObject.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.InsertMenus.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.SetMenu.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.RemoveMenus.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.SetStatusText.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.EnableModeless.ExtFnEntry(),
-		webViewIOleInPlaceFrameCbs.TranslateAccelerator.ExtFnEntry(),
+		syscall.NewCallback(webView_IOleInPlaceFrame_QueryInterface),
+		syscall.NewCallback(webView_IOleInPlaceFrame_AddRef),
+		syscall.NewCallback(webView_IOleInPlaceFrame_Release),
+		syscall.NewCallback(webView_IOleInPlaceFrame_GetWindow),
+		syscall.NewCallback(webView_IOleInPlaceFrame_ContextSensitiveHelp),
+		syscall.NewCallback(webView_IOleInPlaceFrame_GetBorder),
+		syscall.NewCallback(webView_IOleInPlaceFrame_RequestBorderSpace),
+		syscall.NewCallback(webView_IOleInPlaceFrame_SetBorderSpace),
+		syscall.NewCallback(webView_IOleInPlaceFrame_SetActiveObject),
+		syscall.NewCallback(webView_IOleInPlaceFrame_InsertMenus),
+		syscall.NewCallback(webView_IOleInPlaceFrame_SetMenu),
+		syscall.NewCallback(webView_IOleInPlaceFrame_RemoveMenus),
+		syscall.NewCallback(webView_IOleInPlaceFrame_SetStatusText),
+		syscall.NewCallback(webView_IOleInPlaceFrame_EnableModeless),
+		syscall.NewCallback(webView_IOleInPlaceFrame_TranslateAccelerator),
 	}
 }
 
@@ -78,69 +42,64 @@ type webViewIOleInPlaceFrame struct {
 	webView *WebView
 }
 
-func webView_IOleInPlaceFrame_QueryInterface(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_QueryInterface(inPlaceFrame *webViewIOleInPlaceFrame, riid REFIID, ppvObj *uintptr) HRESULT {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_AddRef(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_AddRef(inPlaceFrame *webViewIOleInPlaceFrame) HRESULT {
 	return 1
 }
 
-func webView_IOleInPlaceFrame_Release(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_Release(inPlaceFrame *webViewIOleInPlaceFrame) HRESULT {
 	return 1
 }
 
-func webView_IOleInPlaceFrame_GetWindow(args *uintptr) uintptr {
-	p := (*struct {
-		inPlaceFrame *webViewIOleInPlaceFrame
-		hwnd         *HWND
-	})(unsafe.Pointer(args))
-
-	*p.hwnd = p.inPlaceFrame.webView.hWnd
+func webView_IOleInPlaceFrame_GetWindow(inPlaceFrame *webViewIOleInPlaceFrame, lphwnd *HWND) HRESULT {
+	*lphwnd = inPlaceFrame.webView.hWnd
 
 	return S_OK
 }
 
-func webView_IOleInPlaceFrame_ContextSensitiveHelp(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_ContextSensitiveHelp(inPlaceFrame *webViewIOleInPlaceFrame, fEnterMode BOOL) HRESULT {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_GetBorder(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_GetBorder(inPlaceFrame *webViewIOleInPlaceFrame, lprectBorder *RECT) HRESULT {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_RequestBorderSpace(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_RequestBorderSpace(inPlaceFrame *webViewIOleInPlaceFrame, pborderwidths uintptr) HRESULT {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_SetBorderSpace(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_SetBorderSpace(inPlaceFrame *webViewIOleInPlaceFrame, pborderwidths uintptr) HRESULT {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_SetActiveObject(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_SetActiveObject(inPlaceFrame *webViewIOleInPlaceFrame, pActiveObject uintptr, pszObjName *uint16) HRESULT {
 	return S_OK
 }
 
-func webView_IOleInPlaceFrame_InsertMenus(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_InsertMenus(inPlaceFrame *webViewIOleInPlaceFrame, hmenuShared HMENU, lpMenuWidths uintptr) HRESULT {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_SetMenu(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_SetMenu(inPlaceFrame *webViewIOleInPlaceFrame, hmenuShared HMENU, holemenu HMENU, hwndActiveObject HWND) HRESULT {
 	return S_OK
 }
 
-func webView_IOleInPlaceFrame_RemoveMenus(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_RemoveMenus(inPlaceFrame *webViewIOleInPlaceFrame, hmenuShared HMENU) HRESULT {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_SetStatusText(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_SetStatusText(inPlaceFrame *webViewIOleInPlaceFrame, pszStatusText *uint16) HRESULT {
 	return S_OK
 }
 
-func webView_IOleInPlaceFrame_EnableModeless(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_EnableModeless(inPlaceFrame *webViewIOleInPlaceFrame, fEnable BOOL) HRESULT {
 	return S_OK
 }
 
-func webView_IOleInPlaceFrame_TranslateAccelerator(args *uintptr) uintptr {
+func webView_IOleInPlaceFrame_TranslateAccelerator(inPlaceFrame *webViewIOleInPlaceFrame, lpmsg *MSG, wID uint16) HRESULT {
 	return E_NOTIMPL
 }

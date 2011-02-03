@@ -17,19 +17,15 @@ import (
 
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
 
-var mainWindowWndProcCallback *syscall.Callback
+var mainWindowWndProcPtr uintptr
 
-func mainWindowWndProc(args *uintptr) uintptr {
-	msg := msgFromCallbackArgs(args)
-
-	mw, ok := widgetsByHWnd[msg.HWnd].(*MainWindow)
+func mainWindowWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	mw, ok := widgetsByHWnd[hwnd].(*MainWindow)
 	if !ok {
-		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
-		// FIXME: Find a way to properly handle this.
-		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	return mw.wndProc(msg, 0)
+	return mw.wndProc(hwnd, msg, wParam, lParam, 0)
 }
 
 type MainWindow struct {
@@ -39,7 +35,7 @@ type MainWindow struct {
 }
 
 func NewMainWindow() (*MainWindow, os.Error) {
-	ensureRegisteredWindowClass(mainWindowWindowClass, mainWindowWndProc, &mainWindowWndProcCallback)
+	ensureRegisteredWindowClass(mainWindowWindowClass, mainWindowWndProc, &mainWindowWndProcPtr)
 
 	hWnd := CreateWindowEx(
 		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(mainWindowWindowClass), nil,
@@ -125,11 +121,11 @@ func (mw *MainWindow) ClientBounds() (bounds drawing.Rectangle, err os.Error) {
 	return
 }
 
-func (mw *MainWindow) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
-	switch msg.Message {
+func (mw *MainWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
 	case WM_SIZE, WM_SIZING:
 		SendMessage(mw.toolBar.hWnd, TB_AUTOSIZE, 0, 0)
 	}
 
-	return mw.TopLevelWindow.wndProc(msg, origWndProcPtr)
+	return mw.TopLevelWindow.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }

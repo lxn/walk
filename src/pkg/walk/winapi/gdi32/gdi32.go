@@ -961,7 +961,7 @@ func init() {
 }
 
 func AbortDoc(hdc HDC) int {
-	ret, _, _ := syscall.Syscall(abortDoc,
+	ret, _, _ := syscall.Syscall(abortDoc, 1,
 		uintptr(hdc),
 		0,
 		0)
@@ -970,7 +970,7 @@ func AbortDoc(hdc HDC) int {
 }
 
 func BitBlt(hdcDest HDC, nXDest, nYDest, nWidth, nHeight int, hdcSrc HDC, nXSrc, nYSrc int, dwRop uint) bool {
-	ret, _, _ := syscall.Syscall9(bitBlt,
+	ret, _, _ := syscall.Syscall9(bitBlt, 9,
 		uintptr(hdcDest),
 		uintptr(nXDest),
 		uintptr(nYDest),
@@ -985,7 +985,7 @@ func BitBlt(hdcDest HDC, nXDest, nYDest, nWidth, nHeight int, hdcSrc HDC, nXSrc,
 }
 
 func CloseEnhMetaFile(hdc HDC) HENHMETAFILE {
-	ret, _, _ := syscall.Syscall(closeEnhMetaFile,
+	ret, _, _ := syscall.Syscall(closeEnhMetaFile, 1,
 		uintptr(hdc),
 		0,
 		0)
@@ -994,7 +994,7 @@ func CloseEnhMetaFile(hdc HDC) HENHMETAFILE {
 }
 
 func CopyEnhMetaFile(hemfSrc HENHMETAFILE, lpszFile *uint16) HENHMETAFILE {
-	ret, _, _ := syscall.Syscall(copyEnhMetaFile,
+	ret, _, _ := syscall.Syscall(copyEnhMetaFile, 2,
 		uintptr(hemfSrc),
 		uintptr(unsafe.Pointer(lpszFile)),
 		0)
@@ -1003,7 +1003,7 @@ func CopyEnhMetaFile(hemfSrc HENHMETAFILE, lpszFile *uint16) HENHMETAFILE {
 }
 
 func CreateBrushIndirect(lplb *LOGBRUSH) HBRUSH {
-	ret, _, _ := syscall.Syscall(createBrushIndirect,
+	ret, _, _ := syscall.Syscall(createBrushIndirect, 1,
 		uintptr(unsafe.Pointer(lplb)),
 		0,
 		0)
@@ -1012,7 +1012,7 @@ func CreateBrushIndirect(lplb *LOGBRUSH) HBRUSH {
 }
 
 func CreateCompatibleDC(hdc HDC) HDC {
-	ret, _, _ := syscall.Syscall(createCompatibleDC,
+	ret, _, _ := syscall.Syscall(createCompatibleDC, 1,
 		uintptr(hdc),
 		0,
 		0)
@@ -1021,7 +1021,7 @@ func CreateCompatibleDC(hdc HDC) HDC {
 }
 
 func CreateDC(lpszDriver, lpszDevice, lpszOutput *uint16, lpInitData *DEVMODE) HDC {
-	ret, _, _ := syscall.Syscall6(createDC,
+	ret, _, _ := syscall.Syscall6(createDC, 4,
 		uintptr(unsafe.Pointer(lpszDriver)),
 		uintptr(unsafe.Pointer(lpszDevice)),
 		uintptr(unsafe.Pointer(lpszOutput)),
@@ -1033,7 +1033,7 @@ func CreateDC(lpszDriver, lpszDevice, lpszOutput *uint16, lpInitData *DEVMODE) H
 }
 
 func CreateDIBSection(hdc HDC, pbmi *BITMAPINFO, iUsage uint, ppvBits *unsafe.Pointer, hSection HANDLE, dwOffset uint) HBITMAP {
-	ret, _, _ := syscall.Syscall6(createDIBSection,
+	ret, _, _ := syscall.Syscall6(createDIBSection, 6,
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(pbmi)),
 		uintptr(iUsage),
@@ -1045,7 +1045,7 @@ func CreateDIBSection(hdc HDC, pbmi *BITMAPINFO, iUsage uint, ppvBits *unsafe.Po
 }
 
 func CreateEnhMetaFile(hdcRef HDC, lpFilename *uint16, lpRect *RECT, lpDescription *uint16) HDC {
-	ret, _, _ := syscall.Syscall6(createEnhMetaFile,
+	ret, _, _ := syscall.Syscall6(createEnhMetaFile, 4,
 		uintptr(hdcRef),
 		uintptr(unsafe.Pointer(lpFilename)),
 		uintptr(unsafe.Pointer(lpRect)),
@@ -1057,7 +1057,7 @@ func CreateEnhMetaFile(hdcRef HDC, lpFilename *uint16, lpRect *RECT, lpDescripti
 }
 
 func CreateFontIndirect(lplf *LOGFONT) HFONT {
-	ret, _, _ := syscall.Syscall(createFontIndirect,
+	ret, _, _ := syscall.Syscall(createFontIndirect, 1,
 		uintptr(unsafe.Pointer(lplf)),
 		0,
 		0)
@@ -1066,7 +1066,7 @@ func CreateFontIndirect(lplf *LOGFONT) HFONT {
 }
 
 func CreateIC(lpszDriver, lpszDevice, lpszOutput *uint16, lpdvmInit *DEVMODE) HDC {
-	ret, _, _ := syscall.Syscall6(createIC,
+	ret, _, _ := syscall.Syscall6(createIC, 4,
 		uintptr(unsafe.Pointer(lpszDriver)),
 		uintptr(unsafe.Pointer(lpszDevice)),
 		uintptr(unsafe.Pointer(lpszOutput)),
@@ -1078,7 +1078,7 @@ func CreateIC(lpszDriver, lpszDevice, lpszOutput *uint16, lpdvmInit *DEVMODE) HD
 }
 
 func DeleteDC(hdc HDC) bool {
-	ret, _, _ := syscall.Syscall(deleteDC,
+	ret, _, _ := syscall.Syscall(deleteDC, 1,
 		uintptr(hdc),
 		0,
 		0)
@@ -1087,7 +1087,7 @@ func DeleteDC(hdc HDC) bool {
 }
 
 func DeleteEnhMetaFile(hemf HENHMETAFILE) bool {
-	ret, _, _ := syscall.Syscall(deleteEnhMetaFile,
+	ret, _, _ := syscall.Syscall(deleteEnhMetaFile, 1,
 		uintptr(hemf),
 		0,
 		0)
@@ -1096,7 +1096,7 @@ func DeleteEnhMetaFile(hemf HENHMETAFILE) bool {
 }
 
 func DeleteObject(hObject HGDIOBJ) bool {
-	ret, _, _ := syscall.Syscall(deleteObject,
+	ret, _, _ := syscall.Syscall(deleteObject, 1,
 		uintptr(hObject),
 		0,
 		0)
@@ -1105,7 +1105,7 @@ func DeleteObject(hObject HGDIOBJ) bool {
 }
 
 func Ellipse(hdc HDC, nLeftRect, nTopRect, nRightRect, nBottomRect int) bool {
-	ret, _, _ := syscall.Syscall6(ellipse,
+	ret, _, _ := syscall.Syscall6(ellipse, 5,
 		uintptr(hdc),
 		uintptr(nLeftRect),
 		uintptr(nTopRect),
@@ -1117,7 +1117,7 @@ func Ellipse(hdc HDC, nLeftRect, nTopRect, nRightRect, nBottomRect int) bool {
 }
 
 func EndDoc(hdc HDC) int {
-	ret, _, _ := syscall.Syscall(endDoc,
+	ret, _, _ := syscall.Syscall(endDoc, 1,
 		uintptr(hdc),
 		0,
 		0)
@@ -1126,7 +1126,7 @@ func EndDoc(hdc HDC) int {
 }
 
 func EndPage(hdc HDC) int {
-	ret, _, _ := syscall.Syscall(endPage,
+	ret, _, _ := syscall.Syscall(endPage, 1,
 		uintptr(hdc),
 		0,
 		0)
@@ -1135,7 +1135,7 @@ func EndPage(hdc HDC) int {
 }
 
 func ExtCreatePen(dwPenStyle, dwWidth uint, lplb *LOGBRUSH, dwStyleCount uint, lpStyle *uint) HPEN {
-	ret, _, _ := syscall.Syscall6(extCreatePen,
+	ret, _, _ := syscall.Syscall6(extCreatePen, 5,
 		uintptr(dwPenStyle),
 		uintptr(dwWidth),
 		uintptr(unsafe.Pointer(lplb)),
@@ -1147,7 +1147,7 @@ func ExtCreatePen(dwPenStyle, dwWidth uint, lplb *LOGBRUSH, dwStyleCount uint, l
 }
 
 func GetDeviceCaps(hdc HDC, nIndex int) int {
-	ret, _, _ := syscall.Syscall(getDeviceCaps,
+	ret, _, _ := syscall.Syscall(getDeviceCaps, 2,
 		uintptr(hdc),
 		uintptr(nIndex),
 		0)
@@ -1156,7 +1156,7 @@ func GetDeviceCaps(hdc HDC, nIndex int) int {
 }
 
 func GetEnhMetaFile(lpszMetaFile *uint16) HENHMETAFILE {
-	ret, _, _ := syscall.Syscall(getEnhMetaFile,
+	ret, _, _ := syscall.Syscall(getEnhMetaFile, 1,
 		uintptr(unsafe.Pointer(lpszMetaFile)),
 		0,
 		0)
@@ -1165,7 +1165,7 @@ func GetEnhMetaFile(lpszMetaFile *uint16) HENHMETAFILE {
 }
 
 func GetEnhMetaFileHeader(hemf HENHMETAFILE, cbBuffer uint, lpemh *ENHMETAHEADER) uint {
-	ret, _, _ := syscall.Syscall(getEnhMetaFileHeader,
+	ret, _, _ := syscall.Syscall(getEnhMetaFileHeader, 3,
 		uintptr(hemf),
 		uintptr(cbBuffer),
 		uintptr(unsafe.Pointer(lpemh)))
@@ -1174,7 +1174,7 @@ func GetEnhMetaFileHeader(hemf HENHMETAFILE, cbBuffer uint, lpemh *ENHMETAHEADER
 }
 
 func GetObject(hgdiobj HGDIOBJ, cbBuffer int, lpvObject unsafe.Pointer) int {
-	ret, _, _ := syscall.Syscall(getObject,
+	ret, _, _ := syscall.Syscall(getObject, 3,
 		uintptr(hgdiobj),
 		uintptr(cbBuffer),
 		uintptr(lpvObject))
@@ -1183,7 +1183,7 @@ func GetObject(hgdiobj HGDIOBJ, cbBuffer int, lpvObject unsafe.Pointer) int {
 }
 
 func GetStockObject(fnObject int) HGDIOBJ {
-	ret, _, _ := syscall.Syscall(getDeviceCaps,
+	ret, _, _ := syscall.Syscall(getDeviceCaps, 1,
 		uintptr(fnObject),
 		0,
 		0)
@@ -1192,7 +1192,7 @@ func GetStockObject(fnObject int) HGDIOBJ {
 }
 
 func GetTextExtentExPoint(hdc HDC, lpszStr *uint16, cchString, nMaxExtent int, lpnFit, alpDx *int, lpSize *SIZE) bool {
-	ret, _, _ := syscall.Syscall9(getTextExtentExPoint,
+	ret, _, _ := syscall.Syscall9(getTextExtentExPoint, 7,
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(lpszStr)),
 		uintptr(cchString),
@@ -1207,7 +1207,7 @@ func GetTextExtentExPoint(hdc HDC, lpszStr *uint16, cchString, nMaxExtent int, l
 }
 
 func GetTextExtentPoint32(hdc HDC, lpString *uint16, c int, lpSize *SIZE) bool {
-	ret, _, _ := syscall.Syscall6(getTextExtentPoint32,
+	ret, _, _ := syscall.Syscall6(getTextExtentPoint32, 4,
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(lpString)),
 		uintptr(c),
@@ -1219,7 +1219,7 @@ func GetTextExtentPoint32(hdc HDC, lpString *uint16, c int, lpSize *SIZE) bool {
 }
 
 func GetTextMetrics(hdc HDC, lptm *TEXTMETRIC) bool {
-	ret, _, _ := syscall.Syscall(getTextMetrics,
+	ret, _, _ := syscall.Syscall(getTextMetrics, 2,
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(lptm)),
 		0)
@@ -1228,7 +1228,7 @@ func GetTextMetrics(hdc HDC, lptm *TEXTMETRIC) bool {
 }
 
 func LineTo(hdc HDC, nXEnd, nYEnd int) bool {
-	ret, _, _ := syscall.Syscall(lineTo,
+	ret, _, _ := syscall.Syscall(lineTo, 3,
 		uintptr(hdc),
 		uintptr(nXEnd),
 		uintptr(nYEnd))
@@ -1237,7 +1237,7 @@ func LineTo(hdc HDC, nXEnd, nYEnd int) bool {
 }
 
 func MoveToEx(hdc HDC, x, y int, lpPoint *POINT) bool {
-	ret, _, _ := syscall.Syscall6(moveToEx,
+	ret, _, _ := syscall.Syscall6(moveToEx, 4,
 		uintptr(hdc),
 		uintptr(x),
 		uintptr(y),
@@ -1249,7 +1249,7 @@ func MoveToEx(hdc HDC, x, y int, lpPoint *POINT) bool {
 }
 
 func PlayEnhMetaFile(hdc HDC, hemf HENHMETAFILE, lpRect *RECT) bool {
-	ret, _, _ := syscall.Syscall(playEnhMetaFile,
+	ret, _, _ := syscall.Syscall(playEnhMetaFile, 3,
 		uintptr(hdc),
 		uintptr(hemf),
 		uintptr(unsafe.Pointer(lpRect)))
@@ -1258,7 +1258,7 @@ func PlayEnhMetaFile(hdc HDC, hemf HENHMETAFILE, lpRect *RECT) bool {
 }
 
 func Rectangle_(hdc HDC, nLeftRect, nTopRect, nRightRect, nBottomRect int) bool {
-	ret, _, _ := syscall.Syscall6(rectangle,
+	ret, _, _ := syscall.Syscall6(rectangle, 5,
 		uintptr(hdc),
 		uintptr(nLeftRect),
 		uintptr(nTopRect),
@@ -1270,7 +1270,7 @@ func Rectangle_(hdc HDC, nLeftRect, nTopRect, nRightRect, nBottomRect int) bool 
 }
 
 func ResetDC(hdc HDC, lpInitData *DEVMODE) HDC {
-	ret, _, _ := syscall.Syscall(resetDC,
+	ret, _, _ := syscall.Syscall(resetDC, 2,
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(lpInitData)),
 		0)
@@ -1279,7 +1279,7 @@ func ResetDC(hdc HDC, lpInitData *DEVMODE) HDC {
 }
 
 func SelectObject(hdc HDC, hgdiobj HGDIOBJ) HGDIOBJ {
-	ret, _, _ := syscall.Syscall(selectObject,
+	ret, _, _ := syscall.Syscall(selectObject, 2,
 		uintptr(hdc),
 		uintptr(hgdiobj),
 		0)
@@ -1288,7 +1288,7 @@ func SelectObject(hdc HDC, hgdiobj HGDIOBJ) HGDIOBJ {
 }
 
 func SetBkMode(hdc HDC, iBkMode int) int {
-	ret, _, _ := syscall.Syscall(setBkMode,
+	ret, _, _ := syscall.Syscall(setBkMode, 2,
 		uintptr(hdc),
 		uintptr(iBkMode),
 		0)
@@ -1297,7 +1297,7 @@ func SetBkMode(hdc HDC, iBkMode int) int {
 }
 
 func SetBrushOrgEx(hdc HDC, nXOrg, nYOrg int, lppt *POINT) bool {
-	ret, _, _ := syscall.Syscall6(setBrushOrgEx,
+	ret, _, _ := syscall.Syscall6(setBrushOrgEx, 4,
 		uintptr(hdc),
 		uintptr(nXOrg),
 		uintptr(nYOrg),
@@ -1309,7 +1309,7 @@ func SetBrushOrgEx(hdc HDC, nXOrg, nYOrg int, lppt *POINT) bool {
 }
 
 func SetStretchBltMode(hdc HDC, iStretchMode int) int {
-	ret, _, _ := syscall.Syscall(setStretchBltMode,
+	ret, _, _ := syscall.Syscall(setStretchBltMode, 2,
 		uintptr(hdc),
 		uintptr(iStretchMode),
 		0)
@@ -1318,7 +1318,7 @@ func SetStretchBltMode(hdc HDC, iStretchMode int) int {
 }
 
 func SetTextColor(hdc HDC, crColor COLORREF) COLORREF {
-	ret, _, _ := syscall.Syscall(setTextColor,
+	ret, _, _ := syscall.Syscall(setTextColor, 2,
 		uintptr(hdc),
 		uintptr(crColor),
 		0)
@@ -1327,7 +1327,7 @@ func SetTextColor(hdc HDC, crColor COLORREF) COLORREF {
 }
 
 func StartDoc(hdc HDC, lpdi *DOCINFO) int {
-	ret, _, _ := syscall.Syscall(startDoc,
+	ret, _, _ := syscall.Syscall(startDoc, 2,
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(lpdi)),
 		0)
@@ -1336,7 +1336,7 @@ func StartDoc(hdc HDC, lpdi *DOCINFO) int {
 }
 
 func StartPage(hdc HDC) int {
-	ret, _, _ := syscall.Syscall(startPage,
+	ret, _, _ := syscall.Syscall(startPage, 1,
 		uintptr(hdc),
 		0,
 		0)
@@ -1345,7 +1345,7 @@ func StartPage(hdc HDC) int {
 }
 
 func StretchBlt(hdcDest HDC, nXOriginDest, nYOriginDest, nWidthDest, nHeightDest int, hdcSrc HDC, nXOriginSrc, nYOriginSrc, nWidthSrc, nHeightSrc int, dwRop uint) bool {
-	ret, _, _ := syscall.Syscall12(stretchBlt,
+	ret, _, _ := syscall.Syscall12(stretchBlt, 11,
 		uintptr(hdcDest),
 		uintptr(nXOriginDest),
 		uintptr(nYOriginDest),

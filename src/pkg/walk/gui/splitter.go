@@ -20,19 +20,15 @@ import (
 
 const splitterWindowClass = `\o/ Walk_Splitter_Class \o/`
 
-var splitterWndProcCallback *syscall.Callback
+var splitterWndProcPtr uintptr
 
-func splitterWndProc(args *uintptr) uintptr {
-	msg := msgFromCallbackArgs(args)
-
-	s, ok := widgetsByHWnd[msg.HWnd].(*Splitter)
+func splitterWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	s, ok := widgetsByHWnd[hwnd].(*Splitter)
 	if !ok {
-		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
-		// FIXME: Find a way to properly handle this.
-		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	return s.wndProc(msg, 0)
+	return s.wndProc(hwnd, msg, wParam, lParam, 0)
 }
 
 type Splitter struct {
@@ -47,7 +43,7 @@ func NewSplitter(parent IContainer) (*Splitter, os.Error) {
 		return nil, newError("parent cannot be nil")
 	}
 
-	ensureRegisteredWindowClass(splitterWindowClass, splitterWndProc, &splitterWndProcCallback)
+	ensureRegisteredWindowClass(splitterWindowClass, splitterWndProc, &splitterWndProcPtr)
 
 	hWnd := CreateWindowEx(
 		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(splitterWindowClass), nil,

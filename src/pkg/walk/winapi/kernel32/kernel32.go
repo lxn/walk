@@ -78,7 +78,7 @@ func init() {
 }
 
 func GetLastError() uint {
-	ret, _, _ := syscall.Syscall(setLastError,
+	ret, _, _ := syscall.Syscall(setLastError, 0,
 		0,
 		0,
 		0)
@@ -87,7 +87,7 @@ func GetLastError() uint {
 }
 
 func GetLogicalDriveStrings(nBufferLength uint, lpBuffer *uint16) uint {
-	ret, _, _ := syscall.Syscall(getLogicalDriveStrings,
+	ret, _, _ := syscall.Syscall(getLogicalDriveStrings, 2,
 		uintptr(nBufferLength),
 		uintptr(unsafe.Pointer(lpBuffer)),
 		0)
@@ -96,7 +96,7 @@ func GetLogicalDriveStrings(nBufferLength uint, lpBuffer *uint16) uint {
 }
 
 func GetModuleHandle(lpModuleName *uint16) HINSTANCE {
-	ret, _, _ := syscall.Syscall(getModuleHandle,
+	ret, _, _ := syscall.Syscall(getModuleHandle, 1,
 		uintptr(unsafe.Pointer(lpModuleName)),
 		0,
 		0)
@@ -105,7 +105,7 @@ func GetModuleHandle(lpModuleName *uint16) HINSTANCE {
 }
 
 func GetThreadLocale() LCID {
-	ret, _, _ := syscall.Syscall(getThreadLocale,
+	ret, _, _ := syscall.Syscall(getThreadLocale, 0,
 		0,
 		0,
 		0)
@@ -114,7 +114,7 @@ func GetThreadLocale() LCID {
 }
 
 func GlobalAlloc(uFlags uint, dwBytes uintptr) HGLOBAL {
-	ret, _, _ := syscall.Syscall(globalAlloc,
+	ret, _, _ := syscall.Syscall(globalAlloc, 2,
 		uintptr(uFlags),
 		dwBytes,
 		0)
@@ -123,7 +123,7 @@ func GlobalAlloc(uFlags uint, dwBytes uintptr) HGLOBAL {
 }
 
 func GlobalFree(hMem HGLOBAL) HGLOBAL {
-	ret, _, _ := syscall.Syscall(globalFree,
+	ret, _, _ := syscall.Syscall(globalFree, 1,
 		uintptr(hMem),
 		0,
 		0)
@@ -132,7 +132,7 @@ func GlobalFree(hMem HGLOBAL) HGLOBAL {
 }
 
 func GlobalLock(hMem HGLOBAL) unsafe.Pointer {
-	ret, _, _ := syscall.Syscall(globalLock,
+	ret, _, _ := syscall.Syscall(globalLock, 1,
 		uintptr(hMem),
 		0,
 		0)
@@ -141,7 +141,7 @@ func GlobalLock(hMem HGLOBAL) unsafe.Pointer {
 }
 
 func GlobalUnlock(hMem HGLOBAL) bool {
-	ret, _, _ := syscall.Syscall(globalUnlock,
+	ret, _, _ := syscall.Syscall(globalUnlock, 1,
 		uintptr(hMem),
 		0,
 		0)
@@ -150,14 +150,14 @@ func GlobalUnlock(hMem HGLOBAL) bool {
 }
 
 func MoveMemory(destination, source unsafe.Pointer, length uintptr) {
-	syscall.Syscall(moveMemory,
+	syscall.Syscall(moveMemory, 3,
 		uintptr(unsafe.Pointer(destination)),
 		uintptr(source),
 		uintptr(length))
 }
 
 func MulDiv(nNumber, nNumerator, nDenominator int) int {
-	ret, _, _ := syscall.Syscall(mulDiv,
+	ret, _, _ := syscall.Syscall(mulDiv, 3,
 		uintptr(nNumber),
 		uintptr(nNumerator),
 		uintptr(nDenominator))
@@ -166,7 +166,7 @@ func MulDiv(nNumber, nNumerator, nDenominator int) int {
 }
 
 func SetLastError(dwErrorCode uint) {
-	syscall.Syscall(setLastError,
+	syscall.Syscall(setLastError, 1,
 		uintptr(dwErrorCode),
 		0,
 		0)

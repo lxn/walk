@@ -33,7 +33,7 @@ const (
 
 type (
 	BOOL    int
-	HRESULT int32
+	HRESULT uint32
 )
 
 func MustLoadLibrary(name string) uintptr {

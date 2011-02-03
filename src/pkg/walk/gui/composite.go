@@ -16,19 +16,15 @@ import (
 
 const compositeWindowClass = `\o/ Walk_Composite_Class \o/`
 
-var compositeWindowWndProcCallback *syscall.Callback
+var compositeWindowWndProcPtr uintptr
 
-func compositeWndProc(args *uintptr) uintptr {
-	msg := msgFromCallbackArgs(args)
-
-	c, ok := widgetsByHWnd[msg.HWnd].(*Composite)
+func compositeWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	c, ok := widgetsByHWnd[hwnd].(*Composite)
 	if !ok {
-		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
-		// FIXME: Find a way to properly handle this.
-		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	return c.wndProc(msg, 0)
+	return c.wndProc(hwnd, msg, wParam, lParam, 0)
 }
 
 type Composite struct {
@@ -40,7 +36,7 @@ func NewCompositeWithStyle(parent IContainer, style uint) (*Composite, os.Error)
 		return nil, newError("parent cannot be nil")
 	}
 
-	ensureRegisteredWindowClass(compositeWindowClass, compositeWndProc, &compositeWindowWndProcCallback)
+	ensureRegisteredWindowClass(compositeWindowClass, compositeWndProc, &compositeWindowWndProcPtr)
 
 	hWnd := CreateWindowEx(
 		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(compositeWindowClass), nil,

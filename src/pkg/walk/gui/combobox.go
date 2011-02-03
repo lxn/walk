@@ -89,10 +89,10 @@ func (cb *ComboBox) SelectedIndexChanged() *Event {
 	return cb.selectedIndexChangedPublisher.Event()
 }
 
-func (cb *ComboBox) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
-	switch msg.Message {
+func (cb *ComboBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
 	case WM_COMMAND:
-		switch HIWORD(uint(msg.WParam)) {
+		switch HIWORD(uint(wParam)) {
 		case CBN_SELENDOK:
 			if selIndex := cb.SelectedIndex(); selIndex != cb.prevSelIndex {
 				cb.selectedIndexChangedPublisher.Publish(NewEventArgs(cb))
@@ -102,7 +102,7 @@ func (cb *ComboBox) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		}
 	}
 
-	return cb.Widget.wndProc(msg, origWndProcPtr)
+	return cb.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }
 
 func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) (err os.Error) {

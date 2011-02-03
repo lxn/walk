@@ -114,7 +114,7 @@ type IClassFactory struct {
 }
 
 func (cf *IClassFactory) Release() uint {
-	ret, _, _ := syscall.Syscall(cf.LpVtbl.Release,
+	ret, _, _ := syscall.Syscall(cf.LpVtbl.Release, 1,
 		uintptr(unsafe.Pointer(cf)),
 		0,
 		0)
@@ -123,7 +123,7 @@ func (cf *IClassFactory) Release() uint {
 }
 
 func (cf *IClassFactory) CreateInstance(pUnkOuter *IUnknown, riid REFIID, ppvObject *unsafe.Pointer) HRESULT {
-	ret, _, _ := syscall.Syscall6(cf.LpVtbl.CreateInstance,
+	ret, _, _ := syscall.Syscall6(cf.LpVtbl.CreateInstance, 4,
 		uintptr(unsafe.Pointer(cf)),
 		uintptr(unsafe.Pointer(pUnkOuter)),
 		uintptr(unsafe.Pointer(riid)),
@@ -150,7 +150,7 @@ type IConnectionPoint struct {
 }
 
 func (cp *IConnectionPoint) Release() uint {
-	ret, _, _ := syscall.Syscall(cp.LpVtbl.Release,
+	ret, _, _ := syscall.Syscall(cp.LpVtbl.Release, 1,
 		uintptr(unsafe.Pointer(cp)),
 		0,
 		0)
@@ -159,7 +159,7 @@ func (cp *IConnectionPoint) Release() uint {
 }
 
 func (cp *IConnectionPoint) Advise(pUnkSink unsafe.Pointer, pdwCookie *uint) HRESULT {
-	ret, _, _ := syscall.Syscall(cp.LpVtbl.Advise,
+	ret, _, _ := syscall.Syscall(cp.LpVtbl.Advise, 3,
 		uintptr(unsafe.Pointer(cp)),
 		uintptr(pUnkSink),
 		uintptr(unsafe.Pointer(pdwCookie)))
@@ -180,7 +180,7 @@ type IConnectionPointContainer struct {
 }
 
 func (cpc *IConnectionPointContainer) Release() uint {
-	ret, _, _ := syscall.Syscall(cpc.LpVtbl.Release,
+	ret, _, _ := syscall.Syscall(cpc.LpVtbl.Release, 1,
 		uintptr(unsafe.Pointer(cpc)),
 		0,
 		0)
@@ -189,7 +189,7 @@ func (cpc *IConnectionPointContainer) Release() uint {
 }
 
 func (cpc *IConnectionPointContainer) FindConnectionPoint(riid REFIID, ppCP **IConnectionPoint) HRESULT {
-	ret, _, _ := syscall.Syscall(cpc.LpVtbl.FindConnectionPoint,
+	ret, _, _ := syscall.Syscall(cpc.LpVtbl.FindConnectionPoint, 3,
 		uintptr(unsafe.Pointer(cpc)),
 		uintptr(unsafe.Pointer(riid)),
 		uintptr(unsafe.Pointer(ppCP)))
@@ -252,7 +252,7 @@ type IOleInPlaceObject struct {
 }
 
 func (obj *IOleInPlaceObject) Release() uint {
-	ret, _, _ := syscall.Syscall(obj.LpVtbl.Release,
+	ret, _, _ := syscall.Syscall(obj.LpVtbl.Release, 1,
 		uintptr(unsafe.Pointer(obj)),
 		0,
 		0)
@@ -261,7 +261,7 @@ func (obj *IOleInPlaceObject) Release() uint {
 }
 
 func (obj *IOleInPlaceObject) SetObjectRects(lprcPosRect, lprcClipRect *RECT) HRESULT {
-	ret, _, _ := syscall.Syscall(obj.LpVtbl.SetObjectRects,
+	ret, _, _ := syscall.Syscall(obj.LpVtbl.SetObjectRects, 3,
 		uintptr(unsafe.Pointer(obj)),
 		uintptr(unsafe.Pointer(lprcPosRect)),
 		uintptr(unsafe.Pointer(lprcClipRect)))
@@ -323,7 +323,7 @@ type IOleObject struct {
 }
 
 func (obj *IOleObject) QueryInterface(riid REFIID, ppvObject *unsafe.Pointer) HRESULT {
-	ret, _, _ := syscall.Syscall(obj.LpVtbl.QueryInterface,
+	ret, _, _ := syscall.Syscall(obj.LpVtbl.QueryInterface, 1,
 		uintptr(unsafe.Pointer(obj)),
 		uintptr(unsafe.Pointer(riid)),
 		uintptr(unsafe.Pointer(ppvObject)))
@@ -332,7 +332,7 @@ func (obj *IOleObject) QueryInterface(riid REFIID, ppvObject *unsafe.Pointer) HR
 }
 
 func (obj *IOleObject) Release() uint {
-	ret, _, _ := syscall.Syscall(obj.LpVtbl.Release,
+	ret, _, _ := syscall.Syscall(obj.LpVtbl.Release, 1,
 		uintptr(unsafe.Pointer(obj)),
 		0,
 		0)
@@ -341,7 +341,7 @@ func (obj *IOleObject) Release() uint {
 }
 
 func (obj *IOleObject) SetClientSite(pClientSite *IOleClientSite) HRESULT {
-	ret, _, _ := syscall.Syscall(obj.LpVtbl.SetClientSite,
+	ret, _, _ := syscall.Syscall(obj.LpVtbl.SetClientSite, 2,
 		uintptr(unsafe.Pointer(obj)),
 		uintptr(unsafe.Pointer(pClientSite)),
 		0)
@@ -350,7 +350,7 @@ func (obj *IOleObject) SetClientSite(pClientSite *IOleClientSite) HRESULT {
 }
 
 func (obj *IOleObject) SetHostNames(szContainerApp, szContainerObj *uint16) HRESULT {
-	ret, _, _ := syscall.Syscall(obj.LpVtbl.SetHostNames,
+	ret, _, _ := syscall.Syscall(obj.LpVtbl.SetHostNames, 3,
 		uintptr(unsafe.Pointer(obj)),
 		uintptr(unsafe.Pointer(szContainerApp)),
 		uintptr(unsafe.Pointer(szContainerObj)))
@@ -359,7 +359,7 @@ func (obj *IOleObject) SetHostNames(szContainerApp, szContainerObj *uint16) HRES
 }
 
 func (obj *IOleObject) Close(dwSaveOption uint) HRESULT {
-	ret, _, _ := syscall.Syscall(obj.LpVtbl.Close,
+	ret, _, _ := syscall.Syscall(obj.LpVtbl.Close, 2,
 		uintptr(unsafe.Pointer(obj)),
 		uintptr(dwSaveOption),
 		0)
@@ -368,7 +368,7 @@ func (obj *IOleObject) Close(dwSaveOption uint) HRESULT {
 }
 
 func (obj *IOleObject) DoVerb(iVerb int, lpmsg *MSG, pActiveSite *IOleClientSite, lindex int, hwndParent HWND, lprcPosRect *RECT) HRESULT {
-	ret, _, _ := syscall.Syscall9(obj.LpVtbl.DoVerb,
+	ret, _, _ := syscall.Syscall9(obj.LpVtbl.DoVerb, 7,
 		uintptr(unsafe.Pointer(obj)),
 		uintptr(iVerb),
 		uintptr(unsafe.Pointer(lpmsg)),
@@ -457,7 +457,7 @@ func init() {
 }
 
 func CoGetClassObject(rclsid REFCLSID, dwClsContext uint, pServerInfo *COSERVERINFO, riid REFIID, ppv *unsafe.Pointer) HRESULT {
-	ret, _, _ := syscall.Syscall6(coGetClassObject,
+	ret, _, _ := syscall.Syscall6(coGetClassObject, 5,
 		uintptr(unsafe.Pointer(rclsid)),
 		uintptr(dwClsContext),
 		uintptr(unsafe.Pointer(pServerInfo)),
@@ -469,7 +469,7 @@ func CoGetClassObject(rclsid REFCLSID, dwClsContext uint, pServerInfo *COSERVERI
 }
 
 func OleInitialize() HRESULT {
-	ret, _, _ := syscall.Syscall(oleInitialize,
+	ret, _, _ := syscall.Syscall(oleInitialize, 1, // WTF, why does 0 not work here?
 		0,
 		0,
 		0)
@@ -478,7 +478,7 @@ func OleInitialize() HRESULT {
 }
 
 func OleSetContainedObject(pUnknown *IUnknown, fContained bool) HRESULT {
-	ret, _, _ := syscall.Syscall(oleSetContainedObject,
+	ret, _, _ := syscall.Syscall(oleSetContainedObject, 2,
 		uintptr(unsafe.Pointer(pUnknown)),
 		uintptr(BoolToBOOL(fContained)),
 		0)
@@ -487,7 +487,7 @@ func OleSetContainedObject(pUnknown *IUnknown, fContained bool) HRESULT {
 }
 
 func OleUninitialize() {
-	syscall.Syscall(oleUninitialize,
+	syscall.Syscall(oleUninitialize, 0,
 		0,
 		0,
 		0)

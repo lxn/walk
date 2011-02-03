@@ -93,10 +93,10 @@ func (tv *TreeView) SelectionChanging() *TreeViewItemSelectionEvent {
 	return tv.selectionChangingPublisher.Event()
 }
 
-func (tv *TreeView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
-	switch msg.Message {
+func (tv *TreeView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
 	case WM_NOTIFY:
-		nmtv := (*NMTREEVIEW)(unsafe.Pointer(msg.LParam))
+		nmtv := (*NMTREEVIEW)(unsafe.Pointer(lParam))
 
 		switch nmtv.Hdr.Code {
 		case TVN_ITEMEXPANDED:
@@ -145,7 +145,7 @@ func (tv *TreeView) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		}
 	}
 
-	return tv.Widget.wndProc(msg, origWndProcPtr)
+	return tv.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }
 
 func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) (err os.Error) {

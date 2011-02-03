@@ -19,19 +19,15 @@ import (
 
 const tabPageWindowClass = `\o/ Walk_TabPage_Class \o/`
 
-var tabPageWndProcCallback *syscall.Callback
+var tabPageWndProcPtr uintptr
 
-func tabPageWndProc(args *uintptr) uintptr {
-	msg := msgFromCallbackArgs(args)
-
-	tp, ok := widgetsByHWnd[msg.HWnd].(*TabPage)
+func tabPageWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	tp, ok := widgetsByHWnd[hwnd].(*TabPage)
 	if !ok {
-		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
-		// FIXME: Find a way to properly handle this.
-		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	return tp.wndProc(msg, 0)
+	return tp.wndProc(hwnd, msg, wParam, lParam, 0)
 }
 
 type TabPage struct {
@@ -39,7 +35,7 @@ type TabPage struct {
 }
 
 func NewTabPage() (*TabPage, os.Error) {
-	ensureRegisteredWindowClass(tabPageWindowClass, tabPageWndProc, &tabPageWndProcCallback)
+	ensureRegisteredWindowClass(tabPageWindowClass, tabPageWndProc, &tabPageWndProcPtr)
 
 	hWnd := CreateWindowEx(
 		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(tabPageWindowClass), nil,

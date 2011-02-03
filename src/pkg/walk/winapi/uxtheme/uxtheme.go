@@ -31,7 +31,7 @@ func init() {
 }
 
 func SetWindowTheme(hwnd HWND, pszSubAppName, pszSubIdList *uint16) HRESULT {
-	ret, _, _ := syscall.Syscall(setWindowTheme,
+	ret, _, _ := syscall.Syscall(setWindowTheme, 3,
 		uintptr(hwnd),
 		uintptr(unsafe.Pointer(pszSubAppName)),
 		uintptr(unsafe.Pointer(pszSubIdList)))

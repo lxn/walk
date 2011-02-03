@@ -16,19 +16,15 @@ import (
 
 const customWidgetWindowClass = `\o/ Walk_CustomWidget_Class \o/`
 
-var customWidgetWndProcCallback *syscall.Callback
+var customWidgetWndProcPtr uintptr
 
-func customWidgetWndProc(args *uintptr) uintptr {
-	msg := msgFromCallbackArgs(args)
-
-	cw, ok := customWidgetsByHWND[msg.HWnd]
+func customWidgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	cw, ok := customWidgetsByHWND[hwnd]
 	if !ok {
-		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
-		// FIXME: Find a way to properly handle this.
-		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	return cw.wndProc(msg, 0)
+	return cw.wndProc(hwnd, msg, wParam, lParam, 0)
 }
 
 type PaintFunc func(surface *drawing.Surface, updateBounds drawing.Rectangle) os.Error
@@ -51,7 +47,7 @@ func NewCustomWidget(parent IContainer, style uint, paint PaintFunc) (*CustomWid
 		customWidgetsByHWND = make(map[HWND]*CustomWidget)
 	}
 
-	ensureRegisteredWindowClass(customWidgetWindowClass, customWidgetWndProc, &customWidgetWndProcCallback)
+	ensureRegisteredWindowClass(customWidgetWindowClass, customWidgetWndProc, &customWidgetWndProcPtr)
 
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr(customWidgetWindowClass), nil,
@@ -97,8 +93,8 @@ func (cw *CustomWidget) SetInvalidatesOnResize(value bool) {
 	cw.invalidatesOnResize = value
 }
 
-func (cw *CustomWidget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
-	switch msg.Message {
+func (cw *CustomWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
 	case WM_PAINT:
 		if cw.paint == nil {
 			// TODO: log?
@@ -141,5 +137,5 @@ func (cw *CustomWidget) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		}
 	}
 
-	return cw.Widget.wndProc(msg, origWndProcPtr)
+	return cw.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }

@@ -202,7 +202,7 @@ type IWebBrowser2 struct {
 }
 
 func (wb2 *IWebBrowser2) Release() HRESULT {
-	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Release,
+	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Release, 1,
 		uintptr(unsafe.Pointer(wb2)),
 		0,
 		0)
@@ -211,7 +211,7 @@ func (wb2 *IWebBrowser2) Release() HRESULT {
 }
 
 func (wb2 *IWebBrowser2) Put_Left(Left int) HRESULT {
-	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Left,
+	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Left, 2,
 		uintptr(unsafe.Pointer(wb2)),
 		uintptr(Left),
 		0)
@@ -220,7 +220,7 @@ func (wb2 *IWebBrowser2) Put_Left(Left int) HRESULT {
 }
 
 func (wb2 *IWebBrowser2) Put_Top(Top int) HRESULT {
-	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Top,
+	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Top, 2,
 		uintptr(unsafe.Pointer(wb2)),
 		uintptr(Top),
 		0)
@@ -229,7 +229,7 @@ func (wb2 *IWebBrowser2) Put_Top(Top int) HRESULT {
 }
 
 func (wb2 *IWebBrowser2) Put_Width(Width int) HRESULT {
-	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Width,
+	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Width, 2,
 		uintptr(unsafe.Pointer(wb2)),
 		uintptr(Width),
 		0)
@@ -238,7 +238,7 @@ func (wb2 *IWebBrowser2) Put_Width(Width int) HRESULT {
 }
 
 func (wb2 *IWebBrowser2) Put_Height(Height int) HRESULT {
-	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Height,
+	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Height, 2,
 		uintptr(unsafe.Pointer(wb2)),
 		uintptr(Height),
 		0)
@@ -247,7 +247,7 @@ func (wb2 *IWebBrowser2) Put_Height(Height int) HRESULT {
 }
 
 func (wb2 *IWebBrowser2) Get_LocationURL(pbstrLocationURL **uint16 /*BSTR*/ ) HRESULT {
-	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Get_LocationURL,
+	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Get_LocationURL, 2,
 		uintptr(unsafe.Pointer(wb2)),
 		uintptr(unsafe.Pointer(pbstrLocationURL)),
 		0)
@@ -256,7 +256,7 @@ func (wb2 *IWebBrowser2) Get_LocationURL(pbstrLocationURL **uint16 /*BSTR*/ ) HR
 }
 
 func (wb2 *IWebBrowser2) Navigate2(URL *VAR_BSTR, Flags *VAR_I4, TargetFrameName *VAR_BSTR, PostData unsafe.Pointer, Headers *VAR_BSTR) HRESULT {
-	ret, _, _ := syscall.Syscall6(wb2.LpVtbl.Navigate2,
+	ret, _, _ := syscall.Syscall6(wb2.LpVtbl.Navigate2, 6,
 		uintptr(unsafe.Pointer(wb2)),
 		uintptr(unsafe.Pointer(URL)),
 		uintptr(unsafe.Pointer(Flags)),

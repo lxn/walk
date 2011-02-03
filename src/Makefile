@@ -14,8 +14,8 @@ all: clean
 	make -C pkg/walk/winapi/uxtheme		install
 	make -C pkg/walk/winapi/winspool	install
 	make -C pkg/walk/drawing		install
-	make -C pkg/walk/gui			install
 	make -C pkg/walk/path			install
+	make -C pkg/walk/gui			install
 	make -C pkg/walk/printing		install
 	make -C pkg/walk/registry		install
 	make -C cmd/examples/drawing
@@ -47,8 +47,8 @@ clean:
 	make -C pkg/walk/winapi/uxtheme		clean
 	make -C pkg/walk/winapi/winspool	clean
 	make -C pkg/walk/drawing		clean
-	make -C pkg/walk/gui			clean
 	make -C pkg/walk/path			clean
+	make -C pkg/walk/gui			clean
 	make -C pkg/walk/printing		clean
 	make -C pkg/walk/registry		clean
 	make -C cmd/examples/drawing		clean

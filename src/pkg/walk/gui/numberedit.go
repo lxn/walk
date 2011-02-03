@@ -20,19 +20,15 @@ import (
 
 const numberEditWindowClass = `\o/ Walk_NumberEdit_Class \o/`
 
-var numberEditWndProcCallback *syscall.Callback
+var numberEditWndProcPtr uintptr
 
-func numberEditWndProc(args *uintptr) uintptr {
-	msg := msgFromCallbackArgs(args)
-
-	ne, ok := widgetsByHWnd[msg.HWnd]
+func numberEditWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	ne, ok := widgetsByHWnd[hwnd]
 	if !ok {
-		// Before CreateWindowEx returns, among others, WM_GETMINMAXINFO is sent.
-		// FIXME: Find a way to properly handle this.
-		return DefWindowProc(msg.HWnd, msg.Message, msg.WParam, msg.LParam)
+		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	return ne.wndProc(msg, 0)
+	return ne.wndProc(hwnd, msg, wParam, lParam, 0)
 }
 
 type NumberEdit struct {
@@ -50,7 +46,7 @@ func NewNumberEdit(parent IContainer) (*NumberEdit, os.Error) {
 		return nil, newError("parent cannot be nil")
 	}
 
-	ensureRegisteredWindowClass(numberEditWindowClass, numberEditWndProc, &numberEditWndProcCallback)
+	ensureRegisteredWindowClass(numberEditWindowClass, numberEditWndProc, &numberEditWndProcPtr)
 
 	hWnd := CreateWindowEx(
 		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(numberEditWindowClass), nil,
@@ -180,12 +176,12 @@ func (ne *NumberEdit) SetValue(value float64) os.Error {
 	return ne.edit.SetText(strconv.Ftoa64(value, 'f', ne.decimals))
 }
 
-func (ne *NumberEdit) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
-	switch msg.Message {
+func (ne *NumberEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
 	case WM_NOTIFY:
-		switch ((*NMHDR)(unsafe.Pointer(msg.LParam))).Code {
+		switch ((*NMHDR)(unsafe.Pointer(lParam))).Code {
 		case UDN_DELTAPOS:
-			nmud := (*NMUPDOWN)(unsafe.Pointer(msg.LParam))
+			nmud := (*NMUPDOWN)(unsafe.Pointer(lParam))
 			val := ne.Value()
 			val -= float64(nmud.IDelta) * ne.increment
 			if err := ne.SetValue(val); err != nil {
@@ -206,5 +202,5 @@ func (ne *NumberEdit) wndProc(msg *MSG, origWndProcPtr uintptr) uintptr {
 		SendMessage(ne.hWndUpDown, UDM_SETBUDDY, uintptr(ne.edit.hWnd), 0)
 	}
 
-	return ne.Widget.wndProc(msg, origWndProcPtr)
+	return ne.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }

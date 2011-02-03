@@ -16,61 +16,25 @@ import (
 	. "walk/winapi/user32"
 )
 
-type webViewIOleInPlaceSiteCallbacks struct {
-	QueryInterface       *syscall.Callback
-	AddRef               *syscall.Callback
-	Release              *syscall.Callback
-	GetWindow            *syscall.Callback
-	ContextSensitiveHelp *syscall.Callback
-	CanInPlaceActivate   *syscall.Callback
-	OnInPlaceActivate    *syscall.Callback
-	OnUIActivate         *syscall.Callback
-	GetWindowContext     *syscall.Callback
-	Scroll               *syscall.Callback
-	OnUIDeactivate       *syscall.Callback
-	OnInPlaceDeactivate  *syscall.Callback
-	DiscardUndoState     *syscall.Callback
-	DeactivateAndUndo    *syscall.Callback
-	OnPosRectChange      *syscall.Callback
-}
-
-var webViewIOleInPlaceSiteCbs = &webViewIOleInPlaceSiteCallbacks{
-	syscall.NewCallback(webView_IOleInPlaceSite_QueryInterface, 1+2),
-	syscall.NewCallback(webView_IOleInPlaceSite_AddRef, 1+0),
-	syscall.NewCallback(webView_IOleInPlaceSite_Release, 1+0),
-	syscall.NewCallback(webView_IOleInPlaceSite_GetWindow, 1+1),
-	syscall.NewCallback(webView_IOleInPlaceSite_ContextSensitiveHelp, 1+1),
-	syscall.NewCallback(webView_IOleInPlaceSite_CanInPlaceActivate, 1+0),
-	syscall.NewCallback(webView_IOleInPlaceSite_OnInPlaceActivate, 1+0),
-	syscall.NewCallback(webView_IOleInPlaceSite_OnUIActivate, 1+0),
-	syscall.NewCallback(webView_IOleInPlaceSite_GetWindowContext, 1+5),
-	syscall.NewCallback(webView_IOleInPlaceSite_Scroll, 1+1*2),
-	syscall.NewCallback(webView_IOleInPlaceSite_OnUIDeactivate, 1+1),
-	syscall.NewCallback(webView_IOleInPlaceSite_OnInPlaceDeactivate, 1+0),
-	syscall.NewCallback(webView_IOleInPlaceSite_DiscardUndoState, 1+0),
-	syscall.NewCallback(webView_IOleInPlaceSite_DeactivateAndUndo, 1+0),
-	syscall.NewCallback(webView_IOleInPlaceSite_OnPosRectChange, 1+1),
-}
-
 var webViewIOleInPlaceSiteVtbl *IOleInPlaceSiteVtbl
 
 func init() {
 	webViewIOleInPlaceSiteVtbl = &IOleInPlaceSiteVtbl{
-		webViewIOleInPlaceSiteCbs.QueryInterface.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.AddRef.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.Release.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.GetWindow.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.ContextSensitiveHelp.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.CanInPlaceActivate.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.OnInPlaceActivate.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.OnUIActivate.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.GetWindowContext.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.Scroll.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.OnUIDeactivate.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.OnInPlaceDeactivate.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.DiscardUndoState.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.DeactivateAndUndo.ExtFnEntry(),
-		webViewIOleInPlaceSiteCbs.OnPosRectChange.ExtFnEntry(),
+		syscall.NewCallback(webView_IOleInPlaceSite_QueryInterface),
+		syscall.NewCallback(webView_IOleInPlaceSite_AddRef),
+		syscall.NewCallback(webView_IOleInPlaceSite_Release),
+		syscall.NewCallback(webView_IOleInPlaceSite_GetWindow),
+		syscall.NewCallback(webView_IOleInPlaceSite_ContextSensitiveHelp),
+		syscall.NewCallback(webView_IOleInPlaceSite_CanInPlaceActivate),
+		syscall.NewCallback(webView_IOleInPlaceSite_OnInPlaceActivate),
+		syscall.NewCallback(webView_IOleInPlaceSite_OnUIActivate),
+		syscall.NewCallback(webView_IOleInPlaceSite_GetWindowContext),
+		syscall.NewCallback(webView_IOleInPlaceSite_Scroll),
+		syscall.NewCallback(webView_IOleInPlaceSite_OnUIDeactivate),
+		syscall.NewCallback(webView_IOleInPlaceSite_OnInPlaceDeactivate),
+		syscall.NewCallback(webView_IOleInPlaceSite_DiscardUndoState),
+		syscall.NewCallback(webView_IOleInPlaceSite_DeactivateAndUndo),
+		syscall.NewCallback(webView_IOleInPlaceSite_OnPosRectChange),
 	}
 }
 
@@ -79,112 +43,87 @@ type webViewIOleInPlaceSite struct {
 	inPlaceFrame webViewIOleInPlaceFrame
 }
 
-func webView_IOleInPlaceSite_QueryInterface(args *uintptr) uintptr {
-	p := (*struct {
-		object    uintptr
-		riid      REFIID
-		ppvObject *unsafe.Pointer
-	})(unsafe.Pointer(args))
-
+func webView_IOleInPlaceSite_QueryInterface(inPlaceSite *webViewIOleInPlaceSite, riid REFIID, ppvObject *unsafe.Pointer) HRESULT {
 	// Just reuse the QueryInterface implementation we have for IOleClientSite.
 	// We need to adjust object from the webViewIDocHostUIHandler to the
 	// containing webViewIOleInPlaceSite.
 	var clientSite IOleClientSite
 
-	p.object -= uintptr(unsafe.Sizeof(clientSite))
+	ptr := uintptr(unsafe.Pointer(inPlaceSite)) - uintptr(unsafe.Sizeof(clientSite))
 
-	return webView_IOleClientSite_QueryInterface(args)
+	return webView_IOleClientSite_QueryInterface((*webViewIOleClientSite)(unsafe.Pointer(ptr)), riid, ppvObject)
 }
 
-func webView_IOleInPlaceSite_AddRef(args *uintptr) uintptr {
+func webView_IOleInPlaceSite_AddRef(inPlaceSite *webViewIOleInPlaceSite) HRESULT {
 	return 1
 }
 
-func webView_IOleInPlaceSite_Release(args *uintptr) uintptr {
+func webView_IOleInPlaceSite_Release(inPlaceSite *webViewIOleInPlaceSite) HRESULT {
 	return 1
 }
 
-func webView_IOleInPlaceSite_GetWindow(args *uintptr) uintptr {
-	p := (*struct {
-		inPlaceSite *webViewIOleInPlaceSite
-		lphwnd      *HWND
-	})(unsafe.Pointer(args))
-
-	*p.lphwnd = p.inPlaceSite.inPlaceFrame.webView.hWnd
+func webView_IOleInPlaceSite_GetWindow(inPlaceSite *webViewIOleInPlaceSite, lphwnd *HWND) HRESULT {
+	*lphwnd = inPlaceSite.inPlaceFrame.webView.hWnd
 
 	return S_OK
 }
 
-func webView_IOleInPlaceSite_ContextSensitiveHelp(args *uintptr) uintptr {
+func webView_IOleInPlaceSite_ContextSensitiveHelp(inPlaceSite *webViewIOleInPlaceSite, fEnterMode BOOL) HRESULT {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceSite_CanInPlaceActivate(args *uintptr) uintptr {
+func webView_IOleInPlaceSite_CanInPlaceActivate(inPlaceSite *webViewIOleInPlaceSite) HRESULT {
 	return S_OK
 }
 
-func webView_IOleInPlaceSite_OnInPlaceActivate(args *uintptr) uintptr {
+func webView_IOleInPlaceSite_OnInPlaceActivate(inPlaceSite *webViewIOleInPlaceSite) HRESULT {
 	return S_OK
 }
 
-func webView_IOleInPlaceSite_OnUIActivate(args *uintptr) uintptr {
+func webView_IOleInPlaceSite_OnUIActivate(inPlaceSite *webViewIOleInPlaceSite) HRESULT {
 	return S_OK
 }
 
-func webView_IOleInPlaceSite_GetWindowContext(args *uintptr) uintptr {
-	p := (*struct {
-		inPlaceSite  *webViewIOleInPlaceSite
-		lplpFrame    **webViewIOleInPlaceFrame
-		lplpDoc      *unsafe.Pointer
-		lprcPosRect  *RECT
-		lprcClipRect *RECT
-		lpFrameInfo  *OLEINPLACEFRAMEINFO
-	})(unsafe.Pointer(args))
+func webView_IOleInPlaceSite_GetWindowContext(inPlaceSite *webViewIOleInPlaceSite, lplpFrame **webViewIOleInPlaceFrame, lplpDoc *uintptr, lprcPosRect, lprcClipRect *RECT, lpFrameInfo *OLEINPLACEFRAMEINFO) HRESULT {
+	*lplpFrame = &inPlaceSite.inPlaceFrame
+	*lplpDoc = 0
 
-	*p.lplpFrame = &p.inPlaceSite.inPlaceFrame
-	*p.lplpDoc = nil
-
-	p.lpFrameInfo.FMDIApp = FALSE
-	p.lpFrameInfo.HwndFrame = p.inPlaceSite.inPlaceFrame.webView.hWnd
-	p.lpFrameInfo.Haccel = 0
-	p.lpFrameInfo.CAccelEntries = 0
+	lpFrameInfo.FMDIApp = FALSE
+	lpFrameInfo.HwndFrame = inPlaceSite.inPlaceFrame.webView.hWnd
+	lpFrameInfo.Haccel = 0
+	lpFrameInfo.CAccelEntries = 0
 
 	return S_OK
 }
 
-func webView_IOleInPlaceSite_Scroll(args *uintptr) uintptr {
+func webView_IOleInPlaceSite_Scroll(inPlaceSite *webViewIOleInPlaceSite, scrollExtent SIZE) HRESULT {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceSite_OnUIDeactivate(args *uintptr) uintptr {
+func webView_IOleInPlaceSite_OnUIDeactivate(inPlaceSite *webViewIOleInPlaceSite, fUndoable BOOL) HRESULT {
 	return S_OK
 }
 
-func webView_IOleInPlaceSite_OnInPlaceDeactivate(args *uintptr) uintptr {
+func webView_IOleInPlaceSite_OnInPlaceDeactivate(inPlaceSite *webViewIOleInPlaceSite) HRESULT {
 	return S_OK
 }
 
-func webView_IOleInPlaceSite_DiscardUndoState(args *uintptr) uintptr {
+func webView_IOleInPlaceSite_DiscardUndoState(inPlaceSite *webViewIOleInPlaceSite) HRESULT {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceSite_DeactivateAndUndo(args *uintptr) uintptr {
+func webView_IOleInPlaceSite_DeactivateAndUndo(inPlaceSite *webViewIOleInPlaceSite) HRESULT {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceSite_OnPosRectChange(args *uintptr) uintptr {
-	p := (*struct {
-		inPlaceSite *webViewIOleInPlaceSite
-		lprcPosRect *RECT
-	})(unsafe.Pointer(args))
-
-	browserObject := p.inPlaceSite.inPlaceFrame.webView.browserObject
+func webView_IOleInPlaceSite_OnPosRectChange(inPlaceSite *webViewIOleInPlaceSite, lprcPosRect *RECT) HRESULT {
+	browserObject := inPlaceSite.inPlaceFrame.webView.browserObject
 	var inPlaceObjectPtr unsafe.Pointer
 	if hr := browserObject.QueryInterface(&IID_IOleInPlaceObject, &inPlaceObjectPtr); FAILED(hr) {
-		return uintptr(hr)
+		return hr
 	}
 	inPlaceObject := (*IOleInPlaceObject)(inPlaceObjectPtr)
 	defer inPlaceObject.Release()
 
-	return uintptr(inPlaceObject.SetObjectRects(p.lprcPosRect, p.lprcPosRect))
+	return inPlaceObject.SetObjectRects(lprcPosRect, lprcPosRect)
 }
