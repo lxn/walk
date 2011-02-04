@@ -244,7 +244,7 @@ func (tw *TabWidget) onSelChange() {
 		tw.curPage.Invalidate()
 	}
 
-	tw.currentPageChangedPublisher.Publish(NewEventArgs(tw))
+	tw.currentPageChangedPublisher.Publish()
 }
 
 func (tw *TabWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {

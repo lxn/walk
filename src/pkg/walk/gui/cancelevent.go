@@ -4,38 +4,17 @@
 
 package gui
 
-type CancelEventArgs struct {
-	EventArgs
-	canceled bool
-}
-
-func NewCancelEventArgs(sender interface{}) *CancelEventArgs {
-	return &CancelEventArgs{
-		EventArgs: EventArgs{
-			sender: sender,
-		},
-	}
-}
-
-func (a *CancelEventArgs) Canceled() bool {
-	return a.canceled
-}
-
-func (a *CancelEventArgs) SetCanceled(value bool) {
-	a.canceled = value
-}
-
-type CancelEventHandler func(args *CancelEventArgs)
+type CancelEventHandler func(canceled *bool)
 
 type CancelEvent struct {
 	handlers []CancelEventHandler
 }
 
-func (e *CancelEvent) Subscribe(handler CancelEventHandler) {
+func (e *CancelEvent) Attach(handler CancelEventHandler) {
 	e.handlers = append(e.handlers, handler)
 }
 
-func (e *CancelEvent) Unsubscribe(handler CancelEventHandler) {
+func (e *CancelEvent) Detach(handler CancelEventHandler) {
 	for i, h := range e.handlers {
 		if h == handler {
 			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
@@ -52,8 +31,8 @@ func (p *CancelEventPublisher) Event() *CancelEvent {
 	return &p.event
 }
 
-func (p *CancelEventPublisher) Publish(args *CancelEventArgs) {
+func (p *CancelEventPublisher) Publish(canceled *bool) {
 	for _, handler := range p.event.handlers {
-		handler(args)
+		handler(canceled)
 	}
 }

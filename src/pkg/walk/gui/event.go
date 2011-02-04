@@ -4,31 +4,17 @@
 
 package gui
 
-type EventArgs struct {
-	sender interface{}
-}
-
-func NewEventArgs(sender interface{}) *EventArgs {
-	return &EventArgs{
-		sender: sender,
-	}
-}
-
-func (a *EventArgs) Sender() interface{} {
-	return a.sender
-}
-
-type EventHandler func(args *EventArgs)
+type EventHandler func()
 
 type Event struct {
 	handlers []EventHandler
 }
 
-func (e *Event) Subscribe(handler EventHandler) {
+func (e *Event) Attach(handler EventHandler) {
 	e.handlers = append(e.handlers, handler)
 }
 
-func (e *Event) Unsubscribe(handler EventHandler) {
+func (e *Event) Detach(handler EventHandler) {
 	for i, h := range e.handlers {
 		if h == handler {
 			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
@@ -45,8 +31,8 @@ func (p *EventPublisher) Event() *Event {
 	return &p.event
 }
 
-func (p *EventPublisher) Publish(args *EventArgs) {
+func (p *EventPublisher) Publish() {
 	for _, handler := range p.event.handlers {
-		handler(args)
+		handler()
 	}
 }

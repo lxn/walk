@@ -174,10 +174,10 @@ func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, 
 		return 0
 
 	case WM_CLOSE:
-		args := NewCloseEventArgs(widgetsByHWnd[tlw.hWnd], tlw.closeReason)
 		tlw.closeReason = CloseReasonUnknown
-		tlw.closingPublisher.Publish(args)
-		if !args.Canceled() {
+		var canceled bool
+		tlw.closingPublisher.Publish(&canceled, tlw.closeReason)
+		if !canceled {
 			if tlw.owner != nil {
 				tlw.owner.SetEnabled(true)
 			}

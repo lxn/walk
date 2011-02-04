@@ -4,37 +4,17 @@
 
 package gui
 
-type CloseEventArgs struct {
-	CancelEventArgs
-	reason CloseReason
-}
-
-func NewCloseEventArgs(sender interface{}, reason CloseReason) *CloseEventArgs {
-	return &CloseEventArgs{
-		CancelEventArgs: CancelEventArgs{
-			EventArgs: EventArgs{
-				sender: sender,
-			},
-		},
-		reason: reason,
-	}
-}
-
-func (a *CloseEventArgs) Reason() CloseReason {
-	return a.reason
-}
-
-type CloseEventHandler func(args *CloseEventArgs)
+type CloseEventHandler func(canceled *bool, reason CloseReason)
 
 type CloseEvent struct {
 	handlers []CloseEventHandler
 }
 
-func (e *CloseEvent) Subscribe(handler CloseEventHandler) {
+func (e *CloseEvent) Attach(handler CloseEventHandler) {
 	e.handlers = append(e.handlers, handler)
 }
 
-func (e *CloseEvent) Unsubscribe(handler CloseEventHandler) {
+func (e *CloseEvent) Detach(handler CloseEventHandler) {
 	for i, h := range e.handlers {
 		if h == handler {
 			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
@@ -51,8 +31,8 @@ func (p *CloseEventPublisher) Event() *CloseEvent {
 	return &p.event
 }
 
-func (p *CloseEventPublisher) Publish(args *CloseEventArgs) {
+func (p *CloseEventPublisher) Publish(canceled *bool, reason CloseReason) {
 	for _, handler := range p.event.handlers {
-		handler(args)
+		handler(canceled, reason)
 	}
 }

@@ -38,5 +38,5 @@ func (b *Button) Clicked() *Event {
 }
 
 func (b *Button) raiseClicked() {
-	b.clickedPublisher.Publish(NewEventArgs(b))
+	b.clickedPublisher.Publish()
 }

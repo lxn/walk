@@ -104,12 +104,12 @@ func (tv *TreeView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 
 			switch nmtv.Action {
 			case TVE_COLLAPSE:
-				tv.itemCollapsedPublisher.Publish(NewTreeViewItemEventArgs(tv, item))
+				tv.itemCollapsedPublisher.Publish(item)
 
 			case TVE_COLLAPSERESET:
 
 			case TVE_EXPAND:
-				tv.itemExpandedPublisher.Publish(NewTreeViewItemEventArgs(tv, item))
+				tv.itemExpandedPublisher.Publish(item)
 
 			case TVE_EXPANDPARTIAL:
 
@@ -121,12 +121,12 @@ func (tv *TreeView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 
 			switch nmtv.Action {
 			case TVE_COLLAPSE:
-				tv.itemCollapsingPublisher.Publish(NewTreeViewItemEventArgs(tv, item))
+				tv.itemCollapsingPublisher.Publish(item)
 
 			case TVE_COLLAPSERESET:
 
 			case TVE_EXPAND:
-				tv.itemExpandingPublisher.Publish(NewTreeViewItemEventArgs(tv, item))
+				tv.itemExpandingPublisher.Publish(item)
 
 			case TVE_EXPANDPARTIAL:
 
@@ -136,12 +136,12 @@ func (tv *TreeView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		case TVN_SELCHANGED:
 			old := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemOld.LParam))
 			new := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
-			tv.selectionChangedPublisher.Publish(NewTreeViewItemSelectionEventArgs(tv, old, new))
+			tv.selectionChangedPublisher.Publish(old, new)
 
 		case TVN_SELCHANGING:
 			old := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemOld.LParam))
 			new := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
-			tv.selectionChangingPublisher.Publish(NewTreeViewItemSelectionEventArgs(tv, old, new))
+			tv.selectionChangingPublisher.Publish(old, new)
 		}
 	}
 

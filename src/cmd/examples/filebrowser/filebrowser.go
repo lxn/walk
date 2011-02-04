@@ -154,7 +154,7 @@ func main() {
 
 	exitAction := gui.NewAction()
 	panicIfErr(exitAction.SetText("Exit"))
-	exitAction.Triggered().Subscribe(func(args *gui.EventArgs) { gui.App().Exit(0) })
+	exitAction.Triggered().Attach(func() { gui.App().Exit(0) })
 	panicIfErr(fileMenu.Actions().Add(exitAction))
 
 	helpMenu, err := gui.NewMenu()
@@ -165,7 +165,7 @@ func main() {
 
 	aboutAction := gui.NewAction()
 	panicIfErr(aboutAction.SetText("About"))
-	aboutAction.Triggered().Subscribe(func(args *gui.EventArgs) {
+	aboutAction.Triggered().Attach(func() {
 		gui.MsgBox(mw, "About", "Walk File Browser Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
 	})
 	panicIfErr(helpMenu.Actions().Add(aboutAction))
@@ -177,17 +177,16 @@ func main() {
 	panicIfErr(err)
 	panicIfErr(mw.treeView.SetMaxSize(drawing.Size{200, 0}))
 
-	mw.treeView.ItemExpanded().Subscribe(func(args *gui.TreeViewItemEventArgs) {
-		item := args.Item()
+	mw.treeView.ItemExpanded().Attach(func(item *gui.TreeViewItem) {
 		children := item.Children()
 		if children.Len() == 1 && children.At(0).Text() == "" {
 			mw.populateTreeViewItem(item)
 		}
 	})
 
-	mw.treeView.SelectionChanged().Subscribe(func(args *gui.TreeViewItemSelectionEventArgs) {
-		mw.selTvwItem = args.New()
-		mw.populateListView(pathForTreeViewItem(mw.selTvwItem))
+	mw.treeView.SelectionChanged().Attach(func(old, new *gui.TreeViewItem) {
+		mw.selTvwItem = new
+		mw.populateListView(pathForTreeViewItem(new))
 	})
 
 	drives, err := wpath.DriveNames()
@@ -204,7 +203,7 @@ func main() {
 	panicIfErr(err)
 	panicIfErr(mw.listView.SetMaxSize(drawing.Size{422, 0}))
 
-	mw.listView.SelectedIndexChanged().Subscribe(func(args *gui.EventArgs) {
+	mw.listView.SelectedIndexChanged().Attach(func() {
 		index := mw.listView.SelectedIndex()
 		var url string
 		if index > -1 {

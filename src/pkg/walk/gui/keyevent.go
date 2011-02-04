@@ -4,35 +4,17 @@
 
 package gui
 
-type KeyEventArgs struct {
-	EventArgs
-	key int
-}
-
-func NewKeyEventArgs(sender interface{}, key int) *KeyEventArgs {
-	return &KeyEventArgs{
-		EventArgs: EventArgs{
-			sender: sender,
-		},
-		key: key,
-	}
-}
-
-func (a *KeyEventArgs) Key() int {
-	return a.key
-}
-
-type KeyEventHandler func(args *KeyEventArgs)
+type KeyEventHandler func(key int)
 
 type KeyEvent struct {
 	handlers []KeyEventHandler
 }
 
-func (e *KeyEvent) Subscribe(handler KeyEventHandler) {
+func (e *KeyEvent) Attach(handler KeyEventHandler) {
 	e.handlers = append(e.handlers, handler)
 }
 
-func (e *KeyEvent) Unsubscribe(handler KeyEventHandler) {
+func (e *KeyEvent) Detach(handler KeyEventHandler) {
 	for i, h := range e.handlers {
 		if h == handler {
 			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
@@ -49,8 +31,8 @@ func (p *KeyEventPublisher) Event() *KeyEvent {
 	return &p.event
 }
 
-func (p *KeyEventPublisher) Publish(args *KeyEventArgs) {
+func (p *KeyEventPublisher) Publish(key int) {
 	for _, handler := range p.event.handlers {
-		handler(args)
+		handler(key)
 	}
 }

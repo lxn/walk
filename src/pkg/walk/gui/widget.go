@@ -675,11 +675,11 @@ func (w *Widget) MouseUp() *MouseEvent {
 	return w.mouseUpPublisher.Event()
 }
 
-func (w *Widget) mouseEventArgsFromMSG(wParam, lParam uintptr) *MouseEventArgs {
+func (w *Widget) publishMouseEvent(publisher *MouseEventPublisher, wParam, lParam uintptr) {
 	x := int(GET_X_LPARAM(lParam))
 	y := int(GET_Y_LPARAM(lParam))
 
-	return NewMouseEventArgs(widgetsByHWnd[w.hWnd], x, y, 0)
+	publisher.Publish(x, y, 0)
 }
 
 func (w *Widget) SizeChanged() *Event {
@@ -728,16 +728,16 @@ func (w *Widget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndPro
 	switch msg {
 	case WM_LBUTTONDOWN:
 		SetCapture(w.hWnd)
-		w.mouseDownPublisher.Publish(w.mouseEventArgsFromMSG(wParam, lParam))
+		w.publishMouseEvent(&w.mouseDownPublisher, wParam, lParam)
 
 	case WM_LBUTTONUP:
 		if !ReleaseCapture() {
 			log.Println(lastError("ReleaseCapture"))
 		}
-		w.mouseUpPublisher.Publish(w.mouseEventArgsFromMSG(wParam, lParam))
+		w.publishMouseEvent(&w.mouseUpPublisher, wParam, lParam)
 
 	case WM_MOUSEMOVE:
-		w.mouseMovePublisher.Publish(w.mouseEventArgsFromMSG(wParam, lParam))
+		w.publishMouseEvent(&w.mouseUpPublisher, wParam, lParam)
 
 	case WM_SETCURSOR:
 		if w.cursor != nil {
@@ -762,10 +762,10 @@ func (w *Widget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndPro
 		return 0
 
 	case WM_KEYDOWN:
-		w.keyDownPublisher.Publish(NewKeyEventArgs(widgetsByHWnd[w.hWnd], int(wParam)))
+		w.keyDownPublisher.Publish(int(wParam))
 
 	case WM_SIZE, WM_SIZING:
-		w.sizeChangedPublisher.Publish(NewEventArgs(widgetsByHWnd[w.hWnd]))
+		w.sizeChangedPublisher.Publish()
 
 	case WM_GETMINMAXINFO:
 		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))

@@ -4,35 +4,17 @@
 
 package gui
 
-type TreeViewItemEventArgs struct {
-	EventArgs
-	item *TreeViewItem
-}
-
-func NewTreeViewItemEventArgs(sender interface{}, item *TreeViewItem) *TreeViewItemEventArgs {
-	return &TreeViewItemEventArgs{
-		EventArgs: EventArgs{
-			sender: sender,
-		},
-		item: item,
-	}
-}
-
-func (a *TreeViewItemEventArgs) Item() *TreeViewItem {
-	return a.item
-}
-
-type TreeViewItemEventHandler func(args *TreeViewItemEventArgs)
+type TreeViewItemEventHandler func(item *TreeViewItem)
 
 type TreeViewItemEvent struct {
 	handlers []TreeViewItemEventHandler
 }
 
-func (e *TreeViewItemEvent) Subscribe(handler TreeViewItemEventHandler) {
+func (e *TreeViewItemEvent) Attach(handler TreeViewItemEventHandler) {
 	e.handlers = append(e.handlers, handler)
 }
 
-func (e *TreeViewItemEvent) Unsubscribe(handler TreeViewItemEventHandler) {
+func (e *TreeViewItemEvent) Detach(handler TreeViewItemEventHandler) {
 	for i, h := range e.handlers {
 		if h == handler {
 			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
@@ -49,8 +31,8 @@ func (p *TreeViewItemEventPublisher) Event() *TreeViewItemEvent {
 	return &p.event
 }
 
-func (p *TreeViewItemEventPublisher) Publish(args *TreeViewItemEventArgs) {
+func (p *TreeViewItemEventPublisher) Publish(item *TreeViewItem) {
 	for _, handler := range p.event.handlers {
-		handler(args)
+		handler(item)
 	}
 }

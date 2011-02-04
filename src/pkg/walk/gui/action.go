@@ -218,7 +218,7 @@ func (a *Action) Triggered() *Event {
 }
 
 func (a *Action) raiseTriggered() {
-	a.triggeredPublisher.Publish(NewEventArgs(a))
+	a.triggeredPublisher.Publish()
 }
 
 func (a *Action) addChangedHandler(handler actionChangedHandler) {

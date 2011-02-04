@@ -142,7 +142,7 @@ func (lv *ListView) SetSelectedIndex(value int) os.Error {
 	lv.selectedIndex = value
 
 	if value == -1 {
-		lv.selectedIndexChangedPublisher.Publish(NewEventArgs(lv))
+		lv.selectedIndexChangedPublisher.Publish()
 	}
 
 	return nil
@@ -253,7 +253,7 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 
 	case WM_KEYDOWN:
 		if wParam == VK_RETURN && lv.SelectedIndex() > -1 {
-			lv.itemActivatedPublisher.Publish(NewEventArgs(lv))
+			lv.itemActivatedPublisher.Publish()
 		}
 
 	case WM_NOTIFY:
@@ -264,11 +264,11 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 			selectedBefore := nmlv.UOldState&LVIS_SELECTED > 0
 			if selectedNow && !selectedBefore {
 				lv.selectedIndex = nmlv.IItem
-				lv.selectedIndexChangedPublisher.Publish(NewEventArgs(lv))
+				lv.selectedIndexChangedPublisher.Publish()
 			}
 
 		case LVN_ITEMACTIVATE:
-			lv.itemActivatedPublisher.Publish(NewEventArgs(lv))
+			lv.itemActivatedPublisher.Publish()
 		}
 	}
 

@@ -95,7 +95,7 @@ func (cb *ComboBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		switch HIWORD(uint(wParam)) {
 		case CBN_SELENDOK:
 			if selIndex := cb.SelectedIndex(); selIndex != cb.prevSelIndex {
-				cb.selectedIndexChangedPublisher.Publish(NewEventArgs(cb))
+				cb.selectedIndexChangedPublisher.Publish()
 				cb.prevSelIndex = selIndex
 				return 0
 			}

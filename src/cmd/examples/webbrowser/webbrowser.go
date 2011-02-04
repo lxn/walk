@@ -48,7 +48,7 @@ func main() {
 
 	exitAction := gui.NewAction()
 	panicIfErr(exitAction.SetText("Exit"))
-	exitAction.Triggered().Subscribe(func(args *gui.EventArgs) { gui.App().Exit(0) })
+	exitAction.Triggered().Attach(func() { gui.App().Exit(0) })
 	panicIfErr(fileMenu.Actions().Add(exitAction))
 
 	helpMenu, err := gui.NewMenu()
@@ -59,15 +59,15 @@ func main() {
 
 	aboutAction := gui.NewAction()
 	panicIfErr(aboutAction.SetText("About"))
-	aboutAction.Triggered().Subscribe(func(args *gui.EventArgs) {
+	aboutAction.Triggered().Attach(func() {
 		gui.MsgBox(mw, "About", "Walk Web Browser Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
 	})
 	panicIfErr(helpMenu.Actions().Add(aboutAction))
 
 	mw.urlLineEdit, err = gui.NewLineEdit(mw.ClientArea())
 	panicIfErr(err)
-	mw.urlLineEdit.KeyDown().Subscribe(func(args *gui.KeyEventArgs) {
-		if args.Key() == user32.VK_RETURN {
+	mw.urlLineEdit.KeyDown().Attach(func(key int) {
+		if key == user32.VK_RETURN {
 			panicIfErr(mw.webView.SetURL(mw.urlLineEdit.Text()))
 		}
 	})

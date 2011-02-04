@@ -12,47 +12,17 @@ const (
 	MiddleButton
 )
 
-type MouseEventArgs struct {
-	EventArgs
-	x      int
-	y      int
-	button MouseButton
-}
-
-func NewMouseEventArgs(sender interface{}, x, y int, button MouseButton) *MouseEventArgs {
-	return &MouseEventArgs{
-		EventArgs: EventArgs{
-			sender: sender,
-		},
-		x:      x,
-		y:      y,
-		button: button,
-	}
-}
-
-func (a *MouseEventArgs) X() int {
-	return a.x
-}
-
-func (a *MouseEventArgs) Y() int {
-	return a.y
-}
-
-func (a *MouseEventArgs) Button() MouseButton {
-	return a.button
-}
-
-type MouseEventHandler func(args *MouseEventArgs)
+type MouseEventHandler func(x, y int, button MouseButton)
 
 type MouseEvent struct {
 	handlers []MouseEventHandler
 }
 
-func (e *MouseEvent) Subscribe(handler MouseEventHandler) {
+func (e *MouseEvent) Attach(handler MouseEventHandler) {
 	e.handlers = append(e.handlers, handler)
 }
 
-func (e *MouseEvent) Unsubscribe(handler MouseEventHandler) {
+func (e *MouseEvent) Detach(handler MouseEventHandler) {
 	for i, h := range e.handlers {
 		if h == handler {
 			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
@@ -69,8 +39,8 @@ func (p *MouseEventPublisher) Event() *MouseEvent {
 	return &p.event
 }
 
-func (p *MouseEventPublisher) Publish(args *MouseEventArgs) {
+func (p *MouseEventPublisher) Publish(x, y int, button MouseButton) {
 	for _, handler := range p.event.handlers {
-		handler(args)
+		handler(x, y, button)
 	}
 }

@@ -4,41 +4,17 @@
 
 package gui
 
-type TreeViewItemSelectionEventArgs struct {
-	EventArgs
-	old *TreeViewItem
-	new *TreeViewItem
-}
-
-func NewTreeViewItemSelectionEventArgs(sender interface{}, old, new *TreeViewItem) *TreeViewItemSelectionEventArgs {
-	return &TreeViewItemSelectionEventArgs{
-		EventArgs: EventArgs{
-			sender: sender,
-		},
-		old: old,
-		new: new,
-	}
-}
-
-func (a *TreeViewItemSelectionEventArgs) Old() *TreeViewItem {
-	return a.old
-}
-
-func (a *TreeViewItemSelectionEventArgs) New() *TreeViewItem {
-	return a.new
-}
-
-type TreeViewItemSelectionEventHandler func(args *TreeViewItemSelectionEventArgs)
+type TreeViewItemSelectionEventHandler func(old, new *TreeViewItem)
 
 type TreeViewItemSelectionEvent struct {
 	handlers []TreeViewItemSelectionEventHandler
 }
 
-func (e *TreeViewItemSelectionEvent) Subscribe(handler TreeViewItemSelectionEventHandler) {
+func (e *TreeViewItemSelectionEvent) Attach(handler TreeViewItemSelectionEventHandler) {
 	e.handlers = append(e.handlers, handler)
 }
 
-func (e *TreeViewItemSelectionEvent) Unsubscribe(handler TreeViewItemSelectionEventHandler) {
+func (e *TreeViewItemSelectionEvent) Detach(handler TreeViewItemSelectionEventHandler) {
 	for i, h := range e.handlers {
 		if h == handler {
 			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
@@ -55,8 +31,8 @@ func (p *TreeViewItemSelectionEventPublisher) Event() *TreeViewItemSelectionEven
 	return &p.event
 }
 
-func (p *TreeViewItemSelectionEventPublisher) Publish(args *TreeViewItemSelectionEventArgs) {
+func (p *TreeViewItemSelectionEventPublisher) Publish(old, new *TreeViewItem) {
 	for _, handler := range p.event.handlers {
-		handler(args)
+		handler(old, new)
 	}
 }

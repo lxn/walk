@@ -163,12 +163,12 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 			err = s.children.Insert(handleIndex, handle)
 			if err == nil {
 				// FIXME: These handlers will be leaked, if widgets get removed.
-				handle.MouseDown().Subscribe(func(args *MouseEventArgs) {
+				handle.MouseDown().Attach(func(x, y int, button MouseButton) {
 					s.draggedHandle = handle
-					s.mouseDownPos = drawing.Point{args.X(), args.Y()}
+					s.mouseDownPos = drawing.Point{x, y}
 				})
 
-				handle.MouseMove().Subscribe(func(args *MouseEventArgs) {
+				handle.MouseMove().Attach(func(x, y int, button MouseButton) {
 					if s.draggedHandle == nil {
 						return
 					}
@@ -190,15 +190,13 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 					}
 
 					if s.Orientation() == Horizontal {
-						xm := args.X()
-
 						xh, e := s.draggedHandle.X()
 						if e != nil {
 							log.Println(e)
 							return
 						}
 
-						xnew := xh + xm - s.mouseDownPos.X
+						xnew := xh + x - s.mouseDownPos.X
 						if xnew < bp.X {
 							xnew = bp.X
 						} else if xnew >= bn.X+bn.Width-s.handleWidth {
@@ -210,15 +208,13 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 							return
 						}
 					} else {
-						ym := args.Y()
-
 						yh, e := s.draggedHandle.Y()
 						if e != nil {
 							log.Println(e)
 							return
 						}
 
-						ynew := yh + ym - s.mouseDownPos.Y
+						ynew := yh + y - s.mouseDownPos.Y
 						if ynew < bp.Y {
 							ynew = bp.Y
 						} else if ynew >= bn.Y+bn.Height-s.handleWidth {
@@ -232,7 +228,7 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 					}
 				})
 
-				handle.MouseUp().Subscribe(func(args *MouseEventArgs) {
+				handle.MouseUp().Attach(func(x, y int, button MouseButton) {
 					if s.draggedHandle != nil {
 						dragHandle := s.draggedHandle
 						s.draggedHandle = nil
