@@ -40,6 +40,7 @@ type ListView struct {
 	selectedIndex                 int
 	selectedIndexChangedPublisher EventPublisher
 	itemActivatedPublisher        EventPublisher
+	columnClickedPublisher        IntEventPublisher
 	lastColumnStretched           bool
 	persistent                    bool
 }
@@ -119,8 +120,44 @@ func (lv *ListView) Columns() *ListViewColumnList {
 	return lv.columns
 }
 
+func (lv *ListView) SelectedColumnIndex() int {
+	return int(SendMessage(lv.hWnd, LVM_GETSELECTEDCOLUMN, 0, 0))
+}
+
+func (lv *ListView) SetSelectedColumnIndex(value int) {
+	SendMessage(lv.hWnd, LVM_SETSELECTEDCOLUMN, uintptr(value), 0)
+}
+
+func (lv *ListView) ColumnClicked() *IntEvent {
+	return lv.columnClickedPublisher.Event()
+}
+
+/* FIXME: Our items list and that of the control get out of sync here.
+func listViewCompare(lParam1, lParam2, lParamSort uintptr) int {
+	compare := (*func(i, j int) int)(unsafe.Pointer(lParamSort))
+	return (*compare)(int(lParam1), int(lParam2))
+}
+
+var listViewCompareCallback = uintptr(unsafe.Pointer(syscall.NewCallback(listViewCompare)))
+
+func (lv *ListView) Sort(compare func(i, j int) int) os.Error {
+	if compare == nil {
+		return newError("compare must not be nil")
+	}
+
+	if FALSE == SendMessage(lv.hWnd, LVM_SORTITEMSEX, uintptr(unsafe.Pointer(&compare)), listViewCompareCallback) {
+		return newError("LVM_SORTITEMSEX failed")
+	}
+
+	return nil
+}*/
+
 func (lv *ListView) Items() *ListViewItemList {
 	return lv.items
+}
+
+func (lv *ListView) ItemActivated() *Event {
+	return lv.itemActivatedPublisher.Event()
 }
 
 func (lv *ListView) SelectedIndex() int {
@@ -146,6 +183,10 @@ func (lv *ListView) SetSelectedIndex(value int) os.Error {
 	}
 
 	return nil
+}
+
+func (lv *ListView) SelectedIndexChanged() *Event {
+	return lv.selectedIndexChangedPublisher.Event()
 }
 
 func (lv *ListView) LastColumnStretched() bool {
@@ -230,14 +271,6 @@ func (lv *ListView) RestoreState() os.Error {
 	return nil
 }
 
-func (lv *ListView) ItemActivated() *Event {
-	return lv.itemActivatedPublisher.Event()
-}
-
-func (lv *ListView) SelectedIndexChanged() *Event {
-	return lv.selectedIndexChangedPublisher.Event()
-}
-
 func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
 	case WM_ERASEBKGND:
@@ -258,6 +291,10 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 
 	case WM_NOTIFY:
 		switch int(((*NMHDR)(unsafe.Pointer(lParam))).Code) {
+		case LVN_COLUMNCLICK:
+			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
+			lv.columnClickedPublisher.Publish(nmlv.ISubItem)
+
 		case LVN_ITEMCHANGED:
 			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
 			selectedNow := nmlv.UNewState&LVIS_SELECTED > 0
