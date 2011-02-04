@@ -36,7 +36,7 @@ func NewComboBox(parent IContainer) (*ComboBox, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	cb := &ComboBox{Widget: Widget{hWnd: hWnd, parent: parent}}
+	cb := &ComboBox{Widget: Widget{hWnd: hWnd, parent: parent}, prevSelIndex: -1}
 
 	succeeded := false
 	defer func() {
