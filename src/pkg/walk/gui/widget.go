@@ -737,7 +737,7 @@ func (w *Widget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndPro
 		w.publishMouseEvent(&w.mouseUpPublisher, wParam, lParam)
 
 	case WM_MOUSEMOVE:
-		w.publishMouseEvent(&w.mouseUpPublisher, wParam, lParam)
+		w.publishMouseEvent(&w.mouseMovePublisher, wParam, lParam)
 
 	case WM_SETCURSOR:
 		if w.cursor != nil {
