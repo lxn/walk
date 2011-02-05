@@ -15,26 +15,26 @@ import (
 	. "walk/winapi/kernel32"
 )
 
-type Key struct {
+type RegistryKey struct {
 	hKey HKEY
 }
 
-func ClassesRootKey() *Key {
-	return &Key{HKEY_CLASSES_ROOT}
+func ClassesRootKey() *RegistryKey {
+	return &RegistryKey{HKEY_CLASSES_ROOT}
 }
 
-func CurrentUserKey() *Key {
-	return &Key{HKEY_CURRENT_USER}
+func CurrentUserKey() *RegistryKey {
+	return &RegistryKey{HKEY_CURRENT_USER}
 }
 
-func LocalMachineKey() *Key {
-	return &Key{HKEY_LOCAL_MACHINE}
+func LocalMachineKey() *RegistryKey {
+	return &RegistryKey{HKEY_LOCAL_MACHINE}
 }
 
-func KeyString(rootKey *Key, subKeyPath, valueName string) (value string, err os.Error) {
+func RegistryKeyString(rootKey *RegistryKey, subKeyPath, valueName string) (value string, err os.Error) {
 	var hKey HKEY
 	if RegOpenKeyEx(rootKey.hKey, syscall.StringToUTF16Ptr(subKeyPath), 0, KEY_READ, &hKey) != ERROR_SUCCESS {
-		return "", newError("KeyString: Failed to open subkey.")
+		return "", newError("RegistryKeyString: Failed to open subkey.")
 	}
 	defer RegCloseKey(hKey)
 
@@ -43,13 +43,13 @@ func KeyString(rootKey *Key, subKeyPath, valueName string) (value string, err os
 	var bufSize uint
 
 	if RegQueryValueEx(hKey, syscall.StringToUTF16Ptr(valueName), (*uint)(unsafe.Pointer(nil)), &typ, nil, &bufSize) != ERROR_SUCCESS {
-		return "", newError("KeyString: Failed to retrieve required buffer size.")
+		return "", newError("RegistryKeyString: Failed to retrieve required buffer size.")
 	}
 
 	data = make([]uint16, bufSize/2+1)
 
 	if RegQueryValueEx(hKey, syscall.StringToUTF16Ptr(valueName), (*uint)(unsafe.Pointer(nil)), &typ, (*byte)(unsafe.Pointer((&data[0]))), &bufSize) != ERROR_SUCCESS {
-		return "", newError("KeyString: Failed to retrieve registry key value.")
+		return "", newError("RegistryKeyString: Failed to retrieve registry key value.")
 	}
 
 	return syscall.UTF16ToString(data), nil

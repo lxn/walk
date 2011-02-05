@@ -24,15 +24,15 @@ func knownFolderPath(id CSIDL) (string, os.Error) {
 	return syscall.UTF16ToString(buf[0:]), nil
 }
 
-func AppData() (string, os.Error) {
+func AppDataPath() (string, os.Error) {
 	return knownFolderPath(CSIDL_APPDATA)
 }
 
-func CommonAppData() (string, os.Error) {
+func CommonAppDataPath() (string, os.Error) {
 	return knownFolderPath(CSIDL_COMMON_APPDATA)
 }
 
-func LocalAppData() (string, os.Error) {
+func LocalAppDataPath() (string, os.Error) {
 	return knownFolderPath(CSIDL_LOCAL_APPDATA)
 }
 

@@ -36,7 +36,7 @@ func (ifs *IniFileSettings) Put(key, value string) os.Error {
 }
 
 func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) os.Error) os.Error {
-	appDataPath, err := AppData()
+	appDataPath, err := AppDataPath()
 	if err != nil {
 		return err
 	}
