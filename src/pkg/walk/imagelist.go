@@ -34,10 +34,10 @@ func (il *ImageList) Add(bitmap, maskBitmap *Bitmap) (int, os.Error) {
 
 	var maskHandle HBITMAP
 	if maskBitmap != nil {
-		maskHandle = maskBitmap.Handle()
+		maskHandle = maskBitmap.handle()
 	}
 
-	index := ImageList_Add(il.hIml, bitmap.Handle(), maskHandle)
+	index := ImageList_Add(il.hIml, bitmap.handle(), maskHandle)
 	if index == -1 {
 		return 0, newError("ImageList_Add failed")
 	}
@@ -50,7 +50,7 @@ func (il *ImageList) AddMasked(bitmap *Bitmap) (int, os.Error) {
 		return 0, newError("bitmap cannot be nil")
 	}
 
-	index := ImageList_AddMasked(il.hIml, bitmap.Handle(), COLORREF(il.maskColor))
+	index := ImageList_AddMasked(il.hIml, bitmap.handle(), COLORREF(il.maskColor))
 	if index == -1 {
 		return 0, newError("ImageList_AddMasked failed")
 	}

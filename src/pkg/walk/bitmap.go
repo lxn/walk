@@ -164,7 +164,7 @@ func (bmp *Bitmap) drawStretched(hdc HDC, bounds Rectangle) os.Error {
 	})
 }
 
-func (bmp *Bitmap) Handle() HBITMAP {
+func (bmp *Bitmap) handle() HBITMAP {
 	return bmp.hBmp
 }
 

@@ -59,7 +59,7 @@ func (item *simpleTextItem) AddNewPart(surface *Surface, bounds Rectangle) (part
 	runeCount := item.text.RuneCount()
 	text := item.text.Slice(offset, runeCount)
 
-	fontHeight, err := surface.FontHeight(item.font)
+	fontHeight, err := surface.fontHeight(item.font)
 	if err != nil {
 		return
 	}

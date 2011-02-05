@@ -277,7 +277,7 @@ func (s *Surface) DrawText(text string, font *Font, color Color, bounds Rectangl
 	})
 }
 
-func (s *Surface) FontHeight(font *Font) (height int, err os.Error) {
+func (s *Surface) fontHeight(font *Font) (height int, err os.Error) {
 	err = s.withFontAndTextColor(font, 0, func() os.Error {
 		var size SIZE
 		if !GetTextExtentPoint32(s.hdc, gM, 2, &size) {

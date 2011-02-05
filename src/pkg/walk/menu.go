@@ -78,7 +78,7 @@ func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 	mii.FMask = MIIM_FTYPE | MIIM_ID | MIIM_STATE | MIIM_STRING
 	if action.image != nil {
 		mii.FMask |= MIIM_BITMAP
-		mii.HbmpItem = action.image.Handle()
+		mii.HbmpItem = action.image.handle()
 	}
 	if action.text == "-" {
 		mii.FType = MFT_SEPARATOR
