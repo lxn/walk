@@ -274,7 +274,7 @@ func (w *Widget) Font() *Font {
 
 func (w *Widget) SetFont(value *Font) {
 	if value != w.font {
-		SendMessage(w.hWnd, WM_SETFONT, uintptr(value.HandleForDPI(0)), 1)
+		SendMessage(w.hWnd, WM_SETFONT, uintptr(value.handleForDPI(0)), 1)
 
 		w.font = value
 	}

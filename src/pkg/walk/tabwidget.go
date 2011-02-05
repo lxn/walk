@@ -79,7 +79,7 @@ func NewTabWidget(parent IContainer) (*TabWidget, os.Error) {
 	if tw.hWndTab == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
-	SendMessage(tw.hWndTab, WM_SETFONT, uintptr(defaultFont.HandleForDPI(0)), 1)
+	SendMessage(tw.hWndTab, WM_SETFONT, uintptr(defaultFont.handleForDPI(0)), 1)
 
 	tw.SetFont(defaultFont)
 

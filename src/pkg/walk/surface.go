@@ -169,7 +169,7 @@ func (s *Surface) withBrush(brush Brush, f func() os.Error) os.Error {
 }
 
 func (s *Surface) withFontAndTextColor(font *Font, color Color, f func() os.Error) os.Error {
-	return s.withGdiObj(HGDIOBJ(font.HandleForDPI(s.dpiy)), func() os.Error {
+	return s.withGdiObj(HGDIOBJ(font.handleForDPI(s.dpiy)), func() os.Error {
 		oldColor := SetTextColor(s.hdc, COLORREF(color))
 		if oldColor == CLR_INVALID {
 			return newError("SetTextColor failed")
@@ -307,7 +307,7 @@ func (s *Surface) MeasureText(text string, font *Font, bounds Rectangle, format 
 		}
 	}
 
-	hFont := HGDIOBJ(font.HandleForDPI(s.dpiy))
+	hFont := HGDIOBJ(font.handleForDPI(s.dpiy))
 	oldHandle := SelectObject(s.measureTextMetafile.hdc, hFont)
 	if oldHandle == 0 {
 		err = newError("SelectObject failed")

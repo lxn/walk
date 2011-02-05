@@ -49,7 +49,7 @@ func init() {
 	}
 
 	var err os.Error
-	defaultFont, err = NewFontFromLOGFONT(&ncm.LfMenuFont, screenDPIY)
+	defaultFont, err = newFontFromLOGFONT(&ncm.LfMenuFont, screenDPIY)
 	if err != nil {
 		panic("failed to create default font")
 	}
@@ -88,7 +88,7 @@ func NewFont(family string, pointSize int, style FontStyle) (*Font, os.Error) {
 	return font, nil
 }
 
-func NewFontFromLOGFONT(lf *LOGFONT, dpi int) (*Font, os.Error) {
+func newFontFromLOGFONT(lf *LOGFONT, dpi int) (*Font, os.Error) {
 	if lf == nil {
 		return nil, newError("lf cannot be nil")
 	}
@@ -181,7 +181,7 @@ func (f *Font) Italic() bool {
 // DPI value.
 //
 // A value of 0 returns a HFONT suitable for the screen.
-func (f *Font) HandleForDPI(dpi int) HFONT {
+func (f *Font) handleForDPI(dpi int) HFONT {
 	hFont := f.dpi2hFont[dpi]
 	if hFont == 0 {
 		hFont = f.createForDPI(dpi)
