@@ -25,7 +25,7 @@ func NewCheckBox(parent IContainer) (*CheckBox, os.Error) {
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
 		BS_AUTOCHECKBOX /*|BS_NOTIFY*/ |WS_CHILD|WS_TABSTOP|WS_VISIBLE,
-		0, 0, 120, 24, parent.Handle(), 0, 0, nil)
+		0, 0, 120, 24, parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}

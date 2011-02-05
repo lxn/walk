@@ -54,7 +54,7 @@ func NewDialog(owner RootWidget) (*Dialog, os.Error) {
 
 	var ownerHWnd HWND
 	if owner != nil {
-		ownerHWnd = owner.Handle()
+		ownerHWnd = owner.BaseWidget().hWnd
 	}
 
 	hWnd := CreateWindowEx(

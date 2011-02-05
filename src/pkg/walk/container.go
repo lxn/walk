@@ -158,7 +158,7 @@ func (c *Container) onInsertingWidget(index int, widget IWidget) (err os.Error) 
 }
 
 func (c *Container) onInsertedWidget(index int, widget IWidget) (err os.Error) {
-	if widget.Parent().Handle() != c.hWnd {
+	if widget.Parent().BaseWidget().hWnd != c.hWnd {
 		err = widget.SetParent(widgetsByHWnd[c.hWnd].(IContainer))
 		if err != nil {
 			return
@@ -173,7 +173,7 @@ func (c *Container) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 }
 
 func (c *Container) onRemovingWidget(index int, widget IWidget) (err os.Error) {
-	if widget.Parent().Handle() == c.hWnd {
+	if widget.Parent().BaseWidget().hWnd == c.hWnd {
 		err = widget.SetParent(nil)
 	}
 

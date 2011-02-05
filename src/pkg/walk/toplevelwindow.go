@@ -58,7 +58,7 @@ func (tlw *TopLevelWindow) SetOwner(value RootWidget) os.Error {
 
 	var ownerHWnd HWND
 	if value != nil {
-		ownerHWnd = value.Handle()
+		ownerHWnd = value.BaseWidget().hWnd
 	}
 
 	SetLastError(0)

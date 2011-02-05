@@ -30,7 +30,7 @@ func NewComboBox(parent IContainer) (*ComboBox, os.Error) {
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("COMBOBOX"), nil,
 		CBS_DROPDOWNLIST|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
-		0, 0, 0, 0, parent.Handle(), 0, 0, nil)
+		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}

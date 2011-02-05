@@ -40,7 +40,7 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, os.Error) {
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr(splitterHandleWindowClass), nil,
 		WS_CHILD|WS_VISIBLE,
-		0, 0, 0, 0, splitter.Handle(), 0, 0, nil)
+		0, 0, 0, 0, splitter.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}

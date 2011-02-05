@@ -73,9 +73,9 @@ func (l *TabPageList) Contains(item *TabPage) bool {
 	return l.Index(item) > -1
 }
 
-func (l *TabPageList) IndexHandle(handle HWND) int {
-	for i, lvi := range l.items {
-		if lvi.Handle() == handle {
+func (l *TabPageList) indexHandle(handle HWND) int {
+	for i, page := range l.items {
+		if page.BaseWidget().hWnd == handle {
 			return i
 		}
 	}
@@ -83,8 +83,8 @@ func (l *TabPageList) IndexHandle(handle HWND) int {
 	return -1
 }
 
-func (l *TabPageList) ContainsHandle(handle HWND) bool {
-	return l.IndexHandle(handle) > -1
+func (l *TabPageList) containsHandle(handle HWND) bool {
+	return l.indexHandle(handle) > -1
 }
 
 func (l *TabPageList) insertIntoSlice(index int, item *TabPage) {

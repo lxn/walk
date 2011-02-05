@@ -27,7 +27,7 @@ func (dlg *FileDialog) show(owner RootWidget, fun func(ofn *OPENFILENAME) bool) 
 	ofn := &OPENFILENAME{}
 
 	ofn.LStructSize = uint(unsafe.Sizeof(*ofn))
-	ofn.HwndOwner = owner.Handle()
+	ofn.HwndOwner = owner.BaseWidget().hWnd
 
 	filter := make([]uint16, len(dlg.Filter)+1)
 	copy(filter, syscall.StringToUTF16(dlg.Filter))

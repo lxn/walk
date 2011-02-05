@@ -25,7 +25,7 @@ func NewTextEdit(parent IContainer) (*TextEdit, os.Error) {
 	hWnd := CreateWindowEx(
 		WS_EX_CLIENTEDGE, syscall.StringToUTF16Ptr("EDIT"), nil,
 		ES_MULTILINE|ES_WANTRETURN|WS_CHILD|WS_TABSTOP|WS_VISIBLE|WS_VSCROLL,
-		0, 0, 160, 80, parent.Handle(), 0, 0, nil)
+		0, 0, 160, 80, parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}

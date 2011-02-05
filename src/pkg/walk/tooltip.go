@@ -29,7 +29,7 @@ func NewToolTip(parent IContainer) (*ToolTip, os.Error) {
 		WS_EX_TOPMOST, syscall.StringToUTF16Ptr("tooltips_class32"), nil,
 		TTS_ALWAYSTIP|TTS_BALLOON|WS_POPUP,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-		parent.Handle(), 0, 0, nil)
+		parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
@@ -82,10 +82,10 @@ func (tt *ToolTip) AddWidget(widget IWidget, text string) os.Error {
 	ti.CbSize = uint(unsafe.Sizeof(ti))
 	parent := widget.Parent()
 	if parent != nil {
-		ti.Hwnd = parent.Handle()
+		ti.Hwnd = parent.BaseWidget().hWnd
 	}
 	ti.UFlags = TTF_IDISHWND | TTF_SUBCLASS
-	ti.UId = uintptr(widget.Handle())
+	ti.UId = uintptr(widget.BaseWidget().hWnd)
 	ti.LpszText = syscall.StringToUTF16Ptr(text)
 
 	if FALSE == SendMessage(tt.hWnd, TTM_ADDTOOL, 0, uintptr(unsafe.Pointer(&ti))) {

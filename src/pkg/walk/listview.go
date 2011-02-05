@@ -74,7 +74,7 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 	hWnd := CreateWindowEx(
 		WS_EX_CLIENTEDGE, syscall.StringToUTF16Ptr("SysListView32"), nil,
 		LVS_SHOWSELALWAYS|LVS_REPORT|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
-		0, 0, 0, 0, parent.Handle(), 0, 0, nil)
+		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}

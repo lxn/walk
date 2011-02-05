@@ -41,7 +41,7 @@ func MsgBox(owner RootWidget, title, message string, style MsgBoxStyle) DialogCo
 	var ownerHWnd HWND
 
 	if owner != nil {
-		ownerHWnd = owner.Handle()
+		ownerHWnd = owner.BaseWidget().hWnd
 	}
 
 	return DialogCommandId(MessageBox(ownerHWnd, syscall.StringToUTF16Ptr(message), syscall.StringToUTF16Ptr(title), uint(style)))

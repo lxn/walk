@@ -51,7 +51,7 @@ func NewTabWidget(parent IContainer) (*TabWidget, os.Error) {
 	hWnd := CreateWindowEx(
 		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(tabWidgetWindowClass), nil,
 		WS_CHILD|WS_VISIBLE,
-		0, 0, 0, 0, parent.Handle(), 0, 0, nil)
+		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}

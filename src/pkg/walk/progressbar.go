@@ -26,7 +26,7 @@ func NewProgressBar(parent IContainer) (*ProgressBar, os.Error) {
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("msctls_progress32"), nil,
 		WS_CHILD|WS_VISIBLE,
-		0, 0, 80, 24, parent.Handle(), 0, 0, nil)
+		0, 0, 80, 24, parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}

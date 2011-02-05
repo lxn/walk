@@ -72,7 +72,7 @@ func NewLineEdit(parent IContainer) (*LineEdit, os.Error) {
 		return nil, newError("parent cannot be nil")
 	}
 
-	le, err := newLineEdit(parent.Handle())
+	le, err := newLineEdit(parent.BaseWidget().hWnd)
 	if err != nil {
 		return nil, err
 	}

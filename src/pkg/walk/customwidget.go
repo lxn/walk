@@ -52,7 +52,7 @@ func NewCustomWidget(parent IContainer, style uint, paint PaintFunc) (*CustomWid
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr(customWidgetWindowClass), nil,
 		WS_CHILD|WS_VISIBLE|style,
-		0, 0, 0, 0, parent.Handle(), 0, 0, nil)
+		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}

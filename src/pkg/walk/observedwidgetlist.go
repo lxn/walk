@@ -60,8 +60,8 @@ func (l *ObservedWidgetList) Clear() os.Error {
 }
 
 func (l *ObservedWidgetList) Index(item IWidget) int {
-	for i, lvi := range l.items {
-		if lvi == item {
+	for i, widget := range l.items {
+		if widget == item {
 			return i
 		}
 	}
@@ -73,9 +73,9 @@ func (l *ObservedWidgetList) Contains(item IWidget) bool {
 	return l.Index(item) > -1
 }
 
-func (l *ObservedWidgetList) IndexHandle(handle HWND) int {
-	for i, lvi := range l.items {
-		if lvi.Handle() == handle {
+func (l *ObservedWidgetList) indexHandle(handle HWND) int {
+	for i, widget := range l.items {
+		if widget.BaseWidget().hWnd == handle {
 			return i
 		}
 	}
@@ -83,8 +83,8 @@ func (l *ObservedWidgetList) IndexHandle(handle HWND) int {
 	return -1
 }
 
-func (l *ObservedWidgetList) ContainsHandle(handle HWND) bool {
-	return l.IndexHandle(handle) > -1
+func (l *ObservedWidgetList) containsHandle(handle HWND) bool {
+	return l.indexHandle(handle) > -1
 }
 
 func (l *ObservedWidgetList) insertIntoSlice(index int, item IWidget) {

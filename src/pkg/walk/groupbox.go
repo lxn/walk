@@ -25,7 +25,7 @@ func NewGroupBox(parent IContainer) (*GroupBox, os.Error) {
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
 		BS_GROUPBOX|WS_CHILD|WS_VISIBLE,
-		0, 0, 80, 24, parent.Handle(), 0, 0, nil)
+		0, 0, 80, 24, parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}

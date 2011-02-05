@@ -30,7 +30,7 @@ const (
 )
 
 type IWidget interface {
-	Handle() HWND
+	BaseWidget() *Widget
 	Name() string
 	SetName(name string)
 	BeginUpdate()
@@ -160,7 +160,7 @@ func rootWidget(w IWidget) RootWidget {
 		return nil
 	}
 
-	hWndRoot := GetAncestor(w.Handle(), GA_ROOT)
+	hWndRoot := GetAncestor(w.BaseWidget().hWnd, GA_ROOT)
 
 	rw, _ := widgetsByHWnd[hWndRoot].(RootWidget)
 	return rw
@@ -224,8 +224,8 @@ func (w *Widget) path() string {
 	return buf.String()
 }
 
-func (w *Widget) Handle() HWND {
-	return w.hWnd
+func (w *Widget) BaseWidget() *Widget {
+	return w
 }
 
 func (w *Widget) Dispose() {
@@ -332,7 +332,7 @@ func (w *Widget) SetParent(value IContainer) (err os.Error) {
 		if SetWindowLong(w.hWnd, GWL_STYLE, int(style)) == 0 {
 			return lastError("SetWindowLong")
 		}
-		if SetParent(w.hWnd, value.Handle()) == 0 {
+		if SetParent(w.hWnd, value.BaseWidget().hWnd) == 0 {
 			return lastError("SetParent")
 		}
 	}
@@ -351,7 +351,7 @@ func (w *Widget) SetParent(value IContainer) (err os.Error) {
 		oldParent.Children().Remove(w)
 	}
 
-	if value != nil && !value.Children().ContainsHandle(w.hWnd) {
+	if value != nil && !value.Children().containsHandle(w.hWnd) {
 		value.Children().Add(w)
 	}
 
@@ -399,7 +399,7 @@ func (w *Widget) Bounds() Rectangle {
 
 	if w.parent != nil {
 		p := POINT{b.X, b.Y}
-		if !ScreenToClient(w.parent.Handle(), &p) {
+		if !ScreenToClient(w.parent.BaseWidget().hWnd, &p) {
 			log.Print(newError("ScreenToClient failed"))
 			return Rectangle{}
 		}
@@ -692,7 +692,7 @@ func (w *Widget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndPro
 		contextMenu := sourceWidget.ContextMenu()
 
 		if contextMenu != nil {
-			TrackPopupMenuEx(contextMenu.hMenu, TPM_NOANIMATION, x, y, rootWidget(sourceWidget).Handle(), nil)
+			TrackPopupMenuEx(contextMenu.hMenu, TPM_NOANIMATION, x, y, rootWidget(sourceWidget).BaseWidget().hWnd, nil)
 		}
 		return 0
 
