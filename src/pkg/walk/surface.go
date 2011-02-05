@@ -82,7 +82,7 @@ func NewSurfaceFromImage(image Image) (*Surface, os.Error) {
 		return (&Surface{hdc: hdc}).init()
 
 	case *Metafile:
-		surface, err := NewSurfaceFromHDC(img.hdc)
+		surface, err := newSurfaceFromHDC(img.hdc)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +95,7 @@ func NewSurfaceFromImage(image Image) (*Surface, os.Error) {
 	return nil, newError("unsupported image type")
 }
 
-func NewSurfaceFromHWND(hwnd HWND) (*Surface, os.Error) {
+func newSurfaceFromHWND(hwnd HWND) (*Surface, os.Error) {
 	hdc := GetDC(hwnd)
 	if hdc == 0 {
 		return nil, newError("GetDC failed")
@@ -104,7 +104,7 @@ func NewSurfaceFromHWND(hwnd HWND) (*Surface, os.Error) {
 	return (&Surface{hdc: hdc, hwnd: hwnd}).init()
 }
 
-func NewSurfaceFromHDC(hdc HDC) (*Surface, os.Error) {
+func newSurfaceFromHDC(hdc HDC) (*Surface, os.Error) {
 	if hdc == 0 {
 		return nil, newError("invalid hdc")
 	}

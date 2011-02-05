@@ -138,7 +138,7 @@ func (doc *Document) withSurface(f func(surface *Surface) os.Error) os.Error {
 	hdc := doc.nextPageInfo.createDC()
 	defer DeleteDC(hdc)
 
-	surface, err := NewSurfaceFromHDC(hdc)
+	surface, err := newSurfaceFromHDC(hdc)
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ func (doc *Document) Print() (err os.Error) {
 		}
 	}()
 
-	surface, err := NewSurfaceFromHDC(hdc)
+	surface, err := newSurfaceFromHDC(hdc)
 	if err != nil {
 		return err
 	}

@@ -633,7 +633,7 @@ func (w *Widget) SetGroupStart(value bool) os.Error {
 }
 
 func (w *Widget) GetDrawingSurface() (*Surface, os.Error) {
-	return NewSurfaceFromHWND(w.hWnd)
+	return newSurfaceFromHWND(w.hWnd)
 }
 
 func (w *Widget) setTheme(appName string) os.Error {
