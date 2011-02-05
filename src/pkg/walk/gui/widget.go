@@ -168,14 +168,14 @@ func rootWidget(w IWidget) RootWidget {
 	return rw
 }
 
-func (w *Widget) setAndUnsetStyleBits(set, unset uint) os.Error {
+func (w *Widget) setAndClearStyleBits(set, clear uint) os.Error {
 	style := uint(GetWindowLong(w.hWnd, GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
 
 	var newStyle uint
-	newStyle = (style | set) &^ unset
+	newStyle = (style | set) &^ clear
 
 	if newStyle != style {
 		SetLastError(0)
@@ -185,6 +185,17 @@ func (w *Widget) setAndUnsetStyleBits(set, unset uint) os.Error {
 	}
 
 	return nil
+}
+
+func (w *Widget) ensureStyleBits(bits uint, set bool) os.Error {
+	var setBits uint
+	var clearBits uint
+	if set {
+		setBits = bits
+	} else {
+		clearBits = bits
+	}
+	return w.setAndClearStyleBits(setBits, clearBits)
 }
 
 func (w *Widget) Name() string {

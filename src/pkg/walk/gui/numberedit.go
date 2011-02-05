@@ -70,7 +70,7 @@ func NewNumberEdit(parent IContainer) (*NumberEdit, os.Error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = ne.edit.setAndUnsetStyleBits(ES_RIGHT, ES_LEFT|ES_CENTER); err != nil {
+	if err = ne.edit.setAndClearStyleBits(ES_RIGHT, ES_LEFT|ES_CENTER); err != nil {
 		return nil, err
 	}
 

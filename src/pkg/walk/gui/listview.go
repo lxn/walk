@@ -33,16 +33,34 @@ func listViewSubclassWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintpt
 	return lv.wndProc(hwnd, msg, wParam, lParam, listViewOrigWndProcPtr)
 }
 
+type SelectedIndexList struct {
+	items []int
+}
+
+func NewSelectedIndexList(items []int) *SelectedIndexList {
+	return &SelectedIndexList{items}
+}
+
+func (l *SelectedIndexList) At(index int) int {
+	return l.items[index]
+}
+
+func (l *SelectedIndexList) Len() int {
+	return len(l.items)
+}
+
 type ListView struct {
 	Widget
-	columns                       *ListViewColumnList
-	items                         *ListViewItemList
-	selectedIndex                 int
-	selectedIndexChangedPublisher EventPublisher
-	itemActivatedPublisher        EventPublisher
-	columnClickedPublisher        IntEventPublisher
-	lastColumnStretched           bool
-	persistent                    bool
+	columns                         *ListViewColumnList
+	items                           *ListViewItemList
+	selectedIndex                   int
+	selectedIndexChangedPublisher   EventPublisher
+	selectedIndexes                 *SelectedIndexList
+	selectedIndexesChangedPublisher EventPublisher
+	itemActivatedPublisher          EventPublisher
+	columnClickedPublisher          IntEventPublisher
+	lastColumnStretched             bool
+	persistent                      bool
 }
 
 func NewListView(parent IContainer) (*ListView, os.Error) {
@@ -56,7 +74,7 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 
 	hWnd := CreateWindowEx(
 		WS_EX_CLIENTEDGE, syscall.StringToUTF16Ptr("SysListView32"), nil,
-		LVS_SINGLESEL|LVS_SHOWSELALWAYS|LVS_REPORT|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
+		LVS_SHOWSELALWAYS|LVS_REPORT|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
 		0, 0, 0, 0, parent.Handle(), 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
@@ -67,6 +85,7 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 			hWnd:   hWnd,
 			parent: parent,
 		},
+		selectedIndexes: NewSelectedIndexList(nil),
 	}
 
 	succeeded := false
@@ -189,6 +208,53 @@ func (lv *ListView) SelectedIndexChanged() *Event {
 	return lv.selectedIndexChangedPublisher.Event()
 }
 
+func (lv *ListView) SingleItemSelection() (bool, os.Error) {
+	style := uint(GetWindowLong(lv.hWnd, GWL_STYLE))
+	if style == 0 {
+		return false, lastError("GetWindowLong")
+	}
+
+	return style&LVS_SINGLESEL > 0, nil
+}
+
+func (lv *ListView) SetSingleItemSelection(value bool) os.Error {
+	return lv.ensureStyleBits(LVS_SINGLESEL, value)
+}
+
+func (lv *ListView) SelectedIndexes() *SelectedIndexList {
+	return lv.selectedIndexes
+}
+
+func (lv *ListView) updateSelectedIndexes() {
+	count := int(SendMessage(lv.hWnd, LVM_GETSELECTEDCOUNT, 0, 0))
+	indexes := make([]int, count)
+
+	j := -1
+	for i := 0; i < count; i++ {
+		j = int(SendMessage(lv.hWnd, LVM_GETNEXTITEM, uintptr(j), LVNI_SELECTED))
+		indexes[i] = j
+	}
+
+	changed := len(indexes) != len(lv.selectedIndexes.items)
+	if !changed {
+		for i := 0; i < len(indexes); i++ {
+			if indexes[i] != lv.selectedIndexes.items[i] {
+				changed = true
+				break
+			}
+		}
+	}
+
+	if changed {
+		lv.selectedIndexes.items = indexes
+		lv.selectedIndexesChangedPublisher.Publish()
+	}
+}
+
+func (lv *ListView) SelectedIndexesChanged() *Event {
+	return lv.selectedIndexesChangedPublisher.Event()
+}
+
 func (lv *ListView) LastColumnStretched() bool {
 	return lv.lastColumnStretched
 }
@@ -302,6 +368,9 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 			if selectedNow && !selectedBefore {
 				lv.selectedIndex = nmlv.IItem
 				lv.selectedIndexChangedPublisher.Publish()
+			}
+			if singleSel, _ := lv.SingleItemSelection(); !singleSel {
+				lv.updateSelectedIndexes()
 			}
 
 		case LVN_ITEMACTIVATE:

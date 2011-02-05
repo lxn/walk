@@ -100,18 +100,18 @@ func (dlg *Dialog) SetDefaultButton(button *PushButton) os.Error {
 
 	succeeded := false
 	if dlg.defaultButton != nil {
-		if err := dlg.defaultButton.setAndUnsetStyleBits(BS_PUSHBUTTON, BS_DEFPUSHBUTTON); err != nil {
+		if err := dlg.defaultButton.setAndClearStyleBits(BS_PUSHBUTTON, BS_DEFPUSHBUTTON); err != nil {
 			return err
 		}
 		defer func() {
 			if !succeeded {
-				dlg.defaultButton.setAndUnsetStyleBits(BS_DEFPUSHBUTTON, BS_PUSHBUTTON)
+				dlg.defaultButton.setAndClearStyleBits(BS_DEFPUSHBUTTON, BS_PUSHBUTTON)
 			}
 		}()
 	}
 
 	if button != nil {
-		if err := button.setAndUnsetStyleBits(BS_DEFPUSHBUTTON, BS_PUSHBUTTON); err != nil {
+		if err := button.setAndClearStyleBits(BS_DEFPUSHBUTTON, BS_PUSHBUTTON); err != nil {
 			return err
 		}
 	}

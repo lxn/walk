@@ -201,6 +201,7 @@ func main() {
 
 	mw.listView, err = gui.NewListView(splitter)
 	panicIfErr(err)
+	panicIfErr(mw.listView.SetSingleItemSelection(true))
 	panicIfErr(mw.listView.SetMaxSize(drawing.Size{422, 0}))
 
 	mw.listView.SelectedIndexChanged().Attach(func() {
