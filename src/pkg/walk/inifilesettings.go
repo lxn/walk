@@ -41,8 +41,12 @@ func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) os.Error) 
 		return err
 	}
 
-	filePath := path.Join(appDataPath, App().OrganizationName(),
-		App().ProductName(), "settings.ini")
+	dirPath := path.Join(appDataPath, appSingleton.OrganizationName(), appSingleton.ProductName())
+	if err := os.MkdirAll(dirPath, 0644); err != nil {
+		return err
+	}
+
+	filePath := path.Join(dirPath, "settings.ini")
 
 	file, err := os.Open(filePath, flags, 0644)
 	if err != nil {
