@@ -321,6 +321,9 @@ func (lv *ListView) RestoreState() os.Error {
 	}
 
 	widthStrs := strings.Split(state, " ", -1)
+	
+	lv.BeginUpdate()
+	defer lv.EndUpdate()
 
 	for i, str := range widthStrs {
 		width, err := strconv.Atoi(str)
