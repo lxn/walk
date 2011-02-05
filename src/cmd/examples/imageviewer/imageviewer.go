@@ -12,13 +12,12 @@ import (
 )
 
 import (
-	"walk/drawing"
-	"walk/gui"
+	"walk"
 )
 
 type MainWindow struct {
-	*gui.MainWindow
-	tabWidget    *gui.TabWidget
+	*walk.MainWindow
+	tabWidget    *walk.TabWidget
 	prevFilePath string
 }
 
@@ -29,7 +28,7 @@ func panicIfErr(err os.Error) {
 }
 
 func (mw *MainWindow) openImage() {
-	dlg := &gui.FileDialog{}
+	dlg := &walk.FileDialog{}
 
 	dlg.FilePath = mw.prevFilePath
 	dlg.Filter = "Image Files (*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff)|*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff"
@@ -43,7 +42,7 @@ func (mw *MainWindow) openImage() {
 
 	mw.prevFilePath = dlg.FilePath
 
-	img, err := drawing.NewImageFromFile(dlg.FilePath)
+	img, err := walk.NewImageFromFile(dlg.FilePath)
 	panicIfErr(err)
 
 	var succeeded bool
@@ -53,10 +52,10 @@ func (mw *MainWindow) openImage() {
 		}
 	}()
 
-	page, err := gui.NewTabPage()
+	page, err := walk.NewTabPage()
 	panicIfErr(err)
 	panicIfErr(page.SetText(path.Base(strings.Replace(dlg.FilePath, "\\", "/", -1))))
-	panicIfErr(page.SetLayout(gui.NewHBoxLayout()))
+	panicIfErr(page.SetLayout(walk.NewHBoxLayout()))
 
 	defer func() {
 		if !succeeded {
@@ -64,7 +63,7 @@ func (mw *MainWindow) openImage() {
 		}
 	}()
 
-	imageView, err := gui.NewImageView(page)
+	imageView, err := walk.NewImageView(page)
 	panicIfErr(err)
 
 	defer func() {
@@ -83,56 +82,56 @@ func (mw *MainWindow) openImage() {
 func main() {
 	runtime.LockOSThread()
 
-	mainWnd, err := gui.NewMainWindow()
+	mainWnd, err := walk.NewMainWindow()
 	panicIfErr(err)
 
 	mw := &MainWindow{MainWindow: mainWnd}
-	panicIfErr(mw.ClientArea().SetLayout(gui.NewVBoxLayout()))
+	panicIfErr(mw.ClientArea().SetLayout(walk.NewVBoxLayout()))
 	panicIfErr(mw.SetText("Walk Image Viewer Example"))
 
-	mw.tabWidget, err = gui.NewTabWidget(mw.ClientArea())
+	mw.tabWidget, err = walk.NewTabWidget(mw.ClientArea())
 	panicIfErr(err)
 
-	imageList, err := gui.NewImageList(drawing.Size{16, 16}, 0)
+	imageList, err := walk.NewImageList(walk.Size{16, 16}, 0)
 	panicIfErr(err)
 	mw.ToolBar().SetImageList(imageList)
 
-	fileMenu, err := gui.NewMenu()
+	fileMenu, err := walk.NewMenu()
 	panicIfErr(err)
 	fileMenuAction, err := mw.Menu().Actions().AddMenu(fileMenu)
 	panicIfErr(err)
 	panicIfErr(fileMenuAction.SetText("File"))
 
-	openBmp, err := drawing.NewBitmapFromFile("../img/open.png")
+	openBmp, err := walk.NewBitmapFromFile("../img/open.png")
 	panicIfErr(err)
 
-	openAction := gui.NewAction()
+	openAction := walk.NewAction()
 	openAction.SetImage(openBmp)
 	panicIfErr(openAction.SetText("Open"))
 	openAction.Triggered().Attach(func() { mw.openImage() })
 	panicIfErr(fileMenu.Actions().Add(openAction))
 	panicIfErr(mw.ToolBar().Actions().Add(openAction))
 
-	exitAction := gui.NewAction()
+	exitAction := walk.NewAction()
 	panicIfErr(exitAction.SetText("Exit"))
-	exitAction.Triggered().Attach(func() { gui.App().Exit(0) })
+	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
 	panicIfErr(fileMenu.Actions().Add(exitAction))
 
-	helpMenu, err := gui.NewMenu()
+	helpMenu, err := walk.NewMenu()
 	panicIfErr(err)
 	helpMenuAction, err := mw.Menu().Actions().AddMenu(helpMenu)
 	panicIfErr(err)
 	panicIfErr(helpMenuAction.SetText("Help"))
 
-	aboutAction := gui.NewAction()
+	aboutAction := walk.NewAction()
 	panicIfErr(aboutAction.SetText("About"))
 	aboutAction.Triggered().Attach(func() {
-		gui.MsgBox(mw, "About", "Walk Image Viewer Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
+		walk.MsgBox(mw, "About", "Walk Image Viewer Example", walk.MsgBoxOK|walk.MsgBoxIconInformation)
 	})
 	panicIfErr(helpMenu.Actions().Add(aboutAction))
 
-	panicIfErr(mw.SetMinSize(drawing.Size{320, 240}))
-	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
+	panicIfErr(mw.SetMinSize(walk.Size{320, 240}))
+	panicIfErr(mw.SetSize(walk.Size{800, 600}))
 	mw.Show()
 
 	os.Exit(mw.Run())

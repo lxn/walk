@@ -10,13 +10,12 @@ import (
 )
 
 import (
-	"walk/drawing"
-	"walk/gui"
+	"walk"
 )
 
 type MainWindow struct {
-	*gui.MainWindow
-	paintWidget *gui.CustomWidget
+	*walk.MainWindow
+	paintWidget *walk.CustomWidget
 }
 
 func panicIfErr(err os.Error) {
@@ -25,10 +24,10 @@ func panicIfErr(err os.Error) {
 	}
 }
 
-func createBitmap() *drawing.Bitmap {
-	bounds := drawing.Rectangle{Width: 200, Height: 200}
+func createBitmap() *walk.Bitmap {
+	bounds := walk.Rectangle{Width: 200, Height: 200}
 
-	bmp, err := drawing.NewBitmap(bounds.Size())
+	bmp, err := walk.NewBitmap(bounds.Size())
 	panicIfErr(err)
 
 	succeeded := false
@@ -38,62 +37,62 @@ func createBitmap() *drawing.Bitmap {
 		}
 	}()
 
-	surface, err := drawing.NewSurfaceFromImage(bmp)
+	surface, err := walk.NewSurfaceFromImage(bmp)
 	panicIfErr(err)
 	defer surface.Dispose()
 
-	brushBmp, err := drawing.NewBitmapFromFile("../img/plus.png")
+	brushBmp, err := walk.NewBitmapFromFile("../img/plus.png")
 	panicIfErr(err)
 	defer brushBmp.Dispose()
 
-	brush, err := drawing.NewBitmapBrush(brushBmp)
+	brush, err := walk.NewBitmapBrush(brushBmp)
 	panicIfErr(err)
 	defer brush.Dispose()
 
 	panicIfErr(surface.FillRectangle(brush, bounds))
 
-	font, err := drawing.NewFont("Times New Roman", 40, drawing.FontBold|drawing.FontItalic)
+	font, err := walk.NewFont("Times New Roman", 40, walk.FontBold|walk.FontItalic)
 	panicIfErr(err)
 	defer font.Dispose()
 
-	panicIfErr(surface.DrawText("Walk Drawing Example", font, drawing.RGB(0, 0, 0), bounds, drawing.TextWordbreak))
+	panicIfErr(surface.DrawText("Walk Drawing Example", font, walk.RGB(0, 0, 0), bounds, walk.TextWordbreak))
 
 	succeeded = true
 	return bmp
 }
 
-func (mw *MainWindow) drawStuff(surface *drawing.Surface, updateBounds drawing.Rectangle) os.Error {
+func (mw *MainWindow) drawStuff(surface *walk.Surface, updateBounds walk.Rectangle) os.Error {
 	bmp := createBitmap()
 	defer bmp.Dispose()
 
 	bounds, err := mw.paintWidget.ClientBounds()
 	panicIfErr(err)
 
-	rectPen, err := drawing.NewCosmeticPen(drawing.PenSolid, drawing.RGB(255, 0, 0))
+	rectPen, err := walk.NewCosmeticPen(walk.PenSolid, walk.RGB(255, 0, 0))
 	panicIfErr(err)
 	defer rectPen.Dispose()
 
 	panicIfErr(surface.DrawRectangle(rectPen, bounds))
 
-	ellipseBrush, err := drawing.NewHatchBrush(drawing.RGB(0, 255, 0), drawing.HatchCross)
+	ellipseBrush, err := walk.NewHatchBrush(walk.RGB(0, 255, 0), walk.HatchCross)
 	panicIfErr(err)
 	defer ellipseBrush.Dispose()
 
 	panicIfErr(surface.FillEllipse(ellipseBrush, bounds))
 
-	linesBrush, err := drawing.NewSolidColorBrush(drawing.RGB(0, 0, 255))
+	linesBrush, err := walk.NewSolidColorBrush(walk.RGB(0, 0, 255))
 	panicIfErr(err)
 	defer linesBrush.Dispose()
 
-	linesPen, err := drawing.NewGeometricPen(drawing.PenDash, 8, linesBrush)
+	linesPen, err := walk.NewGeometricPen(walk.PenDash, 8, linesBrush)
 	panicIfErr(err)
 	defer linesPen.Dispose()
 
-	panicIfErr(surface.DrawLine(linesPen, drawing.Point{bounds.X, bounds.Y}, drawing.Point{bounds.Width, bounds.Height}))
-	panicIfErr(surface.DrawLine(linesPen, drawing.Point{bounds.X, bounds.Height}, drawing.Point{bounds.Width, bounds.Y}))
+	panicIfErr(surface.DrawLine(linesPen, walk.Point{bounds.X, bounds.Y}, walk.Point{bounds.Width, bounds.Height}))
+	panicIfErr(surface.DrawLine(linesPen, walk.Point{bounds.X, bounds.Height}, walk.Point{bounds.Width, bounds.Y}))
 
 	bmpSize := bmp.Size()
-	panicIfErr(surface.DrawImage(bmp, drawing.Point{(bounds.Width - bmpSize.Width) / 2, (bounds.Height - bmpSize.Height) / 2}))
+	panicIfErr(surface.DrawImage(bmp, walk.Point{(bounds.Width - bmpSize.Width) / 2, (bounds.Height - bmpSize.Height) / 2}))
 
 	return nil
 }
@@ -101,23 +100,23 @@ func (mw *MainWindow) drawStuff(surface *drawing.Surface, updateBounds drawing.R
 func main() {
 	runtime.LockOSThread()
 
-	mainWnd, err := gui.NewMainWindow()
+	mainWnd, err := walk.NewMainWindow()
 	panicIfErr(err)
 
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.SetText("Walk Drawing Example"))
 
-	panicIfErr(mw.ClientArea().SetLayout(gui.NewVBoxLayout()))
+	panicIfErr(mw.ClientArea().SetLayout(walk.NewVBoxLayout()))
 
-	mw.paintWidget, err = gui.NewCustomWidget(mw.ClientArea(), 0, func(surface *drawing.Surface, updateBounds drawing.Rectangle) os.Error {
+	mw.paintWidget, err = walk.NewCustomWidget(mw.ClientArea(), 0, func(surface *walk.Surface, updateBounds walk.Rectangle) os.Error {
 		return mw.drawStuff(surface, updateBounds)
 	})
 	panicIfErr(err)
 	mw.paintWidget.SetClearsBackground(true)
 	mw.paintWidget.SetInvalidatesOnResize(true)
 
-	panicIfErr(mw.SetMinSize(drawing.Size{320, 240}))
-	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
+	panicIfErr(mw.SetMinSize(walk.Size{320, 240}))
+	panicIfErr(mw.SetSize(walk.Size{800, 600}))
 	mw.Show()
 
 	os.Exit(mw.Run())

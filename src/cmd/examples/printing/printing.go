@@ -11,8 +11,7 @@ import (
 )
 
 import (
-	"walk/drawing"
-	"walk/printing"
+	"walk"
 )
 
 func panicIfErr(err os.Error) {
@@ -24,17 +23,17 @@ func panicIfErr(err os.Error) {
 func main() {
 	runtime.LockOSThread()
 
-	doc := printing.NewDocument("Walk Printing Example")
+	doc := walk.NewDocument("Walk Printing Example")
 	defer doc.Dispose()
 
 	doc.InsertPageBreak()
 
 	text := "Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua."
-	font, err := drawing.NewFont("Times New Roman", 12, 0)
+	font, err := walk.NewFont("Times New Roman", 12, 0)
 	panicIfErr(err)
-	color := drawing.RGB(0, 0, 0)
-	preferredSize := drawing.Size{1000, 0}
-	format := drawing.TextWordbreak
+	color := walk.RGB(0, 0, 0)
+	preferredSize := walk.Size{1000, 0}
+	format := walk.TextWordbreak
 
 	for i := 0; i < 20; i++ {
 		panicIfErr(doc.AddText(fmt.Sprintf("%d) %s", i, text), font, color, preferredSize, format))

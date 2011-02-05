@@ -14,14 +14,13 @@ import (
 )
 
 import (
-	"walk/drawing"
-	"walk/gui"
+	"walk"
 )
 
 type MainWindow struct {
-	*gui.MainWindow
-	urlLineEdit *gui.LineEdit
-	webView     *gui.WebView
+	*walk.MainWindow
+	urlLineEdit *walk.LineEdit
+	webView     *walk.WebView
 }
 
 func panicIfErr(err os.Error) {
@@ -33,38 +32,38 @@ func panicIfErr(err os.Error) {
 func main() {
 	runtime.LockOSThread()
 
-	mainWnd, err := gui.NewMainWindow()
+	mainWnd, err := walk.NewMainWindow()
 	panicIfErr(err)
 
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.SetText("Walk Web Browser Example"))
-	panicIfErr(mw.ClientArea().SetLayout(gui.NewVBoxLayout()))
+	panicIfErr(mw.ClientArea().SetLayout(walk.NewVBoxLayout()))
 
-	fileMenu, err := gui.NewMenu()
+	fileMenu, err := walk.NewMenu()
 	panicIfErr(err)
 	fileMenuAction, err := mw.Menu().Actions().AddMenu(fileMenu)
 	panicIfErr(err)
 	panicIfErr(fileMenuAction.SetText("File"))
 
-	exitAction := gui.NewAction()
+	exitAction := walk.NewAction()
 	panicIfErr(exitAction.SetText("Exit"))
-	exitAction.Triggered().Attach(func() { gui.App().Exit(0) })
+	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
 	panicIfErr(fileMenu.Actions().Add(exitAction))
 
-	helpMenu, err := gui.NewMenu()
+	helpMenu, err := walk.NewMenu()
 	panicIfErr(err)
 	helpMenuAction, err := mw.Menu().Actions().AddMenu(helpMenu)
 	panicIfErr(err)
 	panicIfErr(helpMenuAction.SetText("Help"))
 
-	aboutAction := gui.NewAction()
+	aboutAction := walk.NewAction()
 	panicIfErr(aboutAction.SetText("About"))
 	aboutAction.Triggered().Attach(func() {
-		gui.MsgBox(mw, "About", "Walk Web Browser Example", gui.MsgBoxOK|gui.MsgBoxIconInformation)
+		walk.MsgBox(mw, "About", "Walk Web Browser Example", walk.MsgBoxOK|walk.MsgBoxIconInformation)
 	})
 	panicIfErr(helpMenu.Actions().Add(aboutAction))
 
-	mw.urlLineEdit, err = gui.NewLineEdit(mw.ClientArea())
+	mw.urlLineEdit, err = walk.NewLineEdit(mw.ClientArea())
 	panicIfErr(err)
 	mw.urlLineEdit.KeyDown().Attach(func(key int) {
 		if key == user32.VK_RETURN {
@@ -72,13 +71,13 @@ func main() {
 		}
 	})
 
-	mw.webView, err = gui.NewWebView(mw.ClientArea())
+	mw.webView, err = walk.NewWebView(mw.ClientArea())
 	panicIfErr(err)
 
 	panicIfErr(mw.webView.SetURL("http://golang.org"))
 
-	panicIfErr(mw.SetMinSize(drawing.Size{600, 400}))
-	panicIfErr(mw.SetSize(drawing.Size{800, 600}))
+	panicIfErr(mw.SetMinSize(walk.Size{600, 400}))
+	panicIfErr(mw.SetSize(walk.Size{800, 600}))
 	mw.Show()
 
 	os.Exit(mw.Run())
