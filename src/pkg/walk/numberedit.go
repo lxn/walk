@@ -189,12 +189,8 @@ func (ne *NumberEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origW
 		}
 
 	case WM_SIZE, WM_SIZING:
-		cb, err := ne.ClientBounds()
-		if err != nil {
-			log.Println(err)
-			break
-		}
-		if err = ne.edit.SetBounds(cb); err != nil {
+		cb := ne.ClientBounds()
+		if err := ne.edit.SetBounds(cb); err != nil {
 			log.Println(err)
 			break
 		}

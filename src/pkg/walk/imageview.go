@@ -51,10 +51,7 @@ func (iv *ImageView) drawImage(surface *Surface, updateBounds Rectangle) os.Erro
 		return nil
 	}
 
-	bounds, err := iv.ClientBounds()
-	if err != nil {
-		return err
-	}
+	bounds := iv.ClientBounds()
 
 	return surface.DrawImageStretched(iv.image, bounds)
 }

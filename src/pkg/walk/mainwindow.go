@@ -101,23 +101,17 @@ func (mw *MainWindow) ToolBar() *ToolBar {
 	return mw.toolBar
 }
 
-func (mw *MainWindow) ClientBounds() (bounds Rectangle, err os.Error) {
-	bounds, err = mw.Widget.ClientBounds()
-	if err != nil {
-		return
-	}
+func (mw *MainWindow) ClientBounds() Rectangle {
+	bounds := mw.Widget.ClientBounds()
 
 	if mw.toolBar.Actions().Len() > 0 {
-		tlbBounds, err := mw.toolBar.Bounds()
-		if err != nil {
-			return
-		}
+		tlbBounds := mw.toolBar.Bounds()
 
 		bounds.Y += tlbBounds.Height
 		bounds.Height -= tlbBounds.Height
 	}
 
-	return
+	return bounds
 }
 
 func (mw *MainWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {

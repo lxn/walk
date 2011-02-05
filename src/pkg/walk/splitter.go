@@ -173,24 +173,11 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 					prev := s.children.At(handleIndex - 1)
 					next := s.children.At(handleIndex + 1)
 
-					bp, e := prev.Bounds()
-					if e != nil {
-						log.Println(e)
-						return
-					}
-
-					bn, e := next.Bounds()
-					if e != nil {
-						log.Println(e)
-						return
-					}
+					bp := prev.Bounds()
+					bn := next.Bounds()
 
 					if s.Orientation() == Horizontal {
-						xh, e := s.draggedHandle.X()
-						if e != nil {
-							log.Println(e)
-							return
-						}
+						xh := s.draggedHandle.X()
 
 						xnew := xh + x - s.mouseDownPos.X
 						if xnew < bp.X {
@@ -199,16 +186,12 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 							xnew = bn.X + bn.Width - s.handleWidth
 						}
 
-						if e = s.draggedHandle.SetX(xnew); e != nil {
+						if e := s.draggedHandle.SetX(xnew); e != nil {
 							log.Println(e)
 							return
 						}
 					} else {
-						yh, e := s.draggedHandle.Y()
-						if e != nil {
-							log.Println(e)
-							return
-						}
+						yh := s.draggedHandle.Y()
 
 						ynew := yh + y - s.mouseDownPos.Y
 						if ynew < bp.Y {
@@ -217,7 +200,7 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 							ynew = bn.Y + bn.Height - s.handleWidth
 						}
 
-						if e = s.draggedHandle.SetY(ynew); e != nil {
+						if e := s.draggedHandle.SetY(ynew); e != nil {
 							log.Println(e)
 							return
 						}
@@ -240,23 +223,9 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 						defer next.Invalidate()
 						defer next.EndUpdate()
 
-						bh, e := dragHandle.Bounds()
-						if e != nil {
-							log.Println(e)
-							return
-						}
-
-						bp, e := prev.Bounds()
-						if e != nil {
-							log.Println(e)
-							return
-						}
-
-						bn, e := next.Bounds()
-						if e != nil {
-							log.Println(e)
-							return
-						}
+						bh := dragHandle.Bounds()
+						bp := prev.Bounds()
+						bn := next.Bounds()
 
 						if s.Orientation() == Horizontal {
 							bp.Width = bh.X - bp.X
@@ -268,12 +237,12 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 							bn.Y = bh.Y + bh.Height
 						}
 
-						if e = prev.SetBounds(bp); e != nil {
+						if e := prev.SetBounds(bp); e != nil {
 							log.Println(e)
 							return
 						}
 
-						if e = next.SetBounds(bn); e != nil {
+						if e := next.SetBounds(bn); e != nil {
 							log.Println(e)
 							return
 						}

@@ -148,10 +148,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 
 		ps := widget.PreferredSize()
 
-		maxSize, err := widget.MaxSize()
-		if err != nil {
-			return err
-		}
+		maxSize := widget.MaxSize()
 
 		lf := widget.LayoutFlags()
 		if maxSize.Width > 0 {
@@ -182,10 +179,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 		prefSizes[i] = ps
 	}
 
-	cb, err := l.container.ClientBounds()
-	if err != nil {
-		return
-	}
+	cb := l.container.ClientBounds()
 
 	spacingSum := (widgetCount - 1) * l.spacing
 

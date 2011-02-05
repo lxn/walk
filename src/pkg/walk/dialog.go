@@ -138,17 +138,15 @@ func (dlg *Dialog) Close(result DialogCommandId) {
 
 func (dlg *Dialog) Run() DialogCommandId {
 	if dlg.owner != nil {
-		ob, err := dlg.owner.Bounds()
-		if err == nil {
-			b, err := dlg.Bounds()
-			if err == nil && b.X == -12345 {
-				dlg.SetBounds(Rectangle{
-					ob.X + (ob.Width-b.Width)/2,
-					ob.Y + (ob.Height-b.Height)/2,
-					b.Width,
-					b.Height,
-				})
-			}
+		ob := dlg.owner.Bounds()
+		b := dlg.Bounds()
+		if b.X == -12345 {
+			dlg.SetBounds(Rectangle{
+				ob.X + (ob.Width-b.Width)/2,
+				ob.Y + (ob.Height-b.Height)/2,
+				b.Width,
+				b.Height,
+			})
 		}
 	}
 

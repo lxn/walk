@@ -130,7 +130,7 @@ func main() {
 	})
 	panicIfErr(helpMenu.Actions().Add(aboutAction))
 
-	panicIfErr(mw.SetMinSize(walk.Size{320, 240}))
+	panicIfErr(mw.SetMinMaxSize(walk.Size{320, 240}, walk.Size{}))
 	panicIfErr(mw.SetSize(walk.Size{800, 600}))
 	mw.Show()
 

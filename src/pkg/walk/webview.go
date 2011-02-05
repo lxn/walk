@@ -224,10 +224,7 @@ func (wv *WebView) withWebBrowser2(f func(webBrowser2 *IWebBrowser2) os.Error) o
 func (wv *WebView) onResize() {
 	// FIXME: handle error?
 	wv.withWebBrowser2(func(webBrowser2 *IWebBrowser2) os.Error {
-		bounds, err := wv.ClientBounds()
-		if err != nil {
-			return err
-		}
+		bounds := wv.ClientBounds()
 
 		webBrowser2.Put_Left(0)
 		webBrowser2.Put_Top(0)

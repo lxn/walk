@@ -36,9 +36,9 @@ type IWidget interface {
 	BeginUpdate()
 	EndUpdate()
 	Invalidate() os.Error
-	Bounds() (Rectangle, os.Error)
+	Bounds() Rectangle
 	SetBounds(value Rectangle) os.Error
-	ClientBounds() (Rectangle, os.Error)
+	ClientBounds() Rectangle
 	ContextMenu() *Menu
 	Cursor() Cursor
 	SetCursor(value Cursor)
@@ -51,27 +51,26 @@ type IWidget interface {
 	SetFont(value *Font)
 	GroupStart() (bool, os.Error)
 	SetGroupStart(value bool) os.Error
-	Height() (int, os.Error)
+	Height() int
 	SetHeight(value int) os.Error
 	LayoutFlags() LayoutFlags
-	MaxSize() (Size, os.Error)
-	SetMaxSize(value Size) os.Error
-	MinSize() (Size, os.Error)
-	SetMinSize(value Size) os.Error
+	MinSize() Size
+	MaxSize() Size
+	SetMinMaxSize(min, max Size) os.Error
 	Parent() IContainer
 	SetParent(value IContainer) os.Error
 	PreferredSize() Size
-	Size() (Size, os.Error)
+	Size() Size
 	SetSize(value Size) os.Error
 	Text() string
 	SetText(value string) os.Error
 	Visible() bool
 	SetVisible(value bool)
-	Width() (int, os.Error)
+	Width() int
 	SetWidth(value int) os.Error
-	X() (int, os.Error)
+	X() int
 	SetX(value int) os.Error
-	Y() (int, os.Error)
+	Y() int
 	SetY(value int) os.Error
 	SetFocus() os.Error
 	RootWidget() RootWidget
@@ -289,10 +288,7 @@ func (w *Widget) EndUpdate() {
 }
 
 func (w *Widget) Invalidate() os.Error {
-	cb, err := w.ClientBounds()
-	if err != nil {
-		return err
-	}
+	cb := w.ClientBounds()
 
 	r := &RECT{cb.X, cb.Y, cb.X + cb.Width, cb.Y + cb.Height}
 
@@ -341,10 +337,7 @@ func (w *Widget) SetParent(value IContainer) (err os.Error) {
 		}
 	}
 
-	b, err := w.Bounds()
-	if err != nil {
-		return err
-	}
+	b := w.Bounds()
 
 	if !SetWindowPos(w.hWnd, HWND_BOTTOM, b.X, b.Y, b.Width, b.Height, SWP_FRAMECHANGED) {
 		return lastError("SetWindowPos")
@@ -394,11 +387,12 @@ func (w *Widget) SetVisible(visible bool) {
 	ShowWindow(w.hWnd, cmd)
 }
 
-func (w *Widget) Bounds() (Rectangle, os.Error) {
+func (w *Widget) Bounds() Rectangle {
 	var r RECT
 
 	if !GetWindowRect(w.hWnd, &r) {
-		return Rectangle{}, lastError("GetWindowRect")
+		log.Print(lastError("GetWindowRect"))
+		return Rectangle{}
 	}
 
 	b := Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}
@@ -406,13 +400,14 @@ func (w *Widget) Bounds() (Rectangle, os.Error) {
 	if w.parent != nil {
 		p := POINT{b.X, b.Y}
 		if !ScreenToClient(w.parent.Handle(), &p) {
-			return Rectangle{}, newError("ScreenToClient failed")
+			log.Print(newError("ScreenToClient failed"))
+			return Rectangle{}
 		}
 		b.X = p.X
 		b.Y = p.Y
 	}
 
-	return b, nil
+	return b
 }
 
 func (w *Widget) SetBounds(bounds Rectangle) os.Error {
@@ -423,22 +418,25 @@ func (w *Widget) SetBounds(bounds Rectangle) os.Error {
 	return nil
 }
 
-func (w *Widget) MaxSize() (Size, os.Error) {
-	return w.maxSize, nil
+func (w *Widget) MinSize() Size {
+	return w.minSize
 }
 
-func (w *Widget) SetMaxSize(value Size) os.Error {
-	w.maxSize = value
-
-	return nil
+func (w *Widget) MaxSize() Size {
+	return w.maxSize
 }
 
-func (w *Widget) MinSize() (Size, os.Error) {
-	return w.minSize, nil
-}
+func (w *Widget) SetMinMaxSize(min, max Size) os.Error {
+	if min.Width < 0 || min.Height < 0 {
+		return newError("min must be positive")
+	}
+	if max.Width > 0 && max.Width < min.Width ||
+		max.Height > 0 && max.Height < min.Height {
+		return newError("max must be greater as or equal to min")
+	}
 
-func (w *Widget) SetMinSize(value Size) os.Error {
-	w.minSize = value
+	w.minSize = min
+	w.maxSize = max
 
 	return nil
 }
@@ -482,117 +480,69 @@ func (w *Widget) PreferredSize() Size {
 	return w.dialogBaseUnitsToPixels(Size{10, 10})
 }
 
-func (w *Widget) Size() (size Size, err os.Error) {
-	bounds, err := w.Bounds()
-	if err != nil {
-		return
-	}
-
-	size = bounds.Size()
-	return
+func (w *Widget) Size() Size {
+	return w.Bounds().Size()
 }
 
-func (w *Widget) SetSize(size Size) (err os.Error) {
-	bounds, err := w.Bounds()
-	if err != nil {
-		return
-	}
+func (w *Widget) SetSize(size Size) os.Error {
+	bounds := w.Bounds()
 
 	return w.SetBounds(bounds.SetSize(size))
 }
 
-func (w *Widget) X() (x int, err os.Error) {
-	bounds, err := w.Bounds()
-	if err != nil {
-		return
-	}
-
-	x = bounds.X
-	return
+func (w *Widget) X() int {
+	return w.Bounds().X
 }
 
-func (w *Widget) SetX(value int) (err os.Error) {
-	bounds, err := w.Bounds()
-	if err != nil {
-		return
-	}
-
+func (w *Widget) SetX(value int) os.Error {
+	bounds := w.Bounds()
 	bounds.X = value
 
 	return w.SetBounds(bounds)
 }
 
-func (w *Widget) Y() (y int, err os.Error) {
-	bounds, err := w.Bounds()
-	if err != nil {
-		return
-	}
-
-	y = bounds.Y
-	return
+func (w *Widget) Y() int {
+	return w.Bounds().Y
 }
 
-func (w *Widget) SetY(value int) (err os.Error) {
-	bounds, err := w.Bounds()
-	if err != nil {
-		return
-	}
-
+func (w *Widget) SetY(value int) os.Error {
+	bounds := w.Bounds()
 	bounds.Y = value
 
 	return w.SetBounds(bounds)
 }
 
-func (w *Widget) Width() (width int, err os.Error) {
-	bounds, err := w.Bounds()
-	if err != nil {
-		return
-	}
-
-	width = bounds.Width
-	return
+func (w *Widget) Width() int {
+	return w.Bounds().Width
 }
 
-func (w *Widget) SetWidth(value int) (err os.Error) {
-	bounds, err := w.Bounds()
-	if err != nil {
-		return
-	}
-
+func (w *Widget) SetWidth(value int) os.Error {
+	bounds := w.Bounds()
 	bounds.Width = value
 
 	return w.SetBounds(bounds)
 }
 
-func (w *Widget) Height() (height int, err os.Error) {
-	bounds, err := w.Bounds()
-	if err != nil {
-		return
-	}
-
-	height = bounds.Height
-	return
+func (w *Widget) Height() int {
+	return w.Bounds().Height
 }
 
-func (w *Widget) SetHeight(value int) (err os.Error) {
-	bounds, err := w.Bounds()
-	if err != nil {
-		return
-	}
-
+func (w *Widget) SetHeight(value int) os.Error {
+	bounds := w.Bounds()
 	bounds.Height = value
 
 	return w.SetBounds(bounds)
 }
 
-func (w *Widget) ClientBounds() (Rectangle, os.Error) {
+func (w *Widget) ClientBounds() Rectangle {
 	var r RECT
 
 	if !GetClientRect(w.hWnd, &r) {
-		return Rectangle{}, lastError("GetClientRect")
+		log.Print(lastError("GetClientRect"))
+		return Rectangle{}
 	}
 
-	return Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}, nil
+	return Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}
 }
 
 func (w *Widget) SetFocus() os.Error {

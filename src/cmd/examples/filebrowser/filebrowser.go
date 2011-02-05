@@ -173,7 +173,7 @@ func main() {
 
 	mw.treeView, err = walk.NewTreeView(splitter)
 	panicIfErr(err)
-	panicIfErr(mw.treeView.SetMaxSize(walk.Size{200, 0}))
+	panicIfErr(mw.treeView.SetMinMaxSize(walk.Size{}, walk.Size{200, 0}))
 
 	mw.treeView.ItemExpanded().Attach(func(item *walk.TreeViewItem) {
 		children := item.Children()
@@ -200,7 +200,7 @@ func main() {
 	mw.listView, err = walk.NewListView(splitter)
 	panicIfErr(err)
 	panicIfErr(mw.listView.SetSingleItemSelection(true))
-	panicIfErr(mw.listView.SetMaxSize(walk.Size{422, 0}))
+	panicIfErr(mw.listView.SetMinMaxSize(walk.Size{}, walk.Size{422, 0}))
 
 	mw.listView.SelectedIndexChanged().Attach(func() {
 		index := mw.listView.SelectedIndex()
@@ -235,7 +235,7 @@ func main() {
 	mw.preview, err = walk.NewWebView(splitter)
 	panicIfErr(err)
 
-	panicIfErr(mw.SetMinSize(walk.Size{600, 400}))
+	panicIfErr(mw.SetMinMaxSize(walk.Size{600, 400}, walk.Size{}))
 	panicIfErr(mw.SetSize(walk.Size{800, 600}))
 	mw.Show()
 

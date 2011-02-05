@@ -76,7 +76,7 @@ func main() {
 
 	panicIfErr(mw.webView.SetURL("http://golang.org"))
 
-	panicIfErr(mw.SetMinSize(walk.Size{600, 400}))
+	panicIfErr(mw.SetMinMaxSize(walk.Size{600, 400}, walk.Size{}))
 	panicIfErr(mw.SetSize(walk.Size{800, 600}))
 	mw.Show()
 

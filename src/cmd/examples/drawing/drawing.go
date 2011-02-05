@@ -65,8 +65,7 @@ func (mw *MainWindow) drawStuff(surface *walk.Surface, updateBounds walk.Rectang
 	bmp := createBitmap()
 	defer bmp.Dispose()
 
-	bounds, err := mw.paintWidget.ClientBounds()
-	panicIfErr(err)
+	bounds := mw.paintWidget.ClientBounds()
 
 	rectPen, err := walk.NewCosmeticPen(walk.PenSolid, walk.RGB(255, 0, 0))
 	panicIfErr(err)
@@ -115,7 +114,7 @@ func main() {
 	mw.paintWidget.SetClearsBackground(true)
 	mw.paintWidget.SetInvalidatesOnResize(true)
 
-	panicIfErr(mw.SetMinSize(walk.Size{320, 240}))
+	panicIfErr(mw.SetMinMaxSize(walk.Size{320, 240}, walk.Size{}))
 	panicIfErr(mw.SetSize(walk.Size{800, 600}))
 	mw.Show()
 
