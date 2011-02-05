@@ -223,20 +223,14 @@ func (tw *TabWidget) onSelChange() {
 	curIndex := int(SendMessage(tw.hWndTab, TCM_GETCURSEL, 0, 0))
 
 	if tw.curPage != nil {
-		if err := tw.curPage.SetVisible(false); err != nil {
-			log.Println(err)
-			return
-		}
+		tw.curPage.SetVisible(false)
 	}
 
 	if curIndex == -1 {
 		tw.curPage = nil
 	} else {
 		tw.curPage = tw.pages.At(curIndex)
-		if err := tw.curPage.SetVisible(true); err != nil {
-			log.Println(err)
-			return
-		}
+		tw.curPage.SetVisible(true)
 		tw.curPage.Invalidate()
 	}
 
@@ -265,9 +259,7 @@ func (tw *TabWidget) onInsertingPage(index int, page *TabPage) (err os.Error) {
 }
 
 func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
-	if err = page.SetVisible(false); err != nil {
-		return
-	}
+	page.SetVisible(false)
 
 	style := uint(GetWindowLong(page.hWnd, GWL_STYLE))
 	if style == 0 {
@@ -285,10 +277,7 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
 	}
 
 	if tw.pages.Len() == 1 {
-		err = page.SetVisible(true)
-		if err != nil {
-			return
-		}
+		page.SetVisible(true)
 		tw.curPage = page
 	}
 

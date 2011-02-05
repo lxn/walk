@@ -991,6 +991,7 @@ var (
 	isChild              uintptr
 	isDialogMessage      uintptr
 	isWindowEnabled      uintptr
+	isWindowVisible      uintptr
 	loadCursor           uintptr
 	loadIcon             uintptr
 	loadImage            uintptr
@@ -1052,6 +1053,7 @@ func init() {
 	isChild = MustGetProcAddress(lib, "IsChild")
 	isDialogMessage = MustGetProcAddress(lib, "IsDialogMessageW")
 	isWindowEnabled = MustGetProcAddress(lib, "IsWindowEnabled")
+	isWindowVisible = MustGetProcAddress(lib, "IsWindowVisible")
 	loadCursor = MustGetProcAddress(lib, "LoadCursorW")
 	loadIcon = MustGetProcAddress(lib, "LoadIconW")
 	loadImage = MustGetProcAddress(lib, "LoadImageW")
@@ -1341,6 +1343,15 @@ func IsChild(hWndParent, hWnd HWND) bool {
 
 func IsWindowEnabled(hWnd HWND) bool {
 	ret, _, _ := syscall.Syscall(isWindowEnabled, 1,
+		uintptr(hWnd),
+		0,
+		0)
+
+	return ret != 0
+}
+
+func IsWindowVisible(hWnd HWND) bool {
+	ret, _, _ := syscall.Syscall(isWindowVisible, 1,
 		uintptr(hWnd),
 		0,
 		0)

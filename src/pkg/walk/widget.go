@@ -65,8 +65,8 @@ type IWidget interface {
 	SetSize(value Size) os.Error
 	Text() string
 	SetText(value string) os.Error
-	Visible() (bool, os.Error)
-	SetVisible(value bool) os.Error
+	Visible() bool
+	SetVisible(value bool)
 	Width() (int, os.Error)
 	SetWidth(value int) os.Error
 	X() (int, os.Error)
@@ -380,43 +380,18 @@ func (w *Widget) SetText(value string) os.Error {
 	return nil
 }
 
-func (w *Widget) Visible() (bool, os.Error) {
-	style := GetWindowLong(w.hWnd, GWL_STYLE)
-	if style == 0 {
-		return false, lastError("GetWindowLong")
-	}
-
-	return (style & WS_VISIBLE) != 0, nil
+func (w *Widget) Visible() bool {
+	return IsWindowVisible(w.hWnd)
 }
 
-func (w *Widget) SetVisible(value bool) os.Error {
-	style := GetWindowLong(w.hWnd, GWL_STYLE)
-	if style == 0 {
-		return lastError("GetWindowLong")
-	}
-
-	if value {
-		if style&WS_VISIBLE > 0 {
-			return nil
-		}
-
-		style |= WS_VISIBLE
+func (w *Widget) SetVisible(visible bool) {
+	var cmd int
+	if visible {
+		cmd = SW_SHOW
 	} else {
-		if style&WS_VISIBLE == 0 {
-			return nil
-		}
-
-		style &^= WS_VISIBLE
+		cmd = SW_HIDE
 	}
-
-	SetLastError(0)
-	if SetWindowLong(w.hWnd, GWL_STYLE, style) == 0 {
-		return lastError("SetWindowLong")
-	}
-
-	SendMessage(w.hWnd, WM_SHOWWINDOW, uintptr(BoolToBOOL(value)), 0)
-
-	return nil
+	ShowWindow(w.hWnd, cmd)
 }
 
 func (w *Widget) Bounds() (Rectangle, os.Error) {

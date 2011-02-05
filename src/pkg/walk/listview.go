@@ -321,7 +321,7 @@ func (lv *ListView) RestoreState() os.Error {
 	}
 
 	widthStrs := strings.Split(state, " ", -1)
-	
+
 	lv.BeginUpdate()
 	defer lv.EndUpdate()
 
