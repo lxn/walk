@@ -29,9 +29,9 @@ func (page *Page) Info() *PageInfo {
 	return page.info
 }
 
-func (page *Page) Draw(surface *Surface) os.Error {
+func (page *Page) Draw(canvas *Canvas) os.Error {
 	for _, part := range page.parts {
-		err := part.Draw(surface)
+		err := part.Draw(canvas)
 		if err != nil {
 			return err
 		}

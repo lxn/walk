@@ -17,7 +17,7 @@ import (
 
 type part interface {
 	Bounds() Rectangle
-	Draw(surface *Surface) os.Error
+	Draw(canvas *Canvas) os.Error
 }
 
 type item interface {
@@ -25,7 +25,7 @@ type item interface {
 	Part(i int) part
 	NextPartMinSize() Size
 	PreferredSize() Size
-	AddNewPart(surface *Surface, bounds Rectangle) (part part, more bool, err os.Error)
+	AddNewPart(canvas *Canvas, bounds Rectangle) (part part, more bool, err os.Error)
 	Dispose()
 }
 
@@ -134,22 +134,22 @@ func (doc *Document) Page(i int) *Page {
 	return doc.pages[i]
 }
 
-func (doc *Document) withSurface(f func(surface *Surface) os.Error) os.Error {
+func (doc *Document) withCanvas(f func(canvas *Canvas) os.Error) os.Error {
 	hdc := doc.nextPageInfo.createDC()
 	defer DeleteDC(hdc)
 
-	surface, err := newSurfaceFromHDC(hdc)
+	canvas, err := newCanvasFromHDC(hdc)
 	if err != nil {
 		return err
 	}
-	defer surface.Dispose()
+	defer canvas.Dispose()
 
-	return f(surface)
+	return f(canvas)
 }
 
 func (doc *Document) pageBounds() (bounds Rectangle, err os.Error) {
-	err = doc.withSurface(func(surface *Surface) os.Error {
-		bounds = surface.Bounds()
+	err = doc.withCanvas(func(canvas *Canvas) os.Error {
+		bounds = canvas.Bounds()
 
 		return nil
 	})
@@ -158,7 +158,7 @@ func (doc *Document) pageBounds() (bounds Rectangle, err os.Error) {
 }
 
 func (doc *Document) paginateItem(item item) (err os.Error) {
-	err = doc.withSurface(func(surface *Surface) os.Error {
+	err = doc.withCanvas(func(canvas *Canvas) os.Error {
 		pageBounds, err := doc.pageBounds()
 		if err != nil {
 			return err
@@ -174,7 +174,7 @@ func (doc *Document) paginateItem(item item) (err os.Error) {
 				bounds.Height = preferredSize.Height
 			}
 
-			part, more, err := item.AddNewPart(surface, bounds)
+			part, more, err := item.AddNewPart(canvas, bounds)
 			if err != nil {
 				return err
 			}
@@ -250,11 +250,11 @@ func (doc *Document) Print() (err os.Error) {
 		}
 	}()
 
-	surface, err := newSurfaceFromHDC(hdc)
+	canvas, err := newCanvasFromHDC(hdc)
 	if err != nil {
 		return err
 	}
-	defer surface.Dispose()
+	defer canvas.Dispose()
 
 	for i, page := range doc.pages {
 		if i > 0 {
@@ -266,7 +266,7 @@ func (doc *Document) Print() (err os.Error) {
 			return newError("StartPage failed")
 		}
 
-		err = page.Draw(surface)
+		err = page.Draw(canvas)
 		if err != nil {
 			return err
 		}

@@ -74,7 +74,7 @@ type IWidget interface {
 	SetY(value int) os.Error
 	SetFocus() os.Error
 	RootWidget() RootWidget
-	GetDrawingSurface() (*Surface, os.Error)
+	CreateCanvas() (*Canvas, os.Error)
 }
 
 type widgetInternal interface {
@@ -582,8 +582,8 @@ func (w *Widget) SetGroupStart(value bool) os.Error {
 	return nil
 }
 
-func (w *Widget) GetDrawingSurface() (*Surface, os.Error) {
-	return newSurfaceFromHWND(w.hWnd)
+func (w *Widget) CreateCanvas() (*Canvas, os.Error) {
+	return newCanvasFromHWND(w.hWnd)
 }
 
 func (w *Widget) setTheme(appName string) os.Error {

@@ -27,7 +27,7 @@ func customWidgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	return cw.wndProc(hwnd, msg, wParam, lParam, 0)
 }
 
-type PaintFunc func(surface *Surface, updateBounds Rectangle) os.Error
+type PaintFunc func(canvas *Canvas, updateBounds Rectangle) os.Error
 
 type CustomWidget struct {
 	Widget
@@ -110,15 +110,15 @@ func (cw *CustomWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, ori
 		}
 		defer EndPaint(cw.hWnd, &ps)
 
-		surface, err := newSurfaceFromHDC(hdc)
+		canvas, err := newCanvasFromHDC(hdc)
 		if err != nil {
-			log.Print(newError("newSurfaceFromHDC failed"))
+			log.Print(newError("newCanvasFromHDC failed"))
 			break
 		}
-		defer surface.Dispose()
+		defer canvas.Dispose()
 
 		r := &ps.RcPaint
-		err = cw.paint(surface, Rectangle{r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top})
+		err = cw.paint(canvas, Rectangle{r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top})
 		if err != nil {
 			log.Print(newError("paint failed"))
 			break

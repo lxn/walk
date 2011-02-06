@@ -20,10 +20,10 @@ type Metafile struct {
 	size Size
 }
 
-func NewMetafile(referenceSurface *Surface) (*Metafile, os.Error) {
+func NewMetafile(referenceCanvas *Canvas) (*Metafile, os.Error) {
 	var rc RECT
 
-	hdc := CreateEnhMetaFile(referenceSurface.hdc, nil, &rc, nil)
+	hdc := CreateEnhMetaFile(referenceCanvas.hdc, nil, &rc, nil)
 	if hdc == 0 {
 		return nil, newError("CreateEnhMetaFile failed")
 	}

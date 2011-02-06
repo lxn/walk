@@ -20,11 +20,11 @@ func (part *simpleTextPart) Bounds() Rectangle {
 	return part.bounds
 }
 
-func (part *simpleTextPart) Draw(surface *Surface) os.Error {
+func (part *simpleTextPart) Draw(canvas *Canvas) os.Error {
 	item := part.item
 	text := item.text.Slice(part.offset, part.offset+part.length)
 
-	return surface.DrawText(text, item.font, item.color, part.bounds, item.format)
+	return canvas.DrawText(text, item.font, item.color, part.bounds, item.format)
 }
 
 type simpleTextItem struct {
@@ -48,7 +48,7 @@ func (item *simpleTextItem) Part(i int) part {
 	return item.parts[i]
 }
 
-func (item *simpleTextItem) AddNewPart(surface *Surface, bounds Rectangle) (part part, more bool, err os.Error) {
+func (item *simpleTextItem) AddNewPart(canvas *Canvas, bounds Rectangle) (part part, more bool, err os.Error) {
 	partCount := len(item.parts)
 	var offset int
 	if partCount > 0 {
@@ -59,7 +59,7 @@ func (item *simpleTextItem) AddNewPart(surface *Surface, bounds Rectangle) (part
 	runeCount := item.text.RuneCount()
 	text := item.text.Slice(offset, runeCount)
 
-	fontHeight, err := surface.fontHeight(item.font)
+	fontHeight, err := canvas.fontHeight(item.font)
 	if err != nil {
 		return
 	}
@@ -70,7 +70,7 @@ func (item *simpleTextItem) AddNewPart(surface *Surface, bounds Rectangle) (part
 		return
 	}
 
-	boundsMeasured, runesFitted, err := surface.MeasureText(text, item.font, bounds, item.format)
+	boundsMeasured, runesFitted, err := canvas.MeasureText(text, item.font, bounds, item.format)
 	if err != nil {
 		return
 	}

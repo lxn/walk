@@ -16,8 +16,8 @@ type ImageView struct {
 func NewImageView(parent IContainer) (*ImageView, os.Error) {
 	iv := &ImageView{}
 
-	cw, err := NewCustomWidget(parent, 0, func(surface *Surface, updateBounds Rectangle) os.Error {
-		return iv.drawImage(surface, updateBounds)
+	cw, err := NewCustomWidget(parent, 0, func(canvas *Canvas, updateBounds Rectangle) os.Error {
+		return iv.drawImage(canvas, updateBounds)
 	})
 	if err != nil {
 		return nil, err
@@ -46,12 +46,12 @@ func (iv *ImageView) SetImage(value Image) os.Error {
 	return iv.Invalidate()
 }
 
-func (iv *ImageView) drawImage(surface *Surface, updateBounds Rectangle) os.Error {
+func (iv *ImageView) drawImage(canvas *Canvas, updateBounds Rectangle) os.Error {
 	if iv.image == nil {
 		return nil
 	}
 
 	bounds := iv.ClientBounds()
 
-	return surface.DrawImageStretched(iv.image, bounds)
+	return canvas.DrawImageStretched(iv.image, bounds)
 }

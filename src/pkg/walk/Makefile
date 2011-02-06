@@ -10,6 +10,7 @@ GOFILES=\
 	brush.go\
 	button.go\
 	cancelevent.go\
+	canvas.go\
 	checkbox.go\
 	closeevent.go\
 	color.go\
@@ -66,7 +67,6 @@ GOFILES=\
 	size.go\
 	splitter.go\
 	splitterhandle.go\
-	surface.go\
 	tabpage.go\
 	tabpagelist.go\
 	tabwidget.go\
