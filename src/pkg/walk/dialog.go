@@ -67,7 +67,7 @@ func NewDialog(owner RootWidget) (*Dialog, os.Error) {
 
 	dlg := &Dialog{
 		TopLevelWindow: TopLevelWindow{
-			Container: Container{
+			ContainerBase: ContainerBase{
 				WidgetBase: WidgetBase{
 					hWnd: hWnd,
 				},

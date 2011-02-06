@@ -27,7 +27,7 @@ func compositeWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 }
 
 type Composite struct {
-	Container
+	ContainerBase
 }
 
 func newCompositeWithStyle(parent IContainer, style uint) (*Composite, os.Error) {
@@ -45,7 +45,7 @@ func newCompositeWithStyle(parent IContainer, style uint) (*Composite, os.Error)
 		return nil, lastError("CreateWindowEx")
 	}
 
-	c := &Composite{Container: Container{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}}
+	c := &Composite{ContainerBase: ContainerBase{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}}
 
 	succeeded := false
 	defer func() {

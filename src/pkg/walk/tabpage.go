@@ -27,7 +27,7 @@ func tabPageWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 }
 
 type TabPage struct {
-	Container
+	ContainerBase
 }
 
 func NewTabPage() (*TabPage, os.Error) {
@@ -42,7 +42,7 @@ func NewTabPage() (*TabPage, os.Error) {
 	}
 
 	tp := &TabPage{
-		Container: Container{
+		ContainerBase: ContainerBase{
 			WidgetBase: WidgetBase{
 				hWnd: hWnd,
 			},

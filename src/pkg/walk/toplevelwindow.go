@@ -24,7 +24,7 @@ const (
 )
 
 type TopLevelWindow struct {
-	Container
+	ContainerBase
 	owner            RootWidget
 	clientArea       *Composite
 	closingPublisher CloseEventPublisher
@@ -110,7 +110,7 @@ func (tlw *TopLevelWindow) SaveState() os.Error {
 		return err
 	}
 
-	return tlw.Container.SaveState()
+	return tlw.ContainerBase.SaveState()
 }
 
 func (tlw *TopLevelWindow) RestoreState() os.Error {
@@ -147,7 +147,7 @@ func (tlw *TopLevelWindow) RestoreState() os.Error {
 		return lastError("SetWindowPlacement")
 	}
 
-	if err := tlw.Container.RestoreState(); err != nil {
+	if err := tlw.ContainerBase.RestoreState(); err != nil {
 		return err
 	}
 
@@ -191,5 +191,5 @@ func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, 
 		}
 	}
 
-	return tlw.Container.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return tlw.ContainerBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }

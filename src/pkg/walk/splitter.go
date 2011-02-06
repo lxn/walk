@@ -28,7 +28,7 @@ func splitterWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 }
 
 type Splitter struct {
-	Container
+	ContainerBase
 	handleWidth   int
 	mouseDownPos  Point
 	draggedHandle *splitterHandle
@@ -51,7 +51,7 @@ func NewSplitter(parent IContainer) (*Splitter, os.Error) {
 
 	layout := NewHBoxLayout()
 	s := &Splitter{
-		Container: Container{
+		ContainerBase: ContainerBase{
 			WidgetBase: WidgetBase{
 				hWnd:   hWnd,
 				parent: parent,
@@ -127,7 +127,7 @@ func (s *Splitter) SetOrientation(value Orientation) os.Error {
 }
 
 func (s *Splitter) onInsertingWidget(index int, widget Widget) (err os.Error) {
-	return s.Container.onInsertingWidget(index, widget)
+	return s.ContainerBase.onInsertingWidget(index, widget)
 }
 
 func (s *Splitter) onInsertedWidget(index int, widget Widget) (err os.Error) {
@@ -252,11 +252,11 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err os.Error) {
 		}()
 	}
 
-	return s.Container.onInsertedWidget(index, widget)
+	return s.ContainerBase.onInsertedWidget(index, widget)
 }
 
 func (s *Splitter) onRemovingWidget(index int, widget Widget) (err os.Error) {
-	return s.Container.onRemovingWidget(index, widget)
+	return s.ContainerBase.onRemovingWidget(index, widget)
 }
 
 func (s *Splitter) onRemovedWidget(index int, widget Widget) (err os.Error) {
@@ -281,7 +281,7 @@ func (s *Splitter) onRemovedWidget(index int, widget Widget) (err os.Error) {
 		}()
 	}
 
-	err = s.Container.onRemovedWidget(index, widget)
+	err = s.ContainerBase.onRemovedWidget(index, widget)
 	if isHandle && err == nil {
 		widget.Dispose()
 	}

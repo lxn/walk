@@ -40,22 +40,22 @@ type RootWidget interface {
 	Run() int
 }
 
-type Container struct {
+type ContainerBase struct {
 	WidgetBase
 	layout     Layout
 	children   *WidgetList
 	persistent bool
 }
 
-func (c *Container) Children() *WidgetList {
+func (c *ContainerBase) Children() *WidgetList {
 	return c.children
 }
 
-func (c *Container) Layout() Layout {
+func (c *ContainerBase) Layout() Layout {
 	return c.layout
 }
 
-func (c *Container) SetLayout(value Layout) os.Error {
+func (c *ContainerBase) SetLayout(value Layout) os.Error {
 	if c.layout != value {
 		if c.layout != nil {
 			c.layout.SetContainer(nil)
@@ -71,7 +71,7 @@ func (c *Container) SetLayout(value Layout) os.Error {
 	return nil
 }
 
-func (c *Container) forEachPersistableChild(f func(p Persistable) os.Error) os.Error {
+func (c *ContainerBase) forEachPersistableChild(f func(p Persistable) os.Error) os.Error {
 	for _, child := range c.children.items {
 		if persistable, ok := child.(Persistable); ok && persistable.Persistent() {
 			if err := f(persistable); err != nil {
@@ -83,27 +83,27 @@ func (c *Container) forEachPersistableChild(f func(p Persistable) os.Error) os.E
 	return nil
 }
 
-func (c *Container) Persistent() bool {
+func (c *ContainerBase) Persistent() bool {
 	return c.persistent
 }
 
-func (c *Container) SetPersistent(value bool) {
+func (c *ContainerBase) SetPersistent(value bool) {
 	c.persistent = value
 }
 
-func (c *Container) SaveState() os.Error {
+func (c *ContainerBase) SaveState() os.Error {
 	return c.forEachPersistableChild(func(p Persistable) os.Error {
 		return p.SaveState()
 	})
 }
 
-func (c *Container) RestoreState() os.Error {
+func (c *ContainerBase) RestoreState() os.Error {
 	return c.forEachPersistableChild(func(p Persistable) os.Error {
 		return p.RestoreState()
 	})
 }
 
-func (c *Container) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (c *ContainerBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		switch HIWORD(uint(wParam)) {
@@ -153,11 +153,11 @@ func (c *Container) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 	return c.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }
 
-func (c *Container) onInsertingWidget(index int, widget Widget) (err os.Error) {
+func (c *ContainerBase) onInsertingWidget(index int, widget Widget) (err os.Error) {
 	return nil
 }
 
-func (c *Container) onInsertedWidget(index int, widget Widget) (err os.Error) {
+func (c *ContainerBase) onInsertedWidget(index int, widget Widget) (err os.Error) {
 	if widget.Parent().BaseWidget().hWnd != c.hWnd {
 		err = widget.SetParent(widgetsByHWnd[c.hWnd].(IContainer))
 		if err != nil {
@@ -172,7 +172,7 @@ func (c *Container) onInsertedWidget(index int, widget Widget) (err os.Error) {
 	return
 }
 
-func (c *Container) onRemovingWidget(index int, widget Widget) (err os.Error) {
+func (c *ContainerBase) onRemovingWidget(index int, widget Widget) (err os.Error) {
 	if widget.Parent().BaseWidget().hWnd == c.hWnd {
 		err = widget.SetParent(nil)
 	}
@@ -180,7 +180,7 @@ func (c *Container) onRemovingWidget(index int, widget Widget) (err os.Error) {
 	return
 }
 
-func (c *Container) onRemovedWidget(index int, widget Widget) (err os.Error) {
+func (c *ContainerBase) onRemovedWidget(index int, widget Widget) (err os.Error) {
 	if c.layout != nil {
 		c.layout.Update(true)
 	}
@@ -188,10 +188,10 @@ func (c *Container) onRemovedWidget(index int, widget Widget) (err os.Error) {
 	return
 }
 
-func (c *Container) onClearingWidgets() (err os.Error) {
+func (c *ContainerBase) onClearingWidgets() (err os.Error) {
 	panic("not implemented")
 }
 
-func (c *Container) onClearedWidgets() (err os.Error) {
+func (c *ContainerBase) onClearedWidgets() (err os.Error) {
 	panic("not implemented")
 }

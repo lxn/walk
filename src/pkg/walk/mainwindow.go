@@ -46,7 +46,7 @@ func NewMainWindow() (*MainWindow, os.Error) {
 
 	mw := &MainWindow{
 		TopLevelWindow: TopLevelWindow{
-			Container: Container{
+			ContainerBase: ContainerBase{
 				WidgetBase: WidgetBase{
 					hWnd: hWnd,
 				},
