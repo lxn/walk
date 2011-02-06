@@ -74,7 +74,7 @@ func (mw *MainWindow) openImage() {
 
 	panicIfErr(imageView.SetImage(img))
 	panicIfErr(mw.tabWidget.Pages().Add(page))
-	panicIfErr(mw.tabWidget.SetCurrentPage(page))
+	panicIfErr(mw.tabWidget.SetSelectedIndex(mw.tabWidget.Pages().Len() - 1))
 
 	succeeded = true
 }

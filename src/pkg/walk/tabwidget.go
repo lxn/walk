@@ -34,11 +34,11 @@ func tabWidgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 
 type TabWidget struct {
 	Widget
-	hWndTab                     HWND
-	pages                       *TabPageList
-	curPage                     *TabPage
-	currentPageChangedPublisher EventPublisher
-	persistent                  bool
+	hWndTab                       HWND
+	pages                         *TabPageList
+	selectedIndex                 int
+	selectedIndexChangedPublisher EventPublisher
+	persistent                    bool
 }
 
 func NewTabWidget(parent IContainer) (*TabWidget, os.Error) {
@@ -61,6 +61,7 @@ func NewTabWidget(parent IContainer) (*TabWidget, os.Error) {
 			hWnd:   hWnd,
 			parent: parent,
 		},
+		selectedIndex: -1,
 	}
 
 	succeeded := false
@@ -104,18 +105,17 @@ func (tw *TabWidget) PreferredSize() Size {
 	return tw.dialogBaseUnitsToPixels(Size{100, 100})
 }
 
-func (tw *TabWidget) CurrentPage() *TabPage {
-	return tw.curPage
+func (tw *TabWidget) SelectedIndex() int {
+	return tw.selectedIndex
 }
 
-func (tw *TabWidget) SetCurrentPage(page *TabPage) os.Error {
-	if page == tw.curPage {
+func (tw *TabWidget) SetSelectedIndex(index int) os.Error {
+	if index == tw.selectedIndex {
 		return nil
 	}
 
-	index := tw.pages.Index(page)
-	if index == -1 {
-		return newError("invalid page")
+	if index < 0 || index >= tw.pages.Len() {
+		return newError("invalid index")
 	}
 
 	ret := int(SendMessage(tw.hWndTab, TCM_SETCURSEL, uintptr(index), 0))
@@ -130,12 +130,12 @@ func (tw *TabWidget) SetCurrentPage(page *TabPage) os.Error {
 	return nil
 }
 
-func (tw *TabWidget) Pages() *TabPageList {
-	return tw.pages
+func (tw *TabWidget) SelectedIndexChanged() *Event {
+	return tw.selectedIndexChangedPublisher.Event()
 }
 
-func (tw *TabWidget) CurrentPageChanged() *Event {
-	return tw.currentPageChangedPublisher.Event()
+func (tw *TabWidget) Pages() *TabPageList {
+	return tw.pages
 }
 
 func (tw *TabWidget) Persistent() bool {
@@ -147,7 +147,7 @@ func (tw *TabWidget) SetPersistent(value bool) {
 }
 
 func (tw *TabWidget) SaveState() os.Error {
-	tw.putState(strconv.Itoa(tw.pages.Index(tw.CurrentPage())))
+	tw.putState(strconv.Itoa(tw.SelectedIndex()))
 
 	for _, page := range tw.pages.items {
 		if err := page.SaveState(); err != nil {
@@ -171,7 +171,7 @@ func (tw *TabWidget) RestoreState() os.Error {
 	if err != nil {
 		return err
 	}
-	if err := tw.SetCurrentPage(tw.pages.At(index)); err != nil {
+	if err := tw.SetSelectedIndex(index); err != nil {
 		return err
 	}
 
@@ -220,21 +220,20 @@ func (tw *TabWidget) onResize(lParam uintptr) {
 }
 
 func (tw *TabWidget) onSelChange() {
-	curIndex := int(SendMessage(tw.hWndTab, TCM_GETCURSEL, 0, 0))
-
-	if tw.curPage != nil {
-		tw.curPage.SetVisible(false)
+	if tw.selectedIndex != -1 {
+		page := tw.pages.At(tw.selectedIndex)
+		page.SetVisible(false)
 	}
 
-	if curIndex == -1 {
-		tw.curPage = nil
-	} else {
-		tw.curPage = tw.pages.At(curIndex)
-		tw.curPage.SetVisible(true)
-		tw.curPage.Invalidate()
+	tw.selectedIndex = int(SendMessage(tw.hWndTab, TCM_GETCURSEL, 0, 0))
+
+	if tw.selectedIndex != -1 {
+		page := tw.pages.At(tw.selectedIndex)
+		page.SetVisible(true)
+		page.Invalidate()
 	}
 
-	tw.currentPageChangedPublisher.Publish()
+	tw.selectedIndexChangedPublisher.Publish()
 }
 
 func (tw *TabWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
@@ -278,7 +277,7 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
 
 	if tw.pages.Len() == 1 {
 		page.SetVisible(true)
-		tw.curPage = page
+		tw.selectedIndex = 0
 	}
 
 	text := syscall.StringToUTF16(page.Text())
