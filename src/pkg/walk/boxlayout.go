@@ -114,7 +114,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 		log.Printf("children: index: %d, type: %T\n", i, child)
 	}*/
 
-	widgets := make([]IWidget, 0, l.container.Children().Len())
+	widgets := make([]Widget, 0, l.container.Children().Len())
 
 	children := l.container.Children()
 	j := 0

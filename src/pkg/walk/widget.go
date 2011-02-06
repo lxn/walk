@@ -29,7 +29,7 @@ const (
 	GrowVert
 )
 
-type IWidget interface {
+type Widget interface {
 	BaseWidget() *WidgetBase
 	Name() string
 	SetName(name string)
@@ -78,7 +78,7 @@ type IWidget interface {
 }
 
 type widgetInternal interface {
-	IWidget
+	Widget
 	wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr
 	path() string
 	writePath(buf *bytes.Buffer)
@@ -155,7 +155,7 @@ func ensureRegisteredWindowClass(className string, windowProc interface{}, callb
 	}
 }*/
 
-func rootWidget(w IWidget) RootWidget {
+func rootWidget(w Widget) RootWidget {
 	if w == nil {
 		return nil
 	}

@@ -76,7 +76,7 @@ func (tt *ToolTip) SetTitle(value string) os.Error {
 	return nil
 }
 
-func (tt *ToolTip) AddWidget(widget IWidget, text string) os.Error {
+func (tt *ToolTip) AddWidget(widget Widget, text string) os.Error {
 	var ti TOOLINFO
 
 	ti.CbSize = uint(unsafe.Sizeof(ti))
@@ -95,6 +95,6 @@ func (tt *ToolTip) AddWidget(widget IWidget, text string) os.Error {
 	return nil
 }
 
-func (tt *ToolTip) RemoveWidget(widget IWidget) os.Error {
+func (tt *ToolTip) RemoveWidget(widget Widget) os.Error {
 	panic("not implemented")
 }

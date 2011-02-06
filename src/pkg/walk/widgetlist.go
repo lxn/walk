@@ -13,16 +13,16 @@ import (
 )
 
 type widgetListObserver interface {
-	onInsertingWidget(index int, widget IWidget) os.Error
-	onInsertedWidget(index int, widget IWidget) os.Error
-	onRemovingWidget(index int, widget IWidget) os.Error
-	onRemovedWidget(index int, widget IWidget) os.Error
+	onInsertingWidget(index int, widget Widget) os.Error
+	onInsertedWidget(index int, widget Widget) os.Error
+	onRemovingWidget(index int, widget Widget) os.Error
+	onRemovedWidget(index int, widget Widget) os.Error
 	onClearingWidgets() os.Error
 	onClearedWidgets() os.Error
 }
 
 type WidgetList struct {
-	items    []IWidget
+	items    []Widget
 	observer widgetListObserver
 }
 
@@ -30,11 +30,11 @@ func newWidgetList(observer widgetListObserver) *WidgetList {
 	return &WidgetList{observer: observer}
 }
 
-func (l *WidgetList) Add(item IWidget) os.Error {
+func (l *WidgetList) Add(item Widget) os.Error {
 	return l.Insert(len(l.items), item)
 }
 
-func (l *WidgetList) At(index int) IWidget {
+func (l *WidgetList) At(index int) Widget {
 	return l.items[index]
 }
 
@@ -59,7 +59,7 @@ func (l *WidgetList) Clear() os.Error {
 	return nil
 }
 
-func (l *WidgetList) Index(item IWidget) int {
+func (l *WidgetList) Index(item Widget) int {
 	for i, widget := range l.items {
 		if widget == item {
 			return i
@@ -69,7 +69,7 @@ func (l *WidgetList) Index(item IWidget) int {
 	return -1
 }
 
-func (l *WidgetList) Contains(item IWidget) bool {
+func (l *WidgetList) Contains(item Widget) bool {
 	return l.Index(item) > -1
 }
 
@@ -87,13 +87,13 @@ func (l *WidgetList) containsHandle(handle HWND) bool {
 	return l.indexHandle(handle) > -1
 }
 
-func (l *WidgetList) insertIntoSlice(index int, item IWidget) {
+func (l *WidgetList) insertIntoSlice(index int, item Widget) {
 	l.items = append(l.items, nil)
 	copy(l.items[index+1:], l.items[index:])
 	l.items[index] = item
 }
 
-func (l *WidgetList) Insert(index int, item IWidget) os.Error {
+func (l *WidgetList) Insert(index int, item Widget) os.Error {
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onInsertingWidget(index, item); err != nil {
@@ -117,7 +117,7 @@ func (l *WidgetList) Len() int {
 	return len(l.items)
 }
 
-func (l *WidgetList) Remove(item IWidget) os.Error {
+func (l *WidgetList) Remove(item Widget) os.Error {
 	index := l.Index(item)
 	if index == -1 {
 		return nil

@@ -126,11 +126,11 @@ func (s *Splitter) SetOrientation(value Orientation) os.Error {
 	return layout.SetOrientation(value)
 }
 
-func (s *Splitter) onInsertingWidget(index int, widget IWidget) (err os.Error) {
+func (s *Splitter) onInsertingWidget(index int, widget Widget) (err os.Error) {
 	return s.Container.onInsertingWidget(index, widget)
 }
 
-func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
+func (s *Splitter) onInsertedWidget(index int, widget Widget) (err os.Error) {
 	_, isHandle := widget.(*splitterHandle)
 	if isHandle {
 		if s.Orientation() == Horizontal {
@@ -255,11 +255,11 @@ func (s *Splitter) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 	return s.Container.onInsertedWidget(index, widget)
 }
 
-func (s *Splitter) onRemovingWidget(index int, widget IWidget) (err os.Error) {
+func (s *Splitter) onRemovingWidget(index int, widget Widget) (err os.Error) {
 	return s.Container.onRemovingWidget(index, widget)
 }
 
-func (s *Splitter) onRemovedWidget(index int, widget IWidget) (err os.Error) {
+func (s *Splitter) onRemovedWidget(index int, widget Widget) (err os.Error) {
 	_, isHandle := widget.(*splitterHandle)
 	if isHandle && s.children.Len()%2 == 1 {
 		return newError("cannot remove splitter handle")

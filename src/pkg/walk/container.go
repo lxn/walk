@@ -29,7 +29,7 @@ type Layout interface {
 }
 
 type IContainer interface {
-	IWidget
+	Widget
 	Children() *WidgetList
 	Layout() Layout
 	SetLayout(value Layout) os.Error
@@ -153,11 +153,11 @@ func (c *Container) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 	return c.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }
 
-func (c *Container) onInsertingWidget(index int, widget IWidget) (err os.Error) {
+func (c *Container) onInsertingWidget(index int, widget Widget) (err os.Error) {
 	return nil
 }
 
-func (c *Container) onInsertedWidget(index int, widget IWidget) (err os.Error) {
+func (c *Container) onInsertedWidget(index int, widget Widget) (err os.Error) {
 	if widget.Parent().BaseWidget().hWnd != c.hWnd {
 		err = widget.SetParent(widgetsByHWnd[c.hWnd].(IContainer))
 		if err != nil {
@@ -172,7 +172,7 @@ func (c *Container) onInsertedWidget(index int, widget IWidget) (err os.Error) {
 	return
 }
 
-func (c *Container) onRemovingWidget(index int, widget IWidget) (err os.Error) {
+func (c *Container) onRemovingWidget(index int, widget Widget) (err os.Error) {
 	if widget.Parent().BaseWidget().hWnd == c.hWnd {
 		err = widget.SetParent(nil)
 	}
@@ -180,7 +180,7 @@ func (c *Container) onRemovingWidget(index int, widget IWidget) (err os.Error) {
 	return
 }
 
-func (c *Container) onRemovedWidget(index int, widget IWidget) (err os.Error) {
+func (c *Container) onRemovedWidget(index int, widget Widget) (err os.Error) {
 	if c.layout != nil {
 		c.layout.Update(true)
 	}
