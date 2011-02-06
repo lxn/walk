@@ -10,10 +10,6 @@ import (
 )
 
 import (
-	"walk/winapi/user32"
-)
-
-import (
 	"walk"
 )
 
@@ -65,10 +61,8 @@ func main() {
 
 	mw.urlLineEdit, err = walk.NewLineEdit(mw.ClientArea())
 	panicIfErr(err)
-	mw.urlLineEdit.KeyDown().Attach(func(key int) {
-		if key == user32.VK_RETURN {
-			panicIfErr(mw.webView.SetURL(mw.urlLineEdit.Text()))
-		}
+	mw.urlLineEdit.ReturnPressed().Attach(func() {
+		panicIfErr(mw.webView.SetURL(mw.urlLineEdit.Text()))
 	})
 
 	mw.webView, err = walk.NewWebView(mw.ClientArea())

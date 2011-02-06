@@ -5,6 +5,7 @@
 package walk
 
 import (
+	"log"
 	"os"
 	"syscall"
 	"unsafe"
@@ -29,6 +30,8 @@ func lineEditSubclassWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintpt
 
 type LineEdit struct {
 	WidgetBase
+	editingFinishedPublisher EventPublisher
+	returnPressedPublisher   EventPublisher
 }
 
 func newLineEdit(parentHWND HWND) (*LineEdit, os.Error) {
@@ -94,13 +97,14 @@ func NewLineEdit(parent Container) (*LineEdit, os.Error) {
 	return le, nil
 }
 
-func (le *LineEdit) CueBanner() (string, os.Error) {
+func (le *LineEdit) CueBanner() string {
 	buf := make([]uint16, 128)
 	if FALSE == SendMessage(le.hWnd, EM_GETCUEBANNER, uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf))) {
-		return "", newError("EM_GETCUEBANNER failed")
+		log.Print(newError("EM_GETCUEBANNER failed"))
+		return ""
 	}
 
-	return syscall.UTF16ToString(buf), nil
+	return syscall.UTF16ToString(buf)
 }
 
 func (le *LineEdit) SetCueBanner(value string) os.Error {
@@ -111,6 +115,14 @@ func (le *LineEdit) SetCueBanner(value string) os.Error {
 	return nil
 }
 
+func (le *LineEdit) MaxLength() int {
+	return int(SendMessage(le.hWnd, EM_GETLIMITTEXT, 0, 0))
+}
+
+func (le *LineEdit) SetMaxLength(value int) {
+	SendMessage(le.hWnd, EM_LIMITTEXT, uintptr(value), 0)
+}
+
 func (*LineEdit) LayoutFlags() LayoutFlags {
 	return ShrinkHorz | GrowHorz
 }
@@ -119,12 +131,29 @@ func (le *LineEdit) PreferredSize() Size {
 	return le.dialogBaseUnitsToPixels(Size{50, 14})
 }
 
+func (le *LineEdit) EditingFinished() *Event {
+	return le.editingFinishedPublisher.Event()
+}
+
+func (le *LineEdit) ReturnPressed() *Event {
+	return le.returnPressedPublisher.Event()
+}
+
 func (le *LineEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
 		if wParam == VK_RETURN {
 			return DLGC_WANTALLKEYS
 		}
+
+	case WM_KEYDOWN:
+		if wParam == VK_RETURN {
+			le.returnPressedPublisher.Publish()
+			le.editingFinishedPublisher.Publish()
+		}
+
+	case WM_KILLFOCUS:
+		le.editingFinishedPublisher.Publish()
 	}
 
 	return le.WidgetBase.wndProc(hwnd, msg, wParam, lParam, lineEditOrigWndProcPtr)
