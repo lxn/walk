@@ -20,7 +20,7 @@ type ToolTip struct {
 	WidgetBase
 }
 
-func NewToolTip(parent IContainer) (*ToolTip, os.Error) {
+func NewToolTip(parent Container) (*ToolTip, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

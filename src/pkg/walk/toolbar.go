@@ -24,7 +24,7 @@ type ToolBar struct {
 	maxButtonWidth uint16
 }
 
-func newToolBar(parent IContainer, style uint) (*ToolBar, os.Error) {
+func newToolBar(parent Container, style uint) (*ToolBar, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}
@@ -53,11 +53,11 @@ func newToolBar(parent IContainer, style uint) (*ToolBar, os.Error) {
 	return tb, nil
 }
 
-func NewToolBar(parent IContainer) (*ToolBar, os.Error) {
+func NewToolBar(parent Container) (*ToolBar, os.Error) {
 	return newToolBar(parent, TBSTYLE_WRAPABLE)
 }
 
-func NewVerticalToolBar(parent IContainer) (*ToolBar, os.Error) {
+func NewVerticalToolBar(parent Container) (*ToolBar, os.Error) {
 	return newToolBar(parent, CCS_VERT|CCS_NORESIZE)
 }
 

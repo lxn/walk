@@ -17,7 +17,7 @@ type GroupBox struct {
 	WidgetBase
 }
 
-func NewGroupBox(parent IContainer) (*GroupBox, os.Error) {
+func NewGroupBox(parent Container) (*GroupBox, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

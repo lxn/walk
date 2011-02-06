@@ -17,7 +17,7 @@ type Label struct {
 	WidgetBase
 }
 
-func NewLabel(parent IContainer) (*Label, os.Error) {
+func NewLabel(parent Container) (*Label, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

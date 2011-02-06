@@ -38,7 +38,7 @@ type WebView struct {
 	browserObject *IOleObject
 }
 
-func NewWebView(parent IContainer) (*WebView, os.Error) {
+func NewWebView(parent Container) (*WebView, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

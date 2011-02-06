@@ -22,7 +22,7 @@ type ComboBox struct {
 	selectedIndexChangedPublisher EventPublisher
 }
 
-func NewComboBox(parent IContainer) (*ComboBox, os.Error) {
+func NewComboBox(parent Container) (*ComboBox, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

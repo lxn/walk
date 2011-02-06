@@ -41,7 +41,7 @@ type TabWidget struct {
 	persistent                    bool
 }
 
-func NewTabWidget(parent IContainer) (*TabWidget, os.Error) {
+func NewTabWidget(parent Container) (*TabWidget, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

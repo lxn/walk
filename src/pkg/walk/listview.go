@@ -62,7 +62,7 @@ type ListView struct {
 	persistent                      bool
 }
 
-func NewListView(parent IContainer) (*ListView, os.Error) {
+func NewListView(parent Container) (*ListView, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

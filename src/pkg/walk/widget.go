@@ -57,8 +57,8 @@ type Widget interface {
 	MinSize() Size
 	MaxSize() Size
 	SetMinMaxSize(min, max Size) os.Error
-	Parent() IContainer
-	SetParent(value IContainer) os.Error
+	Parent() Container
+	SetParent(value Container) os.Error
 	PreferredSize() Size
 	Size() Size
 	SetSize(value Size) os.Error
@@ -87,7 +87,7 @@ type widgetInternal interface {
 type WidgetBase struct {
 	hWnd                 HWND
 	name                 string
-	parent               IContainer
+	parent               Container
 	font                 *Font
 	contextMenu          *Menu
 	keyDownPublisher     KeyEventPublisher
@@ -299,11 +299,11 @@ func (w *WidgetBase) Invalidate() os.Error {
 	return nil
 }
 
-func (w *WidgetBase) Parent() IContainer {
+func (w *WidgetBase) Parent() Container {
 	return w.parent
 }
 
-func (w *WidgetBase) SetParent(value IContainer) (err os.Error) {
+func (w *WidgetBase) SetParent(value Container) (err os.Error) {
 	if value == w.parent {
 		return nil
 	}

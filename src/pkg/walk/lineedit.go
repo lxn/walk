@@ -67,7 +67,7 @@ func newLineEdit(parentHWND HWND) (*LineEdit, os.Error) {
 	return le, nil
 }
 
-func NewLineEdit(parent IContainer) (*LineEdit, os.Error) {
+func NewLineEdit(parent Container) (*LineEdit, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

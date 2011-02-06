@@ -17,7 +17,7 @@ const (
 )
 
 type BoxLayout struct {
-	container   IContainer
+	container   Container
 	margins     *Margins
 	spacing     int
 	orientation Orientation
@@ -31,11 +31,11 @@ func NewVBoxLayout() *BoxLayout {
 	return &BoxLayout{margins: &Margins{}, orientation: Vertical}
 }
 
-func (l *BoxLayout) Container() IContainer {
+func (l *BoxLayout) Container() Container {
 	return l.container
 }
 
-func (l *BoxLayout) SetContainer(value IContainer) {
+func (l *BoxLayout) SetContainer(value Container) {
 	if value != l.container {
 		if l.container != nil {
 			l.container.SetLayout(nil)

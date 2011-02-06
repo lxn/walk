@@ -26,7 +26,7 @@ type TreeView struct {
 	selectionChangingPublisher TreeViewItemSelectionEventPublisher
 }
 
-func NewTreeView(parent IContainer) (*TreeView, os.Error) {
+func NewTreeView(parent Container) (*TreeView, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

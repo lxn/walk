@@ -13,7 +13,7 @@ type ImageView struct {
 	image Image
 }
 
-func NewImageView(parent IContainer) (*ImageView, os.Error) {
+func NewImageView(parent Container) (*ImageView, os.Error) {
 	iv := &ImageView{}
 
 	cw, err := NewCustomWidget(parent, 0, func(canvas *Canvas, updateBounds Rectangle) os.Error {

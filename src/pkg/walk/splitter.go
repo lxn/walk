@@ -34,7 +34,7 @@ type Splitter struct {
 	draggedHandle *splitterHandle
 }
 
-func NewSplitter(parent IContainer) (*Splitter, os.Error) {
+func NewSplitter(parent Container) (*Splitter, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

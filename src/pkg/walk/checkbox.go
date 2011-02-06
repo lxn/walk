@@ -17,7 +17,7 @@ type CheckBox struct {
 	Button
 }
 
-func NewCheckBox(parent IContainer) (*CheckBox, os.Error) {
+func NewCheckBox(parent Container) (*CheckBox, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

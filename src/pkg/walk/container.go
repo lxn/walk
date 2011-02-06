@@ -19,8 +19,8 @@ type Margins struct {
 }
 
 type Layout interface {
-	Container() IContainer
-	SetContainer(value IContainer)
+	Container() Container
+	SetContainer(value Container)
 	Margins() *Margins
 	SetMargins(value *Margins) os.Error
 	Spacing() int
@@ -28,7 +28,7 @@ type Layout interface {
 	Update(reset bool) os.Error
 }
 
-type IContainer interface {
+type Container interface {
 	Widget
 	Children() *WidgetList
 	Layout() Layout
@@ -36,7 +36,7 @@ type IContainer interface {
 }
 
 type RootWidget interface {
-	IContainer
+	Container
 	Run() int
 }
 
@@ -63,7 +63,7 @@ func (c *ContainerBase) SetLayout(value Layout) os.Error {
 
 		c.layout = value
 
-		if value != nil && value.Container() != IContainer(c) {
+		if value != nil && value.Container() != Container(c) {
 			value.SetContainer(c)
 		}
 	}
@@ -159,7 +159,7 @@ func (c *ContainerBase) onInsertingWidget(index int, widget Widget) (err os.Erro
 
 func (c *ContainerBase) onInsertedWidget(index int, widget Widget) (err os.Error) {
 	if widget.Parent().BaseWidget().hWnd != c.hWnd {
-		err = widget.SetParent(widgetsByHWnd[c.hWnd].(IContainer))
+		err = widget.SetParent(widgetsByHWnd[c.hWnd].(Container))
 		if err != nil {
 			return
 		}

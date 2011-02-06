@@ -18,7 +18,7 @@ type ProgressBar struct {
 	WidgetBase
 }
 
-func NewProgressBar(parent IContainer) (*ProgressBar, os.Error) {
+func NewProgressBar(parent Container) (*ProgressBar, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

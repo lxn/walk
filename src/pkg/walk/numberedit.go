@@ -40,7 +40,7 @@ type NumberEdit struct {
 	maxValue   float64
 }
 
-func NewNumberEdit(parent IContainer) (*NumberEdit, os.Error) {
+func NewNumberEdit(parent Container) (*NumberEdit, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

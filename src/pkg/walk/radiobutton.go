@@ -17,7 +17,7 @@ type RadioButton struct {
 	Button
 }
 
-func NewRadioButton(parent IContainer) (*RadioButton, os.Error) {
+func NewRadioButton(parent Container) (*RadioButton, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

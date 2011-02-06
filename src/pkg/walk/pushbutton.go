@@ -19,7 +19,7 @@ type PushButton struct {
 	Button
 }
 
-func NewPushButton(parent IContainer) (*PushButton, os.Error) {
+func NewPushButton(parent Container) (*PushButton, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

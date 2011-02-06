@@ -17,7 +17,7 @@ type TextEdit struct {
 	WidgetBase
 }
 
-func NewTextEdit(parent IContainer) (*TextEdit, os.Error) {
+func NewTextEdit(parent Container) (*TextEdit, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}

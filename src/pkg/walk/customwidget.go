@@ -38,7 +38,7 @@ type CustomWidget struct {
 
 var customWidgetsByHWND map[HWND]*CustomWidget
 
-func NewCustomWidget(parent IContainer, style uint, paint PaintFunc) (*CustomWidget, os.Error) {
+func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidget, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}
