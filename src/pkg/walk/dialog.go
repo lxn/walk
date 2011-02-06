@@ -5,6 +5,7 @@
 package walk
 
 import (
+	"log"
 	"os"
 	"syscall"
 )
@@ -134,6 +135,51 @@ func (dlg *Dialog) Close(result DialogCommandId) {
 	dlg.result = result
 
 	dlg.TopLevelWindow.Close()
+}
+
+func firstFocusableDescendant(container Container) Widget {
+	for _, widget := range container.Children().items {
+		if !widget.Visible() || !widget.Enabled() {
+			continue
+		}
+
+		if c, ok := widget.(Container); ok {
+			if w := firstFocusableDescendant(c); w != nil {
+				return w
+			}
+		} else {
+			style := uint(GetWindowLong(widget.BaseWidget().hWnd, GWL_STYLE))
+			// FIXME: Ugly workaround for NumberEdit
+			_, isTextSelectable := widget.(textSelectable)
+			if style&WS_TABSTOP > 0 || isTextSelectable {
+				return widget
+			}
+		}
+	}
+
+	return nil
+}
+
+type textSelectable interface {
+	SetTextSelection(start, end int)
+}
+
+func (dlg *Dialog) Show() {
+	dlg.TopLevelWindow.Show()
+
+	widget := firstFocusableDescendant(dlg)
+	if widget == nil {
+		return
+	}
+
+	if err := widget.SetFocus(); err != nil {
+		log.Print(err)
+		return
+	}
+
+	if textSel, ok := widget.(textSelectable); ok {
+		textSel.SetTextSelection(0, -1)
+	}
 }
 
 func (dlg *Dialog) Run() DialogCommandId {

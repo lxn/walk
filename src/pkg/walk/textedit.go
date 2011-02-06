@@ -7,6 +7,7 @@ package walk
 import (
 	"os"
 	"syscall"
+	"unsafe"
 )
 
 import (
@@ -46,4 +47,13 @@ func (*TextEdit) LayoutFlags() LayoutFlags {
 
 func (te *TextEdit) PreferredSize() Size {
 	return te.dialogBaseUnitsToPixels(Size{100, 100})
+}
+
+func (te *TextEdit) TextSelection() (start, end int) {
+	SendMessage(te.hWnd, EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
+	return
+}
+
+func (te *TextEdit) SetTextSelection(start, end int) {
+	SendMessage(te.hWnd, EM_SETSEL, uintptr(start), uintptr(end))
 }

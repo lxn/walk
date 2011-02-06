@@ -88,6 +88,15 @@ func (cb *ComboBox) SelectedIndexChanged() *Event {
 	return cb.selectedIndexChangedPublisher.Event()
 }
 
+func (cb *ComboBox) TextSelection() (start, end int) {
+	SendMessage(cb.hWnd, CB_GETEDITSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
+	return
+}
+
+func (cb *ComboBox) SetTextSelection(start, end int) {
+	SendMessage(cb.hWnd, CB_SETEDITSEL, 0, uintptr(MAKELONG(uint16(start), uint16(end))))
+}
+
 func (cb *ComboBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:

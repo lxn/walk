@@ -123,6 +123,15 @@ func (le *LineEdit) SetMaxLength(value int) {
 	SendMessage(le.hWnd, EM_LIMITTEXT, uintptr(value), 0)
 }
 
+func (le *LineEdit) TextSelection() (start, end int) {
+	SendMessage(le.hWnd, EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
+	return
+}
+
+func (le *LineEdit) SetTextSelection(start, end int) {
+	SendMessage(le.hWnd, EM_SETSEL, uintptr(start), uintptr(end))
+}
+
 func (*LineEdit) LayoutFlags() LayoutFlags {
 	return ShrinkHorz | GrowHorz
 }

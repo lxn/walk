@@ -147,17 +147,6 @@ func ensureRegisteredWindowClass(className string, windowProc interface{}, callb
 	}
 }
 
-/*func msgFromCallbackArgs(args *uintptr) *MSG {
-	p := (*[4]int32)(unsafe.Pointer(args))
-
-	return &MSG{
-		HWnd:    HWND(p[0]),
-		Message: uint(p[1]),
-		WParam:  uintptr(p[2]),
-		LParam:  uintptr(p[3]),
-	}
-}*/
-
 func rootWidget(w Widget) RootWidget {
 	if w == nil {
 		return nil

@@ -175,6 +175,22 @@ func (ne *NumberEdit) SetValue(value float64) os.Error {
 	return ne.edit.SetText(strconv.Ftoa64(value, 'f', ne.decimals))
 }
 
+func (ne *NumberEdit) SetFocus() os.Error {
+	if SetFocus(ne.edit.hWnd) == 0 {
+		return lastError("SetFocus")
+	}
+
+	return nil
+}
+
+func (ne *NumberEdit) TextSelection() (start, end int) {
+	return ne.edit.TextSelection()
+}
+
+func (ne *NumberEdit) SetTextSelection(start, end int) {
+	ne.edit.SetTextSelection(start, end)
+}
+
 func (ne *NumberEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
 	case WM_NOTIFY:
