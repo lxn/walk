@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"log"
 	"syscall"
 	"unsafe"
 )
@@ -42,22 +41,17 @@ type webViewIOleClientSite struct {
 
 func webView_IOleClientSite_QueryInterface(clientSite *webViewIOleClientSite, riid REFIID, ppvObject *unsafe.Pointer) HRESULT {
 	if EqualREFIID(riid, &IID_IUnknown) {
-		log.Println("webView_IOleClientSite_QueryInterface IID_IUnknown")
 		*ppvObject = unsafe.Pointer(clientSite)
 	} else if EqualREFIID(riid, &IID_IOleClientSite) {
-		log.Println("webView_IOleClientSite_QueryInterface IID_IOleClientSite")
 		*ppvObject = unsafe.Pointer(clientSite)
 	} else if EqualREFIID(riid, &IID_IOleInPlaceSite) {
-		log.Println("webView_IOleClientSite_QueryInterface IID_IOleInPlaceSite")
 		*ppvObject = unsafe.Pointer(&clientSite.inPlaceSite)
 	} else if EqualREFIID(riid, &IID_IDocHostUIHandler) {
-		log.Println("webView_IOleClientSite_QueryInterface IID_IDocHostUIHandler")
 		*ppvObject = unsafe.Pointer(&clientSite.docHostUIHandler)
 		// FIXME: Reactivate after fixing crash
 		//	} else if EqualREFIID(riid, &IID_IDispatch) {
 		//		*ppvObject = unsafe.Pointer(&clientSite.webBrowserEvents2)
 	} else {
-		log.Println("webView_IOleClientSite_QueryInterface ?")
 		*ppvObject = nil
 		return E_NOINTERFACE
 	}
