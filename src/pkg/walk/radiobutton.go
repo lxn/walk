@@ -30,7 +30,7 @@ func NewRadioButton(parent IContainer) (*RadioButton, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	rb := &RadioButton{Button: Button{Widget: Widget{hWnd: hWnd, parent: parent}}}
+	rb := &RadioButton{Button: Button{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}}
 	rb.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = rb

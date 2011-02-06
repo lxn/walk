@@ -13,7 +13,7 @@ type clickable interface {
 }
 
 type Button struct {
-	Widget
+	WidgetBase
 	clickedPublisher EventPublisher
 }
 

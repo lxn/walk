@@ -31,7 +31,7 @@ func numberEditWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 }
 
 type NumberEdit struct {
-	Widget
+	WidgetBase
 	edit       *LineEdit
 	hWndUpDown HWND
 	decimals   int
@@ -55,7 +55,7 @@ func NewNumberEdit(parent IContainer) (*NumberEdit, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	ne := &NumberEdit{Widget: Widget{hWnd: hWnd, parent: parent}}
+	ne := &NumberEdit{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
 
 	var succeeded bool
 	defer func() {
@@ -197,5 +197,5 @@ func (ne *NumberEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origW
 		SendMessage(ne.hWndUpDown, UDM_SETBUDDY, uintptr(ne.edit.hWnd), 0)
 	}
 
-	return ne.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return ne.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }

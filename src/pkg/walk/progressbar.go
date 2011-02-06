@@ -15,7 +15,7 @@ import (
 )
 
 type ProgressBar struct {
-	Widget
+	WidgetBase
 }
 
 func NewProgressBar(parent IContainer) (*ProgressBar, os.Error) {
@@ -31,7 +31,7 @@ func NewProgressBar(parent IContainer) (*ProgressBar, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	pb := &ProgressBar{Widget: Widget{hWnd: hWnd, parent: parent}}
+	pb := &ProgressBar{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
 	pb.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = pb

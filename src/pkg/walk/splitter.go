@@ -52,7 +52,7 @@ func NewSplitter(parent IContainer) (*Splitter, os.Error) {
 	layout := NewHBoxLayout()
 	s := &Splitter{
 		Container: Container{
-			Widget: Widget{
+			WidgetBase: WidgetBase{
 				hWnd:   hWnd,
 				parent: parent,
 			},

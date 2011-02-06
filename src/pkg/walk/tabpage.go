@@ -43,7 +43,7 @@ func NewTabPage() (*TabPage, os.Error) {
 
 	tp := &TabPage{
 		Container: Container{
-			Widget: Widget{
+			WidgetBase: WidgetBase{
 				hWnd: hWnd,
 			},
 		},

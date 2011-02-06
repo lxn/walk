@@ -45,7 +45,7 @@ func newCompositeWithStyle(parent IContainer, style uint) (*Composite, os.Error)
 		return nil, lastError("CreateWindowEx")
 	}
 
-	c := &Composite{Container: Container{Widget: Widget{hWnd: hWnd, parent: parent}}}
+	c := &Composite{Container: Container{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}}
 
 	succeeded := false
 	defer func() {

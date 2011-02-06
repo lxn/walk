@@ -14,7 +14,7 @@ import (
 )
 
 type TextEdit struct {
-	Widget
+	WidgetBase
 }
 
 func NewTextEdit(parent IContainer) (*TextEdit, os.Error) {
@@ -30,7 +30,7 @@ func NewTextEdit(parent IContainer) (*TextEdit, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	te := &TextEdit{Widget: Widget{hWnd: hWnd, parent: parent}}
+	te := &TextEdit{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
 	te.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = te

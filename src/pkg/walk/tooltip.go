@@ -17,7 +17,7 @@ import (
 )
 
 type ToolTip struct {
-	Widget
+	WidgetBase
 }
 
 func NewToolTip(parent IContainer) (*ToolTip, os.Error) {
@@ -34,7 +34,7 @@ func NewToolTip(parent IContainer) (*ToolTip, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	tt := &ToolTip{Widget: Widget{hWnd: hWnd, parent: parent}}
+	tt := &ToolTip{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
 	tt.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = tt

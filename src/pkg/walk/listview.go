@@ -49,7 +49,7 @@ func (l *SelectedIndexList) Len() int {
 }
 
 type ListView struct {
-	Widget
+	WidgetBase
 	columns                         *ListViewColumnList
 	items                           *ListViewItemList
 	selectedIndex                   int
@@ -80,7 +80,7 @@ func NewListView(parent IContainer) (*ListView, os.Error) {
 	}
 
 	lv := &ListView{
-		Widget: Widget{
+		WidgetBase: WidgetBase{
 			hWnd:   hWnd,
 			parent: parent,
 		},
@@ -380,7 +380,7 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		}
 	}
 
-	return lv.Widget.wndProc(hwnd, msg, wParam, lParam, listViewOrigWndProcPtr)
+	return lv.WidgetBase.wndProc(hwnd, msg, wParam, lParam, listViewOrigWndProcPtr)
 }
 
 func (lv *ListView) onListViewColumnChanged(column *ListViewColumn) {

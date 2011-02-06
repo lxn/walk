@@ -16,7 +16,7 @@ import (
 )
 
 type TreeView struct {
-	Widget
+	WidgetBase
 	items                      *TreeViewItemList
 	itemCollapsedPublisher     TreeViewItemEventPublisher
 	itemCollapsingPublisher    TreeViewItemEventPublisher
@@ -39,7 +39,7 @@ func NewTreeView(parent IContainer) (*TreeView, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	tv := &TreeView{Widget: Widget{hWnd: hWnd, parent: parent}}
+	tv := &TreeView{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
 
 	if err := tv.setTheme("Explorer"); err != nil {
 		return nil, err
@@ -144,7 +144,7 @@ func (tv *TreeView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		}
 	}
 
-	return tv.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return tv.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }
 
 func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) (err os.Error) {

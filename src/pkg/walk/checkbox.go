@@ -30,7 +30,7 @@ func NewCheckBox(parent IContainer) (*CheckBox, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	cb := &CheckBox{Button: Button{Widget: Widget{hWnd: hWnd, parent: parent}}}
+	cb := &CheckBox{Button: Button{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}}
 	cb.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = cb

@@ -30,7 +30,7 @@ func customWidgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 type PaintFunc func(canvas *Canvas, updateBounds Rectangle) os.Error
 
 type CustomWidget struct {
-	Widget
+	WidgetBase
 	paint               PaintFunc
 	clearsBackground    bool
 	invalidatesOnResize bool
@@ -57,7 +57,7 @@ func NewCustomWidget(parent IContainer, style uint, paint PaintFunc) (*CustomWid
 		return nil, lastError("CreateWindowEx")
 	}
 
-	cw := &CustomWidget{Widget: Widget{hWnd: hWnd, parent: parent}, paint: paint}
+	cw := &CustomWidget{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}, paint: paint}
 
 	cw.SetFont(defaultFont)
 
@@ -137,5 +137,5 @@ func (cw *CustomWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, ori
 		}
 	}
 
-	return cw.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return cw.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }

@@ -16,7 +16,7 @@ import (
 )
 
 type ComboBox struct {
-	Widget
+	WidgetBase
 	items                         *ComboBoxItemList
 	prevSelIndex                  int
 	selectedIndexChangedPublisher EventPublisher
@@ -35,7 +35,7 @@ func NewComboBox(parent IContainer) (*ComboBox, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	cb := &ComboBox{Widget: Widget{hWnd: hWnd, parent: parent}, prevSelIndex: -1}
+	cb := &ComboBox{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}, prevSelIndex: -1}
 
 	succeeded := false
 	defer func() {
@@ -101,7 +101,7 @@ func (cb *ComboBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		}
 	}
 
-	return cb.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return cb.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }
 
 func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) (err os.Error) {

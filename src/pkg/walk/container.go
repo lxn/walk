@@ -41,7 +41,7 @@ type RootWidget interface {
 }
 
 type Container struct {
-	Widget
+	WidgetBase
 	layout     Layout
 	children   *WidgetList
 	persistent bool
@@ -150,7 +150,7 @@ func (c *Container) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		}
 	}
 
-	return c.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return c.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }
 
 func (c *Container) onInsertingWidget(index int, widget IWidget) (err os.Error) {

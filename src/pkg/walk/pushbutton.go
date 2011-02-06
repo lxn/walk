@@ -32,7 +32,7 @@ func NewPushButton(parent IContainer) (*PushButton, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	pb := &PushButton{Button: Button{Widget: Widget{hWnd: hWnd, parent: parent}}}
+	pb := &PushButton{Button: Button{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}}
 	pb.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = pb

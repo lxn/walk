@@ -14,7 +14,7 @@ import (
 )
 
 type GroupBox struct {
-	Widget
+	WidgetBase
 }
 
 func NewGroupBox(parent IContainer) (*GroupBox, os.Error) {
@@ -30,7 +30,7 @@ func NewGroupBox(parent IContainer) (*GroupBox, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	gb := &GroupBox{Widget: Widget{hWnd: hWnd, parent: parent}}
+	gb := &GroupBox{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
 	gb.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = gb

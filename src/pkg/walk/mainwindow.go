@@ -47,7 +47,7 @@ func NewMainWindow() (*MainWindow, os.Error) {
 	mw := &MainWindow{
 		TopLevelWindow: TopLevelWindow{
 			Container: Container{
-				Widget: Widget{
+				WidgetBase: WidgetBase{
 					hWnd: hWnd,
 				},
 			},
@@ -102,7 +102,7 @@ func (mw *MainWindow) ToolBar() *ToolBar {
 }
 
 func (mw *MainWindow) ClientBounds() Rectangle {
-	bounds := mw.Widget.ClientBounds()
+	bounds := mw.WidgetBase.ClientBounds()
 
 	if mw.toolBar.Actions().Len() > 0 {
 		tlbBounds := mw.toolBar.Bounds()

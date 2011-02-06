@@ -27,7 +27,7 @@ func splitterHandleWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr 
 }
 
 type splitterHandle struct {
-	Widget
+	WidgetBase
 }
 
 func newSplitterHandle(splitter *Splitter) (*splitterHandle, os.Error) {
@@ -45,7 +45,7 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	sh := &splitterHandle{Widget: Widget{hWnd: hWnd, parent: splitter}}
+	sh := &splitterHandle{WidgetBase: WidgetBase{hWnd: hWnd, parent: splitter}}
 
 	sh.SetFont(defaultFont)
 

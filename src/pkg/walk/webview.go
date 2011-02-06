@@ -33,7 +33,7 @@ func webViewWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 }
 
 type WebView struct {
-	Widget
+	WidgetBase
 	clientSite    webViewIOleClientSite
 	browserObject *IOleObject
 }
@@ -46,7 +46,7 @@ func NewWebView(parent IContainer) (*WebView, os.Error) {
 	ensureRegisteredWindowClass(webViewWindowClass, webViewWndProc, &webViewWndProcPtr)
 
 	wv := &WebView{
-		Widget: Widget{
+		WidgetBase: WidgetBase{
 			parent: parent,
 		},
 		clientSite: webViewIOleClientSite{
@@ -169,7 +169,7 @@ func (wv *WebView) Dispose() {
 		wv.browserObject = nil
 	}
 
-	wv.Widget.Dispose()
+	wv.WidgetBase.Dispose()
 }
 
 func (*WebView) LayoutFlags() LayoutFlags {
@@ -241,5 +241,5 @@ func (wv *WebView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndP
 		wv.onResize()
 	}
 
-	return wv.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return wv.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }

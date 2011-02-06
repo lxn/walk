@@ -28,7 +28,7 @@ func lineEditSubclassWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintpt
 }
 
 type LineEdit struct {
-	Widget
+	WidgetBase
 }
 
 func newLineEdit(parentHWND HWND) (*LineEdit, os.Error) {
@@ -44,7 +44,7 @@ func newLineEdit(parentHWND HWND) (*LineEdit, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	le := &LineEdit{Widget: Widget{hWnd: hWnd}}
+	le := &LineEdit{WidgetBase: WidgetBase{hWnd: hWnd}}
 
 	var succeeded bool
 	defer func() {
@@ -127,5 +127,5 @@ func (le *LineEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		}
 	}
 
-	return le.Widget.wndProc(hwnd, msg, wParam, lParam, lineEditOrigWndProcPtr)
+	return le.WidgetBase.wndProc(hwnd, msg, wParam, lParam, lineEditOrigWndProcPtr)
 }

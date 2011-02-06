@@ -14,7 +14,7 @@ import (
 )
 
 type Label struct {
-	Widget
+	WidgetBase
 }
 
 func NewLabel(parent IContainer) (*Label, os.Error) {
@@ -30,7 +30,7 @@ func NewLabel(parent IContainer) (*Label, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	l := &Label{Widget: Widget{hWnd: hWnd, parent: parent}}
+	l := &Label{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
 	l.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = l

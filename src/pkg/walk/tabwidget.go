@@ -33,7 +33,7 @@ func tabWidgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 }
 
 type TabWidget struct {
-	Widget
+	WidgetBase
 	hWndTab                       HWND
 	pages                         *TabPageList
 	selectedIndex                 int
@@ -57,7 +57,7 @@ func NewTabWidget(parent IContainer) (*TabWidget, os.Error) {
 	}
 
 	tw := &TabWidget{
-		Widget: Widget{
+		WidgetBase: WidgetBase{
 			hWnd:   hWnd,
 			parent: parent,
 		},
@@ -250,7 +250,7 @@ func (tw *TabWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWn
 		}
 	}
 
-	return tw.Widget.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return tw.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }
 
 func (tw *TabWidget) onInsertingPage(index int, page *TabPage) (err os.Error) {

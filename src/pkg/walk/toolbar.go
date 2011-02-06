@@ -17,7 +17,7 @@ import (
 )
 
 type ToolBar struct {
-	Widget
+	WidgetBase
 	imageList      *ImageList
 	actions        *ActionList
 	minButtonWidth uint16
@@ -37,7 +37,7 @@ func newToolBar(parent IContainer, style uint) (*ToolBar, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	tb := &ToolBar{Widget: Widget{hWnd: hWnd, parent: parent}}
+	tb := &ToolBar{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
 	tb.actions = newActionList(tb)
 
 	tb.SetFont(defaultFont)
