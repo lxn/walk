@@ -30,7 +30,7 @@ type Composite struct {
 	Container
 }
 
-func NewCompositeWithStyle(parent IContainer, style uint) (*Composite, os.Error) {
+func newCompositeWithStyle(parent IContainer, style uint) (*Composite, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}
@@ -71,7 +71,7 @@ func NewCompositeWithStyle(parent IContainer, style uint) (*Composite, os.Error)
 }
 
 func NewComposite(parent IContainer) (*Composite, os.Error) {
-	return NewCompositeWithStyle(parent, 0)
+	return newCompositeWithStyle(parent, 0)
 }
 
 func (c *Composite) LayoutFlags() LayoutFlags {
