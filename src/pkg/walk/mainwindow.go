@@ -63,7 +63,7 @@ func NewMainWindow() (*MainWindow, os.Error) {
 
 	mw.SetPersistent(true)
 
-	mw.children = newObservedWidgetList(mw)
+	mw.children = newWidgetList(mw)
 
 	err := mw.SetLayout(NewVBoxLayout())
 	if err != nil {

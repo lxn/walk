@@ -56,7 +56,7 @@ func newCompositeWithStyle(parent IContainer, style uint) (*Composite, os.Error)
 
 	c.SetPersistent(true)
 
-	c.children = newObservedWidgetList(c)
+	c.children = newWidgetList(c)
 
 	c.SetFont(defaultFont)
 

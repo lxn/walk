@@ -46,7 +46,6 @@ GOFILES=\
 	metafile.go\
 	mouseevent.go\
 	numberedit.go\
-	observedwidgetlist.go\
 	page.go\
 	pageinfo.go\
 	papersize.go\
@@ -86,6 +85,7 @@ GOFILES=\
 	webview_ioleclientsite.go\
 	webview_ioleinplaceframe.go\
 	webview_ioleinplacesite.go\
-	widget.go
+	widget.go\
+	widgetlist.go
 
 include $(GOROOT)/src/Make.pkg

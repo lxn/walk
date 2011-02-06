@@ -76,7 +76,7 @@ func NewDialog(owner RootWidget) (*Dialog, os.Error) {
 		},
 	}
 
-	dlg.children = newObservedWidgetList(dlg)
+	dlg.children = newWidgetList(dlg)
 
 	widgetsByHWnd[hWnd] = dlg
 

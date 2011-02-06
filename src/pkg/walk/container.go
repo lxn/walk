@@ -30,7 +30,7 @@ type Layout interface {
 
 type IContainer interface {
 	IWidget
-	Children() *ObservedWidgetList
+	Children() *WidgetList
 	Layout() Layout
 	SetLayout(value Layout) os.Error
 }
@@ -43,11 +43,11 @@ type RootWidget interface {
 type Container struct {
 	Widget
 	layout     Layout
-	children   *ObservedWidgetList
+	children   *WidgetList
 	persistent bool
 }
 
-func (c *Container) Children() *ObservedWidgetList {
+func (c *Container) Children() *WidgetList {
 	return c.children
 }
 

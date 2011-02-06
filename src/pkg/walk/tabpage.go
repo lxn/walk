@@ -56,7 +56,7 @@ func NewTabPage() (*TabPage, os.Error) {
 		}
 	}()
 
-	tp.children = newObservedWidgetList(tp)
+	tp.children = newWidgetList(tp)
 
 	tp.SetFont(defaultFont)
 
