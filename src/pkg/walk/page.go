@@ -14,15 +14,7 @@ type Page struct {
 }
 
 func (page *Page) addPart(p part) {
-	count := len(page.parts)
-	if count == cap(page.parts) {
-		parts := make([]part, count, count*2)
-		copy(parts, page.parts)
-		page.parts = parts
-	}
-
-	page.parts = page.parts[0 : count+1]
-	page.parts[count] = p
+	page.parts = append(page.parts, p)
 }
 
 func (page *Page) Info() *PageInfo {
@@ -31,8 +23,7 @@ func (page *Page) Info() *PageInfo {
 
 func (page *Page) Draw(canvas *Canvas) os.Error {
 	for _, part := range page.parts {
-		err := part.Draw(canvas)
-		if err != nil {
+		if err := part.Draw(canvas); err != nil {
 			return err
 		}
 	}
