@@ -49,8 +49,6 @@ type Widget interface {
 	SetEnabled(value bool)
 	Font() *Font
 	SetFont(value *Font)
-	GroupStart() (bool, os.Error)
-	SetGroupStart(value bool) os.Error
 	Height() int
 	SetHeight(value int) os.Error
 	LayoutFlags() LayoutFlags
@@ -564,35 +562,6 @@ func (w *WidgetBase) ClientBounds() Rectangle {
 func (w *WidgetBase) SetFocus() os.Error {
 	if SetFocus(w.hWnd) == 0 {
 		return lastError("SetFocus")
-	}
-
-	return nil
-}
-
-func (w *WidgetBase) GroupStart() (bool, os.Error) {
-	style := GetWindowLong(w.hWnd, GWL_STYLE)
-	if style == 0 {
-		return false, lastError("GetWindowLong")
-	}
-
-	return (style & WS_GROUP) != 0, nil
-}
-
-func (w *WidgetBase) SetGroupStart(value bool) os.Error {
-	style := GetWindowLong(w.hWnd, GWL_STYLE)
-	if style == 0 {
-		return lastError("GetWindowLong")
-	}
-
-	if value {
-		style |= WS_GROUP
-	} else {
-		style &^= WS_GROUP
-	}
-
-	SetLastError(0)
-	if SetWindowLong(w.hWnd, GWL_STYLE, style) == 0 {
-		return lastError("SetWindowLong")
 	}
 
 	return nil
