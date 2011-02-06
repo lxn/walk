@@ -31,54 +31,59 @@ const (
 
 type Widget interface {
 	BaseWidget() *WidgetBase
-	Name() string
-	SetName(name string)
 	BeginUpdate()
-	EndUpdate()
-	Invalidate() os.Error
 	Bounds() Rectangle
-	SetBounds(value Rectangle) os.Error
 	ClientBounds() Rectangle
 	ContextMenu() *Menu
-	Cursor() Cursor
-	SetCursor(value Cursor)
-	SetContextMenu(value *Menu)
-	Dispose()
-	IsDisposed() bool
-	Enabled() bool
-	SetEnabled(value bool)
-	Font() *Font
-	SetFont(value *Font)
-	Height() int
-	SetHeight(value int) os.Error
-	LayoutFlags() LayoutFlags
-	MinSize() Size
-	MaxSize() Size
-	SetMinMaxSize(min, max Size) os.Error
-	Parent() Container
-	SetParent(value Container) os.Error
-	PreferredSize() Size
-	Size() Size
-	SetSize(value Size) os.Error
-	Text() string
-	SetText(value string) os.Error
-	Visible() bool
-	SetVisible(value bool)
-	Width() int
-	SetWidth(value int) os.Error
-	X() int
-	SetX(value int) os.Error
-	Y() int
-	SetY(value int) os.Error
-	SetFocus() os.Error
-	RootWidget() RootWidget
 	CreateCanvas() (*Canvas, os.Error)
+	Cursor() Cursor
+	Dispose()
+	Enabled() bool
+	EndUpdate()
+	Font() *Font
+	Height() int
+	Invalidate() os.Error
+	IsDisposed() bool
+	KeyDown() *KeyEvent
+	LayoutFlags() LayoutFlags
+	MaxSize() Size
+	MinSize() Size
+	MouseDown() *MouseEvent
+	MouseMove() *MouseEvent
+	MouseUp() *MouseEvent
+	Name() string
+	Parent() Container
+	PreferredSize() Size
+	RootWidget() RootWidget
+	SetBounds(value Rectangle) os.Error
+	SetContextMenu(value *Menu)
+	SetCursor(value Cursor)
+	SetEnabled(value bool)
+	SetFocus() os.Error
+	SetFont(value *Font)
+	SetHeight(value int) os.Error
+	SetMinMaxSize(min, max Size) os.Error
+	SetName(name string)
+	SetParent(value Container) os.Error
+	SetSize(value Size) os.Error
+	SetText(value string) os.Error
+	SetVisible(value bool)
+	SetWidth(value int) os.Error
+	SetX(value int) os.Error
+	SetY(value int) os.Error
+	Size() Size
+	SizeChanged() *Event
+	Text() string
+	Visible() bool
+	Width() int
+	X() int
+	Y() int
 }
 
 type widgetInternal interface {
 	Widget
-	wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr
 	path() string
+	wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr
 	writePath(buf *bytes.Buffer)
 }
 
