@@ -271,9 +271,13 @@ func (w *WidgetBase) Font() *Font {
 	return w.font
 }
 
+func setWidgetFont(hwnd HWND, font *Font) {
+	SendMessage(hwnd, WM_SETFONT, uintptr(font.handleForDPI(0)), 1)
+}
+
 func (w *WidgetBase) SetFont(value *Font) {
 	if value != w.font {
-		SendMessage(w.hWnd, WM_SETFONT, uintptr(value.handleForDPI(0)), 1)
+		setWidgetFont(w.hWnd, value)
 
 		w.font = value
 	}
@@ -358,19 +362,27 @@ func (w *WidgetBase) SetParent(value Container) (err os.Error) {
 	return nil
 }
 
-func (w *WidgetBase) Text() string {
-	textLength := SendMessage(w.hWnd, WM_GETTEXTLENGTH, 0, 0)
+func widgetText(hwnd HWND) string {
+	textLength := SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0)
 	buf := make([]uint16, textLength+1)
-	SendMessage(w.hWnd, WM_GETTEXT, uintptr(textLength+1), uintptr(unsafe.Pointer(&buf[0])))
+	SendMessage(hwnd, WM_GETTEXT, uintptr(textLength+1), uintptr(unsafe.Pointer(&buf[0])))
 	return syscall.UTF16ToString(buf)
 }
 
-func (w *WidgetBase) SetText(value string) os.Error {
-	if TRUE != SendMessage(w.hWnd, WM_SETTEXT, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value)))) {
+func setWidgetText(hwnd HWND, text string) os.Error {
+	if TRUE != SendMessage(hwnd, WM_SETTEXT, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text)))) {
 		return newError("WM_SETTEXT failed")
 	}
 
 	return nil
+}
+
+func (w *WidgetBase) Text() string {
+	return widgetText(w.hWnd)
+}
+
+func (w *WidgetBase) SetText(value string) os.Error {
+	return setWidgetText(w.hWnd, value)
 }
 
 func (w *WidgetBase) Visible() bool {
@@ -534,15 +546,19 @@ func (w *WidgetBase) SetHeight(value int) os.Error {
 	return w.SetBounds(bounds)
 }
 
-func (w *WidgetBase) ClientBounds() Rectangle {
+func widgetClientBounds(hwnd HWND) Rectangle {
 	var r RECT
 
-	if !GetClientRect(w.hWnd, &r) {
+	if !GetClientRect(hwnd, &r) {
 		log.Print(lastError("GetClientRect"))
 		return Rectangle{}
 	}
 
 	return Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}
+}
+
+func (w *WidgetBase) ClientBounds() Rectangle {
+	return widgetClientBounds(w.hWnd)
 }
 
 func (w *WidgetBase) SetFocus() os.Error {

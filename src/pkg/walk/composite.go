@@ -60,11 +60,19 @@ func newCompositeWithStyle(parent Container, style uint) (*Composite, os.Error) 
 
 	c.SetFont(defaultFont)
 
-	widgetsByHWnd[hWnd] = c
-
-	if err := parent.Children().Add(c); err != nil {
-		return nil, err
+	if parent.Children() == nil {
+		// This may happen if the composite is (ab)used to implement 
+		// Container semantics for some other widgets like GroupBox.
+		if SetParent(hWnd, parent.BaseWidget().hWnd) == 0 {
+			return nil, lastError("SetParent")
+		}
+	} else {
+		if err := parent.Children().Add(c); err != nil {
+			return nil, err
+		}
 	}
+
+	widgetsByHWnd[hWnd] = c
 
 	succeeded = true
 	return c, nil
