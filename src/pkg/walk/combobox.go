@@ -81,6 +81,11 @@ func (cb *ComboBox) SetSelectedIndex(value int) os.Error {
 		return newError("invalid index")
 	}
 
+	if value != cb.prevSelIndex {
+		cb.prevSelIndex = value
+		cb.selectedIndexChangedPublisher.Publish()
+	}
+
 	return nil
 }
 
