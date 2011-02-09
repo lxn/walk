@@ -151,6 +151,16 @@ func (le *LineEdit) ReturnPressed() *Event {
 func (le *LineEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
+		if root := rootWidget(le); root != nil {
+			if dlg, ok := root.(dialogish); ok {
+				if dlg.DefaultButton() != nil {
+					// If the LineEdit lives in a Dialog that has a DefaultButton,
+					// we won't swallow the return key. 
+					break
+				}
+			}
+		}
+
 		if wParam == VK_RETURN {
 			return DLGC_WANTALLKEYS
 		}
@@ -162,6 +172,8 @@ func (le *LineEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		}
 
 	case WM_KILLFOCUS:
+		// FIXME: This may be dangerous, see remarks section:
+		// http://msdn.microsoft.com/en-us/library/ms646282(v=vs.85).aspx
 		le.editingFinishedPublisher.Publish()
 	}
 

@@ -106,29 +106,47 @@ func (c *ContainerBase) RestoreState() os.Error {
 func (c *ContainerBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
-		switch HIWORD(uint(wParam)) {
-		case 0:
-			hWnd := HWND(lParam)
-			if hWnd != 0 {
-				if widget, ok := widgetsByHWnd[hWnd]; ok {
-					if clickableWidget, ok := widget.(clickable); ok {
-						clickableWidget.raiseClicked()
-						return 0
+		if lParam == 0 {
+			switch HIWORD(uint(wParam)) {
+			case 0:
+				cmdId := LOWORD(uint(wParam))
+				switch cmdId {
+				case IDOK, IDCANCEL:
+					root := rootWidget(c)
+					if root == nil {
+						break
 					}
+
+					dlg, ok := root.(dialogish)
+					if !ok {
+						break
+					}
+
+					var button *PushButton
+					if cmdId == IDOK {
+						button = dlg.DefaultButton()
+					} else {
+						button = dlg.CancelButton()
+					}
+
+					if button != nil && button.Visible() && button.Enabled() {
+						button.raiseClicked()
+					}
+
+					break
 				}
+
+				// Menu
+				actionId := uint16(LOWORD(uint(wParam)))
+				if action, ok := actionsById[actionId]; ok {
+					action.raiseTriggered()
+					return 0
+				}
+
+			case 1:
+				// Accelerator
 			}
-
-			// Menu
-			actionId := uint16(LOWORD(uint(wParam)))
-			if action, ok := actionsById[actionId]; ok {
-				action.raiseTriggered()
-				return 0
-			}
-
-		case 1:
-			// Accelerator
-
-		default:
+		} else {
 			// The widget that sent the notification shall handle it itself.
 			hWnd := HWND(lParam)
 			if widget, ok := widgetsByHWnd[hWnd]; ok {

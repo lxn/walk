@@ -641,12 +641,20 @@ func (w *WidgetBase) putState(state string) os.Error {
 func (w *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
 	case WM_LBUTTONDOWN:
-		SetCapture(w.hWnd)
+		if origWndProcPtr == 0 {
+			// Only call SetCapture if this is no subclassed control.
+			// (Otherwise e.g. WM_COMMAND(BN_CLICKED) would no longer
+			// be generated for PushButton.)
+			SetCapture(w.hWnd)
+		}
 		w.publishMouseEvent(&w.mouseDownPublisher, wParam, lParam)
 
 	case WM_LBUTTONUP:
-		if !ReleaseCapture() {
-			log.Println(lastError("ReleaseCapture"))
+		if origWndProcPtr == 0 {
+			// See WM_LBUTTONDOWN for why we require origWndProcPtr == 0 here.
+			if !ReleaseCapture() {
+				log.Println(lastError("ReleaseCapture"))
+			}
 		}
 		w.publishMouseEvent(&w.mouseUpPublisher, wParam, lParam)
 

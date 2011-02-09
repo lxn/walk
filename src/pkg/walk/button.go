@@ -5,6 +5,7 @@
 package walk
 
 import (
+	. "walk/winapi"
 	. "walk/winapi/user32"
 )
 
@@ -39,4 +40,16 @@ func (b *Button) Clicked() *Event {
 
 func (b *Button) raiseClicked() {
 	b.clickedPublisher.Publish()
+}
+
+func (b *Button) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
+	case WM_COMMAND:
+		switch HIWORD(uint(wParam)) {
+		case BN_CLICKED:
+			b.raiseClicked()
+		}
+	}
+
+	return b.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }

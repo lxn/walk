@@ -134,6 +134,22 @@ func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int, err os.Error) {
 	return
 }
 
+func (tb *ToolBar) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
+	case WM_NOTIFY:
+		nmm := (*NMMOUSE)(unsafe.Pointer(lParam))
+
+		switch nmm.Hdr.Code {
+		case NM_CLICK:
+			actionId := uint16(nmm.DwItemSpec)
+			action := actionsById[actionId]
+			action.raiseTriggered()
+		}
+	}
+
+	return tb.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+}
+
 func (tb *ToolBar) onActionChanged(action *Action) (err os.Error) {
 	imageIndex, err := tb.imageIndex(action.image)
 	if err != nil {

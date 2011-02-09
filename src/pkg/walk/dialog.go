@@ -14,21 +14,19 @@ import (
 	. "walk/winapi/user32"
 )
 
-type DialogCommandId int
-
 const (
-	DlgCmdOK       DialogCommandId = IDOK
-	DlgCmdCancel   DialogCommandId = IDCANCEL
-	DlgCmdAbort    DialogCommandId = IDABORT
-	DlgCmdRetry    DialogCommandId = IDRETRY
-	DlgCmdIgnore   DialogCommandId = IDIGNORE
-	DlgCmdYes      DialogCommandId = IDYES
-	DlgCmdNo       DialogCommandId = IDNO
-	DlgCmdClose    DialogCommandId = IDCLOSE
-	DlgCmdHelp     DialogCommandId = IDHELP
-	DlgCmdTryAgain DialogCommandId = IDTRYAGAIN
-	DlgCmdContinue DialogCommandId = IDCONTINUE
-	DlgCmdTimeout  DialogCommandId = IDTIMEOUT
+	DlgCmdOK       = IDOK
+	DlgCmdCancel   = IDCANCEL
+	DlgCmdAbort    = IDABORT
+	DlgCmdRetry    = IDRETRY
+	DlgCmdIgnore   = IDIGNORE
+	DlgCmdYes      = IDYES
+	DlgCmdNo       = IDNO
+	DlgCmdClose    = IDCLOSE
+	DlgCmdHelp     = IDHELP
+	DlgCmdTryAgain = IDTRYAGAIN
+	DlgCmdContinue = IDCONTINUE
+	DlgCmdTimeout  = IDTIMEOUT
 )
 
 const dialogWindowClass = `\o/ Walk_Dialog_Class \o/`
@@ -44,10 +42,16 @@ func dialogWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	return dlg.wndProc(hwnd, msg, wParam, lParam, 0)
 }
 
+type dialogish interface {
+	DefaultButton() *PushButton
+	CancelButton() *PushButton
+}
+
 type Dialog struct {
 	TopLevelWindow
-	result        DialogCommandId
+	result        int
 	defaultButton *PushButton
+	cancelButton  *PushButton
 }
 
 func NewDialog(owner RootWidget) (*Dialog, os.Error) {
@@ -123,6 +127,20 @@ func (dlg *Dialog) SetDefaultButton(button *PushButton) os.Error {
 	return nil
 }
 
+func (dlg *Dialog) CancelButton() *PushButton {
+	return dlg.cancelButton
+}
+
+func (dlg *Dialog) SetCancelButton(button *PushButton) os.Error {
+	if button != nil && !IsChild(dlg.hWnd, button.hWnd) {
+		return newError("not a descendant of the dialog")
+	}
+
+	dlg.cancelButton = button
+
+	return nil
+}
+
 func (dlg *Dialog) Accept() {
 	dlg.Close(DlgCmdOK)
 }
@@ -131,7 +149,7 @@ func (dlg *Dialog) Cancel() {
 	dlg.Close(DlgCmdCancel)
 }
 
-func (dlg *Dialog) Close(result DialogCommandId) {
+func (dlg *Dialog) Close(result int) {
 	dlg.result = result
 
 	dlg.TopLevelWindow.Close()
@@ -182,7 +200,7 @@ func (dlg *Dialog) Show() {
 	}
 }
 
-func (dlg *Dialog) Run() DialogCommandId {
+func (dlg *Dialog) Run() int {
 	if dlg.owner != nil {
 		ob := dlg.owner.Bounds()
 		b := dlg.Bounds()
