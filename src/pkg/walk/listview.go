@@ -302,7 +302,7 @@ func (lv *ListView) SaveState() os.Error {
 
 		width := SendMessage(lv.hWnd, LVM_GETCOLUMNWIDTH, uintptr(i), 0)
 		if width == 0 {
-			return newError("LVM_GETCOLUMNWIDTH failed")
+			width = 100
 		}
 
 		buf.WriteString(strconv.Itoa(int(width)))
