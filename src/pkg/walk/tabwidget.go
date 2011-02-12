@@ -171,8 +171,10 @@ func (tw *TabWidget) RestoreState() os.Error {
 	if err != nil {
 		return err
 	}
-	if err := tw.SetSelectedIndex(index); err != nil {
-		return err
+	if index >= 0 && index < tw.pages.Len() {
+		if err := tw.SetSelectedIndex(index); err != nil {
+			return err
+		}
 	}
 
 	for _, page := range tw.pages.items {
