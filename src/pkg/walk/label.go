@@ -41,9 +41,9 @@ func NewLabel(parent Container) (*Label, os.Error) {
 }
 
 func (*Label) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz
+	return 0
 }
 
 func (l *Label) PreferredSize() Size {
-	return l.dialogBaseUnitsToPixels(Size{50, 8})
+	return l.calculateTextSize()
 }

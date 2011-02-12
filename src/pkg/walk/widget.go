@@ -484,6 +484,27 @@ func (w *WidgetBase) PreferredSize() Size {
 	return w.dialogBaseUnitsToPixels(Size{10, 10})
 }
 
+func (w *WidgetBase) calculateTextSize() Size {
+	hdc := GetDC(w.hWnd)
+	if hdc == 0 {
+		log.Print(newError("GetDC failed"))
+		return Size{}
+	}
+	defer ReleaseDC(w.hWnd, hdc)
+
+	hFontOld := SelectObject(hdc, HGDIOBJ(w.Font().handleForDPI(0)))
+	defer SelectObject(hdc, hFontOld)
+
+	str := syscall.StringToUTF16(w.Text())
+	var size SIZE
+	if !GetTextExtentPoint32(hdc, &str[0], len(str)-1, &size) {
+		log.Print(newError("GetTextExtentPoint32 failed"))
+		return Size{}
+	}
+
+	return Size{size.CX, size.CY}
+}
+
 func (w *WidgetBase) Size() Size {
 	return w.Bounds().Size()
 }
