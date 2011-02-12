@@ -62,10 +62,17 @@ func NewDialog(owner RootWidget) (*Dialog, os.Error) {
 		ownerHWnd = owner.BaseWidget().hWnd
 	}
 
+	var x int
+	if owner == nil {
+		x = CW_USEDEFAULT
+	} else {
+		x = -12345
+	}
+
 	hWnd := CreateWindowEx(
 		WS_EX_DLGMODALFRAME, syscall.StringToUTF16Ptr(dialogWindowClass), nil,
 		WS_CAPTION|WS_SYSMENU,
-		-12345, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, ownerHWnd, 0, 0, nil)
+		x, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, ownerHWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
