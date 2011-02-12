@@ -394,7 +394,14 @@ func (lv *ListView) onInsertingListViewColumn(index int, column *ListViewColumn)
 	lvc.ISubItem = index
 	lvc.PszText = syscall.StringToUTF16Ptr(column.Title())
 	lvc.Cx = column.width
-	lvc.Fmt = int(column.alignment)
+
+	switch column.Alignment() {
+	case AlignCenter:
+		lvc.Fmt = 2
+
+	case AlignFar:
+		lvc.Fmt = 1
+	}
 
 	i := SendMessage(lv.hWnd, LVM_INSERTCOLUMN, uintptr(index), uintptr(unsafe.Pointer(&lvc)))
 	if int(i) == -1 {

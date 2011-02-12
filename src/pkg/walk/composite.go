@@ -113,8 +113,8 @@ func (c *Composite) PreferredSize() Size {
 
 	if c.layout != nil {
 		marg := c.layout.Margins()
-		maxW += marg.Left + marg.Right
-		maxH += marg.Top + marg.Bottom
+		maxW += marg.HNear + marg.HFar
+		maxH += marg.VNear + marg.VFar
 	}
 
 	return Size{maxW, maxH}

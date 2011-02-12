@@ -56,7 +56,7 @@ func (l *BoxLayout) Margins() Margins {
 }
 
 func (l *BoxLayout) SetMargins(value Margins) os.Error {
-	if value.Left < 0 || value.Top < 0 || value.Right < 0 || value.Bottom < 0 {
+	if value.HNear < 0 || value.VNear < 0 || value.HFar < 0 || value.VFar < 0 {
 		return newError("margins must be positive")
 	}
 
@@ -185,7 +185,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 
 	// Now do the actual layout thing.
 	if l.orientation == Vertical {
-		diff := cb.Height - l.margins.Top - prefSizeSum.Height - spacingSum - l.margins.Bottom
+		diff := cb.Height - l.margins.VNear - prefSizeSum.Height - spacingSum - l.margins.VFar
 
 		reqW := 0
 
@@ -195,7 +195,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 			}
 		}
 		//        if reqW == 0 {
-		reqW = cb.Width - l.margins.Left - l.margins.Right
+		reqW = cb.Width - l.margins.HNear - l.margins.HFar
 		//        }
 
 		var change int
@@ -211,7 +211,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 
 		//log.Printf("*BoxLayout.Update: widgetCount: %d, cb: %+v, prefSizeSum: %+v, diff: %d, change: %d, reqW: %d", widgetCount, cb, prefSizeSum, diff, change, reqW)
 
-		y := cb.Y + l.margins.Top
+		y := cb.Y + l.margins.VNear
 		for i := 0; i < widgetCount; i++ {
 			widget := widgets[i]
 
@@ -229,7 +229,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 				}
 			}
 
-			bounds := Rectangle{cb.X + l.margins.Left, y, reqW, h}
+			bounds := Rectangle{cb.X + l.margins.HNear, y, reqW, h}
 
 			//log.Printf("*BoxLayout.Update: bounds: %+v", bounds)
 
@@ -238,7 +238,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 			y += h + l.spacing
 		}
 	} else {
-		diff := cb.Width - l.margins.Left - prefSizeSum.Width - spacingSum - l.margins.Right
+		diff := cb.Width - l.margins.HNear - prefSizeSum.Width - spacingSum - l.margins.HFar
 		reqH := 0
 
 		for i, s := range prefSizes {
@@ -247,7 +247,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 			}
 		}
 		//        if reqH == 0 {
-		reqH = cb.Height - l.margins.Top - l.margins.Bottom
+		reqH = cb.Height - l.margins.VNear - l.margins.VFar
 		//        }
 
 		var change int
@@ -263,7 +263,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 
 		//log.Printf("*BoxLayout.Update: widgetCount: %d, cb: %+v, prefSizeSum: %+v, diff: %d, change: %d, reqH: %d", widgetCount, cb, prefSizeSum, diff, change, reqH)
 
-		x := cb.X + l.margins.Left
+		x := cb.X + l.margins.HNear
 		for i := 0; i < widgetCount; i++ {
 			widget := widgets[i]
 
@@ -281,7 +281,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 				}
 			}
 
-			bounds := Rectangle{x, cb.Y + l.margins.Top, w, reqH}
+			bounds := Rectangle{x, cb.Y + l.margins.VNear, w, reqH}
 
 			//log.Printf("*BoxLayout.Update: bounds: %+v", bounds)
 

@@ -224,7 +224,7 @@ func main() {
 	sizeCol := walk.NewListViewColumn()
 	sizeCol.SetTitle("Size")
 	sizeCol.SetWidth(80)
-	sizeCol.SetAlignment(walk.RightAlignment)
+	sizeCol.SetAlignment(walk.AlignFar)
 	panicIfErr(mw.listView.Columns().Add(sizeCol))
 
 	modCol := walk.NewListViewColumn()

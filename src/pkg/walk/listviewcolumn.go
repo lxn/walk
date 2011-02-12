@@ -9,7 +9,7 @@ type listViewColumnChangedHandler interface {
 }
 
 type ListViewColumn struct {
-	alignment       HorizontalAlignment
+	alignment       Alignment1D
 	width           int
 	title           string
 	changedHandlers []listViewColumnChangedHandler
@@ -19,11 +19,11 @@ func NewListViewColumn() *ListViewColumn {
 	return &ListViewColumn{width: 100}
 }
 
-func (c *ListViewColumn) Alignment() HorizontalAlignment {
+func (c *ListViewColumn) Alignment() Alignment1D {
 	return c.alignment
 }
 
-func (c *ListViewColumn) SetAlignment(value HorizontalAlignment) {
+func (c *ListViewColumn) SetAlignment(value Alignment1D) {
 	if value != c.alignment {
 		c.alignment = value
 

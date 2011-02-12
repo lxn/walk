@@ -4,10 +4,24 @@
 
 package walk
 
-type HorizontalAlignment int
+type Alignment1D uint
 
 const (
-	LeftAlignment HorizontalAlignment = iota
-	RightAlignment
-	CenterAlignment
+	AlignNear Alignment1D = iota
+	AlignCenter
+	AlignFar
+)
+
+type Alignment2D uint
+
+const (
+	AlignHNearVNear Alignment2D = iota
+	AlignHCenterVNear
+	AlignHFarVNear
+	AlignHNearVCenter
+	AlignHCenterVCenter
+	AlignHFarVCenter
+	AlignHNearVFar
+	AlignHCenterVFar
+	AlignHFarVFar
 )

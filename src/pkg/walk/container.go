@@ -15,7 +15,7 @@ import (
 )
 
 type Margins struct {
-	Left, Top, Right, Bottom int
+	HNear, VNear, HFar, VFar int
 }
 
 type Layout interface {
