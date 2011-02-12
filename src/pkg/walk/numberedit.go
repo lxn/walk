@@ -6,6 +6,7 @@ package walk
 
 import (
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"syscall"
@@ -13,6 +14,7 @@ import (
 )
 
 import (
+	. "walk/winapi"
 	. "walk/winapi/comctl32"
 	. "walk/winapi/user32"
 )
@@ -32,12 +34,13 @@ func numberEditWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 
 type NumberEdit struct {
 	WidgetBase
-	edit       *LineEdit
-	hWndUpDown HWND
-	decimals   int
-	increment  float64
-	minValue   float64
-	maxValue   float64
+	edit                  *LineEdit
+	hWndUpDown            HWND
+	decimals              int
+	increment             float64
+	minValue              float64
+	maxValue              float64
+	valueChangedPublisher EventPublisher
 }
 
 func NewNumberEdit(parent Container) (*NumberEdit, os.Error) {
@@ -172,7 +175,21 @@ func (ne *NumberEdit) Value() float64 {
 }
 
 func (ne *NumberEdit) SetValue(value float64) os.Error {
-	return ne.edit.SetText(strconv.Ftoa64(value, 'f', ne.decimals))
+	text := strconv.Ftoa64(value, 'f', ne.decimals)
+	desiredPrecVal, _ := strconv.Atof64(text)
+	if math.Fabs(desiredPrecVal-ne.Value()) < math.SmallestNonzeroFloat64 {
+		return nil
+	}
+
+	if err := ne.edit.SetText(text); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ne *NumberEdit) ValueChanged() *Event {
+	return ne.valueChangedPublisher.Event()
 }
 
 func (ne *NumberEdit) SetFocus() os.Error {
@@ -193,6 +210,12 @@ func (ne *NumberEdit) SetTextSelection(start, end int) {
 
 func (ne *NumberEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
+	case WM_COMMAND:
+		switch HIWORD(uint(wParam)) {
+		case EN_CHANGE:
+			ne.valueChangedPublisher.Publish()
+		}
+
 	case WM_NOTIFY:
 		switch ((*NMHDR)(unsafe.Pointer(lParam))).Code {
 		case UDN_DELTAPOS:
