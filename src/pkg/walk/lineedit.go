@@ -32,6 +32,7 @@ type LineEdit struct {
 	WidgetBase
 	editingFinishedPublisher EventPublisher
 	returnPressedPublisher   EventPublisher
+	textChanged              EventPublisher
 }
 
 func newLineEdit(parentHWND HWND) (*LineEdit, os.Error) {
@@ -132,6 +133,14 @@ func (le *LineEdit) SetTextSelection(start, end int) {
 	SendMessage(le.hWnd, EM_SETSEL, uintptr(start), uintptr(end))
 }
 
+func (le *LineEdit) PasswordMode() bool {
+	return SendMessage(le.hWnd, EM_GETPASSWORDCHAR, 0, 0) != 0
+}
+
+func (le *LineEdit) SetPasswordMode(value bool) {
+	SendMessage(le.hWnd, EM_SETPASSWORDCHAR, uintptr('*'), 0)
+}
+
 func (*LineEdit) LayoutFlags() LayoutFlags {
 	return ShrinkHorz | GrowHorz
 }
@@ -148,8 +157,18 @@ func (le *LineEdit) ReturnPressed() *Event {
 	return le.returnPressedPublisher.Event()
 }
 
+func (le *LineEdit) TextChanged() *Event {
+	return le.textChanged.Event()
+}
+
 func (le *LineEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
+	case WM_COMMAND:
+		switch HIWORD(uint(wParam)) {
+		case EN_CHANGE:
+			le.textChanged.Publish()
+		}
+
 	case WM_GETDLGCODE:
 		if root := rootWidget(le); root != nil {
 			if dlg, ok := root.(dialogish); ok {
