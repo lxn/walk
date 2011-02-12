@@ -21,8 +21,8 @@ type Margins struct {
 type Layout interface {
 	Container() Container
 	SetContainer(value Container)
-	Margins() *Margins
-	SetMargins(value *Margins) os.Error
+	Margins() Margins
+	SetMargins(value Margins) os.Error
 	Spacing() int
 	SetSpacing(value int) os.Error
 	Update(reset bool) os.Error

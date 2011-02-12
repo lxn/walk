@@ -18,17 +18,17 @@ const (
 
 type BoxLayout struct {
 	container   Container
-	margins     *Margins
+	margins     Margins
 	spacing     int
 	orientation Orientation
 }
 
 func NewHBoxLayout() *BoxLayout {
-	return &BoxLayout{margins: &Margins{}, orientation: Horizontal}
+	return &BoxLayout{orientation: Horizontal}
 }
 
 func NewVBoxLayout() *BoxLayout {
-	return &BoxLayout{margins: &Margins{}, orientation: Vertical}
+	return &BoxLayout{orientation: Vertical}
 }
 
 func (l *BoxLayout) Container() Container {
@@ -51,13 +51,13 @@ func (l *BoxLayout) SetContainer(value Container) {
 	}
 }
 
-func (l *BoxLayout) Margins() *Margins {
+func (l *BoxLayout) Margins() Margins {
 	return l.margins
 }
 
-func (l *BoxLayout) SetMargins(value *Margins) os.Error {
-	if value == nil {
-		return newError("margins cannot be nil")
+func (l *BoxLayout) SetMargins(value Margins) os.Error {
+	if value.Left < 0 || value.Top < 0 || value.Right < 0 || value.Bottom < 0 {
+		return newError("margins must be positive")
 	}
 
 	l.margins = value
