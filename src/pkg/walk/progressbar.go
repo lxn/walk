@@ -41,8 +41,8 @@ func NewProgressBar(parent Container) (*ProgressBar, os.Error) {
 	return pb, nil
 }
 
-func (*ProgressBar) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz
+func (*ProgressBar) LayoutFlagsMask() LayoutFlags {
+	return HShrink | HGrow
 }
 
 func (pb *ProgressBar) PreferredSize() Size {

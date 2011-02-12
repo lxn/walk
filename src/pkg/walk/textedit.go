@@ -41,8 +41,8 @@ func NewTextEdit(parent Container) (*TextEdit, os.Error) {
 	return te, nil
 }
 
-func (*TextEdit) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz | ShrinkVert | GrowVert
+func (*TextEdit) LayoutFlagsMask() LayoutFlags {
+	return HShrink | HGrow | VShrink | VGrow
 }
 
 func (te *TextEdit) PreferredSize() Size {

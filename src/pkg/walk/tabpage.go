@@ -67,8 +67,8 @@ func NewTabPage() (*TabPage, os.Error) {
 	return tp, nil
 }
 
-func (*TabPage) LayoutFlags() LayoutFlags {
-	return GrowHorz | GrowVert | ShrinkHorz | ShrinkVert
+func (*TabPage) LayoutFlagsMask() LayoutFlags {
+	return HGrow | VGrow | HShrink | VShrink
 }
 
 func (tp *TabPage) PreferredSize() Size {

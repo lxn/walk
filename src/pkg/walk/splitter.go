@@ -86,8 +86,8 @@ func NewSplitter(parent Container) (*Splitter, os.Error) {
 	return s, nil
 }
 
-func (s *Splitter) LayoutFlags() LayoutFlags {
-	return GrowHorz | GrowVert | ShrinkHorz | ShrinkVert
+func (s *Splitter) LayoutFlagsMask() LayoutFlags {
+	return HGrow | VGrow | HShrink | VShrink
 }
 
 func (s *Splitter) PreferredSize() Size {

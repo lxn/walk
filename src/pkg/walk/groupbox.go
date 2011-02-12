@@ -84,8 +84,8 @@ func NewGroupBox(parent Container) (*GroupBox, os.Error) {
 	return gb, nil
 }
 
-func (gb *GroupBox) LayoutFlags() LayoutFlags {
-	return gb.composite.LayoutFlags()
+func (gb *GroupBox) LayoutFlagsMask() LayoutFlags {
+	return gb.composite.LayoutFlagsMask()
 }
 
 func (gb *GroupBox) PreferredSize() Size {

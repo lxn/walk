@@ -69,8 +69,8 @@ func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidg
 	return cw, nil
 }
 
-func (*CustomWidget) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz | ShrinkVert | GrowVert
+func (*CustomWidget) LayoutFlagsMask() LayoutFlags {
+	return HShrink | HGrow | VShrink | VGrow
 }
 
 func (cw *CustomWidget) PreferredSize() Size {

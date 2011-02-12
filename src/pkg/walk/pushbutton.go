@@ -76,7 +76,7 @@ func NewPushButton(parent Container) (*PushButton, os.Error) {
 	return pb, nil
 }
 
-func (*PushButton) LayoutFlags() LayoutFlags {
+func (*PushButton) LayoutFlagsMask() LayoutFlags {
 	return 0
 }
 

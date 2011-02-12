@@ -54,14 +54,14 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, os.Error) {
 	return sh, nil
 }
 
-func (sh *splitterHandle) LayoutFlags() LayoutFlags {
+func (sh *splitterHandle) LayoutFlagsMask() LayoutFlags {
 	splitter := sh.Parent().(*Splitter)
 
 	if splitter.Orientation() == Horizontal {
-		return GrowVert
+		return VGrow
 	}
 
-	return GrowHorz
+	return HGrow
 }
 
 func (sh *splitterHandle) PreferredSize() Size {

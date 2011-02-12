@@ -58,8 +58,8 @@ func NewComboBox(parent Container) (*ComboBox, os.Error) {
 	return cb, nil
 }
 
-func (*ComboBox) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz
+func (*ComboBox) LayoutFlagsMask() LayoutFlags {
+	return HShrink | HGrow
 }
 
 func (cb *ComboBox) PreferredSize() Size {

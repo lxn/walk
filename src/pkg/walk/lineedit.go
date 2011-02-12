@@ -141,8 +141,8 @@ func (le *LineEdit) SetPasswordMode(value bool) {
 	SendMessage(le.hWnd, EM_SETPASSWORDCHAR, uintptr('*'), 0)
 }
 
-func (*LineEdit) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz
+func (*LineEdit) LayoutFlagsMask() LayoutFlags {
+	return HShrink | HGrow
 }
 
 func (le *LineEdit) PreferredSize() Size {

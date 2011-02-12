@@ -82,15 +82,15 @@ func NewComposite(parent Container) (*Composite, os.Error) {
 	return newCompositeWithStyle(parent, 0)
 }
 
-func (c *Composite) LayoutFlags() LayoutFlags {
+func (c *Composite) LayoutFlagsMask() LayoutFlags {
 	var flags LayoutFlags
 
 	count := c.children.Len()
 	if count == 0 {
-		return ShrinkHorz | ShrinkVert
+		return HShrink | VShrink
 	} else {
 		for i := 0; i < count; i++ {
-			flags |= c.children.At(i).LayoutFlags()
+			flags |= c.children.At(i).LayoutFlagsMask()
 		}
 	}
 

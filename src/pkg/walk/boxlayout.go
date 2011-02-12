@@ -122,7 +122,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 		widget := children.At(i)
 
 		ps := widget.PreferredSize()
-		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
+		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlagsMask() == 0 {
 			continue
 		}
 
@@ -150,26 +150,26 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 
 		maxSize := widget.MaxSize()
 
-		lf := widget.LayoutFlags()
+		lf := widget.LayoutFlagsMask()
 		if maxSize.Width > 0 {
-			lf &^= GrowHorz
+			lf &^= HGrow
 			ps.Width = maxSize.Width
 		}
 		if maxSize.Height > 0 {
-			lf &^= GrowVert
+			lf &^= VGrow
 			ps.Height = maxSize.Height
 		}
 
-		if lf&ShrinkHorz > 0 {
+		if lf&HShrink > 0 {
 			shrinkHorzCount++
 		}
-		if lf&GrowHorz > 0 {
+		if lf&HGrow > 0 {
 			growHorzCount++
 		}
-		if lf&ShrinkVert > 0 {
+		if lf&VShrink > 0 {
 			shrinkVertCount++
 		}
-		if lf&GrowVert > 0 {
+		if lf&VGrow > 0 {
 			growVertCount++
 		}
 		flags[i] = lf
@@ -190,7 +190,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 		reqW := 0
 
 		for i, s := range prefSizes {
-			if s.Width > reqW && (flags[i]&ShrinkHorz == 0) {
+			if s.Width > reqW && (flags[i]&HShrink == 0) {
 				reqW = s.Width
 			}
 		}
@@ -219,12 +219,12 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 
 			switch {
 			case change < 0:
-				if flags[i]&ShrinkVert > 0 {
+				if flags[i]&VShrink > 0 {
 					h += change
 				}
 
 			case change > 0:
-				if flags[i]&GrowVert > 0 {
+				if flags[i]&VGrow > 0 {
 					h += change
 				}
 			}
@@ -242,7 +242,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 		reqH := 0
 
 		for i, s := range prefSizes {
-			if s.Height > reqH && (flags[i]&ShrinkVert == 0) {
+			if s.Height > reqH && (flags[i]&VShrink == 0) {
 				reqH = s.Height
 			}
 		}
@@ -271,12 +271,12 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 
 			switch {
 			case change < 0:
-				if flags[i]&ShrinkHorz > 0 {
+				if flags[i]&HShrink > 0 {
 					w += change
 				}
 
 			case change > 0:
-				if flags[i]&GrowHorz > 0 {
+				if flags[i]&HGrow > 0 {
 					w += change
 				}
 			}

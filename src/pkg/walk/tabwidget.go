@@ -97,8 +97,8 @@ func NewTabWidget(parent Container) (*TabWidget, os.Error) {
 	return tw, nil
 }
 
-func (*TabWidget) LayoutFlags() LayoutFlags {
-	return GrowHorz | GrowVert | ShrinkHorz | ShrinkVert
+func (*TabWidget) LayoutFlagsMask() LayoutFlags {
+	return HGrow | VGrow | HShrink | VShrink
 }
 
 func (tw *TabWidget) PreferredSize() Size {

@@ -126,8 +126,8 @@ func NewListView(parent Container) (*ListView, os.Error) {
 	return lv, nil
 }
 
-func (*ListView) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz | ShrinkVert | GrowVert
+func (*ListView) LayoutFlagsMask() LayoutFlags {
+	return HShrink | HGrow | VShrink | VGrow
 }
 
 func (lv *ListView) PreferredSize() Size {

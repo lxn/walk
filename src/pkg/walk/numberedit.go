@@ -117,8 +117,8 @@ func (ne *NumberEdit) SetFont(value *Font) {
 	ne.edit.SetFont(value)
 }
 
-func (*NumberEdit) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz
+func (*NumberEdit) LayoutFlagsMask() LayoutFlags {
+	return HShrink | HGrow
 }
 
 func (ne *NumberEdit) PreferredSize() Size {

@@ -40,7 +40,7 @@ func NewLabel(parent Container) (*Label, os.Error) {
 	return l, nil
 }
 
-func (*Label) LayoutFlags() LayoutFlags {
+func (*Label) LayoutFlagsMask() LayoutFlags {
 	return 0
 }
 

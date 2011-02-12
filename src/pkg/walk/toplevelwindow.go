@@ -39,7 +39,7 @@ func (tlw *TopLevelWindow) ClientArea() *Composite {
 }
 
 func (tlw *TopLevelWindow) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz | ShrinkVert | GrowVert
+	return HShrink | HGrow | VShrink | VGrow
 }
 
 func (tlw *TopLevelWindow) PreferredSize() Size {

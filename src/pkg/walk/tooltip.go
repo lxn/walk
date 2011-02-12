@@ -46,7 +46,7 @@ func NewToolTip(parent Container) (*ToolTip, os.Error) {
 	return tt, nil
 }
 
-func (*ToolTip) LayoutFlags() LayoutFlags {
+func (*ToolTip) LayoutFlagsMask() LayoutFlags {
 	return 0
 }
 

@@ -61,14 +61,14 @@ func NewVerticalToolBar(parent Container) (*ToolBar, os.Error) {
 	return newToolBar(parent, CCS_VERT|CCS_NORESIZE)
 }
 
-func (tb *ToolBar) LayoutFlags() LayoutFlags {
+func (tb *ToolBar) LayoutFlagsMask() LayoutFlags {
 	style := GetWindowLong(tb.hWnd, GWL_STYLE)
 
 	if style&CCS_VERT > 0 {
-		return ShrinkVert | GrowVert
+		return VShrink | VGrow
 	}
 
-	return ShrinkHorz | GrowHorz
+	return HShrink | HGrow
 }
 
 func (tb *ToolBar) PreferredSize() Size {

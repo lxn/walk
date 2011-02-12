@@ -40,8 +40,8 @@ func NewCheckBox(parent Container) (*CheckBox, os.Error) {
 	return cb, nil
 }
 
-func (*CheckBox) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz
+func (*CheckBox) LayoutFlagsMask() LayoutFlags {
+	return HShrink | HGrow
 }
 
 func (cb *CheckBox) PreferredSize() Size {

@@ -40,8 +40,8 @@ func NewRadioButton(parent Container) (*RadioButton, os.Error) {
 	return rb, nil
 }
 
-func (*RadioButton) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz
+func (*RadioButton) LayoutFlagsMask() LayoutFlags {
+	return HShrink | HGrow
 }
 
 func (rb *RadioButton) PreferredSize() Size {

@@ -23,10 +23,10 @@ import (
 type LayoutFlags byte
 
 const (
-	ShrinkHorz LayoutFlags = 1 << iota
-	GrowHorz
-	ShrinkVert
-	GrowVert
+	HShrink LayoutFlags = 1 << iota
+	HGrow
+	VShrink
+	VGrow
 )
 
 type Widget interface {
@@ -45,7 +45,7 @@ type Widget interface {
 	Invalidate() os.Error
 	IsDisposed() bool
 	KeyDown() *KeyEvent
-	LayoutFlags() LayoutFlags
+	LayoutFlagsMask() LayoutFlags
 	MaxSize() Size
 	MinSize() Size
 	MouseDown() *MouseEvent
@@ -474,7 +474,7 @@ func (w *WidgetBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
 	return Size{MulDiv(dlus.Width, base.Width, 4), MulDiv(dlus.Height, base.Height, 8)}
 }
 
-func (w *WidgetBase) LayoutFlags() LayoutFlags {
+func (w *WidgetBase) LayoutFlagsMask() LayoutFlags {
 	// FIXME: Figure out how to do this, if at all.
 	return 0
 }

@@ -56,8 +56,8 @@ func NewTreeView(parent Container) (*TreeView, os.Error) {
 	return tv, nil
 }
 
-func (*TreeView) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz | ShrinkVert | GrowVert
+func (*TreeView) LayoutFlagsMask() LayoutFlags {
+	return HShrink | HGrow | VShrink | VGrow
 }
 
 func (tv *TreeView) PreferredSize() Size {

@@ -172,8 +172,8 @@ func (wv *WebView) Dispose() {
 	wv.WidgetBase.Dispose()
 }
 
-func (*WebView) LayoutFlags() LayoutFlags {
-	return ShrinkHorz | GrowHorz | ShrinkVert | GrowVert
+func (*WebView) LayoutFlagsMask() LayoutFlags {
+	return HShrink | HGrow | VShrink | VGrow
 }
 
 func (*WebView) PreferredSize() Size {
