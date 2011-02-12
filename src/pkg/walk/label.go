@@ -30,12 +30,31 @@ func NewLabel(parent Container) (*Label, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	l := &Label{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
+	l := &Label{
+		WidgetBase: WidgetBase{
+			hWnd:   hWnd,
+			parent: parent,
+		},
+	}
+
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			l.Dispose()
+		}
+	}()
+
+	l.layoutFlags = l.LayoutFlagsMask()
+
 	l.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = l
 
-	parent.Children().Add(l)
+	if err := parent.Children().Add(l); err != nil {
+		return nil, err
+	}
+
+	succeeded = true
 
 	return l, nil
 }

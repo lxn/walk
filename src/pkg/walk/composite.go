@@ -45,7 +45,14 @@ func newCompositeWithStyle(parent Container, style uint) (*Composite, os.Error) 
 		return nil, lastError("CreateWindowEx")
 	}
 
-	c := &Composite{ContainerBase: ContainerBase{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}}
+	c := &Composite{
+		ContainerBase: ContainerBase{
+			WidgetBase: WidgetBase{
+				hWnd:   hWnd,
+				parent: parent,
+			},
+		},
+	}
 
 	succeeded := false
 	defer func() {
@@ -53,6 +60,8 @@ func newCompositeWithStyle(parent Container, style uint) (*Composite, os.Error) 
 			c.Dispose()
 		}
 	}()
+
+	c.layoutFlags = HShrink | HGrow | VShrink | VGrow
 
 	c.SetPersistent(true)
 

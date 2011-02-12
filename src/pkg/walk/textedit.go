@@ -31,12 +31,31 @@ func NewTextEdit(parent Container) (*TextEdit, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	te := &TextEdit{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
+	te := &TextEdit{
+		WidgetBase: WidgetBase{
+			hWnd:   hWnd,
+			parent: parent,
+		},
+	}
+
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			te.Dispose()
+		}
+	}()
+
+	te.layoutFlags = te.LayoutFlagsMask()
+
 	te.SetFont(defaultFont)
+
+	if err := parent.Children().Add(te); err != nil {
+		return nil, err
+	}
 
 	widgetsByHWnd[hWnd] = te
 
-	parent.Children().Add(te)
+	succeeded = true
 
 	return te, nil
 }

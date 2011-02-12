@@ -48,7 +48,11 @@ func newLineEdit(parentHWND HWND) (*LineEdit, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	le := &LineEdit{WidgetBase: WidgetBase{hWnd: hWnd}}
+	le := &LineEdit{
+		WidgetBase: WidgetBase{
+			hWnd: hWnd,
+		},
+	}
 
 	var succeeded bool
 	defer func() {
@@ -56,6 +60,8 @@ func newLineEdit(parentHWND HWND) (*LineEdit, os.Error) {
 			le.Dispose()
 		}
 	}()
+
+	le.layoutFlags = le.LayoutFlagsMask()
 
 	lineEditOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(lineEditSubclassWndProcPtr)))
 	if lineEditOrigWndProcPtr == 0 {

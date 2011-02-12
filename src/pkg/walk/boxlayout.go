@@ -122,7 +122,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 		widget := children.At(i)
 
 		ps := widget.PreferredSize()
-		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlagsMask() == 0 {
+		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags()&widget.LayoutFlagsMask() == 0 {
 			continue
 		}
 
@@ -150,7 +150,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 
 		maxSize := widget.MaxSize()
 
-		lf := widget.LayoutFlagsMask()
+		lf := widget.LayoutFlags() & widget.LayoutFlagsMask()
 		if maxSize.Width > 0 {
 			lf &^= HGrow
 			ps.Width = maxSize.Width

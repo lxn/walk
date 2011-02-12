@@ -34,14 +34,31 @@ func NewToolTip(parent Container) (*ToolTip, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	tt := &ToolTip{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
+	tt := &ToolTip{
+		WidgetBase: WidgetBase{
+			hWnd:   hWnd,
+			parent: parent,
+		},
+	}
+
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			tt.Dispose()
+		}
+	}()
+
 	tt.SetFont(defaultFont)
+
+	if err := parent.Children().Add(tt); err != nil {
+		return nil, err
+	}
 
 	widgetsByHWnd[hWnd] = tt
 
-	parent.Children().Add(tt)
-
 	SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)
+
+	succeeded = true
 
 	return tt, nil
 }

@@ -57,14 +57,33 @@ func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidg
 		return nil, lastError("CreateWindowEx")
 	}
 
-	cw := &CustomWidget{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}, paint: paint}
+	cw := &CustomWidget{
+		WidgetBase: WidgetBase{
+			hWnd:   hWnd,
+			parent: parent,
+		},
+		paint: paint,
+	}
+
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			cw.Dispose()
+		}
+	}()
+
+	cw.layoutFlags = cw.LayoutFlagsMask()
 
 	cw.SetFont(defaultFont)
+
+	if err := parent.Children().Add(cw); err != nil {
+		return nil, err
+	}
 
 	widgetsByHWnd[hWnd] = cw
 	customWidgetsByHWND[hWnd] = cw
 
-	parent.Children().Add(cw)
+	succeeded = true
 
 	return cw, nil
 }

@@ -37,10 +37,29 @@ func newToolBar(parent Container, style uint) (*ToolBar, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	tb := &ToolBar{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
+	tb := &ToolBar{
+		WidgetBase: WidgetBase{
+			hWnd:   hWnd,
+			parent: parent,
+		},
+	}
+
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			tb.Dispose()
+		}
+	}()
+
+	tb.layoutFlags = HGrow | HShrink | VGrow | VShrink
+
 	tb.actions = newActionList(tb)
 
 	tb.SetFont(defaultFont)
+
+	if err := parent.Children().Add(tb); err != nil {
+		return nil, err
+	}
 
 	widgetsByHWnd[hWnd] = tb
 
@@ -48,7 +67,7 @@ func newToolBar(parent Container, style uint) (*ToolBar, os.Error) {
 	//	exStyle |= TBSTYLE_EX_DOUBLEBUFFER
 	//	SendMessage(hWnd, TB_SETEXTENDEDSTYLE, 0, LPARAM(exStyle))
 
-	parent.Children().Add(tb)
+	succeeded = true
 
 	return tb, nil
 }

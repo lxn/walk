@@ -71,6 +71,8 @@ func NewTabWidget(parent Container) (*TabWidget, os.Error) {
 		}
 	}()
 
+	tw.layoutFlags = HGrow | VGrow | HShrink | VShrink
+
 	tw.SetPersistent(true)
 
 	tw.hWndTab = CreateWindowEx(

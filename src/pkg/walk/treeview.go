@@ -39,7 +39,21 @@ func NewTreeView(parent Container) (*TreeView, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	tv := &TreeView{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
+	tv := &TreeView{
+		WidgetBase: WidgetBase{
+			hWnd:   hWnd,
+			parent: parent,
+		},
+	}
+
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			tv.Dispose()
+		}
+	}()
+
+	tv.layoutFlags = tv.LayoutFlagsMask()
 
 	if err := tv.setTheme("Explorer"); err != nil {
 		return nil, err
@@ -49,9 +63,13 @@ func NewTreeView(parent Container) (*TreeView, os.Error) {
 
 	tv.SetFont(defaultFont)
 
+	if err := parent.Children().Add(tv); err != nil {
+		return nil, err
+	}
+
 	widgetsByHWnd[hWnd] = tv
 
-	parent.Children().Add(tv)
+	succeeded = true
 
 	return tv, nil
 }

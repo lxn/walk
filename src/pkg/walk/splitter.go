@@ -69,6 +69,8 @@ func NewSplitter(parent Container) (*Splitter, os.Error) {
 		}
 	}()
 
+	s.layoutFlags = HShrink | HGrow | VShrink | VGrow
+
 	s.SetPersistent(true)
 
 	s.children = newWidgetList(s)

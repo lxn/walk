@@ -24,18 +24,39 @@ func NewCheckBox(parent Container) (*CheckBox, os.Error) {
 
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
-		BS_AUTOCHECKBOX /*|BS_NOTIFY*/ |WS_CHILD|WS_TABSTOP|WS_VISIBLE,
+		BS_AUTOCHECKBOX|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
 		0, 0, 120, 24, parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	cb := &CheckBox{Button: Button{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}}
+	cb := &CheckBox{
+		Button: Button{
+			WidgetBase: WidgetBase{
+				hWnd:   hWnd,
+				parent: parent,
+			},
+		},
+	}
+
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			cb.Dispose()
+		}
+	}()
+
+	cb.layoutFlags = cb.LayoutFlagsMask()
+
 	cb.SetFont(defaultFont)
+
+	if err := parent.Children().Add(cb); err != nil {
+		return nil, err
+	}
 
 	widgetsByHWnd[hWnd] = cb
 
-	parent.Children().Add(cb)
+	succeeded = true
 
 	return cb, nil
 }

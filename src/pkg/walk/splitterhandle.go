@@ -45,7 +45,12 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	sh := &splitterHandle{WidgetBase: WidgetBase{hWnd: hWnd, parent: splitter}}
+	sh := &splitterHandle{
+		WidgetBase: WidgetBase{
+			hWnd:   hWnd,
+			parent: splitter,
+		},
+	}
 
 	sh.SetFont(defaultFont)
 
@@ -55,13 +60,7 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, os.Error) {
 }
 
 func (sh *splitterHandle) LayoutFlagsMask() LayoutFlags {
-	splitter := sh.Parent().(*Splitter)
-
-	if splitter.Orientation() == Horizontal {
-		return VGrow
-	}
-
-	return HGrow
+	return 0
 }
 
 func (sh *splitterHandle) PreferredSize() Size {

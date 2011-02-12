@@ -56,6 +56,8 @@ func NewTabPage() (*TabPage, os.Error) {
 		}
 	}()
 
+	tp.layoutFlags = HGrow | VGrow | HShrink | VShrink
+
 	tp.children = newWidgetList(tp)
 
 	tp.SetFont(defaultFont)

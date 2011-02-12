@@ -24,18 +24,39 @@ func NewRadioButton(parent Container) (*RadioButton, os.Error) {
 
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
-		BS_AUTORADIOBUTTON /*|BS_NOTIFY*/ |WS_CHILD|WS_TABSTOP|WS_VISIBLE,
+		BS_AUTORADIOBUTTON|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
 		0, 0, 120, 24, parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	rb := &RadioButton{Button: Button{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}}
+	rb := &RadioButton{
+		Button: Button{
+			WidgetBase: WidgetBase{
+				hWnd:   hWnd,
+				parent: parent,
+			},
+		},
+	}
+
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			rb.Dispose()
+		}
+	}()
+
+	rb.layoutFlags = rb.LayoutFlagsMask()
+
 	rb.SetFont(defaultFont)
+
+	if err := parent.Children().Add(rb); err != nil {
+		return nil, err
+	}
 
 	widgetsByHWnd[hWnd] = rb
 
-	parent.Children().Add(rb)
+	succeeded = true
 
 	return rb, nil
 }

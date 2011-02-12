@@ -49,7 +49,14 @@ func NewPushButton(parent Container) (*PushButton, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	pb := &PushButton{Button: Button{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}}
+	pb := &PushButton{
+		Button: Button{
+			WidgetBase: WidgetBase{
+				hWnd:   hWnd,
+				parent: parent,
+			},
+		},
+	}
 
 	succeeded := false
 	defer func() {
@@ -57,6 +64,8 @@ func NewPushButton(parent Container) (*PushButton, os.Error) {
 			pb.Dispose()
 		}
 	}()
+
+	pb.layoutFlags = pb.LayoutFlagsMask()
 
 	pushButtonOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(pushButtonSubclassWndProcPtr)))
 	if pushButtonOrigWndProcPtr == 0 {

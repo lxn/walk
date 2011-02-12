@@ -57,6 +57,8 @@ func NewGroupBox(parent Container) (*GroupBox, os.Error) {
 		}
 	}()
 
+	gb.layoutFlags = HShrink | HGrow | VShrink | VGrow
+
 	gb.hWndGroupBox = CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
 		BS_GROUPBOX|WS_CHILD|WS_VISIBLE,

@@ -35,7 +35,13 @@ func NewComboBox(parent Container) (*ComboBox, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	cb := &ComboBox{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}, prevSelIndex: -1}
+	cb := &ComboBox{
+		WidgetBase: WidgetBase{
+			hWnd:   hWnd,
+			parent: parent,
+		},
+		prevSelIndex: -1,
+	}
 
 	succeeded := false
 	defer func() {
@@ -43,6 +49,8 @@ func NewComboBox(parent Container) (*ComboBox, os.Error) {
 			cb.Dispose()
 		}
 	}()
+
+	cb.layoutFlags = cb.LayoutFlagsMask()
 
 	cb.items = newComboBoxItemList(cb)
 

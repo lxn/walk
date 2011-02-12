@@ -94,6 +94,8 @@ func NewListView(parent Container) (*ListView, os.Error) {
 		}
 	}()
 
+	lv.layoutFlags = lv.LayoutFlagsMask()
+
 	lv.SetPersistent(true)
 
 	listViewOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(listViewSubclassWndProcPtr)))

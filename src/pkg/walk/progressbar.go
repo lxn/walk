@@ -31,12 +31,31 @@ func NewProgressBar(parent Container) (*ProgressBar, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	pb := &ProgressBar{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
+	pb := &ProgressBar{
+		WidgetBase: WidgetBase{
+			hWnd:   hWnd,
+			parent: parent,
+		},
+	}
+
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			pb.Dispose()
+		}
+	}()
+
+	pb.layoutFlags = pb.LayoutFlagsMask()
+
 	pb.SetFont(defaultFont)
+
+	if err := parent.Children().Add(pb); err != nil {
+		return nil, err
+	}
 
 	widgetsByHWnd[hWnd] = pb
 
-	parent.Children().Add(pb)
+	succeeded = true
 
 	return pb, nil
 }

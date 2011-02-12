@@ -45,6 +45,7 @@ type Widget interface {
 	Invalidate() os.Error
 	IsDisposed() bool
 	KeyDown() *KeyEvent
+	LayoutFlags() LayoutFlags
 	LayoutFlagsMask() LayoutFlags
 	MaxSize() Size
 	MinSize() Size
@@ -62,6 +63,7 @@ type Widget interface {
 	SetFocus() os.Error
 	SetFont(value *Font)
 	SetHeight(value int) os.Error
+	SetLayoutFlags(flags LayoutFlags)
 	SetMinMaxSize(min, max Size) os.Error
 	SetName(name string)
 	SetParent(value Container) os.Error
@@ -101,6 +103,7 @@ type WidgetBase struct {
 	maxSize              Size
 	minSize              Size
 	cursor               Cursor
+	layoutFlags          LayoutFlags
 }
 
 var (
@@ -472,6 +475,24 @@ func (w *WidgetBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
 	base := w.dialogBaseUnits()
 
 	return Size{MulDiv(dlus.Width, base.Width, 4), MulDiv(dlus.Height, base.Height, 8)}
+}
+
+func (w *WidgetBase) LayoutFlags() LayoutFlags {
+	return w.layoutFlags
+}
+
+func (w *WidgetBase) SetLayoutFlags(flags LayoutFlags) {
+	if widget, ok := widgetsByHWnd[w.hWnd]; ok {
+		if mask := widget.LayoutFlagsMask(); flags&mask == w.layoutFlags&mask {
+			return
+		}
+	}
+
+	w.layoutFlags = flags
+
+	if w.parent != nil && w.parent.Layout() != nil {
+		w.parent.Layout().Update(false)
+	}
 }
 
 func (w *WidgetBase) LayoutFlagsMask() LayoutFlags {

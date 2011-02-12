@@ -58,7 +58,12 @@ func NewNumberEdit(parent Container) (*NumberEdit, os.Error) {
 		return nil, lastError("CreateWindowEx")
 	}
 
-	ne := &NumberEdit{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
+	ne := &NumberEdit{
+		WidgetBase: WidgetBase{
+			hWnd:   hWnd,
+			parent: parent,
+		},
+	}
 
 	var succeeded bool
 	defer func() {
@@ -66,6 +71,8 @@ func NewNumberEdit(parent Container) (*NumberEdit, os.Error) {
 			ne.Dispose()
 		}
 	}()
+
+	ne.layoutFlags = ne.LayoutFlagsMask()
 
 	var err os.Error
 	ne.edit, err = newLineEdit(hWnd)

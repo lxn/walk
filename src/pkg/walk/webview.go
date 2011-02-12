@@ -95,6 +95,8 @@ func NewWebView(parent Container) (*WebView, os.Error) {
 		}
 	}()
 
+	wv.layoutFlags = wv.LayoutFlagsMask()
+
 	var classFactoryPtr unsafe.Pointer
 	if hr := CoGetClassObject(&CLSID_WebBrowser, CLSCTX_INPROC_HANDLER|CLSCTX_INPROC_SERVER, nil, &IID_IClassFactory, &classFactoryPtr); FAILED(hr) {
 		return nil, errorFromHRESULT("CoGetClassObject", hr)
