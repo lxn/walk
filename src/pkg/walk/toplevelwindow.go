@@ -25,12 +25,13 @@ const (
 
 type TopLevelWindow struct {
 	ContainerBase
-	owner            RootWidget
-	clientArea       *Composite
-	closingPublisher CloseEventPublisher
-	closeReason      CloseReason
-	prevFocusHWnd    HWND
-	isInRestoreState bool
+	owner             RootWidget
+	clientArea        *Composite
+	closingPublisher  CloseEventPublisher
+	closeReason       CloseReason
+	prevFocusHWnd     HWND
+	isInRestoreState  bool
+	startingPublisher EventPublisher
 }
 
 func (tlw *TopLevelWindow) ClientArea() *Composite {
@@ -46,7 +47,13 @@ func (tlw *TopLevelWindow) PreferredSize() Size {
 }
 
 func (tlw *TopLevelWindow) Run() int {
+	tlw.startingPublisher.Publish()
+
 	return tlw.runMessageLoop()
+}
+
+func (tlw *TopLevelWindow) Starting() *Event {
+	return tlw.startingPublisher.Event()
 }
 
 func (tlw *TopLevelWindow) Owner() RootWidget {
@@ -70,11 +77,11 @@ func (tlw *TopLevelWindow) SetOwner(value RootWidget) os.Error {
 }
 
 func (tlw *TopLevelWindow) Hide() {
-	ShowWindow(tlw.hWnd, SW_HIDE)
+	tlw.SetVisible(false)
 }
 
 func (tlw *TopLevelWindow) Show() {
-	ShowWindow(tlw.hWnd, SW_SHOW)
+	tlw.SetVisible(true)
 }
 
 func (tlw *TopLevelWindow) close() os.Error {
