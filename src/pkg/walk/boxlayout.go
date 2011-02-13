@@ -5,7 +5,6 @@
 package walk
 
 import (
-	//"log"
 	"os"
 )
 
@@ -109,11 +108,6 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 		return
 	}
 
-	/*log.Printf("*BoxLayout.Update: HWND: %d\n", l.container.Handle())
-	for i, child := range(l.container.Children().items) {
-		log.Printf("children: index: %d, type: %T\n", i, child)
-	}*/
-
 	widgets := make([]Widget, 0, l.container.Children().Len())
 
 	children := l.container.Children()
@@ -141,7 +135,7 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 	flags := make([]LayoutFlags, widgetCount)
 	prefSizes := make([]Size, widgetCount)
 	var prefSizeSum Size
-	var shrinkHorzCount, growHorzCount, shrinkVertCount, growVertCount int
+	var hShrinkCount, hGrowCount, vShrinkCount, vGrowCount int
 
 	for i := 0; i < widgetCount; i++ {
 		widget := widgets[i]
@@ -161,16 +155,16 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 		}
 
 		if lf&HShrink > 0 {
-			shrinkHorzCount++
+			hShrinkCount++
 		}
 		if lf&HGrow > 0 {
-			growHorzCount++
+			hGrowCount++
 		}
 		if lf&VShrink > 0 {
-			shrinkVertCount++
+			vShrinkCount++
 		}
 		if lf&VGrow > 0 {
-			growVertCount++
+			vGrowCount++
 		}
 		flags[i] = lf
 
@@ -194,44 +188,50 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 				reqW = s.Width
 			}
 		}
-		//        if reqW == 0 {
+
 		reqW = cb.Width - l.margins.HNear - l.margins.HFar
-		//        }
 
 		var change int
 		if diff < 0 {
-			if shrinkVertCount > 0 {
-				change = diff / shrinkVertCount
+			if vShrinkCount > 0 {
+				change = diff / vShrinkCount
 			}
 		} else {
-			if growVertCount > 0 {
-				change = diff / growVertCount
+			if vGrowCount > 0 {
+				change = diff / vGrowCount
 			}
 		}
-
-		//log.Printf("*BoxLayout.Update: widgetCount: %d, cb: %+v, prefSizeSum: %+v, diff: %d, change: %d, reqW: %d", widgetCount, cb, prefSizeSum, diff, change, reqW)
 
 		y := cb.Y + l.margins.VNear
 		for i := 0; i < widgetCount; i++ {
 			widget := widgets[i]
 
-			h := prefSizes[i].Height
+			lf := flags[i]
+			ps := prefSizes[i]
+			h := ps.Height
 
 			switch {
 			case change < 0:
-				if flags[i]&VShrink > 0 {
+				if lf&VShrink > 0 {
 					h += change
 				}
 
 			case change > 0:
-				if flags[i]&VGrow > 0 {
+				if lf&VGrow > 0 {
 					h += change
 				}
 			}
 
-			bounds := Rectangle{cb.X + l.margins.HNear, y, reqW, h}
+			var w int
+			if ps.Width < reqW && lf&HGrow == 0 {
+				w = ps.Width
+			} else {
+				w = reqW
+			}
 
-			//log.Printf("*BoxLayout.Update: bounds: %+v", bounds)
+			x := l.margins.HNear + (reqW-w)/2
+
+			bounds := Rectangle{x, y, w, h}
 
 			widget.SetBounds(bounds)
 
@@ -246,44 +246,50 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 				reqH = s.Height
 			}
 		}
-		//        if reqH == 0 {
+
 		reqH = cb.Height - l.margins.VNear - l.margins.VFar
-		//        }
 
 		var change int
 		if diff < 0 {
-			if shrinkHorzCount > 0 {
-				change = diff / shrinkHorzCount
+			if hShrinkCount > 0 {
+				change = diff / hShrinkCount
 			}
 		} else {
-			if growHorzCount > 0 {
-				change = diff / growHorzCount
+			if hGrowCount > 0 {
+				change = diff / hGrowCount
 			}
 		}
-
-		//log.Printf("*BoxLayout.Update: widgetCount: %d, cb: %+v, prefSizeSum: %+v, diff: %d, change: %d, reqH: %d", widgetCount, cb, prefSizeSum, diff, change, reqH)
 
 		x := cb.X + l.margins.HNear
 		for i := 0; i < widgetCount; i++ {
 			widget := widgets[i]
 
-			w := prefSizes[i].Width
+			lf := flags[i]
+			ps := prefSizes[i]
+			w := ps.Width
 
 			switch {
 			case change < 0:
-				if flags[i]&HShrink > 0 {
+				if lf&HShrink > 0 {
 					w += change
 				}
 
 			case change > 0:
-				if flags[i]&HGrow > 0 {
+				if lf&HGrow > 0 {
 					w += change
 				}
 			}
 
-			bounds := Rectangle{x, cb.Y + l.margins.VNear, w, reqH}
+			var h int
+			if ps.Height < reqH && lf&VGrow == 0 {
+				h = ps.Height
+			} else {
+				h = reqH
+			}
 
-			//log.Printf("*BoxLayout.Update: bounds: %+v", bounds)
+			y := l.margins.VNear + (reqH-h)/2
+
+			bounds := Rectangle{x, y, w, h}
 
 			widget.SetBounds(bounds)
 
