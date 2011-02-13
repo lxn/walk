@@ -71,7 +71,7 @@ func (*ComboBox) LayoutFlagsMask() LayoutFlags {
 }
 
 func (cb *ComboBox) PreferredSize() Size {
-	return cb.dialogBaseUnitsToPixels(Size{50, 14})
+	return cb.dialogBaseUnitsToPixels(Size{50, 12})
 }
 
 func (cb *ComboBox) Items() *ComboBoxItemList {

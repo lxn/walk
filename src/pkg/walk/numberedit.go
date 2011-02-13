@@ -129,7 +129,7 @@ func (*NumberEdit) LayoutFlagsMask() LayoutFlags {
 }
 
 func (ne *NumberEdit) PreferredSize() Size {
-	return ne.dialogBaseUnitsToPixels(Size{50, 14})
+	return ne.dialogBaseUnitsToPixels(Size{50, 12})
 }
 
 func (ne *NumberEdit) Decimals() int {

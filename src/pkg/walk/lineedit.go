@@ -152,7 +152,7 @@ func (*LineEdit) LayoutFlagsMask() LayoutFlags {
 }
 
 func (le *LineEdit) PreferredSize() Size {
-	return le.dialogBaseUnitsToPixels(Size{50, 14})
+	return le.dialogBaseUnitsToPixels(Size{50, 12})
 }
 
 func (le *LineEdit) EditingFinished() *Event {

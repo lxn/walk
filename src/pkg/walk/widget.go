@@ -449,23 +449,35 @@ func (w *WidgetBase) SetMinMaxSize(min, max Size) os.Error {
 }
 
 func (w *WidgetBase) dialogBaseUnits() Size {
-	// FIXME: Error handling
-	hFont := HFONT(SendMessage(w.hWnd, WM_GETFONT, 0, 0))
+	// The widget may use a font different from that in WidgetBase,
+	// like e.g. NumberEdit does, so we try to use the right one.
+	widget, ok := widgetsByHWnd[w.hWnd]
+	if !ok {
+		// The call is from the widget constructor func probably, just
+		// return an empty Size.
+		return Size{}
+	}
+
 	hdc := GetDC(w.hWnd)
+	defer ReleaseDC(w.hWnd, hdc)
+
+	hFont := widget.Font().handleForDPI(0) //HFONT(SendMessage(w.hWnd, WM_GETFONT, 0, 0))
 	hFontOld := SelectObject(hdc, HGDIOBJ(hFont))
+	defer SelectObject(hdc, HGDIOBJ(hFontOld))
 
 	var tm TEXTMETRIC
-	GetTextMetrics(hdc, &tm)
+	if !GetTextMetrics(hdc, &tm) {
+		log.Print(newError("GetTextMetrics failed"))
+	}
 
 	var size SIZE
-	GetTextExtentPoint32(
+	if !GetTextExtentPoint32(
 		hdc,
 		syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"),
 		52,
-		&size)
-
-	SelectObject(hdc, HGDIOBJ(hFontOld))
-	ReleaseDC(w.hWnd, hdc)
+		&size) {
+		log.Print(newError("GetTextExtentPoint32 failed"))
+	}
 
 	return Size{(size.CX/26 + 1) / 2, int(tm.TmHeight)}
 }
