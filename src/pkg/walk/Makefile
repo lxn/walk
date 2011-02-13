@@ -64,6 +64,7 @@ GOFILES=\
 	simpletextitem.go\
 	simpletypes.go\
 	size.go\
+	spacer.go\
 	splitter.go\
 	splitterhandle.go\
 	tabpage.go\
