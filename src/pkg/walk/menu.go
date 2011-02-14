@@ -102,25 +102,25 @@ func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 	}
 }
 
-func (m *Menu) onActionChanged(action *Action) (err os.Error) {
+func (m *Menu) onActionChanged(action *Action) os.Error {
 	var mii MENUITEMINFO
 
 	m.initMenuItemInfoFromAction(&mii, action)
 
 	if !SetMenuItemInfo(m.hMenu, uint(m.actions.Index(action)), true, &mii) {
-		err = newError("SetMenuItemInfo failed")
+		return newError("SetMenuItemInfo failed")
 	}
 
-	return
+	return nil
 }
 
-func (m *Menu) onInsertingAction(index int, action *Action) (err os.Error) {
+func (m *Menu) onInsertingAction(index int, action *Action) os.Error {
 	var mii MENUITEMINFO
 
 	m.initMenuItemInfoFromAction(&mii, action)
 
 	if !InsertMenuItem(m.hMenu, uint(index), true, &mii) {
-		return newError("wingui.Menu.onInsertingAction: win32.InsertMenuItem failed")
+		return newError("InsertMenuItem failed")
 	}
 
 	action.addChangedHandler(m)
@@ -134,13 +134,35 @@ func (m *Menu) onInsertingAction(index int, action *Action) (err os.Error) {
 		DrawMenuBar(m.hWnd)
 	}
 
-	return
+	return nil
 }
 
-func (m *Menu) onRemovingAction(index int, action *Action) (err os.Error) {
-	panic("not implemented")
+func (m *Menu) onRemovingAction(index int, action *Action) os.Error {
+	if !RemoveMenu(m.hMenu, uint(index), MF_BYPOSITION) {
+		return lastError("RemoveMenu")
+	}
+
+	action.removeChangedHandler(m)
+
+	if m.hWnd != 0 {
+		DrawMenuBar(m.hWnd)
+	}
+
+	return nil
 }
 
-func (m *Menu) onClearingActions() (err os.Error) {
-	panic("not implemented")
+func (m *Menu) onClearingActions() os.Error {
+	for i := m.actions.Len() - 1; i >= 0; i-- {
+		if !RemoveMenu(m.hMenu, uint(i), MF_BYPOSITION) {
+			return lastError("RemoveMenu")
+		}
+
+		m.actions.At(i).removeChangedHandler(m)
+	}
+
+	if m.hWnd != 0 {
+		DrawMenuBar(m.hWnd)
+	}
+
+	return nil
 }
