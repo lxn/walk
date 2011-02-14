@@ -40,6 +40,7 @@ type NumberEdit struct {
 	increment             float64
 	minValue              float64
 	maxValue              float64
+	oldValue              float64
 	valueChangedPublisher EventPublisher
 }
 
@@ -63,6 +64,10 @@ func NewNumberEdit(parent Container) (*NumberEdit, os.Error) {
 			hWnd:   hWnd,
 			parent: parent,
 		},
+		decimals:  2,
+		increment: 1,
+		minValue:  0,
+		maxValue:  100,
 	}
 
 	var succeeded bool
@@ -143,7 +148,7 @@ func (ne *NumberEdit) SetDecimals(value int) os.Error {
 
 	ne.decimals = value
 
-	return nil
+	return ne.SetValue(ne.oldValue)
 }
 
 func (ne *NumberEdit) Increment() float64 {
@@ -183,10 +188,6 @@ func (ne *NumberEdit) Value() float64 {
 
 func (ne *NumberEdit) SetValue(value float64) os.Error {
 	text := strconv.Ftoa64(value, 'f', ne.decimals)
-	desiredPrecVal, _ := strconv.Atof64(text)
-	if math.Fabs(desiredPrecVal-ne.Value()) < math.SmallestNonzeroFloat64 {
-		return nil
-	}
 
 	if err := ne.edit.SetText(text); err != nil {
 		return err
@@ -220,6 +221,13 @@ func (ne *NumberEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origW
 	case WM_COMMAND:
 		switch HIWORD(uint(wParam)) {
 		case EN_CHANGE:
+			value := ne.Value()
+			if math.Fabs(value-ne.oldValue) < math.SmallestNonzeroFloat64 {
+				break
+			}
+
+			ne.oldValue = value
+
 			ne.valueChangedPublisher.Publish()
 		}
 
