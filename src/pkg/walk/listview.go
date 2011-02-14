@@ -354,11 +354,6 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 			return DLGC_WANTALLKEYS
 		}
 
-	case WM_KEYDOWN:
-		if wParam == VK_RETURN && lv.SelectedIndex() > -1 {
-			lv.itemActivatedPublisher.Publish()
-		}
-
 	case WM_NOTIFY:
 		switch int(((*NMHDR)(unsafe.Pointer(lParam))).Code) {
 		case LVN_COLUMNCLICK:
