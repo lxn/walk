@@ -81,6 +81,11 @@ const (
 	MNS_NOTIFYBYPOS = 0x08000000
 )
 
+const (
+	MF_BYCOMMAND  = 0x00000000
+	MF_BYPOSITION = 0x00000400
+)
+
 type MENUITEMINFO struct {
 	CbSize        uint
 	FMask         uint

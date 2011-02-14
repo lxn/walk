@@ -1002,6 +1002,7 @@ var (
 	registerClassEx      uintptr
 	releaseCapture       uintptr
 	releaseDC            uintptr
+	removeMenu           uintptr
 	screenToClient       uintptr
 	sendMessage          uintptr
 	setActiveWindow      uintptr
@@ -1064,6 +1065,7 @@ func init() {
 	registerClassEx = MustGetProcAddress(lib, "RegisterClassExW")
 	releaseCapture = MustGetProcAddress(lib, "ReleaseCapture")
 	releaseDC = MustGetProcAddress(lib, "ReleaseDC")
+	removeMenu = MustGetProcAddress(lib, "RemoveMenu")
 	screenToClient = MustGetProcAddress(lib, "ScreenToClient")
 	sendMessage = MustGetProcAddress(lib, "SendMessageW")
 	setActiveWindow = MustGetProcAddress(lib, "SetActiveWindow")
@@ -1455,6 +1457,15 @@ func ReleaseDC(hWnd HWND, hDC HDC) bool {
 		uintptr(hWnd),
 		uintptr(hDC),
 		0)
+
+	return ret != 0
+}
+
+func RemoveMenu(hMenu HMENU, uPosition, uFlags uint) bool {
+	ret, _, _ := syscall.Syscall(removeMenu, 3,
+		uintptr(hMenu),
+		uintptr(uPosition),
+		uintptr(uFlags))
 
 	return ret != 0
 }
