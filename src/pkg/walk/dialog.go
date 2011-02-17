@@ -88,8 +88,6 @@ func NewDialog(owner RootWidget) (*Dialog, os.Error) {
 		},
 	}
 
-	dlg.layoutFlags = HGrow | HShrink | VGrow | VShrink
-
 	dlg.children = newWidgetList(dlg)
 
 	widgetsByHWnd[hWnd] = dlg

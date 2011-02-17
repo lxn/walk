@@ -44,8 +44,6 @@ func NewLabel(parent Container) (*Label, os.Error) {
 		}
 	}()
 
-	l.layoutFlags = l.LayoutFlagsMask()
-
 	l.SetFont(defaultFont)
 
 	widgetsByHWnd[hWnd] = l
@@ -59,7 +57,7 @@ func NewLabel(parent Container) (*Label, os.Error) {
 	return l, nil
 }
 
-func (*Label) LayoutFlagsMask() LayoutFlags {
+func (*Label) LayoutFlags() LayoutFlags {
 	return 0
 }
 

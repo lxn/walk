@@ -51,8 +51,6 @@ func newToolBar(parent Container, style uint) (*ToolBar, os.Error) {
 		}
 	}()
 
-	tb.layoutFlags = HGrow | HShrink | VGrow | VShrink
-
 	tb.actions = newActionList(tb)
 
 	tb.SetFont(defaultFont)
@@ -80,7 +78,7 @@ func NewVerticalToolBar(parent Container) (*ToolBar, os.Error) {
 	return newToolBar(parent, CCS_VERT|CCS_NORESIZE)
 }
 
-func (tb *ToolBar) LayoutFlagsMask() LayoutFlags {
+func (tb *ToolBar) LayoutFlags() LayoutFlags {
 	style := GetWindowLong(tb.hWnd, GWL_STYLE)
 
 	if style&CCS_VERT > 0 {

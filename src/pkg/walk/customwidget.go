@@ -72,8 +72,6 @@ func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidg
 		}
 	}()
 
-	cw.layoutFlags = cw.LayoutFlagsMask()
-
 	cw.SetFont(defaultFont)
 
 	if err := parent.Children().Add(cw); err != nil {
@@ -88,7 +86,7 @@ func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidg
 	return cw, nil
 }
 
-func (*CustomWidget) LayoutFlagsMask() LayoutFlags {
+func (*CustomWidget) LayoutFlags() LayoutFlags {
 	return HShrink | HGrow | VShrink | VGrow
 }
 

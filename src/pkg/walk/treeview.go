@@ -53,8 +53,6 @@ func NewTreeView(parent Container) (*TreeView, os.Error) {
 		}
 	}()
 
-	tv.layoutFlags = tv.LayoutFlagsMask()
-
 	if err := tv.setTheme("Explorer"); err != nil {
 		return nil, err
 	}
@@ -74,7 +72,7 @@ func NewTreeView(parent Container) (*TreeView, os.Error) {
 	return tv, nil
 }
 
-func (*TreeView) LayoutFlagsMask() LayoutFlags {
+func (*TreeView) LayoutFlags() LayoutFlags {
 	return HShrink | HGrow | VShrink | VGrow
 }
 

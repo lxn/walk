@@ -45,8 +45,6 @@ func NewTextEdit(parent Container) (*TextEdit, os.Error) {
 		}
 	}()
 
-	te.layoutFlags = te.LayoutFlagsMask()
-
 	te.SetFont(defaultFont)
 
 	if err := parent.Children().Add(te); err != nil {
@@ -60,7 +58,7 @@ func NewTextEdit(parent Container) (*TextEdit, os.Error) {
 	return te, nil
 }
 
-func (*TextEdit) LayoutFlagsMask() LayoutFlags {
+func (*TextEdit) LayoutFlags() LayoutFlags {
 	return HShrink | HGrow | VShrink | VGrow
 }
 

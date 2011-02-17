@@ -61,8 +61,6 @@ func NewMainWindow() (*MainWindow, os.Error) {
 		}
 	}()
 
-	mw.layoutFlags = HGrow | HShrink | VGrow | VShrink
-
 	mw.SetPersistent(true)
 
 	mw.children = newWidgetList(mw)

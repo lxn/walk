@@ -61,8 +61,6 @@ func newLineEdit(parentHWND HWND) (*LineEdit, os.Error) {
 		}
 	}()
 
-	le.layoutFlags = le.LayoutFlagsMask()
-
 	lineEditOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(lineEditSubclassWndProcPtr)))
 	if lineEditOrigWndProcPtr == 0 {
 		return nil, lastError("SetWindowLong")
@@ -147,7 +145,7 @@ func (le *LineEdit) SetPasswordMode(value bool) {
 	SendMessage(le.hWnd, EM_SETPASSWORDCHAR, uintptr('*'), 0)
 }
 
-func (*LineEdit) LayoutFlagsMask() LayoutFlags {
+func (*LineEdit) LayoutFlags() LayoutFlags {
 	return HShrink | HGrow
 }
 

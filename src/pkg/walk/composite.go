@@ -61,8 +61,6 @@ func newCompositeWithStyle(parent Container, style uint) (*Composite, os.Error) 
 		}
 	}()
 
-	c.layoutFlags = HShrink | HGrow | VShrink | VGrow
-
 	c.SetPersistent(true)
 
 	c.children = newWidgetList(c)
@@ -91,7 +89,7 @@ func NewComposite(parent Container) (*Composite, os.Error) {
 	return newCompositeWithStyle(parent, 0)
 }
 
-func (c *Composite) LayoutFlagsMask() LayoutFlags {
+func (c *Composite) LayoutFlags() LayoutFlags {
 	var flags LayoutFlags
 
 	count := c.children.Len()
@@ -99,7 +97,7 @@ func (c *Composite) LayoutFlagsMask() LayoutFlags {
 		return HShrink | VShrink
 	} else {
 		for i := 0; i < count; i++ {
-			flags |= c.children.At(i).LayoutFlagsMask()
+			flags |= c.children.At(i).LayoutFlags()
 		}
 	}
 

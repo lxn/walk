@@ -94,8 +94,6 @@ func NewListView(parent Container) (*ListView, os.Error) {
 		}
 	}()
 
-	lv.layoutFlags = lv.LayoutFlagsMask()
-
 	lv.SetPersistent(true)
 
 	listViewOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(listViewSubclassWndProcPtr)))
@@ -128,7 +126,7 @@ func NewListView(parent Container) (*ListView, os.Error) {
 	return lv, nil
 }
 
-func (*ListView) LayoutFlagsMask() LayoutFlags {
+func (*ListView) LayoutFlags() LayoutFlags {
 	return HShrink | HGrow | VShrink | VGrow
 }
 

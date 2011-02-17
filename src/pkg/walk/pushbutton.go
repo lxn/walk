@@ -65,8 +65,6 @@ func NewPushButton(parent Container) (*PushButton, os.Error) {
 		}
 	}()
 
-	pb.layoutFlags = pb.LayoutFlagsMask()
-
 	pushButtonOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(pushButtonSubclassWndProcPtr)))
 	if pushButtonOrigWndProcPtr == 0 {
 		return nil, lastError("SetWindowLong")
@@ -85,7 +83,7 @@ func NewPushButton(parent Container) (*PushButton, os.Error) {
 	return pb, nil
 }
 
-func (*PushButton) LayoutFlagsMask() LayoutFlags {
+func (*PushButton) LayoutFlags() LayoutFlags {
 	return 0
 }
 

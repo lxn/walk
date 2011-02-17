@@ -45,8 +45,6 @@ func NewProgressBar(parent Container) (*ProgressBar, os.Error) {
 		}
 	}()
 
-	pb.layoutFlags = pb.LayoutFlagsMask()
-
 	pb.SetFont(defaultFont)
 
 	if err := parent.Children().Add(pb); err != nil {
@@ -60,7 +58,7 @@ func NewProgressBar(parent Container) (*ProgressBar, os.Error) {
 	return pb, nil
 }
 
-func (*ProgressBar) LayoutFlagsMask() LayoutFlags {
+func (*ProgressBar) LayoutFlags() LayoutFlags {
 	return HShrink | HGrow
 }
 

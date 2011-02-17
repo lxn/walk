@@ -28,11 +28,11 @@ func spacerWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 
 type Spacer struct {
 	WidgetBase
-	preferredSize   Size
-	layoutFlagsMask LayoutFlags
+	preferredSize Size
+	layoutFlags   LayoutFlags
 }
 
-func newSpacer(parent Container, layoutFlagsMask LayoutFlags, prefSize Size) (*Spacer, os.Error) {
+func newSpacer(parent Container, layoutFlags LayoutFlags, prefSize Size) (*Spacer, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}
@@ -49,12 +49,11 @@ func newSpacer(parent Container, layoutFlagsMask LayoutFlags, prefSize Size) (*S
 
 	s := &Spacer{
 		WidgetBase: WidgetBase{
-			hWnd:        hWnd,
-			parent:      parent,
-			layoutFlags: layoutFlagsMask,
+			hWnd:   hWnd,
+			parent: parent,
 		},
-		layoutFlagsMask: layoutFlagsMask,
-		preferredSize:   prefSize,
+		layoutFlags:   layoutFlags,
+		preferredSize: prefSize,
 	}
 
 	succeeded := false
@@ -93,8 +92,8 @@ func NewVSpacerFixed(parent Container, height int) (*Spacer, os.Error) {
 	return newSpacer(parent, HShrink, Size{0, height})
 }
 
-func (s *Spacer) LayoutFlagsMask() LayoutFlags {
-	return s.layoutFlagsMask
+func (s *Spacer) LayoutFlags() LayoutFlags {
+	return s.layoutFlags
 }
 
 func (s *Spacer) PreferredSize() Size {

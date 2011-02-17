@@ -992,6 +992,7 @@ var (
 	isDialogMessage      uintptr
 	isWindowEnabled      uintptr
 	isWindowVisible      uintptr
+	killTimer            uintptr
 	loadCursor           uintptr
 	loadIcon             uintptr
 	loadImage            uintptr
@@ -1013,6 +1014,7 @@ var (
 	setMenuInfo          uintptr
 	setMenuItemInfo      uintptr
 	setParent            uintptr
+	setTimer             uintptr
 	setWindowLong        uintptr
 	setWindowPlacement   uintptr
 	setWindowPos         uintptr
@@ -1055,6 +1057,7 @@ func init() {
 	isDialogMessage = MustGetProcAddress(lib, "IsDialogMessageW")
 	isWindowEnabled = MustGetProcAddress(lib, "IsWindowEnabled")
 	isWindowVisible = MustGetProcAddress(lib, "IsWindowVisible")
+	killTimer = MustGetProcAddress(lib, "KillTimer")
 	loadCursor = MustGetProcAddress(lib, "LoadCursorW")
 	loadIcon = MustGetProcAddress(lib, "LoadIconW")
 	loadImage = MustGetProcAddress(lib, "LoadImageW")
@@ -1076,6 +1079,7 @@ func init() {
 	setMenuInfo = MustGetProcAddress(lib, "SetMenuInfo")
 	setMenuItemInfo = MustGetProcAddress(lib, "SetMenuItemInfoW")
 	setParent = MustGetProcAddress(lib, "SetParent")
+	setTimer = MustGetProcAddress(lib, "SetTimer")
 	setWindowLong = MustGetProcAddress(lib, "SetWindowLongW")
 	setWindowPlacement = MustGetProcAddress(lib, "SetWindowPlacement")
 	setWindowPos = MustGetProcAddress(lib, "SetWindowPos")
@@ -1361,6 +1365,15 @@ func IsWindowVisible(hWnd HWND) bool {
 	return ret != 0
 }
 
+func KillTimer(hWnd HWND, uIDEvent uintptr) bool {
+	ret, _, _ := syscall.Syscall(killTimer, 2,
+		uintptr(hWnd),
+		uIDEvent,
+		0)
+
+	return ret != 0
+}
+
 func LoadCursor(hInstance HINSTANCE, lpCursorName *uint16) HCURSOR {
 	ret, _, _ := syscall.Syscall(loadCursor, 2,
 		uintptr(hInstance),
@@ -1564,6 +1577,18 @@ func SetParent(hWnd HWND, parentHWnd HWND) HWND {
 		0)
 
 	return HWND(ret)
+}
+
+func SetTimer(hWnd HWND, nIDEvent uintptr, uElapse uint, lpTimerFunc uintptr) uintptr {
+	ret, _, _ := syscall.Syscall6(setTimer, 4,
+		uintptr(hWnd),
+		nIDEvent,
+		uintptr(uElapse),
+		lpTimerFunc,
+		0,
+		0)
+
+	return ret
 }
 
 func SetWindowLong(hWnd HWND, index, value int) int {

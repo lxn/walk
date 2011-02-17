@@ -46,8 +46,6 @@ func NewCheckBox(parent Container) (*CheckBox, os.Error) {
 		}
 	}()
 
-	cb.layoutFlags = cb.LayoutFlagsMask()
-
 	cb.SetFont(defaultFont)
 
 	if err := parent.Children().Add(cb); err != nil {
@@ -61,7 +59,7 @@ func NewCheckBox(parent Container) (*CheckBox, os.Error) {
 	return cb, nil
 }
 
-func (*CheckBox) LayoutFlagsMask() LayoutFlags {
+func (*CheckBox) LayoutFlags() LayoutFlags {
 	return HShrink | HGrow
 }
 

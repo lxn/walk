@@ -50,8 +50,6 @@ func NewComboBox(parent Container) (*ComboBox, os.Error) {
 		}
 	}()
 
-	cb.layoutFlags = cb.LayoutFlagsMask()
-
 	cb.items = newComboBoxItemList(cb)
 
 	cb.SetFont(defaultFont)
@@ -66,7 +64,7 @@ func NewComboBox(parent Container) (*ComboBox, os.Error) {
 	return cb, nil
 }
 
-func (*ComboBox) LayoutFlagsMask() LayoutFlags {
+func (*ComboBox) LayoutFlags() LayoutFlags {
 	return HShrink | HGrow
 }
 

@@ -46,8 +46,6 @@ func NewRadioButton(parent Container) (*RadioButton, os.Error) {
 		}
 	}()
 
-	rb.layoutFlags = rb.LayoutFlagsMask()
-
 	rb.SetFont(defaultFont)
 
 	if err := parent.Children().Add(rb); err != nil {
@@ -61,7 +59,7 @@ func NewRadioButton(parent Container) (*RadioButton, os.Error) {
 	return rb, nil
 }
 
-func (*RadioButton) LayoutFlagsMask() LayoutFlags {
+func (*RadioButton) LayoutFlags() LayoutFlags {
 	return HShrink | HGrow
 }
 

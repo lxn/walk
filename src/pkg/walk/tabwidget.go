@@ -71,8 +71,6 @@ func NewTabWidget(parent Container) (*TabWidget, os.Error) {
 		}
 	}()
 
-	tw.layoutFlags = HGrow | VGrow | HShrink | VShrink
-
 	tw.SetPersistent(true)
 
 	tw.hWndTab = CreateWindowEx(
@@ -99,7 +97,7 @@ func NewTabWidget(parent Container) (*TabWidget, os.Error) {
 	return tw, nil
 }
 
-func (*TabWidget) LayoutFlagsMask() LayoutFlags {
+func (*TabWidget) LayoutFlags() LayoutFlags {
 	return HGrow | VGrow | HShrink | VShrink
 }
 

@@ -77,8 +77,6 @@ func NewNumberEdit(parent Container) (*NumberEdit, os.Error) {
 		}
 	}()
 
-	ne.layoutFlags = ne.LayoutFlagsMask()
-
 	var err os.Error
 	ne.edit, err = newLineEdit(hWnd)
 	if err != nil {
@@ -129,7 +127,7 @@ func (ne *NumberEdit) SetFont(value *Font) {
 	ne.edit.SetFont(value)
 }
 
-func (*NumberEdit) LayoutFlagsMask() LayoutFlags {
+func (*NumberEdit) LayoutFlags() LayoutFlags {
 	return HShrink | HGrow
 }
 

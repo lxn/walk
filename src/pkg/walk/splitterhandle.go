@@ -47,9 +47,8 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, os.Error) {
 
 	sh := &splitterHandle{
 		WidgetBase: WidgetBase{
-			hWnd:        hWnd,
-			parent:      splitter,
-			layoutFlags: HGrow | HShrink | VGrow | VShrink,
+			hWnd:   hWnd,
+			parent: splitter,
 		},
 	}
 
@@ -60,7 +59,7 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, os.Error) {
 	return sh, nil
 }
 
-func (sh *splitterHandle) LayoutFlagsMask() LayoutFlags {
+func (sh *splitterHandle) LayoutFlags() LayoutFlags {
 	splitter := sh.Parent().(*Splitter)
 	if splitter.Orientation() == Horizontal {
 		return VGrow | VShrink

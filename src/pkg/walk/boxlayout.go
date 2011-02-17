@@ -205,7 +205,7 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 		widget := children.At(i)
 
 		ps := widget.PreferredSize()
-		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags()&widget.LayoutFlagsMask() == 0 {
+		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
 			continue
 		}
 
@@ -231,7 +231,7 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 		stretchFactors[i] = sf
 		stretchFactorsRemaining += sf
 
-		flags := widget.LayoutFlags() & widget.LayoutFlagsMask()
+		flags := widget.LayoutFlags()
 
 		min := widget.MinSize()
 		max := widget.MaxSize()
