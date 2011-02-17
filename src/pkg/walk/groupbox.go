@@ -140,6 +140,9 @@ func (gb *GroupBox) SetLayout(value Layout) os.Error {
 
 func (gb *GroupBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
+	case WM_COMMAND, WM_NOTIFY:
+		gb.composite.wndProc(hwnd, msg, wParam, lParam, 0)
+
 	case WM_SIZE, WM_SIZING:
 		wbcb := gb.WidgetBase.ClientBounds()
 		if !MoveWindow(gb.hWndGroupBox, wbcb.X, wbcb.Y, wbcb.Width, wbcb.Height, true) {
