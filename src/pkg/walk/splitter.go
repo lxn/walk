@@ -5,8 +5,11 @@
 package walk
 
 import (
+	"bytes"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -32,6 +35,9 @@ type Splitter struct {
 	handleWidth   int
 	mouseDownPos  Point
 	draggedHandle *splitterHandle
+	widget2Fixed  map[*WidgetBase]bool
+	oldClientSize Size
+	persistent    bool
 }
 
 func NewSplitter(parent Container) (*Splitter, os.Error) {
@@ -58,7 +64,8 @@ func NewSplitter(parent Container) (*Splitter, os.Error) {
 			},
 			layout: layout,
 		},
-		handleWidth: 4,
+		handleWidth:  4,
+		widget2Fixed: make(map[*WidgetBase]bool),
 	}
 	layout.container = s
 
@@ -126,6 +133,159 @@ func (s *Splitter) Orientation() Orientation {
 func (s *Splitter) SetOrientation(value Orientation) os.Error {
 	layout := s.layout.(*BoxLayout)
 	return layout.SetOrientation(value)
+}
+
+func (s *Splitter) Fixed(widget Widget) bool {
+	return s.widget2Fixed[widget.BaseWidget()]
+}
+
+func (s *Splitter) SetFixed(widget Widget, fixed bool) os.Error {
+	if !s.Children().containsHandle(widget.BaseWidget().hWnd) {
+		return newError("unknown widget")
+	}
+
+	s.widget2Fixed[widget.BaseWidget()] = fixed
+
+	return nil
+}
+
+func (s *Splitter) Persistent() bool {
+	return s.persistent
+}
+
+func (s *Splitter) SetPersistent(value bool) {
+	s.persistent = value
+}
+
+func (s *Splitter) SaveState() os.Error {
+	buf := bytes.NewBuffer(nil)
+
+	count := s.children.Len()
+	orientation := s.Orientation()
+	for i := 0; i < count; i++ {
+		if i > 0 {
+			buf.WriteString(" ")
+		}
+
+		var size int
+		if orientation == Horizontal {
+			size = s.children.At(i).Width()
+		} else {
+			size = s.children.At(i).Height()
+		}
+
+		buf.WriteString(strconv.Itoa(size))
+	}
+
+	s.putState(buf.String())
+
+	for _, widget := range s.children.items {
+		if persistable, ok := widget.(Persistable); ok {
+			if err := persistable.SaveState(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *Splitter) RestoreState() os.Error {
+	state, err := s.getState()
+	if err != nil {
+		return err
+	}
+	if state == "" {
+		return nil
+	}
+
+	sizeStrs := strings.Split(state, " ", -1)
+
+	if len(sizeStrs) != s.children.Len() {
+		return newError("unexpected child count")
+	}
+
+	layout := s.layout.(*BoxLayout)
+
+	s.SetSuspended(true)
+	defer s.SetSuspended(false)
+
+	for i, widget := range s.children.items {
+		size, err := strconv.Atoi(sizeStrs[i])
+		if err != nil {
+			return err
+		}
+
+		layout.SetStretchFactor(widget, size)
+
+		if persistable, ok := widget.(Persistable); ok {
+			if err := persistable.RestoreState(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *Splitter) onResize() {
+	clientSize := s.ClientBounds().Size()
+
+	if s.oldClientSize.Width > 0 || s.oldClientSize.Height > 0 {
+		layout := s.layout.(*BoxLayout)
+
+		widgets := s.Children()
+		orientation := s.Orientation()
+
+		s.SetSuspended(true)
+		defer s.SetSuspended(false)
+
+		var fixedSizeTotal int
+		for i := widgets.Len() - 1; i >= 0; i-- {
+			widget := widgets.At(i)
+
+			if i%2 == 1 {
+				fixedSizeTotal += s.handleWidth
+			} else if s.Fixed(widget) {
+				fixedSizeTotal += widget.Width()
+			}
+		}
+
+		for i := widgets.Len() - 1; i >= 0; i-- {
+			widget := widgets.At(i)
+
+			var stretch int
+
+			if i%2 == 1 {
+				stretch = s.handleWidth
+			} else if s.Fixed(widget) {
+				if orientation == Horizontal {
+					stretch = widget.Width()
+				} else {
+					stretch = widget.Height()
+				}
+			} else {
+				if orientation == Horizontal {
+					stretch = int(float64(widget.Width()) * float64(clientSize.Width-fixedSizeTotal) / float64(s.oldClientSize.Width-fixedSizeTotal))
+				} else {
+					stretch = int(float64(widget.Height()) * float64(clientSize.Height-fixedSizeTotal) / float64(s.oldClientSize.Height-fixedSizeTotal))
+				}
+			}
+
+			layout.SetStretchFactor(widget, stretch)
+		}
+	}
+
+	s.oldClientSize = clientSize
+}
+
+func (s *Splitter) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
+	case WM_SIZE, WM_SIZING:
+		s.onResize()
+	}
+
+	return s.ContainerBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
 }
 
 func (s *Splitter) onInsertingWidget(index int, widget Widget) (err os.Error) {
