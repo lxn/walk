@@ -87,7 +87,9 @@ func (tb *ToolBar) LayoutFlagsMask() LayoutFlags {
 		return VShrink | VGrow
 	}
 
-	return HShrink | HGrow
+	// FIXME: Since reimplementation of BoxLayout we must return 0 here,
+	// otherwise the ToolBar contained in MainWindow will eat half the space.  
+	return 0 //HShrink | HGrow
 }
 
 func (tb *ToolBar) PreferredSize() Size {

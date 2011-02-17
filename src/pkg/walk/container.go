@@ -103,6 +103,16 @@ func (c *ContainerBase) RestoreState() os.Error {
 	})
 }
 
+func (c *ContainerBase) SetSuspended(suspend bool) {
+	wasSuspended := c.Suspended()
+
+	c.WidgetBase.SetSuspended(suspend)
+
+	if !suspend && wasSuspended && c.layout != nil {
+		c.layout.Update(false)
+	}
+}
+
 func (c *ContainerBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:

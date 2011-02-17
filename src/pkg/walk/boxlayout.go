@@ -6,6 +6,7 @@ package walk
 
 import (
 	"os"
+	"sort"
 )
 
 type Orientation byte
@@ -16,18 +17,27 @@ const (
 )
 
 type BoxLayout struct {
-	container   Container
-	margins     Margins
-	spacing     int
-	orientation Orientation
+	container            Container
+	margins              Margins
+	spacing              int
+	orientation          Orientation
+	widget2StretchFactor map[*WidgetBase]int
+	resetNeeded          bool
+}
+
+func newBoxLayout(orientation Orientation) *BoxLayout {
+	return &BoxLayout{
+		orientation:          orientation,
+		widget2StretchFactor: make(map[*WidgetBase]int),
+	}
 }
 
 func NewHBoxLayout() *BoxLayout {
-	return &BoxLayout{orientation: Horizontal}
+	return newBoxLayout(Horizontal)
 }
 
 func NewVBoxLayout() *BoxLayout {
-	return &BoxLayout{orientation: Vertical}
+	return newBoxLayout(Vertical)
 }
 
 func (l *BoxLayout) Container() Container {
@@ -103,15 +113,94 @@ func (l *BoxLayout) SetSpacing(value int) os.Error {
 	return nil
 }
 
-func (l *BoxLayout) Update(reset bool) (err os.Error) {
-	if l.container == nil {
-		return
+func (l *BoxLayout) StretchFactor(widget Widget) int {
+	if factor, ok := l.widget2StretchFactor[widget.BaseWidget()]; ok {
+		return factor
 	}
 
-	widgets := make([]Widget, 0, l.container.Children().Len())
+	return 1
+}
 
+func (l *BoxLayout) SetStretchFactor(widget Widget, factor int) os.Error {
+	if factor != l.StretchFactor(widget) {
+		if l.container == nil {
+			return newError("container required")
+		}
+		if !l.container.Children().containsHandle(widget.BaseWidget().hWnd) {
+			return newError("unknown widget")
+		}
+		if factor < 1 {
+			return newError("factor must be >= 1")
+		}
+
+		l.widget2StretchFactor[widget.BaseWidget()] = factor
+
+		l.Update(false)
+	}
+
+	return nil
+}
+
+func (l *BoxLayout) cleanupStretchFactors() {
+	widgets := l.container.Children()
+
+	for widget, _ := range l.widget2StretchFactor {
+		if !widgets.containsHandle(widget.BaseWidget().hWnd) {
+			l.widget2StretchFactor[widget.BaseWidget()] = 0, false
+		}
+	}
+}
+
+type widgetInfo struct {
+	index   int
+	minSize int
+	maxSize int
+	stretch int
+}
+
+type widgetInfoList []widgetInfo
+
+func (l widgetInfoList) Len() int {
+	return len(l)
+}
+
+func (l widgetInfoList) Less(i, j int) bool {
+	minDiff := l[i].minSize - l[j].minSize
+	if minDiff == 0 {
+		return l[i].maxSize/l[i].stretch < l[j].maxSize/l[j].stretch
+	}
+
+	return minDiff > 0
+}
+
+func (l widgetInfoList) Swap(i, j int) {
+	l[i], l[j] = l[j], l[i]
+}
+
+func (l *BoxLayout) Update(reset bool) os.Error {
+	if l.container == nil {
+		return newError("container required")
+	}
+
+	if reset {
+		l.resetNeeded = true
+	}
+
+	if l.container.Suspended() {
+		return nil
+	}
+
+	if l.resetNeeded {
+		l.resetNeeded = false
+
+		// Make GC happy.
+		l.cleanupStretchFactors()
+	}
+
+	// Begin by finding out which widgets we care about.
 	children := l.container.Children()
-	j := 0
+	widgets := make([]Widget, 0, children.Len())
+
 	for i := 0; i < cap(widgets); i++ {
 		widget := children.At(i)
 
@@ -120,182 +209,146 @@ func (l *BoxLayout) Update(reset bool) (err os.Error) {
 			continue
 		}
 
-		widgets = widgets[0 : j+1]
-		widgets[j] = widget
-		j++
+		widgets = append(widgets, widget)
 	}
 
-	widgetCount := len(widgets)
+	// Prepare some useful data.
+	var stretchFactorsRemaining int
+	stretchFactors := make([]int, len(widgets))
+	var minSizesRemaining int
+	minSizes := make([]int, len(widgets))
+	maxSizes := make([]int, len(widgets))
+	sizes := make([]int, len(widgets))
+	prefSizes2 := make([]int, len(widgets))
+	canGrow2 := make([]bool, len(widgets))
+	sortedWidgetInfo := widgetInfoList(make([]widgetInfo, len(widgets)))
 
-	if widgetCount == 0 {
-		return
+	for i, widget := range widgets {
+		sf := l.widget2StretchFactor[widget.BaseWidget()]
+		if sf == 0 {
+			sf = 1
+		}
+		stretchFactors[i] = sf
+		stretchFactorsRemaining += sf
+
+		flags := widget.LayoutFlags() & widget.LayoutFlagsMask()
+
+		min := widget.MinSize()
+		max := widget.MaxSize()
+		pref := widget.PreferredSize()
+
+		if l.orientation == Horizontal {
+			canGrow2[i] = flags&VGrow > 0
+
+			if min.Width > 0 {
+				minSizes[i] = min.Width
+			} else if pref.Width > 0 && flags&HShrink == 0 {
+				minSizes[i] = pref.Width
+			}
+
+			if max.Width > 0 {
+				maxSizes[i] = max.Width
+			} else if pref.Width > 0 && flags&HGrow == 0 {
+				maxSizes[i] = pref.Width
+			} else {
+				maxSizes[i] = 32768
+			}
+
+			prefSizes2[i] = pref.Height
+		} else {
+			canGrow2[i] = flags&HGrow > 0
+
+			if min.Height > 0 {
+				minSizes[i] = min.Height
+			} else if pref.Height > 0 && flags&VShrink == 0 {
+				minSizes[i] = pref.Height
+			}
+
+			if max.Height > 0 {
+				maxSizes[i] = max.Height
+			} else if pref.Height > 0 && flags&VGrow == 0 {
+				maxSizes[i] = pref.Height
+			} else {
+				maxSizes[i] = 32768
+			}
+
+			prefSizes2[i] = pref.Width
+		}
+
+		sortedWidgetInfo[i].index = i
+		sortedWidgetInfo[i].minSize = minSizes[i]
+		sortedWidgetInfo[i].maxSize = maxSizes[i]
+		sortedWidgetInfo[i].stretch = sf
+
+		minSizesRemaining += minSizes[i]
 	}
 
-	// We will start by collecting some valuable information.
-	flags := make([]LayoutFlags, widgetCount)
-	prefSizes := make([]Size, widgetCount)
-	var prefSizeSum Size
-	var hShrinkCount, hGrowCount, vShrinkCount, vGrowCount int
-
-	for i := 0; i < widgetCount; i++ {
-		widget := widgets[i]
-
-		ps := widget.PreferredSize()
-
-		maxSize := widget.MaxSize()
-
-		lf := widget.LayoutFlags() & widget.LayoutFlagsMask()
-		if maxSize.Width > 0 {
-			lf &^= HGrow
-			ps.Width = maxSize.Width
-		}
-		if maxSize.Height > 0 {
-			lf &^= VGrow
-			ps.Height = maxSize.Height
-		}
-
-		if lf&HShrink > 0 {
-			hShrinkCount++
-		}
-		if lf&HGrow > 0 {
-			hGrowCount++
-		}
-		if lf&VShrink > 0 {
-			vShrinkCount++
-		}
-		if lf&VGrow > 0 {
-			vGrowCount++
-		}
-		flags[i] = lf
-
-		prefSizeSum.Width += ps.Width
-		prefSizeSum.Height += ps.Height
-		prefSizes[i] = ps
-	}
+	sort.Sort(sortedWidgetInfo)
 
 	cb := l.container.ClientBounds()
-
-	spacingSum := (widgetCount - 1) * l.spacing
-
-	// Now do the actual layout thing.
-	if l.orientation == Vertical {
-		diff := cb.Height - l.margins.VNear - prefSizeSum.Height - spacingSum - l.margins.VFar
-
-		reqW := 0
-
-		for i, s := range prefSizes {
-			if s.Width > reqW && (flags[i]&HShrink == 0) {
-				reqW = s.Width
-			}
-		}
-
-		reqW = cb.Width - l.margins.HNear - l.margins.HFar
-
-		var change int
-		if diff < 0 {
-			if vShrinkCount > 0 {
-				change = diff / vShrinkCount
-			}
-		} else {
-			if vGrowCount > 0 {
-				change = diff / vGrowCount
-			}
-		}
-
-		y := cb.Y + l.margins.VNear
-		for i := 0; i < widgetCount; i++ {
-			widget := widgets[i]
-
-			lf := flags[i]
-			ps := prefSizes[i]
-			h := ps.Height
-
-			switch {
-			case change < 0:
-				if lf&VShrink > 0 {
-					h += change
-				}
-
-			case change > 0:
-				if lf&VGrow > 0 {
-					h += change
-				}
-			}
-
-			var w int
-			if ps.Width < reqW && lf&HGrow == 0 {
-				w = ps.Width
-			} else {
-				w = reqW
-			}
-
-			x := l.margins.HNear + (reqW-w)/2
-
-			bounds := Rectangle{x, y, w, h}
-
-			widget.SetBounds(bounds)
-
-			y += h + l.spacing
-		}
+	var start1, start2, space1, space2 int
+	if l.orientation == Horizontal {
+		start1 = cb.X + l.margins.HNear
+		start2 = cb.Y + l.margins.VNear
+		space1 = cb.Width - l.margins.HNear - l.margins.HFar
+		space2 = cb.Height - l.margins.VNear - l.margins.VFar
 	} else {
-		diff := cb.Width - l.margins.HNear - prefSizeSum.Width - spacingSum - l.margins.HFar
-		reqH := 0
-
-		for i, s := range prefSizes {
-			if s.Height > reqH && (flags[i]&VShrink == 0) {
-				reqH = s.Height
-			}
-		}
-
-		reqH = cb.Height - l.margins.VNear - l.margins.VFar
-
-		var change int
-		if diff < 0 {
-			if hShrinkCount > 0 {
-				change = diff / hShrinkCount
-			}
-		} else {
-			if hGrowCount > 0 {
-				change = diff / hGrowCount
-			}
-		}
-
-		x := cb.X + l.margins.HNear
-		for i := 0; i < widgetCount; i++ {
-			widget := widgets[i]
-
-			lf := flags[i]
-			ps := prefSizes[i]
-			w := ps.Width
-
-			switch {
-			case change < 0:
-				if lf&HShrink > 0 {
-					w += change
-				}
-
-			case change > 0:
-				if lf&HGrow > 0 {
-					w += change
-				}
-			}
-
-			var h int
-			if ps.Height < reqH && lf&VGrow == 0 {
-				h = ps.Height
-			} else {
-				h = reqH
-			}
-
-			y := l.margins.VNear + (reqH-h)/2
-
-			bounds := Rectangle{x, y, w, h}
-
-			widget.SetBounds(bounds)
-
-			x += w + l.spacing
-		}
+		start1 = cb.Y + l.margins.VNear
+		start2 = cb.X + l.margins.HNear
+		space1 = cb.Height - l.margins.VNear - l.margins.VFar
+		space2 = cb.Width - l.margins.HNear - l.margins.HFar
 	}
 
-	return
+	// Now calculate widget primary axis sizes.
+	spacingRemaining := l.spacing * (len(widgets) - 1)
+	for _, info := range sortedWidgetInfo {
+		i := info.index
+
+		stretch := stretchFactors[i]
+		min := info.minSize
+		max := info.maxSize
+		size := min
+
+		if min < max {
+			excessSpace := float64(space1 - minSizesRemaining - spacingRemaining)
+			size += int(excessSpace * float64(stretch) / float64(stretchFactorsRemaining))
+			if size < min {
+				size = min
+			} else if size > max {
+				size = max
+			}
+		}
+
+		sizes[i] = size
+
+		minSizesRemaining -= min
+		stretchFactorsRemaining -= stretch
+		space1 -= (size + l.spacing)
+		spacingRemaining -= l.spacing
+	}
+
+	// Finally position widgets.
+	p1 := start1
+	for i, widget := range widgets {
+		s1 := sizes[i]
+
+		var s2 int
+		if canGrow2[i] {
+			s2 = space2
+		} else {
+			s2 = prefSizes2[i]
+		}
+
+		p2 := start2 + (space2-s2)/2
+
+		if l.orientation == Horizontal {
+			widget.SetBounds(Rectangle{p1, p2, s1, s2})
+		} else {
+			widget.SetBounds(Rectangle{p2, p1, s2, s1})
+		}
+
+		p1 += s1 + l.spacing
+	}
+
+	return nil
 }
