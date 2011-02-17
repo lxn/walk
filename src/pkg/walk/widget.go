@@ -31,7 +31,6 @@ const (
 
 type Widget interface {
 	BaseWidget() *WidgetBase
-	BeginUpdate()
 	Bounds() Rectangle
 	ClientBounds() Rectangle
 	ContextMenu() *Menu
@@ -39,7 +38,6 @@ type Widget interface {
 	Cursor() Cursor
 	Dispose()
 	Enabled() bool
-	EndUpdate()
 	Font() *Font
 	Height() int
 	Invalidate() os.Error
@@ -68,6 +66,7 @@ type Widget interface {
 	SetName(name string)
 	SetParent(value Container) os.Error
 	SetSize(value Size) os.Error
+	SetSuspended(suspend bool)
 	SetText(value string) os.Error
 	SetVisible(value bool)
 	SetWidth(value int) os.Error
@@ -75,6 +74,7 @@ type Widget interface {
 	SetY(value int) os.Error
 	Size() Size
 	SizeChanged() *Event
+	Suspended() bool
 	Text() string
 	Visible() bool
 	Width() int
@@ -104,6 +104,7 @@ type WidgetBase struct {
 	minSize              Size
 	cursor               Cursor
 	layoutFlags          LayoutFlags
+	suspended            bool
 }
 
 var (
@@ -278,12 +279,25 @@ func (w *WidgetBase) SetFont(value *Font) {
 	}
 }
 
-func (w *WidgetBase) BeginUpdate() {
-	SendMessage(w.hWnd, WM_SETREDRAW, 0, 0)
+func (w *WidgetBase) Suspended() bool {
+	return w.suspended
 }
 
-func (w *WidgetBase) EndUpdate() {
-	SendMessage(w.hWnd, WM_SETREDRAW, 1, 0)
+func (w *WidgetBase) SetSuspended(suspend bool) {
+	if suspend == w.suspended {
+		return
+	}
+
+	var wParam int
+	if suspend {
+		wParam = 0
+	} else {
+		wParam = 1
+	}
+
+	SendMessage(w.hWnd, WM_SETREDRAW, uintptr(wParam), 0)
+
+	w.suspended = suspend
 }
 
 func (w *WidgetBase) Invalidate() os.Error {

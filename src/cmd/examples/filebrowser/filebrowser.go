@@ -29,8 +29,8 @@ func (mw *MainWindow) showError(err os.Error) {
 }
 
 func (mw *MainWindow) populateTreeViewItem(parent *walk.TreeViewItem) {
-	mw.treeView.BeginUpdate()
-	defer mw.treeView.EndUpdate()
+	mw.treeView.SetSuspended(true)
+	defer mw.treeView.SetSuspended(false)
 
 	// Remove dummy child
 	panicIfErr(parent.Children().Clear())
@@ -60,8 +60,8 @@ func (mw *MainWindow) populateTreeViewItem(parent *walk.TreeViewItem) {
 }
 
 func (mw *MainWindow) populateListView(dirPath string) {
-	mw.listView.BeginUpdate()
-	defer mw.listView.EndUpdate()
+	mw.listView.SetSuspended(true)
+	defer mw.listView.SetSuspended(false)
 
 	panicIfErr(mw.listView.Items().Clear())
 
@@ -190,12 +190,12 @@ func main() {
 	drives, err := walk.DriveNames()
 	panicIfErr(err)
 
-	mw.treeView.BeginUpdate()
+	mw.treeView.SetSuspended(true)
 	for _, drive := range drives {
 		driveItem := newTreeViewItem(drive[:2])
 		panicIfErr(mw.treeView.Items().Add(driveItem))
 	}
-	mw.treeView.EndUpdate()
+	mw.treeView.SetSuspended(false)
 
 	mw.listView, err = walk.NewListView(splitter)
 	panicIfErr(err)

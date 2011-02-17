@@ -218,12 +218,12 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err os.Error) {
 						prev := s.children.At(handleIndex - 1)
 						next := s.children.At(handleIndex + 1)
 
-						prev.BeginUpdate()
+						prev.SetSuspended(true)
 						defer prev.Invalidate()
-						defer prev.EndUpdate()
-						next.BeginUpdate()
+						defer prev.SetSuspended(false)
+						next.SetSuspended(true)
 						defer next.Invalidate()
-						defer next.EndUpdate()
+						defer next.SetSuspended(false)
 
 						bh := dragHandle.Bounds()
 						bp := prev.Bounds()
