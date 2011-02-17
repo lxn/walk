@@ -48,6 +48,11 @@ func (l *SelectedIndexList) Len() int {
 	return len(l.items)
 }
 
+const (
+	selectedIndexChangedTimerId = 1 + iota
+	selectedIndexesChangedTimerId
+)
+
 type ListView struct {
 	WidgetBase
 	columns                         *ListViewColumnList
@@ -60,6 +65,7 @@ type ListView struct {
 	columnClickedPublisher          IntEventPublisher
 	lastColumnStretched             bool
 	persistent                      bool
+	selectionChangedDelay           int
 }
 
 func NewListView(parent Container) (*ListView, os.Error) {
@@ -124,6 +130,19 @@ func NewListView(parent Container) (*ListView, os.Error) {
 	succeeded = true
 
 	return lv, nil
+}
+
+func (lv *ListView) Dispose() {
+	if lv.hWnd != 0 {
+		if !KillTimer(lv.hWnd, selectedIndexChangedTimerId) {
+			log.Print(lastError("KillTimer"))
+		}
+		if !KillTimer(lv.hWnd, selectedIndexesChangedTimerId) {
+			log.Print(lastError("KillTimer"))
+		}
+
+		lv.WidgetBase.Dispose()
+	}
 }
 
 func (*ListView) LayoutFlags() LayoutFlags {
@@ -207,13 +226,14 @@ func (lv *ListView) SelectedIndexChanged() *Event {
 	return lv.selectedIndexChangedPublisher.Event()
 }
 
-func (lv *ListView) SingleItemSelection() (bool, os.Error) {
+func (lv *ListView) SingleItemSelection() bool {
 	style := uint(GetWindowLong(lv.hWnd, GWL_STYLE))
 	if style == 0 {
-		return false, lastError("GetWindowLong")
+		log.Print(lastError("GetWindowLong"))
+		return false
 	}
 
-	return style&LVS_SINGLESEL > 0, nil
+	return style&LVS_SINGLESEL > 0
 }
 
 func (lv *ListView) SetSingleItemSelection(value bool) os.Error {
@@ -222,6 +242,14 @@ func (lv *ListView) SetSingleItemSelection(value bool) os.Error {
 
 func (lv *ListView) SelectedIndexes() *SelectedIndexList {
 	return lv.selectedIndexes
+}
+
+func (lv *ListView) SelectionChangedDelay() int {
+	return lv.selectionChangedDelay
+}
+
+func (lv *ListView) SetSelectionChangedDelay(delay int) {
+	lv.selectionChangedDelay = delay
 }
 
 func (lv *ListView) updateSelectedIndexes() {
@@ -246,7 +274,13 @@ func (lv *ListView) updateSelectedIndexes() {
 
 	if changed {
 		lv.selectedIndexes.items = indexes
-		lv.selectedIndexesChangedPublisher.Publish()
+		if lv.selectionChangedDelay > 0 {
+			if 0 == SetTimer(lv.hWnd, selectedIndexesChangedTimerId, uint(lv.selectionChangedDelay), 0) {
+				log.Print(lastError("SetTimer"))
+			}
+		} else {
+			lv.selectedIndexesChangedPublisher.Publish()
+		}
 	}
 }
 
@@ -364,14 +398,29 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 			selectedBefore := nmlv.UOldState&LVIS_SELECTED > 0
 			if selectedNow && !selectedBefore {
 				lv.selectedIndex = nmlv.IItem
-				lv.selectedIndexChangedPublisher.Publish()
+				if lv.selectionChangedDelay > 0 {
+					if 0 == SetTimer(lv.hWnd, selectedIndexChangedTimerId, uint(lv.selectionChangedDelay), 0) {
+						log.Print(lastError("SetTimer"))
+					}
+				} else {
+					lv.selectedIndexChangedPublisher.Publish()
+				}
 			}
-			if singleSel, _ := lv.SingleItemSelection(); !singleSel {
+			if !lv.SingleItemSelection() {
 				lv.updateSelectedIndexes()
 			}
 
 		case LVN_ITEMACTIVATE:
 			lv.itemActivatedPublisher.Publish()
+		}
+
+	case WM_TIMER:
+		switch wParam {
+		case selectedIndexChangedTimerId:
+			lv.selectedIndexChangedPublisher.Publish()
+
+		case selectedIndexesChangedTimerId:
+			lv.selectedIndexesChangedPublisher.Publish()
 		}
 	}
 
