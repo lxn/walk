@@ -44,6 +44,10 @@ func (l *ComboBoxItemList) Clear() os.Error {
 	return nil
 }
 
+func (l *ComboBoxItemList) Contains(item *ComboBoxItem) bool {
+	return l.Index(item) > -1
+}
+
 func (l *ComboBoxItemList) Index(item *ComboBoxItem) int {
 	for i, tvi := range l.items {
 		if tvi == item {

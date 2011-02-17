@@ -48,6 +48,10 @@ func (l *ActionList) Clear() os.Error {
 	return nil
 }
 
+func (l *ActionList) Contains(action *Action) bool {
+	return l.Index(action) > -1
+}
+
 func (l *ActionList) Index(action *Action) int {
 	for i, a := range l.actions {
 		if a == action {

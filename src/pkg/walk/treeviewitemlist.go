@@ -45,6 +45,10 @@ func (l *TreeViewItemList) Clear() os.Error {
 	return nil
 }
 
+func (l *TreeViewItemList) Contains(item *TreeViewItem) bool {
+	return l.Index(item) > -1
+}
+
 func (l *TreeViewItemList) Index(item *TreeViewItem) int {
 	for i, tvi := range l.items {
 		if tvi == item {

@@ -44,6 +44,10 @@ func (l *ListViewColumnList) Clear() os.Error {
 	return nil
 }
 
+func (l *ListViewColumnList) Contains(column *ListViewColumn) bool {
+	return l.Index(column) > -1
+}
+
 func (l *ListViewColumnList) Index(column *ListViewColumn) int {
 	for i, c := range l.columns {
 		if c == column {

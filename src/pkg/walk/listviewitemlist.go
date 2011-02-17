@@ -44,6 +44,10 @@ func (l *ListViewItemList) Clear() os.Error {
 	return nil
 }
 
+func (l *ListViewItemList) Contains(item *ListViewItem) bool {
+	return l.Index(item) > -1
+}
+
 func (l *ListViewItemList) Index(item *ListViewItem) int {
 	for i, lvi := range l.items {
 		if lvi == item {
