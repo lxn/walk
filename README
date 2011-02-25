@@ -19,28 +19,16 @@ redone. Don't rely on anything here to be stable yet, it will take some time.
 Setup
 =====
 
-As the Go toolchain makes crosscompiling very easy, I code and build on Linux
-and use Windows only to run the executables. Follow this guide if you want to do
-the same: http://groups.google.com/group/golang-nuts/msg/c940bb15ef1d2b4e
+1. Make sure you have a working Go installation and build environment, 
+   see this go-nuts post for details:
+   http://groups.google.com/group/golang-nuts/msg/5c87630a84f4fd0c
+   
+   Updated versions of the Windows Go build are available here:
+   http://code.google.com/p/gomingw/downloads/list
+   
+2. git clone https://github.com/lxn/walk.git
 
-Now clone the Walk git repo and run make:
-$ git clone http://github.com/lxn/walk.git
-$ cd walk && gomake
-
-Presently there is one caveat: Windows apps will need window procedures to do
-the nice gui stuff, which means Windows will have to call a callback function in
-the Go code. This is not possible in the current release of Go though, so there
-is an extra hurdle to overcome: You have to apply this patch to your Go
-installation: http://codereview.appspot.com/1696051/
-Also, both occurrences of "4096" in $GOROOT/src/pkg/runtime/proc.c should be
-changed to e.g. "65536".
-
-Now rebuild the Windows port of Go:
-$ export GOOS=windows
-$ cd $GOROOT/src/pkg
-$ make clean
-$ ./deps.bash
-$ make install
+3. cd walk/src && gomake
 
 Using Walk
 ==========
