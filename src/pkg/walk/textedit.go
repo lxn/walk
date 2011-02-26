@@ -14,6 +14,18 @@ import (
 	. "walk/winapi/user32"
 )
 
+var textEditSubclassWndProcPtr uintptr
+var textEditOrigWndProcPtr uintptr
+
+func textEditSubclassWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	te, ok := widgetsByHWnd[hwnd].(*TextEdit)
+	if !ok {
+		return CallWindowProc(textEditOrigWndProcPtr, hwnd, msg, wParam, lParam)
+	}
+
+	return te.wndProc(hwnd, msg, wParam, lParam, textEditOrigWndProcPtr)
+}
+
 type TextEdit struct {
 	WidgetBase
 }
@@ -21,6 +33,10 @@ type TextEdit struct {
 func NewTextEdit(parent Container) (*TextEdit, os.Error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
+	}
+
+	if textEditSubclassWndProcPtr == 0 {
+		textEditSubclassWndProcPtr = syscall.NewCallback(textEditSubclassWndProc)
 	}
 
 	hWnd := CreateWindowEx(
@@ -44,6 +60,11 @@ func NewTextEdit(parent Container) (*TextEdit, os.Error) {
 			te.Dispose()
 		}
 	}()
+
+	textEditOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(textEditSubclassWndProcPtr)))
+	if textEditOrigWndProcPtr == 0 {
+		return nil, lastError("SetWindowLong")
+	}
 
 	te.SetFont(defaultFont)
 
@@ -73,4 +94,14 @@ func (te *TextEdit) TextSelection() (start, end int) {
 
 func (te *TextEdit) SetTextSelection(start, end int) {
 	SendMessage(te.hWnd, EM_SETSEL, uintptr(start), uintptr(end))
+}
+
+func (te *TextEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+	switch msg {
+	case WM_GETDLGCODE:
+		result := CallWindowProc(textEditOrigWndProcPtr, hwnd, msg, wParam, lParam)
+		return result &^ DLGC_HASSETSEL
+	}
+
+	return te.WidgetBase.wndProc(hwnd, msg, wParam, lParam, textEditOrigWndProcPtr)
 }
