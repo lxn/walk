@@ -30,6 +30,7 @@ const (
 )
 
 type Widget interface {
+	Background() Brush
 	BaseWidget() *WidgetBase
 	Bounds() Rectangle
 	ClientBounds() Rectangle
@@ -53,6 +54,7 @@ type Widget interface {
 	Parent() Container
 	PreferredSize() Size
 	RootWidget() RootWidget
+	SetBackground(value Brush)
 	SetBounds(value Rectangle) os.Error
 	SetContextMenu(value *Menu)
 	SetCursor(value Cursor)
@@ -100,6 +102,7 @@ type WidgetBase struct {
 	sizeChangedPublisher EventPublisher
 	maxSize              Size
 	minSize              Size
+	background           Brush
 	cursor               Cursor
 	layoutFlags          LayoutFlags
 	suspended            bool
@@ -243,6 +246,14 @@ func (w *WidgetBase) ContextMenu() *Menu {
 
 func (w *WidgetBase) SetContextMenu(value *Menu) {
 	w.contextMenu = value
+}
+
+func (w *WidgetBase) Background() Brush {
+	return w.background
+}
+
+func (w *WidgetBase) SetBackground(value Brush) {
+	w.background = value
 }
 
 func (w *WidgetBase) Cursor() Cursor {
@@ -688,6 +699,25 @@ func (w *WidgetBase) putState(state string) os.Error {
 
 func (w *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
 	switch msg {
+	case WM_ERASEBKGND:
+		if w.background == nil {
+			break
+		}
+
+		canvas, err := newCanvasFromHDC(HDC(wParam))
+		if err != nil {
+			log.Print(err)
+			break
+		}
+		defer canvas.Dispose()
+
+		if err := canvas.FillRectangle(w.background, w.ClientBounds()); err != nil {
+			log.Print(err)
+			break
+		}
+
+		return 1
+
 	case WM_LBUTTONDOWN:
 		if origWndProcPtr == 0 {
 			// Only call SetCapture if this is no subclassed control.
