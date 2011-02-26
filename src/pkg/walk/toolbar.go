@@ -31,7 +31,7 @@ func newToolBar(parent Container, style uint) (*ToolBar, os.Error) {
 
 	hWnd := CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("ToolbarWindow32"), nil,
-		WS_CHILD|style,
+		CCS_NODIVIDER|WS_CHILD|style,
 		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
 	if hWnd == 0 {
 		return nil, lastError("CreateWindowEx")
