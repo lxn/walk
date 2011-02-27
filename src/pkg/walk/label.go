@@ -6,55 +6,40 @@ package walk
 
 import (
 	"os"
-	"syscall"
 )
 
 import (
 	. "walk/winapi/user32"
 )
 
+var labelOrigWndProcPtr uintptr
+var _ subclassedWidget = &Label{}
+
 type Label struct {
 	WidgetBase
 }
 
 func NewLabel(parent Container) (*Label, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	l := &Label{}
 
-	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr("STATIC"), nil,
-		WS_CHILD|WS_VISIBLE,
-		0, 0, 80, 24, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	l := &Label{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
-	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			l.Dispose()
-		}
-	}()
-
-	l.SetFont(defaultFont)
-
-	widgetsByHWnd[hWnd] = l
-
-	if err := parent.Children().Add(l); err != nil {
+	if err := initChildWidget(
+		l,
+		parent,
+		"STATIC",
+		WS_VISIBLE,
+		0); err != nil {
 		return nil, err
 	}
 
-	succeeded = true
-
 	return l, nil
+}
+
+func (*Label) origWndProcPtr() uintptr {
+	return labelOrigWndProcPtr
+}
+
+func (*Label) setOrigWndProcPtr(ptr uintptr) {
+	labelOrigWndProcPtr = ptr
 }
 
 func (*Label) LayoutFlags() LayoutFlags {

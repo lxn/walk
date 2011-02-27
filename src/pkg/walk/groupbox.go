@@ -16,16 +16,7 @@ import (
 
 const groupBoxWindowClass = `\o/ Walk_GroupBox_Class \o/`
 
-var groupBoxWindowWndProcPtr uintptr
-
-func groupBoxWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	c, ok := widgetsByHWnd[hwnd].(*GroupBox)
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return c.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var groupBoxWindowClassRegistered bool
 
 type GroupBox struct {
 	WidgetBase
@@ -34,21 +25,18 @@ type GroupBox struct {
 }
 
 func NewGroupBox(parent Container) (*GroupBox, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
+	ensureRegisteredWindowClass(groupBoxWindowClass, &groupBoxWindowClassRegistered)
+
+	gb := &GroupBox{}
+
+	if err := initChildWidget(
+		gb,
+		parent,
+		groupBoxWindowClass,
+		WS_VISIBLE,
+		WS_EX_CONTROLPARENT); err != nil {
+		return nil, err
 	}
-
-	ensureRegisteredWindowClass(groupBoxWindowClass, groupBoxWndProc, &groupBoxWindowWndProcPtr)
-
-	hWnd := CreateWindowEx(
-		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(groupBoxWindowClass), nil,
-		WS_CHILD|WS_VISIBLE,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx(groupBoxWindowClass)")
-	}
-
-	gb := &GroupBox{WidgetBase: WidgetBase{hWnd: hWnd, parent: parent}}
 
 	succeeded := false
 	defer func() {
@@ -59,13 +47,11 @@ func NewGroupBox(parent Container) (*GroupBox, os.Error) {
 
 	gb.hWndGroupBox = CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
-		BS_GROUPBOX|WS_CHILD|WS_VISIBLE,
-		0, 0, 80, 24, hWnd, 0, 0, nil)
+		WS_CHILD|WS_VISIBLE|BS_GROUPBOX,
+		0, 0, 80, 24, gb.hWnd, 0, 0, nil)
 	if gb.hWndGroupBox == 0 {
 		return nil, lastError("CreateWindowEx(BUTTON)")
 	}
-
-	gb.SetFont(defaultFont)
 
 	var err os.Error
 	gb.composite, err = NewComposite(gb)
@@ -73,11 +59,9 @@ func NewGroupBox(parent Container) (*GroupBox, os.Error) {
 		return nil, err
 	}
 
-	if err := parent.Children().Add(gb); err != nil {
-		return nil, err
-	}
-
-	widgetsByHWnd[hWnd] = gb
+	// Set font to nil first to outsmart SetFont.
+	gb.font = nil
+	gb.SetFont(defaultFont)
 
 	succeeded = true
 
@@ -136,10 +120,10 @@ func (gb *GroupBox) SetLayout(value Layout) os.Error {
 	return gb.composite.SetLayout(value)
 }
 
-func (gb *GroupBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (gb *GroupBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND, WM_NOTIFY:
-		gb.composite.wndProc(hwnd, msg, wParam, lParam, 0)
+		gb.composite.wndProc(hwnd, msg, wParam, lParam)
 
 	case WM_SIZE, WM_SIZING:
 		wbcb := gb.WidgetBase.ClientBounds()
@@ -154,5 +138,5 @@ func (gb *GroupBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		}
 	}
 
-	return gb.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return gb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }

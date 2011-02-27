@@ -21,53 +21,29 @@ import (
 
 const numberEditWindowClass = `\o/ Walk_NumberEdit_Class \o/`
 
-var numberEditWndProcPtr uintptr
-
-func numberEditWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	ne, ok := widgetsByHWnd[hwnd]
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return ne.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var numberEditWindowClassRegistered bool
 
 type NumberEdit struct {
 	WidgetBase
 	edit                  *LineEdit
 	hWndUpDown            HWND
-	decimals              int
 	increment             float64
-	minValue              float64
-	maxValue              float64
 	oldValue              float64
 	valueChangedPublisher EventPublisher
 }
 
 func NewNumberEdit(parent Container) (*NumberEdit, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	ensureRegisteredWindowClass(numberEditWindowClass, &numberEditWindowClassRegistered)
 
-	ensureRegisteredWindowClass(numberEditWindowClass, numberEditWndProc, &numberEditWndProcPtr)
+	ne := &NumberEdit{increment: 1}
 
-	hWnd := CreateWindowEx(
-		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(numberEditWindowClass), nil,
-		WS_CHILD|WS_VISIBLE,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	ne := &NumberEdit{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
-		decimals:  2,
-		increment: 1,
-		minValue:  0,
-		maxValue:  100,
+	if err := initChildWidget(
+		ne,
+		parent,
+		numberEditWindowClass,
+		WS_VISIBLE,
+		WS_EX_CONTROLPARENT); err != nil {
+		return nil, err
 	}
 
 	var succeeded bool
@@ -78,33 +54,31 @@ func NewNumberEdit(parent Container) (*NumberEdit, os.Error) {
 	}()
 
 	var err os.Error
-	ne.edit, err = newLineEdit(hWnd)
+	ne.edit, err = newLineEdit(ne)
 	if err != nil {
 		return nil, err
 	}
 	if err = ne.edit.setAndClearStyleBits(ES_RIGHT, ES_LEFT|ES_CENTER); err != nil {
 		return nil, err
 	}
+	nv := NewNumberValidator()
+	ne.edit.SetValidator(nv)
+	nv.SetDecimals(2)
+	nv.SetRange(0, 100)
 
 	ne.hWndUpDown = CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("msctls_updown32"), nil,
-		UDS_ALIGNRIGHT|UDS_ARROWKEYS|UDS_HOTTRACK|WS_CHILD|WS_VISIBLE,
-		0, 0, 16, 20, hWnd, 0, 0, nil)
+		WS_CHILD|WS_VISIBLE|UDS_ALIGNRIGHT|UDS_ARROWKEYS|UDS_HOTTRACK,
+		0, 0, 16, 20, ne.hWnd, 0, 0, nil)
 	if ne.hWndUpDown == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
 
 	SendMessage(ne.hWndUpDown, UDM_SETBUDDY, uintptr(ne.edit.hWnd), 0)
 
-	if err = parent.Children().Add(ne); err != nil {
-		return nil, err
-	}
-
 	if err = ne.SetValue(0); err != nil {
 		return nil, err
 	}
-
-	widgetsByHWnd[hWnd] = ne
 
 	succeeded = true
 
@@ -120,6 +94,10 @@ func (ne *NumberEdit) SetEnabled(value bool) {
 }
 
 func (ne *NumberEdit) Font() *Font {
+	if ne.edit == nil {
+		return ne.font
+	}
+
 	return ne.edit.Font()
 }
 
@@ -136,15 +114,13 @@ func (ne *NumberEdit) PreferredSize() Size {
 }
 
 func (ne *NumberEdit) Decimals() int {
-	return ne.decimals
+	return ne.edit.Validator().(*NumberValidator).Decimals()
 }
 
 func (ne *NumberEdit) SetDecimals(value int) os.Error {
-	if value < 0 {
-		return newError("invalid value")
+	if err := ne.edit.Validator().(*NumberValidator).SetDecimals(value); err != nil {
+		return err
 	}
-
-	ne.decimals = value
 
 	return ne.SetValue(ne.oldValue)
 }
@@ -160,22 +136,15 @@ func (ne *NumberEdit) SetIncrement(value float64) os.Error {
 }
 
 func (ne *NumberEdit) MinValue() float64 {
-	return ne.minValue
+	return ne.edit.Validator().(*NumberValidator).MinValue()
 }
 
 func (ne *NumberEdit) MaxValue() float64 {
-	return ne.maxValue
+	return ne.edit.Validator().(*NumberValidator).MaxValue()
 }
 
 func (ne *NumberEdit) SetRange(min, max float64) os.Error {
-	if min > max {
-		return newError("invalid range")
-	}
-
-	ne.minValue = min
-	ne.maxValue = max
-
-	return nil
+	return ne.edit.Validator().(*NumberValidator).SetRange(min, max)
 }
 
 func (ne *NumberEdit) Value() float64 {
@@ -185,7 +154,7 @@ func (ne *NumberEdit) Value() float64 {
 }
 
 func (ne *NumberEdit) SetValue(value float64) os.Error {
-	text := strconv.Ftoa64(value, 'f', ne.decimals)
+	text := strconv.Ftoa64(value, 'f', ne.Decimals())
 
 	if err := ne.edit.SetText(text); err != nil {
 		return err
@@ -214,40 +183,42 @@ func (ne *NumberEdit) SetTextSelection(start, end int) {
 	ne.edit.SetTextSelection(start, end)
 }
 
-func (ne *NumberEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
-	switch msg {
-	case WM_COMMAND:
-		switch HIWORD(uint(wParam)) {
-		case EN_CHANGE:
-			value := ne.Value()
-			if math.Fabs(value-ne.oldValue) < math.SmallestNonzeroFloat64 {
+func (ne *NumberEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	if ne.hWndUpDown != 0 {
+		switch msg {
+		case WM_COMMAND:
+			switch HIWORD(uint(wParam)) {
+			case EN_CHANGE:
+				value := ne.Value()
+				if math.Fabs(value-ne.oldValue) < math.SmallestNonzeroFloat64 {
+					break
+				}
+
+				ne.oldValue = value
+
+				ne.valueChangedPublisher.Publish()
+			}
+
+		case WM_NOTIFY:
+			switch ((*NMHDR)(unsafe.Pointer(lParam))).Code {
+			case UDN_DELTAPOS:
+				nmud := (*NMUPDOWN)(unsafe.Pointer(lParam))
+				val := ne.Value()
+				val -= float64(nmud.IDelta) * ne.increment
+				if err := ne.SetValue(val); err != nil {
+					log.Println(err)
+				}
+			}
+
+		case WM_SIZE, WM_SIZING:
+			cb := ne.ClientBounds()
+			if err := ne.edit.SetBounds(cb); err != nil {
+				log.Println(err)
 				break
 			}
-
-			ne.oldValue = value
-
-			ne.valueChangedPublisher.Publish()
+			SendMessage(ne.hWndUpDown, UDM_SETBUDDY, uintptr(ne.edit.hWnd), 0)
 		}
-
-	case WM_NOTIFY:
-		switch ((*NMHDR)(unsafe.Pointer(lParam))).Code {
-		case UDN_DELTAPOS:
-			nmud := (*NMUPDOWN)(unsafe.Pointer(lParam))
-			val := ne.Value()
-			val -= float64(nmud.IDelta) * ne.increment
-			if err := ne.SetValue(val); err != nil {
-				log.Println(err)
-			}
-		}
-
-	case WM_SIZE, WM_SIZING:
-		cb := ne.ClientBounds()
-		if err := ne.edit.SetBounds(cb); err != nil {
-			log.Println(err)
-			break
-		}
-		SendMessage(ne.hWndUpDown, UDM_SETBUDDY, uintptr(ne.edit.hWnd), 0)
 	}
 
-	return ne.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return ne.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }

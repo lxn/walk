@@ -6,7 +6,6 @@ package walk
 
 import (
 	"os"
-	"syscall"
 )
 
 import (
@@ -16,16 +15,7 @@ import (
 
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
 
-var mainWindowWndProcPtr uintptr
-
-func mainWindowWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	mw, ok := widgetsByHWnd[hwnd].(*MainWindow)
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return mw.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var mainWindowWindowClassRegistered bool
 
 type MainWindow struct {
 	TopLevelWindow
@@ -34,24 +24,17 @@ type MainWindow struct {
 }
 
 func NewMainWindow() (*MainWindow, os.Error) {
-	ensureRegisteredWindowClass(mainWindowWindowClass, mainWindowWndProc, &mainWindowWndProcPtr)
+	ensureRegisteredWindowClass(mainWindowWindowClass, &mainWindowWindowClassRegistered)
 
-	hWnd := CreateWindowEx(
-		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(mainWindowWindowClass), nil,
+	mw := &MainWindow{}
+
+	if err := initWidget(
+		mw,
+		nil,
+		mainWindowWindowClass,
 		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, 400, 300, 0, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	mw := &MainWindow{
-		TopLevelWindow: TopLevelWindow{
-			ContainerBase: ContainerBase{
-				WidgetBase: WidgetBase{
-					hWnd: hWnd,
-				},
-			},
-		},
+		WS_EX_CONTROLPARENT); err != nil {
+		return nil, err
 	}
 
 	succeeded := false
@@ -84,12 +67,11 @@ func NewMainWindow() (*MainWindow, os.Error) {
 	}
 	mw.clientArea.SetName("clientArea")
 
-	widgetsByHWnd[hWnd] = mw
-
 	// This forces display of focus rectangles, as soon as the user starts to type.
-	SendMessage(hWnd, WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
+	SendMessage(mw.hWnd, WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
 	succeeded = true
+
 	return mw, nil
 }
 
@@ -114,11 +96,11 @@ func (mw *MainWindow) ClientBounds() Rectangle {
 	return bounds
 }
 
-func (mw *MainWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (mw *MainWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
 		SendMessage(mw.toolBar.hWnd, TB_AUTOSIZE, 0, 0)
 	}
 
-	return mw.TopLevelWindow.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return mw.TopLevelWindow.wndProc(hwnd, msg, wParam, lParam)
 }

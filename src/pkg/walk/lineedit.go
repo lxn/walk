@@ -16,61 +16,28 @@ import (
 	. "walk/winapi/user32"
 )
 
-var lineEditSubclassWndProcPtr uintptr
 var lineEditOrigWndProcPtr uintptr
-
-func lineEditSubclassWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	le, ok := widgetsByHWnd[hwnd].(*LineEdit)
-	if !ok {
-		return CallWindowProc(lineEditOrigWndProcPtr, hwnd, msg, wParam, lParam)
-	}
-
-	return le.wndProc(hwnd, msg, wParam, lParam, lineEditOrigWndProcPtr)
-}
+var _ subclassedWidget = &LineEdit{}
 
 type LineEdit struct {
 	WidgetBase
+	validator                Validator
 	editingFinishedPublisher EventPublisher
 	returnPressedPublisher   EventPublisher
 	textChanged              EventPublisher
 }
 
-func newLineEdit(parentHWND HWND) (*LineEdit, os.Error) {
-	if lineEditSubclassWndProcPtr == 0 {
-		lineEditSubclassWndProcPtr = syscall.NewCallback(lineEditSubclassWndProc)
+func newLineEdit(parent Widget) (*LineEdit, os.Error) {
+	le := &LineEdit{}
+
+	if err := initWidget(
+		le,
+		parent,
+		"EDIT",
+		WS_CHILD|WS_TABSTOP|WS_VISIBLE|ES_AUTOHSCROLL,
+		WS_EX_CLIENTEDGE); err != nil {
+		return nil, err
 	}
-
-	hWnd := CreateWindowEx(
-		WS_EX_CLIENTEDGE, syscall.StringToUTF16Ptr("EDIT"), nil,
-		ES_AUTOHSCROLL|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
-		0, 0, 120, 24, parentHWND, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	le := &LineEdit{
-		WidgetBase: WidgetBase{
-			hWnd: hWnd,
-		},
-	}
-
-	var succeeded bool
-	defer func() {
-		if !succeeded {
-			le.Dispose()
-		}
-	}()
-
-	lineEditOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(lineEditSubclassWndProcPtr)))
-	if lineEditOrigWndProcPtr == 0 {
-		return nil, lastError("SetWindowLong")
-	}
-
-	le.SetFont(defaultFont)
-
-	widgetsByHWnd[hWnd] = le
-
-	succeeded = true
 
 	return le, nil
 }
@@ -80,7 +47,7 @@ func NewLineEdit(parent Container) (*LineEdit, os.Error) {
 		return nil, newError("parent cannot be nil")
 	}
 
-	le, err := newLineEdit(parent.BaseWidget().hWnd)
+	le, err := newLineEdit(parent)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +67,14 @@ func NewLineEdit(parent Container) (*LineEdit, os.Error) {
 	succeeded = true
 
 	return le, nil
+}
+
+func (*LineEdit) origWndProcPtr() uintptr {
+	return lineEditOrigWndProcPtr
+}
+
+func (*LineEdit) setOrigWndProcPtr(ptr uintptr) {
+	lineEditOrigWndProcPtr = ptr
 }
 
 func (le *LineEdit) CueBanner() string {
@@ -145,6 +120,14 @@ func (le *LineEdit) SetPasswordMode(value bool) {
 	SendMessage(le.hWnd, EM_SETPASSWORDCHAR, uintptr('*'), 0)
 }
 
+func (le *LineEdit) Validator() Validator {
+	return le.validator
+}
+
+func (le *LineEdit) SetValidator(validator Validator) {
+	le.validator = validator
+}
+
 func (*LineEdit) LayoutFlags() LayoutFlags {
 	return HShrink | HGrow
 }
@@ -165,8 +148,20 @@ func (le *LineEdit) TextChanged() *Event {
 	return le.textChanged.Event()
 }
 
-func (le *LineEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (le *LineEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
+	/*	case WM_CHAR:
+		if le.validator == nil {
+			break
+		}
+
+		s := []uint16{uint16(wParam), 0}
+		str := le.Text() + UTF16PtrToString(&s[0])
+
+		if le.validator.Validate(str) == Invalid {
+			return 0
+		}*/
+
 	case WM_COMMAND:
 		switch HIWORD(uint(wParam)) {
 		case EN_CHANGE:
@@ -200,5 +195,5 @@ func (le *LineEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		le.editingFinishedPublisher.Publish()
 	}
 
-	return le.WidgetBase.wndProc(hwnd, msg, wParam, lParam, lineEditOrigWndProcPtr)
+	return le.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }

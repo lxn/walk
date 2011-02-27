@@ -6,7 +6,6 @@ package walk
 
 import (
 	"os"
-	"syscall"
 )
 
 import (
@@ -15,16 +14,7 @@ import (
 
 const compositeWindowClass = `\o/ Walk_Composite_Class \o/`
 
-var compositeWindowWndProcPtr uintptr
-
-func compositeWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	c, ok := widgetsByHWnd[hwnd].(*Composite)
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return c.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var compositeWindowClassRegistered bool
 
 type Composite struct {
 	ContainerBase
@@ -35,23 +25,17 @@ func newCompositeWithStyle(parent Container, style uint) (*Composite, os.Error) 
 		return nil, newError("parent cannot be nil")
 	}
 
-	ensureRegisteredWindowClass(compositeWindowClass, compositeWndProc, &compositeWindowWndProcPtr)
+	ensureRegisteredWindowClass(compositeWindowClass, &compositeWindowClassRegistered)
 
-	hWnd := CreateWindowEx(
-		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(compositeWindowClass), nil,
+	c := &Composite{}
+
+	if err := initWidget(
+		c,
+		parent,
+		compositeWindowClass,
 		WS_CHILD|WS_VISIBLE|style,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	c := &Composite{
-		ContainerBase: ContainerBase{
-			WidgetBase: WidgetBase{
-				hWnd:   hWnd,
-				parent: parent,
-			},
-		},
+		WS_EX_CONTROLPARENT); err != nil {
+		return nil, err
 	}
 
 	succeeded := false
@@ -65,12 +49,10 @@ func newCompositeWithStyle(parent Container, style uint) (*Composite, os.Error) 
 
 	c.children = newWidgetList(c)
 
-	c.SetFont(defaultFont)
-
 	if parent.Children() == nil {
 		// This may happen if the composite is (ab)used to implement 
 		// Container semantics for some other widgets like GroupBox.
-		if SetParent(hWnd, parent.BaseWidget().hWnd) == 0 {
+		if SetParent(c.hWnd, parent.BaseWidget().hWnd) == 0 {
 			return nil, lastError("SetParent")
 		}
 	} else {
@@ -79,9 +61,8 @@ func newCompositeWithStyle(parent Container, style uint) (*Composite, os.Error) 
 		}
 	}
 
-	widgetsByHWnd[hWnd] = c
-
 	succeeded = true
+
 	return c, nil
 }
 

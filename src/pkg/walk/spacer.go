@@ -6,25 +6,11 @@ package walk
 
 import (
 	"os"
-	"syscall"
-)
-
-import (
-	. "walk/winapi/user32"
 )
 
 const spacerWindowClass = `\o/ Walk_Spacer_Class \o/`
 
-var spacerWndProcPtr uintptr
-
-func spacerWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	s, ok := widgetsByHWnd[hwnd].(*Spacer)
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return s.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var spacerWindowClassRegistered bool
 
 type Spacer struct {
 	WidgetBase
@@ -33,45 +19,21 @@ type Spacer struct {
 }
 
 func newSpacer(parent Container, layoutFlags LayoutFlags, prefSize Size) (*Spacer, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
-
-	ensureRegisteredWindowClass(spacerWindowClass, spacerWndProc, &spacerWndProcPtr)
-
-	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr(spacerWindowClass), nil,
-		WS_CHILD,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
+	ensureRegisteredWindowClass(spacerWindowClass, &spacerWindowClassRegistered)
 
 	s := &Spacer{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
 		layoutFlags:   layoutFlags,
 		preferredSize: prefSize,
 	}
 
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			s.Dispose()
-		}
-	}()
-
-	s.SetFont(defaultFont)
-
-	if err := parent.Children().Add(s); err != nil {
+	if err := initChildWidget(
+		s,
+		parent,
+		spacerWindowClass,
+		0,
+		0); err != nil {
 		return nil, err
 	}
-
-	widgetsByHWnd[hWnd] = s
-
-	succeeded = true
 
 	return s, nil
 }

@@ -21,16 +21,7 @@ import (
 
 const webViewWindowClass = `\o/ Walk_WebView_Class \o/`
 
-var webViewWndProcPtr uintptr
-
-func webViewWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	wv, ok := widgetsByHWnd[hwnd].(*WebView)
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return wv.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var webViewWindowClassRegistered bool
 
 type WebView struct {
 	WidgetBase
@@ -39,16 +30,9 @@ type WebView struct {
 }
 
 func NewWebView(parent Container) (*WebView, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
-
-	ensureRegisteredWindowClass(webViewWindowClass, webViewWndProc, &webViewWndProcPtr)
+	ensureRegisteredWindowClass(webViewWindowClass, &webViewWindowClassRegistered)
 
 	wv := &WebView{
-		WidgetBase: WidgetBase{
-			parent: parent,
-		},
 		clientSite: webViewIOleClientSite{
 			IOleClientSite: IOleClientSite{
 				LpVtbl: webViewIOleClientSiteVtbl,
@@ -76,15 +60,15 @@ func NewWebView(parent Container) (*WebView, os.Error) {
 		},
 	}
 
-	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr(webViewWindowClass), nil,
-		WS_CHILD|WS_VISIBLE,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
+	if err := initChildWidget(
+		wv,
+		parent,
+		webViewWindowClass,
+		WS_VISIBLE,
+		0); err != nil {
+		return nil, err
 	}
 
-	wv.hWnd = hWnd
 	wv.clientSite.inPlaceSite.inPlaceFrame.webView = wv
 
 	succeeded := false
@@ -123,9 +107,9 @@ func NewWebView(parent Container) (*WebView, os.Error) {
 	}
 
 	var rect RECT
-	GetClientRect(hWnd, &rect)
+	GetClientRect(wv.hWnd, &rect)
 
-	if hr := browserObject.DoVerb(OLEIVERB_SHOW, nil, (*IOleClientSite)(unsafe.Pointer(&wv.clientSite)), -1, hWnd, &rect); FAILED(hr) {
+	if hr := browserObject.DoVerb(OLEIVERB_SHOW, nil, (*IOleClientSite)(unsafe.Pointer(&wv.clientSite)), -1, wv.hWnd, &rect); FAILED(hr) {
 		return nil, errorFromHRESULT("IOleObject.DoVerb", hr)
 	}
 
@@ -149,12 +133,6 @@ func NewWebView(parent Container) (*WebView, os.Error) {
 		}*/
 
 	wv.onResize()
-
-	wv.SetFont(defaultFont)
-
-	widgetsByHWnd[wv.hWnd] = wv
-
-	parent.Children().Add(wv)
 
 	succeeded = true
 
@@ -235,11 +213,15 @@ func (wv *WebView) onResize() {
 	})
 }
 
-func (wv *WebView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (wv *WebView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
+		if wv.clientSite.inPlaceSite.inPlaceFrame.webView == nil {
+			break
+		}
+
 		wv.onResize()
 	}
 
-	return wv.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return wv.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }

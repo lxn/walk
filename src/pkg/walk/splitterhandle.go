@@ -6,7 +6,6 @@ package walk
 
 import (
 	"os"
-	"syscall"
 )
 
 import (
@@ -15,16 +14,7 @@ import (
 
 const splitterHandleWindowClass = `\o/ Walk_SplitterHandle_Class \o/`
 
-var splitterHandleWndProcPtr uintptr
-
-func splitterHandleWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	s, ok := widgetsByHWnd[hwnd].(*splitterHandle)
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return s.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var splitterHandleWindowClassRegistered bool
 
 type splitterHandle struct {
 	WidgetBase
@@ -35,26 +25,19 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, os.Error) {
 		return nil, newError("splitter cannot be nil")
 	}
 
-	ensureRegisteredWindowClass(splitterHandleWindowClass, splitterHandleWndProc, &splitterHandleWndProcPtr)
+	ensureRegisteredWindowClass(splitterHandleWindowClass, &splitterHandleWindowClassRegistered)
 
-	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr(splitterHandleWindowClass), nil,
+	sh := &splitterHandle{}
+	sh.parent = splitter
+
+	if err := initWidget(
+		sh,
+		splitter,
+		splitterHandleWindowClass,
 		WS_CHILD|WS_VISIBLE,
-		0, 0, 0, 0, splitter.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
+		0); err != nil {
+		return nil, err
 	}
-
-	sh := &splitterHandle{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: splitter,
-		},
-	}
-
-	sh.SetFont(defaultFont)
-
-	widgetsByHWnd[hWnd] = sh
 
 	return sh, nil
 }

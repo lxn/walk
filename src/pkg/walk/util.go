@@ -5,10 +5,11 @@
 package walk
 
 import (
-	"bytes"
+	//	"bytes"
 	"fmt"
 	"os"
-	"runtime"
+	//	"runtime"
+	"runtime/debug"
 	"syscall"
 )
 
@@ -17,7 +18,7 @@ import (
 	. "walk/winapi/kernel32"
 )
 
-func callStack() string {
+/*func callStack() string {
 	buf := bytes.NewBuffer(nil)
 
 	buf.WriteString("=======================================================\n")
@@ -47,7 +48,7 @@ func callStack() string {
 
 func printCallStack() {
 	fmt.Print(callStack())
-}
+}*/
 
 func panicIfErr(err os.Error) {
 	if err != nil {
@@ -68,7 +69,7 @@ func toError(x interface{}) os.Error {
 }
 
 func newError(message string) os.Error {
-	return os.NewError(fmt.Sprintf("%s\nCall Stack:\n%s", message, callStack()))
+	return os.NewError(fmt.Sprintf("%s\nStack:\n%s", message, debug.Stack()))
 }
 
 func lastError(win32FuncName string) os.Error {

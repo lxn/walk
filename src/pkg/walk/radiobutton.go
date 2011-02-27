@@ -6,57 +6,40 @@ package walk
 
 import (
 	"os"
-	"syscall"
 )
 
 import (
 	. "walk/winapi/user32"
 )
 
+var radioButtonOrigWndProcPtr uintptr
+var _ subclassedWidget = &RadioButton{}
+
 type RadioButton struct {
 	Button
 }
 
 func NewRadioButton(parent Container) (*RadioButton, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	rb := &RadioButton{}
 
-	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
-		BS_AUTORADIOBUTTON|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
-		0, 0, 120, 24, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	rb := &RadioButton{
-		Button: Button{
-			WidgetBase: WidgetBase{
-				hWnd:   hWnd,
-				parent: parent,
-			},
-		},
-	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			rb.Dispose()
-		}
-	}()
-
-	rb.SetFont(defaultFont)
-
-	if err := parent.Children().Add(rb); err != nil {
+	if err := initChildWidget(
+		rb,
+		parent,
+		"BUTTON",
+		WS_TABSTOP|WS_VISIBLE|BS_AUTORADIOBUTTON,
+		0); err != nil {
 		return nil, err
 	}
 
-	widgetsByHWnd[hWnd] = rb
-
-	succeeded = true
-
 	return rb, nil
+}
+
+func (*RadioButton) origWndProcPtr() uintptr {
+	return radioButtonOrigWndProcPtr
+}
+
+func (*RadioButton) setOrigWndProcPtr(ptr uintptr) {
+	radioButtonOrigWndProcPtr = ptr
 }
 
 func (*RadioButton) LayoutFlags() LayoutFlags {

@@ -6,7 +6,6 @@ package walk
 
 import (
 	"os"
-	"syscall"
 	"unsafe"
 )
 
@@ -14,69 +13,34 @@ import (
 	. "walk/winapi/user32"
 )
 
-var textEditSubclassWndProcPtr uintptr
 var textEditOrigWndProcPtr uintptr
-
-func textEditSubclassWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	te, ok := widgetsByHWnd[hwnd].(*TextEdit)
-	if !ok {
-		return CallWindowProc(textEditOrigWndProcPtr, hwnd, msg, wParam, lParam)
-	}
-
-	return te.wndProc(hwnd, msg, wParam, lParam, textEditOrigWndProcPtr)
-}
+var _ subclassedWidget = &TextEdit{}
 
 type TextEdit struct {
 	WidgetBase
 }
 
 func NewTextEdit(parent Container) (*TextEdit, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	te := &TextEdit{}
 
-	if textEditSubclassWndProcPtr == 0 {
-		textEditSubclassWndProcPtr = syscall.NewCallback(textEditSubclassWndProc)
-	}
-
-	hWnd := CreateWindowEx(
-		WS_EX_CLIENTEDGE, syscall.StringToUTF16Ptr("EDIT"), nil,
-		ES_MULTILINE|ES_WANTRETURN|WS_CHILD|WS_TABSTOP|WS_VISIBLE|WS_VSCROLL,
-		0, 0, 160, 80, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	te := &TextEdit{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
-	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			te.Dispose()
-		}
-	}()
-
-	textEditOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(textEditSubclassWndProcPtr)))
-	if textEditOrigWndProcPtr == 0 {
-		return nil, lastError("SetWindowLong")
-	}
-
-	te.SetFont(defaultFont)
-
-	if err := parent.Children().Add(te); err != nil {
+	if err := initChildWidget(
+		te,
+		parent,
+		"EDIT",
+		WS_TABSTOP|WS_VISIBLE|WS_VSCROLL|ES_MULTILINE|ES_WANTRETURN,
+		WS_EX_CLIENTEDGE); err != nil {
 		return nil, err
 	}
 
-	widgetsByHWnd[hWnd] = te
-
-	succeeded = true
-
 	return te, nil
+}
+
+func (*TextEdit) origWndProcPtr() uintptr {
+	return textEditOrigWndProcPtr
+}
+
+func (*TextEdit) setOrigWndProcPtr(ptr uintptr) {
+	textEditOrigWndProcPtr = ptr
 }
 
 func (*TextEdit) LayoutFlags() LayoutFlags {
@@ -96,12 +60,12 @@ func (te *TextEdit) SetTextSelection(start, end int) {
 	SendMessage(te.hWnd, EM_SETSEL, uintptr(start), uintptr(end))
 }
 
-func (te *TextEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (te *TextEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
 		result := CallWindowProc(textEditOrigWndProcPtr, hwnd, msg, wParam, lParam)
 		return result &^ DLGC_HASSETSEL
 	}
 
-	return te.WidgetBase.wndProc(hwnd, msg, wParam, lParam, textEditOrigWndProcPtr)
+	return te.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }

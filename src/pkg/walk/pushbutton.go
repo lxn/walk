@@ -7,7 +7,6 @@ package walk
 import (
 	"log"
 	"os"
-	"syscall"
 	"unsafe"
 )
 
@@ -16,71 +15,34 @@ import (
 	. "walk/winapi/user32"
 )
 
-var pushButtonSubclassWndProcPtr uintptr
 var pushButtonOrigWndProcPtr uintptr
-
-func pushButtonSubclassWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	pb, ok := widgetsByHWnd[hwnd].(*PushButton)
-	if !ok {
-		return CallWindowProc(pushButtonOrigWndProcPtr, hwnd, msg, wParam, lParam)
-	}
-
-	return pb.wndProc(hwnd, msg, wParam, lParam, pushButtonOrigWndProcPtr)
-}
+var _ subclassedWidget = &PushButton{}
 
 type PushButton struct {
 	Button
 }
 
 func NewPushButton(parent Container) (*PushButton, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	pb := &PushButton{}
 
-	if pushButtonSubclassWndProcPtr == 0 {
-		pushButtonSubclassWndProcPtr = syscall.NewCallback(pushButtonSubclassWndProc)
-	}
-
-	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
-		BS_PUSHBUTTON|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
-		0, 0, 120, 24, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	pb := &PushButton{
-		Button: Button{
-			WidgetBase: WidgetBase{
-				hWnd:   hWnd,
-				parent: parent,
-			},
-		},
-	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			pb.Dispose()
-		}
-	}()
-
-	pushButtonOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(pushButtonSubclassWndProcPtr)))
-	if pushButtonOrigWndProcPtr == 0 {
-		return nil, lastError("SetWindowLong")
-	}
-
-	pb.SetFont(defaultFont)
-
-	if err := parent.Children().Add(pb); err != nil {
+	if err := initChildWidget(
+		pb,
+		parent,
+		"BUTTON",
+		WS_TABSTOP|WS_VISIBLE|BS_PUSHBUTTON,
+		0); err != nil {
 		return nil, err
 	}
 
-	widgetsByHWnd[hWnd] = pb
-
-	succeeded = true
-
 	return pb, nil
+}
+
+func (*PushButton) origWndProcPtr() uintptr {
+	return pushButtonOrigWndProcPtr
+}
+
+func (*PushButton) setOrigWndProcPtr(ptr uintptr) {
+	pushButtonOrigWndProcPtr = ptr
 }
 
 func (*PushButton) LayoutFlags() LayoutFlags {
@@ -96,12 +58,12 @@ func (pb *PushButton) PreferredSize() Size {
 }
 
 func (pb *PushButton) ensureProperDialogDefaultButton(hwndFocus HWND) {
-	widget, ok := widgetsByHWnd[hwndFocus]
-	if !ok {
+	widget := widgetFromHWND(hwndFocus)
+	if widget == nil {
 		return
 	}
 
-	if _, ok = widget.(*PushButton); ok {
+	if _, ok := widget.(*PushButton); ok {
 		return
 	}
 
@@ -131,7 +93,7 @@ func (pb *PushButton) ensureProperDialogDefaultButton(hwndFocus HWND) {
 	}
 }
 
-func (pb *PushButton) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (pb *PushButton) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
 		hwndFocus := GetFocus()
@@ -163,5 +125,5 @@ func (pb *PushButton) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origW
 		pb.ensureProperDialogDefaultButton(HWND(wParam))
 	}
 
-	return pb.Button.wndProc(hwnd, msg, wParam, lParam, pushButtonOrigWndProcPtr)
+	return pb.Button.wndProc(hwnd, msg, wParam, lParam)
 }

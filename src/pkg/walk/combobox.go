@@ -15,6 +15,9 @@ import (
 	. "walk/winapi/user32"
 )
 
+var comboBoxOrigWndProcPtr uintptr
+var _ subclassedWidget = &ComboBox{}
+
 type ComboBox struct {
 	WidgetBase
 	items                         *ComboBoxItemList
@@ -23,45 +26,28 @@ type ComboBox struct {
 }
 
 func NewComboBox(parent Container) (*ComboBox, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	cb := &ComboBox{prevSelIndex: -1}
 
-	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr("COMBOBOX"), nil,
-		CBS_DROPDOWNLIST|WS_CHILD|WS_TABSTOP|WS_VISIBLE|WS_VSCROLL,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	cb := &ComboBox{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
-		prevSelIndex: -1,
-	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			cb.Dispose()
-		}
-	}()
-
-	cb.items = newComboBoxItemList(cb)
-
-	cb.SetFont(defaultFont)
-
-	if err := parent.Children().Add(cb); err != nil {
+	if err := initChildWidget(
+		cb,
+		parent,
+		"COMBOBOX",
+		WS_TABSTOP|WS_VISIBLE|WS_VSCROLL|CBS_DROPDOWNLIST,
+		0); err != nil {
 		return nil, err
 	}
 
-	widgetsByHWnd[hWnd] = cb
+	cb.items = newComboBoxItemList(cb)
 
-	succeeded = true
 	return cb, nil
+}
+
+func (*ComboBox) origWndProcPtr() uintptr {
+	return comboBoxOrigWndProcPtr
+}
+
+func (*ComboBox) setOrigWndProcPtr(ptr uintptr) {
+	comboBoxOrigWndProcPtr = ptr
 }
 
 func (*ComboBox) LayoutFlags() LayoutFlags {
@@ -108,7 +94,7 @@ func (cb *ComboBox) SetTextSelection(start, end int) {
 	SendMessage(cb.hWnd, CB_SETEDITSEL, 0, uintptr(MAKELONG(uint16(start), uint16(end))))
 }
 
-func (cb *ComboBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (cb *ComboBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		switch HIWORD(uint(wParam)) {
@@ -121,7 +107,7 @@ func (cb *ComboBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		}
 	}
 
-	return cb.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return cb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
 func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) (err os.Error) {

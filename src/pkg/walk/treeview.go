@@ -15,6 +15,9 @@ import (
 	. "walk/winapi/user32"
 )
 
+var treeViewOrigWndProcPtr uintptr
+var _ subclassedWidget = &TreeView{}
+
 type TreeView struct {
 	WidgetBase
 	items                      *TreeViewItemList
@@ -27,23 +30,15 @@ type TreeView struct {
 }
 
 func NewTreeView(parent Container) (*TreeView, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	tv := &TreeView{}
 
-	hWnd := CreateWindowEx(
-		WS_EX_CLIENTEDGE, syscall.StringToUTF16Ptr("SysTreeView32"), nil,
-		TVS_HASBUTTONS|TVS_HASLINES|TVS_LINESATROOT|TVS_SHOWSELALWAYS|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	tv := &TreeView{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
+	if err := initChildWidget(
+		tv,
+		parent,
+		"SysTreeView32",
+		WS_TABSTOP|WS_VISIBLE|TVS_HASBUTTONS|TVS_HASLINES|TVS_LINESATROOT|TVS_SHOWSELALWAYS,
+		WS_EX_CLIENTEDGE); err != nil {
+		return nil, err
 	}
 
 	succeeded := false
@@ -59,17 +54,17 @@ func NewTreeView(parent Container) (*TreeView, os.Error) {
 
 	tv.items = newTreeViewItemList(tv)
 
-	tv.SetFont(defaultFont)
-
-	if err := parent.Children().Add(tv); err != nil {
-		return nil, err
-	}
-
-	widgetsByHWnd[hWnd] = tv
-
 	succeeded = true
 
 	return tv, nil
+}
+
+func (*TreeView) origWndProcPtr() uintptr {
+	return treeViewOrigWndProcPtr
+}
+
+func (*TreeView) setOrigWndProcPtr(ptr uintptr) {
+	treeViewOrigWndProcPtr = ptr
 }
 
 func (*TreeView) LayoutFlags() LayoutFlags {
@@ -108,7 +103,7 @@ func (tv *TreeView) SelectionChanging() *TreeViewItemSelectionEvent {
 	return tv.selectionChangingPublisher.Event()
 }
 
-func (tv *TreeView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (tv *TreeView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_NOTIFY:
 		nmtv := (*NMTREEVIEW)(unsafe.Pointer(lParam))
@@ -160,7 +155,7 @@ func (tv *TreeView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		}
 	}
 
-	return tv.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return tv.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
 func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) (err os.Error) {

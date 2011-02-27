@@ -21,16 +21,7 @@ import (
 
 const tabWidgetWindowClass = `\o/ Walk_TabWidget_Class \o/`
 
-var tabWidgetWndProcPtr uintptr
-
-func tabWidgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	tw, ok := widgetsByHWnd[hwnd].(*TabWidget)
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return tw.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var tabWidgetWindowClassRegistered bool
 
 type TabWidget struct {
 	WidgetBase
@@ -42,26 +33,18 @@ type TabWidget struct {
 }
 
 func NewTabWidget(parent Container) (*TabWidget, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	ensureRegisteredWindowClass(tabWidgetWindowClass, &tabWidgetWindowClassRegistered)
 
-	ensureRegisteredWindowClass(tabWidgetWindowClass, tabWidgetWndProc, &tabWidgetWndProcPtr)
+	tw := &TabWidget{selectedIndex: -1}
+	tw.pages = newTabPageList(tw)
 
-	hWnd := CreateWindowEx(
-		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(tabWidgetWindowClass), nil,
-		WS_CHILD|WS_VISIBLE,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	tw := &TabWidget{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
-		selectedIndex: -1,
+	if err := initChildWidget(
+		tw,
+		parent,
+		tabWidgetWindowClass,
+		WS_VISIBLE,
+		WS_EX_CONTROLPARENT); err != nil {
+		return nil, err
 	}
 
 	succeeded := false
@@ -76,21 +59,11 @@ func NewTabWidget(parent Container) (*TabWidget, os.Error) {
 	tw.hWndTab = CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("SysTabControl32"), nil,
 		WS_CHILD|WS_CLIPSIBLINGS|WS_TABSTOP|WS_VISIBLE,
-		0, 0, 0, 0, hWnd, 0, 0, nil)
+		0, 0, 0, 0, tw.hWnd, 0, 0, nil)
 	if tw.hWndTab == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
 	SendMessage(tw.hWndTab, WM_SETFONT, uintptr(defaultFont.handleForDPI(0)), 1)
-
-	tw.SetFont(defaultFont)
-
-	if err := parent.Children().Add(tw); err != nil {
-		return nil, err
-	}
-
-	tw.pages = newTabPageList(tw)
-
-	widgetsByHWnd[hWnd] = tw
 
 	succeeded = true
 
@@ -238,21 +211,23 @@ func (tw *TabWidget) onSelChange() {
 	tw.selectedIndexChangedPublisher.Publish()
 }
 
-func (tw *TabWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
-	switch msg {
-	case WM_SIZE, WM_SIZING:
-		tw.onResize(lParam)
+func (tw *TabWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	if tw.hWndTab != 0 {
+		switch msg {
+		case WM_SIZE, WM_SIZING:
+			tw.onResize(lParam)
 
-	case WM_NOTIFY:
-		nmhdr := (*NMHDR)(unsafe.Pointer(lParam))
+		case WM_NOTIFY:
+			nmhdr := (*NMHDR)(unsafe.Pointer(lParam))
 
-		switch int(nmhdr.Code) {
-		case TCN_SELCHANGE:
-			tw.onSelChange()
+			switch int(nmhdr.Code) {
+			case TCN_SELCHANGE:
+				tw.onSelChange()
+			}
 		}
 	}
 
-	return tw.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return tw.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
 func (tw *TabWidget) onInsertingPage(index int, page *TabPage) (err os.Error) {

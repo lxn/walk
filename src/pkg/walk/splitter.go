@@ -10,7 +10,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"syscall"
 )
 
 import (
@@ -19,16 +18,7 @@ import (
 
 const splitterWindowClass = `\o/ Walk_Splitter_Class \o/`
 
-var splitterWndProcPtr uintptr
-
-func splitterWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	s, ok := widgetsByHWnd[hwnd].(*Splitter)
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return s.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var splitterWindowClassRegistered bool
 
 type Splitter struct {
 	ContainerBase
@@ -41,54 +31,29 @@ type Splitter struct {
 }
 
 func NewSplitter(parent Container) (*Splitter, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
-
-	ensureRegisteredWindowClass(splitterWindowClass, splitterWndProc, &splitterWndProcPtr)
-
-	hWnd := CreateWindowEx(
-		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(splitterWindowClass), nil,
-		WS_CHILD|WS_VISIBLE,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
+	ensureRegisteredWindowClass(splitterWindowClass, &splitterWindowClassRegistered)
 
 	layout := NewHBoxLayout()
 	s := &Splitter{
 		ContainerBase: ContainerBase{
-			WidgetBase: WidgetBase{
-				hWnd:   hWnd,
-				parent: parent,
-			},
 			layout: layout,
 		},
 		handleWidth:  4,
 		widget2Fixed: make(map[*WidgetBase]bool),
 	}
+	s.children = newWidgetList(s)
 	layout.container = s
 
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			s.Dispose()
-		}
-	}()
-
-	s.SetPersistent(true)
-
-	s.children = newWidgetList(s)
-
-	s.SetFont(defaultFont)
-
-	if err := parent.Children().Add(s); err != nil {
+	if err := initChildWidget(
+		s,
+		parent,
+		splitterWindowClass,
+		WS_VISIBLE,
+		WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
 
-	widgetsByHWnd[hWnd] = s
-
-	succeeded = true
+	s.SetPersistent(true)
 
 	return s, nil
 }
@@ -277,13 +242,13 @@ func (s *Splitter) onResize() {
 	s.oldClientSize = clientSize
 }
 
-func (s *Splitter) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (s *Splitter) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
 		s.onResize()
 	}
 
-	return s.ContainerBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return s.ContainerBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
 func (s *Splitter) onInsertingWidget(index int, widget Widget) (err os.Error) {

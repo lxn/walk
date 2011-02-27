@@ -6,7 +6,6 @@ package walk
 
 import (
 	"os"
-	"syscall"
 )
 
 import (
@@ -14,48 +13,34 @@ import (
 	. "walk/winapi/user32"
 )
 
+var progressBarOrigWndProcPtr uintptr
+var _ subclassedWidget = &ProgressBar{}
+
 type ProgressBar struct {
 	WidgetBase
 }
 
 func NewProgressBar(parent Container) (*ProgressBar, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	pb := &ProgressBar{}
 
-	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr("msctls_progress32"), nil,
-		WS_CHILD|WS_VISIBLE,
-		0, 0, 80, 24, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	pb := &ProgressBar{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
-	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			pb.Dispose()
-		}
-	}()
-
-	pb.SetFont(defaultFont)
-
-	if err := parent.Children().Add(pb); err != nil {
+	if err := initChildWidget(
+		pb,
+		parent,
+		"msctls_progress32",
+		WS_VISIBLE,
+		0); err != nil {
 		return nil, err
 	}
 
-	widgetsByHWnd[hWnd] = pb
-
-	succeeded = true
-
 	return pb, nil
+}
+
+func (*ProgressBar) origWndProcPtr() uintptr {
+	return progressBarOrigWndProcPtr
+}
+
+func (*ProgressBar) setOrigWndProcPtr(ptr uintptr) {
+	progressBarOrigWndProcPtr = ptr
 }
 
 func (*ProgressBar) LayoutFlags() LayoutFlags {

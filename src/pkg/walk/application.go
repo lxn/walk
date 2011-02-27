@@ -27,9 +27,12 @@ type Persistable interface {
 }
 
 type Application struct {
-	organizationName string
-	productName      string
-	settings         Settings
+	organizationName   string
+	productName        string
+	settings           Settings
+	exiting            bool
+	exitCode           int
+	panickingPublisher ErrorEventPublisher
 }
 
 var appSingleton *Application = &Application{}
@@ -63,5 +66,15 @@ func (app *Application) SetSettings(value Settings) {
 }
 
 func (app *Application) Exit(exitCode int) {
+	app.exiting = true
+	app.exitCode = exitCode
 	PostQuitMessage(exitCode)
+}
+
+func (app *Application) ExitCode() int {
+	return app.exitCode
+}
+
+func (app *Application) Panicking() *ErrorEvent {
+	return app.panickingPublisher.Event()
 }

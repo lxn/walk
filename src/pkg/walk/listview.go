@@ -20,17 +20,8 @@ import (
 	. "walk/winapi/user32"
 )
 
-var listViewSubclassWndProcPtr uintptr
 var listViewOrigWndProcPtr uintptr
-
-func listViewSubclassWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	lv, ok := widgetsByHWnd[hwnd].(*ListView)
-	if !ok {
-		return CallWindowProc(listViewOrigWndProcPtr, hwnd, msg, wParam, lParam)
-	}
-
-	return lv.wndProc(hwnd, msg, wParam, lParam, listViewOrigWndProcPtr)
-}
+var _ subclassedWidget = &ListView{}
 
 type SelectedIndexList struct {
 	items []int
@@ -69,28 +60,15 @@ type ListView struct {
 }
 
 func NewListView(parent Container) (*ListView, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	lv := &ListView{selectedIndexes: NewSelectedIndexList(nil)}
 
-	if listViewSubclassWndProcPtr == 0 {
-		listViewSubclassWndProcPtr = syscall.NewCallback(listViewSubclassWndProc)
-	}
-
-	hWnd := CreateWindowEx(
-		WS_EX_CLIENTEDGE, syscall.StringToUTF16Ptr("SysListView32"), nil,
-		LVS_SHOWSELALWAYS|LVS_REPORT|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	lv := &ListView{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
-		selectedIndexes: NewSelectedIndexList(nil),
+	if err := initChildWidget(
+		lv,
+		parent,
+		"SysListView32",
+		WS_TABSTOP|WS_VISIBLE|LVS_SHOWSELALWAYS|LVS_REPORT,
+		WS_EX_CLIENTEDGE); err != nil {
+		return nil, err
 	}
 
 	succeeded := false
@@ -102,14 +80,9 @@ func NewListView(parent Container) (*ListView, os.Error) {
 
 	lv.SetPersistent(true)
 
-	listViewOrigWndProcPtr = uintptr(SetWindowLong(hWnd, GWL_WNDPROC, int(listViewSubclassWndProcPtr)))
-	if listViewOrigWndProcPtr == 0 {
-		return nil, lastError("SetWindowLong")
-	}
-
-	exStyle := SendMessage(hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
-	exStyle |= LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT //| LVS_EX_GRIDLINES
-	SendMessage(hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	exStyle := SendMessage(lv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	exStyle |= LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT
+	SendMessage(lv.hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 
 	if err := lv.setTheme("Explorer"); err != nil {
 		return nil, err
@@ -119,17 +92,17 @@ func NewListView(parent Container) (*ListView, os.Error) {
 	lv.items = newListViewItemList(lv)
 	lv.selectedIndex = -1
 
-	lv.SetFont(defaultFont)
-
-	if err := parent.Children().Add(lv); err != nil {
-		return nil, err
-	}
-
-	widgetsByHWnd[hWnd] = lv
-
 	succeeded = true
 
 	return lv, nil
+}
+
+func (*ListView) origWndProcPtr() uintptr {
+	return listViewOrigWndProcPtr
+}
+
+func (*ListView) setOrigWndProcPtr(ptr uintptr) {
+	listViewOrigWndProcPtr = ptr
 }
 
 func (lv *ListView) Dispose() {
@@ -373,7 +346,7 @@ func (lv *ListView) RestoreState() os.Error {
 	return nil
 }
 
-func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ERASEBKGND:
 		if lv.lastColumnStretched {
@@ -424,7 +397,7 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWnd
 		}
 	}
 
-	return lv.WidgetBase.wndProc(hwnd, msg, wParam, lParam, listViewOrigWndProcPtr)
+	return lv.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
 func (lv *ListView) onListViewColumnChanged(column *ListViewColumn) {

@@ -6,7 +6,6 @@ package walk
 
 import (
 	"os"
-	"syscall"
 )
 
 import (
@@ -15,54 +14,27 @@ import (
 
 const tabPageWindowClass = `\o/ Walk_TabPage_Class \o/`
 
-var tabPageWndProcPtr uintptr
-
-func tabPageWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	tp, ok := widgetsByHWnd[hwnd].(*TabPage)
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return tp.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var tabPageWindowClassRegistered bool
 
 type TabPage struct {
 	ContainerBase
 }
 
 func NewTabPage() (*TabPage, os.Error) {
-	ensureRegisteredWindowClass(tabPageWindowClass, tabPageWndProc, &tabPageWndProcPtr)
+	ensureRegisteredWindowClass(tabPageWindowClass, &tabPageWindowClassRegistered)
 
-	hWnd := CreateWindowEx(
-		WS_EX_CONTROLPARENT, syscall.StringToUTF16Ptr(tabPageWindowClass), nil,
+	tp := &TabPage{}
+
+	if err := initWidget(
+		tp,
+		nil,
+		tabPageWindowClass,
 		WS_POPUP,
-		0, 0, 0, 0, 0, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
+		WS_EX_CONTROLPARENT); err != nil {
+		return nil, err
 	}
-
-	tp := &TabPage{
-		ContainerBase: ContainerBase{
-			WidgetBase: WidgetBase{
-				hWnd: hWnd,
-			},
-		},
-	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			tp.Dispose()
-		}
-	}()
 
 	tp.children = newWidgetList(tp)
-
-	tp.SetFont(defaultFont)
-
-	widgetsByHWnd[hWnd] = tp
-
-	succeeded = true
 
 	return tp, nil
 }

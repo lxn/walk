@@ -16,6 +16,9 @@ import (
 	. "walk/winapi/user32"
 )
 
+var toolBarOrigWndProcPtr uintptr
+var _ subclassedWidget = &ToolBar{}
+
 type ToolBar struct {
 	WidgetBase
 	imageList      *ImageList
@@ -25,47 +28,17 @@ type ToolBar struct {
 }
 
 func newToolBar(parent Container, style uint) (*ToolBar, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
-
-	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr("ToolbarWindow32"), nil,
-		CCS_NODIVIDER|WS_CHILD|style,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	tb := &ToolBar{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
-	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			tb.Dispose()
-		}
-	}()
-
+	tb := &ToolBar{}
 	tb.actions = newActionList(tb)
 
-	tb.SetFont(defaultFont)
-
-	if err := parent.Children().Add(tb); err != nil {
+	if err := initChildWidget(
+		tb,
+		parent,
+		"ToolbarWindow32",
+		CCS_NODIVIDER|style,
+		0); err != nil {
 		return nil, err
 	}
-
-	widgetsByHWnd[hWnd] = tb
-
-	//	exStyle := SendMessage(hWnd, TB_GETEXTENDEDSTYLE, 0, 0)
-	//	exStyle |= TBSTYLE_EX_DOUBLEBUFFER
-	//	SendMessage(hWnd, TB_SETEXTENDEDSTYLE, 0, LPARAM(exStyle))
-
-	succeeded = true
 
 	return tb, nil
 }
@@ -76,6 +49,14 @@ func NewToolBar(parent Container) (*ToolBar, os.Error) {
 
 func NewVerticalToolBar(parent Container) (*ToolBar, os.Error) {
 	return newToolBar(parent, CCS_VERT|CCS_NORESIZE)
+}
+
+func (*ToolBar) origWndProcPtr() uintptr {
+	return toolBarOrigWndProcPtr
+}
+
+func (*ToolBar) setOrigWndProcPtr(ptr uintptr) {
+	toolBarOrigWndProcPtr = ptr
 }
 
 func (tb *ToolBar) LayoutFlags() LayoutFlags {
@@ -153,7 +134,7 @@ func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int, err os.Error) {
 	return
 }
 
-func (tb *ToolBar) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (tb *ToolBar) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_NOTIFY:
 		nmm := (*NMMOUSE)(unsafe.Pointer(lParam))
@@ -167,7 +148,7 @@ func (tb *ToolBar) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndP
 		}
 	}
 
-	return tb.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return tb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
 func (tb *ToolBar) onActionChanged(action *Action) (err os.Error) {

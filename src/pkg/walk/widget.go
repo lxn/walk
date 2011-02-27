@@ -6,6 +6,7 @@ package walk
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"os"
 	"syscall"
@@ -85,11 +86,18 @@ type Widget interface {
 type widgetInternal interface {
 	Widget
 	path() string
-	wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr
+	wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 	writePath(buf *bytes.Buffer)
 }
 
+type subclassedWidget interface {
+	widgetInternal
+	origWndProcPtr() uintptr
+	setOrigWndProcPtr(ptr uintptr)
+}
+
 type WidgetBase struct {
+	widget               widgetInternal
 	hWnd                 HWND
 	name                 string
 	parent               Container
@@ -108,16 +116,14 @@ type WidgetBase struct {
 	suspended            bool
 }
 
-var (
-	widgetsByHWnd map[HWND]widgetInternal = make(map[HWND]widgetInternal)
-)
+var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
 
-func ensureRegisteredWindowClass(className string, windowProc interface{}, callback *uintptr) {
-	if callback == nil {
-		panic("callback cannot be nil")
+func ensureRegisteredWindowClass(className string, registered *bool) {
+	if registered == nil {
+		panic("registered cannot be nil")
 	}
 
-	if *callback != 0 {
+	if *registered {
 		return
 	}
 
@@ -136,11 +142,9 @@ func ensureRegisteredWindowClass(className string, windowProc interface{}, callb
 		panic("LoadCursor failed")
 	}
 
-	*callback = syscall.NewCallback(windowProc)
-
 	var wc WNDCLASSEX
 	wc.CbSize = uint(unsafe.Sizeof(wc))
-	wc.LpfnWndProc = *callback
+	wc.LpfnWndProc = widgetWndProcPtr
 	wc.HInstance = hInst
 	wc.HIcon = hIcon
 	wc.HCursor = hCursor
@@ -150,6 +154,83 @@ func ensureRegisteredWindowClass(className string, windowProc interface{}, callb
 	if atom := RegisterClassEx(&wc); atom == 0 {
 		panic("RegisterClassEx")
 	}
+
+	*registered = true
+}
+
+func initWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint) os.Error {
+	wb := widget.BaseWidget()
+	wb.widget = widget
+
+	var hwndParent HWND
+	if parent != nil {
+		hwndParent = parent.BaseWidget().hWnd
+
+		if container, ok := parent.(Container); ok {
+			wb.parent = container
+		}
+	}
+
+	wb.hWnd = CreateWindowEx(
+		exStyle,
+		syscall.StringToUTF16Ptr(className),
+		nil,
+		style,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		hwndParent,
+		0,
+		0,
+		nil)
+	if wb.hWnd == 0 {
+		return lastError("CreateWindowEx")
+	}
+
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			wb.Dispose()
+		}
+	}()
+
+	SetWindowLongPtr(wb.hWnd, GWLP_USERDATA, uintptr(unsafe.Pointer(wb)))
+
+	if subclassed, ok := widget.(subclassedWidget); ok {
+		origWndProcPtr := SetWindowLongPtr(wb.hWnd, GWLP_WNDPROC, widgetWndProcPtr)
+		if origWndProcPtr == 0 {
+			return lastError("SetWindowLongPtr")
+		}
+
+		if subclassed.origWndProcPtr() == 0 {
+			subclassed.setOrigWndProcPtr(origWndProcPtr)
+		}
+	}
+
+	wb.SetFont(defaultFont)
+
+	succeeded = true
+
+	return nil
+}
+
+func initChildWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint) os.Error {
+	if parent == nil {
+		return newError("parent cannot be nil")
+	}
+
+	if err := initWidget(widget, parent, className, style|WS_CHILD, exStyle); err != nil {
+		return err
+	}
+
+	if container, ok := parent.(Container); ok {
+		if err := container.Children().Add(widget); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func rootWidget(w Widget) RootWidget {
@@ -159,12 +240,12 @@ func rootWidget(w Widget) RootWidget {
 
 	hWndRoot := GetAncestor(w.BaseWidget().hWnd, GA_ROOT)
 
-	rw, _ := widgetsByHWnd[hWndRoot].(RootWidget)
+	rw, _ := widgetFromHWND(hWndRoot).(RootWidget)
 	return rw
 }
 
-func (w *WidgetBase) setAndClearStyleBits(set, clear uint) os.Error {
-	style := uint(GetWindowLong(w.hWnd, GWL_STYLE))
+func (wb *WidgetBase) setAndClearStyleBits(set, clear uint) os.Error {
+	style := uint(GetWindowLong(wb.hWnd, GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
@@ -174,7 +255,7 @@ func (w *WidgetBase) setAndClearStyleBits(set, clear uint) os.Error {
 
 	if newStyle != style {
 		SetLastError(0)
-		if SetWindowLong(w.hWnd, GWL_STYLE, int(newStyle)) == 0 {
+		if SetWindowLong(wb.hWnd, GWL_STYLE, int(newStyle)) == 0 {
 			return lastError("SetWindowLong")
 		}
 	}
@@ -182,7 +263,7 @@ func (w *WidgetBase) setAndClearStyleBits(set, clear uint) os.Error {
 	return nil
 }
 
-func (w *WidgetBase) ensureStyleBits(bits uint, set bool) os.Error {
+func (wb *WidgetBase) ensureStyleBits(bits uint, set bool) os.Error {
 	var setBits uint
 	var clearBits uint
 	if set {
@@ -190,110 +271,108 @@ func (w *WidgetBase) ensureStyleBits(bits uint, set bool) os.Error {
 	} else {
 		clearBits = bits
 	}
-	return w.setAndClearStyleBits(setBits, clearBits)
+	return wb.setAndClearStyleBits(setBits, clearBits)
 }
 
-func (w *WidgetBase) Name() string {
-	return w.name
+func (wb *WidgetBase) Name() string {
+	return wb.name
 }
 
-func (w *WidgetBase) SetName(name string) {
-	w.name = name
+func (wb *WidgetBase) SetName(name string) {
+	wb.name = name
 }
 
-func (w *WidgetBase) writePath(buf *bytes.Buffer) {
-	hWndParent := GetAncestor(w.hWnd, GA_PARENT)
-	if pw, ok := widgetsByHWnd[hWndParent]; ok {
-		if pwi, ok := pw.(widgetInternal); ok {
-			pwi.writePath(buf)
-			buf.WriteByte('/')
-		}
+func (wb *WidgetBase) writePath(buf *bytes.Buffer) {
+	hWndParent := GetAncestor(wb.hWnd, GA_PARENT)
+	if pwi := widgetFromHWND(hWndParent); pwi != nil {
+		pwi.writePath(buf)
+		buf.WriteByte('/')
 	}
 
-	buf.WriteString(w.name)
+	buf.WriteString(wb.name)
 }
 
-func (w *WidgetBase) path() string {
+func (wb *WidgetBase) path() string {
 	buf := bytes.NewBuffer(nil)
 
-	w.writePath(buf)
+	wb.writePath(buf)
 
 	return buf.String()
 }
 
-func (w *WidgetBase) BaseWidget() *WidgetBase {
-	return w
+func (wb *WidgetBase) BaseWidget() *WidgetBase {
+	return wb
 }
 
-func (w *WidgetBase) Dispose() {
-	if w.hWnd != 0 {
-		DestroyWindow(w.hWnd)
-		w.hWnd = 0
+func (wb *WidgetBase) Dispose() {
+	if wb.hWnd != 0 {
+		DestroyWindow(wb.hWnd)
+		wb.hWnd = 0
 	}
 }
 
-func (w *WidgetBase) IsDisposed() bool {
-	return w.hWnd == 0
+func (wb *WidgetBase) IsDisposed() bool {
+	return wb.hWnd == 0
 }
 
-func (w *WidgetBase) RootWidget() RootWidget {
-	return rootWidget(w)
+func (wb *WidgetBase) RootWidget() RootWidget {
+	return rootWidget(wb)
 }
 
-func (w *WidgetBase) ContextMenu() *Menu {
-	return w.contextMenu
+func (wb *WidgetBase) ContextMenu() *Menu {
+	return wb.contextMenu
 }
 
-func (w *WidgetBase) SetContextMenu(value *Menu) {
-	w.contextMenu = value
+func (wb *WidgetBase) SetContextMenu(value *Menu) {
+	wb.contextMenu = value
 }
 
-func (w *WidgetBase) Background() Brush {
-	return w.background
+func (wb *WidgetBase) Background() Brush {
+	return wb.background
 }
 
-func (w *WidgetBase) SetBackground(value Brush) {
-	w.background = value
+func (wb *WidgetBase) SetBackground(value Brush) {
+	wb.background = value
 }
 
-func (w *WidgetBase) Cursor() Cursor {
-	return w.cursor
+func (wb *WidgetBase) Cursor() Cursor {
+	return wb.cursor
 }
 
-func (w *WidgetBase) SetCursor(value Cursor) {
-	w.cursor = value
+func (wb *WidgetBase) SetCursor(value Cursor) {
+	wb.cursor = value
 }
 
-func (w *WidgetBase) Enabled() bool {
-	return IsWindowEnabled(w.hWnd)
+func (wb *WidgetBase) Enabled() bool {
+	return IsWindowEnabled(wb.hWnd)
 }
 
-func (w *WidgetBase) SetEnabled(value bool) {
-	EnableWindow(w.hWnd, value)
+func (wb *WidgetBase) SetEnabled(value bool) {
+	EnableWindow(wb.hWnd, value)
 }
 
-func (w *WidgetBase) Font() *Font {
-	return w.font
+func (wb *WidgetBase) Font() *Font {
+	return wb.font
 }
 
 func setWidgetFont(hwnd HWND, font *Font) {
 	SendMessage(hwnd, WM_SETFONT, uintptr(font.handleForDPI(0)), 1)
 }
 
-func (w *WidgetBase) SetFont(value *Font) {
-	if value != w.font {
-		setWidgetFont(w.hWnd, value)
+func (wb *WidgetBase) SetFont(value *Font) {
+	if value != wb.font {
+		setWidgetFont(wb.hWnd, value)
 
-		w.font = value
+		wb.font = value
 	}
 }
 
-func (w *WidgetBase) Suspended() bool {
-	return w.suspended
+func (wb *WidgetBase) Suspended() bool {
+	return wb.suspended
 }
 
-func (w *WidgetBase) SetSuspended(suspend bool) {
-	if suspend == w.suspended {
+func (wb *WidgetBase) SetSuspended(suspend bool) {
+	if suspend == wb.suspended {
 		return
 	}
 
@@ -304,33 +383,33 @@ func (w *WidgetBase) SetSuspended(suspend bool) {
 		wParam = 1
 	}
 
-	SendMessage(w.hWnd, WM_SETREDRAW, uintptr(wParam), 0)
+	SendMessage(wb.hWnd, WM_SETREDRAW, uintptr(wParam), 0)
 
-	w.suspended = suspend
+	wb.suspended = suspend
 }
 
-func (w *WidgetBase) Invalidate() os.Error {
-	cb := w.ClientBounds()
+func (wb *WidgetBase) Invalidate() os.Error {
+	cb := wb.ClientBounds()
 
 	r := &RECT{cb.X, cb.Y, cb.X + cb.Width, cb.Y + cb.Height}
 
-	if !InvalidateRect(w.hWnd, r, true) {
+	if !InvalidateRect(wb.hWnd, r, true) {
 		return newError("InvalidateRect failed")
 	}
 
 	return nil
 }
 
-func (w *WidgetBase) Parent() Container {
-	return w.parent
+func (wb *WidgetBase) Parent() Container {
+	return wb.parent
 }
 
-func (w *WidgetBase) SetParent(value Container) (err os.Error) {
-	if value == w.parent {
+func (wb *WidgetBase) SetParent(value Container) (err os.Error) {
+	if value == wb.parent {
 		return nil
 	}
 
-	style := uint(GetWindowLong(w.hWnd, GWL_STYLE))
+	style := uint(GetWindowLong(wb.hWnd, GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
@@ -339,11 +418,11 @@ func (w *WidgetBase) SetParent(value Container) (err os.Error) {
 		style &^= WS_CHILD
 		style |= WS_POPUP
 
-		if SetParent(w.hWnd, 0) == 0 {
+		if SetParent(wb.hWnd, 0) == 0 {
 			return lastError("SetParent")
 		}
 		SetLastError(0)
-		if SetWindowLong(w.hWnd, GWL_STYLE, int(style)) == 0 {
+		if SetWindowLong(wb.hWnd, GWL_STYLE, int(style)) == 0 {
 			return lastError("SetWindowLong")
 		}
 	} else {
@@ -351,30 +430,30 @@ func (w *WidgetBase) SetParent(value Container) (err os.Error) {
 		style &^= WS_POPUP
 
 		SetLastError(0)
-		if SetWindowLong(w.hWnd, GWL_STYLE, int(style)) == 0 {
+		if SetWindowLong(wb.hWnd, GWL_STYLE, int(style)) == 0 {
 			return lastError("SetWindowLong")
 		}
-		if SetParent(w.hWnd, value.BaseWidget().hWnd) == 0 {
+		if SetParent(wb.hWnd, value.BaseWidget().hWnd) == 0 {
 			return lastError("SetParent")
 		}
 	}
 
-	b := w.Bounds()
+	b := wb.Bounds()
 
-	if !SetWindowPos(w.hWnd, HWND_BOTTOM, b.X, b.Y, b.Width, b.Height, SWP_FRAMECHANGED) {
+	if !SetWindowPos(wb.hWnd, HWND_BOTTOM, b.X, b.Y, b.Width, b.Height, SWP_FRAMECHANGED) {
 		return lastError("SetWindowPos")
 	}
 
-	oldParent := w.parent
+	oldParent := wb.parent
 
-	w.parent = value
+	wb.parent = value
 
 	if oldParent != nil {
-		oldParent.Children().Remove(w)
+		oldParent.Children().Remove(wb)
 	}
 
-	if value != nil && !value.Children().containsHandle(w.hWnd) {
-		value.Children().Add(w)
+	if value != nil && !value.Children().containsHandle(wb.hWnd) {
+		value.Children().Add(wb)
 	}
 
 	return nil
@@ -395,41 +474,41 @@ func setWidgetText(hwnd HWND, text string) os.Error {
 	return nil
 }
 
-func (w *WidgetBase) Text() string {
-	return widgetText(w.hWnd)
+func (wb *WidgetBase) Text() string {
+	return widgetText(wb.hWnd)
 }
 
-func (w *WidgetBase) SetText(value string) os.Error {
-	return setWidgetText(w.hWnd, value)
+func (wb *WidgetBase) SetText(value string) os.Error {
+	return setWidgetText(wb.hWnd, value)
 }
 
-func (w *WidgetBase) Visible() bool {
-	return IsWindowVisible(w.hWnd)
+func (wb *WidgetBase) Visible() bool {
+	return IsWindowVisible(wb.hWnd)
 }
 
-func (w *WidgetBase) SetVisible(visible bool) {
+func (wb *WidgetBase) SetVisible(visible bool) {
 	var cmd int
 	if visible {
 		cmd = SW_SHOW
 	} else {
 		cmd = SW_HIDE
 	}
-	ShowWindow(w.hWnd, cmd)
+	ShowWindow(wb.hWnd, cmd)
 }
 
-func (w *WidgetBase) Bounds() Rectangle {
+func (wb *WidgetBase) Bounds() Rectangle {
 	var r RECT
 
-	if !GetWindowRect(w.hWnd, &r) {
+	if !GetWindowRect(wb.hWnd, &r) {
 		log.Print(lastError("GetWindowRect"))
 		return Rectangle{}
 	}
 
 	b := Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}
 
-	if w.parent != nil {
+	if wb.parent != nil {
 		p := POINT{b.X, b.Y}
-		if !ScreenToClient(w.parent.BaseWidget().hWnd, &p) {
+		if !ScreenToClient(wb.parent.BaseWidget().hWnd, &p) {
 			log.Print(newError("ScreenToClient failed"))
 			return Rectangle{}
 		}
@@ -440,23 +519,23 @@ func (w *WidgetBase) Bounds() Rectangle {
 	return b
 }
 
-func (w *WidgetBase) SetBounds(bounds Rectangle) os.Error {
-	if !MoveWindow(w.hWnd, bounds.X, bounds.Y, bounds.Width, bounds.Height, true) {
+func (wb *WidgetBase) SetBounds(bounds Rectangle) os.Error {
+	if !MoveWindow(wb.hWnd, bounds.X, bounds.Y, bounds.Width, bounds.Height, true) {
 		return lastError("MoveWindow")
 	}
 
 	return nil
 }
 
-func (w *WidgetBase) MinSize() Size {
-	return w.minSize
+func (wb *WidgetBase) MinSize() Size {
+	return wb.minSize
 }
 
-func (w *WidgetBase) MaxSize() Size {
-	return w.maxSize
+func (wb *WidgetBase) MaxSize() Size {
+	return wb.maxSize
 }
 
-func (w *WidgetBase) SetMinMaxSize(min, max Size) os.Error {
+func (wb *WidgetBase) SetMinMaxSize(min, max Size) os.Error {
 	if min.Width < 0 || min.Height < 0 {
 		return newError("min must be positive")
 	}
@@ -465,26 +544,21 @@ func (w *WidgetBase) SetMinMaxSize(min, max Size) os.Error {
 		return newError("max must be greater as or equal to min")
 	}
 
-	w.minSize = min
-	w.maxSize = max
+	wb.minSize = min
+	wb.maxSize = max
 
 	return nil
 }
 
-func (w *WidgetBase) dialogBaseUnits() Size {
+func (wb *WidgetBase) dialogBaseUnits() Size {
 	// The widget may use a font different from that in WidgetBase,
 	// like e.g. NumberEdit does, so we try to use the right one.
-	widget, ok := widgetsByHWnd[w.hWnd]
-	if !ok {
-		// The call is from the widget constructor func probably, just
-		// return an empty Size.
-		return Size{}
-	}
+	widget := widgetFromHWND(wb.hWnd)
 
-	hdc := GetDC(w.hWnd)
-	defer ReleaseDC(w.hWnd, hdc)
+	hdc := GetDC(wb.hWnd)
+	defer ReleaseDC(wb.hWnd, hdc)
 
-	hFont := widget.Font().handleForDPI(0) //HFONT(SendMessage(w.hWnd, WM_GETFONT, 0, 0))
+	hFont := widget.Font().handleForDPI(0) //HFONT(SendMessage(wb.hWnd, WM_GETFONT, 0, 0))
 	hFontOld := SelectObject(hdc, HGDIOBJ(hFont))
 	defer SelectObject(hdc, HGDIOBJ(hFontOld))
 
@@ -505,35 +579,35 @@ func (w *WidgetBase) dialogBaseUnits() Size {
 	return Size{(size.CX/26 + 1) / 2, int(tm.TmHeight)}
 }
 
-func (w *WidgetBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
+func (wb *WidgetBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
 	// FIXME: Cache dialog base units on font change.
-	base := w.dialogBaseUnits()
+	base := wb.dialogBaseUnits()
 
 	return Size{MulDiv(dlus.Width, base.Width, 4), MulDiv(dlus.Height, base.Height, 8)}
 }
 
-func (w *WidgetBase) LayoutFlags() LayoutFlags {
+func (wb *WidgetBase) LayoutFlags() LayoutFlags {
 	// FIXME: Figure out how to do this, if at all.
 	return 0
 }
 
-func (w *WidgetBase) PreferredSize() Size {
+func (wb *WidgetBase) PreferredSize() Size {
 	// FIXME: Figure out how to do this, if at all.
-	return w.dialogBaseUnitsToPixels(Size{10, 10})
+	return wb.dialogBaseUnitsToPixels(Size{10, 10})
 }
 
-func (w *WidgetBase) calculateTextSize() Size {
-	hdc := GetDC(w.hWnd)
+func (wb *WidgetBase) calculateTextSize() Size {
+	hdc := GetDC(wb.hWnd)
 	if hdc == 0 {
 		log.Print(newError("GetDC failed"))
 		return Size{}
 	}
-	defer ReleaseDC(w.hWnd, hdc)
+	defer ReleaseDC(wb.hWnd, hdc)
 
-	hFontOld := SelectObject(hdc, HGDIOBJ(w.Font().handleForDPI(0)))
+	hFontOld := SelectObject(hdc, HGDIOBJ(wb.Font().handleForDPI(0)))
 	defer SelectObject(hdc, hFontOld)
 
-	str := syscall.StringToUTF16(w.Text())
+	str := syscall.StringToUTF16(wb.Text())
 	var size SIZE
 	if !GetTextExtentPoint32(hdc, &str[0], len(str)-1, &size) {
 		log.Print(newError("GetTextExtentPoint32 failed"))
@@ -543,58 +617,58 @@ func (w *WidgetBase) calculateTextSize() Size {
 	return Size{size.CX, size.CY}
 }
 
-func (w *WidgetBase) Size() Size {
-	return w.Bounds().Size()
+func (wb *WidgetBase) Size() Size {
+	return wb.Bounds().Size()
 }
 
-func (w *WidgetBase) SetSize(size Size) os.Error {
-	bounds := w.Bounds()
+func (wb *WidgetBase) SetSize(size Size) os.Error {
+	bounds := wb.Bounds()
 
-	return w.SetBounds(bounds.SetSize(size))
+	return wb.SetBounds(bounds.SetSize(size))
 }
 
-func (w *WidgetBase) X() int {
-	return w.Bounds().X
+func (wb *WidgetBase) X() int {
+	return wb.Bounds().X
 }
 
-func (w *WidgetBase) SetX(value int) os.Error {
-	bounds := w.Bounds()
+func (wb *WidgetBase) SetX(value int) os.Error {
+	bounds := wb.Bounds()
 	bounds.X = value
 
-	return w.SetBounds(bounds)
+	return wb.SetBounds(bounds)
 }
 
-func (w *WidgetBase) Y() int {
-	return w.Bounds().Y
+func (wb *WidgetBase) Y() int {
+	return wb.Bounds().Y
 }
 
-func (w *WidgetBase) SetY(value int) os.Error {
-	bounds := w.Bounds()
+func (wb *WidgetBase) SetY(value int) os.Error {
+	bounds := wb.Bounds()
 	bounds.Y = value
 
-	return w.SetBounds(bounds)
+	return wb.SetBounds(bounds)
 }
 
-func (w *WidgetBase) Width() int {
-	return w.Bounds().Width
+func (wb *WidgetBase) Width() int {
+	return wb.Bounds().Width
 }
 
-func (w *WidgetBase) SetWidth(value int) os.Error {
-	bounds := w.Bounds()
+func (wb *WidgetBase) SetWidth(value int) os.Error {
+	bounds := wb.Bounds()
 	bounds.Width = value
 
-	return w.SetBounds(bounds)
+	return wb.SetBounds(bounds)
 }
 
-func (w *WidgetBase) Height() int {
-	return w.Bounds().Height
+func (wb *WidgetBase) Height() int {
+	return wb.Bounds().Height
 }
 
-func (w *WidgetBase) SetHeight(value int) os.Error {
-	bounds := w.Bounds()
+func (wb *WidgetBase) SetHeight(value int) os.Error {
+	bounds := wb.Bounds()
 	bounds.Height = value
 
-	return w.SetBounds(bounds)
+	return wb.SetBounds(bounds)
 }
 
 func widgetClientBounds(hwnd HWND) Rectangle {
@@ -608,99 +682,118 @@ func widgetClientBounds(hwnd HWND) Rectangle {
 	return Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}
 }
 
-func (w *WidgetBase) ClientBounds() Rectangle {
-	return widgetClientBounds(w.hWnd)
+func (wb *WidgetBase) ClientBounds() Rectangle {
+	return widgetClientBounds(wb.hWnd)
 }
 
-func (w *WidgetBase) SetFocus() os.Error {
-	if SetFocus(w.hWnd) == 0 {
+func (wb *WidgetBase) SetFocus() os.Error {
+	if SetFocus(wb.hWnd) == 0 {
 		return lastError("SetFocus")
 	}
 
 	return nil
 }
 
-func (w *WidgetBase) CreateCanvas() (*Canvas, os.Error) {
-	return newCanvasFromHWND(w.hWnd)
+func (wb *WidgetBase) CreateCanvas() (*Canvas, os.Error) {
+	return newCanvasFromHWND(wb.hWnd)
 }
 
-func (w *WidgetBase) setTheme(appName string) os.Error {
-	if hr := SetWindowTheme(w.hWnd, syscall.StringToUTF16Ptr(appName), nil); FAILED(hr) {
+func (wb *WidgetBase) setTheme(appName string) os.Error {
+	if hr := SetWindowTheme(wb.hWnd, syscall.StringToUTF16Ptr(appName), nil); FAILED(hr) {
 		return errorFromHRESULT("SetWindowTheme", hr)
 	}
 
 	return nil
 }
 
-func (w *WidgetBase) KeyDown() *KeyEvent {
-	return w.keyDownPublisher.Event()
+func (wb *WidgetBase) KeyDown() *KeyEvent {
+	return wb.keyDownPublisher.Event()
 }
 
-func (w *WidgetBase) MouseDown() *MouseEvent {
-	return w.mouseDownPublisher.Event()
+func (wb *WidgetBase) MouseDown() *MouseEvent {
+	return wb.mouseDownPublisher.Event()
 }
 
-func (w *WidgetBase) MouseMove() *MouseEvent {
-	return w.mouseMovePublisher.Event()
+func (wb *WidgetBase) MouseMove() *MouseEvent {
+	return wb.mouseMovePublisher.Event()
 }
 
-func (w *WidgetBase) MouseUp() *MouseEvent {
-	return w.mouseUpPublisher.Event()
+func (wb *WidgetBase) MouseUp() *MouseEvent {
+	return wb.mouseUpPublisher.Event()
 }
 
-func (w *WidgetBase) publishMouseEvent(publisher *MouseEventPublisher, wParam, lParam uintptr) {
+func (wb *WidgetBase) publishMouseEvent(publisher *MouseEventPublisher, wParam, lParam uintptr) {
 	x := int(GET_X_LPARAM(lParam))
 	y := int(GET_Y_LPARAM(lParam))
 
 	publisher.Publish(x, y, 0)
 }
 
-func (w *WidgetBase) SizeChanged() *Event {
-	return w.sizeChangedPublisher.Event()
+func (wb *WidgetBase) SizeChanged() *Event {
+	return wb.sizeChangedPublisher.Event()
 }
 
-func (w *WidgetBase) persistState(restore bool) {
+func (wb *WidgetBase) persistState(restore bool) {
 	settings := appSingleton.settings
 	if settings != nil {
-		if widget, ok := widgetsByHWnd[w.hWnd]; ok {
-			if persistable, ok := widget.(Persistable); ok && persistable.Persistent() {
-				if restore {
-					if err := persistable.RestoreState(); err != nil {
-						log.Println(err)
-					}
-				} else {
-					if err := persistable.SaveState(); err != nil {
-						log.Println(err)
-					}
+		widget := widgetFromHWND(wb.hWnd)
+		if persistable, ok := widget.(Persistable); ok && persistable.Persistent() {
+			if restore {
+				if err := persistable.RestoreState(); err != nil {
+					log.Println(err)
+				}
+			} else {
+				if err := persistable.SaveState(); err != nil {
+					log.Println(err)
 				}
 			}
 		}
 	}
 }
 
-func (w *WidgetBase) getState() (string, os.Error) {
+func (wb *WidgetBase) getState() (string, os.Error) {
 	settings := appSingleton.settings
 	if settings == nil {
 		return "", newError("App().Settings() must not be nil")
 	}
 
-	state, _ := settings.Get(w.path())
+	state, _ := settings.Get(wb.path())
 	return state, nil
 }
 
-func (w *WidgetBase) putState(state string) os.Error {
+func (wb *WidgetBase) putState(state string) os.Error {
 	settings := appSingleton.settings
 	if settings == nil {
 		return newError("App().Settings() must not be nil")
 	}
 
-	return settings.Put(w.path(), state)
+	return settings.Put(wb.path(), state)
 }
 
-func (w *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func widgetFromHWND(hwnd HWND) widgetInternal {
+	ptr := GetWindowLongPtr(hwnd, GWLP_USERDATA)
+	if ptr == 0 {
+		return nil
+	}
+
+	wb := (*WidgetBase)(unsafe.Pointer(ptr))
+
+	return wb.widget
+}
+
+func widgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+	wi := widgetFromHWND(hwnd)
+	if wi == nil {
+		return DefWindowProc(hwnd, msg, wParam, lParam)
+	}
+
+	return wi.wndProc(hwnd, msg, wParam, lParam)
+}
+
+func (wb *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ERASEBKGND:
-		if w.background == nil {
+		if wb.background == nil {
 			break
 		}
 
@@ -711,7 +804,7 @@ func (w *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWn
 		}
 		defer canvas.Dispose()
 
-		if err := canvas.FillRectangle(w.background, w.ClientBounds()); err != nil {
+		if err := canvas.FillRectangle(wb.background, wb.ClientBounds()); err != nil {
 			log.Print(err)
 			break
 		}
@@ -719,34 +812,34 @@ func (w *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWn
 		return 1
 
 	case WM_LBUTTONDOWN:
-		if origWndProcPtr == 0 {
+		if _, isSubclassed := widgetFromHWND(wb.hWnd).(subclassedWidget); !isSubclassed {
 			// Only call SetCapture if this is no subclassed control.
 			// (Otherwise e.g. WM_COMMAND(BN_CLICKED) would no longer
 			// be generated for PushButton.)
-			SetCapture(w.hWnd)
+			SetCapture(wb.hWnd)
 		}
-		w.publishMouseEvent(&w.mouseDownPublisher, wParam, lParam)
+		wb.publishMouseEvent(&wb.mouseDownPublisher, wParam, lParam)
 
 	case WM_LBUTTONUP:
-		if origWndProcPtr == 0 {
+		if _, isSubclassed := widgetFromHWND(wb.hWnd).(subclassedWidget); !isSubclassed {
 			// See WM_LBUTTONDOWN for why we require origWndProcPtr == 0 here.
 			if !ReleaseCapture() {
 				log.Println(lastError("ReleaseCapture"))
 			}
 		}
-		w.publishMouseEvent(&w.mouseUpPublisher, wParam, lParam)
+		wb.publishMouseEvent(&wb.mouseUpPublisher, wParam, lParam)
 
 	case WM_MOUSEMOVE:
-		w.publishMouseEvent(&w.mouseMovePublisher, wParam, lParam)
+		wb.publishMouseEvent(&wb.mouseMovePublisher, wParam, lParam)
 
 	case WM_SETCURSOR:
-		if w.cursor != nil {
-			SetCursor(w.cursor.handle())
+		if wb.cursor != nil {
+			SetCursor(wb.cursor.handle())
 			return 0
 		}
 
 	case WM_CONTEXTMENU:
-		sourceWidget := widgetsByHWnd[HWND(wParam)]
+		sourceWidget := widgetFromHWND(HWND(wParam))
 		if sourceWidget == nil {
 			break
 		}
@@ -762,47 +855,85 @@ func (w *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWn
 		return 0
 
 	case WM_KEYDOWN:
-		w.keyDownPublisher.Publish(int(wParam))
+		wb.keyDownPublisher.Publish(int(wParam))
 
 	case WM_SIZE, WM_SIZING:
-		w.sizeChangedPublisher.Publish()
+		wb.sizeChangedPublisher.Publish()
 
 	case WM_GETMINMAXINFO:
 		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))
-		mmi.PtMinTrackSize = POINT{w.minSize.Width, w.minSize.Height}
+		mmi.PtMinTrackSize = POINT{wb.minSize.Width, wb.minSize.Height}
 		return 0
 
 	case WM_SHOWWINDOW:
-		w.persistState(wParam != 0)
+		wb.persistState(wParam != 0)
 
 	case WM_DESTROY:
-		w.persistState(false)
+		wb.persistState(false)
 	}
 
-	if origWndProcPtr != 0 {
-		return CallWindowProc(origWndProcPtr, hwnd, msg, wParam, lParam)
+	if widget := widgetFromHWND(hwnd); widget != nil {
+		if subclassed, ok := widget.(subclassedWidget); ok {
+			return CallWindowProc(subclassed.origWndProcPtr(), hwnd, msg, wParam, lParam)
+		}
 	}
 
 	return DefWindowProc(hwnd, msg, wParam, lParam)
 }
 
-func (w *WidgetBase) runMessageLoop() int {
-	var msg MSG
+func (wb *WidgetBase) runMessageLoop() (exitCode int) {
+	for {
+		var err os.Error
 
-	for w.hWnd != 0 {
-		switch GetMessage(&msg, 0, 0, 0) {
-		case 0:
-			return int(msg.WParam)
-
-		case -1:
-			return -1
+		if exitCode, err = wb.runMessageLoopWithRecover(); err == nil {
+			return
 		}
 
-		if !IsDialogMessage(w.hWnd, &msg) {
+		appSingleton.panickingPublisher.Publish(err)
+		if appSingleton.exiting {
+			exitCode = appSingleton.exitCode
+			return
+		}
+	}
+
+	return
+}
+
+func (wb *WidgetBase) runMessageLoopWithRecover() (exitCode int, err os.Error) {
+	var succeeded bool
+
+	defer func() {
+		if !succeeded {
+			if x := recover(); x != nil {
+				if e, ok := x.(os.Error); ok {
+					err = e
+				} else {
+					err = newError(fmt.Sprint(x))
+				}
+			}
+		}
+	}()
+
+	var msg MSG
+
+	for wb.hWnd != 0 {
+		switch GetMessage(&msg, 0, 0, 0) {
+		case 0:
+			exitCode = int(msg.WParam)
+			break
+
+		case -1:
+			exitCode = -1
+			break
+		}
+
+		if !IsDialogMessage(wb.hWnd, &msg) {
 			TranslateMessage(&msg)
 			DispatchMessage(&msg)
 		}
 	}
 
-	return 0
+	succeeded = true
+
+	return
 }

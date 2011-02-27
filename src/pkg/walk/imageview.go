@@ -9,7 +9,7 @@ import (
 )
 
 type ImageView struct {
-	CustomWidget
+	*CustomWidget
 	image Image
 }
 
@@ -23,12 +23,11 @@ func NewImageView(parent Container) (*ImageView, os.Error) {
 		return nil, err
 	}
 
-	iv.CustomWidget = *cw
+	iv.CustomWidget = cw
+
+	iv.widget = iv
 
 	iv.SetInvalidatesOnResize(true)
-
-	widgetsByHWnd[iv.hWnd] = iv
-	customWidgetsByHWND[iv.hWnd] = &iv.CustomWidget
 
 	return iv, nil
 }

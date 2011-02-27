@@ -24,6 +24,7 @@ GOFILES=\
 	customwidget.go\
 	dialog.go\
 	document.go\
+	errorevent.go\
 	event.go\
 	groupbox.go\
 	font.go\
@@ -80,6 +81,7 @@ GOFILES=\
 	treeviewitemselectionevent.go\
 	treeviewitemlist.go\
 	util.go\
+	validators.go\
 	webview.go\
 	webview_dwebbrowserevents2.go\
 	webview_idochostuihandler.go\

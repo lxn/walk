@@ -7,7 +7,6 @@ package walk
 import (
 	"log"
 	"os"
-	"syscall"
 )
 
 import (
@@ -31,16 +30,7 @@ const (
 
 const dialogWindowClass = `\o/ Walk_Dialog_Class \o/`
 
-var dialogWndProcPtr uintptr
-
-func dialogWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	dlg, ok := widgetsByHWnd[hwnd].(*Dialog)
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return dlg.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var dialogWindowClassRegistered bool
 
 type dialogish interface {
 	DefaultButton() *PushButton
@@ -55,45 +45,33 @@ type Dialog struct {
 }
 
 func NewDialog(owner RootWidget) (*Dialog, os.Error) {
-	ensureRegisteredWindowClass(dialogWindowClass, dialogWndProc, &dialogWndProcPtr)
-
-	var ownerHWnd HWND
-	if owner != nil {
-		ownerHWnd = owner.BaseWidget().hWnd
-	}
-
-	var x int
-	if owner == nil {
-		x = CW_USEDEFAULT
-	} else {
-		x = -12345
-	}
-
-	hWnd := CreateWindowEx(
-		WS_EX_DLGMODALFRAME, syscall.StringToUTF16Ptr(dialogWindowClass), nil,
-		WS_CAPTION|WS_SYSMENU,
-		x, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, ownerHWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
+	ensureRegisteredWindowClass(dialogWindowClass, &dialogWindowClassRegistered)
 
 	dlg := &Dialog{
 		TopLevelWindow: TopLevelWindow{
-			ContainerBase: ContainerBase{
-				WidgetBase: WidgetBase{
-					hWnd: hWnd,
-				},
-			},
 			owner: owner,
 		},
 	}
 
+	if err := initWidget(
+		dlg,
+		owner,
+		dialogWindowClass,
+		WS_CAPTION|WS_SYSMENU,
+		WS_EX_DLGMODALFRAME); err != nil {
+		return nil, err
+	}
+
+	if owner != nil {
+		if err := dlg.SetX(-12345); err != nil {
+			return nil, err
+		}
+	}
+
 	dlg.children = newWidgetList(dlg)
 
-	widgetsByHWnd[hWnd] = dlg
-
 	// This forces display of focus rectangles, as soon as the user starts to type.
-	SendMessage(hWnd, WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
+	SendMessage(dlg.hWnd, WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
 	dlg.result = DlgCmdClose
 
@@ -189,9 +167,7 @@ type textSelectable interface {
 	SetTextSelection(start, end int)
 }
 
-func (dlg *Dialog) Show() {
-	dlg.TopLevelWindow.Show()
-
+func (dlg *Dialog) focusFirstCandidateDescendant() {
 	widget := firstFocusableDescendant(dlg)
 	if widget == nil {
 		return
@@ -205,6 +181,12 @@ func (dlg *Dialog) Show() {
 	if textSel, ok := widget.(textSelectable); ok {
 		textSel.SetTextSelection(0, -1)
 	}
+}
+
+func (dlg *Dialog) Show() {
+	dlg.TopLevelWindow.Show()
+
+	dlg.focusFirstCandidateDescendant()
 }
 
 func (dlg *Dialog) Run() int {

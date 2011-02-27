@@ -984,6 +984,7 @@ var (
 	getMenuInfo          uintptr
 	getMessage           uintptr
 	getWindowLong        uintptr
+	getWindowLongPtr     uintptr
 	getWindowPlacement   uintptr
 	getWindowRect        uintptr
 	insertMenuItem       uintptr
@@ -1016,6 +1017,7 @@ var (
 	setParent            uintptr
 	setTimer             uintptr
 	setWindowLong        uintptr
+	setWindowLongPtr     uintptr
 	setWindowPlacement   uintptr
 	setWindowPos         uintptr
 	showWindow           uintptr
@@ -1049,6 +1051,8 @@ func init() {
 	getMenuInfo = MustGetProcAddress(lib, "GetMenuInfo")
 	getMessage = MustGetProcAddress(lib, "GetMessageW")
 	getWindowLong = MustGetProcAddress(lib, "GetWindowLongW")
+	// FIXME: on 32 bit GetWindowLongPtrW is not available
+	getWindowLongPtr = MustGetProcAddress(lib, "GetWindowLongW")
 	getWindowPlacement = MustGetProcAddress(lib, "GetWindowPlacement")
 	getWindowRect = MustGetProcAddress(lib, "GetWindowRect")
 	insertMenuItem = MustGetProcAddress(lib, "InsertMenuItemW")
@@ -1081,6 +1085,8 @@ func init() {
 	setParent = MustGetProcAddress(lib, "SetParent")
 	setTimer = MustGetProcAddress(lib, "SetTimer")
 	setWindowLong = MustGetProcAddress(lib, "SetWindowLongW")
+	// FIXME: on 32 bit SetWindowLongPtrW is not available
+	setWindowLongPtr = MustGetProcAddress(lib, "SetWindowLongW")
 	setWindowPlacement = MustGetProcAddress(lib, "SetWindowPlacement")
 	setWindowPos = MustGetProcAddress(lib, "SetWindowPos")
 	showWindow = MustGetProcAddress(lib, "ShowWindow")
@@ -1288,6 +1294,15 @@ func GetWindowLong(hWnd HWND, index int) int {
 		0)
 
 	return int(ret)
+}
+
+func GetWindowLongPtr(hWnd HWND, index int) uintptr {
+	ret, _, _ := syscall.Syscall(getWindowLongPtr, 2,
+		uintptr(hWnd),
+		uintptr(index),
+		0)
+
+	return ret
 }
 
 func GetWindowPlacement(hWnd HWND, lpwndpl *WINDOWPLACEMENT) bool {
@@ -1598,6 +1613,15 @@ func SetWindowLong(hWnd HWND, index, value int) int {
 		uintptr(value))
 
 	return int(ret)
+}
+
+func SetWindowLongPtr(hWnd HWND, index int, value uintptr) uintptr {
+	ret, _, _ := syscall.Syscall(setWindowLongPtr, 3,
+		uintptr(hWnd),
+		uintptr(index),
+		value)
+
+	return ret
 }
 
 func SetWindowPlacement(hWnd HWND, lpwndpl *WINDOWPLACEMENT) bool {

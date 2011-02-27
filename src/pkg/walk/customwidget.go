@@ -7,7 +7,6 @@ package walk
 import (
 	"log"
 	"os"
-	"syscall"
 )
 
 import (
@@ -16,16 +15,7 @@ import (
 
 const customWidgetWindowClass = `\o/ Walk_CustomWidget_Class \o/`
 
-var customWidgetWndProcPtr uintptr
-
-func customWidgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	cw, ok := customWidgetsByHWND[hwnd]
-	if !ok {
-		return DefWindowProc(hwnd, msg, wParam, lParam)
-	}
-
-	return cw.wndProc(hwnd, msg, wParam, lParam, 0)
-}
+var customWidgetWindowClassRegistered bool
 
 type PaintFunc func(canvas *Canvas, updateBounds Rectangle) os.Error
 
@@ -36,52 +26,19 @@ type CustomWidget struct {
 	invalidatesOnResize bool
 }
 
-var customWidgetsByHWND map[HWND]*CustomWidget
-
 func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidget, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	ensureRegisteredWindowClass(customWidgetWindowClass, &customWidgetWindowClassRegistered)
 
-	if customWidgetsByHWND == nil {
-		customWidgetsByHWND = make(map[HWND]*CustomWidget)
-	}
+	cw := &CustomWidget{paint: paint}
 
-	ensureRegisteredWindowClass(customWidgetWindowClass, customWidgetWndProc, &customWidgetWndProcPtr)
-
-	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr(customWidgetWindowClass), nil,
-		WS_CHILD|WS_VISIBLE|style,
-		0, 0, 0, 0, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	cw := &CustomWidget{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
-		paint: paint,
-	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			cw.Dispose()
-		}
-	}()
-
-	cw.SetFont(defaultFont)
-
-	if err := parent.Children().Add(cw); err != nil {
+	if err := initChildWidget(
+		cw,
+		parent,
+		customWidgetWindowClass,
+		WS_VISIBLE|style,
+		0); err != nil {
 		return nil, err
 	}
-
-	widgetsByHWnd[hWnd] = cw
-	customWidgetsByHWND[hWnd] = cw
-
-	succeeded = true
 
 	return cw, nil
 }
@@ -110,7 +67,7 @@ func (cw *CustomWidget) SetInvalidatesOnResize(value bool) {
 	cw.invalidatesOnResize = value
 }
 
-func (cw *CustomWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, origWndProcPtr uintptr) uintptr {
+func (cw *CustomWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_PAINT:
 		if cw.paint == nil {
@@ -144,15 +101,15 @@ func (cw *CustomWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr, ori
 		return 0
 
 	case WM_ERASEBKGND:
-		if !cw.ClearsBackground() {
+		if !cw.clearsBackground {
 			return 1
 		}
 
 	case WM_SIZE, WM_SIZING:
-		if cw.InvalidatesOnResize() {
+		if cw.invalidatesOnResize {
 			cw.Invalidate()
 		}
 	}
 
-	return cw.WidgetBase.wndProc(hwnd, msg, wParam, lParam, origWndProcPtr)
+	return cw.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }

@@ -16,29 +16,23 @@ import (
 	. "walk/winapi/user32"
 )
 
+var toolTipOrigWndProcPtr uintptr
+var _ subclassedWidget = &ToolTip{}
+
 type ToolTip struct {
 	WidgetBase
 }
 
 func NewToolTip(parent Container) (*ToolTip, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	tt := &ToolTip{}
 
-	hWnd := CreateWindowEx(
-		WS_EX_TOPMOST, syscall.StringToUTF16Ptr("tooltips_class32"), nil,
-		TTS_ALWAYSTIP|TTS_BALLOON|WS_POPUP,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-		parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	tt := &ToolTip{
-		WidgetBase: WidgetBase{
-			hWnd:   hWnd,
-			parent: parent,
-		},
+	if err := initWidget(
+		tt,
+		parent,
+		"tooltips_class32",
+		WS_POPUP|TTS_ALWAYSTIP|TTS_BALLOON,
+		WS_EX_TOPMOST); err != nil {
+		return nil, err
 	}
 
 	succeeded := false
@@ -48,19 +42,23 @@ func NewToolTip(parent Container) (*ToolTip, os.Error) {
 		}
 	}()
 
-	tt.SetFont(defaultFont)
-
 	if err := parent.Children().Add(tt); err != nil {
 		return nil, err
 	}
 
-	widgetsByHWnd[hWnd] = tt
-
-	SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)
+	SetWindowPos(tt.hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)
 
 	succeeded = true
 
 	return tt, nil
+}
+
+func (*ToolTip) origWndProcPtr() uintptr {
+	return toolTipOrigWndProcPtr
+}
+
+func (*ToolTip) setOrigWndProcPtr(ptr uintptr) {
+	toolTipOrigWndProcPtr = ptr
 }
 
 func (*ToolTip) LayoutFlags() LayoutFlags {

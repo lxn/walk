@@ -6,57 +6,40 @@ package walk
 
 import (
 	"os"
-	"syscall"
 )
 
 import (
 	. "walk/winapi/user32"
 )
 
+var checkBoxOrigWndProcPtr uintptr
+var _ subclassedWidget = &CheckBox{}
+
 type CheckBox struct {
 	Button
 }
 
 func NewCheckBox(parent Container) (*CheckBox, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
+	cb := &CheckBox{}
 
-	hWnd := CreateWindowEx(
-		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
-		BS_AUTOCHECKBOX|WS_CHILD|WS_TABSTOP|WS_VISIBLE,
-		0, 0, 120, 24, parent.BaseWidget().hWnd, 0, 0, nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	cb := &CheckBox{
-		Button: Button{
-			WidgetBase: WidgetBase{
-				hWnd:   hWnd,
-				parent: parent,
-			},
-		},
-	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			cb.Dispose()
-		}
-	}()
-
-	cb.SetFont(defaultFont)
-
-	if err := parent.Children().Add(cb); err != nil {
+	if err := initChildWidget(
+		cb,
+		parent,
+		"BUTTON",
+		WS_TABSTOP|WS_VISIBLE|BS_AUTOCHECKBOX,
+		0); err != nil {
 		return nil, err
 	}
 
-	widgetsByHWnd[hWnd] = cb
-
-	succeeded = true
-
 	return cb, nil
+}
+
+func (*CheckBox) origWndProcPtr() uintptr {
+	return checkBoxOrigWndProcPtr
+}
+
+func (*CheckBox) setOrigWndProcPtr(ptr uintptr) {
+	checkBoxOrigWndProcPtr = ptr
 }
 
 func (*CheckBox) LayoutFlags() LayoutFlags {
