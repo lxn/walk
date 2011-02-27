@@ -781,13 +781,29 @@ func widgetFromHWND(hwnd HWND) widgetInternal {
 	return wb.widget
 }
 
-func widgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func widgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) (result uintptr) {
+	defer func() {
+		var err os.Error
+		if x := recover(); x != nil {
+			if e, ok := x.(os.Error); ok {
+				err = e
+			} else {
+				err = newError(fmt.Sprint(x))
+			}
+		}
+		if err != nil {
+			appSingleton.panickingPublisher.Publish(err)
+		}
+	}()
+
 	wi := widgetFromHWND(hwnd)
 	if wi == nil {
 		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	return wi.wndProc(hwnd, msg, wParam, lParam)
+	result = wi.wndProc(hwnd, msg, wParam, lParam)
+
+	return
 }
 
 func (wb *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
@@ -881,59 +897,23 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintp
 	return DefWindowProc(hwnd, msg, wParam, lParam)
 }
 
-func (wb *WidgetBase) runMessageLoop() (exitCode int) {
-	for {
-		var err os.Error
-
-		if exitCode, err = wb.runMessageLoopWithRecover(); err == nil {
-			return
-		}
-
-		appSingleton.panickingPublisher.Publish(err)
-		if appSingleton.exiting {
-			exitCode = appSingleton.exitCode
-			return
-		}
-	}
-
-	return
-}
-
-func (wb *WidgetBase) runMessageLoopWithRecover() (exitCode int, err os.Error) {
-	var succeeded bool
-
-	defer func() {
-		if !succeeded {
-			if x := recover(); x != nil {
-				if e, ok := x.(os.Error); ok {
-					err = e
-				} else {
-					err = newError(fmt.Sprint(x))
-				}
-			}
-		}
-	}()
-
+func (w *WidgetBase) runMessageLoop() int {
 	var msg MSG
 
-	for wb.hWnd != 0 {
+	for w.hWnd != 0 {
 		switch GetMessage(&msg, 0, 0, 0) {
 		case 0:
-			exitCode = int(msg.WParam)
-			break
+			return int(msg.WParam)
 
 		case -1:
-			exitCode = -1
-			break
+			return -1
 		}
 
-		if !IsDialogMessage(wb.hWnd, &msg) {
+		if !IsDialogMessage(w.hWnd, &msg) {
 			TranslateMessage(&msg)
 			DispatchMessage(&msg)
 		}
 	}
 
-	succeeded = true
-
-	return
+	return 0
 }
