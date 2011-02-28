@@ -23,25 +23,26 @@ import (
 var listViewOrigWndProcPtr uintptr
 var _ subclassedWidget = &ListView{}
 
-type SelectedIndexList struct {
+type IndexList struct {
 	items []int
 }
 
-func NewSelectedIndexList(items []int) *SelectedIndexList {
-	return &SelectedIndexList{items}
+func NewIndexList(items []int) *IndexList {
+	return &IndexList{items}
 }
 
-func (l *SelectedIndexList) At(index int) int {
+func (l *IndexList) At(index int) int {
 	return l.items[index]
 }
 
-func (l *SelectedIndexList) Len() int {
+func (l *IndexList) Len() int {
 	return len(l.items)
 }
 
 const (
 	selectedIndexChangedTimerId = 1 + iota
 	selectedIndexesChangedTimerId
+	checkedIndexesChangedTimerId
 )
 
 type ListView struct {
@@ -50,17 +51,22 @@ type ListView struct {
 	items                           *ListViewItemList
 	selectedIndex                   int
 	selectedIndexChangedPublisher   EventPublisher
-	selectedIndexes                 *SelectedIndexList
+	selectedIndexes                 *IndexList
 	selectedIndexesChangedPublisher EventPublisher
+	checkedIndexes                  *IndexList
+	checkedIndexesChangedPublisher  EventPublisher
 	itemActivatedPublisher          EventPublisher
 	columnClickedPublisher          IntEventPublisher
 	lastColumnStretched             bool
 	persistent                      bool
-	selectionChangedDelay           int
+	itemStateChangedEventDelay      int
 }
 
 func NewListView(parent Container) (*ListView, os.Error) {
-	lv := &ListView{selectedIndexes: NewSelectedIndexList(nil)}
+	lv := &ListView{
+		checkedIndexes:  NewIndexList(nil),
+		selectedIndexes: NewIndexList(nil),
+	}
 
 	if err := initChildWidget(
 		lv,
@@ -113,6 +119,9 @@ func (lv *ListView) Dispose() {
 		if !KillTimer(lv.hWnd, selectedIndexesChangedTimerId) {
 			log.Print(lastError("KillTimer"))
 		}
+		if !KillTimer(lv.hWnd, checkedIndexesChangedTimerId) {
+			log.Print(lastError("KillTimer"))
+		}
 
 		lv.WidgetBase.Dispose()
 	}
@@ -124,6 +133,23 @@ func (*ListView) LayoutFlags() LayoutFlags {
 
 func (lv *ListView) PreferredSize() Size {
 	return lv.dialogBaseUnitsToPixels(Size{100, 100})
+}
+
+func (lv *ListView) CheckBoxes() bool {
+	return SendMessage(lv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)&LVS_EX_CHECKBOXES > 0
+}
+
+func (lv *ListView) SetCheckBoxes(value bool) {
+	exStyle := SendMessage(lv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	oldStyle := exStyle
+	if value {
+		exStyle |= LVS_EX_CHECKBOXES
+	} else {
+		exStyle &^= LVS_EX_CHECKBOXES
+	}
+	if exStyle != oldStyle {
+		SendMessage(lv.hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	}
 }
 
 func (lv *ListView) Columns() *ListViewColumnList {
@@ -170,6 +196,51 @@ func (lv *ListView) ItemActivated() *Event {
 	return lv.itemActivatedPublisher.Event()
 }
 
+func (lv *ListView) updateIndexes(indexes []int, list *IndexList, eventDelayTimerId uintptr, eventPublisher EventPublisher) {
+	changed := len(indexes) != len(list.items)
+	if !changed {
+		for i := 0; i < len(indexes); i++ {
+			if indexes[i] != list.items[i] {
+				changed = true
+				break
+			}
+		}
+	}
+
+	if changed {
+		list.items = indexes
+		if lv.itemStateChangedEventDelay > 0 {
+			if 0 == SetTimer(lv.hWnd, eventDelayTimerId, uint(lv.itemStateChangedEventDelay), 0) {
+				log.Print(lastError("SetTimer"))
+			}
+		} else {
+			eventPublisher.Publish()
+		}
+	}
+}
+
+func (lv *ListView) CheckedIndexes() *IndexList {
+	return lv.checkedIndexes
+}
+
+func (lv *ListView) updateCheckedIndexes() {
+	var indexes []int
+	itemCount := len(lv.items.items)
+
+	for i := 0; i < itemCount; i++ {
+		state := SendMessage(lv.hWnd, LVM_GETITEMSTATE, uintptr(i), LVIS_STATEIMAGEMASK)
+		if state&0x2000 > 0 {
+			indexes = append(indexes, i)
+		}
+	}
+
+	lv.updateIndexes(indexes, lv.checkedIndexes, checkedIndexesChangedTimerId, lv.checkedIndexesChangedPublisher)
+}
+
+func (lv *ListView) CheckedIndexesChanged() *Event {
+	return lv.checkedIndexesChangedPublisher.Event()
+}
+
 func (lv *ListView) SelectedIndex() int {
 	return lv.selectedIndex
 }
@@ -213,16 +284,16 @@ func (lv *ListView) SetSingleItemSelection(value bool) os.Error {
 	return lv.ensureStyleBits(LVS_SINGLESEL, value)
 }
 
-func (lv *ListView) SelectedIndexes() *SelectedIndexList {
+func (lv *ListView) SelectedIndexes() *IndexList {
 	return lv.selectedIndexes
 }
 
-func (lv *ListView) SelectionChangedDelay() int {
-	return lv.selectionChangedDelay
+func (lv *ListView) ItemStateChangedEventDelay() int {
+	return lv.itemStateChangedEventDelay
 }
 
-func (lv *ListView) SetSelectionChangedDelay(delay int) {
-	lv.selectionChangedDelay = delay
+func (lv *ListView) SetItemStateChangedEventDelay(delay int) {
+	lv.itemStateChangedEventDelay = delay
 }
 
 func (lv *ListView) updateSelectedIndexes() {
@@ -235,26 +306,7 @@ func (lv *ListView) updateSelectedIndexes() {
 		indexes[i] = j
 	}
 
-	changed := len(indexes) != len(lv.selectedIndexes.items)
-	if !changed {
-		for i := 0; i < len(indexes); i++ {
-			if indexes[i] != lv.selectedIndexes.items[i] {
-				changed = true
-				break
-			}
-		}
-	}
-
-	if changed {
-		lv.selectedIndexes.items = indexes
-		if lv.selectionChangedDelay > 0 {
-			if 0 == SetTimer(lv.hWnd, selectedIndexesChangedTimerId, uint(lv.selectionChangedDelay), 0) {
-				log.Print(lastError("SetTimer"))
-			}
-		} else {
-			lv.selectedIndexesChangedPublisher.Publish()
-		}
-	}
+	lv.updateIndexes(indexes, lv.selectedIndexes, selectedIndexesChangedTimerId, lv.selectedIndexesChangedPublisher)
 }
 
 func (lv *ListView) SelectedIndexesChanged() *Event {
@@ -371,8 +423,8 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 			selectedBefore := nmlv.UOldState&LVIS_SELECTED > 0
 			if selectedNow && !selectedBefore {
 				lv.selectedIndex = nmlv.IItem
-				if lv.selectionChangedDelay > 0 {
-					if 0 == SetTimer(lv.hWnd, selectedIndexChangedTimerId, uint(lv.selectionChangedDelay), 0) {
+				if lv.itemStateChangedEventDelay > 0 {
+					if 0 == SetTimer(lv.hWnd, selectedIndexChangedTimerId, uint(lv.itemStateChangedEventDelay), 0) {
 						log.Print(lastError("SetTimer"))
 					}
 				} else {
@@ -382,6 +434,7 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 			if !lv.SingleItemSelection() {
 				lv.updateSelectedIndexes()
 			}
+			lv.updateCheckedIndexes()
 
 		case LVN_ITEMACTIVATE:
 			lv.itemActivatedPublisher.Publish()
@@ -394,6 +447,9 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 
 		case selectedIndexesChangedTimerId:
 			lv.selectedIndexesChangedPublisher.Publish()
+
+		case checkedIndexesChangedTimerId:
+			lv.checkedIndexesChangedPublisher.Publish()
 		}
 	}
 
