@@ -39,9 +39,10 @@ type dialogish interface {
 
 type Dialog struct {
 	TopLevelWindow
-	result        int
-	defaultButton *PushButton
-	cancelButton  *PushButton
+	result               int
+	defaultButton        *PushButton
+	cancelButton         *PushButton
+	centerInOwnerWhenRun bool
 }
 
 func NewDialog(owner RootWidget) (*Dialog, os.Error) {
@@ -62,11 +63,7 @@ func NewDialog(owner RootWidget) (*Dialog, os.Error) {
 		return nil, err
 	}
 
-	if owner != nil {
-		if err := dlg.SetX(-12345); err != nil {
-			return nil, err
-		}
-	}
+	dlg.centerInOwnerWhenRun = owner != nil
 
 	dlg.children = newWidgetList(dlg)
 
@@ -193,7 +190,7 @@ func (dlg *Dialog) Run() int {
 	if dlg.owner != nil {
 		ob := dlg.owner.Bounds()
 		b := dlg.Bounds()
-		if b.X == -12345 {
+		if dlg.centerInOwnerWhenRun {
 			dlg.SetBounds(Rectangle{
 				ob.X + (ob.Width-b.Width)/2,
 				ob.Y + (ob.Height-b.Height)/2,
