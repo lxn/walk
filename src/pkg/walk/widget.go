@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -607,14 +608,23 @@ func (wb *WidgetBase) calculateTextSize() Size {
 	hFontOld := SelectObject(hdc, HGDIOBJ(wb.Font().handleForDPI(0)))
 	defer SelectObject(hdc, hFontOld)
 
-	str := syscall.StringToUTF16(wb.Text())
-	var size SIZE
-	if !GetTextExtentPoint32(hdc, &str[0], len(str)-1, &size) {
-		log.Print(newError("GetTextExtentPoint32 failed"))
-		return Size{}
+	var size Size
+	lines := strings.Split(wb.Text(), "\n", -1)
+
+	for _, line := range lines {
+		var s SIZE
+		str := syscall.StringToUTF16(strings.TrimRight(line, "\r "))
+
+		if !GetTextExtentPoint32(hdc, &str[0], len(str)-1, &s) {
+			log.Print(newError("GetTextExtentPoint32 failed"))
+			return Size{}
+		}
+
+		size.Width = maxi(size.Width, s.CX)
+		size.Height += s.CY
 	}
 
-	return Size{size.CX, size.CY}
+	return size
 }
 
 func (wb *WidgetBase) Size() Size {
