@@ -18,6 +18,22 @@ import (
 	. "walk/winapi/kernel32"
 )
 
+func maxi(a, b int) int {
+	if a > b {
+		return a
+	}
+
+	return b
+}
+
+func mini(a, b int) int {
+	if a < b {
+		return a
+	}
+
+	return b
+}
+
 /*func callStack() string {
 	buf := bytes.NewBuffer(nil)
 
