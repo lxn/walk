@@ -265,6 +265,20 @@ const (
 	LVIS_STATEIMAGEMASK = 0xF000
 )
 
+// ListView hit test constants
+const (
+	LVHT_NOWHERE         = 0x00000001
+	LVHT_ONITEMICON      = 0x00000002
+	LVHT_ONITEMLABEL     = 0x00000004
+	LVHT_ONITEMSTATEICON = 0x00000008
+	LVHT_ONITEM          = LVHT_ONITEMICON | LVHT_ONITEMLABEL | LVHT_ONITEMSTATEICON
+
+	LVHT_ABOVE   = 0x00000008
+	LVHT_BELOW   = 0x00000010
+	LVHT_TORIGHT = 0x00000020
+	LVHT_TOLEFT  = 0x00000040
+)
+
 type LVCOLUMN struct {
 	Mask       uint
 	Fmt        int
@@ -290,6 +304,14 @@ type LVITEM struct {
 	IGroupId   int
 	CColumns   uint
 	PuColumns  uint
+}
+
+type LVHITTESTINFO struct {
+	Pt       POINT
+	Flags    uint
+	IItem    int
+	ISubItem int
+	IGroup   int
 }
 
 type NMITEMACTIVATE struct {

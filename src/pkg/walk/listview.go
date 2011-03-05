@@ -17,6 +17,7 @@ import (
 import (
 	. "walk/winapi"
 	. "walk/winapi/comctl32"
+	. "walk/winapi/gdi32"
 	. "walk/winapi/user32"
 )
 
@@ -248,9 +249,9 @@ func (lv *ListView) SelectedIndex() int {
 func (lv *ListView) SetSelectedIndex(value int) os.Error {
 	var lvi LVITEM
 
-	lvi.StateMask = LVIS_SELECTED
+	lvi.StateMask = LVIS_FOCUSED | LVIS_SELECTED
 	if value > -1 {
-		lvi.State = LVIS_SELECTED
+		lvi.State = LVIS_FOCUSED | LVIS_SELECTED
 	}
 
 	if FALSE == SendMessage(lv.hWnd, LVM_SETITEMSTATE, uintptr(value), uintptr(unsafe.Pointer(&lvi))) {
@@ -409,6 +410,17 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 	case WM_GETDLGCODE:
 		if wParam == VK_RETURN {
 			return DLGC_WANTALLKEYS
+		}
+
+	case WM_LBUTTONDOWN, WM_RBUTTONDOWN, WM_LBUTTONDBLCLK, WM_RBUTTONDBLCLK:
+		if lv.SingleItemSelection() {
+			var hti LVHITTESTINFO
+			hti.Pt = POINT{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)}
+			SendMessage(lv.hWnd, LVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
+			if hti.Flags == LVHT_NOWHERE {
+				lv.SetFocus()
+				return 0
+			}
 		}
 
 	case WM_NOTIFY:
