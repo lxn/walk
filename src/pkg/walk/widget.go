@@ -907,11 +907,6 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintp
 	case WM_SIZE, WM_SIZING:
 		wb.sizeChangedPublisher.Publish()
 
-	case WM_GETMINMAXINFO:
-		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))
-		mmi.PtMinTrackSize = POINT{wb.minSize.Width, wb.minSize.Height}
-		return 0
-
 	case WM_SHOWWINDOW:
 		wb.persistState(wParam != 0)
 

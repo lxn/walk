@@ -12,6 +12,7 @@ import (
 
 import (
 	. "walk/winapi"
+	. "walk/winapi/gdi32"
 	. "walk/winapi/kernel32"
 	. "walk/winapi/user32"
 )
@@ -189,6 +190,18 @@ func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) 
 			}
 
 			tlw.close()
+		}
+		return 0
+
+	case WM_GETMINMAXINFO:
+		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))
+		var min Size
+		if tlw.layout != nil {
+			min = tlw.layout.MinSize()
+		}
+		mmi.PtMinTrackSize = POINT{
+			maxi(min.Width, tlw.minSize.Width),
+			maxi(min.Width, tlw.minSize.Height),
 		}
 		return 0
 
