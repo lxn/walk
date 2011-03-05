@@ -964,6 +964,7 @@ var (
 	lib uintptr
 
 	// Functions
+	adjustWindowRectEx   uintptr
 	beginPaint           uintptr
 	callWindowProc       uintptr
 	createMenu           uintptr
@@ -1031,6 +1032,7 @@ func init() {
 	lib = MustLoadLibrary("user32.dll")
 
 	// Functions
+	adjustWindowRectEx = MustGetProcAddress(lib, "AdjustWindowRectEx")
 	beginPaint = MustGetProcAddress(lib, "BeginPaint")
 	callWindowProc = MustGetProcAddress(lib, "CallWindowProcW")
 	createMenu = MustGetProcAddress(lib, "CreateMenu")
@@ -1093,6 +1095,18 @@ func init() {
 	systemParametersInfo = MustGetProcAddress(lib, "SystemParametersInfoW")
 	trackPopupMenuEx = MustGetProcAddress(lib, "TrackPopupMenuEx")
 	translateMessage = MustGetProcAddress(lib, "TranslateMessage")
+}
+
+func AdjustWindowRectEx(lpRect *RECT, dwStyle uint, bMenu bool, dwExStyle uint) bool {
+	ret, _, _ := syscall.Syscall6(adjustWindowRectEx, 4,
+		uintptr(unsafe.Pointer(lpRect)),
+		uintptr(dwStyle),
+		uintptr(BoolToBOOL(bMenu)),
+		uintptr(dwExStyle),
+		0,
+		0)
+
+	return ret != 0
 }
 
 func BeginPaint(hwnd HWND, lpPaint *PAINTSTRUCT) HDC {

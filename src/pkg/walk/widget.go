@@ -58,6 +58,7 @@ type Widget interface {
 	RootWidget() RootWidget
 	SetBackground(value Brush)
 	SetBounds(value Rectangle) os.Error
+	SetClientSize(value Size) os.Error
 	SetContextMenu(value *Menu)
 	SetCursor(value Cursor)
 	SetEnabled(value bool)
@@ -694,6 +695,26 @@ func widgetClientBounds(hwnd HWND) Rectangle {
 
 func (wb *WidgetBase) ClientBounds() Rectangle {
 	return widgetClientBounds(wb.hWnd)
+}
+
+func (wb *WidgetBase) SetClientSize(value Size) os.Error {
+	style := uint(GetWindowLong(wb.hWnd, GWL_STYLE))
+	if style == 0 {
+		return lastError("GetWindowLong(GWL_STYLE)")
+	}
+
+	exStyle := uint(GetWindowLong(wb.hWnd, GWL_EXSTYLE))
+	if exStyle == 0 {
+		return lastError("GetWindowLong(GWL_EXSTYLE)")
+	}
+
+	rect := RECT{0, 0, value.Width, value.Height}
+
+	if !AdjustWindowRectEx(&rect, style, false, exStyle) {
+		return lastError("AdjustWindowRectEx")
+	}
+
+	return wb.SetSize(Size{rect.Right, rect.Bottom})
 }
 
 func (wb *WidgetBase) SetFocus() os.Error {
