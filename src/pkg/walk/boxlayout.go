@@ -156,6 +156,7 @@ type widgetInfo struct {
 	minSize int
 	maxSize int
 	stretch int
+	widget  Widget
 }
 
 type widgetInfoList []widgetInfo
@@ -165,16 +166,96 @@ func (l widgetInfoList) Len() int {
 }
 
 func (l widgetInfoList) Less(i, j int) bool {
-	minDiff := l[i].minSize - l[j].minSize
-	if minDiff == 0 {
-		return l[i].maxSize/l[i].stretch < l[j].maxSize/l[j].stretch
+	_, iIsSpacer := l[i].widget.(*Spacer)
+	_, jIsSpacer := l[j].widget.(*Spacer)
+
+	if iIsSpacer == jIsSpacer {
+		minDiff := l[i].minSize - l[j].minSize
+
+		if minDiff == 0 {
+			return l[i].maxSize/l[i].stretch < l[j].maxSize/l[j].stretch
+		}
+
+		return minDiff > 0
 	}
 
-	return minDiff > 0
+	return jIsSpacer
 }
 
 func (l widgetInfoList) Swap(i, j int) {
 	l[i], l[j] = l[j], l[i]
+}
+
+func (l *BoxLayout) MinSize() Size {
+	if l.container == nil {
+		return Size{}
+	}
+
+	// Begin by finding out which widgets we care about.
+	children := l.container.Children()
+	widgets := make([]Widget, 0, children.Len())
+
+	for i := 0; i < cap(widgets); i++ {
+		widget := children.At(i)
+
+		ps := widget.PreferredSize()
+		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
+			continue
+		}
+
+		widgets = append(widgets, widget)
+	}
+
+	// Prepare some useful data.
+	sizes := make([]int, len(widgets))
+	var s2 int
+
+	for i, widget := range widgets {
+		max := widget.MaxSize()
+		pref := widget.PreferredSize()
+
+		if l.orientation == Horizontal {
+			if max.Width > 0 {
+				sizes[i] = mini(pref.Width, max.Width)
+			} else {
+				sizes[i] = pref.Width
+			}
+
+			if pref.Height > s2 {
+				s2 = pref.Height
+			}
+		} else {
+			if max.Height > 0 {
+				sizes[i] = mini(pref.Height, max.Height)
+			} else {
+				sizes[i] = pref.Height
+			}
+
+			if pref.Width > s2 {
+				s2 = pref.Width
+			}
+		}
+	}
+
+	s1 := l.spacing * (len(widgets) - 1)
+
+	if l.orientation == Horizontal {
+		s1 += l.margins.HNear + l.margins.HFar
+		s2 += l.margins.VNear + l.margins.VFar
+	} else {
+		s1 += l.margins.VNear + l.margins.VFar
+		s2 += l.margins.HNear + l.margins.HFar
+	}
+
+	for _, s := range sizes {
+		s1 += s
+	}
+
+	if l.orientation == Horizontal {
+		return Size{s1, s2}
+	}
+
+	return Size{s2, s1}
 }
 
 func (l *BoxLayout) Update(reset bool) os.Error {
@@ -213,7 +294,8 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 	}
 
 	// Prepare some useful data.
-	var stretchFactorsRemaining int
+	var nonSpacerCount int
+	var stretchFactorsTotal [2]int
 	stretchFactors := make([]int, len(widgets))
 	var minSizesRemaining int
 	minSizes := make([]int, len(widgets))
@@ -229,7 +311,6 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 			sf = 1
 		}
 		stretchFactors[i] = sf
-		stretchFactorsRemaining += sf
 
 		flags := widget.LayoutFlags()
 
@@ -279,8 +360,16 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 		sortedWidgetInfo[i].minSize = minSizes[i]
 		sortedWidgetInfo[i].maxSize = maxSizes[i]
 		sortedWidgetInfo[i].stretch = sf
+		sortedWidgetInfo[i].widget = widget
 
 		minSizesRemaining += minSizes[i]
+
+		if _, isSpacer := widget.(*Spacer); !isSpacer {
+			nonSpacerCount++
+			stretchFactorsTotal[0] += sf
+		} else {
+			stretchFactorsTotal[1] += sf
+		}
 	}
 
 	sort.Sort(sortedWidgetInfo)
@@ -301,30 +390,39 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 
 	// Now calculate widget primary axis sizes.
 	spacingRemaining := l.spacing * (len(widgets) - 1)
-	for _, info := range sortedWidgetInfo {
-		i := info.index
 
-		stretch := stretchFactors[i]
-		min := info.minSize
-		max := info.maxSize
-		size := min
+	offsets := [2]int{0, nonSpacerCount}
+	counts := [2]int{nonSpacerCount, len(widgets) - nonSpacerCount}
 
-		if min < max {
-			excessSpace := float64(space1 - minSizesRemaining - spacingRemaining)
-			size += int(excessSpace * float64(stretch) / float64(stretchFactorsRemaining))
-			if size < min {
-				size = min
-			} else if size > max {
-				size = max
+	for i := 0; i < 2; i++ {
+		stretchFactorsRemaining := stretchFactorsTotal[i]
+
+		for j := 0; j < counts[i]; j++ {
+			info := sortedWidgetInfo[offsets[i]+j]
+			k := info.index
+
+			stretch := stretchFactors[k]
+			min := info.minSize
+			max := info.maxSize
+			size := min
+
+			if min < max {
+				excessSpace := float64(space1 - minSizesRemaining - spacingRemaining)
+				size += int(excessSpace * float64(stretch) / float64(stretchFactorsRemaining))
+				if size < min {
+					size = min
+				} else if size > max {
+					size = max
+				}
 			}
+
+			sizes[k] = size
+
+			minSizesRemaining -= min
+			stretchFactorsRemaining -= stretch
+			space1 -= (size + l.spacing)
+			spacingRemaining -= l.spacing
 		}
-
-		sizes[i] = size
-
-		minSizesRemaining -= min
-		stretchFactorsRemaining -= stretch
-		space1 -= (size + l.spacing)
-		spacingRemaining -= l.spacing
 	}
 
 	// Finally position widgets.

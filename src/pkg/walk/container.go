@@ -25,6 +25,7 @@ type Layout interface {
 	SetMargins(value Margins) os.Error
 	Spacing() int
 	SetSpacing(value int) os.Error
+	MinSize() Size
 	Update(reset bool) os.Error
 }
 
@@ -47,32 +48,55 @@ type ContainerBase struct {
 	persistent bool
 }
 
-func (c *ContainerBase) Children() *WidgetList {
-	return c.children
+func (cb *ContainerBase) LayoutFlags() LayoutFlags {
+	var flags LayoutFlags
+
+	count := cb.children.Len()
+	if count == 0 {
+		return HShrink | VShrink
+	} else {
+		for i := 0; i < count; i++ {
+			flags |= cb.children.At(i).LayoutFlags()
+		}
+	}
+
+	return flags
 }
 
-func (c *ContainerBase) Layout() Layout {
-	return c.layout
+func (cb *ContainerBase) PreferredSize() Size {
+	if cb.layout == nil {
+		return Size{100, 100}
+	}
+
+	return cb.layout.MinSize()
 }
 
-func (c *ContainerBase) SetLayout(value Layout) os.Error {
-	if c.layout != value {
-		if c.layout != nil {
-			c.layout.SetContainer(nil)
+func (cb *ContainerBase) Children() *WidgetList {
+	return cb.children
+}
+
+func (cb *ContainerBase) Layout() Layout {
+	return cb.layout
+}
+
+func (cb *ContainerBase) SetLayout(value Layout) os.Error {
+	if cb.layout != value {
+		if cb.layout != nil {
+			cb.layout.SetContainer(nil)
 		}
 
-		c.layout = value
+		cb.layout = value
 
-		if value != nil && value.Container() != Container(c) {
-			value.SetContainer(c)
+		if value != nil && value.Container() != Container(cb) {
+			value.SetContainer(cb)
 		}
 	}
 
 	return nil
 }
 
-func (c *ContainerBase) forEachPersistableChild(f func(p Persistable) os.Error) os.Error {
-	for _, child := range c.children.items {
+func (cb *ContainerBase) forEachPersistableChild(f func(p Persistable) os.Error) os.Error {
+	for _, child := range cb.children.items {
 		if persistable, ok := child.(Persistable); ok && persistable.Persistent() {
 			if err := f(persistable); err != nil {
 				return err
@@ -83,37 +107,37 @@ func (c *ContainerBase) forEachPersistableChild(f func(p Persistable) os.Error) 
 	return nil
 }
 
-func (c *ContainerBase) Persistent() bool {
-	return c.persistent
+func (cb *ContainerBase) Persistent() bool {
+	return cb.persistent
 }
 
-func (c *ContainerBase) SetPersistent(value bool) {
-	c.persistent = value
+func (cb *ContainerBase) SetPersistent(value bool) {
+	cb.persistent = value
 }
 
-func (c *ContainerBase) SaveState() os.Error {
-	return c.forEachPersistableChild(func(p Persistable) os.Error {
+func (cb *ContainerBase) SaveState() os.Error {
+	return cb.forEachPersistableChild(func(p Persistable) os.Error {
 		return p.SaveState()
 	})
 }
 
-func (c *ContainerBase) RestoreState() os.Error {
-	return c.forEachPersistableChild(func(p Persistable) os.Error {
+func (cb *ContainerBase) RestoreState() os.Error {
+	return cb.forEachPersistableChild(func(p Persistable) os.Error {
 		return p.RestoreState()
 	})
 }
 
-func (c *ContainerBase) SetSuspended(suspend bool) {
-	wasSuspended := c.Suspended()
+func (cb *ContainerBase) SetSuspended(suspend bool) {
+	wasSuspended := cb.Suspended()
 
-	c.WidgetBase.SetSuspended(suspend)
+	cb.WidgetBase.SetSuspended(suspend)
 
-	if !suspend && wasSuspended && c.layout != nil {
-		c.layout.Update(false)
+	if !suspend && wasSuspended && cb.layout != nil {
+		cb.layout.Update(false)
 	}
 }
 
-func (c *ContainerBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (cb *ContainerBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		if lParam == 0 {
@@ -122,7 +146,7 @@ func (c *ContainerBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uin
 				cmdId := LOWORD(uint(wParam))
 				switch cmdId {
 				case IDOK, IDCANCEL:
-					root := rootWidget(c)
+					root := rootWidget(cb)
 					if root == nil {
 						break
 					}
@@ -173,53 +197,53 @@ func (c *ContainerBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uin
 		}
 
 	case WM_SIZE, WM_SIZING:
-		if c.layout != nil {
-			c.layout.Update(false)
+		if cb.layout != nil {
+			cb.layout.Update(false)
 		}
 	}
 
-	return c.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return cb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
-func (c *ContainerBase) onInsertingWidget(index int, widget Widget) (err os.Error) {
+func (cb *ContainerBase) onInsertingWidget(index int, widget Widget) (err os.Error) {
 	return nil
 }
 
-func (c *ContainerBase) onInsertedWidget(index int, widget Widget) (err os.Error) {
-	if widget.Parent().BaseWidget().hWnd != c.hWnd {
-		err = widget.SetParent(widgetFromHWND(c.hWnd).(Container))
+func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err os.Error) {
+	if widget.Parent().BaseWidget().hWnd != cb.hWnd {
+		err = widget.SetParent(widgetFromHWND(cb.hWnd).(Container))
 		if err != nil {
 			return
 		}
 	}
 
-	if c.layout != nil {
-		c.layout.Update(true)
+	if cb.layout != nil {
+		cb.layout.Update(true)
 	}
 
 	return
 }
 
-func (c *ContainerBase) onRemovingWidget(index int, widget Widget) (err os.Error) {
-	if widget.Parent().BaseWidget().hWnd == c.hWnd {
+func (cb *ContainerBase) onRemovingWidget(index int, widget Widget) (err os.Error) {
+	if widget.Parent().BaseWidget().hWnd == cb.hWnd {
 		err = widget.SetParent(nil)
 	}
 
 	return
 }
 
-func (c *ContainerBase) onRemovedWidget(index int, widget Widget) (err os.Error) {
-	if c.layout != nil {
-		c.layout.Update(true)
+func (cb *ContainerBase) onRemovedWidget(index int, widget Widget) (err os.Error) {
+	if cb.layout != nil {
+		cb.layout.Update(true)
 	}
 
 	return
 }
 
-func (c *ContainerBase) onClearingWidgets() (err os.Error) {
+func (cb *ContainerBase) onClearingWidgets() (err os.Error) {
 	panic("not implemented")
 }
 
-func (c *ContainerBase) onClearedWidgets() (err os.Error) {
+func (cb *ContainerBase) onClearedWidgets() (err os.Error) {
 	panic("not implemented")
 }
