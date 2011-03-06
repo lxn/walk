@@ -426,8 +426,11 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 	}
 
 	// Finally position widgets.
+	excessTotal := space1 - minSizesRemaining - spacingRemaining
+	excessShare := excessTotal / (len(widgets) + 1)
 	p1 := start1
 	for i, widget := range widgets {
+		p1 += excessShare
 		s1 := sizes[i]
 
 		var s2 int
