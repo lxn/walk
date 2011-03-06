@@ -25,6 +25,7 @@ type Layout interface {
 	SetMargins(value Margins) os.Error
 	Spacing() int
 	SetSpacing(value int) os.Error
+	LayoutFlags() LayoutFlags
 	MinSize() Size
 	Update(reset bool) os.Error
 }
@@ -49,18 +50,11 @@ type ContainerBase struct {
 }
 
 func (cb *ContainerBase) LayoutFlags() LayoutFlags {
-	var flags LayoutFlags
-
-	count := cb.children.Len()
-	if count == 0 {
-		return HShrink | VShrink
-	} else {
-		for i := 0; i < count; i++ {
-			flags |= cb.children.At(i).LayoutFlags()
-		}
+	if cb.layout == nil {
+		return 0
 	}
 
-	return flags
+	return cb.layout.LayoutFlags()
 }
 
 func (cb *ContainerBase) PreferredSize() Size {

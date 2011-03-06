@@ -43,7 +43,7 @@ func (*RadioButton) setOrigWndProcPtr(ptr uintptr) {
 }
 
 func (*RadioButton) LayoutFlags() LayoutFlags {
-	return HShrink | HGrow
+	return 0
 }
 
 func (rb *RadioButton) PreferredSize() Size {

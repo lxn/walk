@@ -46,7 +46,7 @@ func (*PushButton) setOrigWndProcPtr(ptr uintptr) {
 }
 
 func (*PushButton) LayoutFlags() LayoutFlags {
-	return 0
+	return GrowableHorz
 }
 
 func (pb *PushButton) PreferredSize() Size {

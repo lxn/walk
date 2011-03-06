@@ -69,10 +69,18 @@ func NewGroupBox(parent Container) (*GroupBox, os.Error) {
 }
 
 func (gb *GroupBox) LayoutFlags() LayoutFlags {
+	if gb.composite == nil {
+		return 0
+	}
+
 	return gb.composite.LayoutFlags()
 }
 
 func (gb *GroupBox) PreferredSize() Size {
+	if gb.composite == nil {
+		return Size{100, 100}
+	}
+
 	cps := gb.composite.PreferredSize()
 	wbcb := gb.WidgetBase.ClientBounds()
 	gbcb := gb.ClientBounds()
@@ -82,6 +90,10 @@ func (gb *GroupBox) PreferredSize() Size {
 
 func (gb *GroupBox) ClientBounds() Rectangle {
 	cb := widgetClientBounds(gb.hWndGroupBox)
+
+	if gb.Layout() == nil {
+		return cb
+	}
 
 	// FIXME: Use appropriate margins
 	return Rectangle{cb.X + 8, cb.Y + 24, cb.Width - 16, cb.Height - 32}
@@ -121,20 +133,22 @@ func (gb *GroupBox) SetLayout(value Layout) os.Error {
 }
 
 func (gb *GroupBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	switch msg {
-	case WM_COMMAND, WM_NOTIFY:
-		gb.composite.wndProc(hwnd, msg, wParam, lParam)
+	if gb.composite != nil {
+		switch msg {
+		case WM_COMMAND, WM_NOTIFY:
+			gb.composite.wndProc(hwnd, msg, wParam, lParam)
 
-	case WM_SIZE, WM_SIZING:
-		wbcb := gb.WidgetBase.ClientBounds()
-		if !MoveWindow(gb.hWndGroupBox, wbcb.X, wbcb.Y, wbcb.Width, wbcb.Height, true) {
-			log.Print(lastError("MoveWindow"))
-			break
-		}
+		case WM_SIZE, WM_SIZING:
+			wbcb := gb.WidgetBase.ClientBounds()
+			if !MoveWindow(gb.hWndGroupBox, wbcb.X, wbcb.Y, wbcb.Width, wbcb.Height, true) {
+				log.Print(lastError("MoveWindow"))
+				break
+			}
 
-		gbcb := gb.ClientBounds()
-		if err := gb.composite.SetBounds(gbcb); err != nil {
-			log.Print(err)
+			gbcb := gb.ClientBounds()
+			if err := gb.composite.SetBounds(gbcb); err != nil {
+				log.Print(err)
+			}
 		}
 	}
 

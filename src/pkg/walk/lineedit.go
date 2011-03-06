@@ -129,7 +129,7 @@ func (le *LineEdit) SetValidator(validator Validator) {
 }
 
 func (*LineEdit) LayoutFlags() LayoutFlags {
-	return HShrink | HGrow
+	return ShrinkableHorz | GrowableHorz | GreedyHorz
 }
 
 func (le *LineEdit) PreferredSize() Size {

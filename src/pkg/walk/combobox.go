@@ -51,7 +51,7 @@ func (*ComboBox) setOrigWndProcPtr(ptr uintptr) {
 }
 
 func (*ComboBox) LayoutFlags() LayoutFlags {
-	return HShrink | HGrow
+	return ShrinkableHorz | GrowableHorz
 }
 
 func (cb *ComboBox) PreferredSize() Size {

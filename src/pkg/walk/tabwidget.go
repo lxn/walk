@@ -71,7 +71,7 @@ func NewTabWidget(parent Container) (*TabWidget, os.Error) {
 }
 
 func (*TabWidget) LayoutFlags() LayoutFlags {
-	return HGrow | VGrow | HShrink | VShrink
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
 func (tw *TabWidget) PreferredSize() Size {

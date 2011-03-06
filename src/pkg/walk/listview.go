@@ -129,7 +129,7 @@ func (lv *ListView) Dispose() {
 }
 
 func (*ListView) LayoutFlags() LayoutFlags {
-	return HShrink | HGrow | VShrink | VGrow
+	return ShrinkableHorz | GrowableHorz | ShrinkableVert | GrowableVert | GreedyHorz | GreedyVert
 }
 
 func (lv *ListView) PreferredSize() Size {

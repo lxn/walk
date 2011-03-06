@@ -68,7 +68,7 @@ func (*TreeView) setOrigWndProcPtr(ptr uintptr) {
 }
 
 func (*TreeView) LayoutFlags() LayoutFlags {
-	return HShrink | HGrow | VShrink | VGrow
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
 func (tv *TreeView) PreferredSize() Size {

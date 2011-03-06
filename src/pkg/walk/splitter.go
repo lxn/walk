@@ -59,7 +59,7 @@ func NewSplitter(parent Container) (*Splitter, os.Error) {
 }
 
 func (s *Splitter) LayoutFlags() LayoutFlags {
-	return HGrow | VGrow | HShrink | VShrink
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
 func (s *Splitter) PreferredSize() Size {

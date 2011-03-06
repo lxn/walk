@@ -63,12 +63,12 @@ func (tb *ToolBar) LayoutFlags() LayoutFlags {
 	style := GetWindowLong(tb.hWnd, GWL_STYLE)
 
 	if style&CCS_VERT > 0 {
-		return VShrink | VGrow
+		return ShrinkableVert | GrowableVert | GreedyVert
 	}
 
 	// FIXME: Since reimplementation of BoxLayout we must return 0 here,
 	// otherwise the ToolBar contained in MainWindow will eat half the space.  
-	return 0 //HShrink | HGrow
+	return 0 //ShrinkableHorz | GrowableHorz
 }
 
 func (tb *ToolBar) PreferredSize() Size {

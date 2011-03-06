@@ -40,7 +40,7 @@ func NewTabPage() (*TabPage, os.Error) {
 }
 
 func (*TabPage) LayoutFlags() LayoutFlags {
-	return HGrow | VGrow | HShrink | VShrink
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
 func (tp *TabPage) PreferredSize() Size {

@@ -106,7 +106,7 @@ func (ne *NumberEdit) SetFont(value *Font) {
 }
 
 func (*NumberEdit) LayoutFlags() LayoutFlags {
-	return HShrink | HGrow
+	return ShrinkableHorz | GrowableHorz
 }
 
 func (ne *NumberEdit) PreferredSize() Size {

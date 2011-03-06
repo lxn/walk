@@ -39,7 +39,7 @@ func newSpacer(parent Container, layoutFlags LayoutFlags, prefSize Size) (*Space
 }
 
 func NewHSpacer(parent Container) (*Spacer, os.Error) {
-	return newSpacer(parent, HGrow|HShrink|VShrink, Size{})
+	return newSpacer(parent, ShrinkableHorz|ShrinkableVert|GrowableHorz|GreedyHorz, Size{})
 }
 
 func NewHSpacerFixed(parent Container, width int) (*Spacer, os.Error) {
@@ -47,11 +47,11 @@ func NewHSpacerFixed(parent Container, width int) (*Spacer, os.Error) {
 }
 
 func NewVSpacer(parent Container) (*Spacer, os.Error) {
-	return newSpacer(parent, HShrink|VGrow|VShrink, Size{})
+	return newSpacer(parent, ShrinkableHorz|ShrinkableVert|GrowableVert|GreedyVert, Size{})
 }
 
 func NewVSpacerFixed(parent Container, height int) (*Spacer, os.Error) {
-	return newSpacer(parent, HShrink, Size{0, height})
+	return newSpacer(parent, 0, Size{0, height})
 }
 
 func (s *Spacer) LayoutFlags() LayoutFlags {

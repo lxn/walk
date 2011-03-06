@@ -43,7 +43,7 @@ func (*CheckBox) setOrigWndProcPtr(ptr uintptr) {
 }
 
 func (*CheckBox) LayoutFlags() LayoutFlags {
-	return HShrink | HGrow
+	return 0
 }
 
 func (cb *CheckBox) PreferredSize() Size {

@@ -44,11 +44,11 @@ func (*TextEdit) setOrigWndProcPtr(ptr uintptr) {
 }
 
 func (*TextEdit) LayoutFlags() LayoutFlags {
-	return HShrink | HGrow | VShrink | VGrow
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
 func (te *TextEdit) PreferredSize() Size {
-	return te.dialogBaseUnitsToPixels(Size{100, 100})
+	return Size{100, 100}
 }
 
 func (te *TextEdit) TextSelection() (start, end int) {

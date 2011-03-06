@@ -25,10 +25,12 @@ import (
 type LayoutFlags byte
 
 const (
-	HShrink LayoutFlags = 1 << iota
-	HGrow
-	VShrink
-	VGrow
+	ShrinkableHorz LayoutFlags = 1 << iota
+	ShrinkableVert
+	GrowableHorz
+	GrowableVert
+	GreedyHorz
+	GreedyVert
 )
 
 type Widget interface {
@@ -697,24 +699,16 @@ func (wb *WidgetBase) ClientBounds() Rectangle {
 	return widgetClientBounds(wb.hWnd)
 }
 
+func (wb *WidgetBase) sizeFromClientSize(clientSize Size) Size {
+	s := wb.Size()
+	cs := wb.ClientBounds().Size()
+	ncs := Size{s.Width - cs.Width, s.Height - cs.Height}
+
+	return Size{clientSize.Width + ncs.Width, clientSize.Height + ncs.Height}
+}
+
 func (wb *WidgetBase) SetClientSize(value Size) os.Error {
-	style := uint(GetWindowLong(wb.hWnd, GWL_STYLE))
-	if style == 0 {
-		return lastError("GetWindowLong(GWL_STYLE)")
-	}
-
-	exStyle := uint(GetWindowLong(wb.hWnd, GWL_EXSTYLE))
-	if exStyle == 0 {
-		return lastError("GetWindowLong(GWL_EXSTYLE)")
-	}
-
-	rect := RECT{0, 0, value.Width, value.Height}
-
-	if !AdjustWindowRectEx(&rect, style, false, exStyle) {
-		return lastError("AdjustWindowRectEx")
-	}
-
-	return wb.SetSize(Size{rect.Right, rect.Bottom})
+	return wb.SetSize(wb.sizeFromClientSize(value))
 }
 
 func (wb *WidgetBase) SetFocus() os.Error {

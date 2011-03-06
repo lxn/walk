@@ -40,7 +40,7 @@ func (tlw *TopLevelWindow) ClientArea() *Composite {
 }
 
 func (tlw *TopLevelWindow) LayoutFlags() LayoutFlags {
-	return HShrink | HGrow | VShrink | VGrow
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
 func (tlw *TopLevelWindow) PreferredSize() Size {
@@ -197,11 +197,11 @@ func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) 
 		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))
 		var min Size
 		if tlw.layout != nil {
-			min = tlw.layout.MinSize()
+			min = tlw.sizeFromClientSize(tlw.layout.MinSize())
 		}
 		mmi.PtMinTrackSize = POINT{
 			maxi(min.Width, tlw.minSize.Width),
-			maxi(min.Width, tlw.minSize.Height),
+			maxi(min.Height, tlw.minSize.Height),
 		}
 		return 0
 

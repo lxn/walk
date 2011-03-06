@@ -44,7 +44,7 @@ func (*ProgressBar) setOrigWndProcPtr(ptr uintptr) {
 }
 
 func (*ProgressBar) LayoutFlags() LayoutFlags {
-	return HShrink | HGrow
+	return ShrinkableHorz | GrowableHorz | GreedyHorz
 }
 
 func (pb *ProgressBar) PreferredSize() Size {

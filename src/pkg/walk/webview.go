@@ -151,7 +151,7 @@ func (wv *WebView) Dispose() {
 }
 
 func (*WebView) LayoutFlags() LayoutFlags {
-	return HShrink | HGrow | VShrink | VGrow
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
 func (*WebView) PreferredSize() Size {

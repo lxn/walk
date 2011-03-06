@@ -156,6 +156,7 @@ type widgetInfo struct {
 	minSize int
 	maxSize int
 	stretch int
+	greedy  bool
 	widget  Widget
 }
 
@@ -169,21 +170,68 @@ func (l widgetInfoList) Less(i, j int) bool {
 	_, iIsSpacer := l[i].widget.(*Spacer)
 	_, jIsSpacer := l[j].widget.(*Spacer)
 
-	if iIsSpacer == jIsSpacer {
-		minDiff := l[i].minSize - l[j].minSize
+	if l[i].greedy == l[j].greedy {
+		if iIsSpacer == jIsSpacer {
+			minDiff := l[i].minSize - l[j].minSize
 
-		if minDiff == 0 {
-			return l[i].maxSize/l[i].stretch < l[j].maxSize/l[j].stretch
+			if minDiff == 0 {
+				return l[i].maxSize/l[i].stretch < l[j].maxSize/l[j].stretch
+			}
+
+			return minDiff > 0
 		}
 
-		return minDiff > 0
+		return jIsSpacer
 	}
 
-	return jIsSpacer
+	return l[i].greedy
 }
 
 func (l widgetInfoList) Swap(i, j int) {
 	l[i], l[j] = l[j], l[i]
+}
+
+func (l *BoxLayout) LayoutFlags() LayoutFlags {
+	if l.container == nil {
+		return 0
+	}
+
+	var flags LayoutFlags
+	var hasNonShrinkableHorz bool
+	var hasNonShrinkableVert bool
+
+	children := l.container.Children()
+	count := children.Len()
+	if count == 0 {
+		return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert
+	} else {
+		for i := 0; i < count; i++ {
+			f := children.At(i).LayoutFlags()
+			flags |= f
+			if f&ShrinkableHorz == 0 {
+				hasNonShrinkableHorz = true
+			}
+			if f&ShrinkableVert == 0 {
+				hasNonShrinkableVert = true
+			}
+		}
+	}
+
+	if l.orientation == Horizontal {
+		flags |= GrowableHorz
+
+		if hasNonShrinkableVert {
+			flags &^= ShrinkableVert
+		}
+	} else {
+		flags |= GrowableVert
+
+		if hasNonShrinkableHorz {
+			flags &^= ShrinkableHorz
+		}
+	}
+
+	return flags
 }
 
 func (l *BoxLayout) MinSize() Size {
@@ -294,15 +342,16 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 	}
 
 	// Prepare some useful data.
-	var nonSpacerCount int
-	var stretchFactorsTotal [2]int
+	var greedyNonSpacerCount int
+	var greedySpacerCount int
+	var stretchFactorsTotal [3]int
 	stretchFactors := make([]int, len(widgets))
 	var minSizesRemaining int
 	minSizes := make([]int, len(widgets))
 	maxSizes := make([]int, len(widgets))
 	sizes := make([]int, len(widgets))
 	prefSizes2 := make([]int, len(widgets))
-	canGrow2 := make([]bool, len(widgets))
+	growable2 := make([]bool, len(widgets))
 	sortedWidgetInfo := widgetInfoList(make([]widgetInfo, len(widgets)))
 
 	for i, widget := range widgets {
@@ -319,41 +368,45 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 		pref := widget.PreferredSize()
 
 		if l.orientation == Horizontal {
-			canGrow2[i] = flags&VGrow > 0
+			growable2[i] = flags&GrowableVert > 0
 
 			if min.Width > 0 {
 				minSizes[i] = min.Width
-			} else if pref.Width > 0 && flags&HShrink == 0 {
+			} else if pref.Width > 0 && flags&ShrinkableHorz == 0 {
 				minSizes[i] = pref.Width
 			}
 
 			if max.Width > 0 {
 				maxSizes[i] = max.Width
-			} else if pref.Width > 0 && flags&HGrow == 0 {
+			} else if pref.Width > 0 && flags&GrowableHorz == 0 {
 				maxSizes[i] = pref.Width
 			} else {
 				maxSizes[i] = 32768
 			}
 
 			prefSizes2[i] = pref.Height
+
+			sortedWidgetInfo[i].greedy = flags&GreedyHorz > 0
 		} else {
-			canGrow2[i] = flags&HGrow > 0
+			growable2[i] = flags&GrowableHorz > 0
 
 			if min.Height > 0 {
 				minSizes[i] = min.Height
-			} else if pref.Height > 0 && flags&VShrink == 0 {
+			} else if pref.Height > 0 && flags&ShrinkableVert == 0 {
 				minSizes[i] = pref.Height
 			}
 
 			if max.Height > 0 {
 				maxSizes[i] = max.Height
-			} else if pref.Height > 0 && flags&VGrow == 0 {
+			} else if pref.Height > 0 && flags&GrowableVert == 0 {
 				maxSizes[i] = pref.Height
 			} else {
 				maxSizes[i] = 32768
 			}
 
 			prefSizes2[i] = pref.Width
+
+			sortedWidgetInfo[i].greedy = flags&GreedyVert > 0
 		}
 
 		sortedWidgetInfo[i].index = i
@@ -364,11 +417,16 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 
 		minSizesRemaining += minSizes[i]
 
-		if _, isSpacer := widget.(*Spacer); !isSpacer {
-			nonSpacerCount++
-			stretchFactorsTotal[0] += sf
+		if sortedWidgetInfo[i].greedy {
+			if _, isSpacer := widget.(*Spacer); !isSpacer {
+				greedyNonSpacerCount++
+				stretchFactorsTotal[0] += sf
+			} else {
+				greedySpacerCount++
+				stretchFactorsTotal[1] += sf
+			}
 		} else {
-			stretchFactorsTotal[1] += sf
+			stretchFactorsTotal[2] += sf
 		}
 	}
 
@@ -391,10 +449,10 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 	// Now calculate widget primary axis sizes.
 	spacingRemaining := l.spacing * (len(widgets) - 1)
 
-	offsets := [2]int{0, nonSpacerCount}
-	counts := [2]int{nonSpacerCount, len(widgets) - nonSpacerCount}
+	offsets := [3]int{0, greedyNonSpacerCount, greedyNonSpacerCount + greedySpacerCount}
+	counts := [3]int{greedyNonSpacerCount, greedySpacerCount, len(widgets) - greedyNonSpacerCount - greedySpacerCount}
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 3; i++ {
 		stretchFactorsRemaining := stretchFactorsTotal[i]
 
 		for j := 0; j < counts[i]; j++ {
@@ -434,7 +492,7 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 		s1 := sizes[i]
 
 		var s2 int
-		if canGrow2[i] {
+		if growable2[i] {
 			s2 = space2
 		} else {
 			s2 = prefSizes2[i]

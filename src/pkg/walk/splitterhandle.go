@@ -45,10 +45,10 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, os.Error) {
 func (sh *splitterHandle) LayoutFlags() LayoutFlags {
 	splitter := sh.Parent().(*Splitter)
 	if splitter.Orientation() == Horizontal {
-		return VGrow | VShrink
+		return ShrinkableVert | GrowableVert | GreedyVert
 	}
 
-	return HGrow | HShrink
+	return ShrinkableHorz | GrowableHorz | GreedyHorz
 }
 
 func (sh *splitterHandle) PreferredSize() Size {
