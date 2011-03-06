@@ -78,7 +78,7 @@ func init() {
 }
 
 func GetLastError() uint {
-	ret, _, _ := syscall.Syscall(setLastError, 0,
+	ret, _, _ := syscall.Syscall(getLastError, 0,
 		0,
 		0,
 		0)
