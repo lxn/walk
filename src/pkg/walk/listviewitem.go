@@ -12,10 +12,25 @@ type ListViewItem struct {
 	texts           []string
 	userData        interface{}
 	changedHandlers []listViewItemChangedHandler
+	checked         bool
 }
 
 func NewListViewItem() *ListViewItem {
 	return &ListViewItem{}
+}
+
+func (lvi *ListViewItem) Checked() bool {
+	return lvi.checked
+}
+
+func (lvi *ListViewItem) SetChecked(value bool) {
+	if value == lvi.checked {
+		return
+	}
+
+	lvi.checked = value
+
+	lvi.raiseChanged()
 }
 
 func (lvi *ListViewItem) Texts() []string {

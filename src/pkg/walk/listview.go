@@ -230,7 +230,9 @@ func (lv *ListView) updateCheckedIndexes() {
 
 	for i := 0; i < itemCount; i++ {
 		state := SendMessage(lv.hWnd, LVM_GETITEMSTATE, uintptr(i), LVIS_STATEIMAGEMASK)
-		if state&0x2000 > 0 {
+		checked := state&0x2000 > 0
+		lv.items.items[i].checked = checked
+		if checked {
 			indexes = append(indexes, i)
 		}
 	}
@@ -507,10 +509,21 @@ func (lv *ListView) onClearingListViewColumns() (err os.Error) {
 }
 
 func (lv *ListView) onListViewItemChanged(item *ListViewItem) {
+	index := lv.Items().Index(item)
 	var lvi LVITEM
 
-	lvi.Mask = LVIF_TEXT
-	lvi.IItem = lv.Items().Index(item)
+	lvi.IItem = index
+	lvi.Mask = LVIF_STATE | LVIF_TEXT
+
+	state := uint(SendMessage(lv.hWnd, LVM_GETITEMSTATE, uintptr(index), LVIS_STATEIMAGEMASK))
+	if item.Checked() {
+		state = 0x2000
+	} else {
+		state = 0x1000
+	}
+
+	lvi.State = state
+	lvi.StateMask = LVIS_STATEIMAGEMASK
 
 	texts := item.Texts()
 
