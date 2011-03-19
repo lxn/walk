@@ -65,7 +65,7 @@ func (*ToolTip) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (tt *ToolTip) PreferredSize() Size {
+func (tt *ToolTip) SizeHint() Size {
 	return Size{0, 0}
 }
 

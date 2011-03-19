@@ -246,7 +246,7 @@ func (l *BoxLayout) MinSize() Size {
 	for i := 0; i < cap(widgets); i++ {
 		widget := children.At(i)
 
-		ps := widget.PreferredSize()
+		ps := widget.SizeHint()
 		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
 			continue
 		}
@@ -259,29 +259,25 @@ func (l *BoxLayout) MinSize() Size {
 	var s2 int
 
 	for i, widget := range widgets {
-		max := widget.MaxSize()
-		pref := widget.PreferredSize()
+		min := widget.MinSize()
+		minHint := widget.MinSizeHint()
 
 		if l.orientation == Horizontal {
-			if max.Width > 0 {
-				sizes[i] = mini(pref.Width, max.Width)
+			if min.Width > 0 {
+				sizes[i] = mini(minHint.Width, min.Width)
 			} else {
-				sizes[i] = pref.Width
+				sizes[i] = minHint.Width
 			}
 
-			if pref.Height > s2 {
-				s2 = pref.Height
-			}
+			s2 = maxi(s2, maxi(minHint.Height, min.Height))
 		} else {
-			if max.Height > 0 {
-				sizes[i] = mini(pref.Height, max.Height)
+			if min.Height > 0 {
+				sizes[i] = mini(minHint.Height, min.Height)
 			} else {
-				sizes[i] = pref.Height
+				sizes[i] = minHint.Height
 			}
 
-			if pref.Width > s2 {
-				s2 = pref.Width
-			}
+			s2 = maxi(s2, maxi(minHint.Width, min.Width))
 		}
 	}
 
@@ -333,7 +329,7 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 	for i := 0; i < cap(widgets); i++ {
 		widget := children.At(i)
 
-		ps := widget.PreferredSize()
+		ps := widget.SizeHint()
 		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
 			continue
 		}
@@ -365,16 +361,13 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 
 		min := widget.MinSize()
 		max := widget.MaxSize()
-		pref := widget.PreferredSize()
+		minHint := widget.MinSizeHint()
+		pref := widget.SizeHint()
 
 		if l.orientation == Horizontal {
 			growable2[i] = flags&GrowableVert > 0
 
-			if min.Width > 0 {
-				minSizes[i] = min.Width
-			} else if pref.Width > 0 && flags&ShrinkableHorz == 0 {
-				minSizes[i] = pref.Width
-			}
+			minSizes[i] = maxi(min.Width, minHint.Width)
 
 			if max.Width > 0 {
 				maxSizes[i] = max.Width
@@ -390,11 +383,7 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 		} else {
 			growable2[i] = flags&GrowableHorz > 0
 
-			if min.Height > 0 {
-				minSizes[i] = min.Height
-			} else if pref.Height > 0 && flags&ShrinkableVert == 0 {
-				minSizes[i] = pref.Height
-			}
+			minSizes[i] = maxi(min.Height, minHint.Height)
 
 			if max.Height > 0 {
 				maxSizes[i] = max.Height

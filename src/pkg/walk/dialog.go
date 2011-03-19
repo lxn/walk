@@ -58,7 +58,7 @@ func NewDialog(owner RootWidget) (*Dialog, os.Error) {
 		dlg,
 		owner,
 		dialogWindowClass,
-		WS_CAPTION|WS_SYSMENU,
+		WS_CAPTION|WS_SYSMENU|WS_THICKFRAME,
 		WS_EX_DLGMODALFRAME); err != nil {
 		return nil, err
 	}

@@ -38,11 +38,3 @@ func NewTabPage() (*TabPage, os.Error) {
 
 	return tp, nil
 }
-
-func (*TabPage) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
-}
-
-func (tp *TabPage) PreferredSize() Size {
-	return tp.dialogBaseUnitsToPixels(Size{100, 100})
-}

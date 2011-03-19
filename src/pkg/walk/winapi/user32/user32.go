@@ -81,6 +81,42 @@ const (
 	SC_SEPARATOR    = 0xF00F
 )
 
+// Static control styles
+const (
+	SS_BITMAP          = 14
+	SS_BLACKFRAME      = 7
+	SS_BLACKRECT       = 4
+	SS_CENTER          = 1
+	SS_CENTERIMAGE     = 512
+	SS_EDITCONTROL     = 0x2000
+	SS_ENHMETAFILE     = 15
+	SS_ETCHEDFRAME     = 18
+	SS_ETCHEDHORZ      = 16
+	SS_ETCHEDVERT      = 17
+	SS_GRAYFRAME       = 8
+	SS_GRAYRECT        = 5
+	SS_ICON            = 3
+	SS_LEFT            = 0
+	SS_LEFTNOWORDWRAP  = 0xc
+	SS_NOPREFIX        = 128
+	SS_NOTIFY          = 256
+	SS_OWNERDRAW       = 0xd
+	SS_REALSIZECONTROL = 0x040
+	SS_REALSIZEIMAGE   = 0x800
+	SS_RIGHT           = 2
+	SS_RIGHTJUST       = 0x400
+	SS_SIMPLE          = 11
+	SS_SUNKEN          = 4096
+	SS_WHITEFRAME      = 9
+	SS_WHITERECT       = 6
+	SS_USERITEM        = 10
+	SS_TYPEMASK        = 0x0000001F
+	SS_ENDELLIPSIS     = 0x00004000
+	SS_PATHELLIPSIS    = 0x00008000
+	SS_WORDELLIPSIS    = 0x0000C000
+	SS_ELLIPSISMASK    = 0x0000C000
+)
+
 // Button message constants
 const (
 	BM_CLICK    = 245

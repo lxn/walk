@@ -43,7 +43,7 @@ func (tlw *TopLevelWindow) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
-func (tlw *TopLevelWindow) PreferredSize() Size {
+func (tlw *TopLevelWindow) SizeHint() Size {
 	return tlw.dialogBaseUnitsToPixels(Size{252, 218})
 }
 

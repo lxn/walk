@@ -14,16 +14,16 @@ var spacerWindowClassRegistered bool
 
 type Spacer struct {
 	WidgetBase
-	preferredSize Size
-	layoutFlags   LayoutFlags
+	sizeHint    Size
+	layoutFlags LayoutFlags
 }
 
-func newSpacer(parent Container, layoutFlags LayoutFlags, prefSize Size) (*Spacer, os.Error) {
+func newSpacer(parent Container, layoutFlags LayoutFlags, sizeHint Size) (*Spacer, os.Error) {
 	ensureRegisteredWindowClass(spacerWindowClass, &spacerWindowClassRegistered)
 
 	s := &Spacer{
-		layoutFlags:   layoutFlags,
-		preferredSize: prefSize,
+		layoutFlags: layoutFlags,
+		sizeHint:    sizeHint,
 	}
 
 	if err := initChildWidget(
@@ -58,6 +58,6 @@ func (s *Spacer) LayoutFlags() LayoutFlags {
 	return s.layoutFlags
 }
 
-func (s *Spacer) PreferredSize() Size {
-	return s.preferredSize
+func (s *Spacer) SizeHint() Size {
+	return s.sizeHint
 }

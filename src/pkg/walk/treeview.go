@@ -71,7 +71,7 @@ func (*TreeView) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
-func (tv *TreeView) PreferredSize() Size {
+func (tv *TreeView) SizeHint() Size {
 	return tv.dialogBaseUnitsToPixels(Size{100, 100})
 }
 

@@ -70,12 +70,45 @@ func NewTabWidget(parent Container) (*TabWidget, os.Error) {
 	return tw, nil
 }
 
-func (*TabWidget) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
+func (tw *TabWidget) LayoutFlags() LayoutFlags {
+	if tw.pages.Len() == 0 {
+		return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
+	}
+
+	var flags LayoutFlags
+
+	for i := tw.pages.Len() - 1; i >= 0; i-- {
+		flags |= tw.pages.At(i).LayoutFlags()
+	}
+
+	return flags
 }
 
-func (tw *TabWidget) PreferredSize() Size {
-	return tw.dialogBaseUnitsToPixels(Size{100, 100})
+func (tw *TabWidget) MinSizeHint() Size {
+	if tw.pages.Len() == 0 {
+		return tw.SizeHint()
+	}
+
+	var min Size
+
+	for i := tw.pages.Len() - 1; i >= 0; i-- {
+		s := tw.pages.At(i).MinSizeHint()
+
+		min.Width = maxi(min.Width, s.Width)
+		min.Height = maxi(min.Height, s.Height)
+	}
+
+	b := tw.Bounds()
+	pb := tw.pages.At(0).Bounds()
+
+	size := Size{b.Width - pb.Width + min.Width, b.Height - pb.Height + min.Height}
+
+	return size
+
+}
+
+func (tw *TabWidget) SizeHint() Size {
+	return Size{100, 100}
 }
 
 func (tw *TabWidget) SelectedIndex() int {

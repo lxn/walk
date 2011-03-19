@@ -46,6 +46,6 @@ func (*CheckBox) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (cb *CheckBox) PreferredSize() Size {
+func (cb *CheckBox) SizeHint() Size {
 	return cb.dialogBaseUnitsToPixels(Size{50, 10})
 }

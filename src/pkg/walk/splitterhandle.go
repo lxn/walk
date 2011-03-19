@@ -51,7 +51,11 @@ func (sh *splitterHandle) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | GrowableHorz | GreedyHorz
 }
 
-func (sh *splitterHandle) PreferredSize() Size {
+func (sh *splitterHandle) MinSizeHint() Size {
+	return sh.SizeHint()
+}
+
+func (sh *splitterHandle) SizeHint() Size {
 	splitter := sh.Parent().(*Splitter)
 	handleWidth := splitter.HandleWidth()
 	var size Size

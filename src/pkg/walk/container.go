@@ -57,12 +57,16 @@ func (cb *ContainerBase) LayoutFlags() LayoutFlags {
 	return cb.layout.LayoutFlags()
 }
 
-func (cb *ContainerBase) PreferredSize() Size {
+func (cb *ContainerBase) MinSizeHint() Size {
 	if cb.layout == nil {
-		return Size{100, 100}
+		return Size{}
 	}
 
 	return cb.layout.MinSize()
+}
+
+func (cb *ContainerBase) SizeHint() Size {
+	return Size{100, 100}
 }
 
 func (cb *ContainerBase) Children() *WidgetList {
@@ -193,6 +197,7 @@ func (cb *ContainerBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) ui
 	case WM_SIZE, WM_SIZING:
 		if cb.layout != nil {
 			cb.layout.Update(false)
+			cb.Invalidate()
 		}
 	}
 

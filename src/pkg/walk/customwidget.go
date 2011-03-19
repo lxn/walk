@@ -47,7 +47,7 @@ func (*CustomWidget) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
-func (cw *CustomWidget) PreferredSize() Size {
+func (cw *CustomWidget) SizeHint() Size {
 	return Size{100, 100}
 }
 

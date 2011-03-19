@@ -51,10 +51,10 @@ func (*ComboBox) setOrigWndProcPtr(ptr uintptr) {
 }
 
 func (*ComboBox) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | GrowableHorz
+	return GrowableHorz
 }
 
-func (cb *ComboBox) PreferredSize() Size {
+func (cb *ComboBox) SizeHint() Size {
 	return cb.dialogBaseUnitsToPixels(Size{50, 12})
 }
 

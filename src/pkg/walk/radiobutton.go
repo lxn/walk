@@ -46,6 +46,6 @@ func (*RadioButton) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (rb *RadioButton) PreferredSize() Size {
+func (rb *RadioButton) SizeHint() Size {
 	return rb.dialogBaseUnitsToPixels(Size{50, 10})
 }

@@ -132,7 +132,7 @@ func (*LineEdit) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | GrowableHorz | GreedyHorz
 }
 
-func (le *LineEdit) PreferredSize() Size {
+func (le *LineEdit) SizeHint() Size {
 	return le.dialogBaseUnitsToPixels(Size{50, 12})
 }
 

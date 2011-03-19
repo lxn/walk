@@ -25,21 +25,18 @@ type Splitter struct {
 	handleWidth   int
 	mouseDownPos  Point
 	draggedHandle *splitterHandle
-	widget2Fixed  map[*WidgetBase]bool
-	oldClientSize Size
 	persistent    bool
 }
 
 func NewSplitter(parent Container) (*Splitter, os.Error) {
 	ensureRegisteredWindowClass(splitterWindowClass, &splitterWindowClassRegistered)
 
-	layout := NewHBoxLayout()
+	layout := newSplitterLayout(Horizontal)
 	s := &Splitter{
 		ContainerBase: ContainerBase{
 			layout: layout,
 		},
-		handleWidth:  4,
-		widget2Fixed: make(map[*WidgetBase]bool),
+		handleWidth: 4,
 	}
 	s.children = newWidgetList(s)
 	layout.container = s
@@ -62,8 +59,12 @@ func (s *Splitter) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
-func (s *Splitter) PreferredSize() Size {
-	return s.dialogBaseUnitsToPixels(Size{100, 100})
+func (s *Splitter) MinSizeHint() Size {
+	return Size{10, 10}
+}
+
+func (s *Splitter) SizeHint() Size {
+	return Size{100, 100}
 }
 
 func (s *Splitter) SetLayout(value Layout) os.Error {
@@ -89,27 +90,13 @@ func (s *Splitter) SetHandleWidth(value int) os.Error {
 }
 
 func (s *Splitter) Orientation() Orientation {
-	layout := s.layout.(*BoxLayout)
+	layout := s.layout.(*splitterLayout)
 	return layout.Orientation()
 }
 
 func (s *Splitter) SetOrientation(value Orientation) os.Error {
-	layout := s.layout.(*BoxLayout)
+	layout := s.layout.(*splitterLayout)
 	return layout.SetOrientation(value)
-}
-
-func (s *Splitter) Fixed(widget Widget) bool {
-	return s.widget2Fixed[widget.BaseWidget()]
-}
-
-func (s *Splitter) SetFixed(widget Widget, fixed bool) os.Error {
-	if !s.Children().containsHandle(widget.BaseWidget().hWnd) {
-		return newError("unknown widget")
-	}
-
-	s.widget2Fixed[widget.BaseWidget()] = fixed
-
-	return nil
 }
 
 func (s *Splitter) Persistent() bool {
@@ -124,20 +111,14 @@ func (s *Splitter) SaveState() os.Error {
 	buf := bytes.NewBuffer(nil)
 
 	count := s.children.Len()
-	orientation := s.Orientation()
-	for i := 0; i < count; i++ {
+	layout := s.Layout().(*splitterLayout)
+
+	for i := 0; i < count; i += 2 {
 		if i > 0 {
 			buf.WriteString(" ")
 		}
 
-		var size int
-		if orientation == Horizontal {
-			size = s.children.At(i).Width()
-		} else {
-			size = s.children.At(i).Height()
-		}
-
-		buf.WriteString(strconv.Itoa(size))
+		buf.WriteString(strconv.Ftoa64(layout.fractions[i/2], 'f', -1))
 	}
 
 	s.putState(buf.String())
@@ -162,24 +143,26 @@ func (s *Splitter) RestoreState() os.Error {
 		return nil
 	}
 
-	sizeStrs := strings.Split(state, " ", -1)
+	fractionStrs := strings.Split(state, " ", -1)
 
-	if len(sizeStrs) != s.children.Len() {
-		return newError("unexpected child count")
-	}
-
-	layout := s.layout.(*BoxLayout)
+	layout := s.layout.(*splitterLayout)
 
 	s.SetSuspended(true)
 	defer s.SetSuspended(false)
 
-	for i, widget := range s.children.items {
-		size, err := strconv.Atoi(sizeStrs[i])
-		if err != nil {
-			return err
-		}
+	var fractionsTotal float64
+	var fractions []float64
 
-		layout.SetStretchFactor(widget, size)
+	for i, widget := range s.children.items {
+		if i%2 == 0 {
+			fraction, err := strconv.Atof64(fractionStrs[i/2+i%2])
+			if err != nil {
+				return err
+			}
+
+			fractionsTotal += fraction
+			fractions = append(fractions, fraction)
+		}
 
 		if persistable, ok := widget.(Persistable); ok {
 			if err := persistable.RestoreState(); err != nil {
@@ -188,67 +171,11 @@ func (s *Splitter) RestoreState() os.Error {
 		}
 	}
 
-	return nil
-}
-
-func (s *Splitter) onResize() {
-	clientSize := s.ClientBounds().Size()
-
-	if s.oldClientSize.Width > 0 || s.oldClientSize.Height > 0 {
-		layout := s.layout.(*BoxLayout)
-
-		widgets := s.Children()
-		orientation := s.Orientation()
-
-		s.SetSuspended(true)
-		defer s.SetSuspended(false)
-
-		var fixedSizeTotal int
-		for i := widgets.Len() - 1; i >= 0; i-- {
-			widget := widgets.At(i)
-
-			if i%2 == 1 {
-				fixedSizeTotal += s.handleWidth
-			} else if s.Fixed(widget) {
-				fixedSizeTotal += widget.Width()
-			}
-		}
-
-		for i := widgets.Len() - 1; i >= 0; i-- {
-			widget := widgets.At(i)
-
-			var stretch int
-
-			if i%2 == 1 {
-				stretch = s.handleWidth
-			} else if s.Fixed(widget) {
-				if orientation == Horizontal {
-					stretch = widget.Width()
-				} else {
-					stretch = widget.Height()
-				}
-			} else {
-				if orientation == Horizontal {
-					stretch = int(float64(widget.Width()) * float64(clientSize.Width-fixedSizeTotal) / float64(s.oldClientSize.Width-fixedSizeTotal))
-				} else {
-					stretch = int(float64(widget.Height()) * float64(clientSize.Height-fixedSizeTotal) / float64(s.oldClientSize.Height-fixedSizeTotal))
-				}
-			}
-
-			layout.SetStretchFactor(widget, stretch)
-		}
+	for i := range fractions {
+		fractions[i] = fractions[i] / fractionsTotal
 	}
 
-	s.oldClientSize = clientSize
-}
-
-func (s *Splitter) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
-	switch msg {
-	case WM_SIZE, WM_SIZING:
-		s.onResize()
-	}
-
-	return s.ContainerBase.wndProc(hwnd, msg, wParam, lParam)
+	return layout.SetFractions(fractions)
 }
 
 func (s *Splitter) onInsertingWidget(index int, widget Widget) (err os.Error) {
@@ -352,14 +279,21 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err os.Error) {
 						bp := prev.Bounds()
 						bn := next.Bounds()
 
+						var sizePrev int
+						var sizeNext int
+
 						if s.Orientation() == Horizontal {
 							bp.Width = bh.X - bp.X
 							bn.Width -= (bh.X + bh.Width) - bn.X
 							bn.X = bh.X + bh.Width
+							sizePrev = bp.Width
+							sizeNext = bn.Width
 						} else {
 							bp.Height = bh.Y - bp.Y
 							bn.Height -= (bh.Y + bh.Height) - bn.Y
 							bn.Y = bh.Y + bh.Height
+							sizePrev = bp.Height
+							sizeNext = bn.Height
 						}
 
 						if e := prev.SetBounds(bp); e != nil {
@@ -371,6 +305,15 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err os.Error) {
 							log.Println(e)
 							return
 						}
+
+						layout := s.Layout().(*splitterLayout)
+						space := float64(layout.spaceForRegularWidgets())
+						fractions := layout.fractions
+						i := handleIndex - 1
+						prevFracIndex := i/2 + i%2
+						nextFracIndex := prevFracIndex + 1
+						fractions[prevFracIndex] = float64(sizePrev) / space
+						fractions[nextFracIndex] = float64(sizeNext) / space
 					}
 				})
 			}

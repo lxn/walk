@@ -7,7 +7,6 @@ package walk
 import (
 	"os"
 	"syscall"
-	"unsafe"
 )
 
 import (
@@ -41,16 +40,8 @@ func init() {
 	screenDPIY = GetDeviceCaps(hDC, LOGPIXELSY)
 
 	// Initialize default font
-	var ncm NONCLIENTMETRICS
-	ncm.CbSize = uint(unsafe.Sizeof(ncm))
-
-	if !SystemParametersInfo(SPI_GETNONCLIENTMETRICS, ncm.CbSize, unsafe.Pointer(&ncm), 0) {
-		panic("SystemParametersInfo failed")
-	}
-
 	var err os.Error
-	defaultFont, err = newFontFromLOGFONT(&ncm.LfMenuFont, screenDPIY)
-	if err != nil {
+	if defaultFont, err = NewFont("MS Shell Dlg 2", 8, 0); err != nil {
 		panic("failed to create default font")
 	}
 }

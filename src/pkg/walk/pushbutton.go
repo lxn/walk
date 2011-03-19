@@ -49,7 +49,7 @@ func (*PushButton) LayoutFlags() LayoutFlags {
 	return GrowableHorz
 }
 
-func (pb *PushButton) PreferredSize() Size {
+func (pb *PushButton) SizeHint() Size {
 	var s Size
 
 	SendMessage(pb.hWnd, BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))

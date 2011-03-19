@@ -26,7 +26,7 @@ func NewLabel(parent Container) (*Label, os.Error) {
 		l,
 		parent,
 		"STATIC",
-		WS_VISIBLE,
+		WS_VISIBLE|SS_CENTERIMAGE,
 		0); err != nil {
 		return nil, err
 	}
@@ -43,9 +43,13 @@ func (*Label) setOrigWndProcPtr(ptr uintptr) {
 }
 
 func (*Label) LayoutFlags() LayoutFlags {
-	return 0
+	return GrowableVert
 }
 
-func (l *Label) PreferredSize() Size {
+func (l *Label) MinSizeHint() Size {
+	return l.calculateTextSize()
+}
+
+func (l *Label) SizeHint() Size {
 	return l.calculateTextSize()
 }

@@ -68,6 +68,7 @@ GOFILES=\
 	spacer.go\
 	splitter.go\
 	splitterhandle.go\
+	splitterlayout.go\
 	tabpage.go\
 	tabpagelist.go\
 	tabwidget.go\

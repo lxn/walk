@@ -51,12 +51,12 @@ type Widget interface {
 	LayoutFlags() LayoutFlags
 	MaxSize() Size
 	MinSize() Size
+	MinSizeHint() Size
 	MouseDown() *MouseEvent
 	MouseMove() *MouseEvent
 	MouseUp() *MouseEvent
 	Name() string
 	Parent() Container
-	PreferredSize() Size
 	RootWidget() RootWidget
 	SetBackground(value Brush)
 	SetBounds(value Rectangle) os.Error
@@ -79,6 +79,7 @@ type Widget interface {
 	SetY(value int) os.Error
 	Size() Size
 	SizeChanged() *Event
+	SizeHint() Size
 	Suspended() bool
 	Text() string
 	Visible() bool
@@ -393,11 +394,7 @@ func (wb *WidgetBase) SetSuspended(suspend bool) {
 }
 
 func (wb *WidgetBase) Invalidate() os.Error {
-	cb := wb.ClientBounds()
-
-	r := &RECT{cb.X, cb.Y, cb.X + cb.Width, cb.Y + cb.Height}
-
-	if !InvalidateRect(wb.hWnd, r, true) {
+	if !InvalidateRect(wb.hWnd, nil, true) {
 		return newError("InvalidateRect failed")
 	}
 
@@ -591,13 +588,15 @@ func (wb *WidgetBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
 }
 
 func (wb *WidgetBase) LayoutFlags() LayoutFlags {
-	// FIXME: Figure out how to do this, if at all.
 	return 0
 }
 
-func (wb *WidgetBase) PreferredSize() Size {
-	// FIXME: Figure out how to do this, if at all.
-	return wb.dialogBaseUnitsToPixels(Size{10, 10})
+func (wb *WidgetBase) MinSizeHint() Size {
+	return wb.widget.SizeHint()
+}
+
+func (wb *WidgetBase) SizeHint() Size {
+	return Size{10, 10}
 }
 
 func (wb *WidgetBase) calculateTextSize() Size {

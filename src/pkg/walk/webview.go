@@ -154,7 +154,7 @@ func (*WebView) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
-func (*WebView) PreferredSize() Size {
+func (*WebView) SizeHint() Size {
 	return Size{100, 100}
 }
 

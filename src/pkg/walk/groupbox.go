@@ -76,16 +76,20 @@ func (gb *GroupBox) LayoutFlags() LayoutFlags {
 	return gb.composite.LayoutFlags()
 }
 
-func (gb *GroupBox) PreferredSize() Size {
+func (gb *GroupBox) MinSizeHint() Size {
 	if gb.composite == nil {
-		return Size{100, 100}
+		return gb.SizeHint()
 	}
 
-	cps := gb.composite.PreferredSize()
+	cps := gb.composite.MinSizeHint()
 	wbcb := gb.WidgetBase.ClientBounds()
 	gbcb := gb.ClientBounds()
 
 	return Size{cps.Width + wbcb.Width - gbcb.Width, cps.Height + wbcb.Height - gbcb.Height}
+}
+
+func (gb *GroupBox) SizeHint() Size {
+	return Size{100, 100}
 }
 
 func (gb *GroupBox) ClientBounds() Rectangle {
@@ -96,7 +100,7 @@ func (gb *GroupBox) ClientBounds() Rectangle {
 	}
 
 	// FIXME: Use appropriate margins
-	return Rectangle{cb.X + 8, cb.Y + 24, cb.Width - 16, cb.Height - 32}
+	return Rectangle{cb.X + 1, cb.Y + 14, cb.Width - 2, cb.Height - 9}
 }
 
 func (gb *GroupBox) SetFont(value *Font) {

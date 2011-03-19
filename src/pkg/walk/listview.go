@@ -129,11 +129,15 @@ func (lv *ListView) Dispose() {
 }
 
 func (*ListView) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | GrowableHorz | ShrinkableVert | GrowableVert | GreedyHorz | GreedyVert
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
-func (lv *ListView) PreferredSize() Size {
-	return lv.dialogBaseUnitsToPixels(Size{100, 100})
+func (lv *ListView) MinSizeHint() Size {
+	return Size{10, 10}
+}
+
+func (lv *ListView) SizeHint() Size {
+	return Size{100, 100}
 }
 
 func (lv *ListView) CheckBoxes() bool {

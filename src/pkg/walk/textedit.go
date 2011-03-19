@@ -47,7 +47,7 @@ func (*TextEdit) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
-func (te *TextEdit) PreferredSize() Size {
+func (te *TextEdit) SizeHint() Size {
 	return Size{100, 100}
 }
 

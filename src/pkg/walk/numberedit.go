@@ -109,8 +109,14 @@ func (*NumberEdit) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | GrowableHorz
 }
 
-func (ne *NumberEdit) PreferredSize() Size {
-	return ne.dialogBaseUnitsToPixels(Size{50, 12})
+func (ne *NumberEdit) MinSizeHint() Size {
+	s := ne.dialogBaseUnitsToPixels(Size{10, 12})
+	return Size{s.Width, maxi(s.Height, 22)}
+}
+
+func (ne *NumberEdit) SizeHint() Size {
+	s := ne.dialogBaseUnitsToPixels(Size{50, 12})
+	return Size{s.Width, maxi(s.Height, 22)}
 }
 
 func (ne *NumberEdit) Decimals() int {
