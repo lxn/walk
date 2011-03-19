@@ -14,6 +14,7 @@ all: clean
 	make -C pkg/walk/winapi/uxtheme  install
 	make -C pkg/walk/winapi/winspool install
 	make -C pkg/walk                 install
+	make -C cmd/tools/ui2walk        install
 	make -C cmd/examples/drawing
 	make -C cmd/examples/filebrowser
 	make -C cmd/examples/imageviewer
@@ -39,6 +40,7 @@ clean:
 	make -C pkg/walk/winapi/uxtheme  clean
 	make -C pkg/walk/winapi/winspool clean
 	make -C pkg/walk                 clean
+	make -C cmd/tools/ui2walk        clean
 	make -C cmd/examples/drawing     clean
 	make -C cmd/examples/filebrowser clean
 	make -C cmd/examples/imageviewer clean

@@ -42,6 +42,49 @@ directory for such a file.
 You should be aware that this project is far from being mature - anything could
 break or change without warning.
 
+ui2walk
+=======
+
+The ui2walk tool generates Go code for use with Walk from Qt Designer ui files.
+
+It generates a .go file for every .ui file in the current working directory,
+recursively.
+
+If you e.g. have a file 'mydialog.ui', ui2walk will create 'mydialog_ui.go' in 
+the same directory.
+
+To use the generated code, put something like this into a file 'mydialog.go':
+
+--------------------------------------------------------------------------------
+
+package main
+
+import (
+	"os"
+	"walk"
+)
+
+type MyDialog struct {
+	*walk.Dialog
+	ui myDialogUI
+}
+
+func RunMyDialog(owner walk.RootWidget) (int, os.Error) {
+	dlg := &MyDialog{}
+	if err := dlg.init(owner); err != nil {
+		return 0, err
+	}
+	
+	// Your custom init and event handling code goes here
+
+	return dlg.Run(), nil
+}
+
+--------------------------------------------------------------------------------
+
+ui2walk is early code and a lot of features are missing. Dialogs and composites
+should already work more or less, support for MainWindows will arrive later.
+
 Contribute
 ==========
 
