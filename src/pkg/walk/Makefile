@@ -26,6 +26,7 @@ GOFILES=\
 	document.go\
 	errorevent.go\
 	event.go\
+	gridlayout.go\
 	groupbox.go\
 	font.go\
 	image.go\
