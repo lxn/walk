@@ -85,6 +85,14 @@ func (cb *ComboBox) CurrentIndexChanged() *Event {
 	return cb.currentIndexChangedPublisher.Event()
 }
 
+func (cb *ComboBox) Text() string {
+	return widgetText(cb.hWnd)
+}
+
+func (cb *ComboBox) SetText(value string) os.Error {
+	return setWidgetText(cb.hWnd, value)
+}
+
 func (cb *ComboBox) TextSelection() (start, end int) {
 	SendMessage(cb.hWnd, CB_GETEDITSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
 	return

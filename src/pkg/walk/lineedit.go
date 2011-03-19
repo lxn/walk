@@ -103,6 +103,14 @@ func (le *LineEdit) SetMaxLength(value int) {
 	SendMessage(le.hWnd, EM_LIMITTEXT, uintptr(value), 0)
 }
 
+func (le *LineEdit) Text() string {
+	return widgetText(le.hWnd)
+}
+
+func (le *LineEdit) SetText(value string) os.Error {
+	return setWidgetText(le.hWnd, value)
+}
+
 func (le *LineEdit) TextSelection() (start, end int) {
 	SendMessage(le.hWnd, EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
 	return

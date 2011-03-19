@@ -32,7 +32,7 @@ func main() {
 	panicIfErr(err)
 
 	mw := &MainWindow{MainWindow: mainWnd}
-	panicIfErr(mw.SetText("Walk Web Browser Example"))
+	panicIfErr(mw.SetTitle("Walk Web Browser Example"))
 	panicIfErr(mw.ClientArea().SetLayout(walk.NewVBoxLayout()))
 
 	fileMenu, err := walk.NewMenu()

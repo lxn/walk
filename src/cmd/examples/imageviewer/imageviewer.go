@@ -54,7 +54,7 @@ func (mw *MainWindow) openImage() {
 
 	page, err := walk.NewTabPage()
 	panicIfErr(err)
-	panicIfErr(page.SetText(path.Base(strings.Replace(dlg.FilePath, "\\", "/", -1))))
+	panicIfErr(page.SetTitle(path.Base(strings.Replace(dlg.FilePath, "\\", "/", -1))))
 	panicIfErr(page.SetLayout(walk.NewHBoxLayout()))
 
 	defer func() {
@@ -87,7 +87,7 @@ func main() {
 
 	mw := &MainWindow{MainWindow: mainWnd}
 	panicIfErr(mw.ClientArea().SetLayout(walk.NewVBoxLayout()))
-	panicIfErr(mw.SetText("Walk Image Viewer Example"))
+	panicIfErr(mw.SetTitle("Walk Image Viewer Example"))
 
 	mw.tabWidget, err = walk.NewTabWidget(mw.ClientArea())
 	panicIfErr(err)

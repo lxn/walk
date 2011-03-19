@@ -103,7 +103,7 @@ func main() {
 	panicIfErr(err)
 
 	mw := &MainWindow{MainWindow: mainWnd}
-	panicIfErr(mw.SetText("Walk Drawing Example"))
+	panicIfErr(mw.SetTitle("Walk Drawing Example"))
 
 	panicIfErr(mw.ClientArea().SetLayout(walk.NewVBoxLayout()))
 

@@ -18,6 +18,7 @@ var tabPageWindowClassRegistered bool
 
 type TabPage struct {
 	ContainerBase
+	title string
 }
 
 func NewTabPage() (*TabPage, os.Error) {
@@ -37,4 +38,14 @@ func NewTabPage() (*TabPage, os.Error) {
 	tp.children = newWidgetList(tp)
 
 	return tp, nil
+}
+
+func (tp *TabPage) Title() string {
+	return tp.title
+}
+
+func (tp *TabPage) SetTitle(value string) os.Error {
+	tp.title = value
+
+	return nil
 }

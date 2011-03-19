@@ -51,6 +51,14 @@ func (te *TextEdit) SizeHint() Size {
 	return Size{100, 100}
 }
 
+func (te *TextEdit) Text() string {
+	return widgetText(te.hWnd)
+}
+
+func (te *TextEdit) SetText(value string) os.Error {
+	return setWidgetText(te.hWnd, value)
+}
+
 func (te *TextEdit) TextSelection() (start, end int) {
 	SendMessage(te.hWnd, EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
 	return

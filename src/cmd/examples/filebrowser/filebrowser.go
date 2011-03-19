@@ -141,7 +141,7 @@ func main() {
 	panicIfErr(err)
 
 	mw := &MainWindow{MainWindow: mainWnd}
-	panicIfErr(mw.SetText("Walk File Browser Example"))
+	panicIfErr(mw.SetTitle("Walk File Browser Example"))
 	panicIfErr(mw.ClientArea().SetLayout(walk.NewHBoxLayout()))
 
 	fileMenu, err := walk.NewMenu()

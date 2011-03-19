@@ -72,7 +72,6 @@ type Widget interface {
 	SetParent(value Container) os.Error
 	SetSize(value Size) os.Error
 	SetSuspended(suspend bool)
-	SetText(value string) os.Error
 	SetVisible(value bool)
 	SetWidth(value int) os.Error
 	SetX(value int) os.Error
@@ -81,7 +80,6 @@ type Widget interface {
 	SizeChanged() *Event
 	SizeHint() Size
 	Suspended() bool
-	Text() string
 	Visible() bool
 	Width() int
 	X() int
@@ -475,14 +473,6 @@ func setWidgetText(hwnd HWND, text string) os.Error {
 	return nil
 }
 
-func (wb *WidgetBase) Text() string {
-	return widgetText(wb.hWnd)
-}
-
-func (wb *WidgetBase) SetText(value string) os.Error {
-	return setWidgetText(wb.hWnd, value)
-}
-
 func (wb *WidgetBase) Visible() bool {
 	return IsWindowVisible(wb.hWnd)
 }
@@ -611,7 +601,7 @@ func (wb *WidgetBase) calculateTextSize() Size {
 	defer SelectObject(hdc, hFontOld)
 
 	var size Size
-	lines := strings.Split(wb.Text(), "\n", -1)
+	lines := strings.Split(widgetText(wb.hWnd), "\n", -1)
 
 	for _, line := range lines {
 		var s SIZE

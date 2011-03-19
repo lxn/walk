@@ -111,11 +111,11 @@ func (gb *GroupBox) SetFont(value *Font) {
 	}
 }
 
-func (gb *GroupBox) Text() string {
+func (gb *GroupBox) Title() string {
 	return widgetText(gb.hWndGroupBox)
 }
 
-func (gb *GroupBox) SetText(value string) os.Error {
+func (gb *GroupBox) SetTitle(value string) os.Error {
 	return setWidgetText(gb.hWndGroupBox, value)
 }
 

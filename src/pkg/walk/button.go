@@ -5,6 +5,10 @@
 package walk
 
 import (
+	"os"
+)
+
+import (
 	. "walk/winapi"
 	. "walk/winapi/user32"
 )
@@ -16,6 +20,14 @@ type clickable interface {
 type Button struct {
 	WidgetBase
 	clickedPublisher EventPublisher
+}
+
+func (b *Button) Text() string {
+	return widgetText(b.hWnd)
+}
+
+func (b *Button) SetText(value string) os.Error {
+	return setWidgetText(b.hWnd, value)
 }
 
 func (b *Button) Checked() bool {

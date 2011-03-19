@@ -47,6 +47,14 @@ func (tlw *TopLevelWindow) SizeHint() Size {
 	return tlw.dialogBaseUnitsToPixels(Size{252, 218})
 }
 
+func (tlw *TopLevelWindow) Title() string {
+	return widgetText(tlw.hWnd)
+}
+
+func (tlw *TopLevelWindow) SetTitle(value string) os.Error {
+	return setWidgetText(tlw.hWnd, value)
+}
+
 func (tlw *TopLevelWindow) Run() int {
 	tlw.startingPublisher.Publish()
 

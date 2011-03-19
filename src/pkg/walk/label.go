@@ -53,3 +53,11 @@ func (l *Label) MinSizeHint() Size {
 func (l *Label) SizeHint() Size {
 	return l.calculateTextSize()
 }
+
+func (l *Label) Text() string {
+	return widgetText(l.hWnd)
+}
+
+func (l *Label) SetText(value string) os.Error {
+	return setWidgetText(l.hWnd, value)
+}

@@ -132,7 +132,7 @@ func writeAttribute(buf *bytes.Buffer, attr *Attribute, qualifiedReceiver string
 	switch attr.Name {
 	case "title":
 		buf.WriteString(fmt.Sprintf(
-			"if err := %s.SetText(`%s`); err != nil {\nreturn err\n}\n",
+			"if err := %s.SetTitle(`%s`); err != nil {\nreturn err\n}\n",
 			qualifiedReceiver, attr.String))
 
 	default:
@@ -153,7 +153,11 @@ func writeAttributes(buf *bytes.Buffer, attrs []*Attribute, qualifiedReceiver st
 	return nil
 }
 
-func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string) (err os.Error) {
+func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string, widget *Widget) (err os.Error) {
+	if prop.Name == "windowTitle" && widget.Class == "QWidget" {
+		return
+	}
+
 	switch prop.Name {
 	case "decimals":
 		buf.WriteString(fmt.Sprintf("if err := %s.SetDecimals(%d); err != nil {\nreturn err\n}\n", qualifiedReceiver, int(prop.Number)))
@@ -230,9 +234,14 @@ func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string) 
 	case "maxLength":
 		buf.WriteString(fmt.Sprintf("%s.SetMaxLength(%d)\n", qualifiedReceiver, int(prop.Number)))
 
-	case "text", "title", "windowTitle":
+	case "text":
 		buf.WriteString(fmt.Sprintf(
 			"if err := %s.SetText(`%s`); err != nil {\nreturn err\n}\n",
+			qualifiedReceiver, prop.String))
+
+	case "title", "windowTitle":
+		buf.WriteString(fmt.Sprintf(
+			"if err := %s.SetTitle(`%s`); err != nil {\nreturn err\n}\n",
 			qualifiedReceiver, prop.String))
 
 	case "orientation":
@@ -263,12 +272,12 @@ func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string) 
 	return
 }
 
-func writeProperties(buf *bytes.Buffer, props []*Property, qualifiedReceiver string) os.Error {
+func writeProperties(buf *bytes.Buffer, props []*Property, qualifiedReceiver string, widget *Widget) os.Error {
 	var minSize, maxSize Size
 	var hasMinOrMaxSize bool
 
 	for _, prop := range props {
-		if err := writeProperty(buf, prop, qualifiedReceiver); err != nil {
+		if err := writeProperty(buf, prop, qualifiedReceiver, widget); err != nil {
 			return err
 		}
 
@@ -560,7 +569,7 @@ func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget
 		return err
 	}
 
-	if err := writeProperties(buf, widget.Property, receiver); err != nil {
+	if err := writeProperties(buf, widget.Property, receiver, widget); err != nil {
 		return err
 	}
 
@@ -786,7 +795,7 @@ func generateCode(buf *bytes.Buffer, ui *UI) os.Error {
 			`,
 		ui.Widget.Name))
 
-	if err := writeProperties(buf, ui.Widget.Property, "w"); err != nil {
+	if err := writeProperties(buf, ui.Widget.Property, "w", &ui.Widget); err != nil {
 		return err
 	}
 

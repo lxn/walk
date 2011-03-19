@@ -290,7 +290,7 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
 		tw.currentIndex = 0
 	}
 
-	text := syscall.StringToUTF16(page.Text())
+	text := syscall.StringToUTF16(page.Title())
 	item := TCITEM{
 		Mask:       TCIF_TEXT,
 		PszText:    &text[0],
