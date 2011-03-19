@@ -20,13 +20,13 @@ var _ subclassedWidget = &ComboBox{}
 
 type ComboBox struct {
 	WidgetBase
-	items                         *ComboBoxItemList
-	prevSelIndex                  int
-	selectedIndexChangedPublisher EventPublisher
+	items                        *ComboBoxItemList
+	prevCurIndex                 int
+	currentIndexChangedPublisher EventPublisher
 }
 
 func NewComboBox(parent Container) (*ComboBox, os.Error) {
-	cb := &ComboBox{prevSelIndex: -1}
+	cb := &ComboBox{prevCurIndex: -1}
 
 	if err := initChildWidget(
 		cb,
@@ -62,27 +62,27 @@ func (cb *ComboBox) Items() *ComboBoxItemList {
 	return cb.items
 }
 
-func (cb *ComboBox) SelectedIndex() int {
+func (cb *ComboBox) CurrentIndex() int {
 	return int(SendMessage(cb.hWnd, CB_GETCURSEL, 0, 0))
 }
 
-func (cb *ComboBox) SetSelectedIndex(value int) os.Error {
+func (cb *ComboBox) SetCurrentIndex(value int) os.Error {
 	index := int(SendMessage(cb.hWnd, CB_SETCURSEL, uintptr(value), 0))
 
 	if index != value {
 		return newError("invalid index")
 	}
 
-	if value != cb.prevSelIndex {
-		cb.prevSelIndex = value
-		cb.selectedIndexChangedPublisher.Publish()
+	if value != cb.prevCurIndex {
+		cb.prevCurIndex = value
+		cb.currentIndexChangedPublisher.Publish()
 	}
 
 	return nil
 }
 
-func (cb *ComboBox) SelectedIndexChanged() *Event {
-	return cb.selectedIndexChangedPublisher.Event()
+func (cb *ComboBox) CurrentIndexChanged() *Event {
+	return cb.currentIndexChangedPublisher.Event()
 }
 
 func (cb *ComboBox) TextSelection() (start, end int) {
@@ -99,9 +99,9 @@ func (cb *ComboBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 	case WM_COMMAND:
 		switch HIWORD(uint(wParam)) {
 		case CBN_SELENDOK:
-			if selIndex := cb.SelectedIndex(); selIndex != cb.prevSelIndex {
-				cb.selectedIndexChangedPublisher.Publish()
-				cb.prevSelIndex = selIndex
+			if selIndex := cb.CurrentIndex(); selIndex != cb.prevCurIndex {
+				cb.currentIndexChangedPublisher.Publish()
+				cb.prevCurIndex = selIndex
 				return 0
 			}
 		}
@@ -123,8 +123,8 @@ func (cb *ComboBox) onRemovingComboBoxItem(index int, item *ComboBoxItem) (err o
 		err = newError("CB_DELETESTRING failed")
 	}
 
-	if index == cb.prevSelIndex {
-		cb.prevSelIndex = -1
+	if index == cb.prevCurIndex {
+		cb.prevCurIndex = -1
 	}
 
 	return
@@ -133,7 +133,7 @@ func (cb *ComboBox) onRemovingComboBoxItem(index int, item *ComboBoxItem) (err o
 func (cb *ComboBox) onClearingComboBoxItems() (err os.Error) {
 	SendMessage(cb.hWnd, CB_RESETCONTENT, 0, 0)
 
-	cb.prevSelIndex = -1
+	cb.prevCurIndex = -1
 
 	return
 }

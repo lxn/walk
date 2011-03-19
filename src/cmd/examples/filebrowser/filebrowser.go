@@ -202,8 +202,8 @@ func main() {
 	panicIfErr(mw.listView.SetSingleItemSelection(true))
 	panicIfErr(mw.listView.SetMinMaxSize(walk.Size{}, walk.Size{422, 0}))
 
-	mw.listView.SelectedIndexChanged().Attach(func() {
-		index := mw.listView.SelectedIndex()
+	mw.listView.CurrentIndexChanged().Attach(func() {
+		index := mw.listView.CurrentIndex()
 		var url string
 		if index > -1 {
 			item := mw.listView.Items().At(index)

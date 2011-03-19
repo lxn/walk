@@ -41,7 +41,7 @@ func (l *IndexList) Len() int {
 }
 
 const (
-	selectedIndexChangedTimerId = 1 + iota
+	currentIndexChangedTimerId = 1 + iota
 	selectedIndexesChangedTimerId
 	checkedIndexesChangedTimerId
 )
@@ -50,8 +50,8 @@ type ListView struct {
 	WidgetBase
 	columns                         *ListViewColumnList
 	items                           *ListViewItemList
-	selectedIndex                   int
-	selectedIndexChangedPublisher   EventPublisher
+	currentIndex                    int
+	currentIndexChangedPublisher    EventPublisher
 	selectedIndexes                 *IndexList
 	selectedIndexesChangedPublisher EventPublisher
 	checkedIndexes                  *IndexList
@@ -97,7 +97,7 @@ func NewListView(parent Container) (*ListView, os.Error) {
 
 	lv.columns = newListViewColumnList(lv)
 	lv.items = newListViewItemList(lv)
-	lv.selectedIndex = -1
+	lv.currentIndex = -1
 
 	succeeded = true
 
@@ -114,7 +114,7 @@ func (*ListView) setOrigWndProcPtr(ptr uintptr) {
 
 func (lv *ListView) Dispose() {
 	if lv.hWnd != 0 {
-		if !KillTimer(lv.hWnd, selectedIndexChangedTimerId) {
+		if !KillTimer(lv.hWnd, currentIndexChangedTimerId) {
 			log.Print(lastError("KillTimer"))
 		}
 		if !KillTimer(lv.hWnd, selectedIndexesChangedTimerId) {
@@ -248,11 +248,11 @@ func (lv *ListView) CheckedIndexesChanged() *Event {
 	return lv.checkedIndexesChangedPublisher.Event()
 }
 
-func (lv *ListView) SelectedIndex() int {
-	return lv.selectedIndex
+func (lv *ListView) CurrentIndex() int {
+	return lv.currentIndex
 }
 
-func (lv *ListView) SetSelectedIndex(value int) os.Error {
+func (lv *ListView) SetCurrentIndex(value int) os.Error {
 	var lvi LVITEM
 
 	lvi.StateMask = LVIS_FOCUSED | LVIS_SELECTED
@@ -264,17 +264,17 @@ func (lv *ListView) SetSelectedIndex(value int) os.Error {
 		return newError("failed to set selected item")
 	}
 
-	lv.selectedIndex = value
+	lv.currentIndex = value
 
 	if value == -1 {
-		lv.selectedIndexChangedPublisher.Publish()
+		lv.currentIndexChangedPublisher.Publish()
 	}
 
 	return nil
 }
 
-func (lv *ListView) SelectedIndexChanged() *Event {
-	return lv.selectedIndexChangedPublisher.Event()
+func (lv *ListView) CurrentIndexChanged() *Event {
+	return lv.currentIndexChangedPublisher.Event()
 }
 
 func (lv *ListView) SingleItemSelection() bool {
@@ -440,13 +440,13 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 			selectedNow := nmlv.UNewState&LVIS_SELECTED > 0
 			selectedBefore := nmlv.UOldState&LVIS_SELECTED > 0
 			if selectedNow && !selectedBefore {
-				lv.selectedIndex = nmlv.IItem
+				lv.currentIndex = nmlv.IItem
 				if lv.itemStateChangedEventDelay > 0 {
-					if 0 == SetTimer(lv.hWnd, selectedIndexChangedTimerId, uint(lv.itemStateChangedEventDelay), 0) {
+					if 0 == SetTimer(lv.hWnd, currentIndexChangedTimerId, uint(lv.itemStateChangedEventDelay), 0) {
 						log.Print(lastError("SetTimer"))
 					}
 				} else {
-					lv.selectedIndexChangedPublisher.Publish()
+					lv.currentIndexChangedPublisher.Publish()
 				}
 			}
 			if !lv.SingleItemSelection() {
@@ -460,8 +460,8 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 
 	case WM_TIMER:
 		switch wParam {
-		case selectedIndexChangedTimerId:
-			lv.selectedIndexChangedPublisher.Publish()
+		case currentIndexChangedTimerId:
+			lv.currentIndexChangedPublisher.Publish()
 
 		case selectedIndexesChangedTimerId:
 			lv.selectedIndexesChangedPublisher.Publish()
@@ -594,8 +594,8 @@ func (lv *ListView) onRemovingListViewItem(index int, item *ListViewItem) (err o
 
 	item.removeChangedHandler(lv)
 
-	if index == lv.selectedIndex {
-		return lv.SetSelectedIndex(-1)
+	if index == lv.currentIndex {
+		return lv.SetCurrentIndex(-1)
 	}
 
 	return nil
@@ -610,5 +610,5 @@ func (lv *ListView) onClearingListViewItems() os.Error {
 		item.removeChangedHandler(lv)
 	}
 
-	return lv.SetSelectedIndex(-1)
+	return lv.SetCurrentIndex(-1)
 }
