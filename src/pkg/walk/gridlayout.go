@@ -9,6 +9,10 @@ import (
 	"sort"
 )
 
+import (
+	. "walk/winapi/user32"
+)
+
 type gridLayoutCell struct {
 	row    int
 	column int
@@ -393,6 +397,11 @@ func (l *GridLayout) Update(reset bool) os.Error {
 	widths := l.sectionSizes(Horizontal)
 	heights := l.sectionSizes(Vertical)
 
+	hdwp := BeginDeferWindowPos(l.container.Children().Len())
+	if hdwp == 0 {
+		return lastError("BeginDeferWindowPos")
+	}
+
 	y := l.margins.VNear
 	for row := 0; row < len(heights); row++ {
 		h := heights[row]
@@ -405,8 +414,8 @@ func (l *GridLayout) Update(reset bool) os.Error {
 
 			if widget != nil {
 				// FIXME: This currently assumes all widgets can grow.
-				if err := widget.SetBounds(Rectangle{x, y, w, h}); err != nil {
-					return err
+				if hdwp = DeferWindowPos(hdwp, widget.BaseWidget().hWnd, 0, x, y, w, h, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOZORDER); hdwp == 0 {
+					return lastError("DeferWindowPos")
 				}
 			}
 
@@ -414,6 +423,10 @@ func (l *GridLayout) Update(reset bool) os.Error {
 		}
 
 		y += h + l.spacing
+	}
+
+	if !EndDeferWindowPos(hdwp) {
+		return lastError("EndDeferWindowPos")
 	}
 
 	return nil

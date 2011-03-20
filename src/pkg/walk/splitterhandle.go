@@ -39,6 +39,10 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, os.Error) {
 		return nil, err
 	}
 
+	if err := sh.setAndClearStyleBits(0, WS_CLIPSIBLINGS); err != nil {
+		return nil, err
+	}
+
 	return sh, nil
 }
 

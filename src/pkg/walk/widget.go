@@ -178,7 +178,7 @@ func initWidget(widget widgetInternal, parent Widget, className string, style, e
 		exStyle,
 		syscall.StringToUTF16Ptr(className),
 		nil,
-		style,
+		style|WS_CLIPSIBLINGS,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,

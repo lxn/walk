@@ -895,6 +895,7 @@ const (
 type (
 	HACCEL  HANDLE
 	HCURSOR HANDLE
+	HDWP    HANDLE
 	HICON   HANDLE
 	HMENU   HANDLE
 	HWND    HANDLE
@@ -1000,11 +1001,13 @@ var (
 	lib uintptr
 
 	// Functions
+	beginDeferWindowPos  uintptr
 	beginPaint           uintptr
 	callWindowProc       uintptr
 	createMenu           uintptr
 	createPopupMenu      uintptr
 	createWindowEx       uintptr
+	deferWindowPos       uintptr
 	defWindowProc        uintptr
 	destroyMenu          uintptr
 	destroyWindow        uintptr
@@ -1012,6 +1015,7 @@ var (
 	drawMenuBar          uintptr
 	drawTextEx           uintptr
 	enableWindow         uintptr
+	endDeferWindowPos    uintptr
 	endPaint             uintptr
 	getAncestor          uintptr
 	getClientRect        uintptr
@@ -1067,11 +1071,13 @@ func init() {
 	lib = MustLoadLibrary("user32.dll")
 
 	// Functions
+	beginDeferWindowPos = MustGetProcAddress(lib, "BeginDeferWindowPos")
 	beginPaint = MustGetProcAddress(lib, "BeginPaint")
 	callWindowProc = MustGetProcAddress(lib, "CallWindowProcW")
 	createMenu = MustGetProcAddress(lib, "CreateMenu")
 	createPopupMenu = MustGetProcAddress(lib, "CreatePopupMenu")
 	createWindowEx = MustGetProcAddress(lib, "CreateWindowExW")
+	deferWindowPos = MustGetProcAddress(lib, "DeferWindowPos")
 	defWindowProc = MustGetProcAddress(lib, "DefWindowProcW")
 	destroyMenu = MustGetProcAddress(lib, "DestroyMenu")
 	destroyWindow = MustGetProcAddress(lib, "DestroyWindow")
@@ -1079,6 +1085,7 @@ func init() {
 	drawMenuBar = MustGetProcAddress(lib, "DrawMenuBar")
 	drawTextEx = MustGetProcAddress(lib, "DrawTextExW")
 	enableWindow = MustGetProcAddress(lib, "EnableWindow")
+	endDeferWindowPos = MustGetProcAddress(lib, "EndDeferWindowPos")
 	endPaint = MustGetProcAddress(lib, "EndPaint")
 	getAncestor = MustGetProcAddress(lib, "GetAncestor")
 	getClientRect = MustGetProcAddress(lib, "GetClientRect")
@@ -1129,6 +1136,15 @@ func init() {
 	systemParametersInfo = MustGetProcAddress(lib, "SystemParametersInfoW")
 	trackPopupMenuEx = MustGetProcAddress(lib, "TrackPopupMenuEx")
 	translateMessage = MustGetProcAddress(lib, "TranslateMessage")
+}
+
+func BeginDeferWindowPos(nNumWindows int) HDWP {
+	ret, _, _ := syscall.Syscall(beginDeferWindowPos, 1,
+		uintptr(nNumWindows),
+		0,
+		0)
+
+	return HDWP(ret)
 }
 
 func BeginPaint(hwnd HWND, lpPaint *PAINTSTRUCT) HDC {
@@ -1186,6 +1202,21 @@ func CreateWindowEx(dwExStyle uint, lpClassName, lpWindowName *uint16, dwStyle u
 		uintptr(lpParam))
 
 	return HWND(ret)
+}
+
+func DeferWindowPos(hWinPosInfo HDWP, hWnd, hWndInsertAfter HWND, x, y, cx, cy int, uFlags uint) HDWP {
+	ret, _, _ := syscall.Syscall9(deferWindowPos, 8,
+		uintptr(hWinPosInfo),
+		uintptr(hWnd),
+		uintptr(hWndInsertAfter),
+		uintptr(x),
+		uintptr(y),
+		uintptr(cx),
+		uintptr(cy),
+		uintptr(uFlags),
+		0)
+
+	return HDWP(ret)
 }
 
 func DefWindowProc(hWnd HWND, Msg uint, wParam, lParam uintptr) uintptr {
@@ -1252,6 +1283,15 @@ func EnableWindow(hWnd HWND, bEnable bool) bool {
 	ret, _, _ := syscall.Syscall(enableWindow, 2,
 		uintptr(hWnd),
 		uintptr(BoolToBOOL(bEnable)),
+		0)
+
+	return ret != 0
+}
+
+func EndDeferWindowPos(hWinPosInfo HDWP) bool {
+	ret, _, _ := syscall.Syscall(endDeferWindowPos, 1,
+		uintptr(hWinPosInfo),
+		0,
 		0)
 
 	return ret != 0

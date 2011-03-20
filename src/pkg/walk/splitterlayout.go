@@ -8,6 +8,10 @@ import (
 	"os"
 )
 
+import (
+	. "walk/winapi/user32"
+)
+
 type splitterLayout struct {
 	container   Container
 	orientation Orientation
@@ -183,6 +187,11 @@ func (l *splitterLayout) Update(reset bool) os.Error {
 		}
 	}
 
+	hdwp := BeginDeferWindowPos(len(widgets))
+	if hdwp == 0 {
+		return lastError("BeginDeferWindowPos")
+	}
+
 	p1 := 0
 	for i, widget := range widgets {
 		var s1 int
@@ -192,13 +201,22 @@ func (l *splitterLayout) Update(reset bool) os.Error {
 			s1 = sizes[i]
 		}
 
+		var x, y, w, h int
 		if l.orientation == Horizontal {
-			widget.SetBounds(Rectangle{p1, 0, s1, space2})
+			x, y, w, h = p1, 0, s1, space2
 		} else {
-			widget.SetBounds(Rectangle{0, p1, space2, s1})
+			x, y, w, h = 0, p1, space2, s1
+		}
+
+		if hdwp = DeferWindowPos(hdwp, widget.BaseWidget().hWnd, 0, x, y, w, h, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOZORDER); hdwp == 0 {
+			return lastError("DeferWindowPos")
 		}
 
 		p1 += s1
+	}
+
+	if !EndDeferWindowPos(hdwp) {
+		return lastError("EndDeferWindowPos")
 	}
 
 	return nil

@@ -197,7 +197,6 @@ func (cb *ContainerBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) ui
 	case WM_SIZE, WM_SIZING:
 		if cb.layout != nil {
 			cb.layout.Update(false)
-			cb.Invalidate()
 		}
 	}
 

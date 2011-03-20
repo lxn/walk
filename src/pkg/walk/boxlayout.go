@@ -9,6 +9,10 @@ import (
 	"sort"
 )
 
+import (
+	. "walk/winapi/user32"
+)
+
 type Orientation byte
 
 const (
@@ -473,6 +477,11 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 	}
 
 	// Finally position widgets.
+	hdwp := BeginDeferWindowPos(len(widgets))
+	if hdwp == 0 {
+		return lastError("BeginDeferWindowPos")
+	}
+
 	excessTotal := space1 - minSizesRemaining - spacingRemaining
 	excessShare := excessTotal / (len(widgets) + 1)
 	p1 := start1
@@ -489,13 +498,22 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 
 		p2 := start2 + (space2-s2)/2
 
+		var x, y, w, h int
 		if l.orientation == Horizontal {
-			widget.SetBounds(Rectangle{p1, p2, s1, s2})
+			x, y, w, h = p1, p2, s1, s2
 		} else {
-			widget.SetBounds(Rectangle{p2, p1, s2, s1})
+			x, y, w, h = p2, p1, s2, s1
+		}
+
+		if hdwp = DeferWindowPos(hdwp, widget.BaseWidget().hWnd, 0, x, y, w, h, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOZORDER); hdwp == 0 {
+			return lastError("DeferWindowPos")
 		}
 
 		p1 += s1 + l.spacing
+	}
+
+	if !EndDeferWindowPos(hdwp) {
+		return lastError("EndDeferWindowPos")
 	}
 
 	return nil
