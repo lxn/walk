@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"log"
 	"os"
 	"syscall"
 	"unsafe"
@@ -80,7 +79,7 @@ func (*LineEdit) setOrigWndProcPtr(ptr uintptr) {
 func (le *LineEdit) CueBanner() string {
 	buf := make([]uint16, 128)
 	if FALSE == SendMessage(le.hWnd, EM_GETCUEBANNER, uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf))) {
-		log.Print(newError("EM_GETCUEBANNER failed"))
+		newError("EM_GETCUEBANNER failed")
 		return ""
 	}
 

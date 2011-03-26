@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"log"
 	"math"
 	"os"
 	"strconv"
@@ -211,15 +210,12 @@ func (ne *NumberEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintp
 				nmud := (*NMUPDOWN)(unsafe.Pointer(lParam))
 				val := ne.Value()
 				val -= float64(nmud.IDelta) * ne.increment
-				if err := ne.SetValue(val); err != nil {
-					log.Println(err)
-				}
+				ne.SetValue(val)
 			}
 
 		case WM_SIZE, WM_SIZING:
 			cb := ne.ClientBounds()
 			if err := ne.edit.SetBounds(cb); err != nil {
-				log.Println(err)
 				break
 			}
 			SendMessage(ne.hWndUpDown, UDM_SETBUDDY, uintptr(ne.edit.hWnd), 0)

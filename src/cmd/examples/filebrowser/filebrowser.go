@@ -33,7 +33,7 @@ func (mw *MainWindow) populateTreeViewItem(parent *walk.TreeViewItem) {
 	defer mw.treeView.SetSuspended(false)
 
 	// Remove dummy child
-	panicIfErr(parent.Children().Clear())
+	parent.Children().Clear()
 
 	dirPath := pathForTreeViewItem(parent)
 
@@ -54,7 +54,7 @@ func (mw *MainWindow) populateTreeViewItem(parent *walk.TreeViewItem) {
 		if !excludePath(name) && fi.IsDirectory() {
 			child := newTreeViewItem(name)
 
-			panicIfErr(parent.Children().Add(child))
+			parent.Children().Add(child)
 		}
 	}
 }
@@ -63,7 +63,7 @@ func (mw *MainWindow) populateListView(dirPath string) {
 	mw.listView.SetSuspended(true)
 	defer mw.listView.SetSuspended(false)
 
-	panicIfErr(mw.listView.Items().Clear())
+	mw.listView.Items().Clear()
 
 	dir, err := os.Open(dirPath, os.O_RDONLY, 0)
 	if err != nil {
@@ -95,7 +95,7 @@ func (mw *MainWindow) populateListView(dirPath string) {
 			texts := []string{name, size, lastMod}
 			item.SetTexts(texts)
 
-			panicIfErr(mw.listView.Items().Add(item))
+			mw.listView.Items().Add(item)
 		}
 	}
 }
@@ -129,7 +129,7 @@ func newTreeViewItem(text string) *walk.TreeViewItem {
 	item.SetText(text)
 
 	// For now, we add a dummy child to make the item expandable.
-	panicIfErr(item.Children().Add(walk.NewTreeViewItem()))
+	item.Children().Add(walk.NewTreeViewItem())
 
 	return item
 }
@@ -137,43 +137,38 @@ func newTreeViewItem(text string) *walk.TreeViewItem {
 func main() {
 	runtime.LockOSThread()
 
-	mainWnd, err := walk.NewMainWindow()
-	panicIfErr(err)
+	walk.PanicOnError = true
+
+	mainWnd, _ := walk.NewMainWindow()
 
 	mw := &MainWindow{MainWindow: mainWnd}
-	panicIfErr(mw.SetTitle("Walk File Browser Example"))
-	panicIfErr(mw.ClientArea().SetLayout(walk.NewHBoxLayout()))
+	mw.SetTitle("Walk File Browser Example")
+	mw.ClientArea().SetLayout(walk.NewHBoxLayout())
 
-	fileMenu, err := walk.NewMenu()
-	panicIfErr(err)
-	fileMenuAction, err := mw.Menu().Actions().AddMenu(fileMenu)
-	panicIfErr(err)
-	panicIfErr(fileMenuAction.SetText("File"))
+	fileMenu, _ := walk.NewMenu()
+	fileMenuAction, _ := mw.Menu().Actions().AddMenu(fileMenu)
+	fileMenuAction.SetText("File")
 
 	exitAction := walk.NewAction()
-	panicIfErr(exitAction.SetText("Exit"))
+	exitAction.SetText("Exit")
 	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
-	panicIfErr(fileMenu.Actions().Add(exitAction))
+	fileMenu.Actions().Add(exitAction)
 
-	helpMenu, err := walk.NewMenu()
-	panicIfErr(err)
-	helpMenuAction, err := mw.Menu().Actions().AddMenu(helpMenu)
-	panicIfErr(err)
-	panicIfErr(helpMenuAction.SetText("Help"))
+	helpMenu, _ := walk.NewMenu()
+	helpMenuAction, _ := mw.Menu().Actions().AddMenu(helpMenu)
+	helpMenuAction.SetText("Help")
 
 	aboutAction := walk.NewAction()
-	panicIfErr(aboutAction.SetText("About"))
+	aboutAction.SetText("About")
 	aboutAction.Triggered().Attach(func() {
 		walk.MsgBox(mw, "About", "Walk File Browser Example", walk.MsgBoxOK|walk.MsgBoxIconInformation)
 	})
-	panicIfErr(helpMenu.Actions().Add(aboutAction))
+	helpMenu.Actions().Add(aboutAction)
 
-	splitter, err := walk.NewSplitter(mw.ClientArea())
-	panicIfErr(err)
+	splitter, _ := walk.NewSplitter(mw.ClientArea())
 
-	mw.treeView, err = walk.NewTreeView(splitter)
-	panicIfErr(err)
-	panicIfErr(mw.treeView.SetMinMaxSize(walk.Size{}, walk.Size{200, 0}))
+	mw.treeView, _ = walk.NewTreeView(splitter)
+	mw.treeView.SetMinMaxSize(walk.Size{}, walk.Size{200, 0})
 
 	mw.treeView.ItemExpanded().Attach(func(item *walk.TreeViewItem) {
 		children := item.Children()
@@ -187,56 +182,51 @@ func main() {
 		mw.populateListView(pathForTreeViewItem(new))
 	})
 
-	drives, err := walk.DriveNames()
-	panicIfErr(err)
+	drives, _ := walk.DriveNames()
 
 	mw.treeView.SetSuspended(true)
 	for _, drive := range drives {
 		driveItem := newTreeViewItem(drive[:2])
-		panicIfErr(mw.treeView.Items().Add(driveItem))
+		mw.treeView.Items().Add(driveItem)
 	}
 	mw.treeView.SetSuspended(false)
 
-	mw.listView, err = walk.NewListView(splitter)
-	panicIfErr(err)
-	panicIfErr(mw.listView.SetSingleItemSelection(true))
-	panicIfErr(mw.listView.SetMinMaxSize(walk.Size{}, walk.Size{422, 0}))
+	mw.listView, _ = walk.NewListView(splitter)
+	mw.listView.SetSingleItemSelection(true)
+	mw.listView.SetMinMaxSize(walk.Size{}, walk.Size{422, 0})
 
 	mw.listView.CurrentIndexChanged().Attach(func() {
 		index := mw.listView.CurrentIndex()
 		var url string
 		if index > -1 {
 			item := mw.listView.Items().At(index)
-			panicIfErr(err)
 
 			url = path.Join(pathForTreeViewItem(mw.selTvwItem), item.Texts()[0])
 		}
 
-		err := mw.preview.SetURL(url)
-		panicIfErr(err)
+		mw.preview.SetURL(url)
 	})
 
 	nameCol := walk.NewListViewColumn()
 	nameCol.SetTitle("Name")
 	nameCol.SetWidth(200)
-	panicIfErr(mw.listView.Columns().Add(nameCol))
+	mw.listView.Columns().Add(nameCol)
 
 	sizeCol := walk.NewListViewColumn()
 	sizeCol.SetTitle("Size")
 	sizeCol.SetWidth(80)
 	sizeCol.SetAlignment(walk.AlignFar)
-	panicIfErr(mw.listView.Columns().Add(sizeCol))
+	mw.listView.Columns().Add(sizeCol)
 
 	modCol := walk.NewListViewColumn()
 	modCol.SetTitle("Modified")
 	modCol.SetWidth(120)
-	panicIfErr(mw.listView.Columns().Add(modCol))
+	mw.listView.Columns().Add(modCol)
 
-	mw.preview, err = walk.NewWebView(splitter)
-	panicIfErr(err)
+	mw.preview, _ = walk.NewWebView(splitter)
 
-	panicIfErr(mw.SetMinMaxSize(walk.Size{600, 400}, walk.Size{}))
-	panicIfErr(mw.SetSize(walk.Size{800, 600}))
+	mw.SetMinMaxSize(walk.Size{600, 400}, walk.Size{})
+	mw.SetSize(walk.Size{800, 600})
 	mw.Show()
 
 	os.Exit(mw.Run())

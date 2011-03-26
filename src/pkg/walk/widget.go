@@ -7,7 +7,6 @@ package walk
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"syscall"
@@ -506,7 +505,7 @@ func (wb *WidgetBase) Bounds() Rectangle {
 	var r RECT
 
 	if !GetWindowRect(wb.hWnd, &r) {
-		log.Print(lastError("GetWindowRect"))
+		lastError("GetWindowRect")
 		return Rectangle{}
 	}
 
@@ -515,7 +514,7 @@ func (wb *WidgetBase) Bounds() Rectangle {
 	if wb.parent != nil {
 		p := POINT{b.X, b.Y}
 		if !ScreenToClient(wb.parent.BaseWidget().hWnd, &p) {
-			log.Print(newError("ScreenToClient failed"))
+			newError("ScreenToClient failed")
 			return Rectangle{}
 		}
 		b.X = p.X
@@ -570,7 +569,7 @@ func (wb *WidgetBase) dialogBaseUnits() Size {
 
 	var tm TEXTMETRIC
 	if !GetTextMetrics(hdc, &tm) {
-		log.Print(newError("GetTextMetrics failed"))
+		newError("GetTextMetrics failed")
 	}
 
 	var size SIZE
@@ -579,7 +578,7 @@ func (wb *WidgetBase) dialogBaseUnits() Size {
 		syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"),
 		52,
 		&size) {
-		log.Print(newError("GetTextExtentPoint32 failed"))
+		newError("GetTextExtentPoint32 failed")
 	}
 
 	return Size{(size.CX/26 + 1) / 2, int(tm.TmHeight)}
@@ -607,7 +606,7 @@ func (wb *WidgetBase) SizeHint() Size {
 func (wb *WidgetBase) calculateTextSize() Size {
 	hdc := GetDC(wb.hWnd)
 	if hdc == 0 {
-		log.Print(newError("GetDC failed"))
+		newError("GetDC failed")
 		return Size{}
 	}
 	defer ReleaseDC(wb.hWnd, hdc)
@@ -623,7 +622,7 @@ func (wb *WidgetBase) calculateTextSize() Size {
 		str := syscall.StringToUTF16(strings.TrimRight(line, "\r "))
 
 		if !GetTextExtentPoint32(hdc, &str[0], len(str)-1, &s) {
-			log.Print(newError("GetTextExtentPoint32 failed"))
+			newError("GetTextExtentPoint32 failed")
 			return Size{}
 		}
 
@@ -700,7 +699,7 @@ func widgetClientBounds(hwnd HWND) Rectangle {
 	var r RECT
 
 	if !GetClientRect(hwnd, &r) {
-		log.Print(lastError("GetClientRect"))
+		lastError("GetClientRect")
 		return Rectangle{}
 	}
 
@@ -776,13 +775,9 @@ func (wb *WidgetBase) persistState(restore bool) {
 		widget := widgetFromHWND(wb.hWnd)
 		if persistable, ok := widget.(Persistable); ok && persistable.Persistent() {
 			if restore {
-				if err := persistable.RestoreState(); err != nil {
-					log.Println(err)
-				}
+				persistable.RestoreState()
 			} else {
-				if err := persistable.SaveState(); err != nil {
-					log.Println(err)
-				}
+				persistable.SaveState()
 			}
 		}
 	}
@@ -852,13 +847,11 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintp
 
 		canvas, err := newCanvasFromHDC(HDC(wParam))
 		if err != nil {
-			log.Print(err)
 			break
 		}
 		defer canvas.Dispose()
 
 		if err := canvas.FillRectangle(wb.background, wb.ClientBounds()); err != nil {
-			log.Print(err)
 			break
 		}
 
@@ -877,7 +870,7 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintp
 		if _, isSubclassed := widgetFromHWND(wb.hWnd).(subclassedWidget); !isSubclassed {
 			// See WM_LBUTTONDOWN for why we require origWndProcPtr == 0 here.
 			if !ReleaseCapture() {
-				log.Println(lastError("ReleaseCapture"))
+				lastError("ReleaseCapture")
 			}
 		}
 		wb.publishMouseEvent(&wb.mouseUpPublisher, wParam, lParam)

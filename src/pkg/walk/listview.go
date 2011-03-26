@@ -6,7 +6,6 @@ package walk
 
 import (
 	"bytes"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -115,13 +114,13 @@ func (*ListView) setOrigWndProcPtr(ptr uintptr) {
 func (lv *ListView) Dispose() {
 	if lv.hWnd != 0 {
 		if !KillTimer(lv.hWnd, currentIndexChangedTimerId) {
-			log.Print(lastError("KillTimer"))
+			lastError("KillTimer")
 		}
 		if !KillTimer(lv.hWnd, selectedIndexesChangedTimerId) {
-			log.Print(lastError("KillTimer"))
+			lastError("KillTimer")
 		}
 		if !KillTimer(lv.hWnd, checkedIndexesChangedTimerId) {
-			log.Print(lastError("KillTimer"))
+			lastError("KillTimer")
 		}
 
 		lv.WidgetBase.Dispose()
@@ -216,7 +215,7 @@ func (lv *ListView) updateIndexes(indexes []int, list *IndexList, eventDelayTime
 		list.items = indexes
 		if lv.itemStateChangedEventDelay > 0 {
 			if 0 == SetTimer(lv.hWnd, eventDelayTimerId, uint(lv.itemStateChangedEventDelay), 0) {
-				log.Print(lastError("SetTimer"))
+				lastError("SetTimer")
 			}
 		} else {
 			eventPublisher.Publish()
@@ -280,7 +279,7 @@ func (lv *ListView) CurrentIndexChanged() *Event {
 func (lv *ListView) SingleItemSelection() bool {
 	style := uint(GetWindowLong(lv.hWnd, GWL_STYLE))
 	if style == 0 {
-		log.Print(lastError("GetWindowLong"))
+		lastError("GetWindowLong")
 		return false
 	}
 
@@ -443,7 +442,7 @@ func (lv *ListView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 				lv.currentIndex = nmlv.IItem
 				if lv.itemStateChangedEventDelay > 0 {
 					if 0 == SetTimer(lv.hWnd, currentIndexChangedTimerId, uint(lv.itemStateChangedEventDelay), 0) {
-						log.Print(lastError("SetTimer"))
+						lastError("SetTimer")
 					}
 				} else {
 					lv.currentIndexChangedPublisher.Publish()
@@ -544,7 +543,7 @@ func (lv *ListView) onListViewItemChanged(item *ListViewItem) {
 
 		ret := SendMessage(lv.hWnd, LVM_SETITEM, 0, uintptr(unsafe.Pointer(&lvi)))
 		if ret == 0 {
-			log.Println(newError("ListView.onInsertingListViewItem: Failed to set sub item."))
+			newError("ListView.onInsertingListViewItem: Failed to set sub item.")
 		}
 	}
 }

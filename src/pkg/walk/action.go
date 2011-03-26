@@ -59,8 +59,7 @@ func (a *Action) SetCheckable(value bool) (err os.Error) {
 
 		a.checkable = value
 
-		err = a.raiseChanged()
-		if err != nil {
+		if err = a.raiseChanged(); err != nil {
 			a.checkable = old
 			a.raiseChanged()
 		}
@@ -79,8 +78,7 @@ func (a *Action) SetChecked(value bool) (err os.Error) {
 
 		a.checked = value
 
-		err = a.raiseChanged()
-		if err != nil {
+		if err = a.raiseChanged(); err != nil {
 			a.checked = old
 			a.raiseChanged()
 		}
@@ -99,8 +97,7 @@ func (a *Action) SetEnabled(value bool) (err os.Error) {
 
 		a.enabled = value
 
-		err = a.raiseChanged()
-		if err != nil {
+		if err = a.raiseChanged(); err != nil {
 			a.enabled = old
 			a.raiseChanged()
 		}
@@ -119,8 +116,7 @@ func (a *Action) SetExclusive(value bool) (err os.Error) {
 
 		a.exclusive = value
 
-		err = a.raiseChanged()
-		if err != nil {
+		if err = a.raiseChanged(); err != nil {
 			a.exclusive = old
 			a.raiseChanged()
 		}
@@ -139,8 +135,7 @@ func (a *Action) SetImage(value *Bitmap) (err os.Error) {
 
 		a.image = value
 
-		err = a.raiseChanged()
-		if err != nil {
+		if err = a.raiseChanged(); err != nil {
 			a.image = old
 			a.raiseChanged()
 		}
@@ -159,8 +154,7 @@ func (a *Action) SetText(value string) (err os.Error) {
 
 		a.text = value
 
-		err = a.raiseChanged()
-		if err != nil {
+		if err = a.raiseChanged(); err != nil {
 			a.text = old
 			a.raiseChanged()
 		}
@@ -179,8 +173,7 @@ func (a *Action) SetToolTip(value string) (err os.Error) {
 
 		a.toolTip = value
 
-		err = a.raiseChanged()
-		if err != nil {
+		if err = a.raiseChanged(); err != nil {
 			a.toolTip = old
 			a.raiseChanged()
 		}
@@ -199,8 +192,7 @@ func (a *Action) SetVisible(value bool) (err os.Error) {
 
 		a.visible = value
 
-		err = a.raiseChanged()
-		if err != nil {
+		if err = a.raiseChanged(); err != nil {
 			a.visible = old
 			a.raiseChanged()
 		}
@@ -232,8 +224,7 @@ func (a *Action) removeChangedHandler(handler actionChangedHandler) {
 
 func (a *Action) raiseChanged() (err os.Error) {
 	for _, handler := range a.changedHandlers {
-		err = handler.onActionChanged(a)
-		if err != nil {
+		if err = handler.onActionChanged(a); err != nil {
 			return
 		}
 	}

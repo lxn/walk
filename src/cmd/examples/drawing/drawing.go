@@ -18,17 +18,10 @@ type MainWindow struct {
 	paintWidget *walk.CustomWidget
 }
 
-func panicIfErr(err os.Error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func createBitmap() *walk.Bitmap {
 	bounds := walk.Rectangle{Width: 200, Height: 200}
 
-	bmp, err := walk.NewBitmap(bounds.Size())
-	panicIfErr(err)
+	bmp, _ := walk.NewBitmap(bounds.Size())
 
 	succeeded := false
 	defer func() {
@@ -37,25 +30,21 @@ func createBitmap() *walk.Bitmap {
 		}
 	}()
 
-	canvas, err := walk.NewCanvasFromImage(bmp)
-	panicIfErr(err)
+	canvas, _ := walk.NewCanvasFromImage(bmp)
 	defer canvas.Dispose()
 
-	brushBmp, err := walk.NewBitmapFromFile("../img/plus.png")
-	panicIfErr(err)
+	brushBmp, _ := walk.NewBitmapFromFile("../img/plus.png")
 	defer brushBmp.Dispose()
 
-	brush, err := walk.NewBitmapBrush(brushBmp)
-	panicIfErr(err)
+	brush, _ := walk.NewBitmapBrush(brushBmp)
 	defer brush.Dispose()
 
-	panicIfErr(canvas.FillRectangle(brush, bounds))
+	canvas.FillRectangle(brush, bounds)
 
-	font, err := walk.NewFont("Times New Roman", 40, walk.FontBold|walk.FontItalic)
-	panicIfErr(err)
+	font, _ := walk.NewFont("Times New Roman", 40, walk.FontBold|walk.FontItalic)
 	defer font.Dispose()
 
-	panicIfErr(canvas.DrawText("Walk Drawing Example", font, walk.RGB(0, 0, 0), bounds, walk.TextWordbreak))
+	canvas.DrawText("Walk Drawing Example", font, walk.RGB(0, 0, 0), bounds, walk.TextWordbreak)
 
 	succeeded = true
 	return bmp
@@ -67,31 +56,27 @@ func (mw *MainWindow) drawStuff(canvas *walk.Canvas, updateBounds walk.Rectangle
 
 	bounds := mw.paintWidget.ClientBounds()
 
-	rectPen, err := walk.NewCosmeticPen(walk.PenSolid, walk.RGB(255, 0, 0))
-	panicIfErr(err)
+	rectPen, _ := walk.NewCosmeticPen(walk.PenSolid, walk.RGB(255, 0, 0))
 	defer rectPen.Dispose()
 
-	panicIfErr(canvas.DrawRectangle(rectPen, bounds))
+	canvas.DrawRectangle(rectPen, bounds)
 
-	ellipseBrush, err := walk.NewHatchBrush(walk.RGB(0, 255, 0), walk.HatchCross)
-	panicIfErr(err)
+	ellipseBrush, _ := walk.NewHatchBrush(walk.RGB(0, 255, 0), walk.HatchCross)
 	defer ellipseBrush.Dispose()
 
-	panicIfErr(canvas.FillEllipse(ellipseBrush, bounds))
+	canvas.FillEllipse(ellipseBrush, bounds)
 
-	linesBrush, err := walk.NewSolidColorBrush(walk.RGB(0, 0, 255))
-	panicIfErr(err)
+	linesBrush, _ := walk.NewSolidColorBrush(walk.RGB(0, 0, 255))
 	defer linesBrush.Dispose()
 
-	linesPen, err := walk.NewGeometricPen(walk.PenDash, 8, linesBrush)
-	panicIfErr(err)
+	linesPen, _ := walk.NewGeometricPen(walk.PenDash, 8, linesBrush)
 	defer linesPen.Dispose()
 
-	panicIfErr(canvas.DrawLine(linesPen, walk.Point{bounds.X, bounds.Y}, walk.Point{bounds.Width, bounds.Height}))
-	panicIfErr(canvas.DrawLine(linesPen, walk.Point{bounds.X, bounds.Height}, walk.Point{bounds.Width, bounds.Y}))
+	canvas.DrawLine(linesPen, walk.Point{bounds.X, bounds.Y}, walk.Point{bounds.Width, bounds.Height})
+	canvas.DrawLine(linesPen, walk.Point{bounds.X, bounds.Height}, walk.Point{bounds.Width, bounds.Y})
 
 	bmpSize := bmp.Size()
-	panicIfErr(canvas.DrawImage(bmp, walk.Point{(bounds.Width - bmpSize.Width) / 2, (bounds.Height - bmpSize.Height) / 2}))
+	canvas.DrawImage(bmp, walk.Point{(bounds.Width - bmpSize.Width) / 2, (bounds.Height - bmpSize.Height) / 2})
 
 	return nil
 }
@@ -99,23 +84,23 @@ func (mw *MainWindow) drawStuff(canvas *walk.Canvas, updateBounds walk.Rectangle
 func main() {
 	runtime.LockOSThread()
 
-	mainWnd, err := walk.NewMainWindow()
-	panicIfErr(err)
+	walk.PanicOnError = true
+
+	mainWnd, _ := walk.NewMainWindow()
 
 	mw := &MainWindow{MainWindow: mainWnd}
-	panicIfErr(mw.SetTitle("Walk Drawing Example"))
+	mw.SetTitle("Walk Drawing Example")
 
-	panicIfErr(mw.ClientArea().SetLayout(walk.NewVBoxLayout()))
+	mw.ClientArea().SetLayout(walk.NewVBoxLayout())
 
-	mw.paintWidget, err = walk.NewCustomWidget(mw.ClientArea(), 0, func(canvas *walk.Canvas, updateBounds walk.Rectangle) os.Error {
+	mw.paintWidget, _ = walk.NewCustomWidget(mw.ClientArea(), 0, func(canvas *walk.Canvas, updateBounds walk.Rectangle) os.Error {
 		return mw.drawStuff(canvas, updateBounds)
 	})
-	panicIfErr(err)
 	mw.paintWidget.SetClearsBackground(true)
 	mw.paintWidget.SetInvalidatesOnResize(true)
 
-	panicIfErr(mw.SetMinMaxSize(walk.Size{320, 240}, walk.Size{}))
-	panicIfErr(mw.SetSize(walk.Size{800, 600}))
+	mw.SetMinMaxSize(walk.Size{320, 240}, walk.Size{})
+	mw.SetSize(walk.Size{800, 600})
 	mw.Show()
 
 	os.Exit(mw.Run())

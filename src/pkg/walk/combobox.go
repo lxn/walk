@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"log"
 	"os"
 	"syscall"
 	"unsafe"
@@ -74,7 +73,7 @@ func (cb *ComboBox) SizeHint() Size {
 func (cb *ComboBox) calculateMaxItemTextWidth() int {
 	hdc := GetDC(cb.hWnd)
 	if hdc == 0 {
-		log.Print(newError("GetDC failed"))
+		newError("GetDC failed")
 		return -1
 	}
 	defer ReleaseDC(cb.hWnd, hdc)
@@ -89,7 +88,7 @@ func (cb *ComboBox) calculateMaxItemTextWidth() int {
 		str := syscall.StringToUTF16(item.Text())
 
 		if !GetTextExtentPoint32(hdc, &str[0], len(str)-1, &s) {
-			log.Print(newError("GetTextExtentPoint32 failed"))
+			newError("GetTextExtentPoint32 failed")
 			return -1
 		}
 

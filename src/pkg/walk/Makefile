@@ -24,6 +24,7 @@ GOFILES=\
 	customwidget.go\
 	dialog.go\
 	document.go\
+	error.go\
 	errorevent.go\
 	event.go\
 	gridlayout.go\

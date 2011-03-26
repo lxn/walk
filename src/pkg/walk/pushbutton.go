@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"log"
 	"os"
 	"unsafe"
 )
@@ -88,12 +87,10 @@ func (pb *PushButton) ensureProperDialogDefaultButton(hwndFocus HWND) {
 	}
 
 	if err := defBtn.setAndClearStyleBits(BS_DEFPUSHBUTTON, BS_PUSHBUTTON); err != nil {
-		log.Print(err)
 		return
 	}
 
 	if err := defBtn.Invalidate(); err != nil {
-		log.Print(err)
 		return
 	}
 }
@@ -115,9 +112,7 @@ func (pb *PushButton) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintp
 
 			defBtn := dlg.DefaultButton()
 			if defBtn == pb {
-				if err := pb.setAndClearStyleBits(BS_DEFPUSHBUTTON, BS_PUSHBUTTON); err != nil {
-					log.Print(err)
-				}
+				pb.setAndClearStyleBits(BS_DEFPUSHBUTTON, BS_PUSHBUTTON)
 				return DLGC_BUTTON | DLGC_DEFPUSHBUTTON
 			}
 

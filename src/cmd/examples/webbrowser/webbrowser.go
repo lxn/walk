@@ -19,59 +19,48 @@ type MainWindow struct {
 	webView     *walk.WebView
 }
 
-func panicIfErr(err os.Error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func main() {
 	runtime.LockOSThread()
 
-	mainWnd, err := walk.NewMainWindow()
-	panicIfErr(err)
+	walk.PanicOnError = true
+
+	mainWnd, _ := walk.NewMainWindow()
 
 	mw := &MainWindow{MainWindow: mainWnd}
-	panicIfErr(mw.SetTitle("Walk Web Browser Example"))
-	panicIfErr(mw.ClientArea().SetLayout(walk.NewVBoxLayout()))
+	mw.SetTitle("Walk Web Browser Example")
+	mw.ClientArea().SetLayout(walk.NewVBoxLayout())
 
-	fileMenu, err := walk.NewMenu()
-	panicIfErr(err)
-	fileMenuAction, err := mw.Menu().Actions().AddMenu(fileMenu)
-	panicIfErr(err)
-	panicIfErr(fileMenuAction.SetText("File"))
+	fileMenu, _ := walk.NewMenu()
+	fileMenuAction, _ := mw.Menu().Actions().AddMenu(fileMenu)
+	fileMenuAction.SetText("File")
 
 	exitAction := walk.NewAction()
-	panicIfErr(exitAction.SetText("Exit"))
+	exitAction.SetText("Exit")
 	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
-	panicIfErr(fileMenu.Actions().Add(exitAction))
+	fileMenu.Actions().Add(exitAction)
 
-	helpMenu, err := walk.NewMenu()
-	panicIfErr(err)
-	helpMenuAction, err := mw.Menu().Actions().AddMenu(helpMenu)
-	panicIfErr(err)
-	panicIfErr(helpMenuAction.SetText("Help"))
+	helpMenu, _ := walk.NewMenu()
+	helpMenuAction, _ := mw.Menu().Actions().AddMenu(helpMenu)
+	helpMenuAction.SetText("Help")
 
 	aboutAction := walk.NewAction()
-	panicIfErr(aboutAction.SetText("About"))
+	aboutAction.SetText("About")
 	aboutAction.Triggered().Attach(func() {
 		walk.MsgBox(mw, "About", "Walk Web Browser Example", walk.MsgBoxOK|walk.MsgBoxIconInformation)
 	})
-	panicIfErr(helpMenu.Actions().Add(aboutAction))
+	helpMenu.Actions().Add(aboutAction)
 
-	mw.urlLineEdit, err = walk.NewLineEdit(mw.ClientArea())
-	panicIfErr(err)
+	mw.urlLineEdit, _ = walk.NewLineEdit(mw.ClientArea())
 	mw.urlLineEdit.ReturnPressed().Attach(func() {
-		panicIfErr(mw.webView.SetURL(mw.urlLineEdit.Text()))
+		mw.webView.SetURL(mw.urlLineEdit.Text())
 	})
 
-	mw.webView, err = walk.NewWebView(mw.ClientArea())
-	panicIfErr(err)
+	mw.webView, _ = walk.NewWebView(mw.ClientArea())
 
-	panicIfErr(mw.webView.SetURL("http://golang.org"))
+	mw.webView.SetURL("http://golang.org")
 
-	panicIfErr(mw.SetMinMaxSize(walk.Size{600, 400}, walk.Size{}))
-	panicIfErr(mw.SetSize(walk.Size{800, 600}))
+	mw.SetMinMaxSize(walk.Size{600, 400}, walk.Size{})
+	mw.SetSize(walk.Size{800, 600})
 	mw.Show()
 
 	os.Exit(mw.Run())

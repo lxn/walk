@@ -6,7 +6,6 @@ package walk
 
 import (
 	"bytes"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -239,7 +238,6 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err os.Error) {
 						}
 
 						if e := s.draggedHandle.SetX(xnew); e != nil {
-							log.Println(e)
 							return
 						}
 					} else {
@@ -253,7 +251,6 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err os.Error) {
 						}
 
 						if e := s.draggedHandle.SetY(ynew); e != nil {
-							log.Println(e)
 							return
 						}
 					}
@@ -297,12 +294,10 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err os.Error) {
 						}
 
 						if e := prev.SetBounds(bp); e != nil {
-							log.Println(e)
 							return
 						}
 
 						if e := next.SetBounds(bn); e != nil {
-							log.Println(e)
 							return
 						}
 

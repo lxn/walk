@@ -43,14 +43,14 @@ func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) os.Error) 
 
 	dirPath := path.Join(appDataPath, appSingleton.OrganizationName(), appSingleton.ProductName())
 	if err := os.MkdirAll(dirPath, 0644); err != nil {
-		return err
+		return wrapError(err)
 	}
 
 	filePath := path.Join(dirPath, "settings.ini")
 
 	file, err := os.Open(filePath, flags, 0644)
 	if err != nil {
-		return err
+		return wrapError(err)
 	}
 	defer file.Close()
 
@@ -68,7 +68,10 @@ func (ifs *IniFileSettings) Load() os.Error {
 			for {
 				ln, isPrefix, err := lineReader.ReadLine()
 				if err != nil {
-					return err
+					if err == os.EOF {
+						return nil
+					}
+					return wrapError(err)
 				}
 
 				lineBytes = append(lineBytes, ln...)
@@ -100,16 +103,16 @@ func (ifs *IniFileSettings) Save() os.Error {
 
 		for key, val := range ifs.data {
 			if _, err := bufWriter.WriteString(key); err != nil {
-				return err
+				return wrapError(err)
 			}
 			if err := bufWriter.WriteByte('='); err != nil {
-				return err
+				return wrapError(err)
 			}
 			if _, err := bufWriter.WriteString(val); err != nil {
-				return err
+				return wrapError(err)
 			}
 			if err := bufWriter.WriteByte('\n'); err != nil {
-				return err
+				return wrapError(err)
 			}
 		}
 

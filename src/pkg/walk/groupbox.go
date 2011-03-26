@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"log"
 	"os"
 	"syscall"
 )
@@ -145,14 +144,12 @@ func (gb *GroupBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 		case WM_SIZE, WM_SIZING:
 			wbcb := gb.WidgetBase.ClientBounds()
 			if !MoveWindow(gb.hWndGroupBox, wbcb.X, wbcb.Y, wbcb.Width, wbcb.Height, true) {
-				log.Print(lastError("MoveWindow"))
+				lastError("MoveWindow")
 				break
 			}
 
 			gbcb := gb.ClientBounds()
-			if err := gb.composite.SetBounds(gbcb); err != nil {
-				log.Print(err)
-			}
+			gb.composite.SetBounds(gbcb)
 		}
 	}
 

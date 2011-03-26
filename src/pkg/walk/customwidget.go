@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"log"
 	"os"
 )
 
@@ -71,7 +70,7 @@ func (cw *CustomWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uin
 	switch msg {
 	case WM_PAINT:
 		if cw.paint == nil {
-			log.Print(newError("paint func is nil"))
+			newError("paint func is nil")
 			break
 		}
 
@@ -79,14 +78,14 @@ func (cw *CustomWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uin
 
 		hdc := BeginPaint(cw.hWnd, &ps)
 		if hdc == 0 {
-			log.Print(newError("BeginPaint failed"))
+			newError("BeginPaint failed")
 			break
 		}
 		defer EndPaint(cw.hWnd, &ps)
 
 		canvas, err := newCanvasFromHDC(hdc)
 		if err != nil {
-			log.Print(newError("newCanvasFromHDC failed"))
+			newError("newCanvasFromHDC failed")
 			break
 		}
 		defer canvas.Dispose()
@@ -94,7 +93,7 @@ func (cw *CustomWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uin
 		r := &ps.RcPaint
 		err = cw.paint(canvas, Rectangle{r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top})
 		if err != nil {
-			log.Print(newError("paint failed"))
+			newError("paint failed")
 			break
 		}
 

@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"log"
 	"os"
 	"strconv"
 	"syscall"
@@ -195,13 +194,13 @@ func (tw *TabWidget) RestoreState() os.Error {
 func (tw *TabWidget) resizePages() {
 	var r RECT
 	if !GetWindowRect(tw.hWndTab, &r) {
-		log.Println(lastError("GetWindowRect"))
+		lastError("GetWindowRect")
 		return
 	}
 
 	p := POINT{r.Left, r.Top}
 	if !ScreenToClient(tw.hWnd, &p) {
-		log.Println(newError("ScreenToClient failed"))
+		newError("ScreenToClient failed")
 		return
 	}
 
@@ -211,7 +210,6 @@ func (tw *TabWidget) resizePages() {
 
 	for _, page := range tw.pages.items {
 		if err := page.SetBounds(Rectangle{r.Left - 2, r.Top, r.Right - r.Left + 2, r.Bottom - r.Top}); err != nil {
-			log.Println(err)
 			return
 		}
 	}
@@ -220,7 +218,7 @@ func (tw *TabWidget) resizePages() {
 func (tw *TabWidget) onResize(lParam uintptr) {
 	r := RECT{0, 0, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)}
 	if !MoveWindow(tw.hWndTab, r.Left, r.Top, r.Right-r.Left, r.Bottom-r.Top, true) {
-		log.Println(lastError("MoveWindow"))
+		lastError("MoveWindow")
 		return
 	}
 

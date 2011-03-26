@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"log"
 	"os"
 	"syscall"
 	"unsafe"
@@ -179,7 +178,6 @@ func (dlg *Dialog) focusFirstCandidateDescendant() {
 	}
 
 	if err := widget.SetFocus(); err != nil {
-		log.Print(err)
 		return
 	}
 
