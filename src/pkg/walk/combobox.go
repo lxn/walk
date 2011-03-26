@@ -5,6 +5,7 @@
 package walk
 
 import (
+	"log"
 	"os"
 	"syscall"
 	"unsafe"
@@ -12,6 +13,7 @@ import (
 
 import (
 	. "walk/winapi"
+	. "walk/winapi/gdi32"
 	. "walk/winapi/user32"
 )
 
@@ -21,6 +23,7 @@ var _ subclassedWidget = &ComboBox{}
 type ComboBox struct {
 	WidgetBase
 	items                        *ComboBoxItemList
+	maxItemTextWidth             int
 	prevCurIndex                 int
 	currentIndexChangedPublisher EventPublisher
 }
@@ -55,7 +58,45 @@ func (*ComboBox) LayoutFlags() LayoutFlags {
 }
 
 func (cb *ComboBox) SizeHint() Size {
-	return cb.dialogBaseUnitsToPixels(Size{50, 12})
+	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 12})
+
+	if cb.items != nil && cb.maxItemTextWidth <= 0 {
+		cb.maxItemTextWidth = cb.calculateMaxItemTextWidth()
+	}
+
+	// FIXME: Use GetThemePartSize instead of guessing
+	w := maxi(defaultSize.Width, cb.maxItemTextWidth+24)
+	h := defaultSize.Height + 1
+
+	return Size{w, h}
+}
+
+func (cb *ComboBox) calculateMaxItemTextWidth() int {
+	hdc := GetDC(cb.hWnd)
+	if hdc == 0 {
+		log.Print(newError("GetDC failed"))
+		return -1
+	}
+	defer ReleaseDC(cb.hWnd, hdc)
+
+	hFontOld := SelectObject(hdc, HGDIOBJ(cb.Font().handleForDPI(0)))
+	defer SelectObject(hdc, hFontOld)
+
+	var maxWidth int
+
+	for _, item := range cb.items.items {
+		var s SIZE
+		str := syscall.StringToUTF16(item.Text())
+
+		if !GetTextExtentPoint32(hdc, &str[0], len(str)-1, &s) {
+			log.Print(newError("GetTextExtentPoint32 failed"))
+			return -1
+		}
+
+		maxWidth = maxi(maxWidth, s.CX)
+	}
+
+	return maxWidth
 }
 
 func (cb *ComboBox) Items() *ComboBoxItemList {
@@ -118,30 +159,34 @@ func (cb *ComboBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 	return cb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
-func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) (err os.Error) {
+func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) os.Error {
 	if CB_ERR == SendMessage(cb.hWnd, CB_INSERTSTRING, uintptr(index), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item.text)))) {
-		err = newError("CB_INSERTSTRING failed")
+		return newError("CB_INSERTSTRING failed")
 	}
 
-	return
+	cb.maxItemTextWidth = 0
+
+	return nil
 }
 
-func (cb *ComboBox) onRemovingComboBoxItem(index int, item *ComboBoxItem) (err os.Error) {
+func (cb *ComboBox) onRemovingComboBoxItem(index int, item *ComboBoxItem) os.Error {
 	if CB_ERR == SendMessage(cb.hWnd, CB_DELETESTRING, uintptr(index), 0) {
-		err = newError("CB_DELETESTRING failed")
+		return newError("CB_DELETESTRING failed")
 	}
 
+	cb.maxItemTextWidth = 0
 	if index == cb.prevCurIndex {
 		cb.prevCurIndex = -1
 	}
 
-	return
+	return nil
 }
 
-func (cb *ComboBox) onClearingComboBoxItems() (err os.Error) {
+func (cb *ComboBox) onClearingComboBoxItems() os.Error {
 	SendMessage(cb.hWnd, CB_RESETCONTENT, 0, 0)
 
+	cb.maxItemTextWidth = 0
 	cb.prevCurIndex = -1
 
-	return
+	return nil
 }

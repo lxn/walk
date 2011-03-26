@@ -27,7 +27,15 @@ func (b *Button) Text() string {
 }
 
 func (b *Button) SetText(value string) os.Error {
-	return setWidgetText(b.hWnd, value)
+	if value == b.Text() {
+		return nil
+	}
+
+	if err := setWidgetText(b.hWnd, value); err != nil {
+		return err
+	}
+
+	return b.updateParentLayout()
 }
 
 func (b *Button) Checked() bool {

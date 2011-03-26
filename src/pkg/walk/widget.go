@@ -619,6 +619,14 @@ func (wb *WidgetBase) calculateTextSize() Size {
 	return size
 }
 
+func (wb *WidgetBase) updateParentLayout() os.Error {
+	if wb.parent == nil || wb.parent.Layout() == nil {
+		return nil
+	}
+
+	return wb.parent.Layout().Update(false)
+}
+
 func (wb *WidgetBase) Size() Size {
 	return wb.Bounds().Size()
 }

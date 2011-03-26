@@ -47,5 +47,12 @@ func (*CheckBox) LayoutFlags() LayoutFlags {
 }
 
 func (cb *CheckBox) SizeHint() Size {
-	return cb.dialogBaseUnitsToPixels(Size{50, 10})
+	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 10})
+	textSize := cb.calculateTextSize()
+
+	// FIXME: Use GetThemePartSize instead of GetSystemMetrics?
+	w := textSize.Width + GetSystemMetrics(SM_CXMENUCHECK)
+	h := maxi(defaultSize.Height, textSize.Height)
+
+	return Size{w, h}
 }

@@ -47,5 +47,12 @@ func (*RadioButton) LayoutFlags() LayoutFlags {
 }
 
 func (rb *RadioButton) SizeHint() Size {
-	return rb.dialogBaseUnitsToPixels(Size{50, 10})
+	defaultSize := rb.dialogBaseUnitsToPixels(Size{50, 10})
+	textSize := rb.calculateTextSize()
+
+	// FIXME: Use GetThemePartSize instead of GetSystemMetrics?
+	w := textSize.Width + GetSystemMetrics(SM_CXMENUCHECK)
+	h := maxi(defaultSize.Height, textSize.Height)
+
+	return Size{w, h}
 }

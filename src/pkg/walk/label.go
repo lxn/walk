@@ -59,5 +59,13 @@ func (l *Label) Text() string {
 }
 
 func (l *Label) SetText(value string) os.Error {
-	return setWidgetText(l.hWnd, value)
+	if value == l.Text() {
+		return nil
+	}
+
+	if err := setWidgetText(l.hWnd, value); err != nil {
+		return err
+	}
+
+	return l.updateParentLayout()
 }

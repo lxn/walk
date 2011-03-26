@@ -110,7 +110,7 @@ func (*NumberEdit) LayoutFlags() LayoutFlags {
 }
 
 func (ne *NumberEdit) MinSizeHint() Size {
-	s := ne.dialogBaseUnitsToPixels(Size{10, 12})
+	s := ne.dialogBaseUnitsToPixels(Size{20, 12})
 	return Size{s.Width, maxi(s.Height, 22)}
 }
 
