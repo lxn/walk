@@ -73,6 +73,12 @@ func (te *TextEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 	case WM_GETDLGCODE:
 		result := CallWindowProc(textEditOrigWndProcPtr, hwnd, msg, wParam, lParam)
 		return result &^ DLGC_HASSETSEL
+
+	case WM_KEYDOWN:
+		if wParam == VK_ESCAPE {
+			// Suppress weird parent destruction behavior.
+			return 0
+		}
 	}
 
 	return te.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
