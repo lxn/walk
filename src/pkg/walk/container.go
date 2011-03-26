@@ -239,9 +239,21 @@ func (cb *ContainerBase) onRemovedWidget(index int, widget Widget) (err os.Error
 }
 
 func (cb *ContainerBase) onClearingWidgets() (err os.Error) {
-	panic("not implemented")
+	for _, widget := range cb.children.items {
+		if widget.Parent().BaseWidget().hWnd == cb.hWnd {
+			if err = widget.SetParent(nil); err != nil {
+				return
+			}
+		}
+	}
+
+	return
 }
 
 func (cb *ContainerBase) onClearedWidgets() (err os.Error) {
-	panic("not implemented")
+	if cb.layout != nil {
+		cb.layout.Update(true)
+	}
+
+	return
 }
