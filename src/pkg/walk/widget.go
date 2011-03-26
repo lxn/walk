@@ -889,8 +889,8 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintp
 
 		if contextMenu != nil {
 			TrackPopupMenuEx(contextMenu.hMenu, TPM_NOANIMATION, x, y, rootWidget(sourceWidget).BaseWidget().hWnd, nil)
+			return 0
 		}
-		return 0
 
 	case WM_KEYDOWN:
 		wb.keyDownPublisher.Publish(int(wParam))
