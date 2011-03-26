@@ -23,7 +23,7 @@ type UI struct {
 	Class         string
 	Widget        Widget
 	CustomWidgets CustomWidgets
-	TabStops      TabStops
+	TabStops      []string "tabstops>tabstop"
 }
 
 type Widget struct {
@@ -102,14 +102,6 @@ type CustomWidgets struct {
 type CustomWidget struct {
 	Class   string
 	Extends string
-}
-
-type TabStops struct {
-	TabStop []TabStop
-}
-
-type TabStop struct {
-	TabStop string
 }
 
 func logFatal(err os.Error) {
@@ -809,6 +801,15 @@ func generateCode(buf *bytes.Buffer, ui *UI) os.Error {
 		if err := writeLayoutInitialization(buf, ui.Widget.Layout, &ui.Widget, qualifiedParent); err != nil {
 			return err
 		}
+	}
+
+	buf.WriteString("\n// Tab order\n")
+	for i := len(ui.TabStops) - 1; i >= 0; i-- {
+		buf.WriteString(fmt.Sprintf(`if err = w.ui.%s.BringToTop(); err != nil {
+			return err
+		}
+		`,
+			ui.TabStops[i]))
 	}
 
 	// end func

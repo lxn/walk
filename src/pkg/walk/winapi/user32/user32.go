@@ -1116,6 +1116,7 @@ var (
 	enableWindow         uintptr
 	endDeferWindowPos    uintptr
 	endPaint             uintptr
+	enumChildWindows     uintptr
 	getAncestor          uintptr
 	getClientRect        uintptr
 	getDC                uintptr
@@ -1187,6 +1188,7 @@ func init() {
 	enableWindow = MustGetProcAddress(lib, "EnableWindow")
 	endDeferWindowPos = MustGetProcAddress(lib, "EndDeferWindowPos")
 	endPaint = MustGetProcAddress(lib, "EndPaint")
+	enumChildWindows = MustGetProcAddress(lib, "EnumChildWindows")
 	getAncestor = MustGetProcAddress(lib, "GetAncestor")
 	getClientRect = MustGetProcAddress(lib, "GetClientRect")
 	getDC = MustGetProcAddress(lib, "GetDC")
@@ -1403,6 +1405,15 @@ func EndPaint(hwnd HWND, lpPaint *PAINTSTRUCT) bool {
 		uintptr(hwnd),
 		uintptr(unsafe.Pointer(lpPaint)),
 		0)
+
+	return ret != 0
+}
+
+func EnumChildWindows(hWndParent HWND, lpEnumFunc, lParam uintptr) bool {
+	ret, _, _ := syscall.Syscall(enumChildWindows, 3,
+		uintptr(hWndParent),
+		lpEnumFunc,
+		lParam)
 
 	return ret != 0
 }

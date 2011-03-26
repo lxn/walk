@@ -7,6 +7,8 @@ package walk
 import (
 	"log"
 	"os"
+	"syscall"
+	"unsafe"
 )
 
 import (
@@ -137,27 +139,33 @@ func (dlg *Dialog) Close(result int) {
 	dlg.TopLevelWindow.Close()
 }
 
-func firstFocusableDescendant(container Container) Widget {
-	for _, widget := range container.Children().items {
-		if !widget.Visible() || !widget.Enabled() {
-			continue
-		}
+func firstFocusableDescendantCallback(hwnd HWND, lParam uintptr) int {
+	widget := widgetFromHWND(hwnd)
 
-		if c, ok := widget.(Container); ok {
-			if w := firstFocusableDescendant(c); w != nil {
-				return w
-			}
-		} else {
-			style := uint(GetWindowLong(widget.BaseWidget().hWnd, GWL_STYLE))
-			// FIXME: Ugly workaround for NumberEdit
-			_, isTextSelectable := widget.(textSelectable)
-			if style&WS_TABSTOP > 0 || isTextSelectable {
-				return widget
-			}
-		}
+	if widget == nil || !widget.Visible() || !widget.Enabled() {
+		return 1
 	}
 
-	return nil
+	style := uint(GetWindowLong(hwnd, GWL_STYLE))
+	// FIXME: Ugly workaround for NumberEdit
+	_, isTextSelectable := widget.(textSelectable)
+	if style&WS_TABSTOP > 0 || isTextSelectable {
+		hwndPtr := (*HWND)(unsafe.Pointer(lParam))
+		*hwndPtr = hwnd
+		return 0
+	}
+
+	return 1
+}
+
+var firstFocusableDescendantCallbackPtr = syscall.NewCallback(firstFocusableDescendantCallback)
+
+func firstFocusableDescendant(container Container) Widget {
+	var hwnd HWND
+
+	EnumChildWindows(container.BaseWidget().hWnd, firstFocusableDescendantCallbackPtr, uintptr(unsafe.Pointer(&hwnd)))
+
+	return widgetFromHWND(hwnd)
 }
 
 type textSelectable interface {

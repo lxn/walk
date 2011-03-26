@@ -37,6 +37,7 @@ type Widget interface {
 	Background() Brush
 	BaseWidget() *WidgetBase
 	Bounds() Rectangle
+	BringToTop() os.Error
 	ClientBounds() Rectangle
 	ContextMenu() *Menu
 	CreateCanvas() (*Canvas, os.Error)
@@ -485,6 +486,20 @@ func (wb *WidgetBase) SetVisible(visible bool) {
 		cmd = SW_HIDE
 	}
 	ShowWindow(wb.hWnd, cmd)
+}
+
+func (wb *WidgetBase) BringToTop() os.Error {
+	if wb.parent != nil {
+		if err := wb.parent.BringToTop(); err != nil {
+			return err
+		}
+	}
+
+	if !SetWindowPos(wb.hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOSIZE) {
+		return lastError("SetWindowPos")
+	}
+
+	return nil
 }
 
 func (wb *WidgetBase) Bounds() Rectangle {
