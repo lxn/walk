@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	LogErrors    bool
-	PanicOnError bool
+	logErrors    bool
+	panicOnError bool
 )
 
 type Error struct {
@@ -57,11 +57,11 @@ func (err *Error) String() string {
 }
 
 func processError(err os.Error) os.Error {
-	if LogErrors {
+	if logErrors {
 		log.Print(err)
 	}
 
-	if PanicOnError {
+	if panicOnError {
 		panic(err)
 	}
 

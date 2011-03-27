@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"runtime"
 	"time"
 )
 
@@ -135,9 +134,8 @@ func newTreeViewItem(text string) *walk.TreeViewItem {
 }
 
 func main() {
-	runtime.LockOSThread()
-
-	walk.PanicOnError = true
+	walk.Initialize(walk.InitParams{PanicOnError: true})
+	defer walk.Shutdown()
 
 	mainWnd, _ := walk.NewMainWindow()
 

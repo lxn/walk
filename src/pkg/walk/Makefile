@@ -85,6 +85,7 @@ GOFILES=\
 	treeviewitemlist.go\
 	util.go\
 	validators.go\
+	walk.go\
 	webview.go\
 	webview_dwebbrowserevents2.go\
 	webview_idochostuihandler.go\

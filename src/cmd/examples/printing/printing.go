@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"runtime"
 )
 
 import (
@@ -14,9 +13,8 @@ import (
 )
 
 func main() {
-	runtime.LockOSThread()
-
-	walk.PanicOnError = true
+	walk.Initialize(walk.InitParams{PanicOnError: true})
+	defer walk.Shutdown()
 
 	doc := walk.NewDocument("Walk Printing Example")
 	defer doc.Dispose()

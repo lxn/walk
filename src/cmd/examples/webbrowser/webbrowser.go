@@ -6,7 +6,6 @@ package main
 
 import (
 	"os"
-	"runtime"
 )
 
 import (
@@ -20,9 +19,8 @@ type MainWindow struct {
 }
 
 func main() {
-	runtime.LockOSThread()
-
-	walk.PanicOnError = true
+	walk.Initialize(walk.InitParams{PanicOnError: true})
+	defer walk.Shutdown()
 
 	mainWnd, _ := walk.NewMainWindow()
 

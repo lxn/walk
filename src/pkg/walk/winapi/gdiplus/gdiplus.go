@@ -163,7 +163,7 @@ func init() {
 	// Startup and remember token for shutdown.
 	var si GdiplusStartupInput
 	si.GdiplusVersion = 1
-	if status := GdiplusStartup(&token, &si, nil); status != Ok {
+	if status := GdiplusStartup(&si, nil); status != Ok {
 		panic("GdiplusStartup failed with status " + status.String())
 	}
 }
@@ -205,16 +205,16 @@ func GdipDisposeImage(image *GpImage) GpStatus {
 	return GpStatus(ret)
 }
 
-func GdiplusShutdown(token uintptr) {
+func GdiplusShutdown() {
 	syscall.Syscall(gdiplusShutdown, 1,
 		token,
 		0,
 		0)
 }
 
-func GdiplusStartup(token *uintptr, input *GdiplusStartupInput, output *GdiplusStartupOutput) GpStatus {
+func GdiplusStartup(input *GdiplusStartupInput, output *GdiplusStartupOutput) GpStatus {
 	ret, _, _ := syscall.Syscall(gdiplusStartup, 3,
-		uintptr(unsafe.Pointer(token)),
+		uintptr(unsafe.Pointer(&token)),
 		uintptr(unsafe.Pointer(input)),
 		uintptr(unsafe.Pointer(output)))
 
