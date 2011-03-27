@@ -228,8 +228,15 @@ func initChildWidget(widget widgetInternal, parent Widget, className string, sty
 	}
 
 	if container, ok := parent.(Container); ok {
-		if err := container.Children().Add(widget); err != nil {
-			return err
+		if container.Children() == nil {
+			// Required by parents like MainWindow and GroupBox.
+			if SetParent(widget.BaseWidget().hWnd, container.BaseWidget().hWnd) == 0 {
+				return lastError("SetParent")
+			}
+		} else {
+			if err := container.Children().Add(widget); err != nil {
+				return err
+			}
 		}
 	}
 

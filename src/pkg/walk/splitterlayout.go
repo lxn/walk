@@ -115,8 +115,6 @@ func (l *splitterLayout) spaceForRegularWidgets() int {
 }
 
 func (l *splitterLayout) reset() {
-	space := l.spaceForRegularWidgets()
-
 	children := l.container.Children()
 	regularCount := children.Len()/2 + children.Len()%2
 
@@ -132,13 +130,10 @@ func (l *splitterLayout) reset() {
 		return
 	}
 
-	splitter := l.container.(*Splitter)
-	handleWidth := splitter.HandleWidth()
-	handlesFraction := float64((regularCount-1)*handleWidth) / float64(space+(regularCount-1)*handleWidth)
-	regularWidgetsFraction := (1 - handlesFraction) / float64(regularCount)
+	fraction := 1 / float64(regularCount)
 
 	for i := 0; i < regularCount; i++ {
-		l.fractions[i] = regularWidgetsFraction
+		l.fractions[i] = fraction
 	}
 }
 
@@ -165,15 +160,13 @@ func (l *splitterLayout) Update(reset bool) os.Error {
 	splitter := l.container.(*Splitter)
 	handleWidth := splitter.HandleWidth()
 	sizes := make([]int, len(widgets))
-	cb := l.container.ClientBounds()
+	cb := splitter.ClientBounds()
+	space1 := l.spaceForRegularWidgets()
 
-	var space1 int
 	var space2 int
 	if l.orientation == Horizontal {
-		space1 = cb.Width
 		space2 = cb.Height
 	} else {
-		space1 = cb.Height
 		space2 = cb.Width
 	}
 

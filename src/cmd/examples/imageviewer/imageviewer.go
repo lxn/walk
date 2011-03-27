@@ -71,10 +71,10 @@ func main() {
 	mainWnd, _ := walk.NewMainWindow()
 
 	mw := &MainWindow{MainWindow: mainWnd}
-	mw.ClientArea().SetLayout(walk.NewVBoxLayout())
+	mw.SetLayout(walk.NewVBoxLayout())
 	mw.SetTitle("Walk Image Viewer Example")
 
-	mw.tabWidget, _ = walk.NewTabWidget(mw.ClientArea())
+	mw.tabWidget, _ = walk.NewTabWidget(mw)
 
 	imageList, _ := walk.NewImageList(walk.Size{16, 16}, 0)
 	mw.ToolBar().SetImageList(imageList)

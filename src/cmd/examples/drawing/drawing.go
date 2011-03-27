@@ -85,9 +85,9 @@ func main() {
 	mw := &MainWindow{MainWindow: mainWnd}
 	mw.SetTitle("Walk Drawing Example")
 
-	mw.ClientArea().SetLayout(walk.NewVBoxLayout())
+	mw.SetLayout(walk.NewVBoxLayout())
 
-	mw.paintWidget, _ = walk.NewCustomWidget(mw.ClientArea(), 0, func(canvas *walk.Canvas, updateBounds walk.Rectangle) os.Error {
+	mw.paintWidget, _ = walk.NewCustomWidget(mw, 0, func(canvas *walk.Canvas, updateBounds walk.Rectangle) os.Error {
 		return mw.drawStuff(canvas, updateBounds)
 	})
 	mw.paintWidget.SetClearsBackground(true)

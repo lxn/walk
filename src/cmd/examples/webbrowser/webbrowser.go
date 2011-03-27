@@ -20,7 +20,7 @@ func main() {
 
 	mw := &MainWindow{MainWindow: mainWnd}
 	mw.SetTitle("Walk Web Browser Example")
-	mw.ClientArea().SetLayout(walk.NewVBoxLayout())
+	mw.SetLayout(walk.NewVBoxLayout())
 
 	fileMenu, _ := walk.NewMenu()
 	fileMenuAction, _ := mw.Menu().Actions().AddMenu(fileMenu)
@@ -42,12 +42,12 @@ func main() {
 	})
 	helpMenu.Actions().Add(aboutAction)
 
-	mw.urlLineEdit, _ = walk.NewLineEdit(mw.ClientArea())
+	mw.urlLineEdit, _ = walk.NewLineEdit(mw)
 	mw.urlLineEdit.ReturnPressed().Attach(func() {
 		mw.webView.SetURL(mw.urlLineEdit.Text())
 	})
 
-	mw.webView, _ = walk.NewWebView(mw.ClientArea())
+	mw.webView, _ = walk.NewWebView(mw)
 
 	mw.webView.SetURL("http://golang.org")
 

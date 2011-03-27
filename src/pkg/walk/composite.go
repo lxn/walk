@@ -21,15 +21,13 @@ type Composite struct {
 }
 
 func newCompositeWithStyle(parent Container, style uint) (*Composite, os.Error) {
-	if parent == nil {
-		return nil, newError("parent cannot be nil")
-	}
-
 	ensureRegisteredWindowClass(compositeWindowClass, &compositeWindowClassRegistered)
 
 	c := &Composite{}
+	c.children = newWidgetList(c)
+	c.SetPersistent(true)
 
-	if err := initWidget(
+	if err := initChildWidget(
 		c,
 		parent,
 		compositeWindowClass,
@@ -37,31 +35,6 @@ func newCompositeWithStyle(parent Container, style uint) (*Composite, os.Error) 
 		WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			c.Dispose()
-		}
-	}()
-
-	c.SetPersistent(true)
-
-	c.children = newWidgetList(c)
-
-	if parent.Children() == nil {
-		// This may happen if the composite is (ab)used to implement 
-		// Container semantics for some other widgets like GroupBox.
-		if SetParent(c.hWnd, parent.BaseWidget().hWnd) == 0 {
-			return nil, lastError("SetParent")
-		}
-	} else {
-		if err := parent.Children().Add(c); err != nil {
-			return nil, err
-		}
-	}
-
-	succeeded = true
 
 	return c, nil
 }

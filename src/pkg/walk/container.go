@@ -94,6 +94,10 @@ func (cb *ContainerBase) SetLayout(value Layout) os.Error {
 }
 
 func (cb *ContainerBase) forEachPersistableChild(f func(p Persistable) os.Error) os.Error {
+	if cb.children == nil {
+		return nil
+	}
+
 	for _, child := range cb.children.items {
 		if persistable, ok := child.(Persistable); ok && persistable.Persistent() {
 			if err := f(persistable); err != nil {

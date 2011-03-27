@@ -27,16 +27,11 @@ const (
 type TopLevelWindow struct {
 	ContainerBase
 	owner             RootWidget
-	clientArea        *Composite
 	closingPublisher  CloseEventPublisher
 	closeReason       CloseReason
 	prevFocusHWnd     HWND
 	isInRestoreState  bool
 	startingPublisher EventPublisher
-}
-
-func (tlw *TopLevelWindow) ClientArea() *Composite {
-	return tlw.clientArea
 }
 
 func (tlw *TopLevelWindow) LayoutFlags() LayoutFlags {
@@ -94,7 +89,6 @@ func (tlw *TopLevelWindow) Show() {
 }
 
 func (tlw *TopLevelWindow) close() os.Error {
-	// FIXME: Remove this and children from widgetsByHWnd
 	tlw.Dispose()
 
 	return nil

@@ -139,7 +139,7 @@ func main() {
 
 	mw := &MainWindow{MainWindow: mainWnd}
 	mw.SetTitle("Walk File Browser Example")
-	mw.ClientArea().SetLayout(walk.NewHBoxLayout())
+	mw.SetLayout(walk.NewHBoxLayout())
 
 	fileMenu, _ := walk.NewMenu()
 	fileMenuAction, _ := mw.Menu().Actions().AddMenu(fileMenu)
@@ -161,10 +161,9 @@ func main() {
 	})
 	helpMenu.Actions().Add(aboutAction)
 
-	splitter, _ := walk.NewSplitter(mw.ClientArea())
+	splitter, _ := walk.NewSplitter(mw)
 
 	mw.treeView, _ = walk.NewTreeView(splitter)
-	mw.treeView.SetMinMaxSize(walk.Size{}, walk.Size{200, 0})
 
 	mw.treeView.ItemExpanded().Attach(func(item *walk.TreeViewItem) {
 		children := item.Children()
@@ -189,7 +188,6 @@ func main() {
 
 	mw.listView, _ = walk.NewListView(splitter)
 	mw.listView.SetSingleItemSelection(true)
-	mw.listView.SetMinMaxSize(walk.Size{}, walk.Size{422, 0})
 
 	mw.listView.CurrentIndexChanged().Attach(func() {
 		index := mw.listView.CurrentIndex()

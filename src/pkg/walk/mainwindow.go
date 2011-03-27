@@ -19,8 +19,9 @@ var mainWindowWindowClassRegistered bool
 
 type MainWindow struct {
 	TopLevelWindow
-	menu    *Menu
-	toolBar *ToolBar
+	menu            *Menu
+	toolBar         *ToolBar
+	clientComposite *Composite
 }
 
 func NewMainWindow() (*MainWindow, os.Error) {
@@ -46,12 +47,7 @@ func NewMainWindow() (*MainWindow, os.Error) {
 
 	mw.SetPersistent(true)
 
-	mw.children = newWidgetList(mw)
-
-	err := mw.SetLayout(NewVBoxLayout())
-	if err != nil {
-		return nil, err
-	}
+	var err os.Error
 
 	if mw.menu, err = newMenuBar(); err != nil {
 		return nil, err
@@ -62,10 +58,10 @@ func NewMainWindow() (*MainWindow, os.Error) {
 		return nil, err
 	}
 
-	if mw.clientArea, err = NewComposite(mw); err != nil {
+	if mw.clientComposite, err = NewComposite(mw); err != nil {
 		return nil, err
 	}
-	mw.clientArea.SetName("clientArea")
+	mw.clientComposite.SetName("clientComposite")
 
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	SendMessage(mw.hWnd, WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
@@ -73,6 +69,30 @@ func NewMainWindow() (*MainWindow, os.Error) {
 	succeeded = true
 
 	return mw, nil
+}
+
+func (mw *MainWindow) Children() *WidgetList {
+	if mw.clientComposite == nil {
+		return nil
+	}
+
+	return mw.clientComposite.Children()
+}
+
+func (mw *MainWindow) Layout() Layout {
+	if mw.clientComposite == nil {
+		return nil
+	}
+
+	return mw.clientComposite.Layout()
+}
+
+func (mw *MainWindow) SetLayout(value Layout) os.Error {
+	if mw.clientComposite == nil {
+		return newError("clientComposite not initialized")
+	}
+
+	return mw.clientComposite.SetLayout(value)
 }
 
 func (mw *MainWindow) Menu() *Menu {
@@ -100,6 +120,8 @@ func (mw *MainWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintp
 	switch msg {
 	case WM_SIZE, WM_SIZING:
 		SendMessage(mw.toolBar.hWnd, TB_AUTOSIZE, 0, 0)
+
+		mw.clientComposite.SetBounds(mw.ClientBounds())
 	}
 
 	return mw.TopLevelWindow.wndProc(hwnd, msg, wParam, lParam)
