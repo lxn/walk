@@ -4,13 +4,9 @@
 
 package main
 
-import (
-	"os"
-)
+import "os"
 
-import (
-	"walk"
-)
+import "walk"
 
 type MainWindow struct {
 	*walk.MainWindow
@@ -101,5 +97,5 @@ func main() {
 	mw.SetSize(walk.Size{800, 600})
 	mw.Show()
 
-	os.Exit(mw.Run())
+	mw.Run()
 }

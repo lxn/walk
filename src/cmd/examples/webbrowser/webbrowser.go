@@ -4,13 +4,7 @@
 
 package main
 
-import (
-	"os"
-)
-
-import (
-	"walk"
-)
+import "walk"
 
 type MainWindow struct {
 	*walk.MainWindow
@@ -30,19 +24,19 @@ func main() {
 
 	fileMenu, _ := walk.NewMenu()
 	fileMenuAction, _ := mw.Menu().Actions().AddMenu(fileMenu)
-	fileMenuAction.SetText("File")
+	fileMenuAction.SetText("&File")
 
 	exitAction := walk.NewAction()
-	exitAction.SetText("Exit")
+	exitAction.SetText("E&xit")
 	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
 	fileMenu.Actions().Add(exitAction)
 
 	helpMenu, _ := walk.NewMenu()
 	helpMenuAction, _ := mw.Menu().Actions().AddMenu(helpMenu)
-	helpMenuAction.SetText("Help")
+	helpMenuAction.SetText("&Help")
 
 	aboutAction := walk.NewAction()
-	aboutAction.SetText("About")
+	aboutAction.SetText("&About")
 	aboutAction.Triggered().Attach(func() {
 		walk.MsgBox(mw, "About", "Walk Web Browser Example", walk.MsgBoxOK|walk.MsgBoxIconInformation)
 	})
@@ -61,5 +55,5 @@ func main() {
 	mw.SetSize(walk.Size{800, 600})
 	mw.Show()
 
-	os.Exit(mw.Run())
+	mw.Run()
 }

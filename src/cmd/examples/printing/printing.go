@@ -4,13 +4,9 @@
 
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
-import (
-	"walk"
-)
+import "walk"
 
 func main() {
 	walk.Initialize(walk.InitParams{PanicOnError: true})
