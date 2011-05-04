@@ -21,9 +21,7 @@ type Metafile struct {
 }
 
 func NewMetafile(referenceCanvas *Canvas) (*Metafile, os.Error) {
-	var rc RECT
-
-	hdc := CreateEnhMetaFile(referenceCanvas.hdc, nil, &rc, nil)
+	hdc := CreateEnhMetaFile(referenceCanvas.hdc, nil, nil, nil)
 	if hdc == 0 {
 		return nil, newError("CreateEnhMetaFile failed")
 	}
