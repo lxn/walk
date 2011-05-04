@@ -34,7 +34,7 @@ func (mw *MainWindow) populateTreeViewItem(parent *walk.TreeViewItem) {
 
 	dirPath := pathForTreeViewItem(parent)
 
-	dir, err := os.Open(dirPath, os.O_RDONLY, 0)
+	dir, err := os.Open(dirPath)
 	if err != nil {
 		mw.showError(err)
 		return
@@ -62,7 +62,7 @@ func (mw *MainWindow) populateListView(dirPath string) {
 
 	mw.listView.Items().Clear()
 
-	dir, err := os.Open(dirPath, os.O_RDONLY, 0)
+	dir, err := os.Open(dirPath)
 	if err != nil {
 		mw.showError(err)
 		return

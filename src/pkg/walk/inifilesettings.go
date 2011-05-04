@@ -48,7 +48,7 @@ func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) os.Error) 
 
 	filePath := path.Join(dirPath, "settings.ini")
 
-	file, err := os.Open(filePath, flags, 0644)
+	file, err := os.OpenFile(filePath, flags, 0644)
 	if err != nil {
 		return wrapError(err)
 	}
