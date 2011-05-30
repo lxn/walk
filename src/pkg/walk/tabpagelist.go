@@ -17,8 +17,8 @@ type tabPageListObserver interface {
 	onInsertedPage(index int, page *TabPage) os.Error
 	onRemovingPage(index int, page *TabPage) os.Error
 	onRemovedPage(index int, page *TabPage) os.Error
-	onClearingPages() os.Error
-	onClearedPages() os.Error
+	onClearingPages(pages []*TabPage) os.Error
+	onClearedPages(pages []*TabPage) os.Error
 }
 
 type TabPageList struct {
@@ -41,7 +41,7 @@ func (l *TabPageList) At(index int) *TabPage {
 func (l *TabPageList) Clear() os.Error {
 	observer := l.observer
 	if observer != nil {
-		if err := observer.onClearingPages(); err != nil {
+		if err := observer.onClearingPages(l.items); err != nil {
 			return err
 		}
 	}
@@ -50,7 +50,7 @@ func (l *TabPageList) Clear() os.Error {
 	l.items = l.items[:0]
 
 	if observer != nil {
-		if err := observer.onClearedPages(); err != nil {
+		if err := observer.onClearedPages(oldItems); err != nil {
 			l.items = oldItems
 			return err
 		}

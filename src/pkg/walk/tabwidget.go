@@ -303,18 +303,59 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
 	return
 }
 
+func (tw *TabWidget) removePage(page *TabPage) (err os.Error) {
+	page.SetVisible(false)
+	style := uint(GetWindowLong(page.hWnd, GWL_STYLE))
+	if style == 0 {
+		return lastError("GetWindowLong")
+	}
+	style &^= WS_CHILD
+	style |= WS_POPUP
+	SetLastError(0)
+	if SetWindowLong(page.hWnd, GWL_STYLE, int(style)) == 0 {
+		return lastError("SetWindowLong")
+	}
+	return page.SetParent(nil)
+}
 func (tw *TabWidget) onRemovingPage(index int, page *TabPage) (err os.Error) {
-	panic("not implemented")
+	return nil
 }
 
 func (tw *TabWidget) onRemovedPage(index int, page *TabPage) (err os.Error) {
-	panic("not implemented")
+	err = tw.removePage(page)
+	if err != nil {
+		return
+	}
+	SendMessage(tw.hWndTab, TCM_DELETEITEM, uintptr(index), 0)
+	tw.currentIndex = -1
+	tw.onSelChange()
+	return
+	if index == tw.currentIndex {
+		// removal of current visible tabpage...
+		tw.currentIndex = -1
+		// select new tabpage if any :
+		if tw.pages.Len() > 0 {
+			// are we removing the rightmost page ? 
+			if index == tw.pages.Len()-1 {
+				// If so, select the page on the left 
+				index -= 1
+			}
+		}
+	}
+	tw.SetCurrentIndex(index)
+	//tw.Invalidate()
+	return
 }
 
-func (tw *TabWidget) onClearingPages() (err os.Error) {
-	panic("not implemented")
+func (tw *TabWidget) onClearingPages(pages []*TabPage) (err os.Error) {
+	return nil
 }
 
-func (tw *TabWidget) onClearedPages() (err os.Error) {
-	panic("not implemented")
+func (tw *TabWidget) onClearedPages(pages []*TabPage) (err os.Error) {
+	SendMessage(tw.hWndTab, TCM_DELETEALLITEMS, 0, 0)
+	for _, page := range pages {
+		tw.removePage(page)
+	}
+	tw.currentIndex = -1
+	return nil
 }
