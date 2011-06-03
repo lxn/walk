@@ -6,7 +6,6 @@ package walk
 
 import (
 	"bufio"
-	"encoding/line"
 	"os"
 	"path"
 	"strings"
@@ -60,13 +59,13 @@ func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) os.Error) 
 func (ifs *IniFileSettings) Load() os.Error {
 	return ifs.withFile(os.O_RDONLY, func(file *os.File) os.Error {
 		lineBytes := make([]byte, 0, 4096)
-		lineReader := line.NewReader(bufio.NewReader(file), cap(lineBytes))
+		reader := bufio.NewReader(file)
 
 		for {
 			lineBytes = lineBytes[:0]
 
 			for {
-				ln, isPrefix, err := lineReader.ReadLine()
+				ln, isPrefix, err := reader.ReadLine()
 				if err != nil {
 					if err == os.EOF {
 						return nil
