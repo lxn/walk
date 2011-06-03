@@ -189,6 +189,9 @@ func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) 
 		if !canceled {
 			if tlw.owner != nil {
 				tlw.owner.SetEnabled(true)
+				if !SetWindowPos(tlw.owner.BaseWidget().hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_SHOWWINDOW) {
+					lastError("SetWindowPos")
+				}
 			}
 
 			tlw.close()
