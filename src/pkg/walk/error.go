@@ -72,6 +72,16 @@ func newError(message string) os.Error {
 	return processError(&Error{message: message, stack: debug.Stack()})
 }
 
+func newErrorNoPanic(message string) os.Error {
+	err := &Error{message: message, stack: debug.Stack()}
+
+	if logErrors {
+		log.Print(err)
+	}
+
+	return err
+}
+
 func lastError(win32FuncName string) os.Error {
 	if errno := GetLastError(); errno != ERROR_SUCCESS {
 		return newError(fmt.Sprintf("%s: %s", win32FuncName, syscall.Errstr(int(errno))))

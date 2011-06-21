@@ -822,16 +822,18 @@ func widgetFromHWND(hwnd HWND) widgetInternal {
 
 func widgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) (result uintptr) {
 	defer func() {
-		var err os.Error
-		if x := recover(); x != nil {
-			if e, ok := x.(os.Error); ok {
-				err = e
-			} else {
-				err = newError(fmt.Sprint(x))
+		if len(appSingleton.panickingPublisher.event.handlers) > 0 {
+			var err os.Error
+			if x := recover(); x != nil {
+				if e, ok := x.(os.Error); ok {
+					err = e
+				} else {
+					err = newErrorNoPanic(fmt.Sprint(x))
+				}
 			}
-		}
-		if err != nil {
-			appSingleton.panickingPublisher.Publish(err)
+			if err != nil {
+				appSingleton.panickingPublisher.Publish(err)
+			}
 		}
 	}()
 
