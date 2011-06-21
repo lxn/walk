@@ -13,6 +13,8 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"xml"
 )
@@ -871,7 +873,14 @@ func processFile(uiFilePath string) os.Error {
 		return err
 	}
 
-	gofmt, err := os.StartProcess("gofmt.exe", []string{"gofmt.exe", "-w", goFilePath}, &os.ProcAttr{Files: []*os.File{nil, nil, os.Stderr}})
+	dirPath := os.Getenv("GOBIN")
+	if dirPath == "" {
+		dirPath = filepath.Join(runtime.GOROOT(), "bin")
+	}
+
+	gofmtPath := filepath.Join(dirPath, "gofmt.exe")
+
+	gofmt, err := os.StartProcess(gofmtPath, []string{gofmtPath, "-w", goFilePath}, &os.ProcAttr{Files: []*os.File{nil, nil, os.Stderr}})
 	if err != nil {
 		return err
 	}
