@@ -469,6 +469,9 @@ func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget
 	case "QComboBox":
 		typ = "ComboBox"
 
+	case "QDateEdit":
+		typ = "DateEdit"
+
 	case "QDoubleSpinBox", "QSpinBox":
 		typ = "NumberEdit"
 
@@ -607,6 +610,9 @@ func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) os.Error
 
 	case "QComboBox":
 		typ = "walk.ComboBox"
+
+	case "QDateEdit":
+		typ = "walk.DateEdit"
 
 	case "QDoubleSpinBox", "QSpinBox":
 		typ = "walk.NumberEdit"

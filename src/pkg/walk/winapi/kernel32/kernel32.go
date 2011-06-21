@@ -38,6 +38,7 @@ var (
 	lib uintptr
 
 	// Functions
+	fileTimeToSystemTime   uintptr
 	getLastError           uintptr
 	getLogicalDriveStrings uintptr
 	getModuleHandle        uintptr
@@ -49,6 +50,7 @@ var (
 	moveMemory             uintptr
 	mulDiv                 uintptr
 	setLastError           uintptr
+	systemTimeToFileTime   uintptr
 )
 
 type (
@@ -59,11 +61,28 @@ type (
 	LCID      uint
 )
 
+type FILETIME struct {
+	DwLowDateTime  uint32
+	DwHighDateTime uint32
+}
+
+type SYSTEMTIME struct {
+	WYear         uint16
+	WMonth        uint16
+	WDayOfWeek    uint16
+	WDay          uint16
+	WHour         uint16
+	WMinute       uint16
+	WSecond       uint16
+	WMilliseconds uint16
+}
+
 func init() {
 	// Library
 	lib = MustLoadLibrary("kernel32.dll")
 
 	// Functions
+	fileTimeToSystemTime = MustGetProcAddress(lib, "FileTimeToSystemTime")
 	getLastError = MustGetProcAddress(lib, "GetLastError")
 	getLogicalDriveStrings = MustGetProcAddress(lib, "GetLogicalDriveStringsW")
 	getModuleHandle = MustGetProcAddress(lib, "GetModuleHandleW")
@@ -75,6 +94,16 @@ func init() {
 	moveMemory = MustGetProcAddress(lib, "RtlMoveMemory")
 	mulDiv = MustGetProcAddress(lib, "MulDiv")
 	setLastError = MustGetProcAddress(lib, "SetLastError")
+	systemTimeToFileTime = MustGetProcAddress(lib, "SystemTimeToFileTime")
+}
+
+func FileTimeToSystemTime(lpFileTime *FILETIME, lpSystemTime *SYSTEMTIME) bool {
+	ret, _, _ := syscall.Syscall(fileTimeToSystemTime, 2,
+		uintptr(unsafe.Pointer(lpFileTime)),
+		uintptr(unsafe.Pointer(lpSystemTime)),
+		0)
+
+	return ret != 0
 }
 
 func GetLastError() uint {
@@ -170,4 +199,13 @@ func SetLastError(dwErrorCode uint) {
 		uintptr(dwErrorCode),
 		0,
 		0)
+}
+
+func SystemTimeToFileTime(lpSystemTime *SYSTEMTIME, lpFileTime *FILETIME) bool {
+	ret, _, _ := syscall.Syscall(systemTimeToFileTime, 2,
+		uintptr(unsafe.Pointer(lpSystemTime)),
+		uintptr(unsafe.Pointer(lpFileTime)),
+		0)
+
+	return ret != 0
 }

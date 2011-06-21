@@ -22,6 +22,7 @@ GOFILES=\
 	container.go\
 	cursor.go\
 	customwidget.go\
+	dateedit.go\
 	dialog.go\
 	document.go\
 	error.go\
