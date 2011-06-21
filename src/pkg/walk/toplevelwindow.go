@@ -53,7 +53,24 @@ func (tlw *TopLevelWindow) SetTitle(value string) os.Error {
 func (tlw *TopLevelWindow) Run() int {
 	tlw.startingPublisher.Publish()
 
-	return tlw.runMessageLoop()
+	var msg MSG
+
+	for tlw.hWnd != 0 {
+		switch GetMessage(&msg, 0, 0, 0) {
+		case 0:
+			return int(msg.WParam)
+
+		case -1:
+			return -1
+		}
+
+		if !IsDialogMessage(tlw.hWnd, &msg) {
+			TranslateMessage(&msg)
+			DispatchMessage(&msg)
+		}
+	}
+
+	return 0
 }
 
 func (tlw *TopLevelWindow) Starting() *Event {

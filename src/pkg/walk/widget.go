@@ -928,24 +928,3 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintp
 
 	return DefWindowProc(hwnd, msg, wParam, lParam)
 }
-
-func (w *WidgetBase) runMessageLoop() int {
-	var msg MSG
-
-	for w.hWnd != 0 {
-		switch GetMessage(&msg, 0, 0, 0) {
-		case 0:
-			return int(msg.WParam)
-
-		case -1:
-			return -1
-		}
-
-		if !IsDialogMessage(w.hWnd, &msg) {
-			TranslateMessage(&msg)
-			DispatchMessage(&msg)
-		}
-	}
-
-	return 0
-}
