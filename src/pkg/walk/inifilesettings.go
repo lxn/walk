@@ -6,6 +6,7 @@ package walk
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -97,20 +98,13 @@ func (ifs *IniFileSettings) Load() os.Error {
 }
 
 func (ifs *IniFileSettings) Save() os.Error {
-	return ifs.withFile(os.O_CREATE|os.O_WRONLY, func(file *os.File) os.Error {
+	return ifs.withFile(os.O_CREATE|os.O_TRUNC|os.O_WRONLY, func(file *os.File) os.Error {
 		bufWriter := bufio.NewWriter(file)
 
 		for key, val := range ifs.data {
-			if _, err := bufWriter.WriteString(key); err != nil {
-				return wrapError(err)
-			}
-			if err := bufWriter.WriteByte('='); err != nil {
-				return wrapError(err)
-			}
-			if _, err := bufWriter.WriteString(val); err != nil {
-				return wrapError(err)
-			}
-			if err := bufWriter.WriteByte('\n'); err != nil {
+			line := fmt.Sprintf("%s=%s\n", key, val)
+
+			if _, err := bufWriter.WriteString(line); err != nil {
 				return wrapError(err)
 			}
 		}
