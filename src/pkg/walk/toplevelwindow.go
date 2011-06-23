@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"unsafe"
+	"sync"
 )
 
 import (
@@ -23,6 +24,29 @@ const (
 	CloseReasonUnknown CloseReason = iota
 	CloseReasonUser
 )
+
+var syncFuncs struct {
+	m     sync.Mutex
+	funcs []func()
+}
+
+func Synchronize(f func()) {
+	syncFuncs.m.Lock()
+	defer syncFuncs.m.Unlock()
+	syncFuncs.funcs = append(syncFuncs.funcs, f)
+}
+
+func runSynchronized() {
+	// Clear the list of callbacks first to avoid deadlock
+	// if a callback itself calls Synchronize()...
+	syncFuncs.m.Lock()
+	funcs := syncFuncs.funcs
+	syncFuncs.funcs = nil
+	syncFuncs.m.Unlock()
+	for _, f := range funcs {
+		f()
+	}
+}
 
 type TopLevelWindow struct {
 	ContainerBase
@@ -56,6 +80,7 @@ func (tlw *TopLevelWindow) Run() int {
 	var msg MSG
 
 	for tlw.hWnd != 0 {
+		runSynchronized()
 		switch GetMessage(&msg, 0, 0, 0) {
 		case 0:
 			return int(msg.WParam)
