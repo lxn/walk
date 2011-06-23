@@ -210,7 +210,7 @@ func (p *PrinterInfo) hDevNames() HGLOBAL {
 	portLen := len(outputPort) + 1
 
 	var dn DEVNAMES
-	hDevNames := GlobalAlloc(GHND, uintptr(unsafe.Sizeof(dn)+(driverLen+printerLen+portLen)*2))
+	hDevNames := GlobalAlloc(GHND, unsafe.Sizeof(dn)+uintptr(driverLen+printerLen+portLen)*2)
 	devNames := (*DEVNAMES)(GlobalLock(hDevNames))
 	defer GlobalUnlock(hDevNames)
 
@@ -285,7 +285,7 @@ func (p *PrinterInfo) devNamePtr(devNamesPtr unsafe.Pointer, index int) *uint16 
 	var offset uint16
 	var offsetPtr unsafe.Pointer
 
-	offsetPtr = unsafe.Pointer(uintptr(devNamesPtr) + uintptr(index*unsafe.Sizeof(offset)))
+	offsetPtr = unsafe.Pointer(uintptr(devNamesPtr) + uintptr(index)*unsafe.Sizeof(offset))
 
 	MoveMemory(unsafe.Pointer(&offset), offsetPtr, uintptr(unsafe.Sizeof(offset)))
 

@@ -789,7 +789,7 @@ type SIZE struct {
 }
 
 type DOCINFO struct {
-	CbSize       int
+	CbSize       int32
 	LpszDocName  *uint16
 	LpszOutput   *uint16
 	LpszDatatype *uint16
@@ -1173,7 +1173,7 @@ func GetEnhMetaFileHeader(hemf HENHMETAFILE, cbBuffer uint, lpemh *ENHMETAHEADER
 	return uint(ret)
 }
 
-func GetObject(hgdiobj HGDIOBJ, cbBuffer int, lpvObject unsafe.Pointer) int {
+func GetObject(hgdiobj HGDIOBJ, cbBuffer uintptr, lpvObject unsafe.Pointer) int {
 	ret, _, _ := syscall.Syscall(getObject, 3,
 		uintptr(hgdiobj),
 		uintptr(cbBuffer),
