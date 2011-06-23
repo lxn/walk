@@ -164,6 +164,11 @@ func (tb *ToolBar) onActionChanged(action *Action) (err os.Error) {
 		FsStyle: BTNS_BUTTON,
 		PszText: syscall.StringToUTF16Ptr(action.Text()),
 	}
+
+	if !tb.hasStyleBits(CCS_VERT) {
+		tbbi.FsStyle |= BTNS_AUTOSIZE
+	}
+
 	tbbi.CbSize = uint(unsafe.Sizeof(tbbi))
 	if action.checked {
 		tbbi.FsState |= TBSTATE_CHECKED
@@ -195,9 +200,14 @@ func (tb *ToolBar) onInsertingAction(index int, action *Action) (err os.Error) {
 		IBitmap:   imageIndex,
 		IdCommand: int(action.id),
 		FsState:   TBSTATE_WRAP,
-		FsStyle:/*BTNS_AUTOSIZE |*/ BTNS_BUTTON,
-		IString: uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(action.Text()))),
+		FsStyle:   BTNS_BUTTON,
+		IString:   uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(action.Text()))),
 	}
+
+	if !tb.hasStyleBits(CCS_VERT) {
+		tbb.FsStyle |= BTNS_AUTOSIZE
+	}
+
 	if action.checked {
 		tbb.FsState |= TBSTATE_CHECKED
 	}
@@ -217,10 +227,15 @@ func (tb *ToolBar) onInsertingAction(index int, action *Action) (err os.Error) {
 	SendMessage(tb.hWnd, TB_ADDBUTTONS, 1, uintptr(unsafe.Pointer(&tbb)))
 	SendMessage(tb.hWnd, TB_AUTOSIZE, 0, 0)
 
+	action.addChangedHandler(tb)
+
 	return
 }
 
 func (tb *ToolBar) removeAt(index int) (err os.Error) {
+	action := tb.actions.At(index)
+	action.removeChangedHandler(tb)
+
 	if 0 == SendMessage(tb.hWnd, TB_DELETEBUTTON, uintptr(index), 0) {
 		err = newError("SendMessage(TB_DELETEBUTTON) failed")
 	}
