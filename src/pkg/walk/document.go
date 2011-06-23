@@ -238,7 +238,7 @@ func (doc *Document) Print() (err os.Error) {
 	defer DeleteDC(hdc)
 
 	var di DOCINFO
-	di.CbSize = unsafe.Sizeof(di)
+	di.CbSize = int32(unsafe.Sizeof(di))
 	di.LpszDocName = syscall.StringToUTF16Ptr(doc.name)
 
 	if StartDoc(hdc, &di) <= 0 {

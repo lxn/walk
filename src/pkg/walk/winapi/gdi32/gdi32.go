@@ -789,7 +789,7 @@ type SIZE struct {
 }
 
 type DOCINFO struct {
-	CbSize       uintptr
+	CbSize       int32
 	LpszDocName  *uint16
 	LpszOutput   *uint16
 	LpszDatatype *uint16
