@@ -127,6 +127,18 @@ func (le *LineEdit) SetPasswordMode(value bool) {
 	SendMessage(le.hWnd, EM_SETPASSWORDCHAR, uintptr('*'), 0)
 }
 
+func (le *LineEdit) ReadOnly() bool {
+	return le.hasStyleBits(ES_READONLY)
+}
+
+func (le *LineEdit) SetReadOnly(readOnly bool) os.Error {
+	if 0 == SendMessage(le.hWnd, EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
+		return newError("SendMessage(EM_SETREADONLY)")
+	}
+
+	return nil
+}
+
 func (le *LineEdit) Validator() Validator {
 	return le.validator
 }

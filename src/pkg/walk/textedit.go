@@ -10,6 +10,7 @@ import (
 )
 
 import (
+	. "walk/winapi"
 	. "walk/winapi/user32"
 )
 
@@ -66,6 +67,18 @@ func (te *TextEdit) TextSelection() (start, end int) {
 
 func (te *TextEdit) SetTextSelection(start, end int) {
 	SendMessage(te.hWnd, EM_SETSEL, uintptr(start), uintptr(end))
+}
+
+func (te *TextEdit) ReadOnly() bool {
+	return te.hasStyleBits(ES_READONLY)
+}
+
+func (te *TextEdit) SetReadOnly(readOnly bool) os.Error {
+	if 0 == SendMessage(te.hWnd, EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
+		return newError("SendMessage(EM_SETREADONLY)")
+	}
+
+	return nil
 }
 
 func (te *TextEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {

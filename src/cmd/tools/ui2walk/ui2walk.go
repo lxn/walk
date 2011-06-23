@@ -228,6 +228,9 @@ func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string, 
 	case "maxLength":
 		buf.WriteString(fmt.Sprintf("%s.SetMaxLength(%d)\n", qualifiedReceiver, int(prop.Number)))
 
+	case "readOnly":
+		buf.WriteString(fmt.Sprintf("%s.SetReadOnly(%t)\n", qualifiedReceiver, prop.Bool))
+
 	case "text":
 		buf.WriteString(fmt.Sprintf(
 			"if err := %s.SetText(`%s`); err != nil {\nreturn err\n}\n",

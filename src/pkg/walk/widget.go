@@ -254,6 +254,12 @@ func rootWidget(w Widget) RootWidget {
 	return rw
 }
 
+func (wb *WidgetBase) hasStyleBits(bits uint) bool {
+	style := uint(GetWindowLong(wb.hWnd, GWL_STYLE))
+
+	return style&bits == bits
+}
+
 func (wb *WidgetBase) setAndClearStyleBits(set, clear uint) os.Error {
 	style := uint(GetWindowLong(wb.hWnd, GWL_STYLE))
 	if style == 0 {
