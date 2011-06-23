@@ -261,6 +261,17 @@ func (tw *TabWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintpt
 	return tw.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
+func (tw *TabWidget) onPageChanged(page *TabPage) (err os.Error) {
+	index := tw.pages.Index(page)
+	item := page.tcItem()
+
+	if 0 == SendMessage(tw.hWndTab, TCM_SETITEM, uintptr(index), uintptr(unsafe.Pointer(item))) {
+		return newError("SendMessage(TCM_SETITEM) failed")
+	}
+
+	return nil
+}
+
 func (tw *TabWidget) onInsertingPage(index int, page *TabPage) (err os.Error) {
 	return nil
 }
@@ -272,8 +283,10 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
+
 	style |= WS_CHILD
 	style &^= WS_POPUP
+
 	SetLastError(0)
 	if SetWindowLong(page.hWnd, GWL_STYLE, int(style)) == 0 {
 		return lastError("SetWindowLong")
@@ -288,35 +301,40 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
 		tw.currentIndex = 0
 	}
 
-	text := syscall.StringToUTF16(page.Title())
-	item := TCITEM{
-		Mask:       TCIF_TEXT,
-		PszText:    &text[0],
-		CchTextMax: len(text),
-	}
-	if idx := int(SendMessage(tw.hWndTab, TCM_INSERTITEM, uintptr(index), uintptr(unsafe.Pointer(&item)))); idx == -1 {
+	item := page.tcItem()
+
+	if idx := int(SendMessage(tw.hWndTab, TCM_INSERTITEM, uintptr(index), uintptr(unsafe.Pointer(item)))); idx == -1 {
 		return newError("SendMessage(TCM_INSERTITEM) failed")
 	}
 
 	tw.resizePages()
+
+	page.tabWidget = tw
 
 	return
 }
 
 func (tw *TabWidget) removePage(page *TabPage) (err os.Error) {
 	page.SetVisible(false)
+
 	style := uint(GetWindowLong(page.hWnd, GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
+
 	style &^= WS_CHILD
 	style |= WS_POPUP
+
 	SetLastError(0)
 	if SetWindowLong(page.hWnd, GWL_STYLE, int(style)) == 0 {
 		return lastError("SetWindowLong")
 	}
+
+	page.tabWidget = nil
+
 	return page.SetParent(nil)
 }
+
 func (tw *TabWidget) onRemovingPage(index int, page *TabPage) (err os.Error) {
 	return nil
 }
@@ -326,13 +344,19 @@ func (tw *TabWidget) onRemovedPage(index int, page *TabPage) (err os.Error) {
 	if err != nil {
 		return
 	}
+
 	SendMessage(tw.hWndTab, TCM_DELETEITEM, uintptr(index), 0)
+
 	tw.currentIndex = -1
 	tw.onSelChange()
+
 	return
+
+	// FIXME: Either make use of this unreachable code or remove it.
 	if index == tw.currentIndex {
 		// removal of current visible tabpage...
 		tw.currentIndex = -1
+
 		// select new tabpage if any :
 		if tw.pages.Len() > 0 {
 			// are we removing the rightmost page ? 
@@ -342,8 +366,10 @@ func (tw *TabWidget) onRemovedPage(index int, page *TabPage) (err os.Error) {
 			}
 		}
 	}
+
 	tw.SetCurrentIndex(index)
 	//tw.Invalidate()
+
 	return
 }
 
