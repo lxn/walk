@@ -160,12 +160,13 @@ func (tb *ToolBar) onActionChanged(action *Action) (err os.Error) {
 	tbbi := TBBUTTONINFO{
 		DwMask:  TBIF_BYINDEX | TBIF_IMAGE | TBIF_STATE | TBIF_STYLE | TBIF_TEXT,
 		IImage:  imageIndex,
-		FsState: TBSTATE_WRAP,
 		FsStyle: BTNS_BUTTON,
 		PszText: syscall.StringToUTF16Ptr(action.Text()),
 	}
 
-	if !tb.hasStyleBits(CCS_VERT) {
+	if tb.hasStyleBits(CCS_VERT) {
+		tbbi.FsState |= TBSTATE_WRAP
+	} else {
 		tbbi.FsStyle |= BTNS_AUTOSIZE
 	}
 
@@ -199,12 +200,13 @@ func (tb *ToolBar) onInsertingAction(index int, action *Action) (err os.Error) {
 	tbb := TBBUTTON{
 		IBitmap:   imageIndex,
 		IdCommand: int(action.id),
-		FsState:   TBSTATE_WRAP,
 		FsStyle:   BTNS_BUTTON,
 		IString:   uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(action.Text()))),
 	}
 
-	if !tb.hasStyleBits(CCS_VERT) {
+	if tb.hasStyleBits(CCS_VERT) {
+		tbb.FsState |= TBSTATE_WRAP
+	} else {
 		tbb.FsStyle |= BTNS_AUTOSIZE
 	}
 
