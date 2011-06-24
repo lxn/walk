@@ -21,10 +21,11 @@ var _ subclassedWidget = &ToolBar{}
 
 type ToolBar struct {
 	WidgetBase
-	imageList      *ImageList
-	actions        *ActionList
-	minButtonWidth uint16
-	maxButtonWidth uint16
+	imageList          *ImageList
+	actions            *ActionList
+	minButtonWidth     uint16
+	maxButtonWidth     uint16
+	defaultButtonWidth int
 }
 
 func newToolBar(parent Container, style uint) (*ToolBar, os.Error) {
@@ -48,7 +49,14 @@ func NewToolBar(parent Container) (*ToolBar, os.Error) {
 }
 
 func NewVerticalToolBar(parent Container) (*ToolBar, os.Error) {
-	return newToolBar(parent, CCS_VERT|CCS_NORESIZE)
+	tb, err := newToolBar(parent, CCS_VERT|CCS_NORESIZE)
+	if err != nil {
+		return nil, err
+	}
+
+	tb.defaultButtonWidth = 100
+
+	return tb, nil
 }
 
 func (*ToolBar) origWndProcPtr() uintptr {
@@ -78,12 +86,65 @@ func (tb *ToolBar) SizeHint() Size {
 
 	style := GetWindowLong(tb.hWnd, GWL_STYLE)
 
-	if style&CCS_VERT > 0 && tb.minButtonWidth > 0 {
-		return Size{int(tb.minButtonWidth), 44}
+	if style&CCS_VERT > 0 && tb.defaultButtonWidth > 0 {
+		return Size{int(tb.defaultButtonWidth), 44}
 	}
 
 	// FIXME: Figure out how to do this.
 	return Size{44, 44}
+}
+
+func (tb *ToolBar) applyDefaultButtonWidth() os.Error {
+	if tb.defaultButtonWidth == 0 {
+		return nil
+	}
+
+	size := uint(SendMessage(tb.hWnd, TB_GETBUTTONSIZE, 0, 0))
+	height := HIWORD(size)
+
+	lParam := uintptr(MAKELONG(uint16(tb.defaultButtonWidth), height))
+	if FALSE == SendMessage(tb.hWnd, TB_SETBUTTONSIZE, 0, lParam) {
+		return newError("SendMessage(TB_SETBUTTONSIZE)")
+	}
+
+	return nil
+}
+
+// DefaultButtonWidth returns the default button width of the ToolBar.
+//
+// The default value for a horizontal ToolBar is 0, resulting in automatic
+// sizing behavior. For a vertical ToolBar, the default is 100 pixels. 
+func (tb *ToolBar) DefaultButtonWidth() int {
+	return tb.defaultButtonWidth
+}
+
+// SetDefaultButtonWidth sets the default button width of the ToolBar.
+//
+// Calling this method affects all buttons in the ToolBar, no matter if they are 
+// added before or after the call. A width of 0 results in automatic sizing 
+// behavior. Negative values are not allowed.
+func (tb *ToolBar) SetDefaultButtonWidth(width int) os.Error {
+	if width == tb.defaultButtonWidth {
+		return nil
+	}
+
+	if width < 0 {
+		return newError("width must be >= 0")
+	}
+
+	old := tb.defaultButtonWidth
+
+	tb.defaultButtonWidth = width
+
+	for _, action := range tb.actions.actions {
+		if err := tb.onActionChanged(action); err != nil {
+			tb.defaultButtonWidth = old
+
+			return err
+		}
+	}
+
+	return tb.applyDefaultButtonWidth()
 }
 
 func (tb *ToolBar) ButtonWidthLimits() (min, max uint16) {
@@ -153,7 +214,7 @@ func (tb *ToolBar) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr 
 func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image *int, text *uintptr) (err os.Error) {
 	if tb.hasStyleBits(CCS_VERT) {
 		*state |= TBSTATE_WRAP
-	} else {
+	} else if tb.defaultButtonWidth == 0 {
 		*style |= BTNS_AUTOSIZE
 	}
 
@@ -232,6 +293,10 @@ func (tb *ToolBar) onInsertingAction(index int, action *Action) os.Error {
 
 	if FALSE == SendMessage(tb.hWnd, TB_ADDBUTTONS, 1, uintptr(unsafe.Pointer(&tbb))) {
 		return newError("SendMessage(TB_ADDBUTTONS)")
+	}
+
+	if err := tb.applyDefaultButtonWidth(); err != nil {
+		return err
 	}
 
 	SendMessage(tb.hWnd, TB_AUTOSIZE, 0, 0)
