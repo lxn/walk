@@ -82,14 +82,16 @@ func (tb *ToolBar) SizeHint() Size {
 		return Size{}
 	}
 
-	style := GetWindowLong(tb.hWnd, GWL_STYLE)
+	size := uint(SendMessage(tb.hWnd, TB_GETBUTTONSIZE, 0, 0))
 
-	if style&CCS_VERT > 0 && tb.defaultButtonWidth > 0 {
-		return Size{int(tb.defaultButtonWidth), 44}
+	width := tb.defaultButtonWidth
+	if width == 0 {
+		width = int(LOWORD(size))
 	}
 
-	// FIXME: Figure out how to do this.
-	return Size{44, 44}
+	height := int(HIWORD(size))
+
+	return Size{width, height}
 }
 
 func (tb *ToolBar) applyDefaultButtonWidth() os.Error {
