@@ -125,8 +125,7 @@ func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int, err os.Error) {
 	imageIndex = -1
 	if image != nil {
 		// FIXME: Protect against duplicate insertion
-		imageIndex, err = tb.imageList.AddMasked(image)
-		if err != nil {
+		if imageIndex, err = tb.imageList.AddMasked(image); err != nil {
 			return
 		}
 	}
@@ -151,111 +150,118 @@ func (tb *ToolBar) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr 
 	return tb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
-func (tb *ToolBar) onActionChanged(action *Action) (err os.Error) {
-	imageIndex, err := tb.imageIndex(action.image)
-	if err != nil {
+func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image *int, text *uintptr) (err os.Error) {
+	if tb.hasStyleBits(CCS_VERT) {
+		*state |= TBSTATE_WRAP
+	} else {
+		*style |= BTNS_AUTOSIZE
+	}
+
+	if action.checked {
+		*state |= TBSTATE_CHECKED
+	}
+
+	if action.enabled {
+		*state |= TBSTATE_ENABLED
+	}
+
+	if action.checkable {
+		*style |= BTNS_CHECK
+	}
+
+	if action.exclusive {
+		*style |= BTNS_GROUP
+	}
+
+	if *image, err = tb.imageIndex(action.image); err != nil {
 		return
 	}
 
-	tbbi := TBBUTTONINFO{
-		DwMask:  TBIF_BYINDEX | TBIF_IMAGE | TBIF_STATE | TBIF_STYLE | TBIF_TEXT,
-		IImage:  imageIndex,
-		FsStyle: BTNS_BUTTON,
-		PszText: syscall.StringToUTF16Ptr(action.Text()),
-	}
-
-	if tb.hasStyleBits(CCS_VERT) {
-		tbbi.FsState |= TBSTATE_WRAP
-	} else {
-		tbbi.FsStyle |= BTNS_AUTOSIZE
-	}
-
-	tbbi.CbSize = uint(unsafe.Sizeof(tbbi))
-	if action.checked {
-		tbbi.FsState |= TBSTATE_CHECKED
-	}
-	if action.enabled {
-		tbbi.FsState |= TBSTATE_ENABLED
-	}
-	if action.checkable {
-		tbbi.FsStyle |= BTNS_CHECK
-	}
-	if action.exclusive {
-		tbbi.FsStyle |= BTNS_GROUP
-	}
-
-	if 0 == SendMessage(tb.hWnd, TB_SETBUTTONINFO, uintptr(tb.actions.Index(action)), uintptr(unsafe.Pointer(&tbbi))) {
-		err = newError("SendMessage(TB_SETBUTTONINFO) failed")
-	}
+	*text = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(action.Text())))
 
 	return
 }
 
-func (tb *ToolBar) onInsertingAction(index int, action *Action) (err os.Error) {
-	imageIndex, err := tb.imageIndex(action.image)
-	if err != nil {
-		return
+func (tb *ToolBar) onActionChanged(action *Action) os.Error {
+	tbbi := TBBUTTONINFO{
+		DwMask: TBIF_IMAGE | TBIF_STATE | TBIF_STYLE | TBIF_TEXT,
 	}
 
+	tbbi.CbSize = uint(unsafe.Sizeof(tbbi))
+
+	if err := tb.initButtonForAction(
+		action,
+		&tbbi.FsState,
+		&tbbi.FsStyle,
+		&tbbi.IImage,
+		&tbbi.PszText); err != nil {
+
+		return err
+	}
+
+	if 0 == SendMessage(
+		tb.hWnd,
+		TB_SETBUTTONINFO,
+		uintptr(action.id),
+		uintptr(unsafe.Pointer(&tbbi))) {
+
+		return newError("SendMessage(TB_SETBUTTONINFO) failed")
+	}
+
+	return nil
+}
+
+func (tb *ToolBar) onInsertingAction(index int, action *Action) os.Error {
 	tbb := TBBUTTON{
-		IBitmap:   imageIndex,
 		IdCommand: int(action.id),
-		FsStyle:   BTNS_BUTTON,
-		IString:   uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(action.Text()))),
 	}
 
-	if tb.hasStyleBits(CCS_VERT) {
-		tbb.FsState |= TBSTATE_WRAP
-	} else {
-		tbb.FsStyle |= BTNS_AUTOSIZE
-	}
+	if err := tb.initButtonForAction(
+		action,
+		&tbb.FsState,
+		&tbb.FsStyle,
+		&tbb.IBitmap,
+		&tbb.IString); err != nil {
 
-	if action.checked {
-		tbb.FsState |= TBSTATE_CHECKED
-	}
-	if action.enabled {
-		tbb.FsState |= TBSTATE_ENABLED
-	}
-	if action.checkable {
-		tbb.FsStyle |= BTNS_CHECK
-	}
-	if action.exclusive {
-		tbb.FsStyle |= BTNS_GROUP
+		return err
 	}
 
 	tb.SetVisible(true)
 
 	SendMessage(tb.hWnd, TB_BUTTONSTRUCTSIZE, uintptr(unsafe.Sizeof(tbb)), 0)
-	SendMessage(tb.hWnd, TB_ADDBUTTONS, 1, uintptr(unsafe.Pointer(&tbb)))
+
+	if FALSE == SendMessage(tb.hWnd, TB_ADDBUTTONS, 1, uintptr(unsafe.Pointer(&tbb))) {
+		return newError("SendMessage(TB_ADDBUTTONS)")
+	}
+
 	SendMessage(tb.hWnd, TB_AUTOSIZE, 0, 0)
 
 	action.addChangedHandler(tb)
 
-	return
+	return nil
 }
 
-func (tb *ToolBar) removeAt(index int) (err os.Error) {
+func (tb *ToolBar) removeAt(index int) os.Error {
 	action := tb.actions.At(index)
 	action.removeChangedHandler(tb)
 
 	if 0 == SendMessage(tb.hWnd, TB_DELETEBUTTON, uintptr(index), 0) {
-		err = newError("SendMessage(TB_DELETEBUTTON) failed")
+		return newError("SendMessage(TB_DELETEBUTTON) failed")
 	}
 
-	return
+	return nil
 }
 
 func (tb *ToolBar) onRemovingAction(index int, action *Action) os.Error {
 	return tb.removeAt(index)
 }
 
-func (tb *ToolBar) onClearingActions() (err os.Error) {
+func (tb *ToolBar) onClearingActions() os.Error {
 	for i := tb.actions.Len() - 1; i >= 0; i-- {
-		err = tb.removeAt(i)
-		if err != nil {
-			return
+		if err := tb.removeAt(i); err != nil {
+			return err
 		}
 	}
 
-	return
+	return nil
 }

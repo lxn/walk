@@ -191,6 +191,6 @@ type TBBUTTONINFO struct {
 	FsStyle   byte
 	Cx        uint16
 	LParam    uintptr
-	PszText   *uint16
+	PszText   uintptr
 	CchText   int
 }
