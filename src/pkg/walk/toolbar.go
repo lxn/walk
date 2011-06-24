@@ -23,8 +23,6 @@ type ToolBar struct {
 	WidgetBase
 	imageList          *ImageList
 	actions            *ActionList
-	minButtonWidth     uint16
-	maxButtonWidth     uint16
 	defaultButtonWidth int
 }
 
@@ -145,21 +143,6 @@ func (tb *ToolBar) SetDefaultButtonWidth(width int) os.Error {
 	}
 
 	return tb.applyDefaultButtonWidth()
-}
-
-func (tb *ToolBar) ButtonWidthLimits() (min, max uint16) {
-	return tb.minButtonWidth, tb.maxButtonWidth
-}
-
-func (tb *ToolBar) SetButtonWidthLimits(min, max uint16) os.Error {
-	if SendMessage(tb.hWnd, TB_SETBUTTONWIDTH, 0, uintptr(MAKELONG(min, max))) == 0 {
-		return newError("TB_SETBUTTONWIDTH failed")
-	}
-
-	tb.minButtonWidth = min
-	tb.maxButtonWidth = max
-
-	return nil
 }
 
 func (tb *ToolBar) Actions() *ActionList {
