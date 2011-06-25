@@ -17,6 +17,7 @@ const (
 // ListView messages
 const (
 	LVM_FIRST                    = 0x1000
+	LVM_SETIMAGELIST             = LVM_FIRST + 3
 	LVM_GETITEM                  = LVM_FIRST + 75
 	LVM_SETITEM                  = LVM_FIRST + 76
 	LVM_INSERTITEM               = LVM_FIRST + 77
@@ -279,6 +280,14 @@ const (
 	LVHT_TOLEFT  = 0x00000040
 )
 
+// ListView image list types
+const (
+	LVSIL_NORMAL      = 0
+	LVSIL_SMALL       = 1
+	LVSIL_STATE       = 2
+	LVSIL_GROUPHEADER = 3
+)
+
 type LVCOLUMN struct {
 	Mask       uint
 	Fmt        int
@@ -335,4 +344,9 @@ type NMLISTVIEW struct {
 	UChanged  uint
 	PtAction  POINT
 	LParam    uintptr
+}
+
+type NMLVDISPINFO struct {
+	Hdr  NMHDR
+	Item LVITEM
 }
