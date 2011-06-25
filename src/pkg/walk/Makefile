@@ -72,6 +72,7 @@ GOFILES=\
 	splitter.go\
 	splitterhandle.go\
 	splitterlayout.go\
+	tableview.go\
 	tabpage.go\
 	tabpagelist.go\
 	tabwidget.go\
