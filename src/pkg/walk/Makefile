@@ -39,11 +39,6 @@ GOFILES=\
 	keyevent.go\
 	label.go\
 	lineedit.go\
-	listviewcolumn.go\
-	listviewcolumnlist.go\
-	listview.go\
-	listviewitem.go\
-	listviewitemlist.go\
 	mainwindow.go\
 	menu.go\
 	messagebox.go\

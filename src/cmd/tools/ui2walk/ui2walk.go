@@ -490,9 +490,6 @@ func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget
 	case "QLineEdit":
 		typ = "LineEdit"
 
-	case "QListView", "QListWidget":
-		typ = "ListView"
-
 	case "QPlainTextEdit", "QTextEdit":
 		typ = "TextEdit"
 
@@ -634,9 +631,6 @@ func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) os.Error
 
 	case "QLineEdit":
 		typ = "walk.LineEdit"
-
-	case "QListView", "QListWidget":
-		typ = "walk.ListView"
 
 	case "QPlainTextEdit", "QTextEdit":
 		typ = "walk.TextEdit"
