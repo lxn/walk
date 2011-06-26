@@ -286,14 +286,7 @@ func (tv *TableView) setItemCount() os.Error {
 		return newError("SendMessage(LVM_SETITEMCOUNT)")
 	}
 
-	var currIndex int
-	if count == 0 {
-		currIndex = -1
-	} else {
-		currIndex = 0
-	}
-
-	return tv.SetCurrentIndex(currIndex)
+	return nil
 }
 
 // CheckBoxes returns if the *TableView has check boxes.
