@@ -36,7 +36,7 @@ func (m *FooModel) Columns() []walk.TableColumn {
 		{Title: "#"},
 		{Title: "Bar"},
 		{Title: "Baz", Format: "%.2f", Alignment: walk.AlignFar},
-		{Title: "Quux", Format: "2006-01-02 03:04:05", Width: 150},
+		{Title: "Quux", Format: "2006-01-02 15:04:05", Width: 150},
 	}
 }
 
