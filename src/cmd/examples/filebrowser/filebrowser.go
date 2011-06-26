@@ -5,7 +5,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"time"
@@ -13,15 +12,107 @@ import (
 
 import "walk"
 
+type FileInfo struct {
+	Name     string
+	Size     int64
+	Modified int64
+}
+
+type FileInfoModel struct {
+	items               []*FileInfo
+	rowsResetPublisher  walk.EventPublisher
+	rowChangedPublisher walk.IntEventPublisher
+}
+
+func (m *FileInfoModel) Columns() []walk.TableColumn {
+	return []walk.TableColumn{
+		{Title: "Name", Width: 200},
+		{Title: "Size", Format: "%d", Alignment: walk.AlignFar, Width: 80},
+		{Title: "Modified", Format: "2006-01-02 15:04:05", Width: 120},
+	}
+}
+
+func (m *FileInfoModel) RowCount() int {
+	return len(m.items)
+}
+
+func (m *FileInfoModel) Value(row, col int) interface{} {
+	item := m.items[row]
+
+	switch col {
+	case 0:
+		return item.Name
+
+	case 1:
+		return item.Size
+
+	case 2:
+		return time.SecondsToLocalTime(item.Modified)
+	}
+
+	panic("unexpected col")
+}
+
+func (m *FileInfoModel) RowsReset() *walk.Event {
+	return m.rowsResetPublisher.Event()
+}
+
+func (m *FileInfoModel) RowChanged() *walk.IntEvent {
+	return m.rowChangedPublisher.Event()
+}
+
+func (m *FileInfoModel) ResetRows(dirPath string) os.Error {
+	dir, err := os.Open(dirPath)
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+
+	names, err := dir.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+
+	m.items = make([]*FileInfo, 0, len(names))
+
+	for _, name := range names {
+		if !excludePath(name) {
+			fullPath := path.Join(dirPath, name)
+
+			fi, err := os.Stat(fullPath)
+			if err != nil {
+				continue
+			}
+
+			item := &FileInfo{
+				Name:     name,
+				Size:     fi.Size,
+				Modified: fi.Mtime_ns / 1e9,
+			}
+
+			m.items = append(m.items, item)
+		}
+	}
+
+	m.rowsResetPublisher.Publish()
+
+	return nil
+}
+
 type MainWindow struct {
 	*walk.MainWindow
-	treeView   *walk.TreeView
-	selTvwItem *walk.TreeViewItem
-	listView   *walk.ListView
-	preview    *walk.WebView
+	fileInfoModel *FileInfoModel
+	treeView      *walk.TreeView
+	selTvwItem    *walk.TreeViewItem
+	tableView     *walk.TableView
+	preview       *walk.WebView
 }
 
 func (mw *MainWindow) showError(err os.Error) {
+	if err == nil {
+		return
+	}
+
 	walk.MsgBox(mw, "Error", err.String(), walk.MsgBoxOK|walk.MsgBoxIconError)
 }
 
@@ -52,47 +143,6 @@ func (mw *MainWindow) populateTreeViewItem(parent *walk.TreeViewItem) {
 			child := newTreeViewItem(name)
 
 			parent.Children().Add(child)
-		}
-	}
-}
-
-func (mw *MainWindow) populateListView(dirPath string) {
-	mw.listView.SetSuspended(true)
-	defer mw.listView.SetSuspended(false)
-
-	mw.listView.Items().Clear()
-
-	dir, err := os.Open(dirPath)
-	if err != nil {
-		mw.showError(err)
-		return
-	}
-	defer dir.Close()
-
-	names, err := dir.Readdirnames(-1)
-	panicIfErr(err)
-
-	for _, name := range names {
-		if !excludePath(name) {
-			fullPath := path.Join(dirPath, name)
-
-			fi, err := os.Stat(fullPath)
-			if err != nil {
-				mw.showError(err)
-				continue
-			}
-
-			var size string
-			if !fi.IsDirectory() {
-				size = fmt.Sprintf("%d", fi.Size)
-			}
-			lastMod := time.SecondsToLocalTime(fi.Mtime_ns / 10e8).Format("2006-01-02 15:04:05")
-
-			item := walk.NewListViewItem()
-			texts := []string{name, size, lastMod}
-			item.SetTexts(texts)
-
-			mw.listView.Items().Add(item)
 		}
 	}
 }
@@ -137,7 +187,11 @@ func main() {
 
 	mainWnd, _ := walk.NewMainWindow()
 
-	mw := &MainWindow{MainWindow: mainWnd}
+	mw := &MainWindow{
+		MainWindow:    mainWnd,
+		fileInfoModel: &FileInfoModel{},
+	}
+
 	mw.SetTitle("Walk File Browser Example")
 	mw.SetLayout(walk.NewHBoxLayout())
 
@@ -174,7 +228,7 @@ func main() {
 
 	mw.treeView.SelectionChanged().Attach(func(old, new *walk.TreeViewItem) {
 		mw.selTvwItem = new
-		mw.populateListView(pathForTreeViewItem(new))
+		mw.showError(mw.fileInfoModel.ResetRows(pathForTreeViewItem(new)))
 	})
 
 	drives, _ := walk.DriveNames()
@@ -186,36 +240,21 @@ func main() {
 	}
 	mw.treeView.SetSuspended(false)
 
-	mw.listView, _ = walk.NewListView(splitter)
-	mw.listView.SetSingleItemSelection(true)
+	mw.tableView, _ = walk.NewTableView(splitter)
+	mw.tableView.SetModel(mw.fileInfoModel)
+	mw.tableView.SetSingleItemSelection(true)
 
-	mw.listView.CurrentIndexChanged().Attach(func() {
-		index := mw.listView.CurrentIndex()
+	mw.tableView.CurrentIndexChanged().Attach(func() {
 		var url string
-		if index > -1 {
-			item := mw.listView.Items().At(index)
 
-			url = path.Join(pathForTreeViewItem(mw.selTvwItem), item.Texts()[0])
+		index := mw.tableView.CurrentIndex()
+		if index > -1 {
+			name := mw.fileInfoModel.items[index].Name
+			url = path.Join(pathForTreeViewItem(mw.selTvwItem), name)
 		}
 
 		mw.preview.SetURL(url)
 	})
-
-	nameCol := walk.NewListViewColumn()
-	nameCol.SetTitle("Name")
-	nameCol.SetWidth(200)
-	mw.listView.Columns().Add(nameCol)
-
-	sizeCol := walk.NewListViewColumn()
-	sizeCol.SetTitle("Size")
-	sizeCol.SetWidth(80)
-	sizeCol.SetAlignment(walk.AlignFar)
-	mw.listView.Columns().Add(sizeCol)
-
-	modCol := walk.NewListViewColumn()
-	modCol.SetTitle("Modified")
-	modCol.SetWidth(120)
-	mw.listView.Columns().Add(modCol)
 
 	mw.preview, _ = walk.NewWebView(splitter)
 
