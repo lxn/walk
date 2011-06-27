@@ -34,6 +34,7 @@ GOFILES=\
 	image.go\
 	imagelist.go\
 	imageview.go\
+	indexlist.go\
 	inifilesettings.go\
 	intevent.go\
 	keyevent.go\
