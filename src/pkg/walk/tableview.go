@@ -191,9 +191,9 @@ func (tv *TableView) SizeHint() Size {
 
 func (tv *TableView) attachModel() {
 	tv.rowsResetHandler = func() {
-		tv.SetCurrentIndex(-1)
-
 		tv.setItemCount()
+
+		tv.SetCurrentIndex(-1)
 	}
 	tv.model.RowsReset().Attach(tv.rowsResetHandler)
 
