@@ -18,6 +18,7 @@ all: clean
 	make -C cmd/examples/drawing
 	make -C cmd/examples/filebrowser
 	make -C cmd/examples/imageviewer
+	make -C cmd/examples/notifyicon
 	make -C cmd/examples/printing
 	make -C cmd/examples/tableview
 	make -C cmd/examples/webbrowser
@@ -45,6 +46,7 @@ clean:
 	make -C cmd/examples/drawing     clean
 	make -C cmd/examples/filebrowser clean
 	make -C cmd/examples/imageviewer clean
+	make -C cmd/examples/notifyicon  clean
 	make -C cmd/examples/printing    clean
 	make -C cmd/examples/tableview   clean
 	make -C cmd/examples/webbrowser  clean
