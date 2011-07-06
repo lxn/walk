@@ -4,9 +4,7 @@
 
 package walk
 
-import (
-	"walk/winapi/gdi32"
-)
+import "walk/winapi"
 
 type Rectangle struct {
 	X, Y, Width, Height int
@@ -50,6 +48,6 @@ func (r *Rectangle) SetSize(s Size) Rectangle {
 	return *r
 }
 
-func (r Rectangle) toRECT() gdi32.RECT {
-	return gdi32.RECT{r.X, r.Y, r.X + r.Width, r.Y + r.Height}
+func (r Rectangle) toRECT() winapi.RECT {
+	return winapi.RECT{r.X, r.Y, r.X + r.Width, r.Y + r.Height}
 }

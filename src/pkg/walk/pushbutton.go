@@ -9,10 +9,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi/comctl32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 var pushButtonOrigWndProcPtr uintptr
 var _ subclassedWidget = &PushButton{}

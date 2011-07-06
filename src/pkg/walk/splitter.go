@@ -11,9 +11,7 @@ import (
 	"strings"
 )
 
-import (
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 const splitterWindowClass = `\o/ Walk_Splitter_Class \o/`
 

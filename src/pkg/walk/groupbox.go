@@ -9,9 +9,7 @@ import (
 	"syscall"
 )
 
-import (
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 const groupBoxWindowClass = `\o/ Walk_GroupBox_Class \o/`
 

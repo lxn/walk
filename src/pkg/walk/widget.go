@@ -13,13 +13,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/gdi32"
-	. "walk/winapi/kernel32"
-	. "walk/winapi/user32"
-	. "walk/winapi/uxtheme"
-)
+import . "walk/winapi"
 
 // App-specific message ids for internal use in Walk.
 // TODO: Document reserved range somewhere (when we have an idea how many we need).

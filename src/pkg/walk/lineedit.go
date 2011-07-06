@@ -10,10 +10,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 var lineEditOrigWndProcPtr uintptr
 var _ subclassedWidget = &LineEdit{}

@@ -10,11 +10,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi/gdi32"
-	. "walk/winapi/shell32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 const notifyIconWindowClass = `\o/ Walk_NotifyIcon_Class \o/`
 

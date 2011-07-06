@@ -12,10 +12,7 @@ import (
 	"syscall"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/kernel32"
-)
+import . "walk/winapi"
 
 var (
 	logErrors    bool

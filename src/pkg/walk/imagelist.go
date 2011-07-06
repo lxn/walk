@@ -8,10 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/comctl32"
-	. "walk/winapi/gdi32"
-)
+import . "walk/winapi"
 
 type ImageList struct {
 	hIml      HIMAGELIST

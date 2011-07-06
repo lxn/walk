@@ -8,9 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 var radioButtonOrigWndProcPtr uintptr
 var _ subclassedWidget = &RadioButton{}

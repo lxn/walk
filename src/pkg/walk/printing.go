@@ -9,10 +9,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/winspool"
-)
+import . "walk/winapi"
 
 func defaultPrinterNamePtr() *uint16 {
 	var bufLen uint

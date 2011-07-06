@@ -8,9 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/gdi32"
-)
+import . "walk/winapi"
 
 type HatchStyle int
 

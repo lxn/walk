@@ -8,10 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/comctl32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
 

@@ -17,12 +17,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/comctl32"
-	. "walk/winapi/gdi32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 // TableColumn provides column information for widgets like TableView.
 type TableColumn struct {

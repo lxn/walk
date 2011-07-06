@@ -10,9 +10,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 type Menu struct {
 	hMenu   HMENU

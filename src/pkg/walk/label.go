@@ -8,9 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 var labelOrigWndProcPtr uintptr
 var _ subclassedWidget = &Label{}

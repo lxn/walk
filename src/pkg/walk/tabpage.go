@@ -9,10 +9,7 @@ import (
 	"syscall"
 )
 
-import (
-	. "walk/winapi/comctl32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 const tabPageWindowClass = `\o/ Walk_TabPage_Class \o/`
 

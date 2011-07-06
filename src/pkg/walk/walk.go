@@ -8,10 +8,7 @@ import (
 	"runtime"
 )
 
-import (
-	"walk/winapi/gdiplus"
-	"walk/winapi/ole32"
-)
+import "walk/winapi"
 
 type InitParams struct {
 	LogErrors    bool
@@ -28,6 +25,6 @@ func Initialize(params InitParams) {
 }
 
 func Shutdown() {
-	gdiplus.GdiplusShutdown()
-	ole32.OleUninitialize()
+	winapi.GdiplusShutdown()
+	winapi.OleUninitialize()
 }
