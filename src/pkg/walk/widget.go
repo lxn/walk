@@ -1137,7 +1137,7 @@ func widgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) (result uintptr)
 			var err os.Error
 			if x := recover(); x != nil {
 				if e, ok := x.(os.Error); ok {
-					err = e
+					err = wrapErrorNoPanic(e)
 				} else {
 					err = newErrorNoPanic(fmt.Sprint(x))
 				}
