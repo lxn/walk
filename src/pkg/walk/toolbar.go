@@ -184,7 +184,7 @@ func (tb *ToolBar) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr 
 	case WM_NOTIFY:
 		nmm := (*NMMOUSE)(unsafe.Pointer(lParam))
 
-		switch nmm.Hdr.Code {
+		switch int(nmm.Hdr.Code) {
 		case NM_CLICK:
 			actionId := uint16(nmm.DwItemSpec)
 			if action := actionsById[actionId]; action != nil {
