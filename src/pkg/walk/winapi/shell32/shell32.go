@@ -81,12 +81,56 @@ const (
 	CSIDL_FLAG_MASK               = 0xFF00
 )
 
+// NotifyIcon flags
+const (
+	NIF_MESSAGE = 0x00000001
+	NIF_ICON    = 0x00000002
+	NIF_TIP     = 0x00000004
+	NIF_STATE   = 0x00000008
+	NIF_INFO    = 0x00000010
+)
+
+// NotifyIcon messages
+const (
+	NIM_ADD        = 0x00000000
+	NIM_MODIFY     = 0x00000001
+	NIM_DELETE     = 0x00000002
+	NIM_SETFOCUS   = 0x00000003
+	NIM_SETVERSION = 0x00000004
+)
+
+// NotifyIcon states
+const (
+	NIS_HIDDEN     = 0x00000001
+	NIS_SHAREDICON = 0x00000002
+)
+
+const NOTIFYICON_VERSION = 3
+
+type NOTIFYICONDATA struct {
+	CbSize           uint32
+	HWnd             HWND
+	UID              uint32
+	UFlags           uint32
+	UCallbackMessage uint32
+	HIcon            HICON
+	SzTip            [128]uint16
+	DwState          uint32
+	DwStateMask      uint32
+	SzInfo           [256]uint16
+	UVersion         uint32
+	SzInfoTitle      [64]uint16
+	DwInfoFlags      uint32
+	GuidItem         GUID
+}
+
 var (
 	// Library
 	lib uintptr
 
 	// Functions
 	shGetSpecialFolderPath uintptr
+	shell_NotifyIcon       uintptr
 )
 
 func init() {
@@ -95,6 +139,7 @@ func init() {
 
 	// Functions
 	shGetSpecialFolderPath = MustGetProcAddress(lib, "SHGetSpecialFolderPathW")
+	shell_NotifyIcon = MustGetProcAddress(lib, "Shell_NotifyIconW")
 }
 
 func ShGetSpecialFolderPath(hwndOwner HWND, lpszPath *uint16, csidl CSIDL, fCreate bool) bool {
@@ -104,6 +149,15 @@ func ShGetSpecialFolderPath(hwndOwner HWND, lpszPath *uint16, csidl CSIDL, fCrea
 		uintptr(csidl),
 		uintptr(BoolToBOOL(fCreate)),
 		0,
+		0)
+
+	return ret != 0
+}
+
+func Shell_NotifyIcon(dwMessage uint32, lpdata *NOTIFYICONDATA) bool {
+	ret, _, _ := syscall.Syscall(shell_NotifyIcon, 2,
+		uintptr(dwMessage),
+		uintptr(unsafe.Pointer(lpdata)),
 		0)
 
 	return ret != 0

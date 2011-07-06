@@ -1108,6 +1108,7 @@ var (
 	createWindowEx       uintptr
 	deferWindowPos       uintptr
 	defWindowProc        uintptr
+	destroyIcon          uintptr
 	destroyMenu          uintptr
 	destroyWindow        uintptr
 	dispatchMessage      uintptr
@@ -1119,6 +1120,7 @@ var (
 	enumChildWindows     uintptr
 	getAncestor          uintptr
 	getClientRect        uintptr
+	getCursorPos         uintptr
 	getDC                uintptr
 	getFocus             uintptr
 	getMenuInfo          uintptr
@@ -1152,6 +1154,7 @@ var (
 	setCapture           uintptr
 	setCursor            uintptr
 	setFocus             uintptr
+	setForegroundWindow  uintptr
 	setMenu              uintptr
 	setMenuInfo          uintptr
 	setMenuItemInfo      uintptr
@@ -1180,6 +1183,7 @@ func init() {
 	createWindowEx = MustGetProcAddress(lib, "CreateWindowExW")
 	deferWindowPos = MustGetProcAddress(lib, "DeferWindowPos")
 	defWindowProc = MustGetProcAddress(lib, "DefWindowProcW")
+	destroyIcon = MustGetProcAddress(lib, "DestroyIcon")
 	destroyMenu = MustGetProcAddress(lib, "DestroyMenu")
 	destroyWindow = MustGetProcAddress(lib, "DestroyWindow")
 	dispatchMessage = MustGetProcAddress(lib, "DispatchMessageW")
@@ -1191,6 +1195,7 @@ func init() {
 	enumChildWindows = MustGetProcAddress(lib, "EnumChildWindows")
 	getAncestor = MustGetProcAddress(lib, "GetAncestor")
 	getClientRect = MustGetProcAddress(lib, "GetClientRect")
+	getCursorPos = MustGetProcAddress(lib, "GetCursorPos")
 	getDC = MustGetProcAddress(lib, "GetDC")
 	getFocus = MustGetProcAddress(lib, "GetFocus")
 	getMenuInfo = MustGetProcAddress(lib, "GetMenuInfo")
@@ -1225,6 +1230,7 @@ func init() {
 	setCapture = MustGetProcAddress(lib, "SetCapture")
 	setCursor = MustGetProcAddress(lib, "SetCursor")
 	setFocus = MustGetProcAddress(lib, "SetFocus")
+	setForegroundWindow = MustGetProcAddress(lib, "SetForegroundWindow")
 	setMenu = MustGetProcAddress(lib, "SetMenu")
 	setMenuInfo = MustGetProcAddress(lib, "SetMenuInfo")
 	setMenuItemInfo = MustGetProcAddress(lib, "SetMenuItemInfoW")
@@ -1334,6 +1340,15 @@ func DefWindowProc(hWnd HWND, Msg uint, wParam, lParam uintptr) uintptr {
 	return ret
 }
 
+func DestroyIcon(hIcon HICON) bool {
+	ret, _, _ := syscall.Syscall(destroyIcon, 1,
+		uintptr(hIcon),
+		0,
+		0)
+
+	return ret != 0
+}
+
 func DestroyMenu(hMenu HMENU) bool {
 	ret, _, _ := syscall.Syscall(destroyMenu, 1,
 		uintptr(hMenu),
@@ -1431,6 +1446,15 @@ func GetClientRect(hWnd HWND, rect *RECT) bool {
 	ret, _, _ := syscall.Syscall(getClientRect, 2,
 		uintptr(hWnd),
 		uintptr(unsafe.Pointer(rect)),
+		0)
+
+	return ret != 0
+}
+
+func GetCursorPos(lpPoint *POINT) bool {
+	ret, _, _ := syscall.Syscall(getCursorPos, 1,
+		uintptr(unsafe.Pointer(lpPoint)),
+		0,
 		0)
 
 	return ret != 0
@@ -1750,6 +1774,15 @@ func SetFocus(hWnd HWND) HWND {
 		0)
 
 	return HWND(ret)
+}
+
+func SetForegroundWindow(hWnd HWND) bool {
+	ret, _, _ := syscall.Syscall(setForegroundWindow, 1,
+		uintptr(hWnd),
+		0,
+		0)
+
+	return ret != 0
 }
 
 func SetMenu(hWnd HWND, hMenu HMENU) bool {

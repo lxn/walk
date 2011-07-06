@@ -21,6 +21,12 @@ import (
 	. "walk/winapi/uxtheme"
 )
 
+// App-specific message ids for internal use in Walk.
+// TODO: Document reserved range somewhere (when we have an idea how many we need).
+const (
+	notifyIconMessageId = WM_APP + iota
+)
+
 // LayoutFlags specify how a Widget wants to be treated when used with a Layout.
 // 
 // These flags are interpreted in respect to Widget.SizeHint.
@@ -1147,6 +1153,10 @@ func widgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) (result uintptr)
 			}
 		}
 	}()
+
+	if msg == notifyIconMessageId {
+		return notifyIconWndProc(hwnd, msg, wParam, lParam)
+	}
 
 	wi := widgetFromHWND(hwnd)
 	if wi == nil {

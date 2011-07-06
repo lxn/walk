@@ -31,6 +31,7 @@ GOFILES=\
 	gridlayout.go\
 	groupbox.go\
 	font.go\
+	icon.go\
 	image.go\
 	imagelist.go\
 	imageview.go\
@@ -45,6 +46,7 @@ GOFILES=\
 	messagebox.go\
 	metafile.go\
 	mouseevent.go\
+	notifyicon.go\
 	numberedit.go\
 	page.go\
 	pageinfo.go\
