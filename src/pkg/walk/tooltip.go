@@ -10,11 +10,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/comctl32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 var toolTipOrigWndProcPtr uintptr
 var _ subclassedWidget = &ToolTip{}

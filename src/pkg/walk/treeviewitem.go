@@ -8,9 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/comctl32"
-)
+import . "walk/winapi"
 
 type TreeViewItem struct {
 	handle   HTREEITEM

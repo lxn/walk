@@ -11,9 +11,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi/comdlg32"
-)
+import . "walk/winapi"
 
 type FileDialog struct {
 	Title          string

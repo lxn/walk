@@ -11,9 +11,7 @@ import (
 	"utf8"
 )
 
-import (
-	. "walk/winapi/gdi32"
-)
+import . "walk/winapi"
 
 type part interface {
 	Bounds() Rectangle

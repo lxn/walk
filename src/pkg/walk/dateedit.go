@@ -10,11 +10,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi/comctl32"
-	. "walk/winapi/kernel32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 func systemTimeToTime(st *SYSTEMTIME) *time.Time {
 	if st == nil {

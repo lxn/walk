@@ -12,11 +12,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/comctl32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 const numberEditWindowClass = `\o/ Walk_NumberEdit_Class \o/`
 

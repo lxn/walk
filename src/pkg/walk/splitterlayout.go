@@ -8,9 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 type splitterLayout struct {
 	container   Container

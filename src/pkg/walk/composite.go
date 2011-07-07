@@ -8,9 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 const compositeWindowClass = `\o/ Walk_Composite_Class \o/`
 

@@ -9,12 +9,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/ole32"
-	. "walk/winapi/oleaut32"
-	. "walk/winapi/shdocvw"
-)
+import . "walk/winapi"
 
 var webViewDWebBrowserEvents2Vtbl *DWebBrowserEvents2Vtbl
 

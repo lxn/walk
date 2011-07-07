@@ -8,9 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 type tabPageListObserver interface {
 	onInsertingPage(index int, page *TabPage) os.Error

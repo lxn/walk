@@ -8,9 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 const customWidgetWindowClass = `\o/ Walk_CustomWidget_Class \o/`
 
