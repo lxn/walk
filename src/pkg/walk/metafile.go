@@ -10,9 +10,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi/gdi32"
-)
+import . "walk/winapi"
 
 type Metafile struct {
 	hdc  HDC

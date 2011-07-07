@@ -8,10 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/gdi32"
-	. "walk/winapi/kernel32"
-)
+import . "walk/winapi"
 
 type ColorMode int16
 

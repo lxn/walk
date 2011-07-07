@@ -10,13 +10,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/comdlg32"
-	. "walk/winapi/kernel32"
-	. "walk/winapi/gdi32"
-	. "walk/winapi/winspool"
-)
+import . "walk/winapi"
 
 type optBool int
 

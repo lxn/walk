@@ -10,11 +10,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi/gdi32"
-	. "walk/winapi/kernel32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 // DrawText format flags
 type DrawTextFormat uint

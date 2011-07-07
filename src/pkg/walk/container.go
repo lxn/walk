@@ -9,10 +9,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 type Margins struct {
 	HNear, VNear, HFar, VFar int

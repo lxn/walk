@@ -10,11 +10,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/gdi32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 var comboBoxOrigWndProcPtr uintptr
 var _ subclassedWidget = &ComboBox{}

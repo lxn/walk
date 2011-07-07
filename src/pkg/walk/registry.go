@@ -10,10 +10,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi/advapi32"
-	. "walk/winapi/kernel32"
-)
+import . "walk/winapi"
 
 type RegistryKey struct {
 	hKey HKEY

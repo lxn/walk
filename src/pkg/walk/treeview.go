@@ -10,10 +10,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi/comctl32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 var treeViewOrigWndProcPtr uintptr
 var _ subclassedWidget = &TreeView{}

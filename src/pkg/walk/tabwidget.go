@@ -11,12 +11,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi/comctl32"
-	. "walk/winapi/gdi32"
-	. "walk/winapi/kernel32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 const tabWidgetWindowClass = `\o/ Walk_TabWidget_Class \o/`
 

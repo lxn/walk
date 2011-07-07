@@ -9,12 +9,7 @@ import (
 	"syscall"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/gdi32"
-	. "walk/winapi/kernel32"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 type FontStyle byte
 

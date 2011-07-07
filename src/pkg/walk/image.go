@@ -9,9 +9,7 @@ import (
 	"strings"
 )
 
-import (
-	. "walk/winapi/gdi32"
-)
+import . "walk/winapi"
 
 type Image interface {
 	draw(hdc HDC, location Point) os.Error

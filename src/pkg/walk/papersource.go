@@ -4,9 +4,7 @@
 
 package walk
 
-import (
-	. "walk/winapi/gdi32"
-)
+import . "walk/winapi"
 
 type PaperSourceType int16
 

@@ -9,13 +9,7 @@ import (
 	"unsafe"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/gdi32"
-	. "walk/winapi/ole32"
-	. "walk/winapi/shdocvw"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 var webViewIDocHostUIHandlerVtbl *IDocHostUIHandlerVtbl
 

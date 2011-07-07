@@ -8,9 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 var checkBoxOrigWndProcPtr uintptr
 var _ subclassedWidget = &CheckBox{}

@@ -9,10 +9,7 @@ import (
 	"syscall"
 )
 
-import (
-	. "walk/winapi/kernel32"
-	. "walk/winapi/shell32"
-)
+import . "walk/winapi"
 
 func knownFolderPath(id CSIDL) (string, os.Error) {
 	var buf [MAX_PATH]uint16

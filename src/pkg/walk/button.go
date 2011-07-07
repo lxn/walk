@@ -8,10 +8,7 @@ import (
 	"os"
 )
 
-import (
-	. "walk/winapi"
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 type clickable interface {
 	raiseClicked()

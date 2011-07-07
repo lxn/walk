@@ -9,9 +9,7 @@ import (
 	"sort"
 )
 
-import (
-	. "walk/winapi/user32"
-)
+import . "walk/winapi"
 
 type gridLayoutCell struct {
 	row    int
