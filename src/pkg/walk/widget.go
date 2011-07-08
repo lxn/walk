@@ -895,7 +895,7 @@ func (wb *WidgetBase) calculateTextSize() Size {
 	defer SelectObject(hdc, hFontOld)
 
 	var size Size
-	lines := strings.Split(widgetText(wb.hWnd), "\n", -1)
+	lines := strings.Split(widgetText(wb.hWnd), "\n")
 
 	for _, line := range lines {
 		var s SIZE

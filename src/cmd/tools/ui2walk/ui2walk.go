@@ -25,12 +25,12 @@ type UI struct {
 	Class         string
 	Widget        Widget
 	CustomWidgets CustomWidgets
-	TabStops      []string "tabstops>tabstop"
+	TabStops      []string `xml:"tabstops>tabstop"`
 }
 
 type Widget struct {
-	Class     string "attr"
-	Name      string "attr"
+	Class     string `xml:"attr"`
+	Name      string `xml:"attr"`
 	Attribute []*Attribute
 	Property  []*Property
 	Layout    *Layout
@@ -39,33 +39,33 @@ type Widget struct {
 }
 
 type Layout struct {
-	Class    string "attr"
-	Name     string "attr"
-	Stretch  string "attr"
+	Class    string `xml:"attr"`
+	Name     string `xml:"attr"`
+	Stretch  string `xml:"attr"`
 	Property []*Property
 	Item     []*Item
 	ignored  bool
 }
 
 type Item struct {
-	Row    string "attr"
-	Column string "attr"
+	Row    string `xml:"attr"`
+	Column string `xml:"attr"`
 	Widget *Widget
 	Spacer *Spacer
 }
 
 type Spacer struct {
-	Name     string "attr"
+	Name     string `xml:"attr"`
 	Property []*Property
 }
 
 type Attribute struct {
-	Name   string "attr"
+	Name   string `xml:"attr"`
 	String string
 }
 
 type Property struct {
-	Name   string "attr"
+	Name   string `xml:"attr"`
 	Bool   bool
 	Enum   string
 	Font   *Font

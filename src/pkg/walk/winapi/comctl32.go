@@ -98,7 +98,6 @@ const (
 	NM_CHAR            = NM_FIRST - 18
 	NM_TOOLTIPSCREATED = NM_FIRST - 19
 	NM_LAST            = NM_FIRST - 99
-
 )
 
 // ProgressBar messages

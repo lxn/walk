@@ -140,7 +140,7 @@ func (s *Splitter) RestoreState() os.Error {
 		return nil
 	}
 
-	fractionStrs := strings.Split(state, " ", -1)
+	fractionStrs := strings.Split(state, " ")
 
 	layout := s.layout.(*splitterLayout)
 

@@ -549,7 +549,7 @@ func (tv *TableView) RestoreState() os.Error {
 		return nil
 	}
 
-	widthStrs := strings.Split(state, " ", -1)
+	widthStrs := strings.Split(state, " ")
 
 	// FIXME: Solve this in a better way.
 	if len(widthStrs) != len(tv.columns) {
