@@ -242,10 +242,10 @@ func (tv *TableView) SetModel(model TableModel) os.Error {
 			var lvc LVCOLUMN
 
 			lvc.Mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM
-			lvc.ISubItem = i
+			lvc.ISubItem = int32(i)
 			lvc.PszText = syscall.StringToUTF16Ptr(column.Title)
 			if column.Width > 0 {
-				lvc.Cx = column.Width
+				lvc.Cx = int32(column.Width)
 			} else {
 				lvc.Cx = 100
 			}
@@ -452,7 +452,12 @@ func (tv *TableView) updateSelectedIndexes() {
 	if changed {
 		tv.selectedIndexes.items = indexes
 		if tv.itemStateChangedEventDelay > 0 {
-			if 0 == SetTimer(tv.hWnd, tableViewSelectedIndexesChangedTimerId, uint(tv.itemStateChangedEventDelay), 0) {
+			if 0 == SetTimer(
+				tv.hWnd,
+				tableViewSelectedIndexesChangedTimerId,
+				uint32(tv.itemStateChangedEventDelay),
+				0) {
+
 				lastError("SetTimer")
 			}
 		} else {
@@ -617,7 +622,7 @@ func (tv *TableView) toggleItemChecked(index int) os.Error {
 	return nil
 }
 
-func (tv *TableView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ERASEBKGND:
 		if tv.lastColumnStretched {
@@ -647,7 +652,7 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintpt
 				tv.itemChecker != nil &&
 				tv.CheckBoxes() {
 
-				tv.toggleItemChecked(hti.IItem)
+				tv.toggleItemChecked(int(hti.IItem))
 			}
 		}
 
@@ -665,8 +670,8 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintpt
 		case LVN_GETDISPINFO:
 			di := (*NMLVDISPINFO)(unsafe.Pointer(lParam))
 
-			row := di.Item.IItem
-			col := di.Item.ISubItem
+			row := int(di.Item.IItem)
+			col := int(di.Item.ISubItem)
 
 			if di.Item.Mask&LVIF_TEXT > 0 {
 				var text string
@@ -703,16 +708,21 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintpt
 
 		case LVN_COLUMNCLICK:
 			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
-			tv.columnClickedPublisher.Publish(nmlv.ISubItem)
+			tv.columnClickedPublisher.Publish(int(nmlv.ISubItem))
 
 		case LVN_ITEMCHANGED:
 			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
 			selectedNow := nmlv.UNewState&LVIS_SELECTED > 0
 			selectedBefore := nmlv.UOldState&LVIS_SELECTED > 0
 			if selectedNow && !selectedBefore {
-				tv.currentIndex = nmlv.IItem
+				tv.currentIndex = int(nmlv.IItem)
 				if tv.itemStateChangedEventDelay > 0 {
-					if 0 == SetTimer(tv.hWnd, tableViewCurrentIndexChangedTimerId, uint(tv.itemStateChangedEventDelay), 0) {
+					if 0 == SetTimer(
+						tv.hWnd,
+						tableViewCurrentIndexChangedTimerId,
+						uint32(tv.itemStateChangedEventDelay),
+						0) {
+
 						lastError("SetTimer")
 					}
 				} else {

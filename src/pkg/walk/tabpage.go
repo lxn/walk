@@ -64,7 +64,7 @@ func (tp *TabPage) tcItem() *TCITEM {
 	item := &TCITEM{
 		Mask:       TCIF_TEXT,
 		PszText:    &text[0],
-		CchTextMax: len(text),
+		CchTextMax: int32(len(text)),
 	}
 
 	return item
