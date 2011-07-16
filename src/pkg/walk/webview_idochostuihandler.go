@@ -67,7 +67,7 @@ func webView_IDocHostUIHandler_ShowContextMenu(docHostUIHandler *webViewIDocHost
 }
 
 func webView_IDocHostUIHandler_GetHostInfo(docHostUIHandler *webViewIDocHostUIHandler, pInfo *DOCHOSTUIINFO) HRESULT {
-	pInfo.CbSize = uint(unsafe.Sizeof(*pInfo))
+	pInfo.CbSize = uint32(unsafe.Sizeof(*pInfo))
 	pInfo.DwFlags = DOCHOSTUIFLAG_NO3DBORDER
 	pInfo.DwDoubleClick = DOCHOSTUIDBLCLK_DEFAULT
 

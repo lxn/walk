@@ -54,7 +54,7 @@ type (
 	HANDLE    uintptr
 	HGLOBAL   HANDLE
 	HINSTANCE HANDLE
-	LCID      uint
+	LCID      uint32
 )
 
 type FILETIME struct {
@@ -102,22 +102,22 @@ func FileTimeToSystemTime(lpFileTime *FILETIME, lpSystemTime *SYSTEMTIME) bool {
 	return ret != 0
 }
 
-func GetLastError() uint {
+func GetLastError() uint32 {
 	ret, _, _ := syscall.Syscall(getLastError, 0,
 		0,
 		0,
 		0)
 
-	return uint(ret)
+	return uint32(ret)
 }
 
-func GetLogicalDriveStrings(nBufferLength uint, lpBuffer *uint16) uint {
+func GetLogicalDriveStrings(nBufferLength uint32, lpBuffer *uint16) uint32 {
 	ret, _, _ := syscall.Syscall(getLogicalDriveStrings, 2,
 		uintptr(nBufferLength),
 		uintptr(unsafe.Pointer(lpBuffer)),
 		0)
 
-	return uint(ret)
+	return uint32(ret)
 }
 
 func GetModuleHandle(lpModuleName *uint16) HINSTANCE {
@@ -138,7 +138,7 @@ func GetThreadLocale() LCID {
 	return LCID(ret)
 }
 
-func GlobalAlloc(uFlags uint, dwBytes uintptr) HGLOBAL {
+func GlobalAlloc(uFlags uint32, dwBytes uintptr) HGLOBAL {
 	ret, _, _ := syscall.Syscall(globalAlloc, 2,
 		uintptr(uFlags),
 		dwBytes,
@@ -181,16 +181,16 @@ func MoveMemory(destination, source unsafe.Pointer, length uintptr) {
 		uintptr(length))
 }
 
-func MulDiv(nNumber, nNumerator, nDenominator int) int {
+func MulDiv(nNumber, nNumerator, nDenominator int32) int32 {
 	ret, _, _ := syscall.Syscall(mulDiv, 3,
 		uintptr(nNumber),
 		uintptr(nNumerator),
 		uintptr(nDenominator))
 
-	return int(ret)
+	return int32(ret)
 }
 
-func SetLastError(dwErrorCode uint) {
+func SetLastError(dwErrorCode uint32) {
 	syscall.Syscall(setLastError, 1,
 		uintptr(dwErrorCode),
 		0,

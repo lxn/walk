@@ -76,8 +76,8 @@ const (
 )
 
 type TOOLINFO struct {
-	CbSize     uint
-	UFlags     uint
+	CbSize     uint32
+	UFlags     uint32
 	Hwnd       HWND
 	UId        uintptr
 	Rect       RECT
@@ -88,8 +88,8 @@ type TOOLINFO struct {
 }
 
 type TTGETTITLE struct {
-	DwSize       uint
-	UTitleBitmap uint
-	Cch          uint
+	DwSize       uint32
+	UTitleBitmap uint32
+	Cch          uint32
 	PszTitle     *uint16
 }

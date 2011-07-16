@@ -16,7 +16,7 @@ const notifyIconWindowClass = `\o/ Walk_NotifyIcon_Class \o/`
 
 var notifyIconWindowClassRegistered bool
 
-func notifyIconWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) (result uintptr) {
+func notifyIconWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) (result uintptr) {
 	// Retrieve our *NotifyIcon from the message window.
 	ptr := GetWindowLongPtr(hwnd, GWLP_USERDATA)
 	ni := (*NotifyIcon)(unsafe.Pointer(ptr))
@@ -265,7 +265,7 @@ func (ni *NotifyIcon) publishMouseEvent(publisher *MouseEventPublisher, button M
 		lastError("GetCursorPos")
 	}
 
-	publisher.Publish(p.X, p.Y, button)
+	publisher.Publish(int(p.X), int(p.Y), button)
 }
 
 // MouseDown returns the event that is published when a mouse button is pressed

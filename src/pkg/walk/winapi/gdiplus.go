@@ -9,7 +9,7 @@ import (
 	"unsafe"
 )
 
-type GpStatus int
+type GpStatus int32
 
 const (
 	Ok                        GpStatus = 0

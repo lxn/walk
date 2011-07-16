@@ -92,7 +92,7 @@ func (pb *PushButton) ensureProperDialogDefaultButton(hwndFocus HWND) {
 	}
 }
 
-func (pb *PushButton) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (pb *PushButton) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
 		hwndFocus := GetFocus()

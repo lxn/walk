@@ -18,7 +18,7 @@ type Composite struct {
 	ContainerBase
 }
 
-func newCompositeWithStyle(parent Container, style uint) (*Composite, os.Error) {
+func newCompositeWithStyle(parent Container, style uint32) (*Composite, os.Error) {
 	ensureRegisteredWindowClass(compositeWindowClass, &compositeWindowClassRegistered)
 
 	c := &Composite{}

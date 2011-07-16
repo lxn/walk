@@ -22,7 +22,7 @@ const (
 )
 
 type (
-	ACCESS_MASK uint
+	ACCESS_MASK uint32
 	HKEY        HANDLE
 	REGSAM      ACCESS_MASK
 )
@@ -47,16 +47,16 @@ func init() {
 	regQueryValueEx = MustGetProcAddress(libadvapi32, "RegQueryValueExW")
 }
 
-func RegCloseKey(hKey HKEY) int {
+func RegCloseKey(hKey HKEY) int32 {
 	ret, _, _ := syscall.Syscall(regCloseKey, 1,
 		uintptr(hKey),
 		0,
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
-func RegOpenKeyEx(hKey HKEY, lpSubKey *uint16, ulOptions uint, samDesired REGSAM, phkResult *HKEY) int {
+func RegOpenKeyEx(hKey HKEY, lpSubKey *uint16, ulOptions uint32, samDesired REGSAM, phkResult *HKEY) int32 {
 	ret, _, _ := syscall.Syscall6(regOpenKeyEx, 5,
 		uintptr(hKey),
 		uintptr(unsafe.Pointer(lpSubKey)),
@@ -65,10 +65,10 @@ func RegOpenKeyEx(hKey HKEY, lpSubKey *uint16, ulOptions uint, samDesired REGSAM
 		uintptr(unsafe.Pointer(phkResult)),
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
-func RegQueryValueEx(hKey HKEY, lpValueName *uint16, lpReserved, lpType *uint, lpData *byte, lpcbData *uint) int {
+func RegQueryValueEx(hKey HKEY, lpValueName *uint16, lpReserved, lpType *uint32, lpData *byte, lpcbData *uint32) int32 {
 	ret, _, _ := syscall.Syscall6(regQueryValueEx, 6,
 		uintptr(hKey),
 		uintptr(unsafe.Pointer(lpValueName)),
@@ -77,5 +77,5 @@ func RegQueryValueEx(hKey HKEY, lpValueName *uint16, lpReserved, lpType *uint, l
 		uintptr(unsafe.Pointer(lpData)),
 		uintptr(unsafe.Pointer(lpcbData)))
 
-	return int(ret)
+	return int32(ret)
 }

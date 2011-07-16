@@ -70,8 +70,8 @@ func (tt *ToolTip) Title() string {
 
 	buf := make([]uint16, 128)
 
-	gt.DwSize = uint(unsafe.Sizeof(gt))
-	gt.Cch = uint(len(buf))
+	gt.DwSize = uint32(unsafe.Sizeof(gt))
+	gt.Cch = uint32(len(buf))
 	gt.PszTitle = &buf[0]
 
 	SendMessage(tt.hWnd, TTM_GETTITLE, 0, uintptr(unsafe.Pointer(&gt)))
@@ -90,7 +90,7 @@ func (tt *ToolTip) SetTitle(value string) os.Error {
 func (tt *ToolTip) AddWidget(widget Widget, text string) os.Error {
 	var ti TOOLINFO
 
-	ti.CbSize = uint(unsafe.Sizeof(ti))
+	ti.CbSize = uint32(unsafe.Sizeof(ti))
 	parent := widget.Parent()
 	if parent != nil {
 		ti.Hwnd = parent.BaseWidget().hWnd

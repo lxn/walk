@@ -22,7 +22,7 @@ type ToolBar struct {
 	defaultButtonWidth int
 }
 
-func newToolBar(parent Container, style uint) (*ToolBar, os.Error) {
+func newToolBar(parent Container, style uint32) (*ToolBar, os.Error) {
 	tb := &ToolBar{}
 	tb.actions = newActionList(tb)
 
@@ -78,7 +78,7 @@ func (tb *ToolBar) SizeHint() Size {
 		return Size{}
 	}
 
-	size := uint(SendMessage(tb.hWnd, TB_GETBUTTONSIZE, 0, 0))
+	size := uint32(SendMessage(tb.hWnd, TB_GETBUTTONSIZE, 0, 0))
 
 	width := tb.defaultButtonWidth
 	if width == 0 {
@@ -95,7 +95,7 @@ func (tb *ToolBar) applyDefaultButtonWidth() os.Error {
 		return nil
 	}
 
-	size := uint(SendMessage(tb.hWnd, TB_GETBUTTONSIZE, 0, 0))
+	size := uint32(SendMessage(tb.hWnd, TB_GETBUTTONSIZE, 0, 0))
 	height := HIWORD(size)
 
 	lParam := uintptr(MAKELONG(uint16(tb.defaultButtonWidth), height))
@@ -163,7 +163,7 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 	tb.imageList = value
 }
 
-func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int, err os.Error) {
+func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err os.Error) {
 	imageIndex = -1
 	if image != nil {
 		// FIXME: Protect against duplicate insertion
@@ -175,12 +175,12 @@ func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int, err os.Error) {
 	return
 }
 
-func (tb *ToolBar) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (tb *ToolBar) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_NOTIFY:
 		nmm := (*NMMOUSE)(unsafe.Pointer(lParam))
 
-		switch int(nmm.Hdr.Code) {
+		switch int32(nmm.Hdr.Code) {
 		case NM_CLICK:
 			actionId := uint16(nmm.DwItemSpec)
 			if action := actionsById[actionId]; action != nil {
@@ -192,7 +192,7 @@ func (tb *ToolBar) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr 
 	return tb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
-func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image *int, text *uintptr) (err os.Error) {
+func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image *int32, text *uintptr) (err os.Error) {
 	if tb.hasStyleBits(CCS_VERT) {
 		*state |= TBSTATE_WRAP
 	} else if tb.defaultButtonWidth == 0 {
@@ -229,7 +229,7 @@ func (tb *ToolBar) onActionChanged(action *Action) os.Error {
 		DwMask: TBIF_IMAGE | TBIF_STATE | TBIF_STYLE | TBIF_TEXT,
 	}
 
-	tbbi.CbSize = uint(unsafe.Sizeof(tbbi))
+	tbbi.CbSize = uint32(unsafe.Sizeof(tbbi))
 
 	if err := tb.initButtonForAction(
 		action,
@@ -255,7 +255,7 @@ func (tb *ToolBar) onActionChanged(action *Action) os.Error {
 
 func (tb *ToolBar) onInsertingAction(index int, action *Action) os.Error {
 	tbb := TBBUTTON{
-		IdCommand: int(action.id),
+		IdCommand: int32(action.id),
 	}
 
 	if err := tb.initButtonForAction(

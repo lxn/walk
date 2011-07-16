@@ -134,7 +134,7 @@ func (p *PrinterInfo) createIC() HDC {
 }
 
 func (p *PrinterInfo) devCapsPrinter(capability uint16, pOutput *uint16, defaultValue uint, printerName *uint16) uint {
-	val := DeviceCapabilities(printerName, syscall.StringToUTF16Ptr(p.outputPort), capability, pOutput, nil)
+	val := uint(DeviceCapabilities(printerName, syscall.StringToUTF16Ptr(p.outputPort), capability, pOutput, nil))
 
 	if val == ^uint(0) { // ^0 == -1
 		return defaultValue
@@ -147,7 +147,7 @@ func (p *PrinterInfo) devCaps(capability uint16, pOutput *uint16, defaultValue u
 	return p.devCapsPrinter(capability, pOutput, defaultValue, p.printerNamePtr())
 }
 
-func (p *PrinterInfo) getDeviceCaps(capability int) int {
+func (p *PrinterInfo) getDeviceCaps(capability int32) int32 {
 	hic := p.createIC()
 	defer DeleteDC(hic)
 
@@ -517,7 +517,12 @@ func (p *PrinterInfo) paperSizes() []*PaperSize {
 		typ := PaperSizeType(types[i])
 		size := sizes[i]
 
-		papers[i] = &PaperSize{name: name, typ: typ, width: size.CX, height: size.CY}
+		papers[i] = &PaperSize{
+			name:   name,
+			typ:    typ,
+			width:  int(size.CX),
+			height: int(size.CY),
+		}
 	}
 
 	return papers
@@ -603,7 +608,11 @@ func (p *PrinterInfo) resolutions() []*Resolution {
 	for i := 0; i < len(sizes); i++ {
 		size := sizes[i]
 
-		resolutions[i+4] = &Resolution{typ: ResCustom, x: size.CX, y: size.CY}
+		resolutions[i+4] = &Resolution{
+			typ: ResCustom,
+			x:   int(size.CX),
+			y:   int(size.CY),
+		}
 	}
 
 	return resolutions

@@ -996,25 +996,25 @@ type (
 
 type MSG struct {
 	HWnd    HWND
-	Message uint
+	Message uint32
 	WParam  uintptr
 	LParam  uintptr
-	Time    uint
+	Time    uint32
 	Pt      POINT
 }
 
 type NMHDR struct {
 	HwndFrom HWND
 	IdFrom   uintptr
-	Code     uint
+	Code     uint32
 }
 
 type WNDCLASSEX struct {
-	CbSize        uint
-	Style         uint
+	CbSize        uint32
+	Style         uint32
 	LpfnWndProc   uintptr
-	CbClsExtra    int
-	CbWndExtra    int
+	CbClsExtra    int32
+	CbWndExtra    int32
 	HInstance     HINSTANCE
 	HIcon         HICON
 	HCursor       HCURSOR
@@ -1025,25 +1025,25 @@ type WNDCLASSEX struct {
 }
 
 type TPMPARAMS struct {
-	CbSize    uint
+	CbSize    uint32
 	RcExclude RECT
 }
 
 type WINDOWPLACEMENT struct {
-	Length           uint
-	Flags            uint
-	ShowCmd          uint
+	Length           uint32
+	Flags            uint32
+	ShowCmd          uint32
 	PtMinPosition    POINT
 	PtMaxPosition    POINT
 	RcNormalPosition RECT
 }
 
 type DRAWTEXTPARAMS struct {
-	CbSize        uint
-	ITabLength    int
-	ILeftMargin   int
-	IRightMargin  int
-	UiLengthDrawn uint
+	CbSize        uint32
+	ITabLength    int32
+	ILeftMargin   int32
+	IRightMargin  int32
+	UiLengthDrawn uint32
 }
 
 type PAINTSTRUCT struct {
@@ -1064,29 +1064,29 @@ type MINMAXINFO struct {
 }
 
 type NONCLIENTMETRICS struct {
-	CbSize           uint
-	IBorderWidth     int
-	IScrollWidth     int
-	IScrollHeight    int
-	ICaptionWidth    int
-	ICaptionHeight   int
+	CbSize           uint32
+	IBorderWidth     int32
+	IScrollWidth     int32
+	IScrollHeight    int32
+	ICaptionWidth    int32
+	ICaptionHeight   int32
 	LfCaptionFont    LOGFONT
-	ISmCaptionWidth  int
-	ISmCaptionHeight int
+	ISmCaptionWidth  int32
+	ISmCaptionHeight int32
 	LfSmCaptionFont  LOGFONT
-	IMenuWidth       int
-	IMenuHeight      int
+	IMenuWidth       int32
+	IMenuHeight      int32
 	LfMenuFont       LOGFONT
 	LfStatusFont     LOGFONT
 	LfMessageFont    LOGFONT
 }
 
-func GET_X_LPARAM(lp uintptr) int {
-	return int(int16(LOWORD(uint(lp))))
+func GET_X_LPARAM(lp uintptr) int32 {
+	return int32(int16(LOWORD(uint32(lp))))
 }
 
-func GET_Y_LPARAM(lp uintptr) int {
-	return int(int16(HIWORD(uint(lp))))
+func GET_Y_LPARAM(lp uintptr) int32 {
+	return int32(int16(HIWORD(uint32(lp))))
 }
 
 var (
@@ -1241,7 +1241,7 @@ func init() {
 	translateMessage = MustGetProcAddress(libuser32, "TranslateMessage")
 }
 
-func BeginDeferWindowPos(nNumWindows int) HDWP {
+func BeginDeferWindowPos(nNumWindows int32) HDWP {
 	ret, _, _ := syscall.Syscall(beginDeferWindowPos, 1,
 		uintptr(nNumWindows),
 		0,
@@ -1259,7 +1259,7 @@ func BeginPaint(hwnd HWND, lpPaint *PAINTSTRUCT) HDC {
 	return HDC(ret)
 }
 
-func CallWindowProc(lpPrevWndFunc uintptr, hWnd HWND, Msg uint, wParam, lParam uintptr) uintptr {
+func CallWindowProc(lpPrevWndFunc uintptr, hWnd HWND, Msg uint32, wParam, lParam uintptr) uintptr {
 	ret, _, _ := syscall.Syscall6(callWindowProc, 5,
 		lpPrevWndFunc,
 		uintptr(hWnd),
@@ -1289,7 +1289,7 @@ func CreatePopupMenu() HMENU {
 	return HMENU(ret)
 }
 
-func CreateWindowEx(dwExStyle uint, lpClassName, lpWindowName *uint16, dwStyle uint, x, y, nWidth, nHeight int, hWndParent HWND, hMenu HMENU, hInstance HINSTANCE, lpParam unsafe.Pointer) HWND {
+func CreateWindowEx(dwExStyle uint32, lpClassName, lpWindowName *uint16, dwStyle uint32, x, y, nWidth, nHeight int32, hWndParent HWND, hMenu HMENU, hInstance HINSTANCE, lpParam unsafe.Pointer) HWND {
 	ret, _, _ := syscall.Syscall12(createWindowEx, 12,
 		uintptr(dwExStyle),
 		uintptr(unsafe.Pointer(lpClassName)),
@@ -1307,7 +1307,7 @@ func CreateWindowEx(dwExStyle uint, lpClassName, lpWindowName *uint16, dwStyle u
 	return HWND(ret)
 }
 
-func DeferWindowPos(hWinPosInfo HDWP, hWnd, hWndInsertAfter HWND, x, y, cx, cy int, uFlags uint) HDWP {
+func DeferWindowPos(hWinPosInfo HDWP, hWnd, hWndInsertAfter HWND, x, y, cx, cy int32, uFlags uint32) HDWP {
 	ret, _, _ := syscall.Syscall9(deferWindowPos, 8,
 		uintptr(hWinPosInfo),
 		uintptr(hWnd),
@@ -1322,7 +1322,7 @@ func DeferWindowPos(hWinPosInfo HDWP, hWnd, hWndInsertAfter HWND, x, y, cx, cy i
 	return HDWP(ret)
 }
 
-func DefWindowProc(hWnd HWND, Msg uint, wParam, lParam uintptr) uintptr {
+func DefWindowProc(hWnd HWND, Msg uint32, wParam, lParam uintptr) uintptr {
 	ret, _, _ := syscall.Syscall6(defWindowProc, 4,
 		uintptr(hWnd),
 		uintptr(Msg),
@@ -1379,7 +1379,7 @@ func DrawMenuBar(hWnd HWND) bool {
 	return ret != 0
 }
 
-func DrawTextEx(hdc HDC, lpchText *uint16, cchText int, lprc *RECT, dwDTFormat uint, lpDTParams *DRAWTEXTPARAMS) int {
+func DrawTextEx(hdc HDC, lpchText *uint16, cchText int32, lprc *RECT, dwDTFormat uint32, lpDTParams *DRAWTEXTPARAMS) int32 {
 	ret, _, _ := syscall.Syscall6(drawTextEx, 6,
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(lpchText)),
@@ -1388,7 +1388,7 @@ func DrawTextEx(hdc HDC, lpchText *uint16, cchText int, lprc *RECT, dwDTFormat u
 		uintptr(dwDTFormat),
 		uintptr(unsafe.Pointer(lpDTParams)))
 
-	return int(ret)
+	return int32(ret)
 }
 
 func EnableWindow(hWnd HWND, bEnable bool) bool {
@@ -1427,7 +1427,7 @@ func EnumChildWindows(hWndParent HWND, lpEnumFunc, lParam uintptr) bool {
 	return ret != 0
 }
 
-func GetAncestor(hWnd HWND, gaFlags uint) HWND {
+func GetAncestor(hWnd HWND, gaFlags uint32) HWND {
 	ret, _, _ := syscall.Syscall(getAncestor, 2,
 		uintptr(hWnd),
 		uintptr(gaFlags),
@@ -1481,7 +1481,7 @@ func GetMenuInfo(hmenu HMENU, lpcmi *MENUINFO) bool {
 	return ret != 0
 }
 
-func GetMessage(msg *MSG, hWnd HWND, msgFilterMin, msgFilterMax uint) BOOL {
+func GetMessage(msg *MSG, hWnd HWND, msgFilterMin, msgFilterMax uint32) BOOL {
 	ret, _, _ := syscall.Syscall6(getMessage, 4,
 		uintptr(unsafe.Pointer(msg)),
 		uintptr(hWnd),
@@ -1493,25 +1493,25 @@ func GetMessage(msg *MSG, hWnd HWND, msgFilterMin, msgFilterMax uint) BOOL {
 	return BOOL(ret)
 }
 
-func GetSystemMetrics(nIndex int) int {
+func GetSystemMetrics(nIndex int32) int32 {
 	ret, _, _ := syscall.Syscall(getSystemMetrics, 1,
 		uintptr(nIndex),
 		0,
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
-func GetWindowLong(hWnd HWND, index int) int {
+func GetWindowLong(hWnd HWND, index int32) int32 {
 	ret, _, _ := syscall.Syscall(getWindowLong, 2,
 		uintptr(hWnd),
 		uintptr(index),
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
-func GetWindowLongPtr(hWnd HWND, index int) uintptr {
+func GetWindowLongPtr(hWnd HWND, index int32) uintptr {
 	ret, _, _ := syscall.Syscall(getWindowLongPtr, 2,
 		uintptr(hWnd),
 		uintptr(index),
@@ -1538,7 +1538,7 @@ func GetWindowRect(hWnd HWND, rect *RECT) bool {
 	return ret != 0
 }
 
-func InsertMenuItem(hMenu HMENU, uItem uint, fByPosition bool, lpmii *MENUITEMINFO) bool {
+func InsertMenuItem(hMenu HMENU, uItem uint32, fByPosition bool, lpmii *MENUITEMINFO) bool {
 	ret, _, _ := syscall.Syscall6(insertMenuItem, 4,
 		uintptr(hMenu),
 		uintptr(uItem),
@@ -1622,7 +1622,7 @@ func LoadIcon(hInstance HINSTANCE, lpIconName *uint16) HICON {
 	return HICON(ret)
 }
 
-func LoadImage(hinst HINSTANCE, lpszName *uint16, uType uint, cxDesired, cyDesired int, fuLoad uint) HANDLE {
+func LoadImage(hinst HINSTANCE, lpszName *uint16, uType uint32, cxDesired, cyDesired int32, fuLoad uint32) HANDLE {
 	ret, _, _ := syscall.Syscall6(loadImage, 6,
 		uintptr(hinst),
 		uintptr(unsafe.Pointer(lpszName)),
@@ -1634,7 +1634,7 @@ func LoadImage(hinst HINSTANCE, lpszName *uint16, uType uint, cxDesired, cyDesir
 	return HANDLE(ret)
 }
 
-func MessageBox(hWnd HWND, lpText, lpCaption *uint16, uType uint) int {
+func MessageBox(hWnd HWND, lpText, lpCaption *uint16, uType uint32) int32 {
 	ret, _, _ := syscall.Syscall6(messageBox, 4,
 		uintptr(hWnd),
 		uintptr(unsafe.Pointer(lpText)),
@@ -1643,10 +1643,10 @@ func MessageBox(hWnd HWND, lpText, lpCaption *uint16, uType uint) int {
 		0,
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
-func MoveWindow(hWnd HWND, x, y, width, height int, repaint bool) bool {
+func MoveWindow(hWnd HWND, x, y, width, height int32, repaint bool) bool {
 	ret, _, _ := syscall.Syscall6(moveWindow, 6,
 		uintptr(hWnd),
 		uintptr(x),
@@ -1658,7 +1658,7 @@ func MoveWindow(hWnd HWND, x, y, width, height int, repaint bool) bool {
 	return ret != 0
 }
 
-func PostMessage(hWnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func PostMessage(hWnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	ret, _, _ := syscall.Syscall6(postMessage, 4,
 		uintptr(hWnd),
 		uintptr(msg),
@@ -1670,7 +1670,7 @@ func PostMessage(hWnd HWND, msg uint, wParam, lParam uintptr) uintptr {
 	return ret
 }
 
-func PostQuitMessage(exitCode int) {
+func PostQuitMessage(exitCode int32) {
 	syscall.Syscall(postQuitMessage, 1,
 		uintptr(exitCode),
 		0,
@@ -1704,7 +1704,7 @@ func ReleaseDC(hWnd HWND, hDC HDC) bool {
 	return ret != 0
 }
 
-func RemoveMenu(hMenu HMENU, uPosition, uFlags uint) bool {
+func RemoveMenu(hMenu HMENU, uPosition, uFlags uint32) bool {
 	ret, _, _ := syscall.Syscall(removeMenu, 3,
 		uintptr(hMenu),
 		uintptr(uPosition),
@@ -1722,7 +1722,7 @@ func ScreenToClient(hWnd HWND, point *POINT) bool {
 	return ret != 0
 }
 
-func SendMessage(hWnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func SendMessage(hWnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	ret, _, _ := syscall.Syscall6(sendMessage, 4,
 		uintptr(hWnd),
 		uintptr(msg),
@@ -1797,7 +1797,7 @@ func SetMenuInfo(hmenu HMENU, lpcmi *MENUINFO) bool {
 	return ret != 0
 }
 
-func SetMenuItemInfo(hMenu HMENU, uItem uint, fByPosition bool, lpmii *MENUITEMINFO) bool {
+func SetMenuItemInfo(hMenu HMENU, uItem uint32, fByPosition bool, lpmii *MENUITEMINFO) bool {
 	ret, _, _ := syscall.Syscall6(setMenuItemInfo, 4,
 		uintptr(hMenu),
 		uintptr(uItem),
@@ -1818,7 +1818,7 @@ func SetParent(hWnd HWND, parentHWnd HWND) HWND {
 	return HWND(ret)
 }
 
-func SetTimer(hWnd HWND, nIDEvent uintptr, uElapse uint, lpTimerFunc uintptr) uintptr {
+func SetTimer(hWnd HWND, nIDEvent uintptr, uElapse uint32, lpTimerFunc uintptr) uintptr {
 	ret, _, _ := syscall.Syscall6(setTimer, 4,
 		uintptr(hWnd),
 		nIDEvent,
@@ -1830,13 +1830,13 @@ func SetTimer(hWnd HWND, nIDEvent uintptr, uElapse uint, lpTimerFunc uintptr) ui
 	return ret
 }
 
-func SetWindowLong(hWnd HWND, index, value int) int {
+func SetWindowLong(hWnd HWND, index, value int32) int32 {
 	ret, _, _ := syscall.Syscall(setWindowLong, 3,
 		uintptr(hWnd),
 		uintptr(index),
 		uintptr(value))
 
-	return int(ret)
+	return int32(ret)
 }
 
 func SetWindowLongPtr(hWnd HWND, index int, value uintptr) uintptr {
@@ -1857,7 +1857,7 @@ func SetWindowPlacement(hWnd HWND, lpwndpl *WINDOWPLACEMENT) bool {
 	return ret != 0
 }
 
-func SetWindowPos(hWnd, hWndInsertAfter HWND, x, y, width, height int, flags uint) bool {
+func SetWindowPos(hWnd, hWndInsertAfter HWND, x, y, width, height int32, flags uint32) bool {
 	ret, _, _ := syscall.Syscall9(setWindowPos, 7,
 		uintptr(hWnd),
 		uintptr(hWndInsertAfter),
@@ -1872,7 +1872,7 @@ func SetWindowPos(hWnd, hWndInsertAfter HWND, x, y, width, height int, flags uin
 	return ret != 0
 }
 
-func ShowWindow(hWnd HWND, nCmdShow int) bool {
+func ShowWindow(hWnd HWND, nCmdShow int32) bool {
 	ret, _, _ := syscall.Syscall(showWindow, 2,
 		uintptr(hWnd),
 		uintptr(nCmdShow),
@@ -1881,7 +1881,7 @@ func ShowWindow(hWnd HWND, nCmdShow int) bool {
 	return ret != 0
 }
 
-func SystemParametersInfo(uiAction, uiParam uint, pvParam unsafe.Pointer, fWinIni uint) bool {
+func SystemParametersInfo(uiAction, uiParam uint32, pvParam unsafe.Pointer, fWinIni uint32) bool {
 	ret, _, _ := syscall.Syscall6(systemParametersInfo, 4,
 		uintptr(uiAction),
 		uintptr(uiParam),
@@ -1893,7 +1893,7 @@ func SystemParametersInfo(uiAction, uiParam uint, pvParam unsafe.Pointer, fWinIn
 	return ret != 0
 }
 
-func TrackPopupMenuEx(hMenu HMENU, fuFlags uint, x, y int, hWnd HWND, lptpm *TPMPARAMS) BOOL {
+func TrackPopupMenuEx(hMenu HMENU, fuFlags uint32, x, y int32, hWnd HWND, lptpm *TPMPARAMS) BOOL {
 	ret, _, _ := syscall.Syscall6(trackPopupMenuEx, 6,
 		uintptr(hMenu),
 		uintptr(fuFlags),

@@ -37,7 +37,7 @@ func NewMenu() (*Menu, os.Error) {
 	}
 
 	var mi MENUINFO
-	mi.CbSize = uint(unsafe.Sizeof(mi))
+	mi.CbSize = uint32(unsafe.Sizeof(mi))
 
 	if !GetMenuInfo(hMenu, &mi) {
 		return nil, lastError("GetMenuInfo")
@@ -72,7 +72,7 @@ func (m *Menu) Actions() *ActionList {
 }
 
 func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
-	mii.CbSize = uint(unsafe.Sizeof(*mii))
+	mii.CbSize = uint32(unsafe.Sizeof(*mii))
 	mii.FMask = MIIM_FTYPE | MIIM_ID | MIIM_STATE | MIIM_STRING
 	if action.image != nil {
 		mii.FMask |= MIIM_BITMAP
@@ -83,9 +83,9 @@ func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 	} else {
 		mii.FType = MFT_STRING
 		mii.DwTypeData = syscall.StringToUTF16Ptr(action.text)
-		mii.Cch = uint(len([]int(action.text)))
+		mii.Cch = uint32(len([]int(action.text)))
 	}
-	mii.WID = uint(action.id)
+	mii.WID = uint32(action.id)
 
 	if action.Enabled() {
 		mii.FState &^= MFS_DISABLED
@@ -105,7 +105,7 @@ func (m *Menu) onActionChanged(action *Action) os.Error {
 
 	m.initMenuItemInfoFromAction(&mii, action)
 
-	if !SetMenuItemInfo(m.hMenu, uint(m.actions.Index(action)), true, &mii) {
+	if !SetMenuItemInfo(m.hMenu, uint32(m.actions.Index(action)), true, &mii) {
 		return newError("SetMenuItemInfo failed")
 	}
 
@@ -117,7 +117,7 @@ func (m *Menu) onInsertingAction(index int, action *Action) os.Error {
 
 	m.initMenuItemInfoFromAction(&mii, action)
 
-	if !InsertMenuItem(m.hMenu, uint(index), true, &mii) {
+	if !InsertMenuItem(m.hMenu, uint32(index), true, &mii) {
 		return newError("InsertMenuItem failed")
 	}
 
@@ -136,7 +136,7 @@ func (m *Menu) onInsertingAction(index int, action *Action) os.Error {
 }
 
 func (m *Menu) onRemovingAction(index int, action *Action) os.Error {
-	if !RemoveMenu(m.hMenu, uint(index), MF_BYPOSITION) {
+	if !RemoveMenu(m.hMenu, uint32(index), MF_BYPOSITION) {
 		return lastError("RemoveMenu")
 	}
 
@@ -151,7 +151,7 @@ func (m *Menu) onRemovingAction(index int, action *Action) os.Error {
 
 func (m *Menu) onClearingActions() os.Error {
 	for i := m.actions.Len() - 1; i >= 0; i-- {
-		if !RemoveMenu(m.hMenu, uint(i), MF_BYPOSITION) {
+		if !RemoveMenu(m.hMenu, uint32(i), MF_BYPOSITION) {
 			return lastError("RemoveMenu")
 		}
 

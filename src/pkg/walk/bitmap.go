@@ -30,7 +30,8 @@ func hPackedDIBFromHBITMAP(hBmp HBITMAP) (HGLOBAL, os.Error) {
 	}
 
 	bmihSize := uintptr(unsafe.Sizeof(dib.DsBmih))
-	pixelsSize := uintptr(int(dib.DsBmih.BiBitCount) * dib.DsBmih.BiWidth * dib.DsBmih.BiHeight)
+	pixelsSize := uintptr(
+		int32(dib.DsBmih.BiBitCount) * dib.DsBmih.BiWidth * dib.DsBmih.BiHeight)
 
 	totalSize := bmihSize + pixelsSize
 
@@ -65,7 +66,7 @@ func newBitmapFromHBITMAP(hBmp HBITMAP) (bmp *Bitmap, err os.Error) {
 	bmih := &dib.DsBmih
 
 	bmihSize := uintptr(unsafe.Sizeof(*bmih))
-	pixelsSize := uintptr(int(bmih.BiBitCount)*bmih.BiWidth*bmih.BiHeight) / 8
+	pixelsSize := uintptr(int32(bmih.BiBitCount)*bmih.BiWidth*bmih.BiHeight) / 8
 
 	totalSize := uintptr(bmihSize + pixelsSize)
 
@@ -82,18 +83,25 @@ func newBitmapFromHBITMAP(hBmp HBITMAP) (bmp *Bitmap, err os.Error) {
 
 	MoveMemory(dest, src, pixelsSize)
 
-	return &Bitmap{hBmp: hBmp, hPackedDIB: hPackedDIB, size: Size{bmih.BiWidth, bmih.BiHeight}}, nil
+	return &Bitmap{
+		hBmp:       hBmp,
+		hPackedDIB: hPackedDIB,
+		size: Size{
+			int(bmih.BiWidth),
+			int(bmih.BiHeight),
+		},
+	}, nil
 }
 
 func NewBitmap(size Size) (bmp *Bitmap, err os.Error) {
 	var bmi BITMAPINFO
 	hdr := &bmi.BmiHeader
-	hdr.BiSize = uint(unsafe.Sizeof(*hdr))
+	hdr.BiSize = uint32(unsafe.Sizeof(*hdr))
 	hdr.BiBitCount = 24
 	hdr.BiCompression = BI_RGB
 	hdr.BiPlanes = 1
-	hdr.BiWidth = size.Width
-	hdr.BiHeight = size.Height
+	hdr.BiWidth = int32(size.Width)
+	hdr.BiHeight = int32(size.Height)
 
 	err = withCompatibleDC(func(hdc HDC) os.Error {
 		hBmp := CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, nil, 0, 0)
@@ -140,7 +148,17 @@ func (bmp *Bitmap) draw(hdc HDC, location Point) os.Error {
 	return bmp.withSelectedIntoMemDC(func(hdcMem HDC) os.Error {
 		size := bmp.Size()
 
-		if !BitBlt(hdc, location.X, location.Y, size.Width, size.Height, hdcMem, 0, 0, SRCCOPY) {
+		if !BitBlt(
+			hdc,
+			int32(location.X),
+			int32(location.Y),
+			int32(size.Width),
+			int32(size.Height),
+			hdcMem,
+			0,
+			0,
+			SRCCOPY) {
+
 			return lastError("BitBlt")
 		}
 
@@ -152,7 +170,19 @@ func (bmp *Bitmap) drawStretched(hdc HDC, bounds Rectangle) os.Error {
 	return bmp.withSelectedIntoMemDC(func(hdcMem HDC) os.Error {
 		size := bmp.Size()
 
-		if !StretchBlt(hdc, bounds.X, bounds.Y, bounds.Width, bounds.Height, hdcMem, 0, 0, size.Width, size.Height, SRCCOPY) {
+		if !StretchBlt(
+			hdc,
+			int32(bounds.X),
+			int32(bounds.Y),
+			int32(bounds.Width),
+			int32(bounds.Height),
+			hdcMem,
+			0,
+			0,
+			int32(size.Width),
+			int32(size.Height),
+			SRCCOPY) {
+
 			return newError("StretchBlt failed")
 		}
 

@@ -126,7 +126,7 @@ const (
 
 // TreeView notifications
 const (
-	TVN_FIRST = ^uint(399)
+	TVN_FIRST = ^uint32(399)
 
 	TVN_SELCHANGING    = TVN_FIRST - 50
 	TVN_SELCHANGED     = TVN_FIRST - 51
@@ -148,15 +148,15 @@ const (
 type HTREEITEM HANDLE
 
 type TVITEM struct {
-	Mask           uint
+	Mask           uint32
 	HItem          HTREEITEM
-	State          uint
-	StateMask      uint
+	State          uint32
+	StateMask      uint32
 	PszText        *uint16
-	CchTextMax     int
-	IImage         int
-	ISelectedImage int
-	CChildren      int
+	CchTextMax     int32
+	IImage         int32
+	ISelectedImage int32
+	CChildren      int32
 	LParam         uintptr
 }
 
@@ -187,7 +187,7 @@ type TVINSERTSTRUCT struct {
 
 type NMTREEVIEW struct {
 	Hdr     NMHDR
-	Action  uint
+	Action  uint32
 	ItemOld TVITEM
 	ItemNew TVITEM
 	PtDrag  POINT

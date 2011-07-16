@@ -136,13 +136,13 @@ func (cb *ContainerBase) SetSuspended(suspend bool) {
 	}
 }
 
-func (cb *ContainerBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (cb *ContainerBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		if lParam == 0 {
-			switch HIWORD(uint(wParam)) {
+			switch HIWORD(uint32(wParam)) {
 			case 0:
-				cmdId := LOWORD(uint(wParam))
+				cmdId := LOWORD(uint32(wParam))
 				switch cmdId {
 				case IDOK, IDCANCEL:
 					root := rootWidget(cb)
@@ -170,7 +170,7 @@ func (cb *ContainerBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) ui
 				}
 
 				// Menu
-				actionId := uint16(LOWORD(uint(wParam)))
+				actionId := uint16(LOWORD(uint32(wParam)))
 				if action, ok := actionsById[actionId]; ok {
 					action.raiseTriggered()
 					return 0

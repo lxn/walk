@@ -133,7 +133,7 @@ func (gb *GroupBox) SetLayout(value Layout) os.Error {
 	return gb.composite.SetLayout(value)
 }
 
-func (gb *GroupBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (gb *GroupBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if gb.composite != nil {
 		switch msg {
 		case WM_COMMAND, WM_NOTIFY:
@@ -141,7 +141,14 @@ func (gb *GroupBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 
 		case WM_SIZE, WM_SIZING:
 			wbcb := gb.WidgetBase.ClientBounds()
-			if !MoveWindow(gb.hWndGroupBox, wbcb.X, wbcb.Y, wbcb.Width, wbcb.Height, true) {
+			if !MoveWindow(
+				gb.hWndGroupBox,
+				int32(wbcb.X),
+				int32(wbcb.Y),
+				int32(wbcb.Width),
+				int32(wbcb.Height),
+				true) {
+
 				lastError("MoveWindow")
 				break
 			}

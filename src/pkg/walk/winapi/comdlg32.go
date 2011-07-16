@@ -141,20 +141,20 @@ type (
 )
 
 type OPENFILENAME struct {
-	LStructSize       uint
+	LStructSize       uint32
 	HwndOwner         HWND
 	HInstance         HINSTANCE
 	LpstrFilter       *uint16
 	LpstrCustomFilter *uint16
-	NMaxCustFilter    uint
-	NFilterIndex      uint
+	NMaxCustFilter    uint32
+	NFilterIndex      uint32
 	LpstrFile         *uint16
-	NMaxFile          uint
+	NMaxFile          uint32
 	LpstrFileTitle    *uint16
-	NMaxFileTitle     uint
+	NMaxFileTitle     uint32
 	LpstrInitialDir   *uint16
 	LpstrTitle        *uint16
-	Flags             uint
+	Flags             uint32
 	NFileOffset       uint16
 	NFileExtension    uint16
 	LpstrDefExt       *uint16
@@ -162,13 +162,13 @@ type OPENFILENAME struct {
 	LpfnHook          LPOFNHOOKPROC
 	LpTemplateName    *uint16
 	PvReserved        unsafe.Pointer
-	DwReserved        uint
-	FlagsEx           uint
+	DwReserved        uint32
+	FlagsEx           uint32
 }
 
 type PRINTPAGERANGE struct {
-	NFromPage uint
-	NToPage   uint
+	NFromPage uint32
+	NToPage   uint32
 }
 
 type DEVNAMES struct {
@@ -179,27 +179,27 @@ type DEVNAMES struct {
 }
 
 type PRINTDLGEX struct {
-	LStructSize         uint
+	LStructSize         uint32
 	HwndOwner           HWND
 	HDevMode            HGLOBAL
 	HDevNames           HGLOBAL
 	HDC                 HDC
-	Flags               uint
-	Flags2              uint
-	ExclusionFlags      uint
-	NPageRanges         uint
-	NMaxPageRanges      uint
+	Flags               uint32
+	Flags2              uint32
+	ExclusionFlags      uint32
+	NPageRanges         uint32
+	NMaxPageRanges      uint32
 	LpPageRanges        *PRINTPAGERANGE
-	NMinPage            uint
-	NMaxPage            uint
-	NCopies             uint
+	NMinPage            uint32
+	NMaxPage            uint32
+	NCopies             uint32
 	HInstance           HINSTANCE
 	LpPrintTemplateName *uint16
 	LpCallback          LPUNKNOWN
-	NPropertyPages      uint
+	NPropertyPages      uint32
 	LphPropertyPages    *HPROPSHEETPAGE
-	NStartPage          uint
-	DwResultAction      uint
+	NStartPage          uint32
+	DwResultAction      uint32
 }
 
 
@@ -225,13 +225,13 @@ func init() {
 	printDlgEx = MustGetProcAddress(libcomdlg32, "PrintDlgExW")
 }
 
-func CommDlgExtendedError() uint {
+func CommDlgExtendedError() uint32 {
 	ret, _, _ := syscall.Syscall(commDlgExtendedError, 0,
 		0,
 		0,
 		0)
 
-	return uint(ret)
+	return uint32(ret)
 }
 
 func GetOpenFileName(lpofn *OPENFILENAME) bool {

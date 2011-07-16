@@ -184,11 +184,11 @@ func (ne *NumberEdit) SetTextSelection(start, end int) {
 	ne.edit.SetTextSelection(start, end)
 }
 
-func (ne *NumberEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (ne *NumberEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if ne.hWndUpDown != 0 {
 		switch msg {
 		case WM_COMMAND:
-			switch HIWORD(uint(wParam)) {
+			switch HIWORD(uint32(wParam)) {
 			case EN_CHANGE:
 				value := ne.Value()
 				if math.Fabs(value-ne.oldValue) < math.SmallestNonzeroFloat64 {

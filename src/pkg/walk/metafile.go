@@ -67,13 +67,13 @@ func (mf *Metafile) Save(filePath string) os.Error {
 func (mf *Metafile) readSizeFromHeader() os.Error {
 	var hdr ENHMETAHEADER
 
-	if GetEnhMetaFileHeader(mf.hemf, uint(unsafe.Sizeof(hdr)), &hdr) == 0 {
+	if GetEnhMetaFileHeader(mf.hemf, uint32(unsafe.Sizeof(hdr)), &hdr) == 0 {
 		return newError("GetEnhMetaFileHeader failed")
 	}
 
 	mf.size = Size{
-		hdr.RclBounds.Right - hdr.RclBounds.Left,
-		hdr.RclBounds.Bottom - hdr.RclBounds.Top,
+		int(hdr.RclBounds.Right - hdr.RclBounds.Left),
+		int(hdr.RclBounds.Bottom - hdr.RclBounds.Top),
 	}
 
 	return nil

@@ -49,7 +49,7 @@ func (cb *CheckBox) SizeHint() Size {
 	textSize := cb.calculateTextSize()
 
 	// FIXME: Use GetThemePartSize instead of GetSystemMetrics?
-	w := textSize.Width + GetSystemMetrics(SM_CXMENUCHECK)
+	w := textSize.Width + int(GetSystemMetrics(SM_CXMENUCHECK))
 	h := maxi(defaultSize.Height, textSize.Height)
 
 	return Size{w, h}

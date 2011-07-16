@@ -100,13 +100,13 @@ type IClassFactory struct {
 	LpVtbl *IClassFactoryVtbl
 }
 
-func (cf *IClassFactory) Release() uint {
+func (cf *IClassFactory) Release() uint32 {
 	ret, _, _ := syscall.Syscall(cf.LpVtbl.Release, 1,
 		uintptr(unsafe.Pointer(cf)),
 		0,
 		0)
 
-	return uint(ret)
+	return uint32(ret)
 }
 
 func (cf *IClassFactory) CreateInstance(pUnkOuter *IUnknown, riid REFIID, ppvObject *unsafe.Pointer) HRESULT {
@@ -136,16 +136,16 @@ type IConnectionPoint struct {
 	LpVtbl *IConnectionPointVtbl
 }
 
-func (cp *IConnectionPoint) Release() uint {
+func (cp *IConnectionPoint) Release() uint32 {
 	ret, _, _ := syscall.Syscall(cp.LpVtbl.Release, 1,
 		uintptr(unsafe.Pointer(cp)),
 		0,
 		0)
 
-	return uint(ret)
+	return uint32(ret)
 }
 
-func (cp *IConnectionPoint) Advise(pUnkSink unsafe.Pointer, pdwCookie *uint) HRESULT {
+func (cp *IConnectionPoint) Advise(pUnkSink unsafe.Pointer, pdwCookie *uint32) HRESULT {
 	ret, _, _ := syscall.Syscall(cp.LpVtbl.Advise, 3,
 		uintptr(unsafe.Pointer(cp)),
 		uintptr(pUnkSink),
@@ -166,13 +166,13 @@ type IConnectionPointContainer struct {
 	LpVtbl *IConnectionPointContainerVtbl
 }
 
-func (cpc *IConnectionPointContainer) Release() uint {
+func (cpc *IConnectionPointContainer) Release() uint32 {
 	ret, _, _ := syscall.Syscall(cpc.LpVtbl.Release, 1,
 		uintptr(unsafe.Pointer(cpc)),
 		0,
 		0)
 
-	return uint(ret)
+	return uint32(ret)
 }
 
 func (cpc *IConnectionPointContainer) FindConnectionPoint(riid REFIID, ppCP **IConnectionPoint) HRESULT {
@@ -238,13 +238,13 @@ type IOleInPlaceObject struct {
 	LpVtbl *IOleInPlaceObjectVtbl
 }
 
-func (obj *IOleInPlaceObject) Release() uint {
+func (obj *IOleInPlaceObject) Release() uint32 {
 	ret, _, _ := syscall.Syscall(obj.LpVtbl.Release, 1,
 		uintptr(unsafe.Pointer(obj)),
 		0,
 		0)
 
-	return uint(ret)
+	return uint32(ret)
 }
 
 func (obj *IOleInPlaceObject) SetObjectRects(lprcPosRect, lprcClipRect *RECT) HRESULT {
@@ -318,13 +318,13 @@ func (obj *IOleObject) QueryInterface(riid REFIID, ppvObject *unsafe.Pointer) HR
 	return HRESULT(ret)
 }
 
-func (obj *IOleObject) Release() uint {
+func (obj *IOleObject) Release() uint32 {
 	ret, _, _ := syscall.Syscall(obj.LpVtbl.Release, 1,
 		uintptr(unsafe.Pointer(obj)),
 		0,
 		0)
 
-	return uint(ret)
+	return uint32(ret)
 }
 
 func (obj *IOleObject) SetClientSite(pClientSite *IOleClientSite) HRESULT {
@@ -345,7 +345,7 @@ func (obj *IOleObject) SetHostNames(szContainerApp, szContainerObj *uint16) HRES
 	return HRESULT(ret)
 }
 
-func (obj *IOleObject) Close(dwSaveOption uint) HRESULT {
+func (obj *IOleObject) Close(dwSaveOption uint32) HRESULT {
 	ret, _, _ := syscall.Syscall(obj.LpVtbl.Close, 2,
 		uintptr(unsafe.Pointer(obj)),
 		uintptr(dwSaveOption),
@@ -354,7 +354,7 @@ func (obj *IOleObject) Close(dwSaveOption uint) HRESULT {
 	return HRESULT(ret)
 }
 
-func (obj *IOleObject) DoVerb(iVerb int, lpmsg *MSG, pActiveSite *IOleClientSite, lindex int, hwndParent HWND, lprcPosRect *RECT) HRESULT {
+func (obj *IOleObject) DoVerb(iVerb int32, lpmsg *MSG, pActiveSite *IOleClientSite, lindex int32, hwndParent HWND, lprcPosRect *RECT) HRESULT {
 	ret, _, _ := syscall.Syscall9(obj.LpVtbl.DoVerb, 7,
 		uintptr(unsafe.Pointer(obj)),
 		uintptr(iVerb),
@@ -380,38 +380,38 @@ type IUnknown struct {
 }
 
 type OLEINPLACEFRAMEINFO struct {
-	Cb            uint
+	Cb            uint32
 	FMDIApp       BOOL
 	HwndFrame     HWND
 	Haccel        HACCEL
-	CAccelEntries uint
+	CAccelEntries uint32
 }
 
 type COAUTHIDENTITY struct {
 	User           *uint16
-	UserLength     uint
+	UserLength     uint32
 	Domain         *uint16
-	DomainLength   uint
+	DomainLength   uint32
 	Password       *uint16
-	PasswordLength uint
-	Flags          uint
+	PasswordLength uint32
+	Flags          uint32
 }
 
 type COAUTHINFO struct {
-	dwAuthnSvc           uint
-	dwAuthzSvc           uint
+	dwAuthnSvc           uint32
+	dwAuthzSvc           uint32
 	pwszServerPrincName  *uint16
-	dwAuthnLevel         uint
-	dwImpersonationLevel uint
+	dwAuthnLevel         uint32
+	dwImpersonationLevel uint32
 	pAuthIdentityData    *COAUTHIDENTITY
-	dwCapabilities       uint
+	dwCapabilities       uint32
 }
 
 type COSERVERINFO struct {
-	dwReserved1 uint
+	dwReserved1 uint32
 	pwszName    *uint16
 	pAuthInfo   *COAUTHINFO
-	dwReserved2 uint
+	dwReserved2 uint32
 }
 
 var (
@@ -443,7 +443,7 @@ func init() {
 	}
 }
 
-func CoGetClassObject(rclsid REFCLSID, dwClsContext uint, pServerInfo *COSERVERINFO, riid REFIID, ppv *unsafe.Pointer) HRESULT {
+func CoGetClassObject(rclsid REFCLSID, dwClsContext uint32, pServerInfo *COSERVERINFO, riid REFIID, ppv *unsafe.Pointer) HRESULT {
 	ret, _, _ := syscall.Syscall6(coGetClassObject, 5,
 		uintptr(unsafe.Pointer(rclsid)),
 		uintptr(dwClsContext),

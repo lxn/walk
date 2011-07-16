@@ -78,7 +78,7 @@ func (te *TextEdit) SetReadOnly(readOnly bool) os.Error {
 	return nil
 }
 
-func (te *TextEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (te *TextEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
 		result := CallWindowProc(textEditOrigWndProcPtr, hwnd, msg, wParam, lParam)

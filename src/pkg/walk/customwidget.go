@@ -32,7 +32,7 @@ func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidg
 		cw,
 		parent,
 		customWidgetWindowClass,
-		WS_VISIBLE|style,
+		WS_VISIBLE|uint32(style),
 		0); err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (cw *CustomWidget) SetInvalidatesOnResize(value bool) {
 	cw.invalidatesOnResize = value
 }
 
-func (cw *CustomWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (cw *CustomWidget) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_PAINT:
 		if cw.paint == nil {
@@ -89,7 +89,14 @@ func (cw *CustomWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uin
 		defer canvas.Dispose()
 
 		r := &ps.RcPaint
-		err = cw.paint(canvas, Rectangle{r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top})
+		err = cw.paint(
+			canvas,
+			Rectangle{
+				int(r.Left),
+				int(r.Top),
+				int(r.Right - r.Left),
+				int(r.Bottom - r.Top),
+			})
 		if err != nil {
 			newError("paint failed")
 			break

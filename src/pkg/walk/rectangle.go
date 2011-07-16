@@ -49,5 +49,10 @@ func (r *Rectangle) SetSize(s Size) Rectangle {
 }
 
 func (r Rectangle) toRECT() winapi.RECT {
-	return winapi.RECT{r.X, r.Y, r.X + r.Width, r.Y + r.Height}
+	return winapi.RECT{
+		int32(r.X),
+		int32(r.Y),
+		int32(r.X + r.Width),
+		int32(r.Y + r.Height),
+	}
 }

@@ -83,26 +83,26 @@ const (
 )
 
 type MENUITEMINFO struct {
-	CbSize        uint
-	FMask         uint
-	FType         uint
-	FState        uint
-	WID           uint
+	CbSize        uint32
+	FMask         uint32
+	FType         uint32
+	FState        uint32
+	WID           uint32
 	HSubMenu      HMENU
 	HbmpChecked   HBITMAP
 	HbmpUnchecked HBITMAP
 	DwItemData    uintptr
 	DwTypeData    *uint16
-	Cch           uint
+	Cch           uint32
 	HbmpItem      HBITMAP
 }
 
 type MENUINFO struct {
-	CbSize          uint
-	FMask           uint
-	DwStyle         uint
-	CyMax           uint
+	CbSize          uint32
+	FMask           uint32
+	DwStyle         uint32
+	CyMax           uint32
 	HbrBack         HBRUSH
-	DwContextHelpID uint
+	DwContextHelpID uint32
 	DwMenuData      uintptr
 }

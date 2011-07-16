@@ -113,7 +113,7 @@ func (mw *MainWindow) ClientBounds() Rectangle {
 	return bounds
 }
 
-func (mw *MainWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (mw *MainWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
 		SendMessage(mw.toolBar.hWnd, TB_AUTOSIZE, 0, 0)

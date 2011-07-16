@@ -96,31 +96,31 @@ const (
 )
 
 type TCITEMHEADER struct {
-	Mask        uint
-	LpReserved1 uint
-	LpReserved2 uint
+	Mask        uint32
+	LpReserved1 uint32
+	LpReserved2 uint32
 	PszText     *uint16
-	CchTextMax  int
-	IImage      int
+	CchTextMax  int32
+	IImage      int32
 }
 
 type TCITEM struct {
-	Mask        uint
+	Mask        uint32
 	DwState     uint32
 	DwStateMask uint32
 	PszText     *uint16
-	CchTextMax  int
-	IImage      int
+	CchTextMax  int32
+	IImage      int32
 	LParam      uintptr
 }
 
 type TCHITTESTINFO struct {
 	Pt    POINT
-	flags uint
+	flags uint32
 }
 
 type NMTCKEYDOWN struct {
 	Hdr   NMHDR
 	WVKey uint16
-	Flags uint
+	Flags uint32
 }

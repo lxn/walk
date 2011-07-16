@@ -32,7 +32,7 @@ const (
 )
 
 type (
-	BOOL    int
+	BOOL    int32
 	HRESULT uint32
 )
 
@@ -69,15 +69,15 @@ func FAILED(hr HRESULT) bool {
 	return hr < 0
 }
 
-func MAKELONG(lo, hi uint16) uint {
-	return uint(uint(lo) | ((uint(hi)) << 16))
+func MAKELONG(lo, hi uint16) uint32 {
+	return uint32(uint32(lo) | ((uint32(hi)) << 16))
 }
 
-func LOWORD(dw uint) uint16 {
+func LOWORD(dw uint32) uint16 {
 	return uint16(dw)
 }
 
-func HIWORD(dw uint) uint16 {
+func HIWORD(dw uint32) uint16 {
 	return uint16(dw >> 16 & 0xffff)
 }
 

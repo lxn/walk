@@ -9,7 +9,7 @@ import (
 	"unsafe"
 )
 
-type DISPID int
+type DISPID int32
 
 const (
 	DISPID_BEFORENAVIGATE             DISPID = 100
@@ -148,15 +148,15 @@ func BSTRToString(value *uint16 /*BSTR*/ ) string {
 type VAR_I4 struct {
 	vt        VARTYPE
 	reserved1 [6]byte
-	lVal      int
+	lVal      int32
 	reserved2 [4]byte
 }
 
-func IntToVariantI4(value int) *VAR_I4 {
+func IntToVariantI4(value int32) *VAR_I4 {
 	return &VAR_I4{vt: VT_I4, lVal: value}
 }
 
-func VariantI4ToInt(value *VAR_I4) int {
+func VariantI4ToInt(value *VAR_I4) int32 {
 	return value.lVal
 }
 
@@ -194,8 +194,8 @@ func VariantBSTRToString(value *VAR_BSTR) string {
 type DISPPARAMS struct {
 	Rgvarg            *VARIANTARG
 	RgdispidNamedArgs *DISPID
-	CArgs             int
-	CNamedArgs        int
+	CArgs             int32
+	CNamedArgs        int32
 }
 
 var (
@@ -234,11 +234,11 @@ func SysFreeString(bstr *uint16 /*BSTR*/ ) {
 		0)
 }
 
-func SysStringLen(bstr *uint16 /*BSTR*/ ) uint {
+func SysStringLen(bstr *uint16 /*BSTR*/ ) uint32 {
 	ret, _, _ := syscall.Syscall(sysStringLen, 1,
 		uintptr(unsafe.Pointer(bstr)),
 		0,
 		0)
 
-	return uint(ret)
+	return uint32(ret)
 }

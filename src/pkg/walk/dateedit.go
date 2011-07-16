@@ -173,7 +173,7 @@ func (de *DateEdit) ValueChanged() *Event {
 	return de.valueChangedPublisher.Event()
 }
 
-func (de *DateEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (de *DateEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_NOTIFY:
 		switch uint32(((*NMHDR)(unsafe.Pointer(lParam))).Code) {

@@ -164,8 +164,8 @@ type NMMOUSE struct {
 }
 
 type TBBUTTON struct {
-	IBitmap   int
-	IdCommand int
+	IBitmap   int32
+	IdCommand int32
 	FsState   byte
 	FsStyle   byte
 	//#ifdef _WIN64
@@ -178,14 +178,14 @@ type TBBUTTON struct {
 }
 
 type TBBUTTONINFO struct {
-	CbSize    uint
-	DwMask    uint
-	IdCommand int
-	IImage    int
+	CbSize    uint32
+	DwMask    uint32
+	IdCommand int32
+	IImage    int32
 	FsState   byte
 	FsStyle   byte
 	Cx        uint16
 	LParam    uintptr
 	PszText   uintptr
-	CchText   int
+	CchText   int32
 }

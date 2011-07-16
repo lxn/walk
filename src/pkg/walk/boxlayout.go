@@ -475,7 +475,7 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 	}
 
 	// Finally position widgets.
-	hdwp := BeginDeferWindowPos(len(widgets))
+	hdwp := BeginDeferWindowPos(int32(len(widgets)))
 	if hdwp == 0 {
 		return lastError("BeginDeferWindowPos")
 	}
@@ -503,7 +503,16 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 			x, y, w, h = p2, p1, s2, s1
 		}
 
-		if hdwp = DeferWindowPos(hdwp, widget.BaseWidget().hWnd, 0, x, y, w, h, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOZORDER); hdwp == 0 {
+		if hdwp = DeferWindowPos(
+			hdwp,
+			widget.BaseWidget().hWnd,
+			0,
+			int32(x),
+			int32(y),
+			int32(w),
+			int32(h),
+			SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOZORDER); hdwp == 0 {
+
 			return lastError("DeferWindowPos")
 		}
 

@@ -395,7 +395,7 @@ func (l *GridLayout) Update(reset bool) os.Error {
 	widths := l.sectionSizes(Horizontal)
 	heights := l.sectionSizes(Vertical)
 
-	hdwp := BeginDeferWindowPos(l.container.Children().Len())
+	hdwp := BeginDeferWindowPos(int32(l.container.Children().Len()))
 	if hdwp == 0 {
 		return lastError("BeginDeferWindowPos")
 	}
@@ -412,7 +412,16 @@ func (l *GridLayout) Update(reset bool) os.Error {
 
 			if widget != nil {
 				// FIXME: This currently assumes all widgets can grow.
-				if hdwp = DeferWindowPos(hdwp, widget.BaseWidget().hWnd, 0, x, y, w, h, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOZORDER); hdwp == 0 {
+				if hdwp = DeferWindowPos(
+					hdwp,
+					widget.BaseWidget().hWnd,
+					0,
+					int32(x),
+					int32(y),
+					int32(w),
+					int32(h),
+					SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOZORDER); hdwp == 0 {
+
 					return lastError("DeferWindowPos")
 				}
 			}

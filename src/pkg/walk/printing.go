@@ -12,7 +12,7 @@ import (
 import . "walk/winapi"
 
 func defaultPrinterNamePtr() *uint16 {
-	var bufLen uint
+	var bufLen uint32
 
 	GetDefaultPrinter(nil, &bufLen)
 
@@ -42,7 +42,7 @@ func DefaultPrinterName() (name string, err os.Error) {
 
 // PrinterNames returns the names of the installed printers.
 func PrinterNames() ([]string, os.Error) {
-	var bufLen, count uint
+	var bufLen, count uint32
 
 	EnumPrinters(PRINTER_ENUM_LOCAL, nil, 4, nil, 0, &bufLen, &count)
 

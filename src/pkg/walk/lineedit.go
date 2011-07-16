@@ -164,7 +164,7 @@ func (le *LineEdit) TextChanged() *Event {
 	return le.textChanged.Event()
 }
 
-func (le *LineEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (le *LineEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	/*	case WM_CHAR:
 		if le.validator == nil {
@@ -179,7 +179,7 @@ func (le *LineEdit) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
 		}*/
 
 	case WM_COMMAND:
-		switch HIWORD(uint(wParam)) {
+		switch HIWORD(uint32(wParam)) {
 		case EN_CHANGE:
 			le.textChanged.Publish()
 		}

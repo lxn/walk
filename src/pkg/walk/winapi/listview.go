@@ -284,59 +284,59 @@ const (
 )
 
 type LVCOLUMN struct {
-	Mask       uint
-	Fmt        int
-	Cx         int
+	Mask       uint32
+	Fmt        int32
+	Cx         int32
 	PszText    *uint16
-	CchTextMax int
-	ISubItem   int
-	IImage     int
-	IOrder     int
+	CchTextMax int32
+	ISubItem   int32
+	IImage     int32
+	IOrder     int32
 }
 
 type LVITEM struct {
-	Mask       uint
-	IItem      int
-	ISubItem   int
-	State      uint
-	StateMask  uint
+	Mask       uint32
+	IItem      int32
+	ISubItem   int32
+	State      uint32
+	StateMask  uint32
 	PszText    *uint16
-	CchTextMax int
-	IImage     int
+	CchTextMax int32
+	IImage     int32
 	LParam     uintptr
-	IIndent    int
-	IGroupId   int
-	CColumns   uint
-	PuColumns  uint
+	IIndent    int32
+	IGroupId   int32
+	CColumns   uint32
+	PuColumns  uint32
 }
 
 type LVHITTESTINFO struct {
 	Pt       POINT
-	Flags    uint
-	IItem    int
-	ISubItem int
-	IGroup   int
+	Flags    uint32
+	IItem    int32
+	ISubItem int32
+	IGroup   int32
 }
 
 type NMITEMACTIVATE struct {
 	Hdr       NMHDR
-	IItem     int
-	ISubItem  int
-	UNewState uint
-	UOldState uint
-	UChanged  uint
+	IItem     int32
+	ISubItem  int32
+	UNewState uint32
+	UOldState uint32
+	UChanged  uint32
 	PtAction  POINT
 	LParam    uintptr
-	UKeyFlags uint
+	UKeyFlags uint32
 }
 
 type NMLISTVIEW struct {
 	Hdr       NMHDR
-	IItem     int
-	ISubItem  int
-	UNewState uint
-	UOldState uint
-	UChanged  uint
+	IItem     int32
+	ISubItem  int32
+	UNewState uint32
+	UOldState uint32
+	UChanged  uint32
 	PtAction  POINT
 	LParam    uintptr
 }

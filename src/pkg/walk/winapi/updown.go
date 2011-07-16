@@ -4,7 +4,7 @@
 
 package winapi
 
-const UDN_FIRST = ^uint(720)
+const UDN_FIRST = ^uint32(720)
 
 const (
 	UD_MAXVAL = 0x7fff
@@ -45,12 +45,12 @@ const (
 const UDN_DELTAPOS = UDN_FIRST - 1
 
 type UDACCEL struct {
-	NSec uint
-	NInc uint
+	NSec uint32
+	NInc uint32
 }
 
 type NMUPDOWN struct {
 	Hdr    NMHDR
-	IPos   int
-	IDelta int
+	IPos   int32
+	IDelta int32
 }

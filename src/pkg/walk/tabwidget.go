@@ -193,18 +193,32 @@ func (tw *TabWidget) resizePages() {
 		return
 	}
 
-	p := POINT{r.Left, r.Top}
+	p := POINT{
+		r.Left,
+		r.Top,
+	}
 	if !ScreenToClient(tw.hWnd, &p) {
 		newError("ScreenToClient failed")
 		return
 	}
 
-	r = RECT{p.X, p.Y, r.Right - r.Left + p.X, r.Bottom - r.Top + p.Y}
-
+	r = RECT{
+		p.X,
+		p.Y,
+		r.Right - r.Left + p.X,
+		r.Bottom - r.Top + p.Y,
+	}
 	SendMessage(tw.hWndTab, TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
 	for _, page := range tw.pages.items {
-		if err := page.SetBounds(Rectangle{r.Left - 2, r.Top, r.Right - r.Left + 2, r.Bottom - r.Top}); err != nil {
+		if err := page.SetBounds(
+			Rectangle{
+				int(r.Left - 2),
+				int(r.Top),
+				int(r.Right - r.Left + 2),
+				int(r.Bottom - r.Top),
+			}); err != nil {
+
 			return
 		}
 	}
@@ -237,7 +251,7 @@ func (tw *TabWidget) onSelChange() {
 	tw.currentIndexChangedPublisher.Publish()
 }
 
-func (tw *TabWidget) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (tw *TabWidget) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if tw.hWndTab != 0 {
 		switch msg {
 		case WM_SIZE, WM_SIZING:
@@ -274,7 +288,7 @@ func (tw *TabWidget) onInsertingPage(index int, page *TabPage) (err os.Error) {
 func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
 	page.SetVisible(false)
 
-	style := uint(GetWindowLong(page.hWnd, GWL_STYLE))
+	style := uint32(GetWindowLong(page.hWnd, GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
@@ -283,7 +297,7 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
 	style &^= WS_POPUP
 
 	SetLastError(0)
-	if SetWindowLong(page.hWnd, GWL_STYLE, int(style)) == 0 {
+	if SetWindowLong(page.hWnd, GWL_STYLE, int32(style)) == 0 {
 		return lastError("SetWindowLong")
 	}
 
@@ -312,7 +326,7 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
 func (tw *TabWidget) removePage(page *TabPage) (err os.Error) {
 	page.SetVisible(false)
 
-	style := uint(GetWindowLong(page.hWnd, GWL_STYLE))
+	style := uint32(GetWindowLong(page.hWnd, GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
@@ -321,7 +335,7 @@ func (tw *TabWidget) removePage(page *TabPage) (err os.Error) {
 	style |= WS_POPUP
 
 	SetLastError(0)
-	if SetWindowLong(page.hWnd, GWL_STYLE, int(style)) == 0 {
+	if SetWindowLong(page.hWnd, GWL_STYLE, int32(style)) == 0 {
 		return lastError("SetWindowLong")
 	}
 

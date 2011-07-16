@@ -682,7 +682,7 @@ const CBM_INIT = 4
 const CLR_INVALID = 0xFFFFFFFF
 
 type (
-	COLORREF     uint
+	COLORREF     uint32
 	HBITMAP      HGDIOBJ
 	HBRUSH       HGDIOBJ
 	HDC          HANDLE
@@ -695,11 +695,11 @@ type (
 )
 
 type LOGFONT struct {
-	LfHeight         int
-	LfWidth          int
-	LfEscapement     int
-	LfOrientation    int
-	LfWeight         int
+	LfHeight         int32
+	LfWidth          int32
+	LfEscapement     int32
+	LfOrientation    int32
+	LfWeight         int32
 	LfItalic         byte
 	LfUnderline      byte
 	LfStrikeOut      byte
@@ -712,17 +712,17 @@ type LOGFONT struct {
 }
 
 type TEXTMETRIC struct {
-	TmHeight           int
-	TmAscent           int
-	TmDescent          int
-	TmInternalLeading  int
-	TmExternalLeading  int
-	TmAveCharWidth     int
-	TmMaxCharWidth     int
-	TmWeight           int
-	TmOverhang         int
-	TmDigitizedAspectX int
-	TmDigitizedAspectY int
+	TmHeight           int32
+	TmAscent           int32
+	TmDescent          int32
+	TmInternalLeading  int32
+	TmExternalLeading  int32
+	TmAveCharWidth     int32
+	TmMaxCharWidth     int32
+	TmWeight           int32
+	TmOverhang         int32
+	TmDigitizedAspectX int32
+	TmDigitizedAspectY int32
 	TmFirstChar        uint16
 	TmLastChar         uint16
 	TmDefaultChar      uint16
@@ -740,7 +740,7 @@ type DEVMODE struct {
 	DmDriverVersion    uint16
 	DmSize             uint16
 	DmDriverExtra      uint16
-	DmFields           uint
+	DmFields           uint32
 	DmOrientation      int16
 	DmPaperSize        int16
 	DmPaperLength      int16
@@ -756,31 +756,31 @@ type DEVMODE struct {
 	DmCollate          int16
 	DmFormName         [CCHFORMNAME]uint16
 	DmLogPixels        uint16
-	DmBitsPerPel       uint
-	DmPelsWidth        uint
-	DmPelsHeight       uint
-	DmDisplayFlags     uint
-	DmDisplayFrequency uint
-	DmICMMethod        uint
-	DmICMIntent        uint
-	DmMediaType        uint
-	DmDitherType       uint
-	DmReserved1        uint
-	DmReserved2        uint
-	DmPanningWidth     uint
-	DmPanningHeight    uint
+	DmBitsPerPel       uint32
+	DmPelsWidth        uint32
+	DmPelsHeight       uint32
+	DmDisplayFlags     uint32
+	DmDisplayFrequency uint32
+	DmICMMethod        uint32
+	DmICMIntent        uint32
+	DmMediaType        uint32
+	DmDitherType       uint32
+	DmReserved1        uint32
+	DmReserved2        uint32
+	DmPanningWidth     uint32
+	DmPanningHeight    uint32
 }
 
 type POINT struct {
-	X, Y int
+	X, Y int32
 }
 
 type RECT struct {
-	Left, Top, Right, Bottom int
+	Left, Top, Right, Bottom int32
 }
 
 type SIZE struct {
-	CX, CY int
+	CX, CY int32
 }
 
 type DOCINFO struct {
@@ -788,27 +788,27 @@ type DOCINFO struct {
 	LpszDocName  *uint16
 	LpszOutput   *uint16
 	LpszDatatype *uint16
-	FwType       uint
+	FwType       uint32
 }
 
 type LOGBRUSH struct {
-	LbStyle uint
+	LbStyle uint32
 	LbColor COLORREF
 	LbHatch uintptr
 }
 
 type BITMAPINFOHEADER struct {
-	BiSize          uint
-	BiWidth         int
-	BiHeight        int
+	BiSize          uint32
+	BiWidth         int32
+	BiHeight        int32
 	BiPlanes        uint16
 	BiBitCount      uint16
-	BiCompression   uint
-	BiSizeImage     uint
-	BiXPelsPerMeter int
-	BiYPelsPerMeter int
-	BiClrUsed       uint
-	BiClrImportant  uint
+	BiCompression   uint32
+	BiSizeImage     uint32
+	BiXPelsPerMeter int32
+	BiYPelsPerMeter int32
+	BiClrUsed       uint32
+	BiClrImportant  uint32
 }
 
 type RGBQUAD struct {
@@ -824,10 +824,10 @@ type BITMAPINFO struct {
 }
 
 type BITMAP struct {
-	BmType       int
-	BmWidth      int
-	BmHeight     int
-	BmWidthBytes int
+	BmType       int32
+	BmWidth      int32
+	BmHeight     int32
+	BmWidthBytes int32
 	BmPlanes     uint16
 	BmBitsPixel  uint16
 	BmBits       unsafe.Pointer
@@ -836,30 +836,30 @@ type BITMAP struct {
 type DIBSECTION struct {
 	DsBm        BITMAP
 	DsBmih      BITMAPINFOHEADER
-	DsBitfields [3]uint
+	DsBitfields [3]uint32
 	DshSection  HANDLE
-	DsOffset    uint
+	DsOffset    uint32
 }
 
 type ENHMETAHEADER struct {
-	IType          uint
-	NSize          uint
+	IType          uint32
+	NSize          uint32
 	RclBounds      RECT
 	RclFrame       RECT
-	DSignature     uint
-	NVersion       uint
-	NBytes         uint
-	NRecords       uint
+	DSignature     uint32
+	NVersion       uint32
+	NBytes         uint32
+	NRecords       uint32
 	NHandles       uint16
 	SReserved      uint16
-	NDescription   uint
-	OffDescription uint
-	NPalEntries    uint
+	NDescription   uint32
+	OffDescription uint32
+	NPalEntries    uint32
 	SzlDevice      SIZE
 	SzlMillimeters SIZE
-	CbPixelFormat  uint
-	OffPixelFormat uint
-	BOpenGL        uint
+	CbPixelFormat  uint32
+	OffPixelFormat uint32
+	BOpenGL        uint32
 	SzlMicrometers SIZE
 }
 
@@ -955,16 +955,16 @@ func init() {
 	stretchBlt = MustGetProcAddress(libgdi32, "StretchBlt")
 }
 
-func AbortDoc(hdc HDC) int {
+func AbortDoc(hdc HDC) int32 {
 	ret, _, _ := syscall.Syscall(abortDoc, 1,
 		uintptr(hdc),
 		0,
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
-func BitBlt(hdcDest HDC, nXDest, nYDest, nWidth, nHeight int, hdcSrc HDC, nXSrc, nYSrc int, dwRop uint) bool {
+func BitBlt(hdcDest HDC, nXDest, nYDest, nWidth, nHeight int32, hdcSrc HDC, nXSrc, nYSrc int32, dwRop uint32) bool {
 	ret, _, _ := syscall.Syscall9(bitBlt, 9,
 		uintptr(hdcDest),
 		uintptr(nXDest),
@@ -1027,7 +1027,7 @@ func CreateDC(lpszDriver, lpszDevice, lpszOutput *uint16, lpInitData *DEVMODE) H
 	return HDC(ret)
 }
 
-func CreateDIBSection(hdc HDC, pbmi *BITMAPINFO, iUsage uint, ppvBits *unsafe.Pointer, hSection HANDLE, dwOffset uint) HBITMAP {
+func CreateDIBSection(hdc HDC, pbmi *BITMAPINFO, iUsage uint32, ppvBits *unsafe.Pointer, hSection HANDLE, dwOffset uint32) HBITMAP {
 	ret, _, _ := syscall.Syscall6(createDIBSection, 6,
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(pbmi)),
@@ -1099,7 +1099,7 @@ func DeleteObject(hObject HGDIOBJ) bool {
 	return ret != 0
 }
 
-func Ellipse(hdc HDC, nLeftRect, nTopRect, nRightRect, nBottomRect int) bool {
+func Ellipse(hdc HDC, nLeftRect, nTopRect, nRightRect, nBottomRect int32) bool {
 	ret, _, _ := syscall.Syscall6(ellipse, 5,
 		uintptr(hdc),
 		uintptr(nLeftRect),
@@ -1111,25 +1111,25 @@ func Ellipse(hdc HDC, nLeftRect, nTopRect, nRightRect, nBottomRect int) bool {
 	return ret != 0
 }
 
-func EndDoc(hdc HDC) int {
+func EndDoc(hdc HDC) int32 {
 	ret, _, _ := syscall.Syscall(endDoc, 1,
 		uintptr(hdc),
 		0,
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
-func EndPage(hdc HDC) int {
+func EndPage(hdc HDC) int32 {
 	ret, _, _ := syscall.Syscall(endPage, 1,
 		uintptr(hdc),
 		0,
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
-func ExtCreatePen(dwPenStyle, dwWidth uint, lplb *LOGBRUSH, dwStyleCount uint, lpStyle *uint) HPEN {
+func ExtCreatePen(dwPenStyle, dwWidth uint32, lplb *LOGBRUSH, dwStyleCount uint32, lpStyle *uint32) HPEN {
 	ret, _, _ := syscall.Syscall6(extCreatePen, 5,
 		uintptr(dwPenStyle),
 		uintptr(dwWidth),
@@ -1141,13 +1141,13 @@ func ExtCreatePen(dwPenStyle, dwWidth uint, lplb *LOGBRUSH, dwStyleCount uint, l
 	return HPEN(ret)
 }
 
-func GetDeviceCaps(hdc HDC, nIndex int) int {
+func GetDeviceCaps(hdc HDC, nIndex int32) int32 {
 	ret, _, _ := syscall.Syscall(getDeviceCaps, 2,
 		uintptr(hdc),
 		uintptr(nIndex),
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
 func GetEnhMetaFile(lpszMetaFile *uint16) HENHMETAFILE {
@@ -1159,25 +1159,25 @@ func GetEnhMetaFile(lpszMetaFile *uint16) HENHMETAFILE {
 	return HENHMETAFILE(ret)
 }
 
-func GetEnhMetaFileHeader(hemf HENHMETAFILE, cbBuffer uint, lpemh *ENHMETAHEADER) uint {
+func GetEnhMetaFileHeader(hemf HENHMETAFILE, cbBuffer uint32, lpemh *ENHMETAHEADER) uint32 {
 	ret, _, _ := syscall.Syscall(getEnhMetaFileHeader, 3,
 		uintptr(hemf),
 		uintptr(cbBuffer),
 		uintptr(unsafe.Pointer(lpemh)))
 
-	return uint(ret)
+	return uint32(ret)
 }
 
-func GetObject(hgdiobj HGDIOBJ, cbBuffer uintptr, lpvObject unsafe.Pointer) int {
+func GetObject(hgdiobj HGDIOBJ, cbBuffer uintptr, lpvObject unsafe.Pointer) int32 {
 	ret, _, _ := syscall.Syscall(getObject, 3,
 		uintptr(hgdiobj),
 		uintptr(cbBuffer),
 		uintptr(lpvObject))
 
-	return int(ret)
+	return int32(ret)
 }
 
-func GetStockObject(fnObject int) HGDIOBJ {
+func GetStockObject(fnObject int32) HGDIOBJ {
 	ret, _, _ := syscall.Syscall(getDeviceCaps, 1,
 		uintptr(fnObject),
 		0,
@@ -1186,7 +1186,7 @@ func GetStockObject(fnObject int) HGDIOBJ {
 	return HGDIOBJ(ret)
 }
 
-func GetTextExtentExPoint(hdc HDC, lpszStr *uint16, cchString, nMaxExtent int, lpnFit, alpDx *int, lpSize *SIZE) bool {
+func GetTextExtentExPoint(hdc HDC, lpszStr *uint16, cchString, nMaxExtent int32, lpnFit, alpDx *int32, lpSize *SIZE) bool {
 	ret, _, _ := syscall.Syscall9(getTextExtentExPoint, 7,
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(lpszStr)),
@@ -1201,7 +1201,7 @@ func GetTextExtentExPoint(hdc HDC, lpszStr *uint16, cchString, nMaxExtent int, l
 	return ret != 0
 }
 
-func GetTextExtentPoint32(hdc HDC, lpString *uint16, c int, lpSize *SIZE) bool {
+func GetTextExtentPoint32(hdc HDC, lpString *uint16, c int32, lpSize *SIZE) bool {
 	ret, _, _ := syscall.Syscall6(getTextExtentPoint32, 4,
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(lpString)),
@@ -1222,7 +1222,7 @@ func GetTextMetrics(hdc HDC, lptm *TEXTMETRIC) bool {
 	return ret != 0
 }
 
-func LineTo(hdc HDC, nXEnd, nYEnd int) bool {
+func LineTo(hdc HDC, nXEnd, nYEnd int32) bool {
 	ret, _, _ := syscall.Syscall(lineTo, 3,
 		uintptr(hdc),
 		uintptr(nXEnd),
@@ -1252,7 +1252,7 @@ func PlayEnhMetaFile(hdc HDC, hemf HENHMETAFILE, lpRect *RECT) bool {
 	return ret != 0
 }
 
-func Rectangle_(hdc HDC, nLeftRect, nTopRect, nRightRect, nBottomRect int) bool {
+func Rectangle_(hdc HDC, nLeftRect, nTopRect, nRightRect, nBottomRect int32) bool {
 	ret, _, _ := syscall.Syscall6(rectangle, 5,
 		uintptr(hdc),
 		uintptr(nLeftRect),
@@ -1282,16 +1282,16 @@ func SelectObject(hdc HDC, hgdiobj HGDIOBJ) HGDIOBJ {
 	return HGDIOBJ(ret)
 }
 
-func SetBkMode(hdc HDC, iBkMode int) int {
+func SetBkMode(hdc HDC, iBkMode int32) int32 {
 	ret, _, _ := syscall.Syscall(setBkMode, 2,
 		uintptr(hdc),
 		uintptr(iBkMode),
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
-func SetBrushOrgEx(hdc HDC, nXOrg, nYOrg int, lppt *POINT) bool {
+func SetBrushOrgEx(hdc HDC, nXOrg, nYOrg int32, lppt *POINT) bool {
 	ret, _, _ := syscall.Syscall6(setBrushOrgEx, 4,
 		uintptr(hdc),
 		uintptr(nXOrg),
@@ -1303,13 +1303,13 @@ func SetBrushOrgEx(hdc HDC, nXOrg, nYOrg int, lppt *POINT) bool {
 	return ret != 0
 }
 
-func SetStretchBltMode(hdc HDC, iStretchMode int) int {
+func SetStretchBltMode(hdc HDC, iStretchMode int32) int32 {
 	ret, _, _ := syscall.Syscall(setStretchBltMode, 2,
 		uintptr(hdc),
 		uintptr(iStretchMode),
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
 func SetTextColor(hdc HDC, crColor COLORREF) COLORREF {
@@ -1321,25 +1321,25 @@ func SetTextColor(hdc HDC, crColor COLORREF) COLORREF {
 	return COLORREF(ret)
 }
 
-func StartDoc(hdc HDC, lpdi *DOCINFO) int {
+func StartDoc(hdc HDC, lpdi *DOCINFO) int32 {
 	ret, _, _ := syscall.Syscall(startDoc, 2,
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(lpdi)),
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
-func StartPage(hdc HDC) int {
+func StartPage(hdc HDC) int32 {
 	ret, _, _ := syscall.Syscall(startPage, 1,
 		uintptr(hdc),
 		0,
 		0)
 
-	return int(ret)
+	return int32(ret)
 }
 
-func StretchBlt(hdcDest HDC, nXOriginDest, nYOriginDest, nWidthDest, nHeightDest int, hdcSrc HDC, nXOriginSrc, nYOriginSrc, nWidthSrc, nHeightSrc int, dwRop uint) bool {
+func StretchBlt(hdcDest HDC, nXOriginDest, nYOriginDest, nWidthDest, nHeightDest int32, hdcSrc HDC, nXOriginSrc, nYOriginSrc, nWidthSrc, nHeightSrc int32, dwRop uint32) bool {
 	ret, _, _ := syscall.Syscall12(stretchBlt, 11,
 		uintptr(hdcDest),
 		uintptr(nXOriginDest),

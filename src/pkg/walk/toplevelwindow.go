@@ -110,7 +110,11 @@ func (tlw *TopLevelWindow) SetOwner(value RootWidget) os.Error {
 	}
 
 	SetLastError(0)
-	if 0 == SetWindowLong(tlw.hWnd, GWL_HWNDPARENT, int(ownerHWnd)) && GetLastError() != 0 {
+	if 0 == SetWindowLong(
+		tlw.hWnd,
+		GWL_HWNDPARENT,
+		int32(ownerHWnd)) && GetLastError() != 0 {
+
 		return lastError("SetWindowLong")
 	}
 
@@ -140,7 +144,7 @@ func (tlw *TopLevelWindow) Close() os.Error {
 func (tlw *TopLevelWindow) SaveState() os.Error {
 	var wp WINDOWPLACEMENT
 
-	wp.Length = uint(unsafe.Sizeof(wp))
+	wp.Length = uint32(unsafe.Sizeof(wp))
 
 	if !GetWindowPlacement(tlw.hWnd, &wp) {
 		return lastError("GetWindowPlacement")
@@ -188,7 +192,7 @@ func (tlw *TopLevelWindow) RestoreState() os.Error {
 		return err
 	}
 
-	wp.Length = uint(unsafe.Sizeof(wp))
+	wp.Length = uint32(unsafe.Sizeof(wp))
 
 	if !SetWindowPlacement(tlw.hWnd, &wp) {
 		return lastError("SetWindowPlacement")
@@ -205,10 +209,10 @@ func (tlw *TopLevelWindow) Closing() *CloseEvent {
 	return tlw.closingPublisher.Event()
 }
 
-func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ACTIVATE:
-		switch LOWORD(uint(wParam)) {
+		switch LOWORD(uint32(wParam)) {
 		case WA_ACTIVE, WA_CLICKACTIVE:
 			if tlw.prevFocusHWnd != 0 {
 				SetFocus(tlw.prevFocusHWnd)
@@ -242,8 +246,8 @@ func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) 
 			min = tlw.sizeFromClientSize(tlw.layout.MinSize())
 		}
 		mmi.PtMinTrackSize = POINT{
-			maxi(min.Width, tlw.minSize.Width),
-			maxi(min.Height, tlw.minSize.Height),
+			int32(maxi(min.Width, tlw.minSize.Width)),
+			int32(maxi(min.Height, tlw.minSize.Height)),
 		}
 		return 0
 

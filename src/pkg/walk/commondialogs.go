@@ -24,7 +24,7 @@ type FileDialog struct {
 func (dlg *FileDialog) show(owner RootWidget, fun func(ofn *OPENFILENAME) bool) (accepted bool, err os.Error) {
 	ofn := &OPENFILENAME{}
 
-	ofn.LStructSize = uint(unsafe.Sizeof(*ofn))
+	ofn.LStructSize = uint32(unsafe.Sizeof(*ofn))
 	ofn.HwndOwner = owner.BaseWidget().hWnd
 
 	filter := make([]uint16, len(dlg.Filter)+2)
@@ -36,12 +36,12 @@ func (dlg *FileDialog) show(owner RootWidget, fun func(ofn *OPENFILENAME) bool) 
 		}
 	}
 	ofn.LpstrFilter = &filter[0]
-	ofn.NFilterIndex = uint(dlg.FilterIndex)
+	ofn.NFilterIndex = uint32(dlg.FilterIndex)
 
 	filePath := make([]uint16, 1024)
 	copy(filePath, syscall.StringToUTF16(dlg.FilePath))
 	ofn.LpstrFile = &filePath[0]
-	ofn.NMaxFile = uint(len(filePath))
+	ofn.NMaxFile = uint32(len(filePath))
 
 	ofn.LpstrInitialDir = syscall.StringToUTF16Ptr(dlg.InitialDirPath)
 	ofn.LpstrTitle = syscall.StringToUTF16Ptr(dlg.Title)

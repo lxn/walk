@@ -277,7 +277,7 @@ type Widget interface {
 type widgetInternal interface {
 	Widget
 	path() string
-	wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr
+	wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr
 	writePath(buf *bytes.Buffer)
 }
 
@@ -335,7 +335,7 @@ func ensureRegisteredWindowClass(className string, registered *bool) {
 	}
 
 	var wc WNDCLASSEX
-	wc.CbSize = uint(unsafe.Sizeof(wc))
+	wc.CbSize = uint32(unsafe.Sizeof(wc))
 	wc.LpfnWndProc = widgetWndProcPtr
 	wc.HInstance = hInst
 	wc.HIcon = hIcon
@@ -350,7 +350,7 @@ func ensureRegisteredWindowClass(className string, registered *bool) {
 	*registered = true
 }
 
-func initWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint) os.Error {
+func initWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint32) os.Error {
 	wb := widget.BaseWidget()
 	wb.widget = widget
 
@@ -407,7 +407,7 @@ func initWidget(widget widgetInternal, parent Widget, className string, style, e
 	return nil
 }
 
-func initChildWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint) os.Error {
+func initChildWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint32) os.Error {
 	if parent == nil {
 		return newError("parent cannot be nil")
 	}
@@ -449,18 +449,18 @@ func (wb *WidgetBase) hasStyleBits(bits uint) bool {
 	return style&bits == bits
 }
 
-func (wb *WidgetBase) setAndClearStyleBits(set, clear uint) os.Error {
-	style := uint(GetWindowLong(wb.hWnd, GWL_STYLE))
+func (wb *WidgetBase) setAndClearStyleBits(set, clear uint32) os.Error {
+	style := uint32(GetWindowLong(wb.hWnd, GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
 
-	var newStyle uint
+	var newStyle uint32
 	newStyle = (style | set) &^ clear
 
 	if newStyle != style {
 		SetLastError(0)
-		if SetWindowLong(wb.hWnd, GWL_STYLE, int(newStyle)) == 0 {
+		if SetWindowLong(wb.hWnd, GWL_STYLE, int32(newStyle)) == 0 {
 			return lastError("SetWindowLong")
 		}
 	}
@@ -468,9 +468,9 @@ func (wb *WidgetBase) setAndClearStyleBits(set, clear uint) os.Error {
 	return nil
 }
 
-func (wb *WidgetBase) ensureStyleBits(bits uint, set bool) os.Error {
-	var setBits uint
-	var clearBits uint
+func (wb *WidgetBase) ensureStyleBits(bits uint32, set bool) os.Error {
+	var setBits uint32
+	var clearBits uint32
 	if set {
 		setBits = bits
 	} else {
@@ -655,7 +655,7 @@ func (wb *WidgetBase) SetParent(value Container) (err os.Error) {
 		return nil
 	}
 
-	style := uint(GetWindowLong(wb.hWnd, GWL_STYLE))
+	style := uint32(GetWindowLong(wb.hWnd, GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
@@ -668,7 +668,7 @@ func (wb *WidgetBase) SetParent(value Container) (err os.Error) {
 			return lastError("SetParent")
 		}
 		SetLastError(0)
-		if SetWindowLong(wb.hWnd, GWL_STYLE, int(style)) == 0 {
+		if SetWindowLong(wb.hWnd, GWL_STYLE, int32(style)) == 0 {
 			return lastError("SetWindowLong")
 		}
 	} else {
@@ -676,7 +676,7 @@ func (wb *WidgetBase) SetParent(value Container) (err os.Error) {
 		style &^= WS_POPUP
 
 		SetLastError(0)
-		if SetWindowLong(wb.hWnd, GWL_STYLE, int(style)) == 0 {
+		if SetWindowLong(wb.hWnd, GWL_STYLE, int32(style)) == 0 {
 			return lastError("SetWindowLong")
 		}
 		if SetParent(wb.hWnd, value.BaseWidget().hWnd) == 0 {
@@ -686,7 +686,15 @@ func (wb *WidgetBase) SetParent(value Container) (err os.Error) {
 
 	b := wb.Bounds()
 
-	if !SetWindowPos(wb.hWnd, HWND_BOTTOM, b.X, b.Y, b.Width, b.Height, SWP_FRAMECHANGED) {
+	if !SetWindowPos(
+		wb.hWnd,
+		HWND_BOTTOM,
+		int32(b.X),
+		int32(b.Y),
+		int32(b.Width),
+		int32(b.Height),
+		SWP_FRAMECHANGED) {
+
 		return lastError("SetWindowPos")
 	}
 
@@ -727,7 +735,7 @@ func (wb *WidgetBase) Visible() bool {
 
 // SetVisible sets if the *WidgetBase is visible.
 func (wb *WidgetBase) SetVisible(visible bool) {
-	var cmd int
+	var cmd int32
 	if visible {
 		cmd = SW_SHOW
 	} else {
@@ -764,16 +772,21 @@ func (wb *WidgetBase) Bounds() Rectangle {
 		return Rectangle{}
 	}
 
-	b := Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}
+	b := Rectangle{
+		int(r.Left),
+		int(r.Top),
+		int(r.Right - r.Left),
+		int(r.Bottom - r.Top),
+	}
 
 	if wb.parent != nil {
-		p := POINT{b.X, b.Y}
+		p := POINT{int32(b.X), int32(b.Y)}
 		if !ScreenToClient(wb.parent.BaseWidget().hWnd, &p) {
 			newError("ScreenToClient failed")
 			return Rectangle{}
 		}
-		b.X = p.X
-		b.Y = p.Y
+		b.X = int(p.X)
+		b.Y = int(p.Y)
 	}
 
 	return b
@@ -785,7 +798,14 @@ func (wb *WidgetBase) Bounds() Rectangle {
 // For a RootWidget, like *MainWindow or *Dialog, the Rectangle is in screen
 // coordinates, for a child Widget the coordinates are relative to its parent.
 func (wb *WidgetBase) SetBounds(bounds Rectangle) os.Error {
-	if !MoveWindow(wb.hWnd, bounds.X, bounds.Y, bounds.Width, bounds.Height, true) {
+	if !MoveWindow(
+		wb.hWnd,
+		int32(bounds.X),
+		int32(bounds.Y),
+		int32(bounds.Width),
+		int32(bounds.Height),
+		true) {
+
 		return lastError("MoveWindow")
 	}
 
@@ -855,14 +875,17 @@ func (wb *WidgetBase) dialogBaseUnits() Size {
 		newError("GetTextExtentPoint32 failed")
 	}
 
-	return Size{(size.CX/26 + 1) / 2, int(tm.TmHeight)}
+	return Size{int((size.CX/26 + 1) / 2), int(tm.TmHeight)}
 }
 
 func (wb *WidgetBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
 	// FIXME: Cache dialog base units on font change.
 	base := wb.dialogBaseUnits()
 
-	return Size{MulDiv(dlus.Width, base.Width, 4), MulDiv(dlus.Height, base.Height, 8)}
+	return Size{
+		int(MulDiv(int32(dlus.Width), int32(base.Width), 4)),
+		int(MulDiv(int32(dlus.Height), int32(base.Height), 8)),
+	}
 }
 
 // LayoutFlags returns a combination of LayoutFlags that specify how the
@@ -901,13 +924,13 @@ func (wb *WidgetBase) calculateTextSize() Size {
 		var s SIZE
 		str := syscall.StringToUTF16(strings.TrimRight(line, "\r "))
 
-		if !GetTextExtentPoint32(hdc, &str[0], len(str)-1, &s) {
+		if !GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
 			newError("GetTextExtentPoint32 failed")
 			return Size{}
 		}
 
-		size.Width = maxi(size.Width, s.CX)
-		size.Height += s.CY
+		size.Width = maxi(size.Width, int(s.CX))
+		size.Height += int(s.CY)
 	}
 
 	return size
@@ -1001,7 +1024,12 @@ func widgetClientBounds(hwnd HWND) Rectangle {
 		return Rectangle{}
 	}
 
-	return Rectangle{X: r.Left, Y: r.Top, Width: r.Right - r.Left, Height: r.Bottom - r.Top}
+	return Rectangle{
+		int(r.Left),
+		int(r.Top),
+		int(r.Right - r.Left),
+		int(r.Bottom - r.Top),
+	}
 }
 
 // ClientBounds returns the inner bounding box Rectangle of the *WidgetBase,
@@ -1131,7 +1159,7 @@ func widgetFromHWND(hwnd HWND) widgetInternal {
 	return wb.widget
 }
 
-func widgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) (result uintptr) {
+func widgetWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) (result uintptr) {
 	defer func() {
 		if len(appSingleton.panickingPublisher.event.handlers) > 0 {
 			var err os.Error
@@ -1162,7 +1190,7 @@ func widgetWndProc(hwnd HWND, msg uint, wParam, lParam uintptr) (result uintptr)
 	return
 }
 
-func (wb *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (wb *WidgetBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ERASEBKGND:
 		if wb.background == nil {
@@ -1214,13 +1242,19 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintp
 			break
 		}
 
-		x := int(GET_X_LPARAM(lParam))
-		y := int(GET_Y_LPARAM(lParam))
+		x := GET_X_LPARAM(lParam)
+		y := GET_Y_LPARAM(lParam)
 
 		contextMenu := sourceWidget.ContextMenu()
 
 		if contextMenu != nil {
-			TrackPopupMenuEx(contextMenu.hMenu, TPM_NOANIMATION, x, y, rootWidget(sourceWidget).BaseWidget().hWnd, nil)
+			TrackPopupMenuEx(
+				contextMenu.hMenu,
+				TPM_NOANIMATION,
+				x,
+				y,
+				rootWidget(sourceWidget).BaseWidget().hWnd,
+				nil)
 			return 0
 		}
 
@@ -1239,7 +1273,12 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintp
 
 	if widget := widgetFromHWND(hwnd); widget != nil {
 		if subclassed, ok := widget.(subclassedWidget); ok {
-			return CallWindowProc(subclassed.origWndProcPtr(), hwnd, msg, wParam, lParam)
+			return CallWindowProc(
+				subclassed.origWndProcPtr(),
+				hwnd,
+				msg,
+				wParam,
+				lParam)
 		}
 	}
 

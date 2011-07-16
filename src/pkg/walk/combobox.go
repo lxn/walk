@@ -83,12 +83,12 @@ func (cb *ComboBox) calculateMaxItemTextWidth() int {
 		var s SIZE
 		str := syscall.StringToUTF16(item.Text())
 
-		if !GetTextExtentPoint32(hdc, &str[0], len(str)-1, &s) {
+		if !GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
 			newError("GetTextExtentPoint32 failed")
 			return -1
 		}
 
-		maxWidth = maxi(maxWidth, s.CX)
+		maxWidth = maxi(maxWidth, int(s.CX))
 	}
 
 	return maxWidth
@@ -138,10 +138,10 @@ func (cb *ComboBox) SetTextSelection(start, end int) {
 	SendMessage(cb.hWnd, CB_SETEDITSEL, 0, uintptr(MAKELONG(uint16(start), uint16(end))))
 }
 
-func (cb *ComboBox) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (cb *ComboBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
-		switch HIWORD(uint(wParam)) {
+		switch HIWORD(uint32(wParam)) {
 		case CBN_SELENDOK:
 			if selIndex := cb.CurrentIndex(); selIndex != cb.prevCurIndex {
 				cb.currentIndexChangedPublisher.Publish()

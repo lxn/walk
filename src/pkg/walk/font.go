@@ -31,8 +31,8 @@ func init() {
 	// Retrieve screen DPI
 	hDC := GetDC(0)
 	defer ReleaseDC(0, hDC)
-	screenDPIX = GetDeviceCaps(hDC, LOGPIXELSX)
-	screenDPIY = GetDeviceCaps(hDC, LOGPIXELSY)
+	screenDPIX = int(GetDeviceCaps(hDC, LOGPIXELSX))
+	screenDPIY = int(GetDeviceCaps(hDC, LOGPIXELSY))
 
 	// Initialize default font
 	var err os.Error
@@ -80,7 +80,7 @@ func newFontFromLOGFONT(lf *LOGFONT, dpi int) (*Font, os.Error) {
 	}
 
 	family := UTF16PtrToString(&lf.LfFaceName[0])
-	pointSize := MulDiv(lf.LfHeight, 72, dpi)
+	pointSize := int(MulDiv(lf.LfHeight, 72, int32(dpi)))
 	if pointSize < 0 {
 		pointSize = -pointSize
 	}
@@ -105,7 +105,7 @@ func newFontFromLOGFONT(lf *LOGFONT, dpi int) (*Font, os.Error) {
 func (f *Font) createForDPI(dpi int) HFONT {
 	var lf LOGFONT
 
-	lf.LfHeight = -MulDiv(f.pointSize, dpi, 72)
+	lf.LfHeight = -MulDiv(int32(f.pointSize), int32(dpi), 72)
 	if f.style&FontBold > 0 {
 		lf.LfWeight = FW_BOLD
 	} else {

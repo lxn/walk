@@ -98,7 +98,7 @@ func NewCosmeticPen(style PenStyle, color Color) (*CosmeticPen, os.Error) {
 
 	style |= PS_COSMETIC
 
-	hPen := ExtCreatePen(uint(style), 1, lb, 0, nil)
+	hPen := ExtCreatePen(uint32(style), 1, lb, 0, nil)
 	if hPen == 0 {
 		return nil, newError("ExtCreatePen failed")
 	}
@@ -144,12 +144,17 @@ func NewGeometricPen(style PenStyle, width int, brush Brush) (*GeometricPen, os.
 
 	style |= PS_GEOMETRIC
 
-	hPen := ExtCreatePen(uint(style), uint(width), brush.logbrush(), 0, nil)
+	hPen := ExtCreatePen(uint32(style), uint32(width), brush.logbrush(), 0, nil)
 	if hPen == 0 {
 		return nil, newError("ExtCreatePen failed")
 	}
 
-	return &GeometricPen{hPen: hPen, style: style, width: width, brush: brush}, nil
+	return &GeometricPen{
+		hPen:  hPen,
+		style: style,
+		width: width,
+		brush: brush,
+	}, nil
 }
 
 func (p *GeometricPen) Dispose() {

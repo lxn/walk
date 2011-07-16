@@ -178,7 +178,7 @@ func (l *splitterLayout) Update(reset bool) os.Error {
 		}
 	}
 
-	hdwp := BeginDeferWindowPos(len(widgets))
+	hdwp := BeginDeferWindowPos(int32(len(widgets)))
 	if hdwp == 0 {
 		return lastError("BeginDeferWindowPos")
 	}
@@ -199,7 +199,16 @@ func (l *splitterLayout) Update(reset bool) os.Error {
 			x, y, w, h = 0, p1, space2, s1
 		}
 
-		if hdwp = DeferWindowPos(hdwp, widget.BaseWidget().hWnd, 0, x, y, w, h, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOZORDER); hdwp == 0 {
+		if hdwp = DeferWindowPos(
+			hdwp,
+			widget.BaseWidget().hWnd,
+			0,
+			int32(x),
+			int32(y),
+			int32(w),
+			int32(h),
+			SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOZORDER); hdwp == 0 {
+
 			return lastError("DeferWindowPos")
 		}
 

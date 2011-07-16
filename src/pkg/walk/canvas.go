@@ -109,8 +109,8 @@ func newCanvasFromHDC(hdc HDC) (*Canvas, os.Error) {
 }
 
 func (c *Canvas) init() (*Canvas, os.Error) {
-	c.dpix = GetDeviceCaps(c.hdc, LOGPIXELSX)
-	c.dpiy = GetDeviceCaps(c.hdc, LOGPIXELSY)
+	c.dpix = int(GetDeviceCaps(c.hdc, LOGPIXELSX))
+	c.dpiy = int(GetDeviceCaps(c.hdc, LOGPIXELSY))
 
 	if SetBkMode(c.hdc, TRANSPARENT) == 0 {
 		return nil, newError("SetBkMode failed")
@@ -180,8 +180,8 @@ func (c *Canvas) withFontAndTextColor(font *Font, color Color, f func() os.Error
 
 func (c *Canvas) Bounds() Rectangle {
 	return Rectangle{
-		Width:  GetDeviceCaps(c.hdc, HORZRES),
-		Height: GetDeviceCaps(c.hdc, VERTRES),
+		Width:  int(GetDeviceCaps(c.hdc, HORZRES)),
+		Height: int(GetDeviceCaps(c.hdc, VERTRES)),
 	}
 }
 
@@ -197,7 +197,13 @@ func (c *Canvas) withBrushAndPen(brush Brush, pen Pen, f func() os.Error) os.Err
 
 func (c *Canvas) ellipse(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) os.Error {
 	return c.withBrushAndPen(brush, pen, func() os.Error {
-		if !Ellipse(c.hdc, bounds.X, bounds.Y, bounds.X+bounds.Width+sizeCorrection, bounds.Y+bounds.Height+sizeCorrection) {
+		if !Ellipse(
+			c.hdc,
+			int32(bounds.X),
+			int32(bounds.Y),
+			int32(bounds.X+bounds.Width+sizeCorrection),
+			int32(bounds.Y+bounds.Height+sizeCorrection)) {
+
 			return newError("Ellipse failed")
 		}
 
@@ -235,7 +241,7 @@ func (c *Canvas) DrawLine(pen Pen, from, to Point) os.Error {
 	}
 
 	return c.withPen(pen, func() os.Error {
-		if !LineTo(c.hdc, to.X, to.Y) {
+		if !LineTo(c.hdc, int32(to.X), int32(to.Y)) {
 			return newError("LineTo failed")
 		}
 
@@ -245,7 +251,13 @@ func (c *Canvas) DrawLine(pen Pen, from, to Point) os.Error {
 
 func (c *Canvas) rectangle(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) os.Error {
 	return c.withBrushAndPen(brush, pen, func() os.Error {
-		if !Rectangle_(c.hdc, bounds.X, bounds.Y, bounds.X+bounds.Width+sizeCorrection, bounds.Y+bounds.Height+sizeCorrection) {
+		if !Rectangle_(
+			c.hdc,
+			int32(bounds.X),
+			int32(bounds.Y),
+			int32(bounds.X+bounds.Width+sizeCorrection),
+			int32(bounds.Y+bounds.Height+sizeCorrection)) {
+
 			return newError("Rectangle_ failed")
 		}
 
@@ -264,7 +276,13 @@ func (c *Canvas) FillRectangle(brush Brush, bounds Rectangle) os.Error {
 func (c *Canvas) DrawText(text string, font *Font, color Color, bounds Rectangle, format DrawTextFormat) os.Error {
 	return c.withFontAndTextColor(font, color, func() os.Error {
 		rect := bounds.toRECT()
-		ret := DrawTextEx(c.hdc, syscall.StringToUTF16Ptr(text), -1, &rect, uint(format)|DT_EDITCONTROL, nil)
+		ret := DrawTextEx(
+			c.hdc,
+			syscall.StringToUTF16Ptr(text),
+			-1,
+			&rect,
+			uint32(format)|DT_EDITCONTROL,
+			nil)
 		if ret == 0 {
 			return newError("DrawTextEx failed")
 		}
@@ -280,7 +298,7 @@ func (c *Canvas) fontHeight(font *Font) (height int, err os.Error) {
 			return newError("GetTextExtentPoint32 failed")
 		}
 
-		height = size.CY
+		height = int(size.CY)
 		if height == 0 {
 			return newError("invalid font height")
 		}
@@ -311,20 +329,31 @@ func (c *Canvas) MeasureText(text string, font *Font, bounds Rectangle, format D
 	}
 	defer SelectObject(c.measureTextMetafile.hdc, oldHandle)
 
-	rect := &RECT{bounds.X, bounds.Y, bounds.X + bounds.Width, bounds.Y + bounds.Height}
+	rect := &RECT{
+		int32(bounds.X),
+		int32(bounds.Y),
+		int32(bounds.X + bounds.Width),
+		int32(bounds.Y + bounds.Height),
+	}
 	var params DRAWTEXTPARAMS
-	params.CbSize = uint(unsafe.Sizeof(params))
+	params.CbSize = uint32(unsafe.Sizeof(params))
 
 	strPtr := syscall.StringToUTF16Ptr(text)
-	dtfmt := uint(format) | DT_EDITCONTROL | DT_WORDBREAK
+	dtfmt := uint32(format) | DT_EDITCONTROL | DT_WORDBREAK
 
-	height := DrawTextEx(c.measureTextMetafile.hdc, strPtr, -1, rect, dtfmt, &params)
+	height := DrawTextEx(
+		c.measureTextMetafile.hdc, strPtr, -1, rect, dtfmt, &params)
 	if height == 0 {
 		err = newError("DrawTextEx failed")
 		return
 	}
 
-	boundsMeasured = Rectangle{rect.Left, rect.Top, rect.Right - rect.Left, height}
+	boundsMeasured = Rectangle{
+		int(rect.Left),
+		int(rect.Top),
+		int(rect.Right - rect.Left),
+		int(height),
+	}
 	runesFitted = int(params.UiLengthDrawn)
 
 	return

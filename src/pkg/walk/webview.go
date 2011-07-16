@@ -199,14 +199,14 @@ func (wv *WebView) onResize() {
 
 		webBrowser2.Put_Left(0)
 		webBrowser2.Put_Top(0)
-		webBrowser2.Put_Width(bounds.Width)
-		webBrowser2.Put_Height(bounds.Height)
+		webBrowser2.Put_Width(int32(bounds.Width))
+		webBrowser2.Put_Height(int32(bounds.Height))
 
 		return nil
 	})
 }
 
-func (wv *WebView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (wv *WebView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
 		if wv.clientSite.inPlaceSite.inPlaceFrame.webView == nil {

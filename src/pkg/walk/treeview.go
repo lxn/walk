@@ -100,7 +100,7 @@ func (tv *TreeView) SelectionChanging() *TreeViewItemSelectionEvent {
 	return tv.selectionChangingPublisher.Event()
 }
 
-func (tv *TreeView) wndProc(hwnd HWND, msg uint, wParam, lParam uintptr) uintptr {
+func (tv *TreeView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_NOTIFY:
 		nmtv := (*NMTREEVIEW)(unsafe.Pointer(lParam))

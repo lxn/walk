@@ -204,7 +204,7 @@ func (wb2 *IWebBrowser2) Release() HRESULT {
 	return HRESULT(ret)
 }
 
-func (wb2 *IWebBrowser2) Put_Left(Left int) HRESULT {
+func (wb2 *IWebBrowser2) Put_Left(Left int32) HRESULT {
 	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Left, 2,
 		uintptr(unsafe.Pointer(wb2)),
 		uintptr(Left),
@@ -213,7 +213,7 @@ func (wb2 *IWebBrowser2) Put_Left(Left int) HRESULT {
 	return HRESULT(ret)
 }
 
-func (wb2 *IWebBrowser2) Put_Top(Top int) HRESULT {
+func (wb2 *IWebBrowser2) Put_Top(Top int32) HRESULT {
 	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Top, 2,
 		uintptr(unsafe.Pointer(wb2)),
 		uintptr(Top),
@@ -222,7 +222,7 @@ func (wb2 *IWebBrowser2) Put_Top(Top int) HRESULT {
 	return HRESULT(ret)
 }
 
-func (wb2 *IWebBrowser2) Put_Width(Width int) HRESULT {
+func (wb2 *IWebBrowser2) Put_Width(Width int32) HRESULT {
 	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Width, 2,
 		uintptr(unsafe.Pointer(wb2)),
 		uintptr(Width),
@@ -231,7 +231,7 @@ func (wb2 *IWebBrowser2) Put_Width(Width int) HRESULT {
 	return HRESULT(ret)
 }
 
-func (wb2 *IWebBrowser2) Put_Height(Height int) HRESULT {
+func (wb2 *IWebBrowser2) Put_Height(Height int32) HRESULT {
 	ret, _, _ := syscall.Syscall(wb2.LpVtbl.Put_Height, 2,
 		uintptr(unsafe.Pointer(wb2)),
 		uintptr(Height),
@@ -287,9 +287,9 @@ type IDocHostUIHandler struct {
 }
 
 type DOCHOSTUIINFO struct {
-	CbSize        uint
-	DwFlags       uint
-	DwDoubleClick uint
+	CbSize        uint32
+	DwFlags       uint32
+	DwDoubleClick uint32
 	PchHostCss    *uint16
 	PchHostNS     *uint16
 }

@@ -16,7 +16,12 @@ type ImageList struct {
 }
 
 func NewImageList(imageSize Size, maskColor Color) (*ImageList, os.Error) {
-	hIml := ImageList_Create(imageSize.Width, imageSize.Height, ILC_MASK|ILC_COLOR24, 8, 8)
+	hIml := ImageList_Create(
+		int32(imageSize.Width),
+		int32(imageSize.Height),
+		ILC_MASK|ILC_COLOR24,
+		8,
+		8)
 	if hIml == 0 {
 		return nil, newError("ImageList_Create failed")
 	}
@@ -34,7 +39,7 @@ func (il *ImageList) Add(bitmap, maskBitmap *Bitmap) (int, os.Error) {
 		maskHandle = maskBitmap.handle()
 	}
 
-	index := ImageList_Add(il.hIml, bitmap.handle(), maskHandle)
+	index := int(ImageList_Add(il.hIml, bitmap.handle(), maskHandle))
 	if index == -1 {
 		return 0, newError("ImageList_Add failed")
 	}
@@ -42,12 +47,15 @@ func (il *ImageList) Add(bitmap, maskBitmap *Bitmap) (int, os.Error) {
 	return index, nil
 }
 
-func (il *ImageList) AddMasked(bitmap *Bitmap) (int, os.Error) {
+func (il *ImageList) AddMasked(bitmap *Bitmap) (int32, os.Error) {
 	if bitmap == nil {
 		return 0, newError("bitmap cannot be nil")
 	}
 
-	index := ImageList_AddMasked(il.hIml, bitmap.handle(), COLORREF(il.maskColor))
+	index := ImageList_AddMasked(
+		il.hIml,
+		bitmap.handle(),
+		COLORREF(il.maskColor))
 	if index == -1 {
 		return 0, newError("ImageList_AddMasked failed")
 	}

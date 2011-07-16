@@ -25,7 +25,7 @@ const (
 type PRINTER_INFO_4 struct {
 	PPrinterName *uint16
 	PServerName  *uint16
-	Attributes   uint
+	Attributes   uint32
 }
 
 var (
@@ -50,7 +50,7 @@ func init() {
 	getDefaultPrinter = MustGetProcAddress(libwinspool, "GetDefaultPrinterW")
 }
 
-func DeviceCapabilities(pDevice, pPort *uint16, fwCapability uint16, pOutput *uint16, pDevMode *DEVMODE) uint {
+func DeviceCapabilities(pDevice, pPort *uint16, fwCapability uint16, pOutput *uint16, pDevMode *DEVMODE) uint32 {
 	ret, _, _ := syscall.Syscall6(deviceCapabilities, 5,
 		uintptr(unsafe.Pointer(pDevice)),
 		uintptr(unsafe.Pointer(pPort)),
@@ -59,10 +59,10 @@ func DeviceCapabilities(pDevice, pPort *uint16, fwCapability uint16, pOutput *ui
 		uintptr(unsafe.Pointer(pDevMode)),
 		0)
 
-	return uint(ret)
+	return uint32(ret)
 }
 
-func DocumentProperties(hWnd HWND, hPrinter HANDLE, pDeviceName *uint16, pDevModeOutput, pDevModeInput *DEVMODE, fMode uint) int {
+func DocumentProperties(hWnd HWND, hPrinter HANDLE, pDeviceName *uint16, pDevModeOutput, pDevModeInput *DEVMODE, fMode uint32) int32 {
 	ret, _, _ := syscall.Syscall6(documentProperties, 6,
 		uintptr(hWnd),
 		uintptr(hPrinter),
@@ -71,10 +71,10 @@ func DocumentProperties(hWnd HWND, hPrinter HANDLE, pDeviceName *uint16, pDevMod
 		uintptr(unsafe.Pointer(pDevModeInput)),
 		uintptr(fMode))
 
-	return int(ret)
+	return int32(ret)
 }
 
-func EnumPrinters(Flags uint, Name *uint16, Level uint, pPrinterEnum *byte, cbBuf uint, pcbNeeded, pcReturned *uint) bool {
+func EnumPrinters(Flags uint32, Name *uint16, Level uint32, pPrinterEnum *byte, cbBuf uint32, pcbNeeded, pcReturned *uint32) bool {
 	ret, _, _ := syscall.Syscall9(enumPrinters, 7,
 		uintptr(Flags),
 		uintptr(unsafe.Pointer(Name)),
@@ -89,7 +89,7 @@ func EnumPrinters(Flags uint, Name *uint16, Level uint, pPrinterEnum *byte, cbBu
 	return ret != 0
 }
 
-func GetDefaultPrinter(pszBuffer *uint16, pcchBuffer *uint) bool {
+func GetDefaultPrinter(pszBuffer *uint16, pcchBuffer *uint32) bool {
 	ret, _, _ := syscall.Syscall(getDefaultPrinter, 2,
 		uintptr(unsafe.Pointer(pszBuffer)),
 		uintptr(unsafe.Pointer(pcchBuffer)),

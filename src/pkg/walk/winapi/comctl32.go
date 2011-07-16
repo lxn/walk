@@ -133,7 +133,7 @@ const (
 type HIMAGELIST HANDLE
 
 type INITCOMMONCONTROLSEX struct {
-	DwSize, DwICC uint
+	DwSize, DwICC uint32
 }
 
 var (
@@ -161,31 +161,31 @@ func init() {
 
 	// Initialize the common controls we support
 	var initCtrls INITCOMMONCONTROLSEX
-	initCtrls.DwSize = uint(unsafe.Sizeof(initCtrls))
+	initCtrls.DwSize = uint32(unsafe.Sizeof(initCtrls))
 	initCtrls.DwICC = ICC_LISTVIEW_CLASSES | ICC_PROGRESS_CLASS | ICC_TAB_CLASSES | ICC_TREEVIEW_CLASSES
 
 	InitCommonControlsEx(&initCtrls)
 }
 
-func ImageList_Add(himl HIMAGELIST, hbmImage, hbmMask HBITMAP) int {
+func ImageList_Add(himl HIMAGELIST, hbmImage, hbmMask HBITMAP) int32 {
 	ret, _, _ := syscall.Syscall(imageList_Add, 3,
 		uintptr(himl),
 		uintptr(hbmImage),
 		uintptr(hbmMask))
 
-	return int(ret)
+	return int32(ret)
 }
 
-func ImageList_AddMasked(himl HIMAGELIST, hbmImage HBITMAP, crMask COLORREF) int {
+func ImageList_AddMasked(himl HIMAGELIST, hbmImage HBITMAP, crMask COLORREF) int32 {
 	ret, _, _ := syscall.Syscall(imageList_AddMasked, 3,
 		uintptr(himl),
 		uintptr(hbmImage),
 		uintptr(crMask))
 
-	return int(ret)
+	return int32(ret)
 }
 
-func ImageList_Create(cx, cy int, flags uint, cInitial, cGrow int) HIMAGELIST {
+func ImageList_Create(cx, cy int32, flags uint32, cInitial, cGrow int32) HIMAGELIST {
 	ret, _, _ := syscall.Syscall6(imageList_Create, 5,
 		uintptr(cx),
 		uintptr(cy),

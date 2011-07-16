@@ -30,23 +30,43 @@ func LocalMachineKey() *RegistryKey {
 
 func RegistryKeyString(rootKey *RegistryKey, subKeyPath, valueName string) (value string, err os.Error) {
 	var hKey HKEY
-	if RegOpenKeyEx(rootKey.hKey, syscall.StringToUTF16Ptr(subKeyPath), 0, KEY_READ, &hKey) != ERROR_SUCCESS {
+	if RegOpenKeyEx(
+		rootKey.hKey,
+		syscall.StringToUTF16Ptr(subKeyPath),
+		0,
+		KEY_READ,
+		&hKey) != ERROR_SUCCESS {
+
 		return "", newError("RegistryKeyString: Failed to open subkey.")
 	}
 	defer RegCloseKey(hKey)
 
-	var typ uint
+	var typ uint32
 	var data []uint16
-	var bufSize uint
+	var bufSize uint32
 
-	if RegQueryValueEx(hKey, syscall.StringToUTF16Ptr(valueName), (*uint)(unsafe.Pointer(nil)), &typ, nil, &bufSize) != ERROR_SUCCESS {
-		return "", newError("RegistryKeyString: Failed to retrieve required buffer size.")
+	if ERROR_SUCCESS != RegQueryValueEx(
+		hKey,
+		syscall.StringToUTF16Ptr(valueName),
+		nil,
+		&typ,
+		nil,
+		&bufSize) {
+
+		return "", newError("RegQueryValueEx #1")
 	}
 
 	data = make([]uint16, bufSize/2+1)
 
-	if RegQueryValueEx(hKey, syscall.StringToUTF16Ptr(valueName), (*uint)(unsafe.Pointer(nil)), &typ, (*byte)(unsafe.Pointer((&data[0]))), &bufSize) != ERROR_SUCCESS {
-		return "", newError("RegistryKeyString: Failed to retrieve registry key value.")
+	if ERROR_SUCCESS != RegQueryValueEx(
+		hKey,
+		syscall.StringToUTF16Ptr(valueName),
+		nil,
+		&typ,
+		(*byte)(unsafe.Pointer(&data[0])),
+		&bufSize) {
+
+		return "", newError("RegQueryValueEx #2")
 	}
 
 	return syscall.UTF16ToString(data), nil

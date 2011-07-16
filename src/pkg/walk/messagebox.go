@@ -42,5 +42,9 @@ func MsgBox(owner RootWidget, title, message string, style MsgBoxStyle) int {
 		ownerHWnd = owner.BaseWidget().hWnd
 	}
 
-	return MessageBox(ownerHWnd, syscall.StringToUTF16Ptr(message), syscall.StringToUTF16Ptr(title), uint(style))
+	return int(MessageBox(
+		ownerHWnd,
+		syscall.StringToUTF16Ptr(message),
+		syscall.StringToUTF16Ptr(title),
+		uint32(style)))
 }
