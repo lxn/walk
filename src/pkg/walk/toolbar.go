@@ -20,6 +20,7 @@ type ToolBar struct {
 	imageList          *ImageList
 	actions            *ActionList
 	defaultButtonWidth int
+	maxTextRows        int
 }
 
 func newToolBar(parent Container, style uint32) (*ToolBar, os.Error) {
@@ -95,10 +96,16 @@ func (tb *ToolBar) applyDefaultButtonWidth() os.Error {
 		return nil
 	}
 
+	lParam := uintptr(
+		MAKELONG(uint16(tb.defaultButtonWidth), uint16(tb.defaultButtonWidth)))
+	if 0 == SendMessage(tb.hWnd, TB_SETBUTTONWIDTH, 0, lParam) {
+		return newError("SendMessage(TB_SETBUTTONWIDTH)")
+	}
+
 	size := uint32(SendMessage(tb.hWnd, TB_GETBUTTONSIZE, 0, 0))
 	height := HIWORD(size)
 
-	lParam := uintptr(MAKELONG(uint16(tb.defaultButtonWidth), height))
+	lParam = uintptr(MAKELONG(uint16(tb.defaultButtonWidth), height))
 	if FALSE == SendMessage(tb.hWnd, TB_SETBUTTONSIZE, 0, lParam) {
 		return newError("SendMessage(TB_SETBUTTONSIZE)")
 	}
@@ -141,6 +148,20 @@ func (tb *ToolBar) SetDefaultButtonWidth(width int) os.Error {
 	}
 
 	return tb.applyDefaultButtonWidth()
+}
+
+func (tb *ToolBar) MaxTextRows() int {
+	return tb.maxTextRows
+}
+
+func (tb *ToolBar) SetMaxTextRows(maxTextRows int) os.Error {
+	if 0 == SendMessage(tb.hWnd, TB_SETMAXTEXTROWS, uintptr(maxTextRows), 0) {
+		return newError("SendMessage(TB_SETMAXTEXTROWS)")
+	}
+
+	tb.maxTextRows = maxTextRows
+
+	return nil
 }
 
 func (tb *ToolBar) Actions() *ActionList {
