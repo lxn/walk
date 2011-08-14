@@ -35,18 +35,42 @@ func (ifs *IniFileSettings) Put(key, value string) os.Error {
 	return nil
 }
 
-func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) os.Error) os.Error {
+
+func (ifs *IniFileSettings) filePath() (string, os.Error) {
 	appDataPath, err := AppDataPath()
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	dirPath := path.Join(appDataPath, appSingleton.OrganizationName(), appSingleton.ProductName())
+	return path.Join(
+		appDataPath,
+		appSingleton.OrganizationName(),
+		appSingleton.ProductName(),
+		"settings.ini"), nil
+}
+
+func (ifs *IniFileSettings) fileExists() (bool, os.Error) {
+	filePath, err := ifs.filePath()
+	if err != nil {
+		return false, err
+	}
+
+	_, err = os.Stat(filePath)
+	if err != nil {
+		// FIXME: Not necessarily a file does not exist error.
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) os.Error) os.Error {
+	filePath, err := ifs.filePath()
+
+	dirPath, _ := path.Split(filePath)
 	if err := os.MkdirAll(dirPath, 0644); err != nil {
 		return wrapError(err)
 	}
-
-	filePath := path.Join(dirPath, "settings.ini")
 
 	file, err := os.OpenFile(filePath, flags, 0644)
 	if err != nil {
@@ -58,6 +82,15 @@ func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) os.Error) 
 }
 
 func (ifs *IniFileSettings) Load() os.Error {
+	exists, err := ifs.fileExists()
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return nil
+	}
+
 	return ifs.withFile(os.O_RDONLY, func(file *os.File) os.Error {
 		lineBytes := make([]byte, 0, 4096)
 		reader := bufio.NewReader(file)
