@@ -81,14 +81,11 @@ func (te *TextEdit) SetReadOnly(readOnly bool) os.Error {
 func (te *TextEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
-		result := CallWindowProc(textEditOrigWndProcPtr, hwnd, msg, wParam, lParam)
-		return result &^ DLGC_HASSETSEL
-
-	case WM_KEYDOWN:
-		if wParam == VK_ESCAPE {
-			// Suppress weird parent destruction behavior.
-			return 0
+		if wParam == VK_RETURN {
+			return DLGC_WANTALLKEYS
 		}
+
+		return DLGC_HASSETSEL | DLGC_WANTARROWS | DLGC_WANTCHARS
 	}
 
 	return te.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
