@@ -292,7 +292,11 @@ func (l *GridLayout) LayoutFlags() LayoutFlags {
 		return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert
 	} else {
 		for i := 0; i < count; i++ {
-			flags |= children.At(i).LayoutFlags()
+			widget := children.At(i)
+
+			if shouldLayoutWidget(widget) {
+				flags |= widget.LayoutFlags()
+			}
 		}
 	}
 
@@ -311,7 +315,7 @@ func (l *GridLayout) MinSize() Size {
 		for col := 0; col < len(widths); col++ {
 			widget := l.cells[row][col].widget
 
-			if widget == nil {
+			if !shouldLayoutWidget(widget) {
 				continue
 			}
 
@@ -404,9 +408,17 @@ func (l *GridLayout) Update(reset bool) os.Error {
 	for row := 0; row < len(heights); row++ {
 		h := heights[row]
 
+		if h == 0 {
+			continue
+		}
+
 		x := l.margins.HNear
 		for col := 0; col < len(widths); col++ {
 			w := widths[col]
+
+			if w == 0 {
+				continue
+			}
 
 			widget := l.cells[row][col].widget
 
@@ -472,7 +484,7 @@ func (l *GridLayout) sectionSizes(orientation Orientation) []int {
 				widget = l.cells[i][j].widget
 			}
 
-			if widget == nil {
+			if !shouldLayoutWidget(widget) {
 				continue
 			}
 

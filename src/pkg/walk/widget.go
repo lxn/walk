@@ -306,6 +306,7 @@ type WidgetBase struct {
 	cursor               Cursor
 	layoutFlags          LayoutFlags
 	suspended            bool
+	hidden               bool
 }
 
 var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
@@ -742,6 +743,10 @@ func (wb *WidgetBase) SetVisible(visible bool) {
 		cmd = SW_HIDE
 	}
 	ShowWindow(wb.hWnd, cmd)
+
+	wb.hidden = !visible
+
+	wb.updateParentLayout()
 }
 
 // BringToTop moves the *WidgetBase to the top of the keyboard focus order.

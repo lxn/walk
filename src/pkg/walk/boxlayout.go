@@ -193,6 +193,28 @@ func (l widgetInfoList) Swap(i, j int) {
 	l[i], l[j] = l[j], l[i]
 }
 
+func (l *BoxLayout) widgets() []Widget {
+	children := l.container.Children()
+	widgets := make([]Widget, 0, children.Len())
+
+	for i := 0; i < cap(widgets); i++ {
+		widget := children.At(i)
+
+		if !shouldLayoutWidget(widget) {
+			continue
+		}
+
+		ps := widget.SizeHint()
+		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
+			continue
+		}
+
+		widgets = append(widgets, widget)
+	}
+
+	return widgets
+}
+
 func (l *BoxLayout) LayoutFlags() LayoutFlags {
 	if l.container == nil {
 		return 0
@@ -208,7 +230,13 @@ func (l *BoxLayout) LayoutFlags() LayoutFlags {
 		return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert
 	} else {
 		for i := 0; i < count; i++ {
-			f := children.At(i).LayoutFlags()
+			widget := children.At(i)
+
+			if !shouldLayoutWidget(widget) {
+				continue
+			}
+
+			f := widget.LayoutFlags()
 			flags |= f
 			if f&ShrinkableHorz == 0 {
 				hasNonShrinkableHorz = true
@@ -242,19 +270,7 @@ func (l *BoxLayout) MinSize() Size {
 	}
 
 	// Begin by finding out which widgets we care about.
-	children := l.container.Children()
-	widgets := make([]Widget, 0, children.Len())
-
-	for i := 0; i < cap(widgets); i++ {
-		widget := children.At(i)
-
-		ps := widget.SizeHint()
-		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
-			continue
-		}
-
-		widgets = append(widgets, widget)
-	}
+	widgets := l.widgets()
 
 	// Prepare some useful data.
 	sizes := make([]int, len(widgets))
@@ -325,19 +341,7 @@ func (l *BoxLayout) Update(reset bool) os.Error {
 	}
 
 	// Begin by finding out which widgets we care about.
-	children := l.container.Children()
-	widgets := make([]Widget, 0, children.Len())
-
-	for i := 0; i < cap(widgets); i++ {
-		widget := children.At(i)
-
-		ps := widget.SizeHint()
-		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
-			continue
-		}
-
-		widgets = append(widgets, widget)
-	}
+	widgets := l.widgets()
 
 	// Prepare some useful data.
 	var greedyNonSpacerCount int

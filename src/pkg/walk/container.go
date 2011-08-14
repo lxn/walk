@@ -27,6 +27,16 @@ type Layout interface {
 	Update(reset bool) os.Error
 }
 
+func shouldLayoutWidget(widget Widget) bool {
+	if widget == nil {
+		return false
+	}
+
+	_, isSpacer := widget.(*Spacer)
+
+	return isSpacer || !widget.BaseWidget().hidden
+}
+
 type Container interface {
 	Widget
 	Children() *WidgetList
