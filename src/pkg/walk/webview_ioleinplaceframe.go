@@ -95,6 +95,6 @@ func webView_IOleInPlaceFrame_EnableModeless(inPlaceFrame *webViewIOleInPlaceFra
 	return S_OK
 }
 
-func webView_IOleInPlaceFrame_TranslateAccelerator(inPlaceFrame *webViewIOleInPlaceFrame, lpmsg *MSG, wID uint16) HRESULT {
+func webView_IOleInPlaceFrame_TranslateAccelerator(inPlaceFrame *webViewIOleInPlaceFrame, lpmsg *MSG, wID uint32) HRESULT {
 	return E_NOTIMPL
 }
