@@ -35,25 +35,25 @@ the same directory.
 
 To use the generated code, put something like this into a file 'mydialog.go':
 
-`package main
+	package main
 
-import "github.com/lxn/walk"
+	import "github.com/lxn/walk"
 
-type MyDialog struct {
-	*walk.Dialog
-	ui myDialogUI
-}
-
-func RunMyDialog(owner walk.RootWidget) (int, error) {
-	dlg := new(MyDialog)
-	if err := dlg.init(owner); err != nil {
-		return 0, err
+	type MyDialog struct {
+		*walk.Dialog
+		ui myDialogUI
 	}
-	
-	// Your custom init and event handling code goes here
 
-	return dlg.Run(), nil
-}`
+	func RunMyDialog(owner walk.RootWidget) (int, error) {
+		dlg := new(MyDialog)
+		if err := dlg.init(owner); err != nil {
+			return 0, err
+		}
+	
+		// Your custom init and event handling code goes here
+
+		return dlg.Run(), nil
+	}
 
 ui2walk is not complete, so some features are missing. Dialogs and composites
 should work pretty good, but there is currently no support for MainWindows.
