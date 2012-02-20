@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
 

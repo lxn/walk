@@ -8,7 +8,7 @@ import (
 	"runtime"
 )
 
-import "walk/winapi"
+import "github.com/lxn/go-winapi"
 
 type InitParams struct {
 	LogErrors    bool

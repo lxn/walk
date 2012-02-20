@@ -10,7 +10,7 @@ import (
 	"unsafe"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 const webViewWindowClass = `\o/ Walk_WebView_Class \o/`
 

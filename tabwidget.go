@@ -11,7 +11,7 @@ import (
 	"unsafe"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 const tabWidgetWindowClass = `\o/ Walk_TabWidget_Class \o/`
 

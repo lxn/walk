@@ -10,7 +10,7 @@ import (
 	"unsafe"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 const notifyIconWindowClass = `\o/ Walk_NotifyIcon_Class \o/`
 

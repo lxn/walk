@@ -11,7 +11,7 @@ import (
 	"utf8"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 type part interface {
 	Bounds() Rectangle

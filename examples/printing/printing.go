@@ -6,7 +6,7 @@ package main
 
 import "fmt"
 
-import "walk"
+import "github.com/lxn/walk"
 
 func main() {
 	walk.Initialize(walk.InitParams{PanicOnError: true})

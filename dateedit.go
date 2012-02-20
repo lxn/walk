@@ -10,7 +10,7 @@ import (
 	"unsafe"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 func systemTimeToTime(st *SYSTEMTIME) *time.Time {
 	if st == nil {

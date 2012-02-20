@@ -526,7 +526,7 @@ func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget
 
 	default:
 		// FIXME: We assume this is a custom widget in the same package.
-		// We also require a func NewFoo(parent) (*Foo, os.Error).
+		// We also require a func NewFoo(parent) (*Foo, error).
 		typ = widget.Class
 		custom = true
 	}
@@ -712,8 +712,7 @@ func generateCode(buf *bytes.Buffer, ui *UI) os.Error {
 		package main
 		
 		import (
-			"os"
-			"walk"
+			"github.com/lxn/walk"
 		)
 		
 		`)
@@ -758,21 +757,21 @@ func generateCode(buf *bytes.Buffer, ui *UI) os.Error {
 	switch embeddedType {
 	case "MainWindow":
 		buf.WriteString(fmt.Sprintf(
-			`func (w *%s) init() (err os.Error) {
+			`func (w *%s) init() (err error) {
 			if w.MainWindow, err = walk.NewMainWindow()`,
 			ui.Widget.Name))
 		qualifiedParent = "w.ClientArea()"
 
 	case "Dialog":
 		buf.WriteString(fmt.Sprintf(
-			`func (w *%s) init(owner walk.RootWidget) (err os.Error) {
+			`func (w *%s) init(owner walk.RootWidget) (err error) {
 			if w.Dialog, err = walk.NewDialog(owner)`,
 			ui.Widget.Name))
 		qualifiedParent = "w"
 
 	case "Composite":
 		buf.WriteString(fmt.Sprintf(
-			`func (w *%s) init(parent walk.Container) (err os.Error) {
+			`func (w *%s) init(parent walk.Container) (err error) {
 			if w.Composite, err = walk.NewComposite(parent)`,
 			ui.Widget.Name))
 		qualifiedParent = "w"

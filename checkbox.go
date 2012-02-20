@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 var checkBoxOrigWndProcPtr uintptr
 var _ subclassedWidget = &CheckBox{}

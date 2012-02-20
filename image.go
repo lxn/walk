@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 type Image interface {
 	draw(hdc HDC, location Point) os.Error

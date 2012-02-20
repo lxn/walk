@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-import "walk"
+import "github.com/lxn/walk"
 
 type Foo struct {
 	Bar     string

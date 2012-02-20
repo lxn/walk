@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 func knownFolderPath(id CSIDL) (string, os.Error) {
 	var buf [MAX_PATH]uint16

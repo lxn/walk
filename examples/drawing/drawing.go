@@ -6,7 +6,7 @@ package main
 
 import "os"
 
-import "walk"
+import "github.com/lxn/walk"
 
 type MainWindow struct {
 	*walk.MainWindow

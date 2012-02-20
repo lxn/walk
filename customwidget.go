@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 const customWidgetWindowClass = `\o/ Walk_CustomWidget_Class \o/`
 

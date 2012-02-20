@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 type widgetListObserver interface {
 	onInsertingWidget(index int, widget Widget) os.Error

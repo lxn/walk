@@ -4,7 +4,7 @@
 
 package walk
 
-import "walk/winapi"
+import "github.com/lxn/go-winapi"
 
 type Rectangle struct {
 	X, Y, Width, Height int

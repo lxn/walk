@@ -7,11 +7,11 @@ package walk
 import (
 	"fmt"
 	"os"
-	"unsafe"
 	"sync"
+	"unsafe"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 type CloseReason int
 

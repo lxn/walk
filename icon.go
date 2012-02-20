@@ -10,7 +10,7 @@ import (
 	"syscall"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 // Icon is a bitmap that supports transparency and combining multiple 
 // variants of an image in different resolutions.

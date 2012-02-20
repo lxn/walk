@@ -17,7 +17,7 @@ import (
 	"unsafe"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 // TableColumn provides column information for widgets like TableView.
 type TableColumn struct {

@@ -9,7 +9,7 @@ import (
 	"unsafe"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 var textEditOrigWndProcPtr uintptr
 var _ subclassedWidget = &TextEdit{}

@@ -35,7 +35,6 @@ func (ifs *IniFileSettings) Put(key, value string) os.Error {
 	return nil
 }
 
-
 func (ifs *IniFileSettings) filePath() (string, os.Error) {
 	appDataPath, err := AppDataPath()
 	if err != nil {

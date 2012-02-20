@@ -9,7 +9,7 @@ import (
 	"sort"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 type gridLayoutCell struct {
 	row    int

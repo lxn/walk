@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 var radioButtonOrigWndProcPtr uintptr
 var _ subclassedWidget = &RadioButton{}

@@ -9,7 +9,7 @@ import (
 	"unsafe"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 var webViewDWebBrowserEvents2Vtbl *DWebBrowserEvents2Vtbl
 

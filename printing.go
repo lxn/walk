@@ -9,7 +9,7 @@ import (
 	"unsafe"
 )
 
-import . "walk/winapi"
+import . "github.com/lxn/go-winapi"
 
 func defaultPrinterNamePtr() *uint16 {
 	var bufLen uint32
