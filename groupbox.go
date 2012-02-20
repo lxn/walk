@@ -4,10 +4,7 @@
 
 package walk
 
-import (
-	"os"
-	"syscall"
-)
+import "syscall"
 
 import . "github.com/lxn/go-winapi"
 
@@ -21,7 +18,7 @@ type GroupBox struct {
 	composite    *Composite
 }
 
-func NewGroupBox(parent Container) (*GroupBox, os.Error) {
+func NewGroupBox(parent Container) (*GroupBox, error) {
 	ensureRegisteredWindowClass(groupBoxWindowClass, &groupBoxWindowClassRegistered)
 
 	gb := &GroupBox{}
@@ -50,7 +47,7 @@ func NewGroupBox(parent Container) (*GroupBox, os.Error) {
 		return nil, lastError("CreateWindowEx(BUTTON)")
 	}
 
-	var err os.Error
+	var err error
 	gb.composite, err = NewComposite(gb)
 	if err != nil {
 		return nil, err
@@ -112,7 +109,7 @@ func (gb *GroupBox) Title() string {
 	return widgetText(gb.hWndGroupBox)
 }
 
-func (gb *GroupBox) SetTitle(value string) os.Error {
+func (gb *GroupBox) SetTitle(value string) error {
 	return setWidgetText(gb.hWndGroupBox, value)
 }
 
@@ -129,7 +126,7 @@ func (gb *GroupBox) Layout() Layout {
 	return gb.composite.Layout()
 }
 
-func (gb *GroupBox) SetLayout(value Layout) os.Error {
+func (gb *GroupBox) SetLayout(value Layout) error {
 	return gb.composite.SetLayout(value)
 }
 

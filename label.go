@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 var labelOrigWndProcPtr uintptr
@@ -17,7 +13,7 @@ type Label struct {
 	WidgetBase
 }
 
-func NewLabel(parent Container) (*Label, os.Error) {
+func NewLabel(parent Container) (*Label, error) {
 	l := &Label{}
 
 	if err := initChildWidget(
@@ -56,7 +52,7 @@ func (l *Label) Text() string {
 	return widgetText(l.hWnd)
 }
 
-func (l *Label) SetText(value string) os.Error {
+func (l *Label) SetText(value string) error {
 	if value == l.Text() {
 		return nil
 	}

@@ -4,17 +4,13 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 const customWidgetWindowClass = `\o/ Walk_CustomWidget_Class \o/`
 
 var customWidgetWindowClassRegistered bool
 
-type PaintFunc func(canvas *Canvas, updateBounds Rectangle) os.Error
+type PaintFunc func(canvas *Canvas, updateBounds Rectangle) error
 
 type CustomWidget struct {
 	WidgetBase
@@ -23,7 +19,7 @@ type CustomWidget struct {
 	invalidatesOnResize bool
 }
 
-func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidget, os.Error) {
+func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidget, error) {
 	ensureRegisteredWindowClass(customWidgetWindowClass, &customWidgetWindowClassRegistered)
 
 	cw := &CustomWidget{paint: paint}

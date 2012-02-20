@@ -4,19 +4,15 @@
 
 package walk
 
-import (
-	"os"
-)
-
 type ImageView struct {
 	*CustomWidget
 	image Image
 }
 
-func NewImageView(parent Container) (*ImageView, os.Error) {
+func NewImageView(parent Container) (*ImageView, error) {
 	iv := &ImageView{}
 
-	cw, err := NewCustomWidget(parent, 0, func(canvas *Canvas, updateBounds Rectangle) os.Error {
+	cw, err := NewCustomWidget(parent, 0, func(canvas *Canvas, updateBounds Rectangle) error {
 		return iv.drawImage(canvas, updateBounds)
 	})
 	if err != nil {
@@ -36,7 +32,7 @@ func (iv *ImageView) Image() Image {
 	return iv.image
 }
 
-func (iv *ImageView) SetImage(value Image) os.Error {
+func (iv *ImageView) SetImage(value Image) error {
 	iv.image = value
 
 	_, isMetafile := value.(*Metafile)
@@ -45,7 +41,7 @@ func (iv *ImageView) SetImage(value Image) os.Error {
 	return iv.Invalidate()
 }
 
-func (iv *ImageView) drawImage(canvas *Canvas, updateBounds Rectangle) os.Error {
+func (iv *ImageView) drawImage(canvas *Canvas, updateBounds Rectangle) error {
 	if iv.image == nil {
 		return nil
 	}

@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -82,7 +81,7 @@ type NotifyIcon struct {
 // NewNotifyIcon creates and returns a new NotifyIcon.
 //
 // The NotifyIcon is initially not visible.
-func NewNotifyIcon() (*NotifyIcon, os.Error) {
+func NewNotifyIcon() (*NotifyIcon, error) {
 	ensureRegisteredWindowClass(notifyIconWindowClass, &notifyIconWindowClassRegistered)
 
 	// Create the message-only window for the NotifyIcon.
@@ -156,7 +155,7 @@ func (ni *NotifyIcon) notifyIconData() *NOTIFYICONDATA {
 // NotifyIcon.
 //
 // The associated Icon is not disposed of.
-func (ni *NotifyIcon) Dispose() os.Error {
+func (ni *NotifyIcon) Dispose() error {
 	if ni.hWnd == 0 {
 		return nil
 	}
@@ -186,7 +185,7 @@ func (ni *NotifyIcon) Icon() *Icon {
 }
 
 // SetIcon sets the Icon of the NotifyIcon.
-func (ni *NotifyIcon) SetIcon(icon *Icon) os.Error {
+func (ni *NotifyIcon) SetIcon(icon *Icon) error {
 	if icon == ni.icon {
 		return nil
 	}
@@ -214,7 +213,7 @@ func (ni *NotifyIcon) ToolTip() string {
 }
 
 // SetToolTip sets the tool tip text of the NotifyIcon.
-func (ni *NotifyIcon) SetToolTip(toolTip string) os.Error {
+func (ni *NotifyIcon) SetToolTip(toolTip string) error {
 	if toolTip == ni.toolTip {
 		return nil
 	}
@@ -238,7 +237,7 @@ func (ni *NotifyIcon) Visible() bool {
 }
 
 // SetVisible sets if the NotifyIcon is visible.
-func (ni *NotifyIcon) SetVisible(visible bool) os.Error {
+func (ni *NotifyIcon) SetVisible(visible bool) error {
 	if visible == ni.visible {
 		return nil
 	}

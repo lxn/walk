@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 type ImageList struct {
@@ -15,7 +11,7 @@ type ImageList struct {
 	maskColor Color
 }
 
-func NewImageList(imageSize Size, maskColor Color) (*ImageList, os.Error) {
+func NewImageList(imageSize Size, maskColor Color) (*ImageList, error) {
 	hIml := ImageList_Create(
 		int32(imageSize.Width),
 		int32(imageSize.Height),
@@ -29,7 +25,7 @@ func NewImageList(imageSize Size, maskColor Color) (*ImageList, os.Error) {
 	return &ImageList{hIml: hIml, maskColor: maskColor}, nil
 }
 
-func (il *ImageList) Add(bitmap, maskBitmap *Bitmap) (int, os.Error) {
+func (il *ImageList) Add(bitmap, maskBitmap *Bitmap) (int, error) {
 	if bitmap == nil {
 		return 0, newError("bitmap cannot be nil")
 	}
@@ -47,7 +43,7 @@ func (il *ImageList) Add(bitmap, maskBitmap *Bitmap) (int, os.Error) {
 	return index, nil
 }
 
-func (il *ImageList) AddMasked(bitmap *Bitmap) (int32, os.Error) {
+func (il *ImageList) AddMasked(bitmap *Bitmap) (int32, error) {
 	if bitmap == nil {
 		return 0, newError("bitmap cannot be nil")
 	}

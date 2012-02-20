@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -26,7 +25,7 @@ type TreeView struct {
 	selectionChangingPublisher TreeViewItemSelectionEventPublisher
 }
 
-func NewTreeView(parent Container) (*TreeView, os.Error) {
+func NewTreeView(parent Container) (*TreeView, error) {
 	tv := &TreeView{}
 
 	if err := initChildWidget(
@@ -155,7 +154,7 @@ func (tv *TreeView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 	return tv.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
-func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) (err os.Error) {
+func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) (err error) {
 	var tvi TVITEM
 	var tvins TVINSERTSTRUCT
 
@@ -202,7 +201,7 @@ func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, ite
 	return
 }
 
-func (tv *TreeView) onRemovingTreeViewItem(index int, item *TreeViewItem) (err os.Error) {
+func (tv *TreeView) onRemovingTreeViewItem(index int, item *TreeViewItem) (err error) {
 	if 0 == SendMessage(tv.hWnd, TVM_DELETEITEM, 0, uintptr(item.handle)) {
 		err = newError("SendMessage(TVM_DELETEITEM) failed")
 	}
@@ -210,7 +209,7 @@ func (tv *TreeView) onRemovingTreeViewItem(index int, item *TreeViewItem) (err o
 	return
 }
 
-func (tv *TreeView) onClearingTreeViewItems(parent *TreeViewItem) (err os.Error) {
+func (tv *TreeView) onClearingTreeViewItems(parent *TreeViewItem) (err error) {
 	for i, child := range parent.children.items {
 		err = tv.onRemovingTreeViewItem(i, child)
 		if err != nil {

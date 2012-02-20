@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 type ComboBoxItem struct {
 	text     string
 	userData interface{}
@@ -21,7 +17,7 @@ func (cbi *ComboBoxItem) Text() string {
 	return cbi.text
 }
 
-func (cbi *ComboBoxItem) SetText(value string) os.Error {
+func (cbi *ComboBoxItem) SetText(value string) error {
 	cbi.text = value
 
 	// FIXME: Update ComboBox

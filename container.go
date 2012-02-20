@@ -4,10 +4,7 @@
 
 package walk
 
-import (
-	"os"
-	"unsafe"
-)
+import "unsafe"
 
 import . "github.com/lxn/go-winapi"
 
@@ -19,12 +16,12 @@ type Layout interface {
 	Container() Container
 	SetContainer(value Container)
 	Margins() Margins
-	SetMargins(value Margins) os.Error
+	SetMargins(value Margins) error
 	Spacing() int
-	SetSpacing(value int) os.Error
+	SetSpacing(value int) error
 	LayoutFlags() LayoutFlags
 	MinSize() Size
-	Update(reset bool) os.Error
+	Update(reset bool) error
 }
 
 func shouldLayoutWidget(widget Widget) bool {
@@ -41,7 +38,7 @@ type Container interface {
 	Widget
 	Children() *WidgetList
 	Layout() Layout
-	SetLayout(value Layout) os.Error
+	SetLayout(value Layout) error
 }
 
 type RootWidget interface {
@@ -84,7 +81,7 @@ func (cb *ContainerBase) Layout() Layout {
 	return cb.layout
 }
 
-func (cb *ContainerBase) SetLayout(value Layout) os.Error {
+func (cb *ContainerBase) SetLayout(value Layout) error {
 	if cb.layout != value {
 		if cb.layout != nil {
 			cb.layout.SetContainer(nil)
@@ -100,7 +97,7 @@ func (cb *ContainerBase) SetLayout(value Layout) os.Error {
 	return nil
 }
 
-func (cb *ContainerBase) forEachPersistableChild(f func(p Persistable) os.Error) os.Error {
+func (cb *ContainerBase) forEachPersistableChild(f func(p Persistable) error) error {
 	if cb.children == nil {
 		return nil
 	}
@@ -124,14 +121,14 @@ func (cb *ContainerBase) SetPersistent(value bool) {
 	cb.persistent = value
 }
 
-func (cb *ContainerBase) SaveState() os.Error {
-	return cb.forEachPersistableChild(func(p Persistable) os.Error {
+func (cb *ContainerBase) SaveState() error {
+	return cb.forEachPersistableChild(func(p Persistable) error {
 		return p.SaveState()
 	})
 }
 
-func (cb *ContainerBase) RestoreState() os.Error {
-	return cb.forEachPersistableChild(func(p Persistable) os.Error {
+func (cb *ContainerBase) RestoreState() error {
+	return cb.forEachPersistableChild(func(p Persistable) error {
 		return p.RestoreState()
 	})
 }
@@ -214,11 +211,11 @@ func (cb *ContainerBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) 
 	return cb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
-func (cb *ContainerBase) onInsertingWidget(index int, widget Widget) (err os.Error) {
+func (cb *ContainerBase) onInsertingWidget(index int, widget Widget) (err error) {
 	return nil
 }
 
-func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err os.Error) {
+func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err error) {
 	if widget.Parent().BaseWidget().hWnd != cb.hWnd {
 		err = widget.SetParent(widgetFromHWND(cb.hWnd).(Container))
 		if err != nil {
@@ -233,7 +230,7 @@ func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err os.Erro
 	return
 }
 
-func (cb *ContainerBase) onRemovingWidget(index int, widget Widget) (err os.Error) {
+func (cb *ContainerBase) onRemovingWidget(index int, widget Widget) (err error) {
 	if widget.Parent().BaseWidget().hWnd == cb.hWnd {
 		err = widget.SetParent(nil)
 	}
@@ -241,7 +238,7 @@ func (cb *ContainerBase) onRemovingWidget(index int, widget Widget) (err os.Erro
 	return
 }
 
-func (cb *ContainerBase) onRemovedWidget(index int, widget Widget) (err os.Error) {
+func (cb *ContainerBase) onRemovedWidget(index int, widget Widget) (err error) {
 	if cb.layout != nil {
 		cb.layout.Update(true)
 	}
@@ -249,7 +246,7 @@ func (cb *ContainerBase) onRemovedWidget(index int, widget Widget) (err os.Error
 	return
 }
 
-func (cb *ContainerBase) onClearingWidgets() (err os.Error) {
+func (cb *ContainerBase) onClearingWidgets() (err error) {
 	for _, widget := range cb.children.items {
 		if widget.Parent().BaseWidget().hWnd == cb.hWnd {
 			if err = widget.SetParent(nil); err != nil {
@@ -261,7 +258,7 @@ func (cb *ContainerBase) onClearingWidgets() (err os.Error) {
 	return
 }
 
-func (cb *ContainerBase) onClearedWidgets() (err os.Error) {
+func (cb *ContainerBase) onClearedWidgets() (err error) {
 	if cb.layout != nil {
 		cb.layout.Update(true)
 	}

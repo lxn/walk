@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 type PenStyle int
@@ -93,7 +89,7 @@ type CosmeticPen struct {
 	color Color
 }
 
-func NewCosmeticPen(style PenStyle, color Color) (*CosmeticPen, os.Error) {
+func NewCosmeticPen(style PenStyle, color Color) (*CosmeticPen, error) {
 	lb := &LOGBRUSH{LbStyle: BS_SOLID, LbColor: COLORREF(color)}
 
 	style |= PS_COSMETIC
@@ -137,7 +133,7 @@ type GeometricPen struct {
 	width int
 }
 
-func NewGeometricPen(style PenStyle, width int, brush Brush) (*GeometricPen, os.Error) {
+func NewGeometricPen(style PenStyle, width int, brush Brush) (*GeometricPen, error) {
 	if brush == nil {
 		return nil, newError("brush cannot be nil")
 	}

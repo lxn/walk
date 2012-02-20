@@ -4,24 +4,20 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 type Settings interface {
 	Get(key string) (string, bool)
-	Put(key, value string) os.Error
-	Load() os.Error
-	Save() os.Error
+	Put(key, value string) error
+	Load() error
+	Save() error
 }
 
 type Persistable interface {
 	Persistent() bool
 	SetPersistent(value bool)
-	SaveState() os.Error
-	RestoreState() os.Error
+	SaveState() error
+	RestoreState() error
 }
 
 type Application struct {

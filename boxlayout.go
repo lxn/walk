@@ -4,10 +4,7 @@
 
 package walk
 
-import (
-	"os"
-	"sort"
-)
+import "sort"
 
 import . "github.com/lxn/go-winapi"
 
@@ -66,7 +63,7 @@ func (l *BoxLayout) Margins() Margins {
 	return l.margins
 }
 
-func (l *BoxLayout) SetMargins(value Margins) os.Error {
+func (l *BoxLayout) SetMargins(value Margins) error {
 	if value.HNear < 0 || value.VNear < 0 || value.HFar < 0 || value.VFar < 0 {
 		return newError("margins must be positive")
 	}
@@ -80,7 +77,7 @@ func (l *BoxLayout) Orientation() Orientation {
 	return l.orientation
 }
 
-func (l *BoxLayout) SetOrientation(value Orientation) os.Error {
+func (l *BoxLayout) SetOrientation(value Orientation) error {
 	if value != l.orientation {
 		switch value {
 		case Horizontal, Vertical:
@@ -101,7 +98,7 @@ func (l *BoxLayout) Spacing() int {
 	return l.spacing
 }
 
-func (l *BoxLayout) SetSpacing(value int) os.Error {
+func (l *BoxLayout) SetSpacing(value int) error {
 	if value != l.spacing {
 		if value < 0 {
 			return newError("spacing cannot be negative")
@@ -123,7 +120,7 @@ func (l *BoxLayout) StretchFactor(widget Widget) int {
 	return 1
 }
 
-func (l *BoxLayout) SetStretchFactor(widget Widget, factor int) os.Error {
+func (l *BoxLayout) SetStretchFactor(widget Widget, factor int) error {
 	if factor != l.StretchFactor(widget) {
 		if l.container == nil {
 			return newError("container required")
@@ -148,7 +145,7 @@ func (l *BoxLayout) cleanupStretchFactors() {
 
 	for widget, _ := range l.widget2StretchFactor {
 		if !widgets.containsHandle(widget.BaseWidget().hWnd) {
-			l.widget2StretchFactor[widget.BaseWidget()] = 0, false
+			delete(l.widget2StretchFactor, widget.BaseWidget())
 		}
 	}
 }
@@ -320,7 +317,7 @@ func (l *BoxLayout) MinSize() Size {
 	return Size{s2, s1}
 }
 
-func (l *BoxLayout) Update(reset bool) os.Error {
+func (l *BoxLayout) Update(reset bool) error {
 	if l.container == nil {
 		return newError("container required")
 	}

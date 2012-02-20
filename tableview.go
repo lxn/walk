@@ -5,11 +5,10 @@
 package walk
 
 import (
-	"big"
 	"bytes"
 	"fmt"
 	"log"
-	"os"
+	"math/big"
 	"strconv"
 	"strings"
 	"syscall"
@@ -68,7 +67,7 @@ type ItemChecker interface {
 	Checked(index int) bool
 
 	// SetChecked sets if the specified item is checked.
-	SetChecked(index int, checked bool) os.Error
+	SetChecked(index int, checked bool) error
 }
 
 var tableViewOrigWndProcPtr uintptr
@@ -87,8 +86,8 @@ type TableView struct {
 	WidgetBase
 	model                           TableModel
 	itemChecker                     ItemChecker
-	rowsResetHandler                EventHandler
-	rowChangedHandler               IntEventHandler
+	rowsResetHandlerHandle          int
+	rowChangedHandlerHandle         int
 	columns                         []TableColumn
 	imageList                       *ImageList
 	currentIndex                    int
@@ -104,7 +103,7 @@ type TableView struct {
 
 // NewTableView creates and returns a *TableView as child of the specified
 // Container.
-func NewTableView(parent Container) (*TableView, os.Error) {
+func NewTableView(parent Container) (*TableView, error) {
 	tv := &TableView{
 		selectedIndexes: NewIndexList(nil),
 	}
@@ -185,24 +184,24 @@ func (tv *TableView) SizeHint() Size {
 }
 
 func (tv *TableView) attachModel() {
-	tv.rowsResetHandler = func() {
+	rowsResetHandler := func() {
 		tv.setItemCount()
 
 		tv.SetCurrentIndex(-1)
 	}
-	tv.model.RowsReset().Attach(tv.rowsResetHandler)
+	tv.rowsResetHandlerHandle = tv.model.RowsReset().Attach(rowsResetHandler)
 
-	tv.rowChangedHandler = func(row int) {
+	rowChangedHandler := func(row int) {
 		if FALSE == SendMessage(tv.hWnd, LVM_UPDATE, uintptr(row), 0) {
 			newError("SendMessage(LVM_UPDATE)")
 		}
 	}
-	tv.model.RowChanged().Attach(tv.rowChangedHandler)
+	tv.rowChangedHandlerHandle = tv.model.RowChanged().Attach(rowChangedHandler)
 }
 
 func (tv *TableView) detachModel() {
-	tv.model.RowsReset().Detach(tv.rowsResetHandler)
-	tv.model.RowChanged().Detach(tv.rowChangedHandler)
+	tv.model.RowsReset().Detach(tv.rowsResetHandlerHandle)
+	tv.model.RowChanged().Detach(tv.rowChangedHandlerHandle)
 }
 
 // Model returns the TableModel that provides data to the *TableView.
@@ -211,7 +210,7 @@ func (tv *TableView) Model() TableModel {
 }
 
 // SetModel sets the TableModel that provides data to the *TableView.
-func (tv *TableView) SetModel(model TableModel) os.Error {
+func (tv *TableView) SetModel(model TableModel) error {
 	tv.SetSuspended(true)
 	defer tv.SetSuspended(false)
 
@@ -270,7 +269,7 @@ func (tv *TableView) SetModel(model TableModel) os.Error {
 	return nil
 }
 
-func (tv *TableView) setItemCount() os.Error {
+func (tv *TableView) setItemCount() error {
 	var count int
 
 	if tv.model != nil {
@@ -352,7 +351,7 @@ func (tv *TableView) CurrentIndex() int {
 // SetCurrentIndex sets the index of the current item.
 //
 // Call this with a value of -1 to have no current item.
-func (tv *TableView) SetCurrentIndex(value int) os.Error {
+func (tv *TableView) SetCurrentIndex(value int) error {
 	var lvi LVITEM
 
 	lvi.StateMask = LVIS_FOCUSED | LVIS_SELECTED
@@ -399,7 +398,7 @@ func (tv *TableView) SingleItemSelection() bool {
 }
 
 // SetSingleItemSelection sets if only a single item can be selected at once.
-func (tv *TableView) SetSingleItemSelection(value bool) os.Error {
+func (tv *TableView) SetSingleItemSelection(value bool) error {
 	return tv.ensureStyleBits(LVS_SINGLESEL, value)
 }
 
@@ -482,7 +481,7 @@ func (tv *TableView) LastColumnStretched() bool {
 // horizontal space of the *TableView.
 //
 // The effect of setting this is persistent.
-func (tv *TableView) SetLastColumnStretched(value bool) os.Error {
+func (tv *TableView) SetLastColumnStretched(value bool) error {
 	if value {
 		if err := tv.StretchLastColumn(); err != nil {
 			return err
@@ -498,7 +497,7 @@ func (tv *TableView) SetLastColumnStretched(value bool) os.Error {
 // space of the *TableView.
 //
 // The effect of this is not persistent.
-func (tv *TableView) StretchLastColumn() os.Error {
+func (tv *TableView) StretchLastColumn() error {
 	colCount := len(tv.columns)
 	if colCount == 0 {
 		return nil
@@ -524,7 +523,7 @@ func (tv *TableView) SetPersistent(value bool) {
 }
 
 // SaveState writes the UI state of the *TableView to the settings.
-func (tv *TableView) SaveState() os.Error {
+func (tv *TableView) SaveState() error {
 	buf := bytes.NewBuffer(nil)
 
 	count := len(tv.columns)
@@ -545,7 +544,7 @@ func (tv *TableView) SaveState() os.Error {
 }
 
 // RestoreState restores the UI state of the *TableView from the settings.
-func (tv *TableView) RestoreState() os.Error {
+func (tv *TableView) RestoreState() error {
 	state, err := tv.getState()
 	if err != nil {
 		return err
@@ -608,7 +607,7 @@ func (tv *TableView) imageIndex(image *Bitmap) (imageIndex int, err os.Error) {
 	return
 }*/
 
-func (tv *TableView) toggleItemChecked(index int) os.Error {
+func (tv *TableView) toggleItemChecked(index int) error {
 	checked := tv.itemChecker.Checked(index)
 
 	if err := tv.itemChecker.SetChecked(index, !checked); err != nil {
@@ -679,7 +678,7 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 				case string:
 					text = val
 
-				case *time.Time:
+				case time.Time:
 					text = val.Format(tv.columns[col].Format)
 
 				case *big.Rat:

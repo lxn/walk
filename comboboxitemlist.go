@@ -4,14 +4,10 @@
 
 package walk
 
-import (
-	"os"
-)
-
 type comboBoxItemListObserver interface {
-	onInsertingComboBoxItem(index int, item *ComboBoxItem) os.Error
-	onRemovingComboBoxItem(index int, item *ComboBoxItem) os.Error
-	onClearingComboBoxItems() os.Error
+	onInsertingComboBoxItem(index int, item *ComboBoxItem) error
+	onRemovingComboBoxItem(index int, item *ComboBoxItem) error
+	onClearingComboBoxItems() error
 }
 
 type ComboBoxItemList struct {
@@ -23,7 +19,7 @@ func newComboBoxItemList(observer comboBoxItemListObserver) *ComboBoxItemList {
 	return &ComboBoxItemList{observer: observer}
 }
 
-func (l *ComboBoxItemList) Add(item *ComboBoxItem) os.Error {
+func (l *ComboBoxItemList) Add(item *ComboBoxItem) error {
 	return l.Insert(len(l.items), item)
 }
 
@@ -31,7 +27,7 @@ func (l *ComboBoxItemList) At(index int) *ComboBoxItem {
 	return l.items[index]
 }
 
-func (l *ComboBoxItemList) Clear() os.Error {
+func (l *ComboBoxItemList) Clear() error {
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onClearingComboBoxItems(); err != nil {
@@ -58,7 +54,7 @@ func (l *ComboBoxItemList) Index(item *ComboBoxItem) int {
 	return -1
 }
 
-func (l *ComboBoxItemList) Insert(index int, item *ComboBoxItem) os.Error {
+func (l *ComboBoxItemList) Insert(index int, item *ComboBoxItem) error {
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onInsertingComboBoxItem(index, item); err != nil {
@@ -77,7 +73,7 @@ func (l *ComboBoxItemList) Len() int {
 	return len(l.items)
 }
 
-func (l *ComboBoxItemList) Remove(item *ComboBoxItem) os.Error {
+func (l *ComboBoxItemList) Remove(item *ComboBoxItem) error {
 	index := l.Index(item)
 	if index == -1 {
 		return nil
@@ -86,7 +82,7 @@ func (l *ComboBoxItemList) Remove(item *ComboBoxItem) os.Error {
 	return l.RemoveAt(index)
 }
 
-func (l *ComboBoxItemList) RemoveAt(index int) os.Error {
+func (l *ComboBoxItemList) RemoveAt(index int) error {
 	observer := l.observer
 	if observer != nil {
 		item := l.items[index]

@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
@@ -21,7 +17,7 @@ type MainWindow struct {
 	clientComposite *Composite
 }
 
-func NewMainWindow() (*MainWindow, os.Error) {
+func NewMainWindow() (*MainWindow, error) {
 	ensureRegisteredWindowClass(mainWindowWindowClass, &mainWindowWindowClassRegistered)
 
 	mw := &MainWindow{}
@@ -44,7 +40,7 @@ func NewMainWindow() (*MainWindow, os.Error) {
 
 	mw.SetPersistent(true)
 
-	var err os.Error
+	var err error
 
 	if mw.menu, err = newMenuBar(); err != nil {
 		return nil, err
@@ -84,7 +80,7 @@ func (mw *MainWindow) Layout() Layout {
 	return mw.clientComposite.Layout()
 }
 
-func (mw *MainWindow) SetLayout(value Layout) os.Error {
+func (mw *MainWindow) SetLayout(value Layout) error {
 	if mw.clientComposite == nil {
 		return newError("clientComposite not initialized")
 	}

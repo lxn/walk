@@ -6,14 +6,13 @@ package walk
 
 import (
 	"fmt"
-	"os"
 	"syscall"
 	"unsafe"
 )
 
 import . "github.com/lxn/go-winapi"
 
-func withCompatibleDC(f func(hdc HDC) os.Error) os.Error {
+func withCompatibleDC(f func(hdc HDC) error) error {
 	hdc := CreateCompatibleDC(0)
 	if hdc == 0 {
 		return newError("CreateCompatibleDC failed")
@@ -23,7 +22,7 @@ func withCompatibleDC(f func(hdc HDC) os.Error) os.Error {
 	return f(hdc)
 }
 
-func hPackedDIBFromHBITMAP(hBmp HBITMAP) (HGLOBAL, os.Error) {
+func hPackedDIBFromHBITMAP(hBmp HBITMAP) (HGLOBAL, error) {
 	var dib DIBSECTION
 	if GetObject(HGDIOBJ(hBmp), unsafe.Sizeof(dib), unsafe.Pointer(&dib)) == 0 {
 		return 0, newError("GetObject failed")
@@ -57,7 +56,7 @@ type Bitmap struct {
 	size       Size
 }
 
-func newBitmapFromHBITMAP(hBmp HBITMAP) (bmp *Bitmap, err os.Error) {
+func newBitmapFromHBITMAP(hBmp HBITMAP) (bmp *Bitmap, err error) {
 	var dib DIBSECTION
 	if GetObject(HGDIOBJ(hBmp), unsafe.Sizeof(dib), unsafe.Pointer(&dib)) == 0 {
 		return nil, newError("GetObject failed")
@@ -93,7 +92,7 @@ func newBitmapFromHBITMAP(hBmp HBITMAP) (bmp *Bitmap, err os.Error) {
 	}, nil
 }
 
-func NewBitmap(size Size) (bmp *Bitmap, err os.Error) {
+func NewBitmap(size Size) (bmp *Bitmap, err error) {
 	var bmi BITMAPINFO
 	hdr := &bmi.BmiHeader
 	hdr.BiSize = uint32(unsafe.Sizeof(*hdr))
@@ -103,7 +102,7 @@ func NewBitmap(size Size) (bmp *Bitmap, err os.Error) {
 	hdr.BiWidth = int32(size.Width)
 	hdr.BiHeight = int32(size.Height)
 
-	err = withCompatibleDC(func(hdc HDC) os.Error {
+	err = withCompatibleDC(func(hdc HDC) error {
 		hBmp := CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, nil, 0, 0)
 		switch hBmp {
 		case 0, ERROR_INVALID_PARAMETER:
@@ -117,7 +116,7 @@ func NewBitmap(size Size) (bmp *Bitmap, err os.Error) {
 	return
 }
 
-func NewBitmapFromFile(filePath string) (*Bitmap, os.Error) {
+func NewBitmapFromFile(filePath string) (*Bitmap, error) {
 	var gpBmp *GpBitmap
 	if status := GdipCreateBitmapFromFile(syscall.StringToUTF16Ptr(filePath), &gpBmp); status != Ok {
 		return nil, newError(fmt.Sprintf("GdipCreateBitmapFromFile failed with status '%s' for file '%s'", status, filePath))
@@ -132,8 +131,8 @@ func NewBitmapFromFile(filePath string) (*Bitmap, os.Error) {
 	return newBitmapFromHBITMAP(hBmp)
 }
 
-func (bmp *Bitmap) withSelectedIntoMemDC(f func(hdcMem HDC) os.Error) os.Error {
-	return withCompatibleDC(func(hdcMem HDC) os.Error {
+func (bmp *Bitmap) withSelectedIntoMemDC(f func(hdcMem HDC) error) error {
+	return withCompatibleDC(func(hdcMem HDC) error {
 		hBmpOld := SelectObject(hdcMem, HGDIOBJ(bmp.hBmp))
 		if hBmpOld == 0 {
 			return newError("SelectObject failed")
@@ -144,8 +143,8 @@ func (bmp *Bitmap) withSelectedIntoMemDC(f func(hdcMem HDC) os.Error) os.Error {
 	})
 }
 
-func (bmp *Bitmap) draw(hdc HDC, location Point) os.Error {
-	return bmp.withSelectedIntoMemDC(func(hdcMem HDC) os.Error {
+func (bmp *Bitmap) draw(hdc HDC, location Point) error {
+	return bmp.withSelectedIntoMemDC(func(hdcMem HDC) error {
 		size := bmp.Size()
 
 		if !BitBlt(
@@ -166,8 +165,8 @@ func (bmp *Bitmap) draw(hdc HDC, location Point) os.Error {
 	})
 }
 
-func (bmp *Bitmap) drawStretched(hdc HDC, bounds Rectangle) os.Error {
-	return bmp.withSelectedIntoMemDC(func(hdcMem HDC) os.Error {
+func (bmp *Bitmap) drawStretched(hdc HDC, bounds Rectangle) error {
+	return bmp.withSelectedIntoMemDC(func(hdcMem HDC) error {
 		size := bmp.Size()
 
 		if !StretchBlt(

@@ -7,6 +7,7 @@ package walk
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"strings"
@@ -25,7 +26,7 @@ func (ifs *IniFileSettings) Get(key string) (string, bool) {
 	return val, ok
 }
 
-func (ifs *IniFileSettings) Put(key, value string) os.Error {
+func (ifs *IniFileSettings) Put(key, value string) error {
 	if strings.IndexAny(key, "=\r\n") > -1 || strings.IndexAny(value, "\r\n") > -1 {
 		return newError("either key or value contains at least one of the invalid characters '=\\r\\n'")
 	}
@@ -35,7 +36,7 @@ func (ifs *IniFileSettings) Put(key, value string) os.Error {
 	return nil
 }
 
-func (ifs *IniFileSettings) filePath() (string, os.Error) {
+func (ifs *IniFileSettings) filePath() (string, error) {
 	appDataPath, err := AppDataPath()
 	if err != nil {
 		return "", err
@@ -48,7 +49,7 @@ func (ifs *IniFileSettings) filePath() (string, os.Error) {
 		"settings.ini"), nil
 }
 
-func (ifs *IniFileSettings) fileExists() (bool, os.Error) {
+func (ifs *IniFileSettings) fileExists() (bool, error) {
 	filePath, err := ifs.filePath()
 	if err != nil {
 		return false, err
@@ -63,7 +64,7 @@ func (ifs *IniFileSettings) fileExists() (bool, os.Error) {
 	return true, nil
 }
 
-func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) os.Error) os.Error {
+func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) error) error {
 	filePath, err := ifs.filePath()
 
 	dirPath, _ := path.Split(filePath)
@@ -80,7 +81,7 @@ func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) os.Error) 
 	return f(file)
 }
 
-func (ifs *IniFileSettings) Load() os.Error {
+func (ifs *IniFileSettings) Load() error {
 	exists, err := ifs.fileExists()
 	if err != nil {
 		return err
@@ -90,7 +91,7 @@ func (ifs *IniFileSettings) Load() os.Error {
 		return nil
 	}
 
-	return ifs.withFile(os.O_RDONLY, func(file *os.File) os.Error {
+	return ifs.withFile(os.O_RDONLY, func(file *os.File) error {
 		lineBytes := make([]byte, 0, 4096)
 		reader := bufio.NewReader(file)
 
@@ -100,7 +101,7 @@ func (ifs *IniFileSettings) Load() os.Error {
 			for {
 				ln, isPrefix, err := reader.ReadLine()
 				if err != nil {
-					if err == os.EOF {
+					if err == io.EOF {
 						return nil
 					}
 					return wrapError(err)
@@ -129,8 +130,8 @@ func (ifs *IniFileSettings) Load() os.Error {
 	})
 }
 
-func (ifs *IniFileSettings) Save() os.Error {
-	return ifs.withFile(os.O_CREATE|os.O_TRUNC|os.O_WRONLY, func(file *os.File) os.Error {
+func (ifs *IniFileSettings) Save() error {
+	return ifs.withFile(os.O_CREATE|os.O_TRUNC|os.O_WRONLY, func(file *os.File) error {
 		bufWriter := bufio.NewWriter(file)
 
 		for key, val := range ifs.data {

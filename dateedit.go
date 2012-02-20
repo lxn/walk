@@ -5,34 +5,29 @@
 package walk
 
 import (
-	"os"
 	"time"
 	"unsafe"
 )
 
 import . "github.com/lxn/go-winapi"
 
-func systemTimeToTime(st *SYSTEMTIME) *time.Time {
+func systemTimeToTime(st *SYSTEMTIME) time.Time {
 	if st == nil {
-		return nil
+		return time.Time{}
 	}
 
-	return &time.Time{
-		Year:  int64(st.WYear),
-		Month: int(st.WMonth),
-		Day:   int(st.WDay),
-	}
+	return time.Date(int(st.WYear), time.Month(st.WMonth), int(st.WDay), 0, 0, 0, 0, time.Local)
 }
 
-func timeToSystemTime(t *time.Time) *SYSTEMTIME {
-	if t == nil {
+func timeToSystemTime(t time.Time) *SYSTEMTIME {
+	if t.IsZero() {
 		return nil
 	}
 
 	return &SYSTEMTIME{
-		WYear:  uint16(t.Year),
-		WMonth: uint16(t.Month),
-		WDay:   uint16(t.Day),
+		WYear:  uint16(t.Year()),
+		WMonth: uint16(t.Month()),
+		WDay:   uint16(t.Day()),
 	}
 }
 
@@ -44,7 +39,7 @@ type DateEdit struct {
 	valueChangedPublisher EventPublisher
 }
 
-func NewDateEdit(parent Container) (*DateEdit, os.Error) {
+func NewDateEdit(parent Container) (*DateEdit, error) {
 	de := &DateEdit{}
 
 	if err := initChildWidget(
@@ -75,7 +70,7 @@ func (de *DateEdit) SizeHint() Size {
 	return de.dialogBaseUnitsToPixels(Size{64, 12})
 }
 
-func (de *DateEdit) systemTime() (*SYSTEMTIME, os.Error) {
+func (de *DateEdit) systemTime() (*SYSTEMTIME, error) {
 	var st SYSTEMTIME
 
 	switch SendMessage(de.hWnd, DTM_GETSYSTEMTIME, 0, uintptr(unsafe.Pointer(&st))) {
@@ -89,7 +84,7 @@ func (de *DateEdit) systemTime() (*SYSTEMTIME, os.Error) {
 	return nil, newError("SendMessage(DTM_GETSYSTEMTIME)")
 }
 
-func (de *DateEdit) setSystemTime(st *SYSTEMTIME) os.Error {
+func (de *DateEdit) setSystemTime(st *SYSTEMTIME) error {
 	var wParam uintptr
 
 	if st != nil {
@@ -107,7 +102,7 @@ func (de *DateEdit) setSystemTime(st *SYSTEMTIME) os.Error {
 	return nil
 }
 
-func (de *DateEdit) Range() (min, max *time.Time) {
+func (de *DateEdit) Range() (min, max time.Time) {
 	var st [2]SYSTEMTIME
 
 	ret := SendMessage(de.hWnd, DTM_GETRANGE, 0, uintptr(unsafe.Pointer(&st[0])))
@@ -123,11 +118,11 @@ func (de *DateEdit) Range() (min, max *time.Time) {
 	return
 }
 
-func (de *DateEdit) SetRange(min, max *time.Time) os.Error {
-	if min != nil && max != nil {
-		if min.Year > max.Year ||
-			min.Year == max.Year && min.Month > max.Month ||
-			min.Year == max.Year && min.Month == max.Month && min.Day > max.Day {
+func (de *DateEdit) SetRange(min, max time.Time) error {
+	if !min.IsZero() && !max.IsZero() {
+		if min.Year() > max.Year() ||
+			min.Year() == max.Year() && min.Month() > max.Month() ||
+			min.Year() == max.Year() && min.Month() == max.Month() && min.Day() > max.Day() {
 			return newError("invalid range")
 		}
 	}
@@ -135,12 +130,12 @@ func (de *DateEdit) SetRange(min, max *time.Time) os.Error {
 	var st [2]SYSTEMTIME
 	var wParam uintptr
 
-	if min != nil {
+	if !min.IsZero() {
 		wParam |= GDTR_MIN
 		st[0] = *timeToSystemTime(min)
 	}
 
-	if max != nil {
+	if !max.IsZero() {
 		wParam |= GDTR_MAX
 		st[1] = *timeToSystemTime(max)
 	}
@@ -152,20 +147,20 @@ func (de *DateEdit) SetRange(min, max *time.Time) os.Error {
 	return nil
 }
 
-func (de *DateEdit) Value() *time.Time {
+func (de *DateEdit) Value() time.Time {
 	st, err := de.systemTime()
 	if err != nil {
-		return nil
+		return time.Time{}
 	}
 
 	if st == nil {
-		return nil
+		return time.Time{}
 	}
 
-	return time.SecondsToLocalTime(systemTimeToTime(st).Seconds())
+	return time.Unix(systemTimeToTime(st).Unix(), 0)
 }
 
-func (de *DateEdit) SetValue(value *time.Time) os.Error {
+func (de *DateEdit) SetValue(value time.Time) error {
 	return de.setSystemTime(timeToSystemTime(value))
 }
 

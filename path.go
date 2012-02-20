@@ -4,14 +4,11 @@
 
 package walk
 
-import (
-	"os"
-	"syscall"
-)
+import "syscall"
 
 import . "github.com/lxn/go-winapi"
 
-func knownFolderPath(id CSIDL) (string, os.Error) {
+func knownFolderPath(id CSIDL) (string, error) {
 	var buf [MAX_PATH]uint16
 
 	if !ShGetSpecialFolderPath(0, &buf[0], id, false) {
@@ -21,19 +18,19 @@ func knownFolderPath(id CSIDL) (string, os.Error) {
 	return syscall.UTF16ToString(buf[0:]), nil
 }
 
-func AppDataPath() (string, os.Error) {
+func AppDataPath() (string, error) {
 	return knownFolderPath(CSIDL_APPDATA)
 }
 
-func CommonAppDataPath() (string, os.Error) {
+func CommonAppDataPath() (string, error) {
 	return knownFolderPath(CSIDL_COMMON_APPDATA)
 }
 
-func LocalAppDataPath() (string, os.Error) {
+func LocalAppDataPath() (string, error) {
 	return knownFolderPath(CSIDL_LOCAL_APPDATA)
 }
 
-func DriveNames() ([]string, os.Error) {
+func DriveNames() ([]string, error) {
 	bufLen := GetLogicalDriveStrings(0, nil)
 	if bufLen == 0 {
 		return nil, lastError("GetLogicalDriveStrings")

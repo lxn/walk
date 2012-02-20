@@ -4,10 +4,7 @@
 
 package walk
 
-import (
-	"os"
-	"strconv"
-)
+import "strconv"
 
 type ValidationStatus uint
 
@@ -32,7 +29,7 @@ func NewNumberValidator() *NumberValidator {
 }
 
 func (nv *NumberValidator) Validate(s string) ValidationStatus {
-	num, err := strconv.Atof64(s)
+	num, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return Invalid
 	}
@@ -45,7 +42,7 @@ func (nv *NumberValidator) Validate(s string) ValidationStatus {
 		return Invalid
 	}
 
-	str := strconv.Ftoa64(num, 'f', nv.decimals)
+	str := strconv.FormatFloat(num, 'f', nv.decimals, 64)
 
 	if s != str {
 		return Invalid
@@ -58,7 +55,7 @@ func (nv *NumberValidator) Decimals() int {
 	return nv.decimals
 }
 
-func (nv *NumberValidator) SetDecimals(value int) os.Error {
+func (nv *NumberValidator) SetDecimals(value int) error {
 	if value < 0 {
 		return newError("invalid value")
 	}
@@ -76,7 +73,7 @@ func (nv *NumberValidator) MaxValue() float64 {
 	return nv.maxValue
 }
 
-func (nv *NumberValidator) SetRange(min, max float64) os.Error {
+func (nv *NumberValidator) SetRange(min, max float64) error {
 	if min > max {
 		return newError("invalid range")
 	}

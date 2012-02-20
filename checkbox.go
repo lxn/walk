@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 var checkBoxOrigWndProcPtr uintptr
@@ -17,7 +13,7 @@ type CheckBox struct {
 	Button
 }
 
-func NewCheckBox(parent Container) (*CheckBox, os.Error) {
+func NewCheckBox(parent Container) (*CheckBox, error) {
 	cb := &CheckBox{}
 
 	if err := initChildWidget(

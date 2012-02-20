@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -23,7 +22,7 @@ type ComboBox struct {
 	currentIndexChangedPublisher EventPublisher
 }
 
-func NewComboBox(parent Container) (*ComboBox, os.Error) {
+func NewComboBox(parent Container) (*ComboBox, error) {
 	cb := &ComboBox{prevCurIndex: -1}
 
 	if err := initChildWidget(
@@ -102,7 +101,7 @@ func (cb *ComboBox) CurrentIndex() int {
 	return int(SendMessage(cb.hWnd, CB_GETCURSEL, 0, 0))
 }
 
-func (cb *ComboBox) SetCurrentIndex(value int) os.Error {
+func (cb *ComboBox) SetCurrentIndex(value int) error {
 	index := int(SendMessage(cb.hWnd, CB_SETCURSEL, uintptr(value), 0))
 
 	if index != value {
@@ -125,7 +124,7 @@ func (cb *ComboBox) Text() string {
 	return widgetText(cb.hWnd)
 }
 
-func (cb *ComboBox) SetText(value string) os.Error {
+func (cb *ComboBox) SetText(value string) error {
 	return setWidgetText(cb.hWnd, value)
 }
 
@@ -154,7 +153,7 @@ func (cb *ComboBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 	return cb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
-func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) os.Error {
+func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) error {
 	if CB_ERR == SendMessage(cb.hWnd, CB_INSERTSTRING, uintptr(index), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item.text)))) {
 		return newError("CB_INSERTSTRING failed")
 	}
@@ -164,7 +163,7 @@ func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) os.Er
 	return nil
 }
 
-func (cb *ComboBox) onRemovingComboBoxItem(index int, item *ComboBoxItem) os.Error {
+func (cb *ComboBox) onRemovingComboBoxItem(index int, item *ComboBoxItem) error {
 	if CB_ERR == SendMessage(cb.hWnd, CB_DELETESTRING, uintptr(index), 0) {
 		return newError("CB_DELETESTRING failed")
 	}
@@ -177,7 +176,7 @@ func (cb *ComboBox) onRemovingComboBoxItem(index int, item *ComboBoxItem) os.Err
 	return nil
 }
 
-func (cb *ComboBox) onClearingComboBoxItems() os.Error {
+func (cb *ComboBox) onClearingComboBoxItems() error {
 	SendMessage(cb.hWnd, CB_RESETCONTENT, 0, 0)
 
 	cb.maxItemTextWidth = 0

@@ -91,7 +91,7 @@ func webView_IOleInPlaceSite_GetWindowContext(inPlaceSite *webViewIOleInPlaceSit
 	return S_OK
 }
 
-func webView_IOleInPlaceSite_Scroll(inPlaceSite *webViewIOleInPlaceSite, scrollExtent SIZE) HRESULT {
+func webView_IOleInPlaceSite_Scroll(inPlaceSite *webViewIOleInPlaceSite, scrollExtentX, scrollExtentY int32) HRESULT {
 	return E_NOTIMPL
 }
 

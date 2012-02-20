@@ -4,8 +4,6 @@
 
 package main
 
-import "os"
-
 import "github.com/lxn/walk"
 
 type MainWindow struct {
@@ -45,7 +43,7 @@ func createBitmap() *walk.Bitmap {
 	return bmp
 }
 
-func (mw *MainWindow) drawStuff(canvas *walk.Canvas, updateBounds walk.Rectangle) os.Error {
+func (mw *MainWindow) drawStuff(canvas *walk.Canvas, updateBounds walk.Rectangle) error {
 	bmp := createBitmap()
 	defer bmp.Dispose()
 
@@ -87,7 +85,7 @@ func main() {
 
 	mw.SetLayout(walk.NewVBoxLayout())
 
-	mw.paintWidget, _ = walk.NewCustomWidget(mw, 0, func(canvas *walk.Canvas, updateBounds walk.Rectangle) os.Error {
+	mw.paintWidget, _ = walk.NewCustomWidget(mw, 0, func(canvas *walk.Canvas, updateBounds walk.Rectangle) error {
 		return mw.drawStuff(canvas, updateBounds)
 	})
 	mw.paintWidget.SetClearsBackground(true)

@@ -6,7 +6,6 @@ package walk
 
 import (
 	"math"
-	"os"
 	"strconv"
 	"syscall"
 	"unsafe"
@@ -27,7 +26,7 @@ type NumberEdit struct {
 	valueChangedPublisher EventPublisher
 }
 
-func NewNumberEdit(parent Container) (*NumberEdit, os.Error) {
+func NewNumberEdit(parent Container) (*NumberEdit, error) {
 	ensureRegisteredWindowClass(numberEditWindowClass, &numberEditWindowClassRegistered)
 
 	ne := &NumberEdit{increment: 1}
@@ -48,7 +47,7 @@ func NewNumberEdit(parent Container) (*NumberEdit, os.Error) {
 		}
 	}()
 
-	var err os.Error
+	var err error
 	ne.edit, err = newLineEdit(ne)
 	if err != nil {
 		return nil, err
@@ -113,7 +112,7 @@ func (ne *NumberEdit) Decimals() int {
 	return ne.edit.Validator().(*NumberValidator).Decimals()
 }
 
-func (ne *NumberEdit) SetDecimals(value int) os.Error {
+func (ne *NumberEdit) SetDecimals(value int) error {
 	if err := ne.edit.Validator().(*NumberValidator).SetDecimals(value); err != nil {
 		return err
 	}
@@ -125,7 +124,7 @@ func (ne *NumberEdit) Increment() float64 {
 	return ne.increment
 }
 
-func (ne *NumberEdit) SetIncrement(value float64) os.Error {
+func (ne *NumberEdit) SetIncrement(value float64) error {
 	ne.increment = value
 
 	return nil
@@ -139,18 +138,18 @@ func (ne *NumberEdit) MaxValue() float64 {
 	return ne.edit.Validator().(*NumberValidator).MaxValue()
 }
 
-func (ne *NumberEdit) SetRange(min, max float64) os.Error {
+func (ne *NumberEdit) SetRange(min, max float64) error {
 	return ne.edit.Validator().(*NumberValidator).SetRange(min, max)
 }
 
 func (ne *NumberEdit) Value() float64 {
-	val, _ := strconv.Atof64(ne.edit.Text())
+	val, _ := strconv.ParseFloat(ne.edit.Text(), 64)
 
 	return val
 }
 
-func (ne *NumberEdit) SetValue(value float64) os.Error {
-	text := strconv.Ftoa64(value, 'f', ne.Decimals())
+func (ne *NumberEdit) SetValue(value float64) error {
+	text := strconv.FormatFloat(value, 'f', ne.Decimals(), 64)
 
 	if err := ne.edit.SetText(text); err != nil {
 		return err
@@ -163,7 +162,7 @@ func (ne *NumberEdit) ValueChanged() *Event {
 	return ne.valueChangedPublisher.Event()
 }
 
-func (ne *NumberEdit) SetFocus() os.Error {
+func (ne *NumberEdit) SetFocus() error {
 	if SetFocus(ne.edit.hWnd) == 0 {
 		return lastError("SetFocus")
 	}
@@ -186,7 +185,7 @@ func (ne *NumberEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 			switch HIWORD(uint32(wParam)) {
 			case EN_CHANGE:
 				value := ne.Value()
-				if math.Fabs(value-ne.oldValue) < math.SmallestNonzeroFloat64 {
+				if math.Abs(value-ne.oldValue) < math.SmallestNonzeroFloat64 {
 					break
 				}
 

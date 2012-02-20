@@ -6,7 +6,6 @@ package walk
 
 import (
 	"fmt"
-	"os"
 	"sync"
 	"unsafe"
 )
@@ -65,7 +64,7 @@ func (tlw *TopLevelWindow) Title() string {
 	return widgetText(tlw.hWnd)
 }
 
-func (tlw *TopLevelWindow) SetTitle(value string) os.Error {
+func (tlw *TopLevelWindow) SetTitle(value string) error {
 	return setWidgetText(tlw.hWnd, value)
 }
 
@@ -101,7 +100,7 @@ func (tlw *TopLevelWindow) Owner() RootWidget {
 	return tlw.owner
 }
 
-func (tlw *TopLevelWindow) SetOwner(value RootWidget) os.Error {
+func (tlw *TopLevelWindow) SetOwner(value RootWidget) error {
 	tlw.owner = value
 
 	var ownerHWnd HWND
@@ -129,19 +128,19 @@ func (tlw *TopLevelWindow) Show() {
 	tlw.SetVisible(true)
 }
 
-func (tlw *TopLevelWindow) close() os.Error {
+func (tlw *TopLevelWindow) close() error {
 	tlw.Dispose()
 
 	return nil
 }
 
-func (tlw *TopLevelWindow) Close() os.Error {
+func (tlw *TopLevelWindow) Close() error {
 	SendMessage(tlw.hWnd, WM_CLOSE, 0, 0)
 
 	return nil
 }
 
-func (tlw *TopLevelWindow) SaveState() os.Error {
+func (tlw *TopLevelWindow) SaveState() error {
 	var wp WINDOWPLACEMENT
 
 	wp.Length = uint32(unsafe.Sizeof(wp))
@@ -164,7 +163,7 @@ func (tlw *TopLevelWindow) SaveState() os.Error {
 	return tlw.ContainerBase.SaveState()
 }
 
-func (tlw *TopLevelWindow) RestoreState() os.Error {
+func (tlw *TopLevelWindow) RestoreState() error {
 	if tlw.isInRestoreState {
 		return nil
 	}

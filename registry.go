@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -28,7 +27,7 @@ func LocalMachineKey() *RegistryKey {
 	return &RegistryKey{HKEY_LOCAL_MACHINE}
 }
 
-func RegistryKeyString(rootKey *RegistryKey, subKeyPath, valueName string) (value string, err os.Error) {
+func RegistryKeyString(rootKey *RegistryKey, subKeyPath, valueName string) (value string, err error) {
 	var hKey HKEY
 	if RegOpenKeyEx(
 		rootKey.hKey,

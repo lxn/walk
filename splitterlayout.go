@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 type splitterLayout struct {
@@ -47,7 +43,7 @@ func (l *splitterLayout) Margins() Margins {
 	return Margins{}
 }
 
-func (l *splitterLayout) SetMargins(value Margins) os.Error {
+func (l *splitterLayout) SetMargins(value Margins) error {
 	return newError("not supported")
 }
 
@@ -55,7 +51,7 @@ func (l *splitterLayout) Spacing() int {
 	return 0
 }
 
-func (l *splitterLayout) SetSpacing(value int) os.Error {
+func (l *splitterLayout) SetSpacing(value int) error {
 	return newError("not supported")
 }
 
@@ -63,7 +59,7 @@ func (l *splitterLayout) Orientation() Orientation {
 	return l.orientation
 }
 
-func (l *splitterLayout) SetOrientation(value Orientation) os.Error {
+func (l *splitterLayout) SetOrientation(value Orientation) error {
 	if value != l.orientation {
 		switch value {
 		case Horizontal, Vertical:
@@ -84,7 +80,7 @@ func (l *splitterLayout) Fractions() []float64 {
 	return l.fractions
 }
 
-func (l *splitterLayout) SetFractions(fractions []float64) os.Error {
+func (l *splitterLayout) SetFractions(fractions []float64) error {
 	l.fractions = fractions
 
 	return l.Update(false)
@@ -135,7 +131,7 @@ func (l *splitterLayout) reset() {
 	}
 }
 
-func (l *splitterLayout) Update(reset bool) os.Error {
+func (l *splitterLayout) Update(reset bool) error {
 	if l.container == nil {
 		return newError("container required")
 	}

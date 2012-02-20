@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -22,7 +21,7 @@ type WebView struct {
 	browserObject *IOleObject
 }
 
-func NewWebView(parent Container) (*WebView, os.Error) {
+func NewWebView(parent Container) (*WebView, error) {
 	ensureRegisteredWindowClass(webViewWindowClass, &webViewWindowClassRegistered)
 
 	wv := &WebView{
@@ -151,8 +150,8 @@ func (*WebView) SizeHint() Size {
 	return Size{100, 100}
 }
 
-func (wv *WebView) URL() (url string, err os.Error) {
-	err = wv.withWebBrowser2(func(webBrowser2 *IWebBrowser2) os.Error {
+func (wv *WebView) URL() (url string, err error) {
+	err = wv.withWebBrowser2(func(webBrowser2 *IWebBrowser2) error {
 		var urlBstr *uint16 /*BSTR*/
 		if hr := webBrowser2.Get_LocationURL(&urlBstr); FAILED(hr) {
 			return errorFromHRESULT("IWebBrowser2.Get_LocationURL", hr)
@@ -167,8 +166,8 @@ func (wv *WebView) URL() (url string, err os.Error) {
 	return
 }
 
-func (wv *WebView) SetURL(url string) os.Error {
-	return wv.withWebBrowser2(func(webBrowser2 *IWebBrowser2) os.Error {
+func (wv *WebView) SetURL(url string) error {
+	return wv.withWebBrowser2(func(webBrowser2 *IWebBrowser2) error {
 		urlBstr := StringToVariantBSTR(url)
 		flags := IntToVariantI4(0)
 		targetFrameName := StringToVariantBSTR("_self")
@@ -181,7 +180,7 @@ func (wv *WebView) SetURL(url string) os.Error {
 	})
 }
 
-func (wv *WebView) withWebBrowser2(f func(webBrowser2 *IWebBrowser2) os.Error) os.Error {
+func (wv *WebView) withWebBrowser2(f func(webBrowser2 *IWebBrowser2) error) error {
 	var webBrowser2Ptr unsafe.Pointer
 	if hr := wv.browserObject.QueryInterface(&IID_IWebBrowser2, &webBrowser2Ptr); FAILED(hr) {
 		return errorFromHRESULT("IOleObject.QueryInterface", hr)
@@ -194,7 +193,7 @@ func (wv *WebView) withWebBrowser2(f func(webBrowser2 *IWebBrowser2) os.Error) o
 
 func (wv *WebView) onResize() {
 	// FIXME: handle error?
-	wv.withWebBrowser2(func(webBrowser2 *IWebBrowser2) os.Error {
+	wv.withWebBrowser2(func(webBrowser2 *IWebBrowser2) error {
 		bounds := wv.ClientBounds()
 
 		webBrowser2.Put_Left(0)

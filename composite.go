@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 const compositeWindowClass = `\o/ Walk_Composite_Class \o/`
@@ -18,7 +14,7 @@ type Composite struct {
 	ContainerBase
 }
 
-func newCompositeWithStyle(parent Container, style uint32) (*Composite, os.Error) {
+func newCompositeWithStyle(parent Container, style uint32) (*Composite, error) {
 	ensureRegisteredWindowClass(compositeWindowClass, &compositeWindowClassRegistered)
 
 	c := &Composite{}
@@ -37,6 +33,6 @@ func newCompositeWithStyle(parent Container, style uint32) (*Composite, os.Error
 	return c, nil
 }
 
-func NewComposite(parent Container) (*Composite, os.Error) {
+func NewComposite(parent Container) (*Composite, error) {
 	return newCompositeWithStyle(parent, 0)
 }

@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -44,7 +43,7 @@ type Dialog struct {
 	centerInOwnerWhenRun bool
 }
 
-func NewDialog(owner RootWidget) (*Dialog, os.Error) {
+func NewDialog(owner RootWidget) (*Dialog, error) {
 	ensureRegisteredWindowClass(dialogWindowClass, &dialogWindowClassRegistered)
 
 	dlg := &Dialog{
@@ -78,7 +77,7 @@ func (dlg *Dialog) DefaultButton() *PushButton {
 	return dlg.defaultButton
 }
 
-func (dlg *Dialog) SetDefaultButton(button *PushButton) os.Error {
+func (dlg *Dialog) SetDefaultButton(button *PushButton) error {
 	if button != nil && !IsChild(dlg.hWnd, button.hWnd) {
 		return newError("not a descendant of the dialog")
 	}
@@ -112,7 +111,7 @@ func (dlg *Dialog) CancelButton() *PushButton {
 	return dlg.cancelButton
 }
 
-func (dlg *Dialog) SetCancelButton(button *PushButton) os.Error {
+func (dlg *Dialog) SetCancelButton(button *PushButton) error {
 	if button != nil && !IsChild(dlg.hWnd, button.hWnd) {
 		return newError("not a descendant of the dialog")
 	}

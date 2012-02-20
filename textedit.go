@@ -4,10 +4,7 @@
 
 package walk
 
-import (
-	"os"
-	"unsafe"
-)
+import "unsafe"
 
 import . "github.com/lxn/go-winapi"
 
@@ -18,7 +15,7 @@ type TextEdit struct {
 	WidgetBase
 }
 
-func NewTextEdit(parent Container) (*TextEdit, os.Error) {
+func NewTextEdit(parent Container) (*TextEdit, error) {
 	te := &TextEdit{}
 
 	if err := initChildWidget(
@@ -53,7 +50,7 @@ func (te *TextEdit) Text() string {
 	return widgetText(te.hWnd)
 }
 
-func (te *TextEdit) SetText(value string) os.Error {
+func (te *TextEdit) SetText(value string) error {
 	return setWidgetText(te.hWnd, value)
 }
 
@@ -70,7 +67,7 @@ func (te *TextEdit) ReadOnly() bool {
 	return te.hasStyleBits(ES_READONLY)
 }
 
-func (te *TextEdit) SetReadOnly(readOnly bool) os.Error {
+func (te *TextEdit) SetReadOnly(readOnly bool) error {
 	if 0 == SendMessage(te.hWnd, EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
 		return newError("SendMessage(EM_SETREADONLY)")
 	}

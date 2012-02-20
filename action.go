@@ -4,12 +4,8 @@
 
 package walk
 
-import (
-	"os"
-)
-
 type actionChangedHandler interface {
-	onActionChanged(action *Action) (err os.Error)
+	onActionChanged(action *Action) (err error)
 }
 
 var (
@@ -53,7 +49,7 @@ func (a *Action) Checkable() bool {
 	return a.checkable
 }
 
-func (a *Action) SetCheckable(value bool) (err os.Error) {
+func (a *Action) SetCheckable(value bool) (err error) {
 	if value != a.checkable {
 		old := a.checkable
 
@@ -72,7 +68,7 @@ func (a *Action) Checked() bool {
 	return a.checked
 }
 
-func (a *Action) SetChecked(value bool) (err os.Error) {
+func (a *Action) SetChecked(value bool) (err error) {
 	if value != a.checked {
 		old := a.checked
 
@@ -91,7 +87,7 @@ func (a *Action) Enabled() bool {
 	return a.enabled
 }
 
-func (a *Action) SetEnabled(value bool) (err os.Error) {
+func (a *Action) SetEnabled(value bool) (err error) {
 	if value != a.enabled {
 		old := a.enabled
 
@@ -110,7 +106,7 @@ func (a *Action) Exclusive() bool {
 	return a.exclusive
 }
 
-func (a *Action) SetExclusive(value bool) (err os.Error) {
+func (a *Action) SetExclusive(value bool) (err error) {
 	if value != a.exclusive {
 		old := a.exclusive
 
@@ -129,7 +125,7 @@ func (a *Action) Image() *Bitmap {
 	return a.image
 }
 
-func (a *Action) SetImage(value *Bitmap) (err os.Error) {
+func (a *Action) SetImage(value *Bitmap) (err error) {
 	if value != a.image {
 		old := a.image
 
@@ -148,7 +144,7 @@ func (a *Action) Text() string {
 	return a.text
 }
 
-func (a *Action) SetText(value string) (err os.Error) {
+func (a *Action) SetText(value string) (err error) {
 	if value != a.text {
 		old := a.text
 
@@ -167,7 +163,7 @@ func (a *Action) ToolTip() string {
 	return a.toolTip
 }
 
-func (a *Action) SetToolTip(value string) (err os.Error) {
+func (a *Action) SetToolTip(value string) (err error) {
 	if value != a.toolTip {
 		old := a.toolTip
 
@@ -186,7 +182,7 @@ func (a *Action) Visible() bool {
 	return a.visible
 }
 
-func (a *Action) SetVisible(value bool) (err os.Error) {
+func (a *Action) SetVisible(value bool) (err error) {
 	if value != a.visible {
 		old := a.visible
 
@@ -222,7 +218,7 @@ func (a *Action) removeChangedHandler(handler actionChangedHandler) {
 	}
 }
 
-func (a *Action) raiseChanged() (err os.Error) {
+func (a *Action) raiseChanged() (err error) {
 	for _, handler := range a.changedHandlers {
 		if err = handler.onActionChanged(a); err != nil {
 			return

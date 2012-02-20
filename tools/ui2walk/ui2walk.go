@@ -7,6 +7,8 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/xml"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -16,7 +18,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"xml"
 )
 
 var forceUpdate *bool = flag.Bool("force", false, "force code generation for up-to-date files")
@@ -106,23 +107,23 @@ type CustomWidget struct {
 	Extends string
 }
 
-func logFatal(err os.Error) {
+func logFatal(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func parseUI(reader io.Reader) (*UI, os.Error) {
+func parseUI(reader io.Reader) (*UI, error) {
 	ui := &UI{}
 
-	if err := xml.Unmarshal(reader, ui); err != nil {
+	if err := xml.NewDecoder(reader).Decode(ui); err != nil {
 		return nil, err
 	}
 
 	return ui, nil
 }
 
-func writeAttribute(buf *bytes.Buffer, attr *Attribute, qualifiedReceiver string) (err os.Error) {
+func writeAttribute(buf *bytes.Buffer, attr *Attribute, qualifiedReceiver string) (err error) {
 	switch attr.Name {
 	case "title":
 		buf.WriteString(fmt.Sprintf(
@@ -137,7 +138,7 @@ func writeAttribute(buf *bytes.Buffer, attr *Attribute, qualifiedReceiver string
 	return nil
 }
 
-func writeAttributes(buf *bytes.Buffer, attrs []*Attribute, qualifiedReceiver string) os.Error {
+func writeAttributes(buf *bytes.Buffer, attrs []*Attribute, qualifiedReceiver string) error {
 	for _, attr := range attrs {
 		if err := writeAttribute(buf, attr, qualifiedReceiver); err != nil {
 			return err
@@ -147,7 +148,7 @@ func writeAttributes(buf *bytes.Buffer, attrs []*Attribute, qualifiedReceiver st
 	return nil
 }
 
-func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string, widget *Widget) (err os.Error) {
+func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string, widget *Widget) (err error) {
 	if prop.Name == "windowTitle" && widget.Class == "QWidget" {
 		return
 	}
@@ -251,7 +252,7 @@ func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string, 
 			orientation = "walk.Vertical"
 
 		default:
-			return os.NewError(fmt.Sprintf("unknown orientation: '%s'", prop.Enum))
+			return errors.New(fmt.Sprintf("unknown orientation: '%s'", prop.Enum))
 		}
 
 		buf.WriteString(fmt.Sprintf(
@@ -269,7 +270,7 @@ func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string, 
 	return
 }
 
-func writeProperties(buf *bytes.Buffer, props []*Property, qualifiedReceiver string, widget *Widget) os.Error {
+func writeProperties(buf *bytes.Buffer, props []*Property, qualifiedReceiver string, widget *Widget) error {
 	var minSize, maxSize Size
 	var hasMinOrMaxSize bool
 
@@ -300,7 +301,7 @@ func writeProperties(buf *bytes.Buffer, props []*Property, qualifiedReceiver str
 	return nil
 }
 
-func writeItemInitializations(buf *bytes.Buffer, items []*Item, parent *Widget, qualifiedParent string, layout string) os.Error {
+func writeItemInitializations(buf *bytes.Buffer, items []*Item, parent *Widget, qualifiedParent string, layout string) error {
 	for _, item := range items {
 		var itemName string
 
@@ -378,7 +379,7 @@ func writeItemInitializations(buf *bytes.Buffer, items []*Item, parent *Widget, 
 	return nil
 }
 
-func writeLayoutInitialization(buf *bytes.Buffer, layout *Layout, parent *Widget, qualifiedParent string) os.Error {
+func writeLayoutInitialization(buf *bytes.Buffer, layout *Layout, parent *Widget, qualifiedParent string) error {
 	var typ string
 	switch layout.Class {
 	case "QGridLayout":
@@ -391,7 +392,7 @@ func writeLayoutInitialization(buf *bytes.Buffer, layout *Layout, parent *Widget
 		typ = "VBoxLayout"
 
 	default:
-		return os.NewError(fmt.Sprintf("unsupported layout type: '%s'", layout.Class))
+		return errors.New(fmt.Sprintf("unsupported layout type: '%s'", layout.Class))
 	}
 
 	buf.WriteString(fmt.Sprintf("%s := walk.New%s()\n",
@@ -460,7 +461,7 @@ func writeLayoutInitialization(buf *bytes.Buffer, layout *Layout, parent *Widget
 	return nil
 }
 
-func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget, qualifiedParent string) os.Error {
+func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget, qualifiedParent string) error {
 	receiver := fmt.Sprintf("w.ui.%s", widget.Name)
 
 	var typ string
@@ -591,7 +592,7 @@ func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget
 	return writeWidgetInitializations(buf, widget.Widget, widget, receiver)
 }
 
-func writeWidgetInitializations(buf *bytes.Buffer, widgets []*Widget, parent *Widget, qualifiedParent string) os.Error {
+func writeWidgetInitializations(buf *bytes.Buffer, widgets []*Widget, parent *Widget, qualifiedParent string) error {
 	for _, widget := range widgets {
 		if widget.ignored {
 			continue
@@ -605,7 +606,7 @@ func writeWidgetInitializations(buf *bytes.Buffer, widgets []*Widget, parent *Wi
 	return nil
 }
 
-func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) os.Error {
+func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) error {
 	var typ string
 	switch widget.Class {
 	case "QCheckBox":
@@ -680,7 +681,7 @@ func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) os.Error
 	return writeWidgetDecls(buf, widget.Widget, widget)
 }
 
-func writeWidgetDecls(buf *bytes.Buffer, widgets []*Widget, parent *Widget) os.Error {
+func writeWidgetDecls(buf *bytes.Buffer, widgets []*Widget, parent *Widget) error {
 	for _, widget := range widgets {
 		if err := writeWidgetDecl(buf, widget, parent); err != nil {
 			return err
@@ -690,7 +691,7 @@ func writeWidgetDecls(buf *bytes.Buffer, widgets []*Widget, parent *Widget) os.E
 	return nil
 }
 
-func writeItemDecls(buf *bytes.Buffer, items []*Item, parent *Widget) os.Error {
+func writeItemDecls(buf *bytes.Buffer, items []*Item, parent *Widget) error {
 	for _, item := range items {
 		if item.Widget == nil {
 			continue
@@ -704,7 +705,7 @@ func writeItemDecls(buf *bytes.Buffer, items []*Item, parent *Widget) os.Error {
 	return nil
 }
 
-func generateCode(buf *bytes.Buffer, ui *UI) os.Error {
+func generateCode(buf *bytes.Buffer, ui *UI) error {
 	// Comment, package decl, imports
 	buf.WriteString(
 		`// THIS FILE WAS GENERATED BY A TOOL, DO NOT EDIT!
@@ -730,7 +731,7 @@ func generateCode(buf *bytes.Buffer, ui *UI) os.Error {
 		embeddedType = "Composite"
 
 	default:
-		return os.NewError(fmt.Sprintf("Top level '%s' currently not supported.", ui.Widget.Class))
+		return errors.New(fmt.Sprintf("Top level '%s' currently not supported.", ui.Widget.Class))
 	}
 
 	// Struct containing all descendant widgets.
@@ -832,7 +833,7 @@ func generateCode(buf *bytes.Buffer, ui *UI) os.Error {
 	return nil
 }
 
-func processFile(uiFilePath string) os.Error {
+func processFile(uiFilePath string) error {
 	goFilePath := uiFilePath[:len(uiFilePath)-3] + "_ui.go"
 
 	uiFileInfo, err := os.Stat(uiFilePath)
@@ -841,7 +842,7 @@ func processFile(uiFilePath string) os.Error {
 	}
 
 	goFileInfo, err := os.Stat(goFilePath)
-	if !*forceUpdate && err == nil && uiFileInfo.Mtime_ns <= goFileInfo.Mtime_ns {
+	if !*forceUpdate && err == nil && uiFileInfo.ModTime().Sub(goFileInfo.ModTime()) >= 0 {
 		// The go file should be up-to-date
 		return nil
 	}
@@ -897,7 +898,7 @@ func processFile(uiFilePath string) os.Error {
 	return nil
 }
 
-func processDirectory(dirPath string) os.Error {
+func processDirectory(dirPath string) error {
 	dir, err := os.Open(dirPath)
 	if err != nil {
 		return err
@@ -917,11 +918,11 @@ func processDirectory(dirPath string) os.Error {
 			return err
 		}
 
-		if fi.IsDirectory() {
+		if fi.IsDir() {
 			if err := processDirectory(fullPath); err != nil {
 				return err
 			}
-		} else if fi.IsRegular() && strings.HasSuffix(name, ".ui") {
+		} else if !fi.IsDir() && strings.HasSuffix(name, ".ui") {
 			if err := processFile(fullPath); err != nil {
 				return err
 			}

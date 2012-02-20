@@ -15,7 +15,7 @@ import "github.com/lxn/walk"
 type FileInfo struct {
 	Name     string
 	Size     int64
-	Modified int64
+	Modified time.Time
 }
 
 type FileInfoModel struct {
@@ -47,7 +47,7 @@ func (m *FileInfoModel) Value(row, col int) interface{} {
 		return item.Size
 
 	case 2:
-		return time.SecondsToLocalTime(item.Modified)
+		return item.Modified
 	}
 
 	panic("unexpected col")
@@ -61,7 +61,7 @@ func (m *FileInfoModel) RowChanged() *walk.IntEvent {
 	return m.rowChangedPublisher.Event()
 }
 
-func (m *FileInfoModel) ResetRows(dirPath string) os.Error {
+func (m *FileInfoModel) ResetRows(dirPath string) error {
 	dir, err := os.Open(dirPath)
 	if err != nil {
 		return err
@@ -86,8 +86,8 @@ func (m *FileInfoModel) ResetRows(dirPath string) os.Error {
 
 			item := &FileInfo{
 				Name:     name,
-				Size:     fi.Size,
-				Modified: fi.Mtime_ns / 1e9,
+				Size:     fi.Size(),
+				Modified: fi.ModTime(),
 			}
 
 			m.items = append(m.items, item)
@@ -108,12 +108,12 @@ type MainWindow struct {
 	preview       *walk.WebView
 }
 
-func (mw *MainWindow) showError(err os.Error) {
+func (mw *MainWindow) showError(err error) {
 	if err == nil {
 		return
 	}
 
-	walk.MsgBox(mw, "Error", err.String(), walk.MsgBoxOK|walk.MsgBoxIconError)
+	walk.MsgBox(mw, "Error", err.Error(), walk.MsgBoxOK|walk.MsgBoxIconError)
 }
 
 func (mw *MainWindow) populateTreeViewItem(parent *walk.TreeViewItem) {
@@ -139,7 +139,7 @@ func (mw *MainWindow) populateTreeViewItem(parent *walk.TreeViewItem) {
 		fi, err := os.Stat(path.Join(dirPath, name))
 		panicIfErr(err)
 
-		if !excludePath(name) && fi.IsDirectory() {
+		if !excludePath(name) && fi.IsDir() {
 			child := newTreeViewItem(name)
 
 			parent.Children().Add(child)
@@ -147,7 +147,7 @@ func (mw *MainWindow) populateTreeViewItem(parent *walk.TreeViewItem) {
 	}
 }
 
-func panicIfErr(err os.Error) {
+func panicIfErr(err error) {
 	if err != nil {
 		panic(err)
 	}

@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -19,7 +18,7 @@ type ToolTip struct {
 	WidgetBase
 }
 
-func NewToolTip(parent Container) (*ToolTip, os.Error) {
+func NewToolTip(parent Container) (*ToolTip, error) {
 	tt := &ToolTip{}
 
 	if err := initWidget(
@@ -79,7 +78,7 @@ func (tt *ToolTip) Title() string {
 	return syscall.UTF16ToString(buf)
 }
 
-func (tt *ToolTip) SetTitle(value string) os.Error {
+func (tt *ToolTip) SetTitle(value string) error {
 	if FALSE == SendMessage(tt.hWnd, TTM_SETTITLE, uintptr(TTI_INFO), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value)))) {
 		return newError("TTM_SETTITLE failed")
 	}
@@ -87,7 +86,7 @@ func (tt *ToolTip) SetTitle(value string) os.Error {
 	return nil
 }
 
-func (tt *ToolTip) AddWidget(widget Widget, text string) os.Error {
+func (tt *ToolTip) AddWidget(widget Widget, text string) error {
 	var ti TOOLINFO
 
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
@@ -106,6 +105,6 @@ func (tt *ToolTip) AddWidget(widget Widget, text string) os.Error {
 	return nil
 }
 
-func (tt *ToolTip) RemoveWidget(widget Widget) os.Error {
+func (tt *ToolTip) RemoveWidget(widget Widget) error {
 	panic("not implemented")
 }

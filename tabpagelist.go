@@ -4,19 +4,15 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 type tabPageListObserver interface {
-	onInsertingPage(index int, page *TabPage) os.Error
-	onInsertedPage(index int, page *TabPage) os.Error
-	onRemovingPage(index int, page *TabPage) os.Error
-	onRemovedPage(index int, page *TabPage) os.Error
-	onClearingPages(pages []*TabPage) os.Error
-	onClearedPages(pages []*TabPage) os.Error
+	onInsertingPage(index int, page *TabPage) error
+	onInsertedPage(index int, page *TabPage) error
+	onRemovingPage(index int, page *TabPage) error
+	onRemovedPage(index int, page *TabPage) error
+	onClearingPages(pages []*TabPage) error
+	onClearedPages(pages []*TabPage) error
 }
 
 type TabPageList struct {
@@ -28,7 +24,7 @@ func newTabPageList(observer tabPageListObserver) *TabPageList {
 	return &TabPageList{observer: observer}
 }
 
-func (l *TabPageList) Add(item *TabPage) os.Error {
+func (l *TabPageList) Add(item *TabPage) error {
 	return l.Insert(len(l.items), item)
 }
 
@@ -36,7 +32,7 @@ func (l *TabPageList) At(index int) *TabPage {
 	return l.items[index]
 }
 
-func (l *TabPageList) Clear() os.Error {
+func (l *TabPageList) Clear() error {
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onClearingPages(l.items); err != nil {
@@ -91,7 +87,7 @@ func (l *TabPageList) insertIntoSlice(index int, item *TabPage) {
 	l.items[index] = item
 }
 
-func (l *TabPageList) Insert(index int, item *TabPage) os.Error {
+func (l *TabPageList) Insert(index int, item *TabPage) error {
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onInsertingPage(index, item); err != nil {
@@ -115,7 +111,7 @@ func (l *TabPageList) Len() int {
 	return len(l.items)
 }
 
-func (l *TabPageList) Remove(item *TabPage) os.Error {
+func (l *TabPageList) Remove(item *TabPage) error {
 	index := l.Index(item)
 	if index == -1 {
 		return nil
@@ -124,7 +120,7 @@ func (l *TabPageList) Remove(item *TabPage) os.Error {
 	return l.RemoveAt(index)
 }
 
-func (l *TabPageList) RemoveAt(index int) os.Error {
+func (l *TabPageList) RemoveAt(index int) error {
 	observer := l.observer
 	item := l.items[index]
 	if observer != nil {

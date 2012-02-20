@@ -10,17 +10,13 @@ type IntEvent struct {
 	handlers []IntEventHandler
 }
 
-func (e *IntEvent) Attach(handler IntEventHandler) {
+func (e *IntEvent) Attach(handler IntEventHandler) int {
 	e.handlers = append(e.handlers, handler)
+	return len(e.handlers) - 1
 }
 
-func (e *IntEvent) Detach(handler IntEventHandler) {
-	for i, h := range e.handlers {
-		if h == handler {
-			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
-			return
-		}
-	}
+func (e *IntEvent) Detach(handle int) {
+	e.handlers = append(e.handlers[:handle], e.handlers[handle+1:]...)
 }
 
 type IntEventPublisher struct {

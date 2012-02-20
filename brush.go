@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 type HatchStyle int
@@ -69,7 +65,7 @@ type SolidColorBrush struct {
 	color  Color
 }
 
-func NewSolidColorBrush(color Color) (*SolidColorBrush, os.Error) {
+func NewSolidColorBrush(color Color) (*SolidColorBrush, error) {
 	lb := &LOGBRUSH{LbStyle: BS_SOLID, LbColor: COLORREF(color)}
 
 	hBrush := CreateBrushIndirect(lb)
@@ -106,7 +102,7 @@ type HatchBrush struct {
 	style  HatchStyle
 }
 
-func NewHatchBrush(color Color, style HatchStyle) (*HatchBrush, os.Error) {
+func NewHatchBrush(color Color, style HatchStyle) (*HatchBrush, error) {
 	lb := &LOGBRUSH{LbStyle: BS_HATCHED, LbColor: COLORREF(color), LbHatch: uintptr(style)}
 
 	hBrush := CreateBrushIndirect(lb)
@@ -146,7 +142,7 @@ type BitmapBrush struct {
 	bitmap *Bitmap
 }
 
-func NewBitmapBrush(bitmap *Bitmap) (*BitmapBrush, os.Error) {
+func NewBitmapBrush(bitmap *Bitmap) (*BitmapBrush, error) {
 	if bitmap == nil {
 		return nil, newError("bitmap cannot be nil")
 	}

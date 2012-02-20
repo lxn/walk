@@ -4,14 +4,10 @@
 
 package walk
 
-import (
-	"os"
-)
-
 type treeViewItemListObserver interface {
-	onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) os.Error
-	onRemovingTreeViewItem(index int, item *TreeViewItem) os.Error
-	onClearingTreeViewItems(parent *TreeViewItem) os.Error
+	onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) error
+	onRemovingTreeViewItem(index int, item *TreeViewItem) error
+	onClearingTreeViewItems(parent *TreeViewItem) error
 }
 
 type TreeViewItemList struct {
@@ -24,7 +20,7 @@ func newTreeViewItemList(observer treeViewItemListObserver) *TreeViewItemList {
 	return &TreeViewItemList{observer: observer}
 }
 
-func (l *TreeViewItemList) Add(item *TreeViewItem) os.Error {
+func (l *TreeViewItemList) Add(item *TreeViewItem) error {
 	return l.Insert(len(l.items), item)
 }
 
@@ -32,7 +28,7 @@ func (l *TreeViewItemList) At(index int) *TreeViewItem {
 	return l.items[index]
 }
 
-func (l *TreeViewItemList) Clear() os.Error {
+func (l *TreeViewItemList) Clear() error {
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onClearingTreeViewItems(l.parent); err != nil {
@@ -59,7 +55,7 @@ func (l *TreeViewItemList) Index(item *TreeViewItem) int {
 	return -1
 }
 
-func (l *TreeViewItemList) Insert(index int, item *TreeViewItem) os.Error {
+func (l *TreeViewItemList) Insert(index int, item *TreeViewItem) error {
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onInsertingTreeViewItem(l.parent, index, item); err != nil {
@@ -80,7 +76,7 @@ func (l *TreeViewItemList) Len() int {
 	return len(l.items)
 }
 
-func (l *TreeViewItemList) Remove(item *TreeViewItem) os.Error {
+func (l *TreeViewItemList) Remove(item *TreeViewItem) error {
 	index := l.Index(item)
 	if index == -1 {
 		return nil
@@ -89,7 +85,7 @@ func (l *TreeViewItemList) Remove(item *TreeViewItem) os.Error {
 	return l.RemoveAt(index)
 }
 
-func (l *TreeViewItemList) RemoveAt(index int) os.Error {
+func (l *TreeViewItemList) RemoveAt(index int) error {
 	observer := l.observer
 	if observer != nil {
 		item := l.items[index]

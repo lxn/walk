@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"path/filepath"
 	"syscall"
 )
@@ -19,7 +18,7 @@ type Icon struct {
 }
 
 // NewIconFromFile returns a new Icon, using the specified icon image file.
-func NewIconFromFile(filePath string) (*Icon, os.Error) {
+func NewIconFromFile(filePath string) (*Icon, error) {
 	absFilePath, err := filepath.Abs(filePath)
 	if err != nil {
 		return nil, wrapError(err)
@@ -40,7 +39,7 @@ func NewIconFromFile(filePath string) (*Icon, os.Error) {
 }
 
 // Dispose releases the operating system resources associated with the Icon.
-func (i *Icon) Dispose() os.Error {
+func (i *Icon) Dispose() error {
 	if i.hIcon == 0 {
 		return nil
 	}

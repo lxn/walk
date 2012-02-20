@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"strconv"
 	"syscall"
 	"unsafe"
@@ -26,7 +25,7 @@ type TabWidget struct {
 	persistent                   bool
 }
 
-func NewTabWidget(parent Container) (*TabWidget, os.Error) {
+func NewTabWidget(parent Container) (*TabWidget, error) {
 	ensureRegisteredWindowClass(tabWidgetWindowClass, &tabWidgetWindowClassRegistered)
 
 	tw := &TabWidget{currentIndex: -1}
@@ -109,7 +108,7 @@ func (tw *TabWidget) CurrentIndex() int {
 	return tw.currentIndex
 }
 
-func (tw *TabWidget) SetCurrentIndex(index int) os.Error {
+func (tw *TabWidget) SetCurrentIndex(index int) error {
 	if index == tw.currentIndex {
 		return nil
 	}
@@ -146,7 +145,7 @@ func (tw *TabWidget) SetPersistent(value bool) {
 	tw.persistent = value
 }
 
-func (tw *TabWidget) SaveState() os.Error {
+func (tw *TabWidget) SaveState() error {
 	tw.putState(strconv.Itoa(tw.CurrentIndex()))
 
 	for _, page := range tw.pages.items {
@@ -158,7 +157,7 @@ func (tw *TabWidget) SaveState() os.Error {
 	return nil
 }
 
-func (tw *TabWidget) RestoreState() os.Error {
+func (tw *TabWidget) RestoreState() error {
 	state, err := tw.getState()
 	if err != nil {
 		return err
@@ -270,7 +269,7 @@ func (tw *TabWidget) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 	return tw.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
-func (tw *TabWidget) onPageChanged(page *TabPage) (err os.Error) {
+func (tw *TabWidget) onPageChanged(page *TabPage) (err error) {
 	index := tw.pages.Index(page)
 	item := page.tcItem()
 
@@ -281,11 +280,11 @@ func (tw *TabWidget) onPageChanged(page *TabPage) (err os.Error) {
 	return nil
 }
 
-func (tw *TabWidget) onInsertingPage(index int, page *TabPage) (err os.Error) {
+func (tw *TabWidget) onInsertingPage(index int, page *TabPage) (err error) {
 	return nil
 }
 
-func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
+func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err error) {
 	page.SetVisible(false)
 
 	style := uint32(GetWindowLong(page.hWnd, GWL_STYLE))
@@ -323,7 +322,7 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err os.Error) {
 	return
 }
 
-func (tw *TabWidget) removePage(page *TabPage) (err os.Error) {
+func (tw *TabWidget) removePage(page *TabPage) (err error) {
 	page.SetVisible(false)
 
 	style := uint32(GetWindowLong(page.hWnd, GWL_STYLE))
@@ -344,11 +343,11 @@ func (tw *TabWidget) removePage(page *TabPage) (err os.Error) {
 	return page.SetParent(nil)
 }
 
-func (tw *TabWidget) onRemovingPage(index int, page *TabPage) (err os.Error) {
+func (tw *TabWidget) onRemovingPage(index int, page *TabPage) (err error) {
 	return nil
 }
 
-func (tw *TabWidget) onRemovedPage(index int, page *TabPage) (err os.Error) {
+func (tw *TabWidget) onRemovedPage(index int, page *TabPage) (err error) {
 	err = tw.removePage(page)
 	if err != nil {
 		return
@@ -382,11 +381,11 @@ func (tw *TabWidget) onRemovedPage(index int, page *TabPage) (err os.Error) {
 	return
 }
 
-func (tw *TabWidget) onClearingPages(pages []*TabPage) (err os.Error) {
+func (tw *TabWidget) onClearingPages(pages []*TabPage) (err error) {
 	return nil
 }
 
-func (tw *TabWidget) onClearedPages(pages []*TabPage) (err os.Error) {
+func (tw *TabWidget) onClearedPages(pages []*TabPage) (err error) {
 	SendMessage(tw.hWndTab, TCM_DELETEALLITEMS, 0, 0)
 	for _, page := range pages {
 		tw.removePage(page)

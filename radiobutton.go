@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 var radioButtonOrigWndProcPtr uintptr
@@ -17,7 +13,7 @@ type RadioButton struct {
 	Button
 }
 
-func NewRadioButton(parent Container) (*RadioButton, os.Error) {
+func NewRadioButton(parent Container) (*RadioButton, error) {
 	rb := &RadioButton{}
 
 	if err := initChildWidget(

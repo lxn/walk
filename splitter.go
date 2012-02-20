@@ -6,7 +6,6 @@ package walk
 
 import (
 	"bytes"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -25,7 +24,7 @@ type Splitter struct {
 	persistent    bool
 }
 
-func NewSplitter(parent Container) (*Splitter, os.Error) {
+func NewSplitter(parent Container) (*Splitter, error) {
 	ensureRegisteredWindowClass(splitterWindowClass, &splitterWindowClassRegistered)
 
 	layout := newSplitterLayout(Horizontal)
@@ -64,7 +63,7 @@ func (s *Splitter) SizeHint() Size {
 	return Size{100, 100}
 }
 
-func (s *Splitter) SetLayout(value Layout) os.Error {
+func (s *Splitter) SetLayout(value Layout) error {
 	return newError("not supported")
 }
 
@@ -72,7 +71,7 @@ func (s *Splitter) HandleWidth() int {
 	return s.handleWidth
 }
 
-func (s *Splitter) SetHandleWidth(value int) os.Error {
+func (s *Splitter) SetHandleWidth(value int) error {
 	if value == s.handleWidth {
 		return nil
 	}
@@ -91,7 +90,7 @@ func (s *Splitter) Orientation() Orientation {
 	return layout.Orientation()
 }
 
-func (s *Splitter) SetOrientation(value Orientation) os.Error {
+func (s *Splitter) SetOrientation(value Orientation) error {
 	layout := s.layout.(*splitterLayout)
 	return layout.SetOrientation(value)
 }
@@ -104,7 +103,7 @@ func (s *Splitter) SetPersistent(value bool) {
 	s.persistent = value
 }
 
-func (s *Splitter) SaveState() os.Error {
+func (s *Splitter) SaveState() error {
 	buf := bytes.NewBuffer(nil)
 
 	count := s.children.Len()
@@ -115,7 +114,7 @@ func (s *Splitter) SaveState() os.Error {
 			buf.WriteString(" ")
 		}
 
-		buf.WriteString(strconv.Ftoa64(layout.fractions[i/2], 'f', -1))
+		buf.WriteString(strconv.FormatFloat(layout.fractions[i/2], 'f', -1, 64))
 	}
 
 	s.putState(buf.String())
@@ -131,7 +130,7 @@ func (s *Splitter) SaveState() os.Error {
 	return nil
 }
 
-func (s *Splitter) RestoreState() os.Error {
+func (s *Splitter) RestoreState() error {
 	state, err := s.getState()
 	if err != nil {
 		return err
@@ -152,7 +151,7 @@ func (s *Splitter) RestoreState() os.Error {
 
 	for i, widget := range s.children.items {
 		if i%2 == 0 {
-			fraction, err := strconv.Atof64(fractionStrs[i/2+i%2])
+			fraction, err := strconv.ParseFloat(fractionStrs[i/2+i%2], 64)
 			if err != nil {
 				return err
 			}
@@ -175,11 +174,11 @@ func (s *Splitter) RestoreState() os.Error {
 	return layout.SetFractions(fractions)
 }
 
-func (s *Splitter) onInsertingWidget(index int, widget Widget) (err os.Error) {
+func (s *Splitter) onInsertingWidget(index int, widget Widget) (err error) {
 	return s.ContainerBase.onInsertingWidget(index, widget)
 }
 
-func (s *Splitter) onInsertedWidget(index int, widget Widget) (err os.Error) {
+func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 	_, isHandle := widget.(*splitterHandle)
 	if isHandle {
 		if s.Orientation() == Horizontal {
@@ -316,11 +315,11 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err os.Error) {
 	return s.ContainerBase.onInsertedWidget(index, widget)
 }
 
-func (s *Splitter) onRemovingWidget(index int, widget Widget) (err os.Error) {
+func (s *Splitter) onRemovingWidget(index int, widget Widget) (err error) {
 	return s.ContainerBase.onRemovingWidget(index, widget)
 }
 
-func (s *Splitter) onRemovedWidget(index int, widget Widget) (err os.Error) {
+func (s *Splitter) onRemovedWidget(index int, widget Widget) (err error) {
 	_, isHandle := widget.(*splitterHandle)
 	if isHandle && s.children.Len()%2 == 1 {
 		return newError("cannot remove splitter handle")
@@ -350,10 +349,10 @@ func (s *Splitter) onRemovedWidget(index int, widget Widget) (err os.Error) {
 	return
 }
 
-func (s *Splitter) onClearingWidgets() (err os.Error) {
+func (s *Splitter) onClearingWidgets() (err error) {
 	panic("not implemented")
 }
 
-func (s *Splitter) onClearedWidgets() (err os.Error) {
+func (s *Splitter) onClearedWidgets() (err error) {
 	panic("not implemented")
 }

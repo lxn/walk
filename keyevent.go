@@ -10,17 +10,13 @@ type KeyEvent struct {
 	handlers []KeyEventHandler
 }
 
-func (e *KeyEvent) Attach(handler KeyEventHandler) {
+func (e *KeyEvent) Attach(handler KeyEventHandler) int {
 	e.handlers = append(e.handlers, handler)
+	return len(e.handlers) - 1
 }
 
-func (e *KeyEvent) Detach(handler KeyEventHandler) {
-	for i, h := range e.handlers {
-		if h == handler {
-			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
-			return
-		}
-	}
+func (e *KeyEvent) Detach(handle int) {
+	e.handlers = append(e.handlers[:handle], e.handlers[handle+1:]...)
 }
 
 type KeyEventPublisher struct {

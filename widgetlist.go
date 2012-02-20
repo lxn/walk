@@ -4,19 +4,15 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 type widgetListObserver interface {
-	onInsertingWidget(index int, widget Widget) os.Error
-	onInsertedWidget(index int, widget Widget) os.Error
-	onRemovingWidget(index int, widget Widget) os.Error
-	onRemovedWidget(index int, widget Widget) os.Error
-	onClearingWidgets() os.Error
-	onClearedWidgets() os.Error
+	onInsertingWidget(index int, widget Widget) error
+	onInsertedWidget(index int, widget Widget) error
+	onRemovingWidget(index int, widget Widget) error
+	onRemovedWidget(index int, widget Widget) error
+	onClearingWidgets() error
+	onClearedWidgets() error
 }
 
 type WidgetList struct {
@@ -28,7 +24,7 @@ func newWidgetList(observer widgetListObserver) *WidgetList {
 	return &WidgetList{observer: observer}
 }
 
-func (l *WidgetList) Add(item Widget) os.Error {
+func (l *WidgetList) Add(item Widget) error {
 	return l.Insert(len(l.items), item)
 }
 
@@ -36,7 +32,7 @@ func (l *WidgetList) At(index int) Widget {
 	return l.items[index]
 }
 
-func (l *WidgetList) Clear() os.Error {
+func (l *WidgetList) Clear() error {
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onClearingWidgets(); err != nil {
@@ -91,7 +87,7 @@ func (l *WidgetList) insertIntoSlice(index int, item Widget) {
 	l.items[index] = item
 }
 
-func (l *WidgetList) Insert(index int, item Widget) os.Error {
+func (l *WidgetList) Insert(index int, item Widget) error {
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onInsertingWidget(index, item); err != nil {
@@ -115,7 +111,7 @@ func (l *WidgetList) Len() int {
 	return len(l.items)
 }
 
-func (l *WidgetList) Remove(item Widget) os.Error {
+func (l *WidgetList) Remove(item Widget) error {
 	index := l.Index(item)
 	if index == -1 {
 		return nil
@@ -124,7 +120,7 @@ func (l *WidgetList) Remove(item Widget) os.Error {
 	return l.RemoveAt(index)
 }
 
-func (l *WidgetList) RemoveAt(index int) os.Error {
+func (l *WidgetList) RemoveAt(index int) error {
 	observer := l.observer
 	item := l.items[index]
 	if observer != nil {

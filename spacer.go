@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 const spacerWindowClass = `\o/ Walk_Spacer_Class \o/`
 
 var spacerWindowClassRegistered bool
@@ -18,7 +14,7 @@ type Spacer struct {
 	layoutFlags LayoutFlags
 }
 
-func newSpacer(parent Container, layoutFlags LayoutFlags, sizeHint Size) (*Spacer, os.Error) {
+func newSpacer(parent Container, layoutFlags LayoutFlags, sizeHint Size) (*Spacer, error) {
 	ensureRegisteredWindowClass(spacerWindowClass, &spacerWindowClassRegistered)
 
 	s := &Spacer{
@@ -38,19 +34,19 @@ func newSpacer(parent Container, layoutFlags LayoutFlags, sizeHint Size) (*Space
 	return s, nil
 }
 
-func NewHSpacer(parent Container) (*Spacer, os.Error) {
+func NewHSpacer(parent Container) (*Spacer, error) {
 	return newSpacer(parent, ShrinkableHorz|ShrinkableVert|GrowableHorz|GreedyHorz, Size{})
 }
 
-func NewHSpacerFixed(parent Container, width int) (*Spacer, os.Error) {
+func NewHSpacerFixed(parent Container, width int) (*Spacer, error) {
 	return newSpacer(parent, 0, Size{width, 0})
 }
 
-func NewVSpacer(parent Container) (*Spacer, os.Error) {
+func NewVSpacer(parent Container) (*Spacer, error) {
 	return newSpacer(parent, ShrinkableHorz|ShrinkableVert|GrowableVert|GreedyVert, Size{})
 }
 
-func NewVSpacerFixed(parent Container, height int) (*Spacer, os.Error) {
+func NewVSpacerFixed(parent Container, height int) (*Spacer, error) {
 	return newSpacer(parent, 0, Size{0, height})
 }
 

@@ -5,8 +5,7 @@
 package main
 
 import (
-	"os"
-	"rand"
+	"math/rand"
 	"strings"
 	"time"
 )
@@ -16,7 +15,7 @@ import "github.com/lxn/walk"
 type Foo struct {
 	Bar     string
 	Baz     float64
-	Quux    int64
+	Quux    time.Time
 	checked bool
 }
 
@@ -61,7 +60,7 @@ func (m *FooModel) Value(row, col int) interface{} {
 		return item.Baz
 
 	case 3:
-		return time.SecondsToLocalTime(item.Quux)
+		return item.Quux
 	}
 
 	panic("unexpected col")
@@ -84,7 +83,7 @@ func (m *FooModel) Checked(row int) bool {
 }
 
 // Called by the TableView when the user toggled the check box of a given row.
-func (m *FooModel) SetChecked(row int, checked bool) os.Error {
+func (m *FooModel) SetChecked(row int, checked bool) error {
 	m.items[row].checked = checked
 
 	return nil
@@ -94,13 +93,13 @@ func (m *FooModel) ResetRows() {
 	// Create some random data.
 	m.items = make([]*Foo, rand.Intn(50000))
 
-	now := time.Seconds()
+	now := time.Now()
 
 	for i := range m.items {
 		m.items[i] = &Foo{
 			Bar:  strings.Repeat("*", rand.Intn(5)+1),
 			Baz:  rand.Float64() * 1000,
-			Quux: rand.Int63n(now),
+			Quux: time.Unix(rand.Int63n(now.Unix()), 0),
 		}
 	}
 
@@ -117,7 +116,7 @@ func main() {
 	walk.Initialize(walk.InitParams{PanicOnError: true})
 	defer walk.Shutdown()
 
-	rand.Seed(time.Seconds())
+	rand.Seed(time.Now().UnixNano())
 
 	mainWnd, _ := walk.NewMainWindow()
 

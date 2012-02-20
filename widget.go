@@ -7,7 +7,6 @@ package walk
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -68,7 +67,7 @@ type Widget interface {
 	Bounds() Rectangle
 
 	// BringToTop moves the Widget to the top of the keyboard focus order.
-	BringToTop() os.Error
+	BringToTop() error
 
 	// ClientBounds returns the inner bounding box Rectangle of the Widget,
 	// excluding decorations.
@@ -84,7 +83,7 @@ type Widget interface {
 	//
 	// Remember to call the Dispose method on the canvas to release resources, 
 	// when you no longer need it. 
-	CreateCanvas() (*Canvas, os.Error)
+	CreateCanvas() (*Canvas, error)
 
 	// Cursor returns the Cursor of the Widget.
 	//
@@ -111,7 +110,7 @@ type Widget interface {
 	Height() int
 
 	// Invalidate schedules a full repaint of the Widget.
-	Invalidate() os.Error
+	Invalidate() error
 
 	// IsDisposed returns if the Widget has been disposed of.
 	IsDisposed() bool
@@ -175,11 +174,11 @@ type Widget interface {
 	// For a RootWidget, like *MainWindow or *Dialog, the Rectangle is in screen
 	// coordinates, for a child Widget the coordinates are relative to its 
 	// parent.
-	SetBounds(value Rectangle) os.Error
+	SetBounds(value Rectangle) error
 
 	// SetClientSize sets the Size of the inner bounding box of the Widget,
 	// excluding decorations.
-	SetClientSize(value Size) os.Error
+	SetClientSize(value Size) error
 
 	// SetContextMenu sets the context menu of the Widget.
 	SetContextMenu(value *Menu)
@@ -191,19 +190,19 @@ type Widget interface {
 	SetEnabled(value bool)
 
 	// SetFocus sets the keyboard input focus to the Widget.
-	SetFocus() os.Error
+	SetFocus() error
 
 	// SetFont sets the *Font of the Widget.
 	SetFont(value *Font)
 
 	// SetHeight sets the outer height of the Widget, including decorations.
-	SetHeight(value int) os.Error
+	SetHeight(value int) error
 
 	// SetMinMaxSize sets the minimum and maximum outer Size of the Widget,
 	// including decorations.
 	//
 	// Use walk.Size{} to make the respective limit be ignored.
-	SetMinMaxSize(min, max Size) os.Error
+	SetMinMaxSize(min, max Size) error
 
 	// SetName sets the name of the Widget.
 	//
@@ -214,10 +213,10 @@ type Widget interface {
 
 	// SetParent sets the parent of the Widget and adds the Widget to the 
 	// Children list of the Container.
-	SetParent(value Container) os.Error
+	SetParent(value Container) error
 
 	// SetSize sets the outer Size of the Widget, including decorations.
-	SetSize(value Size) os.Error
+	SetSize(value Size) error
 
 	// SetSuspended sets if the Widget is suspended for layout and repainting 
 	// purposes.
@@ -231,17 +230,17 @@ type Widget interface {
 	SetVisible(value bool)
 
 	// SetWidth sets the outer width of the Widget, including decorations.
-	SetWidth(value int) os.Error
+	SetWidth(value int) error
 
 	// SetX sets the x coordinate of the Widget, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
 	// child Widgets.
-	SetX(value int) os.Error
+	SetX(value int) error
 
 	// SetY sets the y coordinate of the Widget, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
 	// child Widgets.
-	SetY(value int) os.Error
+	SetY(value int) error
 
 	// Size returns the outer Size of the Widget, including decorations.
 	Size() Size
@@ -351,7 +350,7 @@ func ensureRegisteredWindowClass(className string, registered *bool) {
 	*registered = true
 }
 
-func initWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint32) os.Error {
+func initWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint32) error {
 	wb := widget.BaseWidget()
 	wb.widget = widget
 
@@ -408,7 +407,7 @@ func initWidget(widget widgetInternal, parent Widget, className string, style, e
 	return nil
 }
 
-func initChildWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint32) os.Error {
+func initChildWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint32) error {
 	if parent == nil {
 		return newError("parent cannot be nil")
 	}
@@ -450,7 +449,7 @@ func (wb *WidgetBase) hasStyleBits(bits uint) bool {
 	return style&bits == bits
 }
 
-func (wb *WidgetBase) setAndClearStyleBits(set, clear uint32) os.Error {
+func (wb *WidgetBase) setAndClearStyleBits(set, clear uint32) error {
 	style := uint32(GetWindowLong(wb.hWnd, GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
@@ -469,7 +468,7 @@ func (wb *WidgetBase) setAndClearStyleBits(set, clear uint32) os.Error {
 	return nil
 }
 
-func (wb *WidgetBase) ensureStyleBits(bits uint32, set bool) os.Error {
+func (wb *WidgetBase) ensureStyleBits(bits uint32, set bool) error {
 	var setBits uint32
 	var clearBits uint32
 	if set {
@@ -634,7 +633,7 @@ func (wb *WidgetBase) SetSuspended(suspend bool) {
 }
 
 // Invalidate schedules a full repaint of the *WidgetBase.
-func (wb *WidgetBase) Invalidate() os.Error {
+func (wb *WidgetBase) Invalidate() error {
 	if !InvalidateRect(wb.hWnd, nil, true) {
 		return newError("InvalidateRect failed")
 	}
@@ -651,7 +650,7 @@ func (wb *WidgetBase) Parent() Container {
 
 // SetParent sets the parent of the *WidgetBase and adds the *WidgetBase to the 
 // Children list of the Container.
-func (wb *WidgetBase) SetParent(value Container) (err os.Error) {
+func (wb *WidgetBase) SetParent(value Container) (err error) {
 	if value == wb.parent {
 		return nil
 	}
@@ -721,7 +720,7 @@ func widgetText(hwnd HWND) string {
 	return syscall.UTF16ToString(buf)
 }
 
-func setWidgetText(hwnd HWND, text string) os.Error {
+func setWidgetText(hwnd HWND, text string) error {
 	if TRUE != SendMessage(hwnd, WM_SETTEXT, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text)))) {
 		return newError("WM_SETTEXT failed")
 	}
@@ -750,7 +749,7 @@ func (wb *WidgetBase) SetVisible(visible bool) {
 }
 
 // BringToTop moves the *WidgetBase to the top of the keyboard focus order.
-func (wb *WidgetBase) BringToTop() os.Error {
+func (wb *WidgetBase) BringToTop() error {
 	if wb.parent != nil {
 		if err := wb.parent.BringToTop(); err != nil {
 			return err
@@ -802,7 +801,7 @@ func (wb *WidgetBase) Bounds() Rectangle {
 //
 // For a RootWidget, like *MainWindow or *Dialog, the Rectangle is in screen
 // coordinates, for a child Widget the coordinates are relative to its parent.
-func (wb *WidgetBase) SetBounds(bounds Rectangle) os.Error {
+func (wb *WidgetBase) SetBounds(bounds Rectangle) error {
 	if !MoveWindow(
 		wb.hWnd,
 		int32(bounds.X),
@@ -839,7 +838,7 @@ func (wb *WidgetBase) MaxSize() Size {
 // including decorations.
 //
 // Use walk.Size{} to make the respective limit be ignored.
-func (wb *WidgetBase) SetMinMaxSize(min, max Size) os.Error {
+func (wb *WidgetBase) SetMinMaxSize(min, max Size) error {
 	if min.Width < 0 || min.Height < 0 {
 		return newError("min must be positive")
 	}
@@ -941,7 +940,7 @@ func (wb *WidgetBase) calculateTextSize() Size {
 	return size
 }
 
-func (wb *WidgetBase) updateParentLayout() os.Error {
+func (wb *WidgetBase) updateParentLayout() error {
 	if wb.parent == nil || wb.parent.Layout() == nil {
 		return nil
 	}
@@ -955,7 +954,7 @@ func (wb *WidgetBase) Size() Size {
 }
 
 // SetSize sets the outer Size of the *WidgetBase, including decorations.
-func (wb *WidgetBase) SetSize(size Size) os.Error {
+func (wb *WidgetBase) SetSize(size Size) error {
 	bounds := wb.Bounds()
 
 	return wb.SetBounds(bounds.SetSize(size))
@@ -971,7 +970,7 @@ func (wb *WidgetBase) X() int {
 // SetX sets the x coordinate of the *WidgetBase, relative to the screen for
 // RootWidgets like *MainWindow or *Dialog and relative to the parent for 
 // child Widgets.
-func (wb *WidgetBase) SetX(value int) os.Error {
+func (wb *WidgetBase) SetX(value int) error {
 	bounds := wb.Bounds()
 	bounds.X = value
 
@@ -988,7 +987,7 @@ func (wb *WidgetBase) Y() int {
 // SetY sets the y coordinate of the *WidgetBase, relative to the screen for
 // RootWidgets like *MainWindow or *Dialog and relative to the parent for 
 // child Widgets.
-func (wb *WidgetBase) SetY(value int) os.Error {
+func (wb *WidgetBase) SetY(value int) error {
 	bounds := wb.Bounds()
 	bounds.Y = value
 
@@ -1001,7 +1000,7 @@ func (wb *WidgetBase) Width() int {
 }
 
 // SetWidth sets the outer width of the *WidgetBase, including decorations.
-func (wb *WidgetBase) SetWidth(value int) os.Error {
+func (wb *WidgetBase) SetWidth(value int) error {
 	bounds := wb.Bounds()
 	bounds.Width = value
 
@@ -1014,7 +1013,7 @@ func (wb *WidgetBase) Height() int {
 }
 
 // SetHeight sets the outer height of the *WidgetBase, including decorations.
-func (wb *WidgetBase) SetHeight(value int) os.Error {
+func (wb *WidgetBase) SetHeight(value int) error {
 	bounds := wb.Bounds()
 	bounds.Height = value
 
@@ -1053,12 +1052,12 @@ func (wb *WidgetBase) sizeFromClientSize(clientSize Size) Size {
 
 // SetClientSize sets the Size of the inner bounding box of the *WidgetBase,
 // excluding decorations.
-func (wb *WidgetBase) SetClientSize(value Size) os.Error {
+func (wb *WidgetBase) SetClientSize(value Size) error {
 	return wb.SetSize(wb.sizeFromClientSize(value))
 }
 
 // SetFocus sets the keyboard input focus to the *WidgetBase.
-func (wb *WidgetBase) SetFocus() os.Error {
+func (wb *WidgetBase) SetFocus() error {
 	if SetFocus(wb.hWnd) == 0 {
 		return lastError("SetFocus")
 	}
@@ -1071,11 +1070,11 @@ func (wb *WidgetBase) SetFocus() os.Error {
 //
 // Remember to call the Dispose method on the canvas to release resources, 
 // when you no longer need it. 
-func (wb *WidgetBase) CreateCanvas() (*Canvas, os.Error) {
+func (wb *WidgetBase) CreateCanvas() (*Canvas, error) {
 	return newCanvasFromHWND(wb.hWnd)
 }
 
-func (wb *WidgetBase) setTheme(appName string) os.Error {
+func (wb *WidgetBase) setTheme(appName string) error {
 	if hr := SetWindowTheme(wb.hWnd, syscall.StringToUTF16Ptr(appName), nil); FAILED(hr) {
 		return errorFromHRESULT("SetWindowTheme", hr)
 	}
@@ -1134,7 +1133,7 @@ func (wb *WidgetBase) persistState(restore bool) {
 	}
 }
 
-func (wb *WidgetBase) getState() (string, os.Error) {
+func (wb *WidgetBase) getState() (string, error) {
 	settings := appSingleton.settings
 	if settings == nil {
 		return "", newError("App().Settings() must not be nil")
@@ -1144,7 +1143,7 @@ func (wb *WidgetBase) getState() (string, os.Error) {
 	return state, nil
 }
 
-func (wb *WidgetBase) putState(state string) os.Error {
+func (wb *WidgetBase) putState(state string) error {
 	settings := appSingleton.settings
 	if settings == nil {
 		return newError("App().Settings() must not be nil")
@@ -1167,9 +1166,9 @@ func widgetFromHWND(hwnd HWND) widgetInternal {
 func widgetWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) (result uintptr) {
 	defer func() {
 		if len(appSingleton.panickingPublisher.event.handlers) > 0 {
-			var err os.Error
+			var err error
 			if x := recover(); x != nil {
-				if e, ok := x.(os.Error); ok {
+				if e, ok := x.(error); ok {
 					err = wrapErrorNoPanic(e)
 				} else {
 					err = newErrorNoPanic(fmt.Sprint(x))

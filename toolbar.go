@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -23,7 +22,7 @@ type ToolBar struct {
 	maxTextRows        int
 }
 
-func newToolBar(parent Container, style uint32) (*ToolBar, os.Error) {
+func newToolBar(parent Container, style uint32) (*ToolBar, error) {
 	tb := &ToolBar{}
 	tb.actions = newActionList(tb)
 
@@ -39,11 +38,11 @@ func newToolBar(parent Container, style uint32) (*ToolBar, os.Error) {
 	return tb, nil
 }
 
-func NewToolBar(parent Container) (*ToolBar, os.Error) {
+func NewToolBar(parent Container) (*ToolBar, error) {
 	return newToolBar(parent, TBSTYLE_WRAPABLE)
 }
 
-func NewVerticalToolBar(parent Container) (*ToolBar, os.Error) {
+func NewVerticalToolBar(parent Container) (*ToolBar, error) {
 	tb, err := newToolBar(parent, CCS_VERT|CCS_NORESIZE)
 	if err != nil {
 		return nil, err
@@ -91,7 +90,7 @@ func (tb *ToolBar) SizeHint() Size {
 	return Size{width, height}
 }
 
-func (tb *ToolBar) applyDefaultButtonWidth() os.Error {
+func (tb *ToolBar) applyDefaultButtonWidth() error {
 	if tb.defaultButtonWidth == 0 {
 		return nil
 	}
@@ -126,7 +125,7 @@ func (tb *ToolBar) DefaultButtonWidth() int {
 // Calling this method affects all buttons in the ToolBar, no matter if they are 
 // added before or after the call. A width of 0 results in automatic sizing 
 // behavior. Negative values are not allowed.
-func (tb *ToolBar) SetDefaultButtonWidth(width int) os.Error {
+func (tb *ToolBar) SetDefaultButtonWidth(width int) error {
 	if width == tb.defaultButtonWidth {
 		return nil
 	}
@@ -154,7 +153,7 @@ func (tb *ToolBar) MaxTextRows() int {
 	return tb.maxTextRows
 }
 
-func (tb *ToolBar) SetMaxTextRows(maxTextRows int) os.Error {
+func (tb *ToolBar) SetMaxTextRows(maxTextRows int) error {
 	if 0 == SendMessage(tb.hWnd, TB_SETMAXTEXTROWS, uintptr(maxTextRows), 0) {
 		return newError("SendMessage(TB_SETMAXTEXTROWS)")
 	}
@@ -184,7 +183,7 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 	tb.imageList = value
 }
 
-func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err os.Error) {
+func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
 	imageIndex = -1
 	if image != nil {
 		// FIXME: Protect against duplicate insertion
@@ -213,7 +212,7 @@ func (tb *ToolBar) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 	return tb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
 
-func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image *int32, text *uintptr) (err os.Error) {
+func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image *int32, text *uintptr) (err error) {
 	if tb.hasStyleBits(CCS_VERT) {
 		*state |= TBSTATE_WRAP
 	} else if tb.defaultButtonWidth == 0 {
@@ -245,7 +244,7 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 	return
 }
 
-func (tb *ToolBar) onActionChanged(action *Action) os.Error {
+func (tb *ToolBar) onActionChanged(action *Action) error {
 	tbbi := TBBUTTONINFO{
 		DwMask: TBIF_IMAGE | TBIF_STATE | TBIF_STYLE | TBIF_TEXT,
 	}
@@ -274,7 +273,7 @@ func (tb *ToolBar) onActionChanged(action *Action) os.Error {
 	return nil
 }
 
-func (tb *ToolBar) onInsertingAction(index int, action *Action) os.Error {
+func (tb *ToolBar) onInsertingAction(index int, action *Action) error {
 	tbb := TBBUTTON{
 		IdCommand: int32(action.id),
 	}
@@ -308,7 +307,7 @@ func (tb *ToolBar) onInsertingAction(index int, action *Action) os.Error {
 	return nil
 }
 
-func (tb *ToolBar) removeAt(index int) os.Error {
+func (tb *ToolBar) removeAt(index int) error {
 	action := tb.actions.At(index)
 	action.removeChangedHandler(tb)
 
@@ -319,11 +318,11 @@ func (tb *ToolBar) removeAt(index int) os.Error {
 	return nil
 }
 
-func (tb *ToolBar) onRemovingAction(index int, action *Action) os.Error {
+func (tb *ToolBar) onRemovingAction(index int, action *Action) error {
 	return tb.removeAt(index)
 }
 
-func (tb *ToolBar) onClearingActions() os.Error {
+func (tb *ToolBar) onClearingActions() error {
 	for i := tb.actions.Len() - 1; i >= 0; i-- {
 		if err := tb.removeAt(i); err != nil {
 			return err

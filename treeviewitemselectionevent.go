@@ -10,17 +10,13 @@ type TreeViewItemSelectionEvent struct {
 	handlers []TreeViewItemSelectionEventHandler
 }
 
-func (e *TreeViewItemSelectionEvent) Attach(handler TreeViewItemSelectionEventHandler) {
+func (e *TreeViewItemSelectionEvent) Attach(handler TreeViewItemSelectionEventHandler) int {
 	e.handlers = append(e.handlers, handler)
+	return len(e.handlers) - 1
 }
 
-func (e *TreeViewItemSelectionEvent) Detach(handler TreeViewItemSelectionEventHandler) {
-	for i, h := range e.handlers {
-		if h == handler {
-			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
-			return
-		}
-	}
+func (e *TreeViewItemSelectionEvent) Detach(handle int) {
+	e.handlers = append(e.handlers[:handle], e.handlers[handle+1:]...)
 }
 
 type TreeViewItemSelectionEventPublisher struct {

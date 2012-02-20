@@ -18,17 +18,13 @@ type MouseEvent struct {
 	handlers []MouseEventHandler
 }
 
-func (e *MouseEvent) Attach(handler MouseEventHandler) {
+func (e *MouseEvent) Attach(handler MouseEventHandler) int {
 	e.handlers = append(e.handlers, handler)
+	return len(e.handlers) - 1
 }
 
-func (e *MouseEvent) Detach(handler MouseEventHandler) {
-	for i, h := range e.handlers {
-		if h == handler {
-			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
-			return
-		}
-	}
+func (e *MouseEvent) Detach(handle int) {
+	e.handlers = append(e.handlers[:handle], e.handlers[handle+1:]...)
 }
 
 type MouseEventPublisher struct {

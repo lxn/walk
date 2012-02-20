@@ -4,14 +4,10 @@
 
 package walk
 
-import (
-	"os"
-)
-
 type actionListObserver interface {
-	onInsertingAction(index int, action *Action) os.Error
-	onRemovingAction(index int, action *Action) os.Error
-	onClearingActions() os.Error
+	onInsertingAction(index int, action *Action) error
+	onRemovingAction(index int, action *Action) error
+	onClearingActions() error
 }
 
 type ActionList struct {
@@ -23,11 +19,11 @@ func newActionList(observer actionListObserver) *ActionList {
 	return &ActionList{observer: observer}
 }
 
-func (l *ActionList) Add(action *Action) os.Error {
+func (l *ActionList) Add(action *Action) error {
 	return l.Insert(len(l.actions), action)
 }
 
-func (l *ActionList) AddMenu(menu *Menu) (*Action, os.Error) {
+func (l *ActionList) AddMenu(menu *Menu) (*Action, error) {
 	return l.InsertMenu(len(l.actions), menu)
 }
 
@@ -35,7 +31,7 @@ func (l *ActionList) At(index int) *Action {
 	return l.actions[index]
 }
 
-func (l *ActionList) Clear() os.Error {
+func (l *ActionList) Clear() error {
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onClearingActions(); err != nil {
@@ -62,7 +58,7 @@ func (l *ActionList) Index(action *Action) int {
 	return -1
 }
 
-func (l *ActionList) Insert(index int, action *Action) os.Error {
+func (l *ActionList) Insert(index int, action *Action) error {
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onInsertingAction(index, action); err != nil {
@@ -77,7 +73,7 @@ func (l *ActionList) Insert(index int, action *Action) os.Error {
 	return nil
 }
 
-func (l *ActionList) InsertMenu(index int, menu *Menu) (*Action, os.Error) {
+func (l *ActionList) InsertMenu(index int, menu *Menu) (*Action, error) {
 	action := NewAction()
 	action.menu = menu
 
@@ -92,7 +88,7 @@ func (l *ActionList) Len() int {
 	return len(l.actions)
 }
 
-func (l *ActionList) Remove(action *Action) os.Error {
+func (l *ActionList) Remove(action *Action) error {
 	index := l.Index(action)
 	if index == -1 {
 		return nil
@@ -101,7 +97,7 @@ func (l *ActionList) Remove(action *Action) os.Error {
 	return l.RemoveAt(index)
 }
 
-func (l *ActionList) RemoveAt(index int) os.Error {
+func (l *ActionList) RemoveAt(index int) error {
 	observer := l.observer
 	if observer != nil {
 		action := l.actions[index]

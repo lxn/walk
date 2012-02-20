@@ -4,21 +4,18 @@
 
 package walk
 
-import (
-	"os"
-	"strings"
-)
+import "strings"
 
 import . "github.com/lxn/go-winapi"
 
 type Image interface {
-	draw(hdc HDC, location Point) os.Error
-	drawStretched(hdc HDC, bounds Rectangle) os.Error
+	draw(hdc HDC, location Point) error
+	drawStretched(hdc HDC, bounds Rectangle) error
 	Dispose()
 	Size() Size
 }
 
-func NewImageFromFile(filePath string) (Image, os.Error) {
+func NewImageFromFile(filePath string) (Image, error) {
 	if strings.HasSuffix(filePath, ".emf") {
 		return NewMetafileFromFile(filePath)
 	}

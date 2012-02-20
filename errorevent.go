@@ -4,27 +4,19 @@
 
 package walk
 
-import (
-	"os"
-)
-
-type ErrorEventHandler func(err os.Error)
+type ErrorEventHandler func(err error)
 
 type ErrorEvent struct {
 	handlers []ErrorEventHandler
 }
 
-func (e *ErrorEvent) Attach(handler ErrorEventHandler) {
+func (e *ErrorEvent) Attach(handler ErrorEventHandler) int {
 	e.handlers = append(e.handlers, handler)
+	return len(e.handlers) - 1
 }
 
-func (e *ErrorEvent) Detach(handler ErrorEventHandler) {
-	for i, h := range e.handlers {
-		if h == handler {
-			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
-			return
-		}
-	}
+func (e *ErrorEvent) Detach(handle int) {
+	e.handlers = append(e.handlers[:handle], e.handlers[handle+1:]...)
 }
 
 type ErrorEventPublisher struct {
@@ -35,7 +27,7 @@ func (p *ErrorEventPublisher) Event() *ErrorEvent {
 	return &p.event
 }
 
-func (p *ErrorEventPublisher) Publish(err os.Error) {
+func (p *ErrorEventPublisher) Publish(err error) {
 	for _, handler := range p.event.handlers {
 		handler(err)
 	}

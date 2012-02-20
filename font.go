@@ -4,10 +4,7 @@
 
 package walk
 
-import (
-	"os"
-	"syscall"
-)
+import "syscall"
 
 import . "github.com/lxn/go-winapi"
 
@@ -35,7 +32,7 @@ func init() {
 	screenDPIY = int(GetDeviceCaps(hDC, LOGPIXELSY))
 
 	// Initialize default font
-	var err os.Error
+	var err error
 	if defaultFont, err = NewFont("MS Shell Dlg 2", 8, 0); err != nil {
 		panic("failed to create default font")
 	}
@@ -51,7 +48,7 @@ type Font struct {
 }
 
 // NewFont returns a new Font with the specified attributes.
-func NewFont(family string, pointSize int, style FontStyle) (*Font, os.Error) {
+func NewFont(family string, pointSize int, style FontStyle) (*Font, error) {
 	if style > FontBold|FontItalic|FontUnderline|FontStrikeOut {
 		return nil, newError("invalid style")
 	}
@@ -74,7 +71,7 @@ func NewFont(family string, pointSize int, style FontStyle) (*Font, os.Error) {
 	return font, nil
 }
 
-func newFontFromLOGFONT(lf *LOGFONT, dpi int) (*Font, os.Error) {
+func newFontFromLOGFONT(lf *LOGFONT, dpi int) (*Font, error) {
 	if lf == nil {
 		return nil, newError("lf cannot be nil")
 	}
@@ -149,7 +146,7 @@ func (f *Font) Dispose() {
 			DeleteObject(HGDIOBJ(hFont))
 		}
 
-		f.dpi2hFont[dpi] = 0, false
+		delete(f.dpi2hFont, dpi)
 	}
 }
 

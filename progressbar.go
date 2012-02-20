@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 var progressBarOrigWndProcPtr uintptr
@@ -17,7 +13,7 @@ type ProgressBar struct {
 	WidgetBase
 }
 
-func NewProgressBar(parent Container) (*ProgressBar, os.Error) {
+func NewProgressBar(parent Container) (*ProgressBar, error) {
 	pb := &ProgressBar{}
 
 	if err := initChildWidget(

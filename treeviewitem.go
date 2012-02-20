@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 type TreeViewItem struct {
@@ -38,7 +34,7 @@ func (tvi *TreeViewItem) Text() string {
 	return tvi.text
 }
 
-func (tvi *TreeViewItem) SetText(value string) os.Error {
+func (tvi *TreeViewItem) SetText(value string) error {
 	tvi.text = value
 
 	return nil

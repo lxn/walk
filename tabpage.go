@@ -4,10 +4,7 @@
 
 package walk
 
-import (
-	"os"
-	"syscall"
-)
+import "syscall"
 
 import . "github.com/lxn/go-winapi"
 
@@ -21,7 +18,7 @@ type TabPage struct {
 	tabWidget *TabWidget
 }
 
-func NewTabPage() (*TabPage, os.Error) {
+func NewTabPage() (*TabPage, error) {
 	ensureRegisteredWindowClass(tabPageWindowClass, &tabPageWindowClassRegistered)
 
 	tp := &TabPage{}
@@ -48,7 +45,7 @@ func (tp *TabPage) Title() string {
 	return tp.title
 }
 
-func (tp *TabPage) SetTitle(value string) os.Error {
+func (tp *TabPage) SetTitle(value string) error {
 	tp.title = value
 
 	if tp.tabWidget == nil {

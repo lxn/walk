@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -18,7 +17,7 @@ type Metafile struct {
 	size Size
 }
 
-func NewMetafile(referenceCanvas *Canvas) (*Metafile, os.Error) {
+func NewMetafile(referenceCanvas *Canvas) (*Metafile, error) {
 	hdc := CreateEnhMetaFile(referenceCanvas.hdc, nil, nil, nil)
 	if hdc == 0 {
 		return nil, newError("CreateEnhMetaFile failed")
@@ -27,7 +26,7 @@ func NewMetafile(referenceCanvas *Canvas) (*Metafile, os.Error) {
 	return &Metafile{hdc: hdc}, nil
 }
 
-func NewMetafileFromFile(filePath string) (*Metafile, os.Error) {
+func NewMetafileFromFile(filePath string) (*Metafile, error) {
 	hemf := GetEnhMetaFile(syscall.StringToUTF16Ptr(filePath))
 	if hemf == 0 {
 		return nil, newError("GetEnhMetaFile failed")
@@ -53,7 +52,7 @@ func (mf *Metafile) Dispose() {
 	}
 }
 
-func (mf *Metafile) Save(filePath string) os.Error {
+func (mf *Metafile) Save(filePath string) error {
 	hemf := CopyEnhMetaFile(mf.hemf, syscall.StringToUTF16Ptr(filePath))
 	if hemf == 0 {
 		return newError("CopyEnhMetaFile failed")
@@ -64,7 +63,7 @@ func (mf *Metafile) Save(filePath string) os.Error {
 	return nil
 }
 
-func (mf *Metafile) readSizeFromHeader() os.Error {
+func (mf *Metafile) readSizeFromHeader() error {
 	var hdr ENHMETAHEADER
 
 	if GetEnhMetaFileHeader(mf.hemf, uint32(unsafe.Sizeof(hdr)), &hdr) == 0 {
@@ -79,7 +78,7 @@ func (mf *Metafile) readSizeFromHeader() os.Error {
 	return nil
 }
 
-func (mf *Metafile) ensureFinished() os.Error {
+func (mf *Metafile) ensureFinished() error {
 	if mf.hdc == 0 {
 		if mf.hemf == 0 {
 			return newError("already disposed")
@@ -102,11 +101,11 @@ func (mf *Metafile) Size() Size {
 	return mf.size
 }
 
-func (mf *Metafile) draw(hdc HDC, location Point) os.Error {
+func (mf *Metafile) draw(hdc HDC, location Point) error {
 	return mf.drawStretched(hdc, Rectangle{location.X, location.Y, mf.size.Width, mf.size.Height})
 }
 
-func (mf *Metafile) drawStretched(hdc HDC, bounds Rectangle) os.Error {
+func (mf *Metafile) drawStretched(hdc HDC, bounds Rectangle) error {
 	rc := bounds.toRECT()
 
 	if !PlayEnhMetaFile(hdc, mf.hemf, &rc) {

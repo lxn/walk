@@ -4,10 +4,7 @@
 
 package walk
 
-import (
-	"os"
-	"unsafe"
-)
+import "unsafe"
 
 import . "github.com/lxn/go-winapi"
 
@@ -18,7 +15,7 @@ type PushButton struct {
 	Button
 }
 
-func NewPushButton(parent Container) (*PushButton, os.Error) {
+func NewPushButton(parent Container) (*PushButton, error) {
 	pb := &PushButton{}
 
 	if err := initChildWidget(

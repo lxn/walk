@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -18,7 +17,7 @@ type Menu struct {
 	actions *ActionList
 }
 
-func newMenuBar() (*Menu, os.Error) {
+func newMenuBar() (*Menu, error) {
 	hMenu := CreateMenu()
 	if hMenu == 0 {
 		return nil, lastError("CreateMenu")
@@ -30,7 +29,7 @@ func newMenuBar() (*Menu, os.Error) {
 	return m, nil
 }
 
-func NewMenu() (*Menu, os.Error) {
+func NewMenu() (*Menu, error) {
 	hMenu := CreatePopupMenu()
 	if hMenu == 0 {
 		return nil, lastError("CreatePopupMenu")
@@ -83,7 +82,7 @@ func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 	} else {
 		mii.FType = MFT_STRING
 		mii.DwTypeData = syscall.StringToUTF16Ptr(action.text)
-		mii.Cch = uint32(len([]int(action.text)))
+		mii.Cch = uint32(len([]rune(action.text)))
 	}
 	mii.WID = uint32(action.id)
 
@@ -100,7 +99,7 @@ func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 	}
 }
 
-func (m *Menu) onActionChanged(action *Action) os.Error {
+func (m *Menu) onActionChanged(action *Action) error {
 	var mii MENUITEMINFO
 
 	m.initMenuItemInfoFromAction(&mii, action)
@@ -112,7 +111,7 @@ func (m *Menu) onActionChanged(action *Action) os.Error {
 	return nil
 }
 
-func (m *Menu) onInsertingAction(index int, action *Action) os.Error {
+func (m *Menu) onInsertingAction(index int, action *Action) error {
 	var mii MENUITEMINFO
 
 	m.initMenuItemInfoFromAction(&mii, action)
@@ -135,7 +134,7 @@ func (m *Menu) onInsertingAction(index int, action *Action) os.Error {
 	return nil
 }
 
-func (m *Menu) onRemovingAction(index int, action *Action) os.Error {
+func (m *Menu) onRemovingAction(index int, action *Action) error {
 	if !RemoveMenu(m.hMenu, uint32(index), MF_BYPOSITION) {
 		return lastError("RemoveMenu")
 	}
@@ -149,7 +148,7 @@ func (m *Menu) onRemovingAction(index int, action *Action) os.Error {
 	return nil
 }
 
-func (m *Menu) onClearingActions() os.Error {
+func (m *Menu) onClearingActions() error {
 	for i := m.actions.Len() - 1; i >= 0; i-- {
 		if !RemoveMenu(m.hMenu, uint32(i), MF_BYPOSITION) {
 			return lastError("RemoveMenu")

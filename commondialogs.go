@@ -6,7 +6,6 @@ package walk
 
 import (
 	"fmt"
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -21,7 +20,7 @@ type FileDialog struct {
 	FilterIndex    int
 }
 
-func (dlg *FileDialog) show(owner RootWidget, fun func(ofn *OPENFILENAME) bool) (accepted bool, err os.Error) {
+func (dlg *FileDialog) show(owner RootWidget, fun func(ofn *OPENFILENAME) bool) (accepted bool, err error) {
 	ofn := &OPENFILENAME{}
 
 	ofn.LStructSize = uint32(unsafe.Sizeof(*ofn))
@@ -62,10 +61,10 @@ func (dlg *FileDialog) show(owner RootWidget, fun func(ofn *OPENFILENAME) bool) 
 	return
 }
 
-func (dlg *FileDialog) ShowOpen(owner RootWidget) (accepted bool, err os.Error) {
+func (dlg *FileDialog) ShowOpen(owner RootWidget) (accepted bool, err error) {
 	return dlg.show(owner, GetOpenFileName)
 }
 
-func (dlg *FileDialog) ShowSave(owner RootWidget) (accepted bool, err os.Error) {
+func (dlg *FileDialog) ShowSave(owner RootWidget) (accepted bool, err error) {
 	return dlg.show(owner, GetSaveFileName)
 }

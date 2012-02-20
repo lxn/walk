@@ -4,10 +4,6 @@
 
 package walk
 
-import (
-	"os"
-)
-
 import . "github.com/lxn/go-winapi"
 
 type clickable interface {
@@ -23,7 +19,7 @@ func (b *Button) Text() string {
 	return widgetText(b.hWnd)
 }
 
-func (b *Button) SetText(value string) os.Error {
+func (b *Button) SetText(value string) error {
 	if value == b.Text() {
 		return nil
 	}

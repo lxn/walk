@@ -4,10 +4,7 @@
 
 package walk
 
-import (
-	"os"
-	"sort"
-)
+import "sort"
 
 import . "github.com/lxn/go-winapi"
 
@@ -65,7 +62,7 @@ func (l *GridLayout) Margins() Margins {
 	return l.margins
 }
 
-func (l *GridLayout) SetMargins(value Margins) os.Error {
+func (l *GridLayout) SetMargins(value Margins) error {
 	if value.HNear < 0 || value.VNear < 0 || value.HFar < 0 || value.VFar < 0 {
 		return newError("margins must be positive")
 	}
@@ -79,7 +76,7 @@ func (l *GridLayout) Spacing() int {
 	return l.spacing
 }
 
-func (l *GridLayout) SetSpacing(value int) os.Error {
+func (l *GridLayout) SetSpacing(value int) error {
 	if value != l.spacing {
 		if value < 0 {
 			return newError("spacing cannot be negative")
@@ -157,7 +154,7 @@ func (l *GridLayout) RowStretchFactor(row int) int {
 	return l.rowStretchFactors[row]
 }
 
-func (l *GridLayout) SetRowStretchFactor(row, factor int) os.Error {
+func (l *GridLayout) SetRowStretchFactor(row, factor int) error {
 	if row < 0 {
 		return newError("row must be >= 0")
 	}
@@ -193,7 +190,7 @@ func (l *GridLayout) ColumnStretchFactor(column int) int {
 	return l.columnStretchFactors[column]
 }
 
-func (l *GridLayout) SetColumnStretchFactor(column, factor int) os.Error {
+func (l *GridLayout) SetColumnStretchFactor(column, factor int) error {
 	if column < 0 {
 		return newError("column must be >= 0")
 	}
@@ -232,7 +229,7 @@ func (l *GridLayout) Location(widget Widget) (row, column int, ok bool) {
 	return cell.row, cell.column, true
 }
 
-func (l *GridLayout) SetLocation(widget Widget, row, column int) os.Error {
+func (l *GridLayout) SetLocation(widget Widget, row, column int) error {
 	if widget == nil {
 		return newError("widget required")
 	}
@@ -263,7 +260,7 @@ func (l *GridLayout) cleanup() {
 	children := l.container.Children()
 	for widget, cell := range l.widget2Cell {
 		if !children.containsHandle(widget.BaseWidget().hWnd) {
-			l.widget2Cell[widget] = nil, false
+			delete(l.widget2Cell, widget)
 			cell.widget = nil
 		}
 	}
@@ -377,7 +374,7 @@ func (l gridLayoutSectionInfoList) Swap(i, j int) {
 	l[i], l[j] = l[j], l[i]
 }
 
-func (l *GridLayout) Update(reset bool) os.Error {
+func (l *GridLayout) Update(reset bool) error {
 	if l.container == nil {
 		return newError("container required")
 	}

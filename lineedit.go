@@ -5,7 +5,6 @@
 package walk
 
 import (
-	"os"
 	"syscall"
 	"unsafe"
 )
@@ -23,7 +22,7 @@ type LineEdit struct {
 	textChanged              EventPublisher
 }
 
-func newLineEdit(parent Widget) (*LineEdit, os.Error) {
+func newLineEdit(parent Widget) (*LineEdit, error) {
 	le := &LineEdit{}
 
 	if err := initWidget(
@@ -38,7 +37,7 @@ func newLineEdit(parent Widget) (*LineEdit, os.Error) {
 	return le, nil
 }
 
-func NewLineEdit(parent Container) (*LineEdit, os.Error) {
+func NewLineEdit(parent Container) (*LineEdit, error) {
 	if parent == nil {
 		return nil, newError("parent cannot be nil")
 	}
@@ -83,7 +82,7 @@ func (le *LineEdit) CueBanner() string {
 	return syscall.UTF16ToString(buf)
 }
 
-func (le *LineEdit) SetCueBanner(value string) os.Error {
+func (le *LineEdit) SetCueBanner(value string) error {
 	if FALSE == SendMessage(le.hWnd, EM_SETCUEBANNER, FALSE, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value)))) {
 		return newError("EM_SETCUEBANNER failed")
 	}
@@ -103,7 +102,7 @@ func (le *LineEdit) Text() string {
 	return widgetText(le.hWnd)
 }
 
-func (le *LineEdit) SetText(value string) os.Error {
+func (le *LineEdit) SetText(value string) error {
 	return setWidgetText(le.hWnd, value)
 }
 
@@ -128,7 +127,7 @@ func (le *LineEdit) ReadOnly() bool {
 	return le.hasStyleBits(ES_READONLY)
 }
 
-func (le *LineEdit) SetReadOnly(readOnly bool) os.Error {
+func (le *LineEdit) SetReadOnly(readOnly bool) error {
 	if 0 == SendMessage(le.hWnd, EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
 		return newError("SendMessage(EM_SETREADONLY)")
 	}
