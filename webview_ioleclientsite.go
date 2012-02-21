@@ -34,7 +34,7 @@ type webViewIOleClientSite struct {
 	webBrowserEvents2 webViewDWebBrowserEvents2
 }
 
-func webView_IOleClientSite_QueryInterface(clientSite *webViewIOleClientSite, riid REFIID, ppvObject *unsafe.Pointer) HRESULT {
+func webView_IOleClientSite_QueryInterface(clientSite *webViewIOleClientSite, riid REFIID, ppvObject *unsafe.Pointer) uintptr {
 	if EqualREFIID(riid, &IID_IUnknown) {
 		*ppvObject = unsafe.Pointer(clientSite)
 	} else if EqualREFIID(riid, &IID_IOleClientSite) {
@@ -54,36 +54,36 @@ func webView_IOleClientSite_QueryInterface(clientSite *webViewIOleClientSite, ri
 	return S_OK
 }
 
-func webView_IOleClientSite_AddRef(clientSite *webViewIOleClientSite) HRESULT {
+func webView_IOleClientSite_AddRef(clientSite *webViewIOleClientSite) uintptr {
 	return 1
 }
 
-func webView_IOleClientSite_Release(clientSite *webViewIOleClientSite) HRESULT {
+func webView_IOleClientSite_Release(clientSite *webViewIOleClientSite) uintptr {
 	return 1
 }
 
-func webView_IOleClientSite_SaveObject(clientSite *webViewIOleClientSite) HRESULT {
+func webView_IOleClientSite_SaveObject(clientSite *webViewIOleClientSite) uintptr {
 	return E_NOTIMPL
 }
 
-func webView_IOleClientSite_GetMoniker(clientSite *webViewIOleClientSite, dwAssign, dwWhichMoniker uint, ppmk *unsafe.Pointer) HRESULT {
+func webView_IOleClientSite_GetMoniker(clientSite *webViewIOleClientSite, dwAssign, dwWhichMoniker uint, ppmk *unsafe.Pointer) uintptr {
 	return E_NOTIMPL
 }
 
-func webView_IOleClientSite_GetContainer(clientSite *webViewIOleClientSite, ppContainer *unsafe.Pointer) HRESULT {
+func webView_IOleClientSite_GetContainer(clientSite *webViewIOleClientSite, ppContainer *unsafe.Pointer) uintptr {
 	*ppContainer = nil
 
 	return E_NOINTERFACE
 }
 
-func webView_IOleClientSite_ShowObject(clientSite *webViewIOleClientSite) HRESULT {
+func webView_IOleClientSite_ShowObject(clientSite *webViewIOleClientSite) uintptr {
 	return S_OK
 }
 
-func webView_IOleClientSite_OnShowWindow(clientSite *webViewIOleClientSite, fShow BOOL) HRESULT {
+func webView_IOleClientSite_OnShowWindow(clientSite *webViewIOleClientSite, fShow BOOL) uintptr {
 	return E_NOTIMPL
 }
 
-func webView_IOleClientSite_RequestNewObjectLayout(clientSite *webViewIOleClientSite) HRESULT {
+func webView_IOleClientSite_RequestNewObjectLayout(clientSite *webViewIOleClientSite) uintptr {
 	return E_NOTIMPL
 }

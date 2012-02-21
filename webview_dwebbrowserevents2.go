@@ -62,7 +62,7 @@ type webViewDWebBrowserEvents2 struct {
 	DWebBrowserEvents2
 }
 
-func webView_DWebBrowserEvents2_QueryInterface(wbe2 *webViewDWebBrowserEvents2, riid REFIID, ppvObject *unsafe.Pointer) HRESULT {
+func webView_DWebBrowserEvents2_QueryInterface(wbe2 *webViewDWebBrowserEvents2, riid REFIID, ppvObject *unsafe.Pointer) uintptr {
 	// Just reuse the QueryInterface implementation we have for IOleClientSite.
 	// We need to adjust object, which initially points at our
 	// webViewDWebBrowserEvents2, so it refers to the containing
@@ -77,15 +77,15 @@ func webView_DWebBrowserEvents2_QueryInterface(wbe2 *webViewDWebBrowserEvents2, 
 	return webView_IOleClientSite_QueryInterface((*webViewIOleClientSite)(unsafe.Pointer(ptr)), riid, ppvObject)
 }
 
-/*func webView_DWebBrowserEvents2_AddRef(wbe2 *webViewDWebBrowserEvents2) uint {
+/*func webView_DWebBrowserEvents2_AddRef(wbe2 *webViewDWebBrowserEvents2) uintptr {
 	return 1
 }
 
-func webView_DWebBrowserEvents2_Release(wbe2 *webViewDWebBrowserEvents2) uint {
+func webView_DWebBrowserEvents2_Release(wbe2 *webViewDWebBrowserEvents2) uintptr {
 	return 1
 }
 
-func webView_DWebBrowserEvents2_GetTypeInfoCount(wbe2 *webViewDWebBrowserEvents2, pctinfo *uint) HRESULT {
+func webView_DWebBrowserEvents2_GetTypeInfoCount(wbe2 *webViewDWebBrowserEvents2, pctinfo *uint) uintptr {
 	return E_NOTIMPL
 }*/
 

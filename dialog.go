@@ -135,7 +135,7 @@ func (dlg *Dialog) Close(result int) {
 	dlg.TopLevelWindow.Close()
 }
 
-func firstFocusableDescendantCallback(hwnd HWND, lParam uintptr) int {
+func firstFocusableDescendantCallback(hwnd HWND, lParam uintptr) uintptr {
 	widget := widgetFromHWND(hwnd)
 
 	if widget == nil || !widget.Visible() || !widget.Enabled() {

@@ -37,64 +37,64 @@ type webViewIOleInPlaceFrame struct {
 	webView *WebView
 }
 
-func webView_IOleInPlaceFrame_QueryInterface(inPlaceFrame *webViewIOleInPlaceFrame, riid REFIID, ppvObj *uintptr) HRESULT {
+func webView_IOleInPlaceFrame_QueryInterface(inPlaceFrame *webViewIOleInPlaceFrame, riid REFIID, ppvObj *uintptr) uintptr {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_AddRef(inPlaceFrame *webViewIOleInPlaceFrame) HRESULT {
+func webView_IOleInPlaceFrame_AddRef(inPlaceFrame *webViewIOleInPlaceFrame) uintptr {
 	return 1
 }
 
-func webView_IOleInPlaceFrame_Release(inPlaceFrame *webViewIOleInPlaceFrame) HRESULT {
+func webView_IOleInPlaceFrame_Release(inPlaceFrame *webViewIOleInPlaceFrame) uintptr {
 	return 1
 }
 
-func webView_IOleInPlaceFrame_GetWindow(inPlaceFrame *webViewIOleInPlaceFrame, lphwnd *HWND) HRESULT {
+func webView_IOleInPlaceFrame_GetWindow(inPlaceFrame *webViewIOleInPlaceFrame, lphwnd *HWND) uintptr {
 	*lphwnd = inPlaceFrame.webView.hWnd
 
 	return S_OK
 }
 
-func webView_IOleInPlaceFrame_ContextSensitiveHelp(inPlaceFrame *webViewIOleInPlaceFrame, fEnterMode BOOL) HRESULT {
+func webView_IOleInPlaceFrame_ContextSensitiveHelp(inPlaceFrame *webViewIOleInPlaceFrame, fEnterMode BOOL) uintptr {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_GetBorder(inPlaceFrame *webViewIOleInPlaceFrame, lprectBorder *RECT) HRESULT {
+func webView_IOleInPlaceFrame_GetBorder(inPlaceFrame *webViewIOleInPlaceFrame, lprectBorder *RECT) uintptr {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_RequestBorderSpace(inPlaceFrame *webViewIOleInPlaceFrame, pborderwidths uintptr) HRESULT {
+func webView_IOleInPlaceFrame_RequestBorderSpace(inPlaceFrame *webViewIOleInPlaceFrame, pborderwidths uintptr) uintptr {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_SetBorderSpace(inPlaceFrame *webViewIOleInPlaceFrame, pborderwidths uintptr) HRESULT {
+func webView_IOleInPlaceFrame_SetBorderSpace(inPlaceFrame *webViewIOleInPlaceFrame, pborderwidths uintptr) uintptr {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_SetActiveObject(inPlaceFrame *webViewIOleInPlaceFrame, pActiveObject uintptr, pszObjName *uint16) HRESULT {
+func webView_IOleInPlaceFrame_SetActiveObject(inPlaceFrame *webViewIOleInPlaceFrame, pActiveObject uintptr, pszObjName *uint16) uintptr {
 	return S_OK
 }
 
-func webView_IOleInPlaceFrame_InsertMenus(inPlaceFrame *webViewIOleInPlaceFrame, hmenuShared HMENU, lpMenuWidths uintptr) HRESULT {
+func webView_IOleInPlaceFrame_InsertMenus(inPlaceFrame *webViewIOleInPlaceFrame, hmenuShared HMENU, lpMenuWidths uintptr) uintptr {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_SetMenu(inPlaceFrame *webViewIOleInPlaceFrame, hmenuShared HMENU, holemenu HMENU, hwndActiveObject HWND) HRESULT {
+func webView_IOleInPlaceFrame_SetMenu(inPlaceFrame *webViewIOleInPlaceFrame, hmenuShared HMENU, holemenu HMENU, hwndActiveObject HWND) uintptr {
 	return S_OK
 }
 
-func webView_IOleInPlaceFrame_RemoveMenus(inPlaceFrame *webViewIOleInPlaceFrame, hmenuShared HMENU) HRESULT {
+func webView_IOleInPlaceFrame_RemoveMenus(inPlaceFrame *webViewIOleInPlaceFrame, hmenuShared HMENU) uintptr {
 	return E_NOTIMPL
 }
 
-func webView_IOleInPlaceFrame_SetStatusText(inPlaceFrame *webViewIOleInPlaceFrame, pszStatusText *uint16) HRESULT {
+func webView_IOleInPlaceFrame_SetStatusText(inPlaceFrame *webViewIOleInPlaceFrame, pszStatusText *uint16) uintptr {
 	return S_OK
 }
 
-func webView_IOleInPlaceFrame_EnableModeless(inPlaceFrame *webViewIOleInPlaceFrame, fEnable BOOL) HRESULT {
+func webView_IOleInPlaceFrame_EnableModeless(inPlaceFrame *webViewIOleInPlaceFrame, fEnable BOOL) uintptr {
 	return S_OK
 }
 
-func webView_IOleInPlaceFrame_TranslateAccelerator(inPlaceFrame *webViewIOleInPlaceFrame, lpmsg *MSG, wID uint32) HRESULT {
+func webView_IOleInPlaceFrame_TranslateAccelerator(inPlaceFrame *webViewIOleInPlaceFrame, lpmsg *MSG, wID uint32) uintptr {
 	return E_NOTIMPL
 }
