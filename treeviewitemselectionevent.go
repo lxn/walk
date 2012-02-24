@@ -11,12 +11,19 @@ type TreeViewItemSelectionEvent struct {
 }
 
 func (e *TreeViewItemSelectionEvent) Attach(handler TreeViewItemSelectionEventHandler) int {
+	for i, h := range e.handlers {
+		if h == nil {
+			e.handlers[i] = handler
+			return i
+		}
+	}
+
 	e.handlers = append(e.handlers, handler)
 	return len(e.handlers) - 1
 }
 
 func (e *TreeViewItemSelectionEvent) Detach(handle int) {
-	e.handlers = append(e.handlers[:handle], e.handlers[handle+1:]...)
+	e.handlers[handle] = nil
 }
 
 type TreeViewItemSelectionEventPublisher struct {
@@ -29,6 +36,8 @@ func (p *TreeViewItemSelectionEventPublisher) Event() *TreeViewItemSelectionEven
 
 func (p *TreeViewItemSelectionEventPublisher) Publish(old, new *TreeViewItem) {
 	for _, handler := range p.event.handlers {
-		handler(old, new)
+		if handler != nil {
+			handler(old, new)
+		}
 	}
 }

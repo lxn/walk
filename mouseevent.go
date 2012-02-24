@@ -19,12 +19,19 @@ type MouseEvent struct {
 }
 
 func (e *MouseEvent) Attach(handler MouseEventHandler) int {
+	for i, h := range e.handlers {
+		if h == nil {
+			e.handlers[i] = handler
+			return i
+		}
+	}
+
 	e.handlers = append(e.handlers, handler)
 	return len(e.handlers) - 1
 }
 
 func (e *MouseEvent) Detach(handle int) {
-	e.handlers = append(e.handlers[:handle], e.handlers[handle+1:]...)
+	e.handlers[handle] = nil
 }
 
 type MouseEventPublisher struct {
@@ -37,6 +44,8 @@ func (p *MouseEventPublisher) Event() *MouseEvent {
 
 func (p *MouseEventPublisher) Publish(x, y int, button MouseButton) {
 	for _, handler := range p.event.handlers {
-		handler(x, y, button)
+		if handler != nil {
+			handler(x, y, button)
+		}
 	}
 }

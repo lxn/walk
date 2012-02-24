@@ -11,12 +11,19 @@ type CloseEvent struct {
 }
 
 func (e *CloseEvent) Attach(handler CloseEventHandler) int {
+	for i, h := range e.handlers {
+		if h == nil {
+			e.handlers[i] = handler
+			return i
+		}
+	}
+
 	e.handlers = append(e.handlers, handler)
 	return len(e.handlers) - 1
 }
 
 func (e *CloseEvent) Detach(handle int) {
-	e.handlers = append(e.handlers[:handle], e.handlers[handle+1:]...)
+	e.handlers[handle] = nil
 }
 
 type CloseEventPublisher struct {
@@ -29,6 +36,8 @@ func (p *CloseEventPublisher) Event() *CloseEvent {
 
 func (p *CloseEventPublisher) Publish(canceled *bool, reason CloseReason) {
 	for _, handler := range p.event.handlers {
-		handler(canceled, reason)
+		if handler != nil {
+			handler(canceled, reason)
+		}
 	}
 }

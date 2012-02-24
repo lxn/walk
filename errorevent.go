@@ -11,12 +11,19 @@ type ErrorEvent struct {
 }
 
 func (e *ErrorEvent) Attach(handler ErrorEventHandler) int {
+	for i, h := range e.handlers {
+		if h == nil {
+			e.handlers[i] = handler
+			return i
+		}
+	}
+
 	e.handlers = append(e.handlers, handler)
 	return len(e.handlers) - 1
 }
 
 func (e *ErrorEvent) Detach(handle int) {
-	e.handlers = append(e.handlers[:handle], e.handlers[handle+1:]...)
+	e.handlers[handle] = nil
 }
 
 type ErrorEventPublisher struct {
@@ -29,6 +36,8 @@ func (p *ErrorEventPublisher) Event() *ErrorEvent {
 
 func (p *ErrorEventPublisher) Publish(err error) {
 	for _, handler := range p.event.handlers {
-		handler(err)
+		if handler != nil {
+			handler(err)
+		}
 	}
 }

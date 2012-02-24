@@ -28,7 +28,7 @@ func NewTabPage() (*TabPage, error) {
 		nil,
 		tabPageWindowClass,
 		WS_POPUP,
-		WS_EX_CONTROLPARENT /*|WS_EX_TRANSPARENT*/ ); err != nil {
+		WS_EX_CONTROLPARENT /*|WS_EX_TRANSPARENT*/); err != nil {
 		return nil, err
 	}
 
