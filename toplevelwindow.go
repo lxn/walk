@@ -7,6 +7,7 @@ package walk
 import (
 	"fmt"
 	"sync"
+	"syscall"
 	"unsafe"
 )
 
@@ -24,7 +25,13 @@ var syncFuncs struct {
 	funcs []func()
 }
 
-func Synchronize(f func()) {
+var syncMsgId uint32
+
+func init() {
+	syncMsgId = RegisterWindowMessage(syscall.StringToUTF16Ptr("WalkSync"))
+}
+
+func synchronize(f func()) {
 	syncFuncs.m.Lock()
 	defer syncFuncs.m.Unlock()
 	syncFuncs.funcs = append(syncFuncs.funcs, f)
@@ -74,7 +81,6 @@ func (tlw *TopLevelWindow) Run() int {
 	var msg MSG
 
 	for tlw.hWnd != 0 {
-		runSynchronized()
 		switch GetMessage(&msg, 0, 0, 0) {
 		case 0:
 			return int(msg.WParam)
@@ -87,6 +93,8 @@ func (tlw *TopLevelWindow) Run() int {
 			TranslateMessage(&msg)
 			DispatchMessage(&msg)
 		}
+
+		runSynchronized()
 	}
 
 	return 0

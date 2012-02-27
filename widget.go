@@ -256,6 +256,10 @@ type Widget interface {
 	// purposes.
 	Suspended() bool
 
+	// Synchronize enqueues func f to be called some time later by the main 
+	// goroutine from inside a message loop.
+	Synchronize(f func())
+
 	// Visible returns if the Widget is visible.
 	Visible() bool
 
@@ -1117,6 +1121,14 @@ func (wb *WidgetBase) publishMouseEvent(publisher *MouseEventPublisher, wParam, 
 // changed events for the *WidgetBase.
 func (wb *WidgetBase) SizeChanged() *Event {
 	return wb.sizeChangedPublisher.Event()
+}
+
+// Synchronize enqueues func f to be called some time later by the main 
+// goroutine from inside a message loop.
+func (wb *WidgetBase) Synchronize(f func()) {
+	synchronize(f)
+
+	PostMessage(wb.hWnd, syncMsgId, 0, 0)
 }
 
 func (wb *WidgetBase) persistState(restore bool) {
