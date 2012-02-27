@@ -70,3 +70,32 @@ func RegistryKeyString(rootKey *RegistryKey, subKeyPath, valueName string) (valu
 
 	return syscall.UTF16ToString(data), nil
 }
+
+func RegistryKeyUint32(rootKey *RegistryKey, subKeyPath, valueName string) (value uint32, err error) {
+	var hKey HKEY
+	if RegOpenKeyEx(
+		rootKey.hKey,
+		syscall.StringToUTF16Ptr(subKeyPath),
+		0,
+		KEY_READ,
+		&hKey) != ERROR_SUCCESS {
+
+		return 0, newError("RegistryKeyUint32: Failed to open subkey.")
+	}
+	defer RegCloseKey(hKey)
+
+	bufSize := uint32(4)
+
+	if ERROR_SUCCESS != RegQueryValueEx(
+		hKey,
+		syscall.StringToUTF16Ptr(valueName),
+		nil,
+		nil,
+		(*byte)(unsafe.Pointer(&value)),
+		&bufSize) {
+
+		return 0, newError("RegQueryValueEx")
+	}
+
+	return
+}
