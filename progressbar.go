@@ -44,10 +44,22 @@ func (pb *ProgressBar) SizeHint() Size {
 	return pb.dialogBaseUnitsToPixels(Size{50, 14})
 }
 
-func (pb *ProgressBar) ProgressPercent() int {
+func (pb *ProgressBar) MinValue() int {
+	return int(SendMessage(pb.hWnd, PBM_GETRANGE, 1, 0))
+}
+
+func (pb *ProgressBar) MaxValue() int {
+	return int(SendMessage(pb.hWnd, PBM_GETRANGE, 0, 0))
+}
+
+func (pb *ProgressBar) SetRange(min, max int) {
+	SendMessage(pb.hWnd, PBM_SETRANGE32, uintptr(min), uintptr(max))
+}
+
+func (pb *ProgressBar) Value() int {
 	return int(SendMessage(pb.hWnd, PBM_GETPOS, 0, 0))
 }
 
-func (pb *ProgressBar) SetProgressPercent(value int) {
+func (pb *ProgressBar) SetValue(value int) {
 	SendMessage(pb.hWnd, PBM_SETPOS, uintptr(value), 0)
 }
