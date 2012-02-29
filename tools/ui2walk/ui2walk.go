@@ -842,7 +842,7 @@ func processFile(uiFilePath string) error {
 	}
 
 	goFileInfo, err := os.Stat(goFilePath)
-	if !*forceUpdate && err == nil && uiFileInfo.ModTime().Sub(goFileInfo.ModTime()) >= 0 {
+	if !*forceUpdate && err == nil && !uiFileInfo.ModTime().After(goFileInfo.ModTime()) {
 		// The go file should be up-to-date
 		return nil
 	}
