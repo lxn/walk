@@ -23,88 +23,88 @@ import (
 var forceUpdate *bool = flag.Bool("force", false, "force code generation for up-to-date files")
 
 type UI struct {
-	Class         string
-	Widget        Widget
-	CustomWidgets CustomWidgets
-	TabStops      []string `xml:"tabstops>tabstop"`
+	Class         string        `xml:"class"`
+	Widget        Widget        `xml:"widget"`
+	CustomWidgets CustomWidgets `xml:"customwidgets"`
+	TabStops      []string      `xml:"tabstops>tabstop"`
 }
 
 type Widget struct {
-	Class     string `xml:"attr"`
-	Name      string `xml:"attr"`
-	Attribute []*Attribute
-	Property  []*Property
-	Layout    *Layout
-	Widget    []*Widget
+	Class     string       `xml:"class,attr"`
+	Name      string       `xml:"name,attr"`
+	Attribute []*Attribute `xml:"attribute"`
+	Property  []*Property  `xml:"property"`
+	Layout    *Layout      `xml:"layout"`
+	Widget    []*Widget    `xml:"widget"`
 	ignored   bool
 }
 
 type Layout struct {
-	Class    string `xml:"attr"`
-	Name     string `xml:"attr"`
-	Stretch  string `xml:"attr"`
-	Property []*Property
-	Item     []*Item
+	Class    string      `xml:"class,attr"`
+	Name     string      `xml:"name,attr"`
+	Stretch  string      `xml:"stretch,attr"`
+	Property []*Property `xml:"property"`
+	Item     []*Item     `xml:"item"`
 	ignored  bool
 }
 
 type Item struct {
-	Row    string `xml:"attr"`
-	Column string `xml:"attr"`
-	Widget *Widget
-	Spacer *Spacer
+	Row    string  `xml:"row,attr"`
+	Column string  `xml:"column,attr"`
+	Widget *Widget `xml:"widget"`
+	Spacer *Spacer `xml:"spacer"`
 }
 
 type Spacer struct {
-	Name     string `xml:"attr"`
-	Property []*Property
+	Name     string      `xml:"name,attr"`
+	Property []*Property `xml:"property"`
 }
 
 type Attribute struct {
-	Name   string `xml:"attr"`
-	String string
+	Name   string `xml:"name,attr"`
+	String string `xml:"string"`
 }
 
 type Property struct {
-	Name   string `xml:"attr"`
-	Bool   bool
-	Enum   string
-	Font   *Font
-	Number float64
-	Rect   Rectangle
-	Set    string
-	Size   Size
-	String string
+	Name   string    `xml:"name,attr"`
+	Bool   bool      `xml:"bool"`
+	Enum   string    `xml:"enum"`
+	Font   *Font     `xml:"font"`
+	Number float64   `xml:"number"`
+	Rect   Rectangle `xml:"rect"`
+	Set    string    `xml:"set"`
+	Size   Size      `xml:"size"`
+	String string    `xml:"string"`
 }
 
 type Font struct {
-	Family    string
-	PointSize int
-	Italic    bool
-	Bold      bool
-	Underline bool
-	StrikeOut bool
+	Family    string `xml:"family"`
+	PointSize int    `xml:"pointsize"`
+	Italic    bool   `xml:"italic"`
+	Bold      bool   `xml:"bold"`
+	Underline bool   `xml:"underline"`
+	StrikeOut bool   `xml:"strikeout"`
 }
 
 type Rectangle struct {
-	X      int
-	Y      int
-	Width  int
-	Height int
+	X      int `xml:"x"`
+	Y      int `xml:"y"`
+	Width  int `xml:"width"`
+	Height int `xml:"height"`
 }
 
 type Size struct {
-	Width  int
-	Height int
+	Width  int `xml:"width"`
+	Height int `xml:"height"`
 }
 
 type CustomWidgets struct {
-	CustomWidget []*CustomWidget
+	CustomWidget []*CustomWidget `xml:"customwidget"`
 }
 
 type CustomWidget struct {
-	Class   string
-	Extends string
+	Class   string `xml:"class"`
+	Extends string `xml:"extends"`
 }
 
 func logFatal(err error) {
