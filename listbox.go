@@ -2,7 +2,6 @@ package walk
 import (
 	"unsafe"
 	"syscall"
-	"fmt"
 )
 import . "github.com/lxn/go-winapi"
 
@@ -15,8 +14,9 @@ const (
 	
 	LBS_STANDARD = LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER
 
-	LB_GETCURSEL = 0x0147
+	LB_GETCURSEL = 0x188
 	LB_GETTEXT = 0x0189
+	LB_GETCOUNT = 0x18B
 	LB_GETTEXTLEN = 0x018A
 	LBN_SELCHANGE = 1
 	LBN_DBLCLK = 2
@@ -117,16 +117,15 @@ func (this *ListBox) SizeHint() Size {
 }
 
 func (this *ListBox) SelectedIndex() int{
-	fmt.Println("SelectedIndex: ", SendMessage (this.hWnd, LB_GETCURSEL, 0, 0))
 	return int(SendMessage (this.hWnd, LB_GETCURSEL, 0, 0))
 }
 
 func (this *ListBox) SelectedItem() string{
 	index := this.SelectedIndex()
 	length := int(SendMessage(this.hWnd, LB_GETTEXTLEN, uintptr(index), 0)) + 1
-	buffer := make([]byte, length)
-	SendMessage(this.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buffer)))
-	return string(buffer)
+	buffer := make([]uint16, length +1)
+	SendMessage(this.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buffer[0])))
+	return syscall.UTF16ToString(buffer)
 }
 
 func (this *ListBox) SelectedIndexChanged() *Event{
