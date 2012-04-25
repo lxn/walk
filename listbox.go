@@ -2,43 +2,32 @@ package walk
 import (
 	"unsafe"
 	"syscall"
+	"errors"
 )
 import . "github.com/lxn/go-winapi"
 
-
 const (
-	LB_ADDSTRING = 0x0180
-
-	LBS_NOTIFY = 0x0001
-	LBS_SORT   = 0x0002
-	
-	LBS_STANDARD = LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER
-
-	LB_GETCURSEL = 0x188
-	LB_GETTEXT = 0x0189
-	LB_GETCOUNT = 0x18B
-	LB_GETTEXTLEN = 0x018A
-	LBN_SELCHANGE = 1
-	LBN_DBLCLK = 2
-
-
+	LB_ERR       = -1
+	LB_ERRSPACE  = -2
 )
 
 type ListBox struct{
 	WidgetBase
-	Items                         []string
 	maxItemTextWidth              int
 	selectedIndexChangedPublisher EventPublisher
 	dbClickedPublisher            EventPublisher
 }
 
 func NewListBox(parent Container)(*ListBox, error){
+	//TODO: move to go-winapi/listbox
+	//LBS_STANDARD := LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER
+
 	lb := &ListBox{}
 	err := initChildWidget(
 		lb,
 		parent,
 		"LISTBOX",
-		WS_TABSTOP | WS_VISIBLE | LBS_STANDARD,
+		WS_TABSTOP | WS_VISIBLE | LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER,
 		0)
 	if err != nil{
 		return nil, err
@@ -58,17 +47,56 @@ func (*ListBox) LayoutFlags() LayoutFlags {
 	return GrowableHorz | GrowableVert
 }
 
-func (this *ListBox) SetItems(items []string){
-	this.Items = items
-	//Should remove the original content?
-	for _, item := range items{
-		this.AddItem(item)
-	}
+func (this *ListBox) AddString(item string){
+	SendMessage (this.hWnd, LB_ADDSTRING, 0, 
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item))))
 }
 
-func (this *ListBox) AddItem(item string){
-	this.Items = append(this.Items, item)
-	SendMessage (this.hWnd, LB_ADDSTRING, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item))))
+//If this parameter is -1, the string is added to the end of the list.
+func (this *ListBox) InsertString(index int, item string) error{
+	if index < -1{
+		return errors.New("Invalid index")
+	}
+	
+	ret := SendMessage(this.hWnd, LB_INSERTSTRING, uintptr(index), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))))
+	if ret == LB_ERRSPACE || ret == LB_ERR {
+		return errors.New("LB_ERR or LB_ERRSPACE")
+	}
+	return nil
+}
+
+func (this *ListBox) DeleteString(index uint) error{
+	ret := SendMessage(this.hWnd, LB_DELETESTRING, uintptr(index), 0)
+	if ret == LB_ERR {
+		return errors.New("LB_ERR")
+	}
+	return nil
+}
+
+func (this *ListBox) GetString(index uint) string{
+	len := SendMessage(this.hWnd, LB_GETTEXTLEN, uintptr(index), 0)
+	if len == LB_ERR{
+		return ""
+	}
+
+	buf := make([]byte, len + 1)
+	ret := SendMessage(this.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buf[0])))
+	
+	if len == LB_ERR{
+		return ""
+	}
+	return string(buf)
+}
+	
+
+func (this *ListBox) ResetContent(){
+	SendMessage(this.hWnd, LB_RESETCONTENT, 0, 0)
+}
+
+//The return value is the number of items in the list box, 
+//or LB_ERR (-1) if an error occurs.
+func (this *ListBox) GetCount() int{
+	return SendMessage(this.hWnd, LB_GETCOUNT, 0, 0)
 }
 
 func (this *ListBox) calculateMaxItemTextWidth() int {
