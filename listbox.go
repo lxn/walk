@@ -58,7 +58,7 @@ func (this *ListBox) InsertString(index int, item string) error{
 		return errors.New("Invalid index")
 	}
 	
-	ret := SendMessage(this.hWnd, LB_INSERTSTRING, uintptr(index), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))))
+	ret := int(SendMessage(this.hWnd, LB_INSERTSTRING, uintptr(index), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item)))))
 	if ret == LB_ERRSPACE || ret == LB_ERR {
 		return errors.New("LB_ERR or LB_ERRSPACE")
 	}
@@ -66,7 +66,7 @@ func (this *ListBox) InsertString(index int, item string) error{
 }
 
 func (this *ListBox) DeleteString(index uint) error{
-	ret := SendMessage(this.hWnd, LB_DELETESTRING, uintptr(index), 0)
+	ret := int(SendMessage(this.hWnd, LB_DELETESTRING, uintptr(index), 0))
 	if ret == LB_ERR {
 		return errors.New("LB_ERR")
 	}
@@ -74,18 +74,18 @@ func (this *ListBox) DeleteString(index uint) error{
 }
 
 func (this *ListBox) GetString(index uint) string{
-	len := SendMessage(this.hWnd, LB_GETTEXTLEN, uintptr(index), 0)
+	len := int(SendMessage(this.hWnd, LB_GETTEXTLEN, uintptr(index), 0))
 	if len == LB_ERR{
 		return ""
 	}
 
 	buf := make([]byte, len + 1)
-	ret := SendMessage(this.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buf[0])))
+	_ = SendMessage(this.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buf[0])))
 	
 	if len == LB_ERR{
 		return ""
 	}
-	return string(buf)
+	return syscall.UTF16ToString(buf)
 }
 	
 
@@ -95,8 +95,13 @@ func (this *ListBox) ResetContent(){
 
 //The return value is the number of items in the list box, 
 //or LB_ERR (-1) if an error occurs.
-func (this *ListBox) GetCount() int{
-	return SendMessage(this.hWnd, LB_GETCOUNT, 0, 0)
+func (this *ListBox) GetCount() (uint, error){
+    retPtr := SendMessage(this.hWnd, LB_GETCOUNT, 0, 0)
+	ret := int(retPtr)
+	if ret == LB_ERR{
+		return 0, errors.New("LB_ERR")
+	}
+	return uint(ret), nil
 }
 
 func (this *ListBox) calculateMaxItemTextWidth() int {
@@ -112,7 +117,10 @@ func (this *ListBox) calculateMaxItemTextWidth() int {
 
 	var maxWidth int
 
-	for _, item := range this.Items {
+	count, _ := this.GetCount()
+	var i uint
+	for i = 0; i < count ; i++{
+		item  := this.GetString(i)
 		var s SIZE
 		str := syscall.StringToUTF16(item)
 
@@ -132,7 +140,7 @@ func (this *ListBox) SizeHint() Size {
 
 	defaultSize := this.dialogBaseUnitsToPixels(Size{50, 12})
 
-	if this.Items != nil && this.maxItemTextWidth <= 0 {
+	if this.maxItemTextWidth <= 0 {
 		this.maxItemTextWidth = this.calculateMaxItemTextWidth()
 	}
 
