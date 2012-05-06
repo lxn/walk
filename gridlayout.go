@@ -363,16 +363,17 @@ func (l *GridLayout) MinSize() Size {
 			continue
 		}
 
-		widget2MinSizes[widget] = &minSizes{widget.MinSize(), widget.MinSizeHint()}
-	}
+		min := widget.MinSize()
+		hint := widget.MinSizeHint()
 
-	var prevWidget Widget
+		widget2MinSizes[widget] = &minSizes{min, hint}
+	}
 
 	for row := 0; row < len(heights); row++ {
 		for col := 0; col < len(widths); col++ {
 			widget := l.cells[row][col].widget
 
-			if widget == prevWidget || !shouldLayoutWidget(widget) {
+			if !shouldLayoutWidget(widget) {
 				continue
 			}
 
@@ -381,33 +382,15 @@ func (l *GridLayout) MinSize() Size {
 			min := minSizes.minSize
 			hint := minSizes.minSizeHint
 
-			heights[row] = maxi(heights[row], maxi(hint.Height, min.Height))
+			info := l.widget2Info[widget]
 
-			prevWidget = widget
-		}
-
-		prevWidget = nil
-	}
-
-	for col := 0; col < len(widths); col++ {
-		for row := 0; row < len(heights); row++ {
-			widget := l.cells[row][col].widget
-
-			if widget == prevWidget || !shouldLayoutWidget(widget) {
-				continue
+			if info.spanHorz == 1 {
+				widths[col] = maxi(widths[col], maxi(hint.Width, min.Width))
 			}
-
-			minSizes := widget2MinSizes[widget]
-
-			min := minSizes.minSize
-			hint := minSizes.minSizeHint
-
-			widths[col] = maxi(widths[col], maxi(hint.Width, min.Width))
-
-			prevWidget = widget
+			if info.spanVert == 1 {
+				heights[row] = maxi(heights[row], maxi(hint.Height, min.Height))
+			}
 		}
-
-		prevWidget = nil
 	}
 
 	width := l.margins.HNear + l.spacing*(len(widths)-1) + l.margins.HFar
@@ -514,7 +497,17 @@ func (l *GridLayout) Update(reset bool) error {
 			}
 		}
 
-		// FIXME: This currently assumes all widgets can grow.
+		if lf := widget.LayoutFlags(); lf&GrowableHorz == 0 || lf&GrowableVert == 0 {
+			hint := widget.SizeHint()
+
+			if lf&GrowableHorz == 0 {
+				w = hint.Width
+			}
+			if lf&GrowableVert == 0 {
+				h = hint.Height
+			}
+		}
+
 		if hdwp = DeferWindowPos(
 			hdwp,
 			widget.BaseWidget().hWnd,
@@ -573,6 +566,7 @@ func (l *GridLayout) sectionSizes(orientation Orientation) []int {
 				continue
 			}
 
+			info := l.widget2Info[widget]
 			flags := widget.LayoutFlags()
 
 			min := widget.MinSize()
@@ -581,7 +575,9 @@ func (l *GridLayout) sectionSizes(orientation Orientation) []int {
 			pref := widget.SizeHint()
 
 			if orientation == Horizontal {
-				minSizes[i] = maxi(minSizes[i], maxi(min.Width, minHint.Width))
+				if info.spanHorz == 1 {
+					minSizes[i] = maxi(minSizes[i], maxi(min.Width, minHint.Width))
+				}
 
 				if max.Width > 0 {
 					maxSizes[i] = maxi(maxSizes[i], max.Width)
@@ -591,7 +587,7 @@ func (l *GridLayout) sectionSizes(orientation Orientation) []int {
 					maxSizes[i] = 32768
 				}
 
-				if flags&GreedyHorz > 0 {
+				if info.spanHorz == 1 && flags&GreedyHorz > 0 {
 					if _, isSpacer := widget.(*Spacer); isSpacer {
 						sortedSections[i].hasGreedySpacer = true
 					} else {
@@ -599,7 +595,9 @@ func (l *GridLayout) sectionSizes(orientation Orientation) []int {
 					}
 				}
 			} else {
-				minSizes[i] = maxi(minSizes[i], maxi(min.Height, minHint.Height))
+				if info.spanVert == 1 {
+					minSizes[i] = maxi(minSizes[i], maxi(min.Height, minHint.Height))
+				}
 
 				if max.Height > 0 {
 					maxSizes[i] = maxi(maxSizes[i], max.Height)
@@ -609,7 +607,7 @@ func (l *GridLayout) sectionSizes(orientation Orientation) []int {
 					maxSizes[i] = 32768
 				}
 
-				if flags&GreedyVert > 0 {
+				if info.spanVert == 1 && flags&GreedyVert > 0 {
 					if _, isSpacer := widget.(*Spacer); isSpacer {
 						sortedSections[i].hasGreedySpacer = true
 					} else {
