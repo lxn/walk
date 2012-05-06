@@ -49,10 +49,12 @@ type Layout struct {
 }
 
 type Item struct {
-	Row    string  `xml:"row,attr"`
-	Column string  `xml:"column,attr"`
-	Widget *Widget `xml:"widget"`
-	Spacer *Spacer `xml:"spacer"`
+	Row     string  `xml:"row,attr"`
+	Column  string  `xml:"column,attr"`
+	RowSpan string  `xml:"rowspan,attr"`
+	ColSpan string  `xml:"colspan,attr"`
+	Widget  *Widget `xml:"widget"`
+	Spacer  *Spacer `xml:"spacer"`
 }
 
 type Spacer struct {
@@ -367,12 +369,18 @@ func writeItemInitializations(buf *bytes.Buffer, items []*Item, parent *Widget, 
 		}
 
 		if layout != "" && itemName != "" && item.Row != "" && item.Column != "" {
+			if item.ColSpan == "" {
+				item.ColSpan = "1"
+			}
+			if item.RowSpan == "" {
+				item.RowSpan = "1"
+			}
 			buf.WriteString(fmt.Sprintf(
-				`				if err := %s.SetLocation(%s, %s, %s); err != nil {
+				`				if err := %s.SetRange(%s, walk.Rectangle{%s, %s, %s, %s}); err != nil {
 				return err
 				}
 				`,
-				layout, itemName, item.Row, item.Column))
+				layout, itemName, item.Column, item.Row, item.ColSpan, item.RowSpan))
 		}
 	}
 
