@@ -505,7 +505,7 @@ func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget
 	case "QProgressBar":
 		typ = "ProgressBar"
 
-	case "QPushButton", "QToolButton":
+	case "QPushButton":
 		typ = "PushButton"
 
 	case "QRadioButton":
@@ -519,6 +519,9 @@ func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget
 
 	case "QTableView", "QTableWidget":
 		typ = "TableView"
+
+	case "QToolButton":
+		typ = "ToolButton"
 
 	case "QTreeView", "QTreeWidget":
 		typ = "TreeView"
@@ -647,7 +650,7 @@ func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) error {
 	case "QProgressBar":
 		typ = "walk.ProgressBar"
 
-	case "QPushButton", "QToolButton":
+	case "QPushButton":
 		typ = "walk.PushButton"
 
 	case "QRadioButton":
@@ -661,6 +664,9 @@ func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) error {
 
 	case "QTableView", "QTableWidget":
 		typ = "walk.TableView"
+
+	case "QToolButton":
+		typ = "walk.ToolButton"
 
 	case "QTreeView", "QTreeWidget":
 		typ = "walk.TreeView"
