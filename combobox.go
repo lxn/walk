@@ -100,11 +100,16 @@ func (cb *ComboBox) insertItemAt(index int) error {
 }
 
 func (cb *ComboBox) resetItems() error {
+	cb.SetSuspended(true)
+	defer cb.SetSuspended(false)
+
 	if FALSE == SendMessage(cb.hWnd, CB_RESETCONTENT, 0, 0) {
 		return newError("SendMessage(CB_RESETCONTENT)")
 	}
 
 	cb.maxItemTextWidth = 0
+
+	cb.SetCurrentIndex(-1)
 
 	if cb.model == nil {
 		return nil
@@ -124,8 +129,6 @@ func (cb *ComboBox) resetItems() error {
 func (cb *ComboBox) attachModel() {
 	itemsResetHandler := func() {
 		cb.resetItems()
-
-		cb.SetCurrentIndex(-1)
 	}
 	cb.itemsResetHandlerHandle = cb.model.ItemsReset().Attach(itemsResetHandler)
 
@@ -151,9 +154,6 @@ func (cb *ComboBox) Model() ListModel {
 }
 
 func (cb *ComboBox) SetModel(model ListModel) error {
-	cb.SetSuspended(true)
-	defer cb.SetSuspended(false)
-
 	if cb.model != nil {
 		cb.detachModel()
 	}
