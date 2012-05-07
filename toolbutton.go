@@ -43,3 +43,12 @@ func (*ToolButton) LayoutFlags() LayoutFlags {
 func (tb *ToolButton) SizeHint() Size {
 	return tb.dialogBaseUnitsToPixels(Size{20, 14})
 }
+
+func (tb *ToolButton) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	switch msg {
+	case WM_GETDLGCODE:
+		return DLGC_BUTTON
+	}
+
+	return tb.Button.wndProc(hwnd, msg, wParam, lParam)
+}
