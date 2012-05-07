@@ -18,58 +18,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-// TableColumn provides column information for widgets like TableView.
-type TableColumn struct {
-	// Name is the optional name of the column.
-	Name string
-
-	// Title is the text to display in the column header.
-	Title string
-
-	// Format is the format string for converting a value into a string.
-	Format string
-
-	// Precision is the number of decimal places for formatting a big.Rat.
-	Precision int
-
-	// Width is the width of the column in pixels.
-	Width int
-
-	// Alignment is the alignment of the column (who would have thought).
-	Alignment Alignment1D
-}
-
-// TableModel is the interface that a model must implement to support widgets
-// like TableView.
-type TableModel interface {
-	// Columns returns information about the columns of the model.
-	Columns() []TableColumn
-
-	// RowCount returns the number of rows in the model.
-	RowCount() int
-
-	// Value returns the value that should be displayed for the given cell.
-	Value(row, col int) interface{}
-
-	// RowsReset returns the event that the model should publish when the number
-	// of its rows changes.
-	RowsReset() *Event
-
-	// RowChanged returns the event that the model should publish when a row was
-	// changed.
-	RowChanged() *IntEvent
-}
-
-// ItemChecker is the interface that a model must implement to support check 
-// boxes in a widget like TableView.
-type ItemChecker interface {
-	// Checked returns if the specified item is checked.
-	Checked(index int) bool
-
-	// SetChecked sets if the specified item is checked.
-	SetChecked(index int, checked bool) error
-}
-
 var tableViewOrigWndProcPtr uintptr
 var _ subclassedWidget = &TableView{}
 
