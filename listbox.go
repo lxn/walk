@@ -79,7 +79,7 @@ func (this *ListBox) GetString(index uint) string{
 		return ""
 	}
 
-	buf := make([]byte, len + 1)
+	buf := make([]uint16, len + 1)
 	_ = SendMessage(this.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buf[0])))
 	
 	if len == LB_ERR{
