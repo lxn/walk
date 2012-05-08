@@ -49,10 +49,12 @@ type Layout struct {
 }
 
 type Item struct {
-	Row    string  `xml:"row,attr"`
-	Column string  `xml:"column,attr"`
-	Widget *Widget `xml:"widget"`
-	Spacer *Spacer `xml:"spacer"`
+	Row     string  `xml:"row,attr"`
+	Column  string  `xml:"column,attr"`
+	RowSpan string  `xml:"rowspan,attr"`
+	ColSpan string  `xml:"colspan,attr"`
+	Widget  *Widget `xml:"widget"`
+	Spacer  *Spacer `xml:"spacer"`
 }
 
 type Spacer struct {
@@ -367,12 +369,18 @@ func writeItemInitializations(buf *bytes.Buffer, items []*Item, parent *Widget, 
 		}
 
 		if layout != "" && itemName != "" && item.Row != "" && item.Column != "" {
+			if item.ColSpan == "" {
+				item.ColSpan = "1"
+			}
+			if item.RowSpan == "" {
+				item.RowSpan = "1"
+			}
 			buf.WriteString(fmt.Sprintf(
-				`				if err := %s.SetLocation(%s, %s, %s); err != nil {
+				`				if err := %s.SetRange(%s, walk.Rectangle{%s, %s, %s, %s}); err != nil {
 				return err
 				}
 				`,
-				layout, itemName, item.Row, item.Column))
+				layout, itemName, item.Column, item.Row, item.ColSpan, item.RowSpan))
 		}
 	}
 
@@ -497,7 +505,7 @@ func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget
 	case "QProgressBar":
 		typ = "ProgressBar"
 
-	case "QPushButton", "QToolButton":
+	case "QPushButton":
 		typ = "PushButton"
 
 	case "QRadioButton":
@@ -511,6 +519,9 @@ func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget
 
 	case "QTableView", "QTableWidget":
 		typ = "TableView"
+
+	case "QToolButton":
+		typ = "ToolButton"
 
 	case "QTreeView", "QTreeWidget":
 		typ = "TreeView"
@@ -639,7 +650,7 @@ func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) error {
 	case "QProgressBar":
 		typ = "walk.ProgressBar"
 
-	case "QPushButton", "QToolButton":
+	case "QPushButton":
 		typ = "walk.PushButton"
 
 	case "QRadioButton":
@@ -653,6 +664,9 @@ func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) error {
 
 	case "QTableView", "QTableWidget":
 		typ = "walk.TableView"
+
+	case "QToolButton":
+		typ = "walk.ToolButton"
 
 	case "QTreeView", "QTreeWidget":
 		typ = "walk.TreeView"

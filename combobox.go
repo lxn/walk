@@ -5,7 +5,10 @@
 package walk
 
 import (
+	"fmt"
+	"math/big"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -16,14 +19,18 @@ var _ subclassedWidget = &ComboBox{}
 
 type ComboBox struct {
 	WidgetBase
-	items                        *ComboBoxItemList
+	model                        ListModel
+	format                       string
+	precision                    int
+	itemsResetHandlerHandle      int
+	itemChangedHandlerHandle     int
 	maxItemTextWidth             int
 	prevCurIndex                 int
 	currentIndexChangedPublisher EventPublisher
 }
 
 func NewComboBox(parent Container) (*ComboBox, error) {
-	cb := &ComboBox{prevCurIndex: -1}
+	cb := &ComboBox{prevCurIndex: -1, precision: 2}
 
 	if err := initChildWidget(
 		cb,
@@ -33,8 +40,6 @@ func NewComboBox(parent Container) (*ComboBox, error) {
 		0); err != nil {
 		return nil, err
 	}
-
-	cb.items = newComboBoxItemList(cb)
 
 	return cb, nil
 }
@@ -54,7 +59,7 @@ func (*ComboBox) LayoutFlags() LayoutFlags {
 func (cb *ComboBox) SizeHint() Size {
 	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 12})
 
-	if cb.items != nil && cb.maxItemTextWidth <= 0 {
+	if cb.model != nil && cb.maxItemTextWidth <= 0 {
 		cb.maxItemTextWidth = cb.calculateMaxItemTextWidth()
 	}
 
@@ -63,6 +68,121 @@ func (cb *ComboBox) SizeHint() Size {
 	h := defaultSize.Height + 1
 
 	return Size{w, h}
+}
+
+func (cb *ComboBox) itemString(index int) string {
+	switch val := cb.model.Value(index).(type) {
+	case string:
+		return val
+
+	case time.Time:
+		return val.Format(cb.format)
+
+	case *big.Rat:
+		return val.FloatString(cb.precision)
+
+	default:
+		return fmt.Sprintf(cb.format, val)
+	}
+
+	panic("unreachable")
+}
+
+func (cb *ComboBox) insertItemAt(index int) error {
+	str := cb.itemString(index)
+	lp := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(str)))
+
+	if CB_ERR == SendMessage(cb.hWnd, CB_INSERTSTRING, uintptr(index), lp) {
+		return newError("SendMessage(CB_INSERTSTRING)")
+	}
+
+	return nil
+}
+
+func (cb *ComboBox) resetItems() error {
+	cb.SetSuspended(true)
+	defer cb.SetSuspended(false)
+
+	if FALSE == SendMessage(cb.hWnd, CB_RESETCONTENT, 0, 0) {
+		return newError("SendMessage(CB_RESETCONTENT)")
+	}
+
+	cb.maxItemTextWidth = 0
+
+	cb.SetCurrentIndex(-1)
+
+	if cb.model == nil {
+		return nil
+	}
+
+	count := cb.model.ItemCount()
+
+	for i := 0; i < count; i++ {
+		if err := cb.insertItemAt(i); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (cb *ComboBox) attachModel() {
+	itemsResetHandler := func() {
+		cb.resetItems()
+	}
+	cb.itemsResetHandlerHandle = cb.model.ItemsReset().Attach(itemsResetHandler)
+
+	itemChangedHandler := func(index int) {
+		if CB_ERR == SendMessage(cb.hWnd, CB_DELETESTRING, uintptr(index), 0) {
+			newError("SendMessage(CB_DELETESTRING)")
+		}
+
+		cb.insertItemAt(index)
+
+		cb.SetCurrentIndex(cb.prevCurIndex)
+	}
+	cb.itemChangedHandlerHandle = cb.model.ItemChanged().Attach(itemChangedHandler)
+}
+
+func (cb *ComboBox) detachModel() {
+	cb.model.ItemsReset().Detach(cb.itemsResetHandlerHandle)
+	cb.model.ItemChanged().Detach(cb.itemChangedHandlerHandle)
+}
+
+func (cb *ComboBox) Model() ListModel {
+	return cb.model
+}
+
+func (cb *ComboBox) SetModel(model ListModel) error {
+	if cb.model != nil {
+		cb.detachModel()
+	}
+
+	cb.model = model
+
+	if model != nil {
+		cb.attachModel()
+
+		return cb.resetItems()
+	}
+
+	return nil
+}
+
+func (cb *ComboBox) Format() string {
+	return cb.format
+}
+
+func (cb *ComboBox) SetFormat(value string) {
+	cb.format = value
+}
+
+func (cb *ComboBox) Precision() int {
+	return cb.precision
+}
+
+func (cb *ComboBox) SetPrecision(value int) {
+	cb.precision = value
 }
 
 func (cb *ComboBox) calculateMaxItemTextWidth() int {
@@ -78,9 +198,10 @@ func (cb *ComboBox) calculateMaxItemTextWidth() int {
 
 	var maxWidth int
 
-	for _, item := range cb.items.items {
+	count := cb.model.ItemCount()
+	for i := 0; i < count; i++ {
 		var s SIZE
-		str := syscall.StringToUTF16(item.Text())
+		str := syscall.StringToUTF16(cb.itemString(i))
 
 		if !GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
 			newError("GetTextExtentPoint32 failed")
@@ -91,10 +212,6 @@ func (cb *ComboBox) calculateMaxItemTextWidth() int {
 	}
 
 	return maxWidth
-}
-
-func (cb *ComboBox) Items() *ComboBoxItemList {
-	return cb.items
 }
 
 func (cb *ComboBox) CurrentIndex() int {
@@ -151,36 +268,4 @@ func (cb *ComboBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 	}
 
 	return cb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
-}
-
-func (cb *ComboBox) onInsertingComboBoxItem(index int, item *ComboBoxItem) error {
-	if CB_ERR == SendMessage(cb.hWnd, CB_INSERTSTRING, uintptr(index), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item.text)))) {
-		return newError("CB_INSERTSTRING failed")
-	}
-
-	cb.maxItemTextWidth = 0
-
-	return nil
-}
-
-func (cb *ComboBox) onRemovingComboBoxItem(index int, item *ComboBoxItem) error {
-	if CB_ERR == SendMessage(cb.hWnd, CB_DELETESTRING, uintptr(index), 0) {
-		return newError("CB_DELETESTRING failed")
-	}
-
-	cb.maxItemTextWidth = 0
-	if index == cb.prevCurIndex {
-		cb.prevCurIndex = -1
-	}
-
-	return nil
-}
-
-func (cb *ComboBox) onClearingComboBoxItems() error {
-	SendMessage(cb.hWnd, CB_RESETCONTENT, 0, 0)
-
-	cb.maxItemTextWidth = 0
-	cb.prevCurIndex = -1
-
-	return nil
 }

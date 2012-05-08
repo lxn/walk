@@ -201,6 +201,8 @@ func (dlg *Dialog) Run() int {
 				b.Height,
 			})
 		}
+	} else {
+		dlg.SetBounds(dlg.Bounds())
 	}
 
 	dlg.Show()
