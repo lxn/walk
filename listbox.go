@@ -1,33 +1,33 @@
+// Copyright 2012 The Walk Authors. All rights reserved.
+// Use of lb source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package walk
+
 import (
-	"unsafe"
 	"syscall"
-	"errors"
+	"unsafe"
 )
+
 import . "github.com/lxn/go-winapi"
 
-const (
-	LB_ERR       = -1
-	LB_ERRSPACE  = -2
-)
+var listBoxOrigWndProcPtr uintptr
+var _ subclassedWidget = &ListBox{}
 
 type ListBox struct{
 	WidgetBase
 	maxItemTextWidth              int
-	selectedIndexChangedPublisher EventPublisher
-	dbClickedPublisher            EventPublisher
+	CurrentIndexChangedPublisher EventPublisher
+	dblClickedPublisher            EventPublisher
 }
 
 func NewListBox(parent Container)(*ListBox, error){
-	//TODO: move to go-winapi/listbox
-	//LBS_STANDARD := LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER
-
 	lb := &ListBox{}
 	err := initChildWidget(
 		lb,
 		parent,
 		"LISTBOX",
-		WS_TABSTOP | WS_VISIBLE | LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER,
+		WS_TABSTOP | WS_VISIBLE | LBS_STANDARD,
 		0)
 	if err != nil{
 		return nil, err
@@ -36,51 +36,51 @@ func NewListBox(parent Container)(*ListBox, error){
 }
 
 func (*ListBox) origWndProcPtr() uintptr {
-	return checkBoxOrigWndProcPtr
+	return listBoxOrigWndProcPtr
 }
 
 func (*ListBox) setOrigWndProcPtr(ptr uintptr) {
-	checkBoxOrigWndProcPtr = ptr
+	listBoxOrigWndProcPtr = ptr
 }
 
 func (*ListBox) LayoutFlags() LayoutFlags {
 	return GrowableHorz | GrowableVert
 }
 
-func (this *ListBox) AddString(item string){
-	SendMessage (this.hWnd, LB_ADDSTRING, 0, 
+func (lb *ListBox) AddString(item string){
+	SendMessage (lb.hWnd, LB_ADDSTRING, 0, 
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item))))
 }
 
-//If this parameter is -1, the string is added to the end of the list.
-func (this *ListBox) InsertString(index int, item string) error{
+//If lb parameter is -1, the string is added to the end of the list.
+func (lb *ListBox) InsertString(index int, item string) error{
 	if index < -1{
-		return errors.New("Invalid index")
+		return newError("Invalid index")
 	}
 	
-	ret := int(SendMessage(this.hWnd, LB_INSERTSTRING, uintptr(index), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item)))))
+	ret := int(SendMessage(lb.hWnd, LB_INSERTSTRING, uintptr(index), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item)))))
 	if ret == LB_ERRSPACE || ret == LB_ERR {
-		return errors.New("LB_ERR or LB_ERRSPACE")
+		return newError("Fail to insert string")
 	}
 	return nil
 }
 
-func (this *ListBox) DeleteString(index uint) error{
-	ret := int(SendMessage(this.hWnd, LB_DELETESTRING, uintptr(index), 0))
+func (lb *ListBox) DeleteString(index uint) error{
+	ret := int(SendMessage(lb.hWnd, LB_DELETESTRING, uintptr(index), 0))
 	if ret == LB_ERR {
-		return errors.New("LB_ERR")
+		return newError("Fail to delete string")
 	}
 	return nil
 }
 
-func (this *ListBox) GetString(index uint) string{
-	len := int(SendMessage(this.hWnd, LB_GETTEXTLEN, uintptr(index), 0))
+func (lb *ListBox) GetString(index uint) string{
+	len := int(SendMessage(lb.hWnd, LB_GETTEXTLEN, uintptr(index), 0))
 	if len == LB_ERR{
 		return ""
 	}
 
 	buf := make([]uint16, len + 1)
-	_ = SendMessage(this.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buf[0])))
+	_ = SendMessage(lb.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buf[0])))
 	
 	if len == LB_ERR{
 		return ""
@@ -89,38 +89,38 @@ func (this *ListBox) GetString(index uint) string{
 }
 	
 
-func (this *ListBox) ResetContent(){
-	SendMessage(this.hWnd, LB_RESETCONTENT, 0, 0)
+func (lb *ListBox) ResetContent(){
+	SendMessage(lb.hWnd, LB_RESETCONTENT, 0, 0)
 }
 
 //The return value is the number of items in the list box, 
 //or LB_ERR (-1) if an error occurs.
-func (this *ListBox) GetCount() (uint, error){
-    retPtr := SendMessage(this.hWnd, LB_GETCOUNT, 0, 0)
+func (lb *ListBox) GetCount() (uint, error){
+    retPtr := SendMessage(lb.hWnd, LB_GETCOUNT, 0, 0)
 	ret := int(retPtr)
 	if ret == LB_ERR{
-		return 0, errors.New("LB_ERR")
+		return 0, newError("Fail to get count")
 	}
 	return uint(ret), nil
 }
 
-func (this *ListBox) calculateMaxItemTextWidth() int {
-	hdc := GetDC(this.hWnd)
+func (lb *ListBox) calculateMaxItemTextWidth() int {
+	hdc := GetDC(lb.hWnd)
 	if hdc == 0 {
 		newError("GetDC failed")
 		return -1
 	}
-	defer ReleaseDC(this.hWnd, hdc)
+	defer ReleaseDC(lb.hWnd, hdc)
 
-	hFontOld := SelectObject(hdc, HGDIOBJ(this.Font().handleForDPI(0)))
+	hFontOld := SelectObject(hdc, HGDIOBJ(lb.Font().handleForDPI(0)))
 	defer SelectObject(hdc, hFontOld)
 
 	var maxWidth int
 
-	count, _ := this.GetCount()
+	count, _ := lb.GetCount()
 	var i uint
 	for i = 0; i < count ; i++{
-		item  := this.GetString(i)
+		item  := lb.GetString(i)
 		var s SIZE
 		str := syscall.StringToUTF16(item)
 
@@ -136,52 +136,60 @@ func (this *ListBox) calculateMaxItemTextWidth() int {
 }
 
 
-func (this *ListBox) SizeHint() Size {
+func (lb *ListBox) SizeHint() Size {
 
-	defaultSize := this.dialogBaseUnitsToPixels(Size{50, 12})
+	defaultSize := lb.dialogBaseUnitsToPixels(Size{50, 12})
 
-	if this.maxItemTextWidth <= 0 {
-		this.maxItemTextWidth = this.calculateMaxItemTextWidth()
+	if lb.maxItemTextWidth <= 0 {
+		lb.maxItemTextWidth = lb.calculateMaxItemTextWidth()
 	}
 
 	// FIXME: Use GetThemePartSize instead of guessing
-	w := maxi(defaultSize.Width, this.maxItemTextWidth+24)
+	w := maxi(defaultSize.Width, lb.maxItemTextWidth+24)
 	h := defaultSize.Height + 1
 
 	return Size{w, h}	
 
 }
 
-func (this *ListBox) SelectedIndex() int{
-	return int(SendMessage (this.hWnd, LB_GETCURSEL, 0, 0))
+func (lb *ListBox) CurrentIndex() int{
+	return int(SendMessage (lb.hWnd, LB_GETCURSEL, 0, 0))
 }
 
-func (this *ListBox) SelectedItem() string{
-	index := this.SelectedIndex()
-	length := int(SendMessage(this.hWnd, LB_GETTEXTLEN, uintptr(index), 0)) + 1
+func (lb *ListBox) SetCurrentIndex(value int) error{
+	ret := int(SendMessage(lb.hWnd, LB_SETCURSEL, uintptr(value), 0))
+	if ret == LB_ERR{
+		return newError("Invalid index or ensure lb is single-selection listbox")
+	}
+	return nil
+}
+
+func (lb *ListBox) CurrentString() string{
+	index := lb.CurrentIndex()
+	length := int(SendMessage(lb.hWnd, LB_GETTEXTLEN, uintptr(index), 0)) + 1
 	buffer := make([]uint16, length +1)
-	SendMessage(this.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buffer[0])))
+	SendMessage(lb.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buffer[0])))
 	return syscall.UTF16ToString(buffer)
 }
 
-func (this *ListBox) SelectedIndexChanged() *Event{
-	return this.selectedIndexChangedPublisher.Event()
+func (lb *ListBox) CurrentIndexChanged() *Event{
+	return lb.CurrentIndexChangedPublisher.Event()
 }
 
-func (this *ListBox) DBClicked() *Event{
-	return this.dbClickedPublisher.Event()
+func (lb *ListBox) DblClicked() *Event{
+	return lb.dblClickedPublisher.Event()
 }
 
-func (this *ListBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (lb *ListBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
 		case LBN_SELCHANGE:
-			this.selectedIndexChangedPublisher.Publish()
+			lb.CurrentIndexChangedPublisher.Publish()
 		case LBN_DBLCLK:
-			this.dbClickedPublisher.Publish()
+			lb.dblClickedPublisher.Publish()
 		}
 	}
 
-	return this.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return lb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
 }
