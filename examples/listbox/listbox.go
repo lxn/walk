@@ -16,23 +16,8 @@ func main() {
 	myWindow.SetLayout(walk.NewVBoxLayout())
 	myWindow.SetTitle("Go GUI example")
 
-	// usrGroup, _ := walk.NewGroupBox(myWindow)
-	// usrGroup.SetTitle("User Enviroment")
-	// sysGroup, _ := walk.NewGroupBox(myWindow)
-	// sysGroup.SetTitle("System Enviroment")
-
-	// usrGroup.SetLayout(walk.NewVBoxLayout())
-	// myButton1, _ := walk.NewPushButton(usrGroup)
-	// myButton1.SetText("XXXX")
-
-	// sysGroup.SetLayout(walk.NewVBoxLayout())
-	// myButton2, _ := walk.NewPushButton(sysGroup)
-	// myButton2.SetText("XXXXYY")	
-
 	myButton1, _ := walk.NewPushButton(myWindow)
 	myButton1.SetText("XXXX")
-	// myButton2, _ := walk.NewLabel(myWindow)
-	// myButton2.SetText("XXXXYYYYYYY")
 
 	envMap := make(map[string]string)
 
@@ -45,7 +30,7 @@ func main() {
 		key := env[0:i]
 		value := env[i+1:]
 		envMap[key] = value
-		lb.AddItem(key)
+		lb.AddString(key)
 	}
 
 	lb.SelectedIndexChanged().Attach(func() {
