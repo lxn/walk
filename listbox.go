@@ -5,7 +5,10 @@
 package walk
 
 import (
+	"fmt"
+	"math/big"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -16,8 +19,14 @@ var _ subclassedWidget = &ListBox{}
 
 type ListBox struct {
 	WidgetBase
+	model                        ListModel
+	format                       string
+	precision                    int
+	prevCurIndex                 int
+	itemsResetHandlerHandle      int
+	itemChangedHandlerHandle     int
 	maxItemTextWidth             int
-	CurrentIndexChangedPublisher EventPublisher
+	currentIndexChangedPublisher EventPublisher
 	dblClickedPublisher          EventPublisher
 }
 
@@ -46,6 +55,122 @@ func (*ListBox) setOrigWndProcPtr(ptr uintptr) {
 func (*ListBox) LayoutFlags() LayoutFlags {
 	return GrowableHorz | GrowableVert
 }
+
+func (lb *ListBox) itemString(index int) string {
+	switch val := lb.model.Value(index).(type) {
+	case string:
+		return val
+
+	case time.Time:
+		return val.Format(lb.format)
+
+	case *big.Rat:
+		return val.FloatString(lb.precision)
+
+	default:
+		return fmt.Sprintf(lb.format, val)
+	}
+
+	panic("unreachable")
+}
+
+//insert one item from list model
+func (lb *ListBox) insertItemAt(index int) error {
+	str := lb.itemString(index)
+	lp := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(str)))
+	ret := int (SendMessage(lb.hWnd, LB_INSERTSTRING, uintptr(index), lp))
+	if ret == LB_ERRSPACE || ret == LB_ERR {
+		return newError("SendMessage(LB_INSERTSTRING)")
+	}
+	return nil
+}
+
+// reread all the items from list model
+func (lb *ListBox) resetItems() error {
+	lb.SetSuspended(true)
+	defer lb.SetSuspended(false)
+
+	SendMessage(lb.hWnd, LB_RESETCONTENT, 0, 0)
+
+	lb.maxItemTextWidth = 0
+
+	lb.SetCurrentIndex(-1)
+
+	if lb.model == nil {
+		return nil
+	}
+
+	count := lb.model.ItemCount()
+
+	for i := 0; i < count; i++ {
+		if err := lb.insertItemAt(i); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+
+func (lb *ListBox) attachModel() {
+	itemsResetHandler := func() {
+		lb.resetItems()
+	}
+	lb.itemsResetHandlerHandle = lb.model.ItemsReset().Attach(itemsResetHandler)
+
+	itemChangedHandler := func(index int) {
+		if CB_ERR == SendMessage(lb.hWnd, LB_DELETESTRING, uintptr(index), 0) {
+			newError("SendMessage(CB_DELETESTRING)")
+		}
+
+		lb.insertItemAt(index)
+
+		lb.SetCurrentIndex(lb.prevCurIndex)
+	}
+	lb.itemChangedHandlerHandle = lb.model.ItemChanged().Attach(itemChangedHandler)
+}
+
+func (lb *ListBox) detachModel() {
+	lb.model.ItemsReset().Detach(lb.itemsResetHandlerHandle)
+	lb.model.ItemChanged().Detach(lb.itemChangedHandlerHandle)
+}
+
+func (lb *ListBox) Model() ListModel {
+	return lb.model
+}
+
+func (lb *ListBox) SetModel(model ListModel) error {
+	if lb.model != nil {
+		lb.detachModel()
+	}
+
+	lb.model = model
+
+	if model != nil {
+		lb.attachModel()
+
+		return lb.resetItems()
+	}
+
+	return nil
+}
+
+func (lb *ListBox) Format() string {
+	return lb.format
+}
+
+func (lb *ListBox) SetFormat(value string) {
+	lb.format = value
+}
+
+func (lb *ListBox) Precision() int {
+	return lb.precision
+}
+
+func (lb *ListBox) SetPrecision(value int) {
+	lb.precision = value
+}
+
 
 func (lb *ListBox) AddString(item string) {
 	SendMessage(lb.hWnd, LB_ADDSTRING, 0,
@@ -155,9 +280,17 @@ func (lb *ListBox) CurrentIndex() int {
 }
 
 func (lb *ListBox) SetCurrentIndex(value int) error {
+	if value < 0 {
+		return nil
+	}
 	ret := int(SendMessage(lb.hWnd, LB_SETCURSEL, uintptr(value), 0))
 	if ret == LB_ERR {
 		return newError("Invalid index or ensure lb is single-selection listbox")
+	}
+
+	if value != lb.prevCurIndex {
+		lb.prevCurIndex = value
+		lb.currentIndexChangedPublisher.Publish()
 	}
 	return nil
 }
@@ -171,7 +304,7 @@ func (lb *ListBox) CurrentString() string {
 }
 
 func (lb *ListBox) CurrentIndexChanged() *Event {
-	return lb.CurrentIndexChangedPublisher.Event()
+	return lb.currentIndexChangedPublisher.Event()
 }
 
 func (lb *ListBox) DblClicked() *Event {
@@ -183,7 +316,7 @@ func (lb *ListBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
 		case LBN_SELCHANGE:
-			lb.CurrentIndexChangedPublisher.Publish()
+			lb.currentIndexChangedPublisher.Publish()
 		case LBN_DBLCLK:
 			lb.dblClickedPublisher.Publish()
 		}
