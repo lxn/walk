@@ -21,7 +21,7 @@ import (
 )
 
 var forceUpdate *bool = flag.Bool("force", false, "forces code generation for up-to-date files")
-var translatable *bool = flag.Bool("tr", false, "adds calls to a user provided 'func tr(text string, comments ...string) string' that returns a translation of the first argument")
+var translatable *bool = flag.Bool("tr", false, "adds calls to a user provided 'func tr(source string, comments ...string) string' that returns a translation of the source argument, using provided comments for disambiguation, if required")
 
 type String struct {
 	Text         string `xml:"string"`
