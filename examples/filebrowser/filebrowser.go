@@ -10,7 +10,9 @@ import (
 	"time"
 )
 
-import "github.com/lxn/walk"
+import (
+	"github.com/lxn/walk"
+)
 
 type FileInfo struct {
 	Name     string

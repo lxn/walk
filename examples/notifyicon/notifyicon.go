@@ -4,7 +4,9 @@
 
 package main
 
-import "github.com/lxn/walk"
+import (
+	"github.com/lxn/walk"
+)
 
 func main() {
 	// Initialize walk and specify that we want errors to be panics.

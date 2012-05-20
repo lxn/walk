@@ -10,7 +10,9 @@ import (
 	"time"
 )
 
-import "github.com/lxn/walk"
+import (
+	"github.com/lxn/walk"
+)
 
 type Foo struct {
 	Bar     string
@@ -20,9 +22,8 @@ type Foo struct {
 }
 
 type FooModel struct {
-	items               []*Foo
-	rowsResetPublisher  walk.EventPublisher
-	rowChangedPublisher walk.IntEventPublisher
+	walk.TableModelBase
+	items []*Foo
 }
 
 // Make sure we implement all required interfaces.
@@ -66,17 +67,6 @@ func (m *FooModel) Value(row, col int) interface{} {
 	panic("unexpected col")
 }
 
-// The TableView attaches to this event to synchronize its internal item count.
-func (m *FooModel) RowsReset() *walk.Event {
-	return m.rowsResetPublisher.Event()
-}
-
-// The TableView attaches to this event to get notified when a row changed and
-// needs to be repainted.
-func (m *FooModel) RowChanged() *walk.IntEvent {
-	return m.rowChangedPublisher.Event()
-}
-
 // Called by the TableView to retrieve if a given row is checked.
 func (m *FooModel) Checked(row int) bool {
 	return m.items[row].checked
@@ -104,7 +94,7 @@ func (m *FooModel) ResetRows() {
 	}
 
 	// Notify TableView and other interested parties about the reset.
-	m.rowsResetPublisher.Publish()
+	m.PublishRowsReset()
 }
 
 type MainWindow struct {
@@ -130,26 +120,6 @@ func main() {
 
 	mw.SetLayout(walk.NewVBoxLayout())
 	mw.SetTitle("Walk TableView Example")
-
-	fileMenu, _ := walk.NewMenu()
-	fileMenuAction, _ := mw.Menu().Actions().AddMenu(fileMenu)
-	fileMenuAction.SetText("&File")
-
-	exitAction := walk.NewAction()
-	exitAction.SetText("E&xit")
-	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
-	fileMenu.Actions().Add(exitAction)
-
-	helpMenu, _ := walk.NewMenu()
-	helpMenuAction, _ := mw.Menu().Actions().AddMenu(helpMenu)
-	helpMenuAction.SetText("&Help")
-
-	aboutAction := walk.NewAction()
-	aboutAction.SetText("&About")
-	aboutAction.Triggered().Attach(func() {
-		walk.MsgBox(mw, "About", "Walk TableView Example", walk.MsgBoxOK|walk.MsgBoxIconInformation)
-	})
-	helpMenu.Actions().Add(aboutAction)
 
 	resetRowsButton, _ := walk.NewPushButton(mw)
 	resetRowsButton.SetText("Reset Rows")
