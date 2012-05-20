@@ -162,11 +162,9 @@ func (cb *ComboBox) SetModel(model ListModel) error {
 
 	if model != nil {
 		cb.attachModel()
-
-		return cb.resetItems()
 	}
 
-	return nil
+	return cb.resetItems()
 }
 
 func (cb *ComboBox) Format() string {
