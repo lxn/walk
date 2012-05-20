@@ -39,6 +39,7 @@ func (em *EnvModel) Value( index int) interface{} {
 }
 
 
+
 func main() {
 	walk.Initialize(walk.InitParams{PanicOnError: true})
 	defer walk.Shutdown()
@@ -48,11 +49,33 @@ func main() {
 	myWindow.SetLayout(walk.NewVBoxLayout())
 	myWindow.SetTitle("Go GUI example")
 
-	myButton1, _ := walk.NewPushButton(myWindow)
-	myButton1.SetText("XXXX")
+	splitter, _ := walk.NewSplitter(myWindow)
+	splitter.SetOrientation(walk.Vertical)
 
-	lb, _ := walk.NewListBox(myWindow)
+	lb, _ := walk.NewListBox(splitter)
+	//lb.SetHeight(100)
 
+
+	valueEdit, _ := walk.NewTextEdit(splitter)
+	valueEdit.SetReadOnly(true)
+	//valueEdit.SetHeight(300)
+	
+
+	buttonCompositor, _ := walk.NewComposite(splitter)
+	hbox := walk.NewHBoxLayout()
+	buttonCompositor.SetLayout(hbox)
+	
+	myButton1, _ := walk.NewPushButton(buttonCompositor)
+	myButton1.SetText("New")
+
+	myButton2, _ := walk.NewPushButton(buttonCompositor)
+	myButton2.SetText("Edit")
+
+	myButton3, _ := walk.NewPushButton(buttonCompositor)
+	myButton3.SetText("Delete")
+
+
+	//env model
 	em := NewEnvModel()
 
 	for _, env := range os.Environ() {
@@ -71,13 +94,17 @@ func main() {
 	lb.SetModel(em)
 	lb.CurrentIndexChanged().Attach(func() {
 		if curVar, ok := em.Value(lb.CurrentIndex()).(string); ok {
-			myButton1.SetText(curVar)
+			value := em.envItems[lb.CurrentIndex()].value
+			value = strings.Replace(value, ";", "\r\n", -1)
+			valueEdit.SetText(value)
 			fmt.Println("CurrentIndex:", lb.CurrentIndex())
 			fmt.Println("CurrentEnvVarName:",curVar)
 		}
 	})
 	lb.DblClicked().Attach(func() { 
 		value := em.envItems[lb.CurrentIndex()].value
+		value = strings.Replace(value, ";", "\r\n", -1)
+		valueEdit.SetText(value)
 		walk.MsgBox(myWindow, "About", value, walk.MsgBoxOK|walk.MsgBoxIconInformation)
 	})
 	myWindow.Show()
