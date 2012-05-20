@@ -30,6 +30,12 @@ type FooModel struct {
 var _ walk.TableModel = &FooModel{}
 var _ walk.ItemChecker = &FooModel{}
 
+func NewFooModel() *FooModel {
+	m := new(FooModel)
+	m.ResetRows()
+	return m
+}
+
 // Called by the TableView from SetModel to retrieve column information. 
 func (m *FooModel) Columns() []walk.TableColumn {
 	return []walk.TableColumn{
@@ -112,11 +118,8 @@ func main() {
 
 	mw := &MainWindow{
 		MainWindow: mainWnd,
-		model:      &FooModel{},
+		model:      NewFooModel(),
 	}
-
-	// We want the model to be populated right from the beginning.
-	mw.model.ResetRows()
 
 	mw.SetLayout(walk.NewVBoxLayout())
 	mw.SetTitle("Walk TableView Example")
