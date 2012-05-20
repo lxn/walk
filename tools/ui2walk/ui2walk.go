@@ -20,7 +20,14 @@ import (
 	"strings"
 )
 
-var forceUpdate *bool = flag.Bool("force", false, "force code generation for up-to-date files")
+var forceUpdate *bool = flag.Bool("force", false, "forces code generation for up-to-date files")
+var translatable *bool = flag.Bool("tr", false, "adds calls to a user provided 'func tr(text string, comments ...string) string' that returns a translation of the first argument")
+
+type String struct {
+	Text         string `xml:"string"`
+	Comment      string `xml:"comment,attr"`
+	ExtraComment string `xml:"extracomment,attr"`
+}
 
 type UI struct {
 	Class         string        `xml:"class"`
@@ -63,8 +70,8 @@ type Spacer struct {
 }
 
 type Attribute struct {
-	Name   string `xml:"name,attr"`
-	String string `xml:"string"`
+	Name string `xml:"name,attr"`
+	String
 }
 
 type Property struct {
@@ -76,7 +83,7 @@ type Property struct {
 	Rect   Rectangle `xml:"rect"`
 	Set    string    `xml:"set"`
 	Size   Size      `xml:"size"`
-	String string    `xml:"string"`
+	String
 }
 
 type Font struct {
@@ -109,6 +116,37 @@ type CustomWidget struct {
 	Extends string `xml:"extends"`
 }
 
+func trString(str *String) string {
+	if str == nil {
+		return ""
+	}
+
+	if !*translatable {
+		return fmt.Sprintf("`%s`", str.Text)
+	}
+
+	buf := new(bytes.Buffer)
+	buf.WriteString("tr(`")
+	buf.WriteString(str.Text)
+	buf.WriteString("`")
+
+	if str.Comment != "" {
+		buf.WriteString(", `")
+		buf.WriteString(str.Comment)
+		buf.WriteString("`")
+	}
+
+	if str.ExtraComment != "" {
+		buf.WriteString(", `")
+		buf.WriteString(str.ExtraComment)
+		buf.WriteString("`")
+	}
+
+	buf.WriteString(")")
+
+	return buf.String()
+}
+
 func logFatal(err error) {
 	if err != nil {
 		log.Fatal(err)
@@ -129,8 +167,8 @@ func writeAttribute(buf *bytes.Buffer, attr *Attribute, qualifiedReceiver string
 	switch attr.Name {
 	case "title":
 		buf.WriteString(fmt.Sprintf(
-			"if err := %s.SetTitle(`%s`); err != nil {\nreturn err\n}\n",
-			qualifiedReceiver, attr.String))
+			"if err := %s.SetTitle(%s); err != nil {\nreturn err\n}\n",
+			qualifiedReceiver, trString(&attr.String)))
 
 	default:
 		fmt.Printf("Ignoring unsupported attribute: '%s'\n", attr.Name)
@@ -236,13 +274,13 @@ func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string, 
 
 	case "text":
 		buf.WriteString(fmt.Sprintf(
-			"if err := %s.SetText(`%s`); err != nil {\nreturn err\n}\n",
-			qualifiedReceiver, prop.String))
+			"if err := %s.SetText(%s); err != nil {\nreturn err\n}\n",
+			qualifiedReceiver, trString(&prop.String)))
 
 	case "title", "windowTitle":
 		buf.WriteString(fmt.Sprintf(
-			"if err := %s.SetTitle(`%s`); err != nil {\nreturn err\n}\n",
-			qualifiedReceiver, prop.String))
+			"if err := %s.SetTitle(%s); err != nil {\nreturn err\n}\n",
+			qualifiedReceiver, trString(&prop.String)))
 
 	case "orientation":
 		var orientation string
@@ -883,7 +921,7 @@ func processFile(uiFilePath string) error {
 	}
 	defer goFile.Close()
 
-	buf := bytes.NewBuffer(nil)
+	buf := new(bytes.Buffer)
 
 	if err := generateCode(buf, ui); err != nil {
 		return err
