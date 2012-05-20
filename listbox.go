@@ -53,7 +53,7 @@ func (*ListBox) setOrigWndProcPtr(ptr uintptr) {
 }
 
 func (*ListBox) LayoutFlags() LayoutFlags {
-	return GrowableHorz | GrowableVert
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert 
 }
 
 func (lb *ListBox) itemString(index int) string {
@@ -171,63 +171,6 @@ func (lb *ListBox) SetPrecision(value int) {
 	lb.precision = value
 }
 
-
-func (lb *ListBox) AddString(item string) {
-	SendMessage(lb.hWnd, LB_ADDSTRING, 0,
-		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item))))
-}
-
-//If lb parameter is -1, the string is added to the end of the list.
-func (lb *ListBox) InsertString(index int, item string) error {
-	if index < -1 {
-		return newError("Invalid index")
-	}
-
-	ret := int(SendMessage(lb.hWnd, LB_INSERTSTRING, uintptr(index), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item)))))
-	if ret == LB_ERRSPACE || ret == LB_ERR {
-		return newError("Fail to insert string")
-	}
-	return nil
-}
-
-func (lb *ListBox) DeleteString(index uint) error {
-	ret := int(SendMessage(lb.hWnd, LB_DELETESTRING, uintptr(index), 0))
-	if ret == LB_ERR {
-		return newError("Fail to delete string")
-	}
-	return nil
-}
-
-func (lb *ListBox) GetString(index uint) string {
-	len := int(SendMessage(lb.hWnd, LB_GETTEXTLEN, uintptr(index), 0))
-	if len == LB_ERR {
-		return ""
-	}
-
-	buf := make([]uint16, len+1)
-	_ = SendMessage(lb.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buf[0])))
-
-	if len == LB_ERR {
-		return ""
-	}
-	return syscall.UTF16ToString(buf)
-}
-
-func (lb *ListBox) ResetContent() {
-	SendMessage(lb.hWnd, LB_RESETCONTENT, 0, 0)
-}
-
-//The return value is the number of items in the list box,
-//or LB_ERR (-1) if an error occurs.
-func (lb *ListBox) GetCount() (uint, error) {
-	retPtr := SendMessage(lb.hWnd, LB_GETCOUNT, 0, 0)
-	ret := int(retPtr)
-	if ret == LB_ERR {
-		return 0, newError("Fail to get count")
-	}
-	return uint(ret), nil
-}
-
 func (lb *ListBox) calculateMaxItemTextWidth() int {
 	hdc := GetDC(lb.hWnd)
 	if hdc == 0 {
@@ -241,10 +184,12 @@ func (lb *ListBox) calculateMaxItemTextWidth() int {
 
 	var maxWidth int
 
-	count, _ := lb.GetCount()
-	var i uint
-	for i = 0; i < count; i++ {
-		item := lb.GetString(i)
+	if lb.model == nil{
+		return -1
+	}
+	count := lb.model.ItemCount()
+	for i := 0; i < count; i++ {
+		item := lb.itemString(i)
 		var s SIZE
 		str := syscall.StringToUTF16(item)
 
@@ -293,14 +238,6 @@ func (lb *ListBox) SetCurrentIndex(value int) error {
 		lb.currentIndexChangedPublisher.Publish()
 	}
 	return nil
-}
-
-func (lb *ListBox) CurrentString() string {
-	index := lb.CurrentIndex()
-	length := int(SendMessage(lb.hWnd, LB_GETTEXTLEN, uintptr(index), 0)) + 1
-	buffer := make([]uint16, length+1)
-	SendMessage(lb.hWnd, LB_GETTEXT, uintptr(index), uintptr(unsafe.Pointer(&buffer[0])))
-	return syscall.UTF16ToString(buffer)
 }
 
 func (lb *ListBox) CurrentIndexChanged() *Event {

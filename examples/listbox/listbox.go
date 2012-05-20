@@ -1,4 +1,4 @@
-// Copyright 2010 The Walk Authors. All rights reserved.
+// Copyright 2012 The Walk Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -12,34 +12,30 @@ import (
 
 import "github.com/lxn/walk"
 
+type EnvItem struct {
+	varName string
+	value   string
+}
+
 type EnvModel struct{
-	names  []string
-	values []string
+	walk.ListModelBase
+	envItems []EnvItem
 	itemsResetPublisher  walk.EventPublisher
 	itemChangedPublisher walk.IntEventPublisher	
 }
 
 func NewEnvModel() *EnvModel{
 	em := &EnvModel{}
-	em.names = make([]string, 0)
-	em.values = make([]string, 0)
+	em.envItems = make([]EnvItem, 0)
 	return em
 }
 
 func (em *EnvModel) ItemCount()int{
-	return len(em.names)
+	return len(em.envItems)
 }
 
 func (em *EnvModel) Value( index int) interface{} {
-	return em.names[index]
-}
-
-func (em *EnvModel) ItemsReset() *walk.Event {
-	return em.itemsResetPublisher.Event()
-}
-
-func (em *EnvModel) ItemChanged() *walk.IntEvent {
-	return em.itemChangedPublisher.Event()
+	return em.envItems[index].varName
 }
 
 
@@ -64,20 +60,24 @@ func main() {
 		if i == 0 {
 			continue
 		}
-		key := env[0:i]
+		varName := env[0:i]
 		value := env[i+1:]
-		em.names = append(em.names, key)
-		em.values = append(em.values, value)
+		envItem := EnvItem{varName, value}
+		
+		em.envItems = append(em.envItems, envItem)
 	}
 
+	fmt.Println("The len of Model", em.ItemCount())
 	lb.SetModel(em)
 	lb.CurrentIndexChanged().Attach(func() {
-		myButton1.SetText(lb.CurrentString())
-		fmt.Println("CurrentIndex:", lb.CurrentIndex())
-		fmt.Println("CurrentString",lb.CurrentString())
+		if curVar, ok := em.Value(lb.CurrentIndex()).(string); ok {
+			myButton1.SetText(curVar)
+			fmt.Println("CurrentIndex:", lb.CurrentIndex())
+			fmt.Println("CurrentEnvVarName:",curVar)
+		}
 	})
 	lb.DblClicked().Attach(func() { 
-		value := em.values[lb.CurrentIndex()]
+		value := em.envItems[lb.CurrentIndex()].value
 		walk.MsgBox(myWindow, "About", value, walk.MsgBoxOK|walk.MsgBoxIconInformation)
 	})
 	myWindow.Show()
