@@ -27,13 +27,15 @@ ui2walk
 
 The ui2walk tool generates Go code for use with Walk from Qt Designer ui files.
 
-It generates a .go file for every .ui file in the current working directory,
+It generates .go files for every .ui file in the current working directory,
 recursively.
 
 If you e.g. have a file 'mydialog.ui', ui2walk will create 'mydialog_ui.go' in 
-the same directory.
+the same directory. This file will get regenerated every time you run ui2walk,
+so don't edit it.
 
-To use the generated code, put something like this into a file 'mydialog.go':
+If it doesn't already exist, ui2walk also creates a matching "logic" file 
+'mydialog.go', which will not be regenerated, so you can extend it:
 
 	package main
 
@@ -50,7 +52,7 @@ To use the generated code, put something like this into a file 'mydialog.go':
 			return 0, err
 		}
 	
-		// Your custom init and event handling code goes here
+		// TODO: Do further required setup, e.g. for event handling, here.
 
 		return dlg.Run(), nil
 	}
