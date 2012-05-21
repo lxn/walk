@@ -43,6 +43,8 @@ type Widget struct {
 	Property  []*Property  `xml:"property"`
 	Layout    *Layout      `xml:"layout"`
 	Widget    []*Widget    `xml:"widget"`
+	AddAction []*AddAction `xml:"addaction"`
+	Action    []*Action    `xml:"action"`
 	ignored   bool
 }
 
@@ -65,6 +67,15 @@ type Item struct {
 }
 
 type Spacer struct {
+	Name     string      `xml:"name,attr"`
+	Property []*Property `xml:"property"`
+}
+
+type AddAction struct {
+	Name string `xml:"name,attr"`
+}
+
+type Action struct {
 	Name     string      `xml:"name,attr"`
 	Property []*Property `xml:"property"`
 }
@@ -189,7 +200,7 @@ func writeAttributes(buf *bytes.Buffer, attrs []*Attribute, qualifiedReceiver st
 }
 
 func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string, widget *Widget) (err error) {
-	if prop.Name == "windowTitle" && widget.Class == "QWidget" {
+	if prop.Name == "windowTitle" && widget != nil && widget.Class == "QWidget" {
 		return
 	}
 
@@ -735,7 +746,8 @@ func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) error {
 
 func writeWidgetDecls(buf *bytes.Buffer, widgets []*Widget, parent *Widget) error {
 	for _, widget := range widgets {
-		if widget.Class == "QMenuBar" || widget.Class == "QStatusBar" {
+		switch widget.Class {
+		case "QMenuBar", "QStatusBar":
 			continue
 		}
 
@@ -756,6 +768,122 @@ func writeItemDecls(buf *bytes.Buffer, items []*Item, parent *Widget) error {
 		if err := writeWidgetDecl(buf, item.Widget, parent); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func writeActionDecl(buf *bytes.Buffer, action *Action) error {
+	buf.WriteString(action.Name)
+	buf.WriteString(" *walk.Action\n")
+	return nil
+}
+
+func writeActionDecls(buf *bytes.Buffer, actions []*Action) error {
+	for _, action := range actions {
+		if err := writeActionDecl(buf, action); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func writeMenuInitialization(buf *bytes.Buffer, menu *Widget, realActions map[string]bool) error {
+	var qualifiedParentMenu string
+
+	if menu.Class == "QMenuBar" {
+		buf.WriteString("// Menus\n\n")
+
+		qualifiedParentMenu = "w.Menu()"
+	} else {
+		qualifiedParentMenu = menu.Name
+	}
+
+	for _, addAction := range menu.AddAction {
+		if realActions[addAction.Name] {
+			buf.WriteString("if err := ")
+			buf.WriteString(qualifiedParentMenu)
+			buf.WriteString(".Actions().Add(w.ui.actions.")
+			buf.WriteString(addAction.Name)
+			buf.WriteString(`); err != nil {
+				return err
+			}
+			
+			`)
+		} else {
+			for _, submenu := range menu.Widget {
+				if submenu.Name != addAction.Name {
+					continue
+				}
+
+				buf.WriteString("// ")
+				buf.WriteString(submenu.Name)
+				buf.WriteString("\n")
+
+				buf.WriteString(submenu.Name)
+				buf.WriteString(`, err := walk.NewMenu()
+					if err != nil {
+						return err
+					}
+					`)
+				submenuActionName := submenu.Name + "Action"
+
+				buf.WriteString(submenuActionName)
+				buf.WriteString(", err := ")
+				buf.WriteString(qualifiedParentMenu)
+				buf.WriteString(".Actions().AddMenu(")
+				buf.WriteString(submenu.Name)
+				buf.WriteString(`)
+					if err != nil {
+						return err
+					}
+					`)
+
+				for _, prop := range submenu.Property {
+					if prop.Name == "title" {
+						buf.WriteString("if err := ")
+						buf.WriteString(submenuActionName)
+						buf.WriteString(".SetText(")
+						buf.WriteString(trString(&prop.String))
+						buf.WriteString(`); err != nil {
+							return err
+						}
+						
+						`)
+						break
+					}
+				}
+
+				if err := writeMenuInitialization(buf, submenu, realActions); err != nil {
+					return err
+				}
+			}
+
+		}
+	}
+
+	return nil
+}
+
+func writeActionInitializations(buf *bytes.Buffer, actions []*Action) error {
+	buf.WriteString("\n// Actions\n\n")
+
+	for _, action := range actions {
+		qualifiedReceiver := "w.ui.actions." + action.Name
+
+		buf.WriteString("// ")
+		buf.WriteString(qualifiedReceiver)
+		buf.WriteString("\n")
+
+		buf.WriteString(qualifiedReceiver)
+		buf.WriteString(" = walk.NewAction()\n")
+
+		if err := writeProperties(buf, action.Property, qualifiedReceiver, nil); err != nil {
+			return err
+		}
+
+		buf.WriteString("\n")
 	}
 
 	return nil
@@ -790,8 +918,23 @@ func generateCode(buf *bytes.Buffer, ui *UI) error {
 		return errors.New(fmt.Sprintf("Top level '%s' currently not supported.", ui.Widget.Class))
 	}
 
+	genTypeBaseName := strings.ToLower(ui.Class[:1]) + ui.Class[1:]
+
+	if len(ui.Widget.Action) > 0 {
+		// This struct will contain actions.
+		buf.WriteString(fmt.Sprintf("type %sActions struct {\n", genTypeBaseName))
+
+		writeActionDecls(buf, ui.Widget.Action)
+
+		buf.WriteString("}\n\n")
+	}
+
 	// Struct containing all descendant widgets.
-	buf.WriteString(fmt.Sprintf("type %s%sUI struct {\n", strings.ToLower(ui.Class[:1]), ui.Class[1:]))
+	buf.WriteString(fmt.Sprintf("type %sUI struct {\n", genTypeBaseName))
+
+	if len(ui.Widget.Action) > 0 {
+		buf.WriteString(fmt.Sprintf("actions %sActions\n", genTypeBaseName))
+	}
 
 	// Descendant widget decls
 	if ui.Widget.Widget != nil {
@@ -864,6 +1007,29 @@ func generateCode(buf *bytes.Buffer, ui *UI) error {
 
 	if err := writeProperties(buf, ui.Widget.Property, "w", &ui.Widget); err != nil {
 		return err
+	}
+
+	// Let's see if we find a QMenuBar widget.
+	var menuBar *Widget
+	for _, widget := range ui.Widget.Widget {
+		if widget.Class == "QMenuBar" {
+			menuBar = widget
+			break
+		}
+	}
+
+	if len(ui.Widget.Action) > 0 {
+		writeActionInitializations(buf, ui.Widget.Action)
+
+		if menuBar != nil {
+			realActions := make(map[string]bool)
+
+			for _, action := range ui.Widget.Action {
+				realActions[action.Name] = true
+			}
+
+			writeMenuInitialization(buf, menuBar, realActions)
+		}
 	}
 
 	if ui.Widget.Widget != nil {
