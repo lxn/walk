@@ -643,7 +643,7 @@ func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget
 
 func writeWidgetInitializations(buf *bytes.Buffer, widgets []*Widget, parent *Widget, qualifiedParent string) error {
 	for _, widget := range widgets {
-		if widget.ignored {
+		if widget.ignored || widget.Class == "QMenuBar" || widget.Class == "QStatusBar" {
 			continue
 		}
 
@@ -735,6 +735,10 @@ func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) error {
 
 func writeWidgetDecls(buf *bytes.Buffer, widgets []*Widget, parent *Widget) error {
 	for _, widget := range widgets {
+		if widget.Class == "QMenuBar" || widget.Class == "QStatusBar" {
+			continue
+		}
+
 		if err := writeWidgetDecl(buf, widget, parent); err != nil {
 			return err
 		}
@@ -806,28 +810,24 @@ func generateCode(buf *bytes.Buffer, ui *UI) error {
 	buf.WriteString("}\n\n")
 
 	// init func
-	var qualifiedParent string
 	switch embeddedType {
 	case "MainWindow":
 		buf.WriteString(fmt.Sprintf(
 			`func (w *%s) init() (err error) {
 			if w.MainWindow, err = walk.NewMainWindow()`,
 			ui.Widget.Name))
-		qualifiedParent = "w.ClientArea()"
 
 	case "Dialog":
 		buf.WriteString(fmt.Sprintf(
 			`func (w *%s) init(owner walk.RootWidget) (err error) {
 			if w.Dialog, err = walk.NewDialog(owner)`,
 			ui.Widget.Name))
-		qualifiedParent = "w"
 
 	case "Composite":
 		buf.WriteString(fmt.Sprintf(
 			`func (w *%s) init(parent walk.Container) (err error) {
 			if w.Composite, err = walk.NewComposite(parent)`,
 			ui.Widget.Name))
-		qualifiedParent = "w"
 	}
 
 	buf.WriteString(fmt.Sprintf(`; err != nil {
@@ -850,18 +850,30 @@ func generateCode(buf *bytes.Buffer, ui *UI) error {
 			`,
 		ui.Widget.Name))
 
+	if embeddedType == "MainWindow" {
+		buf.WriteString(fmt.Sprintf(
+			`l := walk.NewVBoxLayout()
+			if err := l.SetMargins(walk.Margins{0, 0, 0, 0}); err != nil {
+				return err
+			}
+			if err := w.SetLayout(l); err != nil {
+				return err
+			}
+			`))
+	}
+
 	if err := writeProperties(buf, ui.Widget.Property, "w", &ui.Widget); err != nil {
 		return err
 	}
 
 	if ui.Widget.Widget != nil {
-		if err := writeWidgetInitializations(buf, ui.Widget.Widget, &ui.Widget, qualifiedParent); err != nil {
+		if err := writeWidgetInitializations(buf, ui.Widget.Widget, &ui.Widget, "w"); err != nil {
 			return err
 		}
 	}
 
 	if ui.Widget.Layout != nil {
-		if err := writeLayoutInitialization(buf, ui.Widget.Layout, &ui.Widget, qualifiedParent); err != nil {
+		if err := writeLayoutInitialization(buf, ui.Widget.Layout, &ui.Widget, "w"); err != nil {
 			return err
 		}
 	}
