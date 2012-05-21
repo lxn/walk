@@ -54,6 +54,3 @@ To use the generated code, put something like this into a file 'mydialog.go':
 
 		return dlg.Run(), nil
 	}
-
-ui2walk is not complete, so some features are missing. Dialogs and composites
-should work pretty good, but there is currently no support for MainWindows.
