@@ -49,11 +49,15 @@ func main() {
 	myWindow.SetLayout(walk.NewVBoxLayout())
 	myWindow.SetTitle("Go GUI example")
 
+	
 	splitter, _ := walk.NewSplitter(myWindow)
 	splitter.SetOrientation(walk.Vertical)
+	//splitter.SetHeight(270)
 
 	lb, _ := walk.NewListBox(splitter)
 	//lb.SetHeight(100)
+	//lb.SetMinMaxSize(walk.Size{Width:100, Height:100}, walk.Size{})
+	//lb.SetSize(walk.Size{Width:100, Height:100})
 
 
 	valueEdit, _ := walk.NewTextEdit(splitter)
@@ -61,9 +65,10 @@ func main() {
 	//valueEdit.SetHeight(300)
 	
 
-	buttonCompositor, _ := walk.NewComposite(splitter)
+	buttonCompositor, _ := walk.NewComposite(myWindow)
 	hbox := walk.NewHBoxLayout()
 	buttonCompositor.SetLayout(hbox)
+	buttonCompositor.SetHeight(30)
 	
 	myButton1, _ := walk.NewPushButton(buttonCompositor)
 	myButton1.SetText("New")
