@@ -47,38 +47,16 @@ func main() {
 	myWindow, _ := walk.NewMainWindow()
 
 	myWindow.SetLayout(walk.NewVBoxLayout())
-	myWindow.SetTitle("Go GUI example")
+	myWindow.SetTitle("Listbox example")
 
 	
 	splitter, _ := walk.NewSplitter(myWindow)
 	splitter.SetOrientation(walk.Vertical)
-	//splitter.SetHeight(270)
 
 	lb, _ := walk.NewListBox(splitter)
-	//lb.SetHeight(100)
-	//lb.SetMinMaxSize(walk.Size{Width:100, Height:100}, walk.Size{})
-	//lb.SetSize(walk.Size{Width:100, Height:100})
-
 
 	valueEdit, _ := walk.NewTextEdit(splitter)
 	valueEdit.SetReadOnly(true)
-	//valueEdit.SetHeight(300)
-	
-
-	buttonCompositor, _ := walk.NewComposite(myWindow)
-	hbox := walk.NewHBoxLayout()
-	buttonCompositor.SetLayout(hbox)
-	buttonCompositor.SetHeight(30)
-	
-	myButton1, _ := walk.NewPushButton(buttonCompositor)
-	myButton1.SetText("New")
-
-	myButton2, _ := walk.NewPushButton(buttonCompositor)
-	myButton2.SetText("Edit")
-
-	myButton3, _ := walk.NewPushButton(buttonCompositor)
-	myButton3.SetText("Delete")
-
 
 	//env model
 	em := NewEnvModel()
