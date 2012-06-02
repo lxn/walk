@@ -21,7 +21,7 @@ import (
 )
 
 var forceUpdate *bool = flag.Bool("force", false, "forces code generation for up-to-date files")
-var translatable *bool = flag.Bool("tr", false, "adds calls to a user provided 'func tr(source string, comments ...string) string' that returns a translation of the source argument, using provided comments for disambiguation, if required")
+var translatable *bool = flag.Bool("tr", false, "adds calls to a user provided 'func tr(source string, context ...string) string' that returns a translation of the source argument, using provided context args for disambiguation")
 
 type String struct {
 	Text         string `xml:"string"`
@@ -892,7 +892,8 @@ func writeActionInitializations(buf *bytes.Buffer, actions []*Action) error {
 func generateUICode(buf *bytes.Buffer, ui *UI) error {
 	// Comment, package decl, imports
 	buf.WriteString(
-		`// This file was created by ui2walk and may be regenerated. DO NOT EDIT OR YOUR MODIFICATIONS WILL BE LOST!
+		`// This file was created by ui2walk and may be regenerated.
+		// DO NOT EDIT OR YOUR MODIFICATIONS WILL BE LOST!
 
 		package main
 		
