@@ -40,6 +40,10 @@ func (*ToolButton) LayoutFlags() LayoutFlags {
 	return 0
 }
 
+func (tb *ToolButton) MinSizeHint() Size {
+	return tb.SizeHint()
+}
+
 func (tb *ToolButton) SizeHint() Size {
 	return tb.dialogBaseUnitsToPixels(Size{20, 14})
 }

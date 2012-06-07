@@ -53,7 +53,7 @@ func (*ListBox) setOrigWndProcPtr(ptr uintptr) {
 }
 
 func (*ListBox) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert 
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
 func (lb *ListBox) itemString(index int) string {
@@ -78,7 +78,7 @@ func (lb *ListBox) itemString(index int) string {
 func (lb *ListBox) insertItemAt(index int) error {
 	str := lb.itemString(index)
 	lp := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(str)))
-	ret := int (SendMessage(lb.hWnd, LB_INSERTSTRING, uintptr(index), lp))
+	ret := int(SendMessage(lb.hWnd, LB_INSERTSTRING, uintptr(index), lp))
 	if ret == LB_ERRSPACE || ret == LB_ERR {
 		return newError("SendMessage(LB_INSERTSTRING)")
 	}
@@ -110,7 +110,6 @@ func (lb *ListBox) resetItems() error {
 
 	return nil
 }
-
 
 func (lb *ListBox) attachModel() {
 	itemsResetHandler := func() {
@@ -184,7 +183,7 @@ func (lb *ListBox) calculateMaxItemTextWidth() int {
 
 	var maxWidth int
 
-	if lb.model == nil{
+	if lb.model == nil {
 		return -1
 	}
 	count := lb.model.ItemCount()

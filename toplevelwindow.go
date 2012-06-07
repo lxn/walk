@@ -248,10 +248,17 @@ func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 
 	case WM_GETMINMAXINFO:
 		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))
-		var min Size
-		if tlw.layout != nil {
-			min = tlw.sizeFromClientSize(tlw.layout.MinSize())
+
+		var layout Layout
+		if container, ok := tlw.widget.(Container); ok {
+			layout = container.Layout()
 		}
+
+		var min Size
+		if layout != nil {
+			min = tlw.sizeFromClientSize(layout.MinSize())
+		}
+
 		mmi.PtMinTrackSize = POINT{
 			int32(maxi(min.Width, tlw.minSize.Width)),
 			int32(maxi(min.Height, tlw.minSize.Height)),

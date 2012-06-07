@@ -56,7 +56,7 @@ func (*ComboBox) LayoutFlags() LayoutFlags {
 	return GrowableHorz
 }
 
-func (cb *ComboBox) SizeHint() Size {
+func (cb *ComboBox) MinSizeHint() Size {
 	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 12})
 
 	if cb.model != nil && cb.maxItemTextWidth <= 0 {
@@ -68,6 +68,10 @@ func (cb *ComboBox) SizeHint() Size {
 	h := defaultSize.Height + 1
 
 	return Size{w, h}
+}
+
+func (cb *ComboBox) SizeHint() Size {
+	return cb.MinSizeHint()
 }
 
 func (cb *ComboBox) itemString(index int) string {

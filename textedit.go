@@ -42,6 +42,10 @@ func (*TextEdit) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
+func (te *TextEdit) MinSizeHint() Size {
+	return te.dialogBaseUnitsToPixels(Size{20, 12})
+}
+
 func (te *TextEdit) SizeHint() Size {
 	return Size{100, 100}
 }

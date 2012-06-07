@@ -40,7 +40,7 @@ func (*CheckBox) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (cb *CheckBox) SizeHint() Size {
+func (cb *CheckBox) MinSizeHint() Size {
 	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 10})
 	textSize := cb.calculateTextSize()
 
@@ -49,4 +49,8 @@ func (cb *CheckBox) SizeHint() Size {
 	h := maxi(defaultSize.Height, textSize.Height)
 
 	return Size{w, h}
+}
+
+func (cb *CheckBox) SizeHint() Size {
+	return cb.MinSizeHint()
 }

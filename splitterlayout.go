@@ -91,7 +91,21 @@ func (l *splitterLayout) LayoutFlags() LayoutFlags {
 }
 
 func (l *splitterLayout) MinSize() Size {
-	return Size{10, 10}
+	var s Size
+
+	for _, widget := range l.container.Children().items {
+		cur := widget.BaseWidget().minSizeEffective()
+
+		if l.orientation == Horizontal {
+			s.Width += cur.Width
+			s.Height = maxi(s.Height, cur.Height)
+		} else {
+			s.Height += cur.Height
+			s.Width = maxi(s.Width, cur.Width)
+		}
+	}
+
+	return s
 }
 
 func (l *splitterLayout) spaceForRegularWidgets() int {

@@ -562,6 +562,8 @@ func (wb *WidgetBase) Background() Brush {
 // SetBackground sets the background Brush of the *WidgetBase.
 func (wb *WidgetBase) SetBackground(value Brush) {
 	wb.background = value
+
+	wb.Invalidate()
 }
 
 // Cursor returns the Cursor of the *WidgetBase.
@@ -902,16 +904,20 @@ func (wb *WidgetBase) LayoutFlags() LayoutFlags {
 	return 0
 }
 
+func (wb *WidgetBase) minSizeEffective() Size {
+	return maxSize(wb.minSize, wb.widget.MinSizeHint())
+}
+
 // MinSizeHint returns the minimum outer Size, including decorations, that 
 // makes sense for the respective type of Widget.
 func (wb *WidgetBase) MinSizeHint() Size {
-	return wb.widget.SizeHint()
+	return Size{10, 10}
 }
 
 // SizeHint returns a default Size that should be "overidden" by a concrete
 // Widget type.
 func (wb *WidgetBase) SizeHint() Size {
-	return Size{10, 10}
+	return wb.widget.MinSizeHint()
 }
 
 func (wb *WidgetBase) calculateTextSize() Size {

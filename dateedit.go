@@ -66,8 +66,12 @@ func (*DateEdit) LayoutFlags() LayoutFlags {
 	return GrowableHorz
 }
 
-func (de *DateEdit) SizeHint() Size {
+func (de *DateEdit) MinSizeHint() Size {
 	return de.dialogBaseUnitsToPixels(Size{64, 12})
+}
+
+func (de *DateEdit) SizeHint() Size {
+	return de.MinSizeHint()
 }
 
 func (de *DateEdit) systemTime() (*SYSTEMTIME, error) {

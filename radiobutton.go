@@ -40,7 +40,7 @@ func (*RadioButton) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (rb *RadioButton) SizeHint() Size {
+func (rb *RadioButton) MinSizeHint() Size {
 	defaultSize := rb.dialogBaseUnitsToPixels(Size{50, 10})
 	textSize := rb.calculateTextSize()
 
@@ -49,4 +49,8 @@ func (rb *RadioButton) SizeHint() Size {
 	h := maxi(defaultSize.Height, textSize.Height)
 
 	return Size{w, h}
+}
+
+func (rb *RadioButton) SizeHint() Size {
+	return rb.MinSizeHint()
 }

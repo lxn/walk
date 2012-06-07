@@ -42,17 +42,16 @@ func (*PushButton) LayoutFlags() LayoutFlags {
 	return GrowableHorz
 }
 
-func (pb *PushButton) SizeHint() Size {
+func (pb *PushButton) MinSizeHint() Size {
 	var s Size
 
 	SendMessage(pb.hWnd, BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
 
-	minSize := pb.dialogBaseUnitsToPixels(Size{50, 14})
+	return maxSize(s, pb.dialogBaseUnitsToPixels(Size{50, 14}))
+}
 
-	s.Width = maxi(s.Width, minSize.Width)
-	s.Height = maxi(s.Height, minSize.Height)
-
-	return s
+func (pb *PushButton) SizeHint() Size {
+	return pb.MinSizeHint()
 }
 
 func (pb *PushButton) ensureProperDialogDefaultButton(hwndFocus HWND) {

@@ -266,55 +266,32 @@ func (l *BoxLayout) MinSize() Size {
 		return Size{}
 	}
 
-	// Begin by finding out which widgets we care about.
 	widgets := l.widgets()
+	var s Size
 
-	// Prepare some useful data.
-	sizes := make([]int, len(widgets))
-	var s2 int
-
-	for i, widget := range widgets {
-		min := widget.MinSize()
-		minHint := widget.MinSizeHint()
+	for _, widget := range widgets {
+		min := widget.BaseWidget().minSizeEffective()
 
 		if l.orientation == Horizontal {
-			if min.Width > 0 {
-				sizes[i] = mini(minHint.Width, min.Width)
-			} else {
-				sizes[i] = minHint.Width
-			}
-
-			s2 = maxi(s2, maxi(minHint.Height, min.Height))
+			s.Width += min.Width
+			s.Height = maxi(s.Height, min.Height)
 		} else {
-			if min.Height > 0 {
-				sizes[i] = mini(minHint.Height, min.Height)
-			} else {
-				sizes[i] = minHint.Height
-			}
-
-			s2 = maxi(s2, maxi(minHint.Width, min.Width))
+			s.Height += min.Height
+			s.Width = maxi(s.Width, min.Width)
 		}
 	}
 
-	s1 := l.spacing * (len(widgets) - 1)
-
 	if l.orientation == Horizontal {
-		s1 += l.margins.HNear + l.margins.HFar
-		s2 += l.margins.VNear + l.margins.VFar
+		s.Width += l.spacing * (len(widgets) - 1)
+		s.Width += l.margins.HNear + l.margins.HFar
+		s.Height += l.margins.VNear + l.margins.VFar
 	} else {
-		s1 += l.margins.VNear + l.margins.VFar
-		s2 += l.margins.HNear + l.margins.HFar
+		s.Height += l.spacing * (len(widgets) - 1)
+		s.Height += l.margins.VNear + l.margins.VFar
+		s.Width += l.margins.HNear + l.margins.HFar
 	}
 
-	for _, s := range sizes {
-		s1 += s
-	}
-
-	if l.orientation == Horizontal {
-		return Size{s1, s2}
-	}
-
-	return Size{s2, s1}
+	return s
 }
 
 func (l *BoxLayout) Update(reset bool) error {

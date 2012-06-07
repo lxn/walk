@@ -351,22 +351,14 @@ func (l *GridLayout) MinSize() Size {
 	widths := make([]int, len(l.cells[0]))
 	heights := make([]int, len(l.cells))
 
-	type minSizes struct {
-		minSize     Size
-		minSizeHint Size
-	}
-
-	widget2MinSizes := make(map[Widget]*minSizes)
+	widget2MinSize := make(map[Widget]Size)
 
 	for widget, _ := range l.widget2Info {
 		if !shouldLayoutWidget(widget) {
 			continue
 		}
 
-		min := widget.MinSize()
-		hint := widget.MinSizeHint()
-
-		widget2MinSizes[widget] = &minSizes{min, hint}
+		widget2MinSize[widget] = widget.BaseWidget().minSizeEffective()
 	}
 
 	for row := 0; row < len(heights); row++ {
@@ -377,18 +369,14 @@ func (l *GridLayout) MinSize() Size {
 				continue
 			}
 
-			minSizes := widget2MinSizes[widget]
-
-			min := minSizes.minSize
-			hint := minSizes.minSizeHint
-
+			min := widget2MinSize[widget]
 			info := l.widget2Info[widget]
 
 			if info.spanHorz == 1 {
-				widths[col] = maxi(widths[col], maxi(hint.Width, min.Width))
+				widths[col] = maxi(widths[col], min.Width)
 			}
 			if info.spanVert == 1 {
-				heights[row] = maxi(heights[row], maxi(hint.Height, min.Height))
+				heights[row] = maxi(heights[row], min.Height)
 			}
 		}
 	}

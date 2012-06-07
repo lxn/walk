@@ -73,6 +73,10 @@ func (tb *ToolBar) LayoutFlags() LayoutFlags {
 	return 0 //ShrinkableHorz | GrowableHorz
 }
 
+func (tb *ToolBar) MinSizeHint() Size {
+	return tb.SizeHint()
+}
+
 func (tb *ToolBar) SizeHint() Size {
 	if tb.actions.Len() == 0 {
 		return Size{}

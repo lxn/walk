@@ -45,7 +45,7 @@ func (l *Label) MinSizeHint() Size {
 }
 
 func (l *Label) SizeHint() Size {
-	return l.calculateTextSize()
+	return l.MinSizeHint()
 }
 
 func (l *Label) Text() string {

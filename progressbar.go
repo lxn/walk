@@ -40,6 +40,10 @@ func (*ProgressBar) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | GrowableHorz | GreedyHorz
 }
 
+func (pb *ProgressBar) MinSizeHint() Size {
+	return pb.dialogBaseUnitsToPixels(Size{10, 14})
+}
+
 func (pb *ProgressBar) SizeHint() Size {
 	return pb.dialogBaseUnitsToPixels(Size{50, 14})
 }

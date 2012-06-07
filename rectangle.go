@@ -10,6 +10,15 @@ type Rectangle struct {
 	X, Y, Width, Height int
 }
 
+func rectangleFromRECT(r winapi.RECT) Rectangle {
+	return Rectangle{
+		X:      int(r.Left),
+		Y:      int(r.Top),
+		Width:  int(r.Right - r.Left),
+		Height: int(r.Bottom - r.Top),
+	}
+}
+
 func (r Rectangle) Left() int {
 	return r.X
 }
