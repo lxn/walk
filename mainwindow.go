@@ -109,6 +109,14 @@ func (mw *MainWindow) ClientBounds() Rectangle {
 	return bounds
 }
 
+func (mw *MainWindow) Run() int {
+	if mw.clientComposite.layout != nil {
+		mw.clientComposite.layout.Update(false)
+	}
+
+	return mw.TopLevelWindow.Run()
+}
+
 func (mw *MainWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
