@@ -1264,7 +1264,7 @@ func processFile(uiFilePath string) error {
 		return err
 	}
 
-	goLogicFile, err := os.OpenFile(goLogicFilePath, os.O_CREATE|os.O_EXCL, 0666)
+	goLogicFile, err := os.OpenFile(goLogicFilePath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
 	if err == nil {
 		defer goLogicFile.Close()
 
