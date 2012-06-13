@@ -57,6 +57,7 @@ type TopLevelWindow struct {
 	prevFocusHWnd     HWND
 	isInRestoreState  bool
 	startingPublisher EventPublisher
+	icon              *Icon
 }
 
 func (tlw *TopLevelWindow) LayoutFlags() LayoutFlags {
@@ -126,6 +127,22 @@ func (tlw *TopLevelWindow) SetOwner(value RootWidget) error {
 	}
 
 	return nil
+}
+
+func (tlw *TopLevelWindow) Icon() *Icon {
+	return tlw.icon
+}
+
+func (tlw *TopLevelWindow) SetIcon(icon *Icon) {
+	tlw.icon = icon
+
+	var hIcon uintptr
+	if icon != nil {
+		hIcon = uintptr(icon.hIcon)
+	}
+
+	SendMessage(tlw.hWnd, WM_SETICON, 0, hIcon)
+	SendMessage(tlw.hWnd, WM_SETICON, 1, hIcon)
 }
 
 func (tlw *TopLevelWindow) Hide() {
