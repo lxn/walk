@@ -38,6 +38,7 @@ func NewIconFromFile(filePath string) (*Icon, error) {
 	return &Icon{hIcon: hIcon}, nil
 }
 
+// NewIconFromResource returns a new Icon, using the specified icon resource.
 func NewIconFromResource(resName string) (ic *Icon, err error) {
 	hInst := GetModuleHandle(nil)
 	if hInst == 0 {
