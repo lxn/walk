@@ -56,3 +56,6 @@ If it doesn't already exist, ui2walk also creates a matching "logic" file
 
 		return dlg.Run(), nil
 	}
+
+ui2walk emits i18n-ed strings when using the `-tr` flag. See
+https://github.com/lxn/polyglot for more details.
