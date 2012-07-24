@@ -22,7 +22,7 @@ func Initialize(params InitParams) {
 	logErrors = params.LogErrors
 	panicOnError = params.PanicOnError
 
-	if hr := OleInitialize(); FAILED(hr) {
+	if hr := winapi.OleInitialize(); winapi.FAILED(hr) {
 		panic(fmt.Sprint("OleInitialize Error: ", hr))
 	}
 
