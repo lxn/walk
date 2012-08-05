@@ -45,6 +45,7 @@ type TableView struct {
 	itemActivatedPublisher          EventPublisher
 	columnClickedPublisher          IntEventPublisher
 	lastColumnStretched             bool
+	inEraseBkgnd                    bool
 	persistent                      bool
 	itemStateChangedEventDelay      int
 }
@@ -572,7 +573,11 @@ func (tv *TableView) toggleItemChecked(index int) error {
 func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ERASEBKGND:
-		if tv.lastColumnStretched {
+		if tv.lastColumnStretched && !tv.inEraseBkgnd {
+			tv.inEraseBkgnd = true
+			defer func() {
+				tv.inEraseBkgnd = false
+			}()
 			tv.StretchLastColumn()
 		}
 		return 1
