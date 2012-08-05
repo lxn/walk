@@ -5,6 +5,7 @@
 package walk
 
 import (
+	"fmt"
 	"runtime"
 )
 
@@ -20,6 +21,10 @@ func Initialize(params InitParams) {
 
 	logErrors = params.LogErrors
 	panicOnError = params.PanicOnError
+
+	if hr := winapi.OleInitialize(); winapi.FAILED(hr) {
+		panic(fmt.Sprint("OleInitialize Error: ", hr))
+	}
 
 	// TODO: Should we setup winapi syscalls from here instead using init funcs?
 }
