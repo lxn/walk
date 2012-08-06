@@ -197,7 +197,7 @@ func (l *splitterLayout) Update(reset bool) error {
 	for i, widget := range widgets {
 		var s1 int
 		if i == len(widgets)-1 {
-			s1 = space1 - p1
+			s1 = space1 + len(widgets)/2*handleWidth - p1
 		} else {
 			s1 = sizes[i]
 		}
