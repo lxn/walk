@@ -1107,19 +1107,19 @@ func generateLogicCode(buf *bytes.Buffer, ui *UI) error {
 		buf.WriteString("func run")
 		buf.WriteString(ui.Widget.Name)
 		buf.WriteString(`() (int, error) {
-		w := new(`)
+		mw := new(`)
 		buf.WriteString(ui.Widget.Name)
 		buf.WriteString(`)
-		if err := w.init(); err != nil {
+		if err := mw.init(); err != nil {
 			return 0, err
 		}
-		defer w.Dispose()
+		defer mw.Dispose()
 		
 		// TODO: Do further required setup, e.g. for event handling, here.
 		
-		w.Show()
+		mw.Show()
 		
-		return w.Run(), nil
+		return mw.Run(), nil
 		}
 		`)
 
@@ -1127,10 +1127,10 @@ func generateLogicCode(buf *bytes.Buffer, ui *UI) error {
 		buf.WriteString("func run")
 		buf.WriteString(ui.Widget.Name)
 		buf.WriteString(`(owner walk.RootWidget) (int, error) {
-		d := new(`)
+		dlg := new(`)
 		buf.WriteString(ui.Widget.Name)
 		buf.WriteString(`)
-		if err := d.init(owner); err != nil {
+		if err := dlg.init(owner); err != nil {
 			return 0, err
 		}
 		
@@ -1143,10 +1143,10 @@ func generateLogicCode(buf *bytes.Buffer, ui *UI) error {
 			return 0, err
 			}
 			
-			d.ui.`)
+			dlg.ui.`)
 			buf.WriteString(b.Name)
 			buf.WriteString(`.Clicked().Attach(func(){
-			d.Accept()
+			dlg.Accept()
 			})
 			
 			`)
@@ -1159,10 +1159,10 @@ func generateLogicCode(buf *bytes.Buffer, ui *UI) error {
 			return 0, err
 			}
 			
-			d.ui.`)
+			dlg.ui.`)
 			buf.WriteString(b.Name)
 			buf.WriteString(`.Clicked().Attach(func(){
-			d.Cancel()
+			dlg.Cancel()
 			})
 			
 			`)
@@ -1170,7 +1170,7 @@ func generateLogicCode(buf *bytes.Buffer, ui *UI) error {
 
 		buf.WriteString(`// TODO: Do further required setup, e.g. for event handling, here.
 		
-		return d.Run(), nil
+		return dlg.Run(), nil
 		}
 		`)
 
@@ -1180,16 +1180,16 @@ func generateLogicCode(buf *bytes.Buffer, ui *UI) error {
 		buf.WriteString("(parent walk.Container) (*")
 		buf.WriteString(ui.Widget.Name)
 		buf.WriteString(`, error) {
-		w := new(`)
+		c := new(`)
 		buf.WriteString(ui.Widget.Name)
 		buf.WriteString(`)
-		if err := w.init(parent); err != nil {
+		if err := c.init(parent); err != nil {
 			return nil, err
 		}
 		
 		// TODO: Do further required setup, e.g. for event handling, here.
 		
-		return w, nil
+		return c, nil
 		}
 		`)
 	}
