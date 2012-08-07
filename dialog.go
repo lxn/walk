@@ -184,12 +184,6 @@ func (dlg *Dialog) focusFirstCandidateDescendant() {
 }
 
 func (dlg *Dialog) Show() {
-	dlg.TopLevelWindow.Show()
-
-	dlg.focusFirstCandidateDescendant()
-}
-
-func (dlg *Dialog) Run() int {
 	if dlg.owner != nil {
 		ob := dlg.owner.Bounds()
 		b := dlg.Bounds()
@@ -205,6 +199,12 @@ func (dlg *Dialog) Run() int {
 		dlg.SetBounds(dlg.Bounds())
 	}
 
+	dlg.TopLevelWindow.Show()
+
+	dlg.focusFirstCandidateDescendant()
+}
+
+func (dlg *Dialog) Run() int {
 	dlg.Show()
 
 	if dlg.owner != nil {
