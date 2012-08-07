@@ -28,17 +28,30 @@ func NewTabPage() (*TabPage, error) {
 		nil,
 		tabPageWindowClass,
 		WS_POPUP,
-		WS_EX_CONTROLPARENT /*|WS_EX_TRANSPARENT*/); err != nil {
+		WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
 
 	tp.children = newWidgetList(tp)
 
-	// FIXME: The next line, together with WS_EX_TRANSPARENT, would make the tab
-	// page background transparent, but it doesn't work on XP :(
-	//	tp.SetBackground(NullBrush())
+	b, err := NewSolidColorBrush(Color(GetSysColor(COLOR_WINDOW)))
+	if err != nil {
+		return nil, err
+	}
+
+	tp.SetBackground(b)
 
 	return tp, nil
+}
+
+func (tp *TabPage) Dispose() {
+	b := tp.Background()
+	if b != nil {
+		b.Dispose()
+		tp.SetBackground(nil)
+	}
+
+	tp.ContainerBase.Dispose()
 }
 
 func (tp *TabPage) Title() string {
