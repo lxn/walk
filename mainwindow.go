@@ -109,12 +109,14 @@ func (mw *MainWindow) ClientBounds() Rectangle {
 	return bounds
 }
 
-func (mw *MainWindow) Run() int {
+func (mw *MainWindow) Show() {
+	DrawMenuBar(mw.hWnd)
+
 	if mw.clientComposite.layout != nil {
 		mw.clientComposite.layout.Update(false)
 	}
 
-	return mw.TopLevelWindow.Run()
+	mw.TopLevelWindow.Show()
 }
 
 func (mw *MainWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
