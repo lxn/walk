@@ -1137,7 +1137,7 @@ func generateLogicCode(buf *bytes.Buffer, ui *UI) error {
 		`)
 
 		if b := findWidget(&ui.Widget, "QPushButton", []string{"accept", "ok"}); b != nil {
-			buf.WriteString("if err := d.SetDefaultButton(d.ui.")
+			buf.WriteString("if err := dlg.SetDefaultButton(dlg.ui.")
 			buf.WriteString(b.Name)
 			buf.WriteString(`); err != nil {
 			return 0, err
@@ -1153,7 +1153,7 @@ func generateLogicCode(buf *bytes.Buffer, ui *UI) error {
 		}
 
 		if b := findWidget(&ui.Widget, "QPushButton", []string{"cancel"}); b != nil {
-			buf.WriteString("if err := d.SetCancelButton(d.ui.")
+			buf.WriteString("if err := dlg.SetCancelButton(dlg.ui.")
 			buf.WriteString(b.Name)
 			buf.WriteString(`); err != nil {
 			return 0, err
