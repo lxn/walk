@@ -45,7 +45,7 @@ func (tb *ToolButton) MinSizeHint() Size {
 }
 
 func (tb *ToolButton) SizeHint() Size {
-	return tb.dialogBaseUnitsToPixels(Size{20, 14})
+	return tb.dialogBaseUnitsToPixels(Size{16, 12})
 }
 
 func (tb *ToolButton) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
