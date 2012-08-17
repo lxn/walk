@@ -36,6 +36,7 @@ type TableView struct {
 	itemChecker                     ItemChecker
 	rowsResetHandlerHandle          int
 	rowChangedHandlerHandle         int
+	sortChangedHandlerHandle        int
 	columns                         []TableColumn
 	imageList                       *ImageList
 	currentIndex                    int
@@ -133,24 +134,33 @@ func (tv *TableView) SizeHint() Size {
 }
 
 func (tv *TableView) attachModel() {
-	rowsResetHandler := func() {
+	tv.rowsResetHandlerHandle = tv.model.RowsReset().Attach(func() {
 		tv.setItemCount()
 
 		tv.SetCurrentIndex(-1)
-	}
-	tv.rowsResetHandlerHandle = tv.model.RowsReset().Attach(rowsResetHandler)
+	})
 
-	rowChangedHandler := func(row int) {
+	tv.rowChangedHandlerHandle = tv.model.RowChanged().Attach(func(row int) {
 		if FALSE == SendMessage(tv.hWnd, LVM_UPDATE, uintptr(row), 0) {
 			newError("SendMessage(LVM_UPDATE)")
 		}
+	})
+
+	if sorter, ok := tv.model.(Sorter); ok {
+		tv.sortChangedHandlerHandle = sorter.SortChanged().Attach(func() {
+			col := sorter.SortedColumn()
+			tv.setSelectedColumnIndex(col)
+			tv.setSortIcon(col, sorter.SortOrder())
+		})
 	}
-	tv.rowChangedHandlerHandle = tv.model.RowChanged().Attach(rowChangedHandler)
 }
 
 func (tv *TableView) detachModel() {
 	tv.model.RowsReset().Detach(tv.rowsResetHandlerHandle)
 	tv.model.RowChanged().Detach(tv.rowChangedHandlerHandle)
+	if sorter, ok := tv.model.(Sorter); ok {
+		sorter.SortChanged().Detach(tv.sortChangedHandlerHandle)
+	}
 }
 
 // Model returns the TableModel that provides data to the *TableView.
@@ -212,6 +222,12 @@ func (tv *TableView) SetModel(model TableModel) error {
 			}
 		}
 
+		if sorter, ok := tv.model.(Sorter); ok {
+			col := sorter.SortedColumn()
+			tv.setSelectedColumnIndex(col)
+			tv.setSortIcon(col, sorter.SortOrder())
+		}
+
 		return tv.setItemCount()
 	}
 
@@ -263,17 +279,51 @@ func (tv *TableView) SetCheckBoxes(value bool) {
 	}
 }
 
-// SelectedColumnIndex returns the index of the selected column or -1 if no 
-// column is selected.
-func (tv *TableView) SelectedColumnIndex() int {
+func (tv *TableView) selectedColumnIndex() int {
 	return int(SendMessage(tv.hWnd, LVM_GETSELECTEDCOLUMN, 0, 0))
 }
 
-// SetSelectedColumnIndex sets the index of the selected column.
-//
-// Call this with a value of -1 to clear any column selection.
-func (tv *TableView) SetSelectedColumnIndex(value int) {
+func (tv *TableView) setSelectedColumnIndex(value int) {
 	SendMessage(tv.hWnd, LVM_SETSELECTEDCOLUMN, uintptr(value), 0)
+}
+
+func (tv *TableView) setSortIcon(index int, order SortOrder) error {
+	headerHwnd := HWND(SendMessage(tv.hWnd, LVM_GETHEADER, 0, 0))
+
+	count := len(tv.model.Columns())
+
+	for i := 0; i < count; i++ {
+		item := HDITEM{
+			Mask: HDI_FORMAT,
+		}
+
+		iPtr := uintptr(i)
+		itemPtr := uintptr(unsafe.Pointer(&item))
+
+		if SendMessage(headerHwnd, HDM_GETITEM, iPtr, itemPtr) == 0 {
+			return newError("SendMessage(HDM_GETITEM)")
+		}
+
+		if i == index {
+			switch order {
+			case SortAscending:
+				item.Fmt &^= HDF_SORTDOWN
+				item.Fmt |= HDF_SORTUP
+
+			case SortDescending:
+				item.Fmt &^= HDF_SORTUP
+				item.Fmt |= HDF_SORTDOWN
+			}
+		} else {
+			item.Fmt &^= HDF_SORTDOWN | HDF_SORTUP
+		}
+
+		if SendMessage(headerHwnd, HDM_SETITEM, iPtr, itemPtr) == 0 {
+			return newError("SendMessage(HDM_SETITEM)")
+		}
+	}
+
+	return nil
 }
 
 // ColumnClicked returns the event that is published after a column header was
@@ -660,7 +710,20 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 
 		case LVN_COLUMNCLICK:
 			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
-			tv.columnClickedPublisher.Publish(int(nmlv.ISubItem))
+
+			col := int(nmlv.ISubItem)
+			tv.columnClickedPublisher.Publish(col)
+
+			if sorter, ok := tv.model.(Sorter); ok && sorter.ColumnSortable(col) {
+				prevCol := sorter.SortedColumn()
+				var order SortOrder
+				if col != prevCol || sorter.SortOrder() == SortDescending {
+					order = SortAscending
+				} else {
+					order = SortDescending
+				}
+				sorter.Sort(col, order)
+			}
 
 		case LVN_ITEMCHANGED:
 			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
