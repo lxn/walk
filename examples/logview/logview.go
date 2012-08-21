@@ -9,10 +9,10 @@ import (
 	//"os"
 	//"strings"
 	"log"
-	"time"
+	//"time"
 )
 
-import "github.com/ZhuBiCen/walk"
+import "github.com/lxn/walk"
 
 func main() {
 	walk.Initialize(walk.InitParams{PanicOnError: true})
@@ -30,7 +30,6 @@ func main() {
 	
 	go func(){
 		for i := 0; i < 10000; i++{
-		time.Sleep(10 * time.Millisecond)	
 			log.Println("Text" + "\r\n")
 		}
 	}()

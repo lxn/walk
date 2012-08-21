@@ -17,10 +17,12 @@ var _ subclassedWidget = &LogView{}
 
 type LogView struct {
 	WidgetBase
+	logChan chan string
 }
 
 func NewLogView(parent Container) (*LogView, error) {
-	te := &LogView{}
+	lc := make(chan string, 1024)
+	te := &LogView{logChan:lc}
 
 	if err := initChildWidget(
 		te,
@@ -64,12 +66,12 @@ func (te *LogView) textLength() int{
 }
 
 func (te *LogView) AppendText(value string) {
-	fmt.Println("AppendText=", value)
+	//fmt.Println("AppendText=", value)
 	textLength := te.textLength()
-	fmt.Println("TextLength=", textLength)
+	//fmt.Println("TextLength=", textLength)
 	te.setTextSelection(textLength, textLength)
-	r := SendMessage(te.hWnd, EM_REPLACESEL, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value))))
-	fmt.Println("Ret=", r)
+	SendMessage(te.hWnd, EM_REPLACESEL, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value))))
+	//fmt.Println("Ret=", r)
 }
 
 func (te *LogView) setReadOnly(readOnly bool) error {
@@ -81,12 +83,14 @@ func (te *LogView) setReadOnly(readOnly bool) error {
 }
 
 func (te *LogView) PostAppendText(value string){
-	PostMessage(te.hWnd, TEM_APPENDTEXT, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value))), 0)
+	fmt.Println("PostAppendText", value)
+	te.logChan <- value
+	PostMessage(te.hWnd, TEM_APPENDTEXT, 0, 0)
 }
 
 func (te *LogView)  Write(p []byte)(int, error){
-	te.PostAppendText(string(p))
-	return 0, nil
+	te.PostAppendText(string(p) + "\r\n")
+	return len(p), nil
 }
 
 func (te *LogView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -98,8 +102,12 @@ func (te *LogView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 
 		return DLGC_HASSETSEL | DLGC_WANTARROWS | DLGC_WANTCHARS
 	case TEM_APPENDTEXT:
-		fmt.Println("Received APPEND_TEXT", wParam)
-		te.AppendText(UTF16PtrToString((*uint16)(unsafe.Pointer(wParam))))
+		select {
+		case value := <- te.logChan:
+			te.AppendText(value)
+		default:
+			return 0
+		}
 	}
 
 	return te.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
