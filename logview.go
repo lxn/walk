@@ -7,7 +7,6 @@ package walk
 import (
 	"unsafe"
 	"syscall"
-	"fmt"
 )
 
 import . "github.com/lxn/go-winapi"
@@ -66,12 +65,9 @@ func (te *LogView) textLength() int{
 }
 
 func (te *LogView) AppendText(value string) {
-	//fmt.Println("AppendText=", value)
 	textLength := te.textLength()
-	//fmt.Println("TextLength=", textLength)
 	te.setTextSelection(textLength, textLength)
 	SendMessage(te.hWnd, EM_REPLACESEL, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value))))
-	//fmt.Println("Ret=", r)
 }
 
 func (te *LogView) setReadOnly(readOnly bool) error {
@@ -83,7 +79,6 @@ func (te *LogView) setReadOnly(readOnly bool) error {
 }
 
 func (te *LogView) PostAppendText(value string){
-	fmt.Println("PostAppendText", value)
 	te.logChan <- value
 	PostMessage(te.hWnd, TEM_APPENDTEXT, 0, 0)
 }
