@@ -5,18 +5,29 @@
 package walk
 
 import (
-	"syscall"
 	"unsafe"
 )
 
 import . "github.com/lxn/go-winapi"
 
-const progressIndicatorClass = `\o/ Walk_ProgressIndicator_Class \0/`
 
 type ProgressIndicator struct {
+	hwnd HWND
+	taskbarList3 *ITaskbarList3
+	length uint
 }
 
-func NewProgressIndicator()(*ProgressIndicator, error) {
+type PIState int
+const (
+    PINoProgress	PIState = TBPF_NOPROGRESS
+	PIIndeterminate PIState = TBPF_INDETERMINATE
+	PINormal        PIState = TBPF_NORMAL
+	PIError         PIState = TBPF_ERROR
+	PIPaused        PIState = TBPF_PAUSED
+)
+
+
+func newTaskbarList3(hwnd HWND)(*ProgressIndicator, error) {
 
 	// Check that the Windows version is at least 6.1 (yes, Win 7 is version 6.1).
 	var classFactoryPtr unsafe.Pointer
@@ -25,12 +36,30 @@ func NewProgressIndicator()(*ProgressIndicator, error) {
 	}
 
 	var taskbarList3ObjectPtr unsafe.Pointer
+	classFactory := (*IClassFactory)(classFactoryPtr)
+	defer classFactory.Release()
 
 	if hr := classFactory.CreateInstance(nil, &IID_ITaskbarList3, &taskbarList3ObjectPtr); FAILED(hr) {
 		return nil, errorFromHRESULT("IClassFactory.CreateInstance", hr)
 	}
 
-	taskbarList3Object := (*ITaskbarList3Object)(taskbarList3ObjectPtr)
-	
+	return &ProgressIndicator{taskbarList3:(*ITaskbarList3)(taskbarList3ObjectPtr), hwnd:hwnd},  nil
+}
 
+func(pi *ProgressIndicator) SetState(state PIState) error {
+	if hr := pi.taskbarList3.SetProgressState(pi.hwnd, (int)(state)); FAILED(hr){
+		return errorFromHRESULT("ITaskbarList3.setprogressState", hr)
+	}
+	return nil
+}
+
+func (pi* ProgressIndicator) SetLength(length uint) {
+	pi.length = length
+}
+
+func(pi *ProgressIndicator) SetValue(pos uint) error {
+	if hr := pi.taskbarList3.SetProgressValue(pi.hwnd, pos, pi.length); FAILED(hr){
+		return errorFromHRESULT("ITaskbarList3.SetProgressValue", hr)
+	}
+	return nil
 }
