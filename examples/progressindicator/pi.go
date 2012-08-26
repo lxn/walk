@@ -12,42 +12,58 @@ import (
 )
 
 import "github.com/lxn/walk"
+type MyDialog struct {
+    *walk.Dialog
+    ui myDialogUI
+}
 
+func RunMyDialog(owner walk.RootWidget) (int, error) {
+    dlg := new(MyDialog)
+    if err := dlg.init(owner); err != nil {
+        return 0, err
+    }
+
+    //TODO: Do further required setup, e.g. for event handling, here.
+
+	dlg.ui.noProgressBtn.Clicked().Attach(func(){
+		fmt.Println("Hi")
+		dlg.ProgressIndicator().SetState(walk.PINoProgress)
+	})
+
+	dlg.ui.normalBtn.Clicked().Attach(func(){
+		fmt.Println("Hi")
+		dlg.ProgressIndicator().SetState(walk.PINormal)
+	})
+
+	dlg.ui.errBtn.Clicked().Attach(func(){
+		fmt.Println("Hi")
+		dlg.ProgressIndicator().SetState(walk.PIError)
+	})
+
+	dlg.ui.pausedBtn.Clicked().Attach(func(){
+		fmt.Println("Hi")
+		dlg.ProgressIndicator().SetState(walk.PIPaused)
+	})
+
+	dlg.ui.startBtn.Clicked().Attach(func(){
+		go func(){
+		dlg.ProgressIndicator().SetLength(100)
+			var i uint
+			for i = 0; i < 100; i ++ {
+				fmt.Println("Hello", i)
+				time.Sleep(100 * time.Millisecond)
+				if err := dlg.ProgressIndicator().SetValue(i); err != nil {
+					fmt.Println(err)
+				}
+			}
+		}()
+	})
+
+    return dlg.Run(), nil
+}
 func main() {
 	walk.Initialize(walk.InitParams{PanicOnError: true})
 	defer walk.Shutdown()
 
-	myWindow, _ := walk.NewMainWindow()
-
-	myWindow.SetLayout(walk.NewVBoxLayout())
-
-	splitter, _ := walk.NewSplitter(myWindow)
-	splitter.SetOrientation(walk.Vertical)
-
-	btn, _ := walk.NewPushButton(splitter)
-	btn.SetText("init")
-	btn.Clicked().Attach(func(){
-		fmt.Println("Hi")
-		myWindow.ProgressIndicator().SetState(walk.PINormal)
-		myWindow.ProgressIndicator().SetLength(100)
-	})
-
-	btn2, _ := walk.NewPushButton(splitter)
-	btn2.SetText("COMEON")
-	btn2.Clicked().Attach(func(){
-		go func(){
-			var i uint
-			for i = 0; i < 100; i ++ {
-				fmt.Println("Hello")
-				time.Sleep(100 * time.Millisecond)
-				myWindow.ProgressIndicator().SetValue(i)
-			}
-		}()
-	})
-	
-	myWindow.Show()
-	myWindow.SetMinMaxSize(walk.Size{320, 240}, walk.Size{})
-	myWindow.SetSize(walk.Size{400, 500})
-	myWindow.Run()
-
+	RunMyDialog(nil)
 }
