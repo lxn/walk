@@ -110,6 +110,15 @@ func (tmb *TableModelBase) PublishRowChanged(row int) {
 	tmb.rowChangedPublisher.Publish(row)
 }
 
+// ImageProvider is the interface that a model must implement to support
+// displaying an item image. 
+type ImageProvider interface {
+	// Image returns the image to display for the item at index index.
+	//
+	// Supported types are walk.*Bitmap and walk.*Icon.
+	Image(index int) interface{}
+}
+
 // ItemChecker is the interface that a model must implement to support check 
 // boxes in a widget like TableView.
 type ItemChecker interface {
@@ -126,7 +135,7 @@ type SortOrder int
 const (
 	// SortAscending specifies ascending sort order.
 	SortAscending SortOrder = iota
-	
+
 	// SortDescending specifies descending sort order.
 	SortDescending
 )
