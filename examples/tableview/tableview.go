@@ -28,15 +28,21 @@ type FooModel struct {
 	walk.SorterBase
 	sortColumn int
 	sortOrder  walk.SortOrder
+	evenBitmap *walk.Bitmap
+	oddIcon    *walk.Icon
 	items      []*Foo
 }
 
 // Make sure we implement all required interfaces.
-var _ walk.TableModel = &FooModel{}
+var _ walk.ImageProvider = &FooModel{}
 var _ walk.ItemChecker = &FooModel{}
+var _ walk.Sorter = &FooModel{}
+var _ walk.TableModel = &FooModel{}
 
 func NewFooModel() *FooModel {
 	m := new(FooModel)
+	m.evenBitmap, _ = walk.NewBitmapFromFile("../img/open.png")
+	m.oddIcon, _ = walk.NewIconFromFile("../img/x.ico")
 	m.ResetRows()
 	return m
 }
@@ -133,6 +139,15 @@ func (m *FooModel) Less(i, j int) bool {
 
 func (m *FooModel) Swap(i, j int) {
 	m.items[i], m.items[j] = m.items[j], m.items[i]
+}
+
+// Called by the TableView to retrieve an item image.
+func (m *FooModel) Image(row int) interface{} {
+	if m.items[row].Index%2 == 0 {
+		return m.evenBitmap
+	}
+
+	return m.oddIcon
 }
 
 func (m *FooModel) ResetRows() {
