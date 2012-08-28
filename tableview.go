@@ -592,22 +592,6 @@ func (tv *TableView) RestoreState() error {
 	return nil
 }
 
-/*func (tv *TableView) ImageList() *ImageList {
-	return tv.imageList
-}
-
-func (tv *TableView) SetImageList(value *ImageList) {
-	var hIml HIMAGELIST
-
-	if value != nil {
-		hIml = value.hIml
-	}
-
-	SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(hIml))
-
-	tv.imageList = value
-}*/
-
 func (tv *TableView) imageIndex(image interface{}) int {
 	imageIndex := -1
 
