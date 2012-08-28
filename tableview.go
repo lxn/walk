@@ -34,11 +34,13 @@ type TableView struct {
 	WidgetBase
 	model                           TableModel
 	itemChecker                     ItemChecker
+	imageProvider                   ImageProvider
 	rowsResetHandlerHandle          int
 	rowChangedHandlerHandle         int
 	sortChangedHandlerHandle        int
 	columns                         []TableColumn
 	imageList                       *ImageList
+	imageUintptr2Index              map[uintptr]int
 	currentIndex                    int
 	currentIndexChangedPublisher    EventPublisher
 	selectedIndexes                 *IndexList
@@ -55,7 +57,8 @@ type TableView struct {
 // Container.
 func NewTableView(parent Container) (*TableView, error) {
 	tv := &TableView{
-		selectedIndexes: NewIndexList(nil),
+		selectedIndexes:    NewIndexList(nil),
+		imageUintptr2Index: make(map[uintptr]int),
 	}
 
 	if err := initChildWidget(
@@ -85,6 +88,16 @@ func NewTableView(parent Container) (*TableView, error) {
 	}
 
 	tv.currentIndex = -1
+
+	imgSize := Size{
+		int(GetSystemMetrics(SM_CXSMICON)),
+		int(GetSystemMetrics(SM_CYSMICON)),
+	}
+	var err error
+	if tv.imageList, err = NewImageList(imgSize, 0); err != nil {
+		return nil, err
+	}
+	SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(tv.imageList.hIml))
 
 	succeeded = true
 
@@ -151,6 +164,7 @@ func (tv *TableView) attachModel() {
 			col := sorter.SortedColumn()
 			tv.setSelectedColumnIndex(col)
 			tv.setSortIcon(col, sorter.SortOrder())
+			tv.Invalidate()
 		})
 	}
 }
@@ -186,6 +200,7 @@ func (tv *TableView) SetModel(model TableModel) error {
 	tv.model = model
 
 	tv.itemChecker, _ = model.(ItemChecker)
+	tv.imageProvider, _ = model.(ImageProvider)
 
 	if model != nil {
 		tv.attachModel()
@@ -591,20 +606,40 @@ func (tv *TableView) SetImageList(value *ImageList) {
 	SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(hIml))
 
 	tv.imageList = value
-}
+}*/
 
-func (tv *TableView) imageIndex(image *Bitmap) (imageIndex int, err os.Error) {
-	imageIndex = -1
+func (tv *TableView) imageIndex(image interface{}) int {
+	imageIndex := -1
+
 	if image != nil {
-		// FIXME: Protect against duplicate insertion
-		imageIndex, err = tv.imageList.AddMasked(image)
-		if err != nil {
-			return
+		var ptr uintptr
+		switch img := image.(type) {
+		case *Bitmap:
+			ptr = uintptr(unsafe.Pointer(img))
+
+		case *Icon:
+			ptr = uintptr(unsafe.Pointer(img))
+		}
+
+		if imageIndex, ok := tv.imageUintptr2Index[ptr]; ok {
+			return imageIndex
+		}
+
+		switch img := image.(type) {
+		case *Bitmap:
+			imageIndex = int(ImageList_AddMasked(tv.imageList.hIml, img.hBmp, 0))
+
+		case *Icon:
+			imageIndex = int(ImageList_ReplaceIcon(tv.imageList.hIml, -1, img.hIcon))
+		}
+
+		if imageIndex > -1 {
+			tv.imageUintptr2Index[ptr] = imageIndex
 		}
 	}
 
-	return
-}*/
+	return imageIndex
+}
 
 func (tv *TableView) toggleItemChecked(index int) error {
 	checked := tv.itemChecker.Checked(index)
@@ -695,6 +730,12 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 				buf := (*[256]uint16)(unsafe.Pointer(di.Item.PszText))
 				max := mini(len(utf16), int(di.Item.CchTextMax))
 				copy((*buf)[:], utf16[:max])
+			}
+
+			if tv.imageProvider != nil && di.Item.Mask&LVIF_IMAGE > 0 {
+				image := tv.imageProvider.Image(row)
+
+				di.Item.IImage = int32(tv.imageIndex(image))
 			}
 
 			if di.Item.StateMask&LVIS_STATEIMAGEMASK > 0 &&
