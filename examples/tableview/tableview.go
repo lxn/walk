@@ -6,6 +6,7 @@ package main
 
 import (
 	"math/rand"
+	"sort"
 	"strings"
 	"time"
 )
@@ -15,6 +16,7 @@ import (
 )
 
 type Foo struct {
+	Index   int
 	Bar     string
 	Baz     float64
 	Quux    time.Time
@@ -23,7 +25,10 @@ type Foo struct {
 
 type FooModel struct {
 	walk.TableModelBase
-	items []*Foo
+	walk.SorterBase
+	sortColumn int
+	sortOrder  walk.SortOrder
+	items      []*Foo
 }
 
 // Make sure we implement all required interfaces.
@@ -58,7 +63,7 @@ func (m *FooModel) Value(row, col int) interface{} {
 
 	switch col {
 	case 0:
-		return row
+		return item.Index
 
 	case 1:
 		return item.Bar
@@ -85,6 +90,51 @@ func (m *FooModel) SetChecked(row int, checked bool) error {
 	return nil
 }
 
+// Called by the TableView to sort the model.
+func (m *FooModel) Sort(col int, order walk.SortOrder) error {
+	m.sortColumn, m.sortOrder = col, order
+
+	sort.Sort(m)
+
+	return m.SorterBase.Sort(col, order)
+}
+
+func (m *FooModel) Len() int {
+	return len(m.items)
+}
+
+func (m *FooModel) Less(i, j int) bool {
+	a, b := m.items[i], m.items[j]
+
+	c := func(ls bool) bool {
+		if m.sortOrder == walk.SortAscending {
+			return ls
+		}
+
+		return !ls
+	}
+
+	switch m.sortColumn {
+	case 0:
+		return c(a.Index < b.Index)
+
+	case 1:
+		return c(a.Bar < b.Bar)
+
+	case 2:
+		return c(a.Baz < b.Baz)
+
+	case 3:
+		return c(a.Quux.Before(b.Quux))
+	}
+
+	panic("unreachable")
+}
+
+func (m *FooModel) Swap(i, j int) {
+	m.items[i], m.items[j] = m.items[j], m.items[i]
+}
+
 func (m *FooModel) ResetRows() {
 	// Create some random data.
 	m.items = make([]*Foo, rand.Intn(50000))
@@ -93,14 +143,17 @@ func (m *FooModel) ResetRows() {
 
 	for i := range m.items {
 		m.items[i] = &Foo{
-			Bar:  strings.Repeat("*", rand.Intn(5)+1),
-			Baz:  rand.Float64() * 1000,
-			Quux: time.Unix(rand.Int63n(now.Unix()), 0),
+			Index: i,
+			Bar:   strings.Repeat("*", rand.Intn(5)+1),
+			Baz:   rand.Float64() * 1000,
+			Quux:  time.Unix(rand.Int63n(now.Unix()), 0),
 		}
 	}
 
 	// Notify TableView and other interested parties about the reset.
 	m.PublishRowsReset()
+
+	m.Sort(m.sortColumn, m.sortOrder)
 }
 
 type MainWindow struct {
