@@ -145,6 +145,25 @@ func (tv *TableView) SizeHint() Size {
 	return Size{100, 100}
 }
 
+// ReorderColumnsEnabled returns if the user can reorder columns by dragging and
+// dropping column headers.
+func (tv *TableView) ReorderColumnsEnabled() bool {
+	exStyle := SendMessage(tv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	return exStyle&LVS_EX_HEADERDRAGDROP > 0
+}
+
+// SetReorderColumnsEnabled sets if the user can reorder columns by dragging and
+// dropping column headers.
+func (tv *TableView) SetReorderColumnsEnabled(enabled bool) {
+	exStyle := SendMessage(tv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	if enabled {
+		exStyle |= LVS_EX_HEADERDRAGDROP
+	} else {
+		exStyle &^= LVS_EX_HEADERDRAGDROP
+	}
+	SendMessage(tv.hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+}
+
 func (tv *TableView) attachModel() {
 	tv.rowsResetHandlerHandle = tv.model.RowsReset().Attach(func() {
 		tv.setItemCount()
@@ -559,6 +578,21 @@ func (tv *TableView) SaveState() error {
 		buf.WriteString(strconv.Itoa(int(width)))
 	}
 
+	buf.WriteString(";")
+
+	indices := make([]int32, count)
+	lParam := uintptr(unsafe.Pointer(&indices[0]))
+
+	SendMessage(tv.hWnd, LVM_GETCOLUMNORDERARRAY, uintptr(count), lParam)
+
+	for i, idx := range indices {
+		if i > 0 {
+			buf.WriteString(" ")
+		}
+
+		buf.WriteString(strconv.Itoa(int(idx)))
+	}
+
 	return tv.putState(buf.String())
 }
 
@@ -572,7 +606,9 @@ func (tv *TableView) RestoreState() error {
 		return nil
 	}
 
-	widthStrs := strings.Split(state, " ")
+	parts := strings.Split(state, ";")
+
+	widthStrs := strings.Split(parts[0], " ")
 
 	// FIXME: Solve this in a better way.
 	if len(widthStrs) != len(tv.columns) {
@@ -591,6 +627,28 @@ func (tv *TableView) RestoreState() error {
 
 		if FALSE == SendMessage(tv.hWnd, LVM_SETCOLUMNWIDTH, uintptr(i), uintptr(width)) {
 			return newError("LVM_SETCOLUMNWIDTH failed")
+		}
+	}
+
+	if len(parts) > 1 {
+		indexStrs := strings.Split(parts[1], " ")
+
+		indices := make([]int32, len(indexStrs))
+
+		var failed bool
+		for i, s := range indexStrs {
+			idx, err := strconv.Atoi(s)
+			if err != nil {
+				failed = true
+				break
+			}
+			indices[i] = int32(idx)
+		}
+
+		if !failed {
+			wParam := uintptr(len(indices))
+			lParam := uintptr(unsafe.Pointer(&indices[0]))
+			SendMessage(tv.hWnd, LVM_SETCOLUMNORDERARRAY, wParam, lParam)
 		}
 	}
 
