@@ -97,7 +97,6 @@ func NewTableView(parent Container) (*TableView, error) {
 	if tv.imageList, err = NewImageList(imgSize, 0); err != nil {
 		return nil, err
 	}
-	SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(tv.imageList.hIml))
 
 	succeeded = true
 
@@ -201,6 +200,12 @@ func (tv *TableView) SetModel(model TableModel) error {
 
 	tv.itemChecker, _ = model.(ItemChecker)
 	tv.imageProvider, _ = model.(ImageProvider)
+
+	var himl HIMAGELIST
+	if tv.imageProvider != nil {
+		himl = tv.imageList.hIml
+	}
+	SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(himl))
 
 	if model != nil {
 		tv.attachModel()
