@@ -202,6 +202,8 @@ func main() {
 
 	tableView, _ := walk.NewTableView(mw)
 
+	tableView.SetReorderColumnsEnabled(true)
+
 	// Everybody loves check boxes.
 	tableView.SetCheckBoxes(true)
 
