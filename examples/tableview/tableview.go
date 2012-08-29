@@ -202,6 +202,7 @@ func main() {
 
 	tableView, _ := walk.NewTableView(mw)
 
+	tableView.SetAlternatingRowBGColor(walk.RGB(255, 255, 224))
 	tableView.SetReorderColumnsEnabled(true)
 
 	// Everybody loves check boxes.

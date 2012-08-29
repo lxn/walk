@@ -199,7 +199,7 @@ func (cb *ContainerBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) 
 		nmh := (*NMHDR)(unsafe.Pointer(lParam))
 		if widget := widgetFromHWND(nmh.HwndFrom); widget != nil {
 			// The widget that sent the notification shall handle it itself.
-			widget.wndProc(hwnd, msg, wParam, lParam)
+			return widget.wndProc(hwnd, msg, wParam, lParam)
 		}
 
 	case WM_SIZE, WM_SIZING:

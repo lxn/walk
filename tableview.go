@@ -20,6 +20,7 @@ import . "github.com/lxn/go-winapi"
 
 var tableViewOrigWndProcPtr uintptr
 var _ subclassedWidget = &TableView{}
+var defaultTVRowBGColor Color = Color(GetSysColor(COLOR_WINDOW))
 
 const (
 	tableViewCurrentIndexChangedTimerId = 1 + iota
@@ -51,14 +52,16 @@ type TableView struct {
 	inEraseBkgnd                    bool
 	persistent                      bool
 	itemStateChangedEventDelay      int
+	alternatingRowBGColor           Color
 }
 
 // NewTableView creates and returns a *TableView as child of the specified
 // Container.
 func NewTableView(parent Container) (*TableView, error) {
 	tv := &TableView{
-		selectedIndexes:    NewIndexList(nil),
-		imageUintptr2Index: make(map[uintptr]int),
+		alternatingRowBGColor: defaultTVRowBGColor,
+		imageUintptr2Index:    make(map[uintptr]int),
+		selectedIndexes:       NewIndexList(nil),
 	}
 
 	if err := initChildWidget(
@@ -162,6 +165,18 @@ func (tv *TableView) SetReorderColumnsEnabled(enabled bool) {
 		exStyle &^= LVS_EX_HEADERDRAGDROP
 	}
 	SendMessage(tv.hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+}
+
+// AlternatingRowBGColor returns the alternating row background color.
+func (tv *TableView) AlternatingRowBGColor() Color {
+	return tv.alternatingRowBGColor
+}
+
+// SetAlternatingRowBGColor sets the alternating row background color.
+func (tv *TableView) SetAlternatingRowBGColor(c Color) {
+	tv.alternatingRowBGColor = c
+
+	tv.Invalidate()
 }
 
 func (tv *TableView) attachModel() {
@@ -795,6 +810,23 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 					di.Item.State = 0x1000
 				}
 			}
+
+		case NM_CUSTOMDRAW:
+			if tv.alternatingRowBGColor != defaultTVRowBGColor {
+				nmlvcd := (*NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
+
+				switch nmlvcd.Nmcd.DwDrawStage {
+				case CDDS_PREPAINT:
+					return CDRF_NOTIFYITEMDRAW
+
+				case CDDS_ITEMPREPAINT:
+					if nmlvcd.Nmcd.DwItemSpec%2 == 1 {
+						nmlvcd.ClrTextBk = COLORREF(tv.alternatingRowBGColor)
+					}
+				}
+			}
+
+			return CDRF_DODEFAULT
 
 		case LVN_COLUMNCLICK:
 			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
