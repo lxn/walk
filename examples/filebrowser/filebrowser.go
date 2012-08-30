@@ -6,7 +6,7 @@ package main
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"time"
 )
 
@@ -21,9 +21,9 @@ type FileInfo struct {
 }
 
 type FileInfoModel struct {
-	items               []*FileInfo
-	rowsResetPublisher  walk.EventPublisher
-	rowChangedPublisher walk.IntEventPublisher
+	walk.TableModelBase
+	dirPath string
+	items   []*FileInfo
 }
 
 func (m *FileInfoModel) Columns() []walk.TableColumn {
@@ -55,20 +55,14 @@ func (m *FileInfoModel) Value(row, col int) interface{} {
 	panic("unexpected col")
 }
 
-func (m *FileInfoModel) RowsReset() *walk.Event {
-	return m.rowsResetPublisher.Event()
-}
-
-func (m *FileInfoModel) RowChanged() *walk.IntEvent {
-	return m.rowChangedPublisher.Event()
-}
-
 func (m *FileInfoModel) ResetRows(dirPath string) error {
 	dir, err := os.Open(dirPath)
 	if err != nil {
 		return err
 	}
 	defer dir.Close()
+
+	m.dirPath = dirPath
 
 	names, err := dir.Readdirnames(-1)
 	if err != nil {
@@ -79,7 +73,7 @@ func (m *FileInfoModel) ResetRows(dirPath string) error {
 
 	for _, name := range names {
 		if !excludePath(name) {
-			fullPath := path.Join(dirPath, name)
+			fullPath := filepath.Join(dirPath, name)
 
 			fi, err := os.Stat(fullPath)
 			if err != nil {
@@ -96,9 +90,13 @@ func (m *FileInfoModel) ResetRows(dirPath string) error {
 		}
 	}
 
-	m.rowsResetPublisher.Publish()
+	m.TableModelBase.PublishRowsReset()
 
 	return nil
+}
+
+func (m *FileInfoModel) Image(row int) interface{} {
+	return filepath.Join(m.dirPath, m.items[row].Name)
 }
 
 type MainWindow struct {
@@ -138,10 +136,14 @@ func (mw *MainWindow) populateTreeViewItem(parent *walk.TreeViewItem) {
 	panicIfErr(err)
 
 	for _, name := range names {
-		fi, err := os.Stat(path.Join(dirPath, name))
+		if excludePath(name) {
+			continue
+		}
+
+		fi, err := os.Stat(filepath.Join(dirPath, name))
 		panicIfErr(err)
 
-		if !excludePath(name) && fi.IsDir() {
+		if fi.IsDir() {
 			child := newTreeViewItem(name)
 
 			parent.Children().Add(child)
@@ -162,11 +164,12 @@ func pathForTreeViewItem(item *walk.TreeViewItem) string {
 		item = item.Parent()
 	}
 
-	return path.Join(parts...)
+	return filepath.Join(parts...)
 }
 
 func excludePath(path string) bool {
-	if path == "System Volume Information" {
+	switch path {
+	case "System Volume Information", "pagefile.sys", "swapfile.sys":
 		return true
 	}
 
@@ -237,7 +240,7 @@ func main() {
 
 	mw.treeView.SetSuspended(true)
 	for _, drive := range drives {
-		driveItem := newTreeViewItem(drive[:2])
+		driveItem := newTreeViewItem(drive /*[:2]*/)
 		mw.treeView.Items().Add(driveItem)
 	}
 	mw.treeView.SetSuspended(false)
@@ -252,7 +255,7 @@ func main() {
 		index := mw.tableView.CurrentIndex()
 		if index > -1 {
 			name := mw.fileInfoModel.items[index].Name
-			url = path.Join(pathForTreeViewItem(mw.selTvwItem), name)
+			url = filepath.Join(pathForTreeViewItem(mw.selTvwItem), name)
 		}
 
 		mw.preview.SetURL(url)
