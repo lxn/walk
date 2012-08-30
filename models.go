@@ -115,7 +115,10 @@ func (tmb *TableModelBase) PublishRowChanged(row int) {
 type ImageProvider interface {
 	// Image returns the image to display for the item at index index.
 	//
-	// Supported types are walk.*Bitmap and walk.*Icon.
+	// Supported types are *walk.Bitmap, *walk.Icon and string. A string will be
+	// interpreted as a file path and the icon associated with the file will be
+	// used. It is not supported to use strings together with the other options
+	// in the same model instance.
 	Image(index int) interface{}
 }
 

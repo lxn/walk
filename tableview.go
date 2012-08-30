@@ -36,12 +36,14 @@ type TableView struct {
 	model                           TableModel
 	itemChecker                     ItemChecker
 	imageProvider                   ImageProvider
+	hasAppliedImageList             bool
+	imageList                       *ImageList
+	imageUintptr2Index              map[uintptr]int32
+	filePath2IconIndex              map[string]int32
 	rowsResetHandlerHandle          int
 	rowChangedHandlerHandle         int
 	sortChangedHandlerHandle        int
 	columns                         []TableColumn
-	imageList                       *ImageList
-	imageUintptr2Index              map[uintptr]int
 	currentIndex                    int
 	currentIndexChangedPublisher    EventPublisher
 	selectedIndexes                 *IndexList
@@ -60,7 +62,8 @@ type TableView struct {
 func NewTableView(parent Container) (*TableView, error) {
 	tv := &TableView{
 		alternatingRowBGColor: defaultTVRowBGColor,
-		imageUintptr2Index:    make(map[uintptr]int),
+		imageUintptr2Index:    make(map[uintptr]int32),
+		filePath2IconIndex:    make(map[string]int32),
 		selectedIndexes:       NewIndexList(nil),
 	}
 
@@ -91,15 +94,6 @@ func NewTableView(parent Container) (*TableView, error) {
 	}
 
 	tv.currentIndex = -1
-
-	imgSize := Size{
-		int(GetSystemMetrics(SM_CXSMICON)),
-		int(GetSystemMetrics(SM_CYSMICON)),
-	}
-	var err error
-	if tv.imageList, err = NewImageList(imgSize, 0); err != nil {
-		return nil, err
-	}
 
 	succeeded = true
 
@@ -235,11 +229,12 @@ func (tv *TableView) SetModel(model TableModel) error {
 	tv.itemChecker, _ = model.(ItemChecker)
 	tv.imageProvider, _ = model.(ImageProvider)
 
-	var himl HIMAGELIST
-	if tv.imageProvider != nil {
-		himl = tv.imageList.hIml
+	if tv.imageList != nil {
+		SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, 0)
+		tv.imageList.Dispose()
+		tv.imageList = nil
 	}
-	SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(himl))
+	tv.hasAppliedImageList = false
 
 	if model != nil {
 		tv.attachModel()
@@ -670,8 +665,50 @@ func (tv *TableView) RestoreState() error {
 	return nil
 }
 
-func (tv *TableView) imageIndex(image interface{}) int {
-	imageIndex := -1
+func (tv *TableView) applyImageList(image interface{}) {
+	var himl HIMAGELIST
+
+	if filePath, ok := image.(string); ok {
+		_, himl = tv.iconIndexAndHIml(filePath)
+	} else {
+		imgSize := Size{
+			int(GetSystemMetrics(SM_CXSMICON)),
+			int(GetSystemMetrics(SM_CYSMICON)),
+		}
+
+		var err error
+		if tv.imageList, err = NewImageList(imgSize, 0); err != nil {
+			return
+		}
+
+		himl = tv.imageList.hIml
+	}
+
+	if himl != 0 {
+		SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(himl))
+
+		tv.hasAppliedImageList = true
+	}
+}
+
+func (tv *TableView) iconIndexAndHIml(filePath string) (int32, HIMAGELIST) {
+	var shfi SHFILEINFO
+
+	if hIml := HIMAGELIST(SHGetFileInfo(
+		syscall.StringToUTF16Ptr(filePath),
+		0,
+		&shfi,
+		uint32(unsafe.Sizeof(shfi)),
+		SHGFI_SYSICONINDEX|SHGFI_SMALLICON)); hIml != 0 {
+
+		return shfi.IIcon, hIml
+	}
+
+	return -1, 0
+}
+
+func (tv *TableView) imageIndex(image interface{}) int32 {
+	imageIndex := int32(-1)
 
 	if image != nil {
 		var ptr uintptr
@@ -683,16 +720,20 @@ func (tv *TableView) imageIndex(image interface{}) int {
 			ptr = uintptr(unsafe.Pointer(img))
 		}
 
+		if ptr == 0 {
+			return -1
+		}
+
 		if imageIndex, ok := tv.imageUintptr2Index[ptr]; ok {
 			return imageIndex
 		}
 
 		switch img := image.(type) {
 		case *Bitmap:
-			imageIndex = int(ImageList_AddMasked(tv.imageList.hIml, img.hBmp, 0))
+			imageIndex = ImageList_AddMasked(tv.imageList.hIml, img.hBmp, 0)
 
 		case *Icon:
-			imageIndex = int(ImageList_ReplaceIcon(tv.imageList.hIml, -1, img.hIcon))
+			imageIndex = ImageList_ReplaceIcon(tv.imageList.hIml, -1, img.hIcon)
 		}
 
 		if imageIndex > -1 {
@@ -797,7 +838,26 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 			if tv.imageProvider != nil && di.Item.Mask&LVIF_IMAGE > 0 {
 				image := tv.imageProvider.Image(row)
 
-				di.Item.IImage = int32(tv.imageIndex(image))
+				if !tv.hasAppliedImageList {
+					tv.applyImageList(image)
+				}
+
+				if tv.hasAppliedImageList {
+					if tv.imageList != nil {
+						di.Item.IImage = int32(tv.imageIndex(image))
+					} else if filePath, ok := image.(string); ok {
+						if iIcon, ok := tv.filePath2IconIndex[filePath]; ok {
+							di.Item.IImage = iIcon
+							break
+						}
+
+						if iIcon, _ := tv.iconIndexAndHIml(filePath); iIcon != -1 {
+							tv.filePath2IconIndex[filePath] = iIcon
+
+							di.Item.IImage = iIcon
+						}
+					}
+				}
 			}
 
 			if di.Item.StateMask&LVIS_STATEIMAGEMASK > 0 &&
