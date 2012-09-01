@@ -14,7 +14,7 @@ import . "github.com/lxn/go-winapi"
 type ProgressIndicator struct {
 	hwnd HWND
 	taskbarList3 *ITaskbarList3
-	length uint
+	length uint64
 }
 
 type PIState int
@@ -53,11 +53,11 @@ func(pi *ProgressIndicator) SetState(state PIState) error {
 	return nil
 }
 
-func (pi* ProgressIndicator) SetLength(length uint) {
+func (pi* ProgressIndicator) SetLength(length uint64) {
 	pi.length = length
 }
 
-func(pi *ProgressIndicator) SetValue(pos uint) error {
+func(pi *ProgressIndicator) SetValue(pos uint64) error {
 	if hr := pi.taskbarList3.SetProgressValue(pi.hwnd, pos, pi.length); FAILED(hr){
 		return errorFromHRESULT("ITaskbarList3.SetProgressValue", hr)
 	}

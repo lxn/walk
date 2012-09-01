@@ -48,7 +48,7 @@ func RunMyDialog(owner walk.RootWidget) (int, error) {
 	dlg.ui.startBtn.Clicked().Attach(func(){
 		go func(){
 		dlg.ProgressIndicator().SetLength(100)
-			var i uint
+			var i uint64
 			for i = 0; i < 100; i ++ {
 				fmt.Println("Hello", i)
 				time.Sleep(100 * time.Millisecond)
