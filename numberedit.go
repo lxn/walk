@@ -147,19 +147,28 @@ func (ne *NumberEdit) SetRange(min, max float64) error {
 }
 
 func (ne *NumberEdit) Value() float64 {
-	val, _ := strconv.ParseFloat(ne.edit.Text(), 64)
-
+	val, _ := parseFloat(ne.edit.Text())
 	return val
 }
 
-func (ne *NumberEdit) SetValue(value float64) error {
-	text := strconv.FormatFloat(value, 'f', ne.Decimals(), 64)
+func (ne *NumberEdit) SetValue(value float64) (err error) {
+	var text string
+	prec := ne.Decimals()
 
-	if err := ne.edit.SetText(text); err != nil {
-		return err
+	if prec == 0 {
+		text = strconv.Itoa(int(value))
+	} else {
+		text, err = formatFloat(value, prec)
+		if err != nil {
+			return
+		}
 	}
 
-	return nil
+	if err = ne.edit.SetText(text); err != nil {
+		return
+	}
+
+	return
 }
 
 func (ne *NumberEdit) ValueChanged() *Event {

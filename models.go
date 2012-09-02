@@ -56,7 +56,8 @@ type TableColumn struct {
 	// Format is the format string for converting a value into a string.
 	Format string
 
-	// Precision is the number of decimal places for formatting a big.Rat.
+	// Precision is the number of decimal places for formatting float32, float64
+	// or big.Rat values.
 	Precision int
 
 	// Width is the width of the column in pixels.

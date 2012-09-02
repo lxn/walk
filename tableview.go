@@ -819,11 +819,29 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 				case string:
 					text = val
 
+				case float32:
+					prec := tv.columns[col].Precision
+					if prec == 0 {
+						prec = 2
+					}
+					text, _ = formatFloat(float64(val), prec)
+
+				case float64:
+					prec := tv.columns[col].Precision
+					if prec == 0 {
+						prec = 2
+					}
+					text, _ = formatFloat(val, prec)
+
 				case time.Time:
 					text = val.Format(tv.columns[col].Format)
 
 				case *big.Rat:
-					text = val.FloatString(tv.columns[col].Precision)
+					prec := tv.columns[col].Precision
+					if prec == 0 {
+						prec = 2
+					}
+					text, _ = formatRat(val, prec)
 
 				default:
 					text = fmt.Sprintf(tv.columns[col].Format, val)
