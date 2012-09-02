@@ -62,7 +62,7 @@ func webView_IDocHostUIHandler_Release(docHostUIHandler *webViewIDocHostUIHandle
 	return 1
 }
 
-func webView_IDocHostUIHandler_ShowContextMenu(docHostUIHandler *webViewIDocHostUIHandler, dwID uint, ppt *POINT, pcmdtReserved *IUnknown, pdispReserved uintptr) uintptr {
+func webView_IDocHostUIHandler_ShowContextMenu(docHostUIHandler *webViewIDocHostUIHandler, dwID uint32, ppt *POINT, pcmdtReserved *IUnknown, pdispReserved uintptr) uintptr {
 	return S_OK
 }
 
@@ -74,7 +74,7 @@ func webView_IDocHostUIHandler_GetHostInfo(docHostUIHandler *webViewIDocHostUIHa
 	return S_OK
 }
 
-func webView_IDocHostUIHandler_ShowUI(docHostUIHandler *webViewIDocHostUIHandler, dwID uint, pActiveObject uintptr, pCommandTarget uintptr, pFrame *IOleInPlaceFrame, pDoc uintptr) uintptr {
+func webView_IDocHostUIHandler_ShowUI(docHostUIHandler *webViewIDocHostUIHandler, dwID uint32, pActiveObject uintptr, pCommandTarget uintptr, pFrame *IOleInPlaceFrame, pDoc uintptr) uintptr {
 	return S_OK
 }
 
@@ -120,7 +120,7 @@ func webView_IDocHostUIHandler_GetExternal(docHostUIHandler *webViewIDocHostUIHa
 	return S_FALSE
 }
 
-func webView_IDocHostUIHandler_TranslateUrl(docHostUIHandler *webViewIDocHostUIHandler, dwTranslate uint, pchURLIn *uint16, ppchURLOut **uint16) uintptr {
+func webView_IDocHostUIHandler_TranslateUrl(docHostUIHandler *webViewIDocHostUIHandler, dwTranslate uint32, pchURLIn *uint16, ppchURLOut **uint16) uintptr {
 	*ppchURLOut = nil
 
 	return S_FALSE
