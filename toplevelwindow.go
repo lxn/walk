@@ -60,7 +60,7 @@ type TopLevelWindow struct {
 	prevFocusHWnd     HWND
 	isInRestoreState  bool
 	startingPublisher EventPublisher
-	progressIndicator      *ProgressIndicator
+	progressIndicator *ProgressIndicator
 }
 
 func (tlw *TopLevelWindow) LayoutFlags() LayoutFlags {
@@ -273,10 +273,10 @@ func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 
 	case taskbarButtonCreatedMsgId:
 		version := GetVersion()
-		major :=  version & 0xFF
-		minor :=  version & 0xFF00 >> 8
+		major := version & 0xFF
+		minor := version & 0xFF00 >> 8
 		// Check that the OS is Win 7 or later (Win 7 is v6.1).
-		if  major > 6 || ( major == 6 && minor > 0 ) {
+		if major > 6 || (major == 6 && minor > 0) {
 			tlw.progressIndicator, _ = newTaskbarList3(tlw.hWnd)
 		}
 	}

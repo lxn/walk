@@ -10,26 +10,25 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-
 type ProgressIndicator struct {
-	hwnd HWND
+	hwnd         HWND
 	taskbarList3 *ITaskbarList3
-	length uint32
+	length       uint32
 }
 
 type PIState int
+
 const (
-    PINoProgress	PIState = TBPF_NOPROGRESS
+	PINoProgress    PIState = TBPF_NOPROGRESS
 	PIIndeterminate PIState = TBPF_INDETERMINATE
 	PINormal        PIState = TBPF_NORMAL
 	PIError         PIState = TBPF_ERROR
 	PIPaused        PIState = TBPF_PAUSED
 )
 
+//newTaskbarList3 precondition: Windows version is at least 6.1 (yes, Win 7 is version 6.1).
+func newTaskbarList3(hwnd HWND) (*ProgressIndicator, error) {
 
-func newTaskbarList3(hwnd HWND)(*ProgressIndicator, error) {
-
-	// Check that the Windows version is at least 6.1 (yes, Win 7 is version 6.1).
 	var classFactoryPtr unsafe.Pointer
 	if hr := CoGetClassObject(&CLSID_TaskbarList, CLSCTX_ALL, nil, &IID_IClassFactory, &classFactoryPtr); FAILED(hr) {
 		return nil, errorFromHRESULT("CoGetClassObject", hr)
@@ -43,22 +42,22 @@ func newTaskbarList3(hwnd HWND)(*ProgressIndicator, error) {
 		return nil, errorFromHRESULT("IClassFactory.CreateInstance", hr)
 	}
 
-	return &ProgressIndicator{taskbarList3:(*ITaskbarList3)(taskbarList3ObjectPtr), hwnd:hwnd},  nil
+	return &ProgressIndicator{taskbarList3: (*ITaskbarList3)(taskbarList3ObjectPtr), hwnd: hwnd}, nil
 }
 
-func(pi *ProgressIndicator) SetState(state PIState) error {
-	if hr := pi.taskbarList3.SetProgressState(pi.hwnd, (int)(state)); FAILED(hr){
+func (pi *ProgressIndicator) SetState(state PIState) error {
+	if hr := pi.taskbarList3.SetProgressState(pi.hwnd, (int)(state)); FAILED(hr) {
 		return errorFromHRESULT("ITaskbarList3.setprogressState", hr)
 	}
 	return nil
 }
 
-func (pi* ProgressIndicator) SetLength(length uint32) {
+func (pi *ProgressIndicator) SetLength(length uint32) {
 	pi.length = length
 }
 
-func(pi *ProgressIndicator) SetValue(pos uint32) error {
-	if hr := pi.taskbarList3.SetProgressValue(pi.hwnd, pos, pi.length); FAILED(hr){
+func (pi *ProgressIndicator) SetValue(pos uint32) error {
+	if hr := pi.taskbarList3.SetProgressValue(pi.hwnd, pos, pi.length); FAILED(hr) {
 		return errorFromHRESULT("ITaskbarList3.SetProgressValue", hr)
 	}
 	return nil

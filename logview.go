@@ -5,8 +5,8 @@
 package walk
 
 import (
-	"unsafe"
 	"syscall"
+	"unsafe"
 )
 
 import . "github.com/lxn/go-winapi"
@@ -21,7 +21,7 @@ type LogView struct {
 
 func NewLogView(parent Container) (*LogView, error) {
 	lc := make(chan string, 1024)
-	te := &LogView{logChan:lc}
+	te := &LogView{logChan: lc}
 
 	if err := initChildWidget(
 		te,
@@ -60,7 +60,7 @@ func (te *LogView) setTextSelection(start, end int) {
 	SendMessage(te.hWnd, EM_SETSEL, uintptr(start), uintptr(end))
 }
 
-func (te *LogView) textLength() int{
+func (te *LogView) textLength() int {
 	return int(SendMessage(te.hWnd, 0x000E, uintptr(0), uintptr(0)))
 }
 
@@ -78,12 +78,12 @@ func (te *LogView) setReadOnly(readOnly bool) error {
 	return nil
 }
 
-func (te *LogView) PostAppendText(value string){
+func (te *LogView) PostAppendText(value string) {
 	te.logChan <- value
 	PostMessage(te.hWnd, TEM_APPENDTEXT, 0, 0)
 }
 
-func (te *LogView)  Write(p []byte)(int, error){
+func (te *LogView) Write(p []byte) (int, error) {
 	te.PostAppendText(string(p) + "\r\n")
 	return len(p), nil
 }
@@ -98,7 +98,7 @@ func (te *LogView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 		return DLGC_HASSETSEL | DLGC_WANTARROWS | DLGC_WANTCHARS
 	case TEM_APPENDTEXT:
 		select {
-		case value := <- te.logChan:
+		case value := <-te.logChan:
 			te.AppendText(value)
 		default:
 			return 0
