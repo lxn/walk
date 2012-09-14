@@ -35,7 +35,7 @@ func (em *EnvModel) ItemCount()int{
 }
 
 func (em *EnvModel) Value( index int) interface{} {
-	return em.envItems[index].varName
+	return em.envItems[index].value
 }
 
 
