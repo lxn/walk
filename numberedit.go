@@ -15,7 +15,9 @@ import . "github.com/lxn/go-winapi"
 
 const numberEditWindowClass = `\o/ Walk_NumberEdit_Class \o/`
 
-var numberEditWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(numberEditWindowClass)
+}
 
 type NumberEdit struct {
 	WidgetBase
@@ -27,8 +29,6 @@ type NumberEdit struct {
 }
 
 func NewNumberEdit(parent Container) (*NumberEdit, error) {
-	ensureRegisteredWindowClass(numberEditWindowClass, &numberEditWindowClassRegistered)
-
 	ne := &NumberEdit{increment: 1}
 
 	if err := initChildWidget(

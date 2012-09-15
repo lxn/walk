@@ -14,7 +14,9 @@ import . "github.com/lxn/go-winapi"
 
 const tabWidgetWindowClass = `\o/ Walk_TabWidget_Class \o/`
 
-var tabWidgetWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(tabWidgetWindowClass)
+}
 
 type TabWidget struct {
 	WidgetBase
@@ -26,8 +28,6 @@ type TabWidget struct {
 }
 
 func NewTabWidget(parent Container) (*TabWidget, error) {
-	ensureRegisteredWindowClass(tabWidgetWindowClass, &tabWidgetWindowClassRegistered)
-
 	tw := &TabWidget{currentIndex: -1}
 	tw.pages = newTabPageList(tw)
 

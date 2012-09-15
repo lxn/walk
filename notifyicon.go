@@ -13,7 +13,9 @@ import . "github.com/lxn/go-winapi"
 
 const notifyIconWindowClass = `\o/ Walk_NotifyIcon_Class \o/`
 
-var notifyIconWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(notifyIconWindowClass)
+}
 
 func notifyIconWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) (result uintptr) {
 	// Retrieve our *NotifyIcon from the message window.
@@ -82,8 +84,6 @@ type NotifyIcon struct {
 //
 // The NotifyIcon is initially not visible.
 func NewNotifyIcon() (*NotifyIcon, error) {
-	ensureRegisteredWindowClass(notifyIconWindowClass, &notifyIconWindowClassRegistered)
-
 	// Create the message-only window for the NotifyIcon.
 	hWnd := CreateWindowEx(
 		0,

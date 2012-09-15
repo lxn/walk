@@ -6,7 +6,9 @@ package walk
 
 const spacerWindowClass = `\o/ Walk_Spacer_Class \o/`
 
-var spacerWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(spacerWindowClass)
+}
 
 type Spacer struct {
 	WidgetBase
@@ -15,8 +17,6 @@ type Spacer struct {
 }
 
 func newSpacer(parent Container, layoutFlags LayoutFlags, sizeHint Size) (*Spacer, error) {
-	ensureRegisteredWindowClass(spacerWindowClass, &spacerWindowClassRegistered)
-
 	s := &Spacer{
 		layoutFlags: layoutFlags,
 		sizeHint:    sizeHint,

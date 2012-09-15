@@ -10,7 +10,9 @@ import . "github.com/lxn/go-winapi"
 
 const groupBoxWindowClass = `\o/ Walk_GroupBox_Class \o/`
 
-var groupBoxWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(groupBoxWindowClass)
+}
 
 type GroupBox struct {
 	WidgetBase
@@ -19,8 +21,6 @@ type GroupBox struct {
 }
 
 func NewGroupBox(parent Container) (*GroupBox, error) {
-	ensureRegisteredWindowClass(groupBoxWindowClass, &groupBoxWindowClassRegistered)
-
 	gb := &GroupBox{}
 
 	if err := initChildWidget(

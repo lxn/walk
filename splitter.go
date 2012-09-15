@@ -14,12 +14,10 @@ import . "github.com/lxn/go-winapi"
 
 const splitterWindowClass = `\o/ Walk_Splitter_Class \o/`
 
-var (
-	splitterWindowClassRegistered bool
-	splitterHandleDraggingBrush   *SolidColorBrush
-)
+var splitterHandleDraggingBrush *SolidColorBrush
 
 func init() {
+	mustRegisterWindowClass(splitterWindowClass)
 	splitterHandleDraggingBrush, _ = NewSolidColorBrush(Color(GetSysColor(COLOR_BTNSHADOW)))
 }
 
@@ -32,8 +30,6 @@ type Splitter struct {
 }
 
 func NewSplitter(parent Container) (*Splitter, error) {
-	ensureRegisteredWindowClass(splitterWindowClass, &splitterWindowClassRegistered)
-
 	layout := newSplitterLayout(Horizontal)
 	s := &Splitter{
 		ContainerBase: ContainerBase{

@@ -8,7 +8,9 @@ import . "github.com/lxn/go-winapi"
 
 const splitterHandleWindowClass = `\o/ Walk_SplitterHandle_Class \o/`
 
-var splitterHandleWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(splitterHandleWindowClass)
+}
 
 type splitterHandle struct {
 	WidgetBase
@@ -18,8 +20,6 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, error) {
 	if splitter == nil {
 		return nil, newError("splitter cannot be nil")
 	}
-
-	ensureRegisteredWindowClass(splitterHandleWindowClass, &splitterHandleWindowClassRegistered)
 
 	sh := &splitterHandle{}
 	sh.parent = splitter

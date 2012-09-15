@@ -8,15 +8,15 @@ import . "github.com/lxn/go-winapi"
 
 const compositeWindowClass = `\o/ Walk_Composite_Class \o/`
 
-var compositeWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(compositeWindowClass)
+}
 
 type Composite struct {
 	ContainerBase
 }
 
 func newCompositeWithStyle(parent Container, style uint32) (*Composite, error) {
-	ensureRegisteredWindowClass(compositeWindowClass, &compositeWindowClassRegistered)
-
 	c := &Composite{}
 	c.children = newWidgetList(c)
 	c.SetPersistent(true)

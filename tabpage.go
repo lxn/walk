@@ -10,7 +10,9 @@ import . "github.com/lxn/go-winapi"
 
 const tabPageWindowClass = `\o/ Walk_TabPage_Class \o/`
 
-var tabPageWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(tabPageWindowClass)
+}
 
 type TabPage struct {
 	ContainerBase
@@ -19,8 +21,6 @@ type TabPage struct {
 }
 
 func NewTabPage() (*TabPage, error) {
-	ensureRegisteredWindowClass(tabPageWindowClass, &tabPageWindowClassRegistered)
-
 	tp := &TabPage{}
 
 	if err := initWidget(

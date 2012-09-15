@@ -28,7 +28,9 @@ const (
 
 const dialogWindowClass = `\o/ Walk_Dialog_Class \o/`
 
-var dialogWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(dialogWindowClass)
+}
 
 type dialogish interface {
 	DefaultButton() *PushButton
@@ -44,8 +46,6 @@ type Dialog struct {
 }
 
 func NewDialog(owner RootWidget) (*Dialog, error) {
-	ensureRegisteredWindowClass(dialogWindowClass, &dialogWindowClassRegistered)
-
 	dlg := &Dialog{
 		TopLevelWindow: TopLevelWindow{
 			owner: owner,

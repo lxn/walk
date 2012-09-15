@@ -8,7 +8,9 @@ import . "github.com/lxn/go-winapi"
 
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
 
-var mainWindowWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(mainWindowWindowClass)
+}
 
 type MainWindow struct {
 	TopLevelWindow
@@ -18,8 +20,6 @@ type MainWindow struct {
 }
 
 func NewMainWindow() (*MainWindow, error) {
-	ensureRegisteredWindowClass(mainWindowWindowClass, &mainWindowWindowClassRegistered)
-
 	mw := &MainWindow{}
 
 	if err := initWidget(

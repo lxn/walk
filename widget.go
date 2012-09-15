@@ -313,28 +313,26 @@ type WidgetBase struct {
 
 var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
 
-func ensureRegisteredWindowClass(className string, registered *bool) {
-	if registered == nil {
-		panic("registered cannot be nil")
-	}
+var registeredWindowClasses map[string]bool = make(map[string]bool)
 
-	if *registered {
-		return
+func mustRegisterWindowClass(className string) {
+	if registeredWindowClasses[className] {
+		panic("window class already registered")
 	}
 
 	hInst := GetModuleHandle(nil)
 	if hInst == 0 {
-		panic("GetModuleHandle failed")
+		panic("GetModuleHandle")
 	}
 
 	hIcon := LoadIcon(0, (*uint16)(unsafe.Pointer(uintptr(IDI_APPLICATION))))
 	if hIcon == 0 {
-		panic("LoadIcon failed")
+		panic("LoadIcon")
 	}
 
 	hCursor := LoadCursor(0, (*uint16)(unsafe.Pointer(uintptr(IDC_ARROW))))
 	if hCursor == 0 {
-		panic("LoadCursor failed")
+		panic("LoadCursor")
 	}
 
 	var wc WNDCLASSEX
@@ -350,7 +348,7 @@ func ensureRegisteredWindowClass(className string, registered *bool) {
 		panic("RegisterClassEx")
 	}
 
-	*registered = true
+	registeredWindowClasses[className] = true
 }
 
 func initWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint32) error {

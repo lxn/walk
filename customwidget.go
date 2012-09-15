@@ -8,7 +8,9 @@ import . "github.com/lxn/go-winapi"
 
 const customWidgetWindowClass = `\o/ Walk_CustomWidget_Class \o/`
 
-var customWidgetWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(customWidgetWindowClass)
+}
 
 type PaintFunc func(canvas *Canvas, updateBounds Rectangle) error
 
@@ -20,8 +22,6 @@ type CustomWidget struct {
 }
 
 func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidget, error) {
-	ensureRegisteredWindowClass(customWidgetWindowClass, &customWidgetWindowClassRegistered)
-
 	cw := &CustomWidget{paint: paint}
 
 	if err := initChildWidget(

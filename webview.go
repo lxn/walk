@@ -13,7 +13,9 @@ import . "github.com/lxn/go-winapi"
 
 const webViewWindowClass = `\o/ Walk_WebView_Class \o/`
 
-var webViewWindowClassRegistered bool
+func init() {
+	mustRegisterWindowClass(webViewWindowClass)
+}
 
 type WebView struct {
 	WidgetBase
@@ -22,8 +24,6 @@ type WebView struct {
 }
 
 func NewWebView(parent Container) (*WebView, error) {
-	ensureRegisteredWindowClass(webViewWindowClass, &webViewWindowClassRegistered)
-
 	wv := &WebView{
 		clientSite: webViewIOleClientSite{
 			IOleClientSite: IOleClientSite{
