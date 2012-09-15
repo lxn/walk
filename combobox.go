@@ -14,9 +14,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var comboBoxOrigWndProcPtr uintptr
-var _ subclassedWidget = &ComboBox{}
-
 type ComboBox struct {
 	WidgetBase
 	model                        ListModel
@@ -42,14 +39,6 @@ func NewComboBox(parent Container) (*ComboBox, error) {
 	}
 
 	return cb, nil
-}
-
-func (*ComboBox) origWndProcPtr() uintptr {
-	return comboBoxOrigWndProcPtr
-}
-
-func (*ComboBox) setOrigWndProcPtr(ptr uintptr) {
-	comboBoxOrigWndProcPtr = ptr
 }
 
 func (*ComboBox) LayoutFlags() LayoutFlags {

@@ -11,9 +11,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var treeViewOrigWndProcPtr uintptr
-var _ subclassedWidget = &TreeView{}
-
 type TreeView struct {
 	WidgetBase
 	items                      *TreeViewItemList
@@ -53,14 +50,6 @@ func NewTreeView(parent Container) (*TreeView, error) {
 	succeeded = true
 
 	return tv, nil
-}
-
-func (*TreeView) origWndProcPtr() uintptr {
-	return treeViewOrigWndProcPtr
-}
-
-func (*TreeView) setOrigWndProcPtr(ptr uintptr) {
-	treeViewOrigWndProcPtr = ptr
 }
 
 func (*TreeView) LayoutFlags() LayoutFlags {

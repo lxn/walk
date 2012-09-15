@@ -11,9 +11,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var toolTipOrigWndProcPtr uintptr
-var _ subclassedWidget = &ToolTip{}
-
 type ToolTip struct {
 	WidgetBase
 }
@@ -46,14 +43,6 @@ func NewToolTip(parent Container) (*ToolTip, error) {
 	succeeded = true
 
 	return tt, nil
-}
-
-func (*ToolTip) origWndProcPtr() uintptr {
-	return toolTipOrigWndProcPtr
-}
-
-func (*ToolTip) setOrigWndProcPtr(ptr uintptr) {
-	toolTipOrigWndProcPtr = ptr
 }
 
 func (*ToolTip) LayoutFlags() LayoutFlags {

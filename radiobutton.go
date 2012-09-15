@@ -6,9 +6,6 @@ package walk
 
 import . "github.com/lxn/go-winapi"
 
-var radioButtonOrigWndProcPtr uintptr
-var _ subclassedWidget = &RadioButton{}
-
 type RadioButton struct {
 	Button
 }
@@ -26,14 +23,6 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 	}
 
 	return rb, nil
-}
-
-func (*RadioButton) origWndProcPtr() uintptr {
-	return radioButtonOrigWndProcPtr
-}
-
-func (*RadioButton) setOrigWndProcPtr(ptr uintptr) {
-	radioButtonOrigWndProcPtr = ptr
 }
 
 func (*RadioButton) LayoutFlags() LayoutFlags {

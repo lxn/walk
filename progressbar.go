@@ -6,9 +6,6 @@ package walk
 
 import . "github.com/lxn/go-winapi"
 
-var progressBarOrigWndProcPtr uintptr
-var _ subclassedWidget = &ProgressBar{}
-
 type ProgressBar struct {
 	WidgetBase
 }
@@ -26,14 +23,6 @@ func NewProgressBar(parent Container) (*ProgressBar, error) {
 	}
 
 	return pb, nil
-}
-
-func (*ProgressBar) origWndProcPtr() uintptr {
-	return progressBarOrigWndProcPtr
-}
-
-func (*ProgressBar) setOrigWndProcPtr(ptr uintptr) {
-	progressBarOrigWndProcPtr = ptr
 }
 
 func (*ProgressBar) LayoutFlags() LayoutFlags {

@@ -18,8 +18,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var tableViewOrigWndProcPtr uintptr
-var _ subclassedWidget = &TableView{}
 var defaultTVRowBGColor Color = Color(GetSysColor(COLOR_WINDOW))
 
 const (
@@ -98,14 +96,6 @@ func NewTableView(parent Container) (*TableView, error) {
 	succeeded = true
 
 	return tv, nil
-}
-
-func (*TableView) origWndProcPtr() uintptr {
-	return tableViewOrigWndProcPtr
-}
-
-func (*TableView) setOrigWndProcPtr(ptr uintptr) {
-	tableViewOrigWndProcPtr = ptr
 }
 
 // Dispose releases the operating system resources, associated with the 

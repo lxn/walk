@@ -14,9 +14,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var listBoxOrigWndProcPtr uintptr
-var _ subclassedWidget = &ListBox{}
-
 type ListBox struct {
 	WidgetBase
 	model                        ListModel
@@ -42,14 +39,6 @@ func NewListBox(parent Container) (*ListBox, error) {
 		return nil, err
 	}
 	return lb, nil
-}
-
-func (*ListBox) origWndProcPtr() uintptr {
-	return listBoxOrigWndProcPtr
-}
-
-func (*ListBox) setOrigWndProcPtr(ptr uintptr) {
-	listBoxOrigWndProcPtr = ptr
 }
 
 func (*ListBox) LayoutFlags() LayoutFlags {

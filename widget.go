@@ -284,16 +284,11 @@ type widgetInternal interface {
 	writePath(buf *bytes.Buffer)
 }
 
-type subclassedWidget interface {
-	widgetInternal
-	origWndProcPtr() uintptr
-	setOrigWndProcPtr(ptr uintptr)
-}
-
 // WidgetBase implements many operations common to all Widgets.
 type WidgetBase struct {
 	widget               widgetInternal
 	hWnd                 HWND
+	origWndProcPtr       uintptr
 	name                 string
 	parent               Container
 	font                 *Font
@@ -390,14 +385,11 @@ func initWidget(widget widgetInternal, parent Widget, className string, style, e
 
 	SetWindowLongPtr(wb.hWnd, GWLP_USERDATA, uintptr(unsafe.Pointer(wb)))
 
-	if subclassed, ok := widget.(subclassedWidget); ok {
-		origWndProcPtr := SetWindowLongPtr(wb.hWnd, GWLP_WNDPROC, widgetWndProcPtr)
-		if origWndProcPtr == 0 {
+	if !registeredWindowClasses[className] {
+		// We subclass all widgets of system classes.
+		wb.origWndProcPtr = SetWindowLongPtr(wb.hWnd, GWLP_WNDPROC, widgetWndProcPtr)
+		if wb.origWndProcPtr == 0 {
 			return lastError("SetWindowLongPtr")
-		}
-
-		if subclassed.origWndProcPtr() == 0 {
-			subclassed.setOrigWndProcPtr(origWndProcPtr)
 		}
 	}
 
@@ -1229,7 +1221,7 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		return 1
 
 	case WM_LBUTTONDOWN:
-		if _, isSubclassed := widgetFromHWND(wb.hWnd).(subclassedWidget); !isSubclassed {
+		if wb.origWndProcPtr == 0 {
 			// Only call SetCapture if this is no subclassed control.
 			// (Otherwise e.g. WM_COMMAND(BN_CLICKED) would no longer
 			// be generated for PushButton.)
@@ -1238,7 +1230,7 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		wb.publishMouseEvent(&wb.mouseDownPublisher, wParam, lParam)
 
 	case WM_LBUTTONUP:
-		if _, isSubclassed := widgetFromHWND(wb.hWnd).(subclassedWidget); !isSubclassed {
+		if wb.origWndProcPtr == 0 {
 			// See WM_LBUTTONDOWN for why we require origWndProcPtr == 0 here.
 			if !ReleaseCapture() {
 				lastError("ReleaseCapture")
@@ -1291,13 +1283,9 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 	}
 
 	if widget := widgetFromHWND(hwnd); widget != nil {
-		if subclassed, ok := widget.(subclassedWidget); ok {
-			return CallWindowProc(
-				subclassed.origWndProcPtr(),
-				hwnd,
-				msg,
-				wParam,
-				lParam)
+		origWndProcPtr := widget.BaseWidget().origWndProcPtr
+		if origWndProcPtr != 0 {
+			return CallWindowProc(origWndProcPtr, hwnd, msg, wParam, lParam)
 		}
 	}
 

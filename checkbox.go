@@ -6,9 +6,6 @@ package walk
 
 import . "github.com/lxn/go-winapi"
 
-var checkBoxOrigWndProcPtr uintptr
-var _ subclassedWidget = &CheckBox{}
-
 type CheckBox struct {
 	Button
 }
@@ -26,14 +23,6 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 	}
 
 	return cb, nil
-}
-
-func (*CheckBox) origWndProcPtr() uintptr {
-	return checkBoxOrigWndProcPtr
-}
-
-func (*CheckBox) setOrigWndProcPtr(ptr uintptr) {
-	checkBoxOrigWndProcPtr = ptr
 }
 
 func (*CheckBox) LayoutFlags() LayoutFlags {

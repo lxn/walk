@@ -6,9 +6,6 @@ package walk
 
 import . "github.com/lxn/go-winapi"
 
-var toolButtonOrigWndProcPtr uintptr
-var _ subclassedWidget = &ToolButton{}
-
 type ToolButton struct {
 	Button
 }
@@ -26,14 +23,6 @@ func NewToolButton(parent Container) (*ToolButton, error) {
 	}
 
 	return tb, nil
-}
-
-func (*ToolButton) origWndProcPtr() uintptr {
-	return toolButtonOrigWndProcPtr
-}
-
-func (*ToolButton) setOrigWndProcPtr(ptr uintptr) {
-	toolButtonOrigWndProcPtr = ptr
 }
 
 func (*ToolButton) LayoutFlags() LayoutFlags {

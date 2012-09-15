@@ -6,9 +6,6 @@ package walk
 
 import . "github.com/lxn/go-winapi"
 
-var labelOrigWndProcPtr uintptr
-var _ subclassedWidget = &Label{}
-
 type Label struct {
 	WidgetBase
 }
@@ -26,14 +23,6 @@ func NewLabel(parent Container) (*Label, error) {
 	}
 
 	return l, nil
-}
-
-func (*Label) origWndProcPtr() uintptr {
-	return labelOrigWndProcPtr
-}
-
-func (*Label) setOrigWndProcPtr(ptr uintptr) {
-	labelOrigWndProcPtr = ptr
 }
 
 func (*Label) LayoutFlags() LayoutFlags {

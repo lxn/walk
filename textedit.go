@@ -8,9 +8,6 @@ import "unsafe"
 
 import . "github.com/lxn/go-winapi"
 
-var textEditOrigWndProcPtr uintptr
-var _ subclassedWidget = &TextEdit{}
-
 type TextEdit struct {
 	WidgetBase
 }
@@ -28,14 +25,6 @@ func NewTextEdit(parent Container) (*TextEdit, error) {
 	}
 
 	return te, nil
-}
-
-func (*TextEdit) origWndProcPtr() uintptr {
-	return textEditOrigWndProcPtr
-}
-
-func (*TextEdit) setOrigWndProcPtr(ptr uintptr) {
-	textEditOrigWndProcPtr = ptr
 }
 
 func (*TextEdit) LayoutFlags() LayoutFlags {

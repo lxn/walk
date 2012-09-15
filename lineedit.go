@@ -11,9 +11,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var lineEditOrigWndProcPtr uintptr
-var _ subclassedWidget = &LineEdit{}
-
 type LineEdit struct {
 	WidgetBase
 	validator                Validator
@@ -62,14 +59,6 @@ func NewLineEdit(parent Container) (*LineEdit, error) {
 	succeeded = true
 
 	return le, nil
-}
-
-func (*LineEdit) origWndProcPtr() uintptr {
-	return lineEditOrigWndProcPtr
-}
-
-func (*LineEdit) setOrigWndProcPtr(ptr uintptr) {
-	lineEditOrigWndProcPtr = ptr
 }
 
 func (le *LineEdit) CueBanner() string {

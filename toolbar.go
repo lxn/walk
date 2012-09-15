@@ -11,9 +11,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var toolBarOrigWndProcPtr uintptr
-var _ subclassedWidget = &ToolBar{}
-
 type ToolBar struct {
 	WidgetBase
 	imageList          *ImageList
@@ -51,14 +48,6 @@ func NewVerticalToolBar(parent Container) (*ToolBar, error) {
 	tb.defaultButtonWidth = 100
 
 	return tb, nil
-}
-
-func (*ToolBar) origWndProcPtr() uintptr {
-	return toolBarOrigWndProcPtr
-}
-
-func (*ToolBar) setOrigWndProcPtr(ptr uintptr) {
-	toolBarOrigWndProcPtr = ptr
 }
 
 func (tb *ToolBar) LayoutFlags() LayoutFlags {

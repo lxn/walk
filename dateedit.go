@@ -31,9 +31,6 @@ func timeToSystemTime(t time.Time) *SYSTEMTIME {
 	}
 }
 
-var dateEditOrigWndProcPtr uintptr
-var _ subclassedWidget = &DateEdit{}
-
 type DateEdit struct {
 	WidgetBase
 	valueChangedPublisher EventPublisher
@@ -52,14 +49,6 @@ func NewDateEdit(parent Container) (*DateEdit, error) {
 	}
 
 	return de, nil
-}
-
-func (*DateEdit) origWndProcPtr() uintptr {
-	return dateEditOrigWndProcPtr
-}
-
-func (*DateEdit) setOrigWndProcPtr(ptr uintptr) {
-	dateEditOrigWndProcPtr = ptr
 }
 
 func (*DateEdit) LayoutFlags() LayoutFlags {

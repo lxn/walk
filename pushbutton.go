@@ -8,9 +8,6 @@ import "unsafe"
 
 import . "github.com/lxn/go-winapi"
 
-var pushButtonOrigWndProcPtr uintptr
-var _ subclassedWidget = &PushButton{}
-
 type PushButton struct {
 	Button
 }
@@ -28,14 +25,6 @@ func NewPushButton(parent Container) (*PushButton, error) {
 	}
 
 	return pb, nil
-}
-
-func (*PushButton) origWndProcPtr() uintptr {
-	return pushButtonOrigWndProcPtr
-}
-
-func (*PushButton) setOrigWndProcPtr(ptr uintptr) {
-	pushButtonOrigWndProcPtr = ptr
 }
 
 func (*PushButton) LayoutFlags() LayoutFlags {
