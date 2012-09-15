@@ -174,6 +174,55 @@ func (ni *NotifyIcon) Dispose() error {
 	return nil
 }
 
+func (ni *NotifyIcon) showMessage(title, info string, iconType uint32) error {
+	nid := ni.notifyIconData()
+	nid.UFlags = NIF_INFO
+	nid.DwInfoFlags = iconType
+	copy(nid.SzInfoTitle[:], syscall.StringToUTF16(title))
+	copy(nid.SzInfo[:], syscall.StringToUTF16(info))
+
+	if !Shell_NotifyIcon(NIM_MODIFY, nid) {
+		return newError("Shell_NotifyIcon")
+	}
+
+	return nil
+}
+
+// ShowMessage displays a neutral message balloon above the NotifyIcon.
+//
+// The NotifyIcon must be visible before calling this method.
+func (ni *NotifyIcon) ShowMessage(title, info string) error {
+	return ni.showMessage(title, info, NIIF_NONE)
+}
+
+// ShowInfo displays an info message balloon above the NotifyIcon.
+//
+// The NotifyIcon must be visible before calling this method.
+func (ni *NotifyIcon) ShowInfo(title, info string) error {
+	return ni.showMessage(title, info, NIIF_INFO)
+}
+
+// ShowWarning displays a warning message balloon above the NotifyIcon.
+//
+// The NotifyIcon must be visible before calling this method.
+func (ni *NotifyIcon) ShowWarning(title, info string) error {
+	return ni.showMessage(title, info, NIIF_WARNING)
+}
+
+// ShowError displays an error message balloon above the NotifyIcon.
+//
+// The NotifyIcon must be visible before calling this method.
+func (ni *NotifyIcon) ShowError(title, info string) error {
+	return ni.showMessage(title, info, NIIF_ERROR)
+}
+
+// ShowCustom displays a custom icon message balloon above the NotifyIcon.
+//
+// The NotifyIcon must be visible before calling this method.
+func (ni *NotifyIcon) ShowCustom(title, info string) error {
+	return ni.showMessage(title, info, NIIF_USER)
+}
+
 // ContextMenu returns the context menu of the NotifyIcon.
 func (ni *NotifyIcon) ContextMenu() *Menu {
 	return ni.contextMenu
