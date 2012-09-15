@@ -307,7 +307,6 @@ type WidgetBase struct {
 	minSize              Size
 	background           Brush
 	cursor               Cursor
-	layoutFlags          LayoutFlags
 	suspended            bool
 	hidden               bool
 }
