@@ -11,9 +11,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var lineEditOrigWndProcPtr uintptr
-var _ subclassedWidget = &LineEdit{}
-
 type LineEdit struct {
 	WidgetBase
 	validator                Validator
@@ -25,7 +22,7 @@ type LineEdit struct {
 func newLineEdit(parent Widget) (*LineEdit, error) {
 	le := &LineEdit{}
 
-	if err := initWidget(
+	if err := InitWidget(
 		le,
 		parent,
 		"EDIT",
@@ -62,14 +59,6 @@ func NewLineEdit(parent Container) (*LineEdit, error) {
 	succeeded = true
 
 	return le, nil
-}
-
-func (*LineEdit) origWndProcPtr() uintptr {
-	return lineEditOrigWndProcPtr
-}
-
-func (*LineEdit) setOrigWndProcPtr(ptr uintptr) {
-	lineEditOrigWndProcPtr = ptr
 }
 
 func (le *LineEdit) CueBanner() string {
@@ -147,6 +136,10 @@ func (*LineEdit) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | GrowableHorz | GreedyHorz
 }
 
+func (le *LineEdit) MinSizeHint() Size {
+	return le.dialogBaseUnitsToPixels(Size{20, 12})
+}
+
 func (le *LineEdit) SizeHint() Size {
 	return le.dialogBaseUnitsToPixels(Size{50, 12})
 }
@@ -163,7 +156,7 @@ func (le *LineEdit) TextChanged() *Event {
 	return le.textChanged.Event()
 }
 
-func (le *LineEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	/*	case WM_CHAR:
 		if le.validator == nil {
@@ -210,5 +203,5 @@ func (le *LineEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		le.editingFinishedPublisher.Publish()
 	}
 
-	return le.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return le.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

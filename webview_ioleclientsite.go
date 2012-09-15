@@ -66,7 +66,7 @@ func webView_IOleClientSite_SaveObject(clientSite *webViewIOleClientSite) uintpt
 	return E_NOTIMPL
 }
 
-func webView_IOleClientSite_GetMoniker(clientSite *webViewIOleClientSite, dwAssign, dwWhichMoniker uint, ppmk *unsafe.Pointer) uintptr {
+func webView_IOleClientSite_GetMoniker(clientSite *webViewIOleClientSite, dwAssign, dwWhichMoniker uint32, ppmk *unsafe.Pointer) uintptr {
 	return E_NOTIMPL
 }
 

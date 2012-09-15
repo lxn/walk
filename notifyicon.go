@@ -13,7 +13,9 @@ import . "github.com/lxn/go-winapi"
 
 const notifyIconWindowClass = `\o/ Walk_NotifyIcon_Class \o/`
 
-var notifyIconWindowClassRegistered bool
+func init() {
+	MustRegisterWindowClass(notifyIconWindowClass)
+}
 
 func notifyIconWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) (result uintptr) {
 	// Retrieve our *NotifyIcon from the message window.
@@ -82,8 +84,6 @@ type NotifyIcon struct {
 //
 // The NotifyIcon is initially not visible.
 func NewNotifyIcon() (*NotifyIcon, error) {
-	ensureRegisteredWindowClass(notifyIconWindowClass, &notifyIconWindowClassRegistered)
-
 	// Create the message-only window for the NotifyIcon.
 	hWnd := CreateWindowEx(
 		0,
@@ -172,6 +172,55 @@ func (ni *NotifyIcon) Dispose() error {
 	ni.hWnd = 0
 
 	return nil
+}
+
+func (ni *NotifyIcon) showMessage(title, info string, iconType uint32) error {
+	nid := ni.notifyIconData()
+	nid.UFlags = NIF_INFO
+	nid.DwInfoFlags = iconType
+	copy(nid.SzInfoTitle[:], syscall.StringToUTF16(title))
+	copy(nid.SzInfo[:], syscall.StringToUTF16(info))
+
+	if !Shell_NotifyIcon(NIM_MODIFY, nid) {
+		return newError("Shell_NotifyIcon")
+	}
+
+	return nil
+}
+
+// ShowMessage displays a neutral message balloon above the NotifyIcon.
+//
+// The NotifyIcon must be visible before calling this method.
+func (ni *NotifyIcon) ShowMessage(title, info string) error {
+	return ni.showMessage(title, info, NIIF_NONE)
+}
+
+// ShowInfo displays an info message balloon above the NotifyIcon.
+//
+// The NotifyIcon must be visible before calling this method.
+func (ni *NotifyIcon) ShowInfo(title, info string) error {
+	return ni.showMessage(title, info, NIIF_INFO)
+}
+
+// ShowWarning displays a warning message balloon above the NotifyIcon.
+//
+// The NotifyIcon must be visible before calling this method.
+func (ni *NotifyIcon) ShowWarning(title, info string) error {
+	return ni.showMessage(title, info, NIIF_WARNING)
+}
+
+// ShowError displays an error message balloon above the NotifyIcon.
+//
+// The NotifyIcon must be visible before calling this method.
+func (ni *NotifyIcon) ShowError(title, info string) error {
+	return ni.showMessage(title, info, NIIF_ERROR)
+}
+
+// ShowCustom displays a custom icon message balloon above the NotifyIcon.
+//
+// The NotifyIcon must be visible before calling this method.
+func (ni *NotifyIcon) ShowCustom(title, info string) error {
+	return ni.showMessage(title, info, NIIF_USER)
 }
 
 // ContextMenu returns the context menu of the NotifyIcon.

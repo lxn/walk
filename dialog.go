@@ -28,7 +28,9 @@ const (
 
 const dialogWindowClass = `\o/ Walk_Dialog_Class \o/`
 
-var dialogWindowClassRegistered bool
+func init() {
+	MustRegisterWindowClass(dialogWindowClass)
+}
 
 type dialogish interface {
 	DefaultButton() *PushButton
@@ -44,15 +46,13 @@ type Dialog struct {
 }
 
 func NewDialog(owner RootWidget) (*Dialog, error) {
-	ensureRegisteredWindowClass(dialogWindowClass, &dialogWindowClassRegistered)
-
 	dlg := &Dialog{
 		TopLevelWindow: TopLevelWindow{
 			owner: owner,
 		},
 	}
 
-	if err := initWidget(
+	if err := InitWidget(
 		dlg,
 		owner,
 		dialogWindowClass,
@@ -184,12 +184,6 @@ func (dlg *Dialog) focusFirstCandidateDescendant() {
 }
 
 func (dlg *Dialog) Show() {
-	dlg.TopLevelWindow.Show()
-
-	dlg.focusFirstCandidateDescendant()
-}
-
-func (dlg *Dialog) Run() int {
 	if dlg.owner != nil {
 		ob := dlg.owner.Bounds()
 		b := dlg.Bounds()
@@ -205,6 +199,12 @@ func (dlg *Dialog) Run() int {
 		dlg.SetBounds(dlg.Bounds())
 	}
 
+	dlg.TopLevelWindow.Show()
+
+	dlg.focusFirstCandidateDescendant()
+}
+
+func (dlg *Dialog) Run() int {
 	dlg.Show()
 
 	if dlg.owner != nil {

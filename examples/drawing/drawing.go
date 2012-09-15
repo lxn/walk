@@ -4,7 +4,9 @@
 
 package main
 
-import "github.com/lxn/walk"
+import (
+	"github.com/lxn/walk"
+)
 
 type MainWindow struct {
 	*walk.MainWindow

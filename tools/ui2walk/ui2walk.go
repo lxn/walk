@@ -20,7 +20,14 @@ import (
 	"strings"
 )
 
-var forceUpdate *bool = flag.Bool("force", false, "force code generation for up-to-date files")
+var forceUpdate *bool = flag.Bool("force", false, "forces code generation for up-to-date files")
+var translatable *bool = flag.Bool("tr", false, "adds calls to a user provided 'func tr(source string, context ...string) string' that returns a translation of the source argument, using provided context args for disambiguation")
+
+type String struct {
+	Text         string `xml:"string"`
+	Comment      string `xml:"comment,attr"`
+	ExtraComment string `xml:"extracomment,attr"`
+}
 
 type UI struct {
 	Class         string        `xml:"class"`
@@ -36,6 +43,8 @@ type Widget struct {
 	Property  []*Property  `xml:"property"`
 	Layout    *Layout      `xml:"layout"`
 	Widget    []*Widget    `xml:"widget"`
+	AddAction []*AddAction `xml:"addaction"`
+	Action    []*Action    `xml:"action"`
 	ignored   bool
 }
 
@@ -62,9 +71,18 @@ type Spacer struct {
 	Property []*Property `xml:"property"`
 }
 
+type AddAction struct {
+	Name string `xml:"name,attr"`
+}
+
+type Action struct {
+	Name     string      `xml:"name,attr"`
+	Property []*Property `xml:"property"`
+}
+
 type Attribute struct {
-	Name   string `xml:"name,attr"`
-	String string `xml:"string"`
+	Name string `xml:"name,attr"`
+	String
 }
 
 type Property struct {
@@ -76,7 +94,7 @@ type Property struct {
 	Rect   Rectangle `xml:"rect"`
 	Set    string    `xml:"set"`
 	Size   Size      `xml:"size"`
-	String string    `xml:"string"`
+	String
 }
 
 type Font struct {
@@ -109,6 +127,37 @@ type CustomWidget struct {
 	Extends string `xml:"extends"`
 }
 
+func trString(str *String) string {
+	if str == nil {
+		return ""
+	}
+
+	if !*translatable {
+		return fmt.Sprintf("`%s`", str.Text)
+	}
+
+	buf := new(bytes.Buffer)
+	buf.WriteString("tr(`")
+	buf.WriteString(str.Text)
+	buf.WriteString("`")
+
+	if str.Comment != "" {
+		buf.WriteString(", `")
+		buf.WriteString(str.Comment)
+		buf.WriteString("`")
+	}
+
+	if str.ExtraComment != "" {
+		buf.WriteString(", `")
+		buf.WriteString(str.ExtraComment)
+		buf.WriteString("`")
+	}
+
+	buf.WriteString(")")
+
+	return buf.String()
+}
+
 func logFatal(err error) {
 	if err != nil {
 		log.Fatal(err)
@@ -129,8 +178,8 @@ func writeAttribute(buf *bytes.Buffer, attr *Attribute, qualifiedReceiver string
 	switch attr.Name {
 	case "title":
 		buf.WriteString(fmt.Sprintf(
-			"if err := %s.SetTitle(`%s`); err != nil {\nreturn err\n}\n",
-			qualifiedReceiver, attr.String))
+			"if err := %s.SetTitle(%s); err != nil {\nreturn err\n}\n",
+			qualifiedReceiver, trString(&attr.String)))
 
 	default:
 		fmt.Printf("Ignoring unsupported attribute: '%s'\n", attr.Name)
@@ -151,7 +200,7 @@ func writeAttributes(buf *bytes.Buffer, attrs []*Attribute, qualifiedReceiver st
 }
 
 func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string, widget *Widget) (err error) {
-	if prop.Name == "windowTitle" && widget.Class == "QWidget" {
+	if prop.Name == "windowTitle" && widget != nil && widget.Class == "QWidget" {
 		return
 	}
 
@@ -236,13 +285,13 @@ func writeProperty(buf *bytes.Buffer, prop *Property, qualifiedReceiver string, 
 
 	case "text":
 		buf.WriteString(fmt.Sprintf(
-			"if err := %s.SetText(`%s`); err != nil {\nreturn err\n}\n",
-			qualifiedReceiver, prop.String))
+			"if err := %s.SetText(%s); err != nil {\nreturn err\n}\n",
+			qualifiedReceiver, trString(&prop.String)))
 
 	case "title", "windowTitle":
 		buf.WriteString(fmt.Sprintf(
-			"if err := %s.SetTitle(`%s`); err != nil {\nreturn err\n}\n",
-			qualifiedReceiver, prop.String))
+			"if err := %s.SetTitle(%s); err != nil {\nreturn err\n}\n",
+			qualifiedReceiver, trString(&prop.String)))
 
 	case "orientation":
 		var orientation string
@@ -605,7 +654,7 @@ func writeWidgetInitialization(buf *bytes.Buffer, widget *Widget, parent *Widget
 
 func writeWidgetInitializations(buf *bytes.Buffer, widgets []*Widget, parent *Widget, qualifiedParent string) error {
 	for _, widget := range widgets {
-		if widget.ignored {
+		if widget.ignored || widget.Class == "QMenuBar" || widget.Class == "QStatusBar" {
 			continue
 		}
 
@@ -697,6 +746,11 @@ func writeWidgetDecl(buf *bytes.Buffer, widget *Widget, parent *Widget) error {
 
 func writeWidgetDecls(buf *bytes.Buffer, widgets []*Widget, parent *Widget) error {
 	for _, widget := range widgets {
+		switch widget.Class {
+		case "QMenuBar", "QStatusBar":
+			continue
+		}
+
 		if err := writeWidgetDecl(buf, widget, parent); err != nil {
 			return err
 		}
@@ -719,10 +773,127 @@ func writeItemDecls(buf *bytes.Buffer, items []*Item, parent *Widget) error {
 	return nil
 }
 
-func generateCode(buf *bytes.Buffer, ui *UI) error {
+func writeActionDecl(buf *bytes.Buffer, action *Action) error {
+	buf.WriteString(action.Name)
+	buf.WriteString(" *walk.Action\n")
+	return nil
+}
+
+func writeActionDecls(buf *bytes.Buffer, actions []*Action) error {
+	for _, action := range actions {
+		if err := writeActionDecl(buf, action); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func writeMenuInitialization(buf *bytes.Buffer, menu *Widget, realActions map[string]bool) error {
+	var qualifiedParentMenu string
+
+	if menu.Class == "QMenuBar" {
+		buf.WriteString("// Menus\n\n")
+
+		qualifiedParentMenu = "w.Menu()"
+	} else {
+		qualifiedParentMenu = menu.Name
+	}
+
+	for _, addAction := range menu.AddAction {
+		if realActions[addAction.Name] {
+			buf.WriteString("if err := ")
+			buf.WriteString(qualifiedParentMenu)
+			buf.WriteString(".Actions().Add(w.ui.actions.")
+			buf.WriteString(addAction.Name)
+			buf.WriteString(`); err != nil {
+				return err
+			}
+			
+			`)
+		} else {
+			for _, submenu := range menu.Widget {
+				if submenu.Name != addAction.Name {
+					continue
+				}
+
+				buf.WriteString("// ")
+				buf.WriteString(submenu.Name)
+				buf.WriteString("\n")
+
+				buf.WriteString(submenu.Name)
+				buf.WriteString(`, err := walk.NewMenu()
+					if err != nil {
+						return err
+					}
+					`)
+				submenuActionName := submenu.Name + "Action"
+
+				buf.WriteString(submenuActionName)
+				buf.WriteString(", err := ")
+				buf.WriteString(qualifiedParentMenu)
+				buf.WriteString(".Actions().AddMenu(")
+				buf.WriteString(submenu.Name)
+				buf.WriteString(`)
+					if err != nil {
+						return err
+					}
+					`)
+
+				for _, prop := range submenu.Property {
+					if prop.Name == "title" {
+						buf.WriteString("if err := ")
+						buf.WriteString(submenuActionName)
+						buf.WriteString(".SetText(")
+						buf.WriteString(trString(&prop.String))
+						buf.WriteString(`); err != nil {
+							return err
+						}
+						
+						`)
+						break
+					}
+				}
+
+				if err := writeMenuInitialization(buf, submenu, realActions); err != nil {
+					return err
+				}
+			}
+
+		}
+	}
+
+	return nil
+}
+
+func writeActionInitializations(buf *bytes.Buffer, actions []*Action) error {
+	buf.WriteString("\n// Actions\n\n")
+
+	for _, action := range actions {
+		qualifiedReceiver := "w.ui.actions." + action.Name
+
+		buf.WriteString("// ")
+		buf.WriteString(qualifiedReceiver)
+		buf.WriteString("\n")
+
+		buf.WriteString(qualifiedReceiver)
+		buf.WriteString(" = walk.NewAction()\n")
+
+		if err := writeProperties(buf, action.Property, qualifiedReceiver, nil); err != nil {
+			return err
+		}
+
+		buf.WriteString("\n")
+	}
+
+	return nil
+}
+
+func generateUICode(buf *bytes.Buffer, ui *UI) error {
 	// Comment, package decl, imports
 	buf.WriteString(
-		`// THIS FILE WAS GENERATED BY A TOOL, DO NOT EDIT!
+		`// This file was created by ui2walk and may be regenerated.
+		// DO NOT EDIT OR YOUR MODIFICATIONS WILL BE LOST!
 
 		package main
 		
@@ -748,8 +919,23 @@ func generateCode(buf *bytes.Buffer, ui *UI) error {
 		return errors.New(fmt.Sprintf("Top level '%s' currently not supported.", ui.Widget.Class))
 	}
 
+	genTypeBaseName := strings.ToLower(ui.Class[:1]) + ui.Class[1:]
+
+	if len(ui.Widget.Action) > 0 {
+		// This struct will contain actions.
+		buf.WriteString(fmt.Sprintf("type %sActions struct {\n", genTypeBaseName))
+
+		writeActionDecls(buf, ui.Widget.Action)
+
+		buf.WriteString("}\n\n")
+	}
+
 	// Struct containing all descendant widgets.
-	buf.WriteString(fmt.Sprintf("type %s%sUI struct {\n", strings.ToLower(ui.Class[:1]), ui.Class[1:]))
+	buf.WriteString(fmt.Sprintf("type %sUI struct {\n", genTypeBaseName))
+
+	if len(ui.Widget.Action) > 0 {
+		buf.WriteString(fmt.Sprintf("actions %sActions\n", genTypeBaseName))
+	}
 
 	// Descendant widget decls
 	if ui.Widget.Widget != nil {
@@ -768,28 +954,24 @@ func generateCode(buf *bytes.Buffer, ui *UI) error {
 	buf.WriteString("}\n\n")
 
 	// init func
-	var qualifiedParent string
 	switch embeddedType {
 	case "MainWindow":
 		buf.WriteString(fmt.Sprintf(
 			`func (w *%s) init() (err error) {
 			if w.MainWindow, err = walk.NewMainWindow()`,
 			ui.Widget.Name))
-		qualifiedParent = "w.ClientArea()"
 
 	case "Dialog":
 		buf.WriteString(fmt.Sprintf(
 			`func (w *%s) init(owner walk.RootWidget) (err error) {
 			if w.Dialog, err = walk.NewDialog(owner)`,
 			ui.Widget.Name))
-		qualifiedParent = "w"
 
 	case "Composite":
 		buf.WriteString(fmt.Sprintf(
 			`func (w *%s) init(parent walk.Container) (err error) {
 			if w.Composite, err = walk.NewComposite(parent)`,
 			ui.Widget.Name))
-		qualifiedParent = "w"
 	}
 
 	buf.WriteString(fmt.Sprintf(`; err != nil {
@@ -812,18 +994,53 @@ func generateCode(buf *bytes.Buffer, ui *UI) error {
 			`,
 		ui.Widget.Name))
 
+	if embeddedType == "MainWindow" {
+		buf.WriteString(fmt.Sprintf(
+			`l := walk.NewVBoxLayout()
+			if err := l.SetMargins(walk.Margins{0, 0, 0, 0}); err != nil {
+				return err
+			}
+			if err := w.SetLayout(l); err != nil {
+				return err
+			}
+			`))
+	}
+
 	if err := writeProperties(buf, ui.Widget.Property, "w", &ui.Widget); err != nil {
 		return err
 	}
 
+	// Let's see if we find a QMenuBar widget.
+	var menuBar *Widget
+	for _, widget := range ui.Widget.Widget {
+		if widget.Class == "QMenuBar" {
+			menuBar = widget
+			break
+		}
+	}
+
+	if len(ui.Widget.Action) > 0 {
+		writeActionInitializations(buf, ui.Widget.Action)
+
+		if menuBar != nil {
+			realActions := make(map[string]bool)
+
+			for _, action := range ui.Widget.Action {
+				realActions[action.Name] = true
+			}
+
+			writeMenuInitialization(buf, menuBar, realActions)
+		}
+	}
+
 	if ui.Widget.Widget != nil {
-		if err := writeWidgetInitializations(buf, ui.Widget.Widget, &ui.Widget, qualifiedParent); err != nil {
+		if err := writeWidgetInitializations(buf, ui.Widget.Widget, &ui.Widget, "w"); err != nil {
 			return err
 		}
 	}
 
 	if ui.Widget.Layout != nil {
-		if err := writeLayoutInitialization(buf, ui.Widget.Layout, &ui.Widget, qualifiedParent); err != nil {
+		if err := writeLayoutInitialization(buf, ui.Widget.Layout, &ui.Widget, "w"); err != nil {
 			return err
 		}
 	}
@@ -847,16 +1064,186 @@ func generateCode(buf *bytes.Buffer, ui *UI) error {
 	return nil
 }
 
+func generateLogicCode(buf *bytes.Buffer, ui *UI) error {
+	// Comment, package decl, imports
+	buf.WriteString(
+		`package main
+		
+		import (
+			"github.com/lxn/walk"
+		)
+		
+		`)
+
+	// Embed the corresponding Walk type.
+	var embeddedType string
+	switch ui.Widget.Class {
+	case "QMainWindow":
+		embeddedType = "MainWindow"
+
+	case "QDialog":
+		embeddedType = "Dialog"
+
+	case "QWidget":
+		embeddedType = "Composite"
+
+	default:
+		return errors.New(fmt.Sprintf("Top level '%s' currently not supported.", ui.Widget.Class))
+	}
+
+	buf.WriteString("type ")
+	buf.WriteString(ui.Widget.Name)
+	buf.WriteString(" struct {\n*walk.")
+	buf.WriteString(embeddedType)
+	buf.WriteString("\nui ")
+	buf.WriteString(strings.ToLower(ui.Class[:1]) + ui.Class[1:])
+	buf.WriteString(`UI
+	}
+	
+	`)
+
+	switch embeddedType {
+	case "MainWindow":
+		buf.WriteString("func run")
+		buf.WriteString(ui.Widget.Name)
+		buf.WriteString(`() (int, error) {
+		mw := new(`)
+		buf.WriteString(ui.Widget.Name)
+		buf.WriteString(`)
+		if err := mw.init(); err != nil {
+			return 0, err
+		}
+		defer mw.Dispose()
+		
+		// TODO: Do further required setup, e.g. for event handling, here.
+		
+		mw.Show()
+		
+		return mw.Run(), nil
+		}
+		`)
+
+	case "Dialog":
+		buf.WriteString("func run")
+		buf.WriteString(ui.Widget.Name)
+		buf.WriteString(`(owner walk.RootWidget) (int, error) {
+		dlg := new(`)
+		buf.WriteString(ui.Widget.Name)
+		buf.WriteString(`)
+		if err := dlg.init(owner); err != nil {
+			return 0, err
+		}
+		
+		`)
+
+		if b := findWidget(&ui.Widget, "QPushButton", []string{"accept", "ok"}); b != nil {
+			buf.WriteString("if err := dlg.SetDefaultButton(dlg.ui.")
+			buf.WriteString(b.Name)
+			buf.WriteString(`); err != nil {
+			return 0, err
+			}
+			
+			dlg.ui.`)
+			buf.WriteString(b.Name)
+			buf.WriteString(`.Clicked().Attach(func(){
+			dlg.Accept()
+			})
+			
+			`)
+		}
+
+		if b := findWidget(&ui.Widget, "QPushButton", []string{"cancel"}); b != nil {
+			buf.WriteString("if err := dlg.SetCancelButton(dlg.ui.")
+			buf.WriteString(b.Name)
+			buf.WriteString(`); err != nil {
+			return 0, err
+			}
+			
+			dlg.ui.`)
+			buf.WriteString(b.Name)
+			buf.WriteString(`.Clicked().Attach(func(){
+			dlg.Cancel()
+			})
+			
+			`)
+		}
+
+		buf.WriteString(`// TODO: Do further required setup, e.g. for event handling, here.
+		
+		return dlg.Run(), nil
+		}
+		`)
+
+	case "Composite":
+		buf.WriteString("func new")
+		buf.WriteString(ui.Widget.Name)
+		buf.WriteString("(parent walk.Container) (*")
+		buf.WriteString(ui.Widget.Name)
+		buf.WriteString(`, error) {
+		c := new(`)
+		buf.WriteString(ui.Widget.Name)
+		buf.WriteString(`)
+		if err := c.init(parent); err != nil {
+			return nil, err
+		}
+		
+		// TODO: Do further required setup, e.g. for event handling, here.
+		
+		return c, nil
+		}
+		`)
+	}
+
+	return nil
+}
+
+func findWidget(parent *Widget, class string, nameSubstrs []string) *Widget {
+	find := func(widget *Widget) *Widget {
+		if widget.Class == class {
+			for _, substr := range nameSubstrs {
+				if strings.Contains(widget.Name, substr) {
+					return widget
+				}
+			}
+		}
+
+		if w := findWidget(widget, class, nameSubstrs); w != nil {
+			return w
+		}
+
+		return nil
+	}
+
+	for _, widget := range parent.Widget {
+		if w := find(widget); w != nil {
+			return w
+		}
+	}
+
+	if parent.Layout != nil {
+		for _, item := range parent.Layout.Item {
+			if item.Widget != nil {
+				if w := find(item.Widget); w != nil {
+					return w
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func processFile(uiFilePath string) error {
-	goFilePath := uiFilePath[:len(uiFilePath)-3] + "_ui.go"
+	goLogicFilePath := uiFilePath[:len(uiFilePath)-3] + ".go"
+	goUIFilePath := uiFilePath[:len(uiFilePath)-3] + "_ui.go"
 
 	uiFileInfo, err := os.Stat(uiFilePath)
 	if err != nil {
 		return err
 	}
 
-	goFileInfo, err := os.Stat(goFilePath)
-	if !*forceUpdate && err == nil && !uiFileInfo.ModTime().After(goFileInfo.ModTime()) {
+	goUIFileInfo, err := os.Stat(goUIFilePath)
+	if !*forceUpdate && err == nil && !uiFileInfo.ModTime().After(goUIFileInfo.ModTime()) {
 		// The go file should be up-to-date
 		return nil
 	}
@@ -877,22 +1264,40 @@ func processFile(uiFilePath string) error {
 		return err
 	}
 
-	goFile, err := os.Create(goFilePath)
+	goLogicFile, err := os.OpenFile(goLogicFilePath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
+	if err == nil {
+		defer goLogicFile.Close()
+
+		buf := new(bytes.Buffer)
+
+		if err := generateLogicCode(buf, ui); err != nil {
+			return err
+		}
+
+		if _, err := io.Copy(goLogicFile, buf); err != nil {
+			return err
+		}
+		if err := goLogicFile.Close(); err != nil {
+			return err
+		}
+	}
+
+	goUIFile, err := os.Create(goUIFilePath)
 	if err != nil {
 		return err
 	}
-	defer goFile.Close()
+	defer goUIFile.Close()
 
-	buf := bytes.NewBuffer(nil)
+	buf := new(bytes.Buffer)
 
-	if err := generateCode(buf, ui); err != nil {
+	if err := generateUICode(buf, ui); err != nil {
 		return err
 	}
 
-	if _, err := io.Copy(goFile, buf); err != nil {
+	if _, err := io.Copy(goUIFile, buf); err != nil {
 		return err
 	}
-	if err := goFile.Close(); err != nil {
+	if err := goUIFile.Close(); err != nil {
 		return err
 	}
 
@@ -903,7 +1308,12 @@ func processFile(uiFilePath string) error {
 
 	gofmtPath := filepath.Join(dirPath, "gofmt.exe")
 
-	gofmt, err := os.StartProcess(gofmtPath, []string{gofmtPath, "-w", goFilePath}, &os.ProcAttr{Files: []*os.File{nil, nil, os.Stderr}})
+	args := []string{gofmtPath, "-w", goUIFilePath}
+	if goLogicFile != nil {
+		args = append(args, goLogicFilePath)
+	}
+
+	gofmt, err := os.StartProcess(gofmtPath, args, &os.ProcAttr{Files: []*os.File{nil, nil, os.Stderr}})
 	if err != nil {
 		return err
 	}

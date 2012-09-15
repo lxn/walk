@@ -8,7 +8,9 @@ import . "github.com/lxn/go-winapi"
 
 const customWidgetWindowClass = `\o/ Walk_CustomWidget_Class \o/`
 
-var customWidgetWindowClassRegistered bool
+func init() {
+	MustRegisterWindowClass(customWidgetWindowClass)
+}
 
 type PaintFunc func(canvas *Canvas, updateBounds Rectangle) error
 
@@ -20,11 +22,9 @@ type CustomWidget struct {
 }
 
 func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidget, error) {
-	ensureRegisteredWindowClass(customWidgetWindowClass, &customWidgetWindowClassRegistered)
-
 	cw := &CustomWidget{paint: paint}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		cw,
 		parent,
 		customWidgetWindowClass,
@@ -60,7 +60,7 @@ func (cw *CustomWidget) SetInvalidatesOnResize(value bool) {
 	cw.invalidatesOnResize = value
 }
 
-func (cw *CustomWidget) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (cw *CustomWidget) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_PAINT:
 		if cw.paint == nil {
@@ -111,5 +111,5 @@ func (cw *CustomWidget) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) u
 		}
 	}
 
-	return cw.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return cw.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

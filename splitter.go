@@ -14,7 +14,13 @@ import . "github.com/lxn/go-winapi"
 
 const splitterWindowClass = `\o/ Walk_Splitter_Class \o/`
 
-var splitterWindowClassRegistered bool
+var splitterHandleDraggingBrush *SolidColorBrush
+
+func init() {
+	MustRegisterWindowClass(splitterWindowClass)
+
+	splitterHandleDraggingBrush, _ = NewSolidColorBrush(Color(GetSysColor(COLOR_BTNSHADOW)))
+}
 
 type Splitter struct {
 	ContainerBase
@@ -25,8 +31,6 @@ type Splitter struct {
 }
 
 func NewSplitter(parent Container) (*Splitter, error) {
-	ensureRegisteredWindowClass(splitterWindowClass, &splitterWindowClassRegistered)
-
 	layout := newSplitterLayout(Horizontal)
 	s := &Splitter{
 		ContainerBase: ContainerBase{
@@ -37,7 +41,7 @@ func NewSplitter(parent Container) (*Splitter, error) {
 	s.children = newWidgetList(s)
 	layout.container = s
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		s,
 		parent,
 		splitterWindowClass,
@@ -53,10 +57,6 @@ func NewSplitter(parent Container) (*Splitter, error) {
 
 func (s *Splitter) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
-}
-
-func (s *Splitter) MinSizeHint() Size {
-	return Size{10, 10}
 }
 
 func (s *Splitter) SizeHint() Size {
@@ -210,6 +210,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 				handle.MouseDown().Attach(func(x, y int, button MouseButton) {
 					s.draggedHandle = handle
 					s.mouseDownPos = Point{x, y}
+					handle.SetBackground(splitterHandleDraggingBrush)
 				})
 
 				handle.MouseMove().Attach(func(x, y int, button MouseButton) {
@@ -218,20 +219,23 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 					}
 
 					handleIndex := s.children.Index(s.draggedHandle)
-					prev := s.children.At(handleIndex - 1)
-					next := s.children.At(handleIndex + 1)
 
+					prev := s.children.At(handleIndex - 1)
 					bp := prev.Bounds()
+					msep := prev.BaseWidget().minSizeEffective()
+
+					next := s.children.At(handleIndex + 1)
 					bn := next.Bounds()
+					msen := next.BaseWidget().minSizeEffective()
 
 					if s.Orientation() == Horizontal {
 						xh := s.draggedHandle.X()
 
 						xnew := xh + x - s.mouseDownPos.X
-						if xnew < bp.X {
-							xnew = bp.X
-						} else if xnew >= bn.X+bn.Width-s.handleWidth {
-							xnew = bn.X + bn.Width - s.handleWidth
+						if xnew < bp.X+msep.Width {
+							xnew = bp.X + msep.Width
+						} else if xnew >= bn.X+bn.Width-msen.Width-s.handleWidth {
+							xnew = bn.X + bn.Width - msen.Width - s.handleWidth
 						}
 
 						if e := s.draggedHandle.SetX(xnew); e != nil {
@@ -241,10 +245,10 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						yh := s.draggedHandle.Y()
 
 						ynew := yh + y - s.mouseDownPos.Y
-						if ynew < bp.Y {
-							ynew = bp.Y
-						} else if ynew >= bn.Y+bn.Height-s.handleWidth {
-							ynew = bn.Y + bn.Height - s.handleWidth
+						if ynew < bp.Y+msep.Height {
+							ynew = bp.Y + msep.Height
+						} else if ynew >= bn.Y+bn.Height-msen.Height-s.handleWidth {
+							ynew = bn.Y + bn.Height - msen.Height - s.handleWidth
 						}
 
 						if e := s.draggedHandle.SetY(ynew); e != nil {
@@ -254,59 +258,62 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 				})
 
 				handle.MouseUp().Attach(func(x, y int, button MouseButton) {
-					if s.draggedHandle != nil {
-						dragHandle := s.draggedHandle
-						s.draggedHandle = nil
-
-						handleIndex := s.children.Index(dragHandle)
-						prev := s.children.At(handleIndex - 1)
-						next := s.children.At(handleIndex + 1)
-
-						prev.SetSuspended(true)
-						defer prev.Invalidate()
-						defer prev.SetSuspended(false)
-						next.SetSuspended(true)
-						defer next.Invalidate()
-						defer next.SetSuspended(false)
-
-						bh := dragHandle.Bounds()
-						bp := prev.Bounds()
-						bn := next.Bounds()
-
-						var sizePrev int
-						var sizeNext int
-
-						if s.Orientation() == Horizontal {
-							bp.Width = bh.X - bp.X
-							bn.Width -= (bh.X + bh.Width) - bn.X
-							bn.X = bh.X + bh.Width
-							sizePrev = bp.Width
-							sizeNext = bn.Width
-						} else {
-							bp.Height = bh.Y - bp.Y
-							bn.Height -= (bh.Y + bh.Height) - bn.Y
-							bn.Y = bh.Y + bh.Height
-							sizePrev = bp.Height
-							sizeNext = bn.Height
-						}
-
-						if e := prev.SetBounds(bp); e != nil {
-							return
-						}
-
-						if e := next.SetBounds(bn); e != nil {
-							return
-						}
-
-						layout := s.Layout().(*splitterLayout)
-						space := float64(layout.spaceForRegularWidgets())
-						fractions := layout.fractions
-						i := handleIndex - 1
-						prevFracIndex := i/2 + i%2
-						nextFracIndex := prevFracIndex + 1
-						fractions[prevFracIndex] = float64(sizePrev) / space
-						fractions[nextFracIndex] = float64(sizeNext) / space
+					if s.draggedHandle == nil {
+						return
 					}
+
+					dragHandle := s.draggedHandle
+					s.draggedHandle = nil
+					dragHandle.SetBackground(nil)
+
+					handleIndex := s.children.Index(dragHandle)
+					prev := s.children.At(handleIndex - 1)
+					next := s.children.At(handleIndex + 1)
+
+					prev.SetSuspended(true)
+					defer prev.Invalidate()
+					defer prev.SetSuspended(false)
+					next.SetSuspended(true)
+					defer next.Invalidate()
+					defer next.SetSuspended(false)
+
+					bh := dragHandle.Bounds()
+					bp := prev.Bounds()
+					bn := next.Bounds()
+
+					var sizePrev int
+					var sizeNext int
+
+					if s.Orientation() == Horizontal {
+						bp.Width = bh.X - bp.X
+						bn.Width -= (bh.X + bh.Width) - bn.X
+						bn.X = bh.X + bh.Width
+						sizePrev = bp.Width
+						sizeNext = bn.Width
+					} else {
+						bp.Height = bh.Y - bp.Y
+						bn.Height -= (bh.Y + bh.Height) - bn.Y
+						bn.Y = bh.Y + bh.Height
+						sizePrev = bp.Height
+						sizeNext = bn.Height
+					}
+
+					if e := prev.SetBounds(bp); e != nil {
+						return
+					}
+
+					if e := next.SetBounds(bn); e != nil {
+						return
+					}
+
+					layout := s.Layout().(*splitterLayout)
+					space := float64(layout.spaceForRegularWidgets())
+					fractions := layout.fractions
+					i := handleIndex - 1
+					jp := i/2 + i%2
+					jn := jp + 1
+					fractions[jp] = float64(sizePrev) / space
+					fractions[jn] = float64(sizeNext) / space
 				})
 			}
 		}()

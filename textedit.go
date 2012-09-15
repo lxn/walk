@@ -8,9 +8,6 @@ import "unsafe"
 
 import . "github.com/lxn/go-winapi"
 
-var textEditOrigWndProcPtr uintptr
-var _ subclassedWidget = &TextEdit{}
-
 type TextEdit struct {
 	WidgetBase
 }
@@ -18,7 +15,7 @@ type TextEdit struct {
 func NewTextEdit(parent Container) (*TextEdit, error) {
 	te := &TextEdit{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		te,
 		parent,
 		"EDIT",
@@ -30,16 +27,12 @@ func NewTextEdit(parent Container) (*TextEdit, error) {
 	return te, nil
 }
 
-func (*TextEdit) origWndProcPtr() uintptr {
-	return textEditOrigWndProcPtr
-}
-
-func (*TextEdit) setOrigWndProcPtr(ptr uintptr) {
-	textEditOrigWndProcPtr = ptr
-}
-
 func (*TextEdit) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
+}
+
+func (te *TextEdit) MinSizeHint() Size {
+	return te.dialogBaseUnitsToPixels(Size{20, 12})
 }
 
 func (te *TextEdit) SizeHint() Size {
@@ -75,7 +68,7 @@ func (te *TextEdit) SetReadOnly(readOnly bool) error {
 	return nil
 }
 
-func (te *TextEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (te *TextEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
 		if wParam == VK_RETURN {
@@ -85,5 +78,5 @@ func (te *TextEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		return DLGC_HASSETSEL | DLGC_WANTARROWS | DLGC_WANTCHARS
 	}
 
-	return te.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return te.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

@@ -11,9 +11,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var toolBarOrigWndProcPtr uintptr
-var _ subclassedWidget = &ToolBar{}
-
 type ToolBar struct {
 	WidgetBase
 	imageList          *ImageList
@@ -26,7 +23,7 @@ func newToolBar(parent Container, style uint32) (*ToolBar, error) {
 	tb := &ToolBar{}
 	tb.actions = newActionList(tb)
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		tb,
 		parent,
 		"ToolbarWindow32",
@@ -53,14 +50,6 @@ func NewVerticalToolBar(parent Container) (*ToolBar, error) {
 	return tb, nil
 }
 
-func (*ToolBar) origWndProcPtr() uintptr {
-	return toolBarOrigWndProcPtr
-}
-
-func (*ToolBar) setOrigWndProcPtr(ptr uintptr) {
-	toolBarOrigWndProcPtr = ptr
-}
-
 func (tb *ToolBar) LayoutFlags() LayoutFlags {
 	style := GetWindowLong(tb.hWnd, GWL_STYLE)
 
@@ -71,6 +60,10 @@ func (tb *ToolBar) LayoutFlags() LayoutFlags {
 	// FIXME: Since reimplementation of BoxLayout we must return 0 here,
 	// otherwise the ToolBar contained in MainWindow will eat half the space.  
 	return 0 //ShrinkableHorz | GrowableHorz
+}
+
+func (tb *ToolBar) MinSizeHint() Size {
+	return tb.SizeHint()
 }
 
 func (tb *ToolBar) SizeHint() Size {
@@ -195,7 +188,7 @@ func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
 	return
 }
 
-func (tb *ToolBar) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tb *ToolBar) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_NOTIFY:
 		nmm := (*NMMOUSE)(unsafe.Pointer(lParam))
@@ -209,7 +202,7 @@ func (tb *ToolBar) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 		}
 	}
 
-	return tb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return tb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
 func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image *int32, text *uintptr) (err error) {

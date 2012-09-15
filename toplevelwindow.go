@@ -61,6 +61,7 @@ type TopLevelWindow struct {
 	isInRestoreState  bool
 	startingPublisher EventPublisher
 	progressIndicator      *ProgressIndicator
+	icon              *Icon
 }
 
 func (tlw *TopLevelWindow) LayoutFlags() LayoutFlags {
@@ -130,6 +131,22 @@ func (tlw *TopLevelWindow) SetOwner(value RootWidget) error {
 	}
 
 	return nil
+}
+
+func (tlw *TopLevelWindow) Icon() *Icon {
+	return tlw.icon
+}
+
+func (tlw *TopLevelWindow) SetIcon(icon *Icon) {
+	tlw.icon = icon
+
+	var hIcon uintptr
+	if icon != nil {
+		hIcon = uintptr(icon.hIcon)
+	}
+
+	SendMessage(tlw.hWnd, WM_SETICON, 0, hIcon)
+	SendMessage(tlw.hWnd, WM_SETICON, 1, hIcon)
 }
 
 func (tlw *TopLevelWindow) Hide() {
@@ -223,8 +240,7 @@ func (tlw *TopLevelWindow) Closing() *CloseEvent {
 func (tlw *TopLevelWindow) ProgressIndicator() *ProgressIndicator {
 	return tlw.progressIndicator
 }
-
-func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tlw *TopLevelWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ACTIVATE:
 		switch LOWORD(uint32(wParam)) {
@@ -256,10 +272,17 @@ func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 
 	case WM_GETMINMAXINFO:
 		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))
-		var min Size
-		if tlw.layout != nil {
-			min = tlw.sizeFromClientSize(tlw.layout.MinSize())
+
+		var layout Layout
+		if container, ok := tlw.widget.(Container); ok {
+			layout = container.Layout()
 		}
+
+		var min Size
+		if layout != nil {
+			min = tlw.sizeFromClientSize(layout.MinSize())
+		}
+
 		mmi.PtMinTrackSize = POINT{
 			int32(maxi(min.Width, tlw.minSize.Width)),
 			int32(maxi(min.Height, tlw.minSize.Height)),
@@ -281,5 +304,5 @@ func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 		}
 	}
 
-	return tlw.ContainerBase.wndProc(hwnd, msg, wParam, lParam)
+	return tlw.ContainerBase.WndProc(hwnd, msg, wParam, lParam)
 }

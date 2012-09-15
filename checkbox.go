@@ -6,9 +6,6 @@ package walk
 
 import . "github.com/lxn/go-winapi"
 
-var checkBoxOrigWndProcPtr uintptr
-var _ subclassedWidget = &CheckBox{}
-
 type CheckBox struct {
 	Button
 }
@@ -16,7 +13,7 @@ type CheckBox struct {
 func NewCheckBox(parent Container) (*CheckBox, error) {
 	cb := &CheckBox{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		cb,
 		parent,
 		"BUTTON",
@@ -28,19 +25,11 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 	return cb, nil
 }
 
-func (*CheckBox) origWndProcPtr() uintptr {
-	return checkBoxOrigWndProcPtr
-}
-
-func (*CheckBox) setOrigWndProcPtr(ptr uintptr) {
-	checkBoxOrigWndProcPtr = ptr
-}
-
 func (*CheckBox) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (cb *CheckBox) SizeHint() Size {
+func (cb *CheckBox) MinSizeHint() Size {
 	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 10})
 	textSize := cb.calculateTextSize()
 
@@ -49,4 +38,8 @@ func (cb *CheckBox) SizeHint() Size {
 	h := maxi(defaultSize.Height, textSize.Height)
 
 	return Size{w, h}
+}
+
+func (cb *CheckBox) SizeHint() Size {
+	return cb.MinSizeHint()
 }

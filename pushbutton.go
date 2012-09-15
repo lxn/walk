@@ -8,9 +8,6 @@ import "unsafe"
 
 import . "github.com/lxn/go-winapi"
 
-var pushButtonOrigWndProcPtr uintptr
-var _ subclassedWidget = &PushButton{}
-
 type PushButton struct {
 	Button
 }
@@ -18,7 +15,7 @@ type PushButton struct {
 func NewPushButton(parent Container) (*PushButton, error) {
 	pb := &PushButton{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		pb,
 		parent,
 		"BUTTON",
@@ -30,29 +27,20 @@ func NewPushButton(parent Container) (*PushButton, error) {
 	return pb, nil
 }
 
-func (*PushButton) origWndProcPtr() uintptr {
-	return pushButtonOrigWndProcPtr
-}
-
-func (*PushButton) setOrigWndProcPtr(ptr uintptr) {
-	pushButtonOrigWndProcPtr = ptr
-}
-
 func (*PushButton) LayoutFlags() LayoutFlags {
 	return GrowableHorz
 }
 
-func (pb *PushButton) SizeHint() Size {
+func (pb *PushButton) MinSizeHint() Size {
 	var s Size
 
 	SendMessage(pb.hWnd, BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
 
-	minSize := pb.dialogBaseUnitsToPixels(Size{50, 14})
+	return maxSize(s, pb.dialogBaseUnitsToPixels(Size{50, 14}))
+}
 
-	s.Width = maxi(s.Width, minSize.Width)
-	s.Height = maxi(s.Height, minSize.Height)
-
-	return s
+func (pb *PushButton) SizeHint() Size {
+	return pb.MinSizeHint()
 }
 
 func (pb *PushButton) ensureProperDialogDefaultButton(hwndFocus HWND) {
@@ -89,7 +77,7 @@ func (pb *PushButton) ensureProperDialogDefaultButton(hwndFocus HWND) {
 	}
 }
 
-func (pb *PushButton) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (pb *PushButton) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
 		hwndFocus := GetFocus()
@@ -119,5 +107,5 @@ func (pb *PushButton) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		pb.ensureProperDialogDefaultButton(HWND(wParam))
 	}
 
-	return pb.Button.wndProc(hwnd, msg, wParam, lParam)
+	return pb.Button.WndProc(hwnd, msg, wParam, lParam)
 }

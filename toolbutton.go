@@ -6,9 +6,6 @@ package walk
 
 import . "github.com/lxn/go-winapi"
 
-var toolButtonOrigWndProcPtr uintptr
-var _ subclassedWidget = &ToolButton{}
-
 type ToolButton struct {
 	Button
 }
@@ -16,7 +13,7 @@ type ToolButton struct {
 func NewToolButton(parent Container) (*ToolButton, error) {
 	tb := &ToolButton{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		tb,
 		parent,
 		"BUTTON",
@@ -28,27 +25,23 @@ func NewToolButton(parent Container) (*ToolButton, error) {
 	return tb, nil
 }
 
-func (*ToolButton) origWndProcPtr() uintptr {
-	return toolButtonOrigWndProcPtr
-}
-
-func (*ToolButton) setOrigWndProcPtr(ptr uintptr) {
-	toolButtonOrigWndProcPtr = ptr
-}
-
 func (*ToolButton) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (tb *ToolButton) SizeHint() Size {
-	return tb.dialogBaseUnitsToPixels(Size{20, 14})
+func (tb *ToolButton) MinSizeHint() Size {
+	return tb.SizeHint()
 }
 
-func (tb *ToolButton) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tb *ToolButton) SizeHint() Size {
+	return tb.dialogBaseUnitsToPixels(Size{16, 12})
+}
+
+func (tb *ToolButton) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
 		return DLGC_BUTTON
 	}
 
-	return tb.Button.wndProc(hwnd, msg, wParam, lParam)
+	return tb.Button.WndProc(hwnd, msg, wParam, lParam)
 }

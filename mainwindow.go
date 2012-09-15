@@ -8,7 +8,9 @@ import . "github.com/lxn/go-winapi"
 
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
 
-var mainWindowWindowClassRegistered bool
+func init() {
+	MustRegisterWindowClass(mainWindowWindowClass)
+}
 
 type MainWindow struct {
 	TopLevelWindow
@@ -18,11 +20,9 @@ type MainWindow struct {
 }
 
 func NewMainWindow() (*MainWindow, error) {
-	ensureRegisteredWindowClass(mainWindowWindowClass, &mainWindowWindowClassRegistered)
-
 	mw := &MainWindow{}
 
-	if err := initWidget(
+	if err := InitWidget(
 		mw,
 		nil,
 		mainWindowWindowClass,
@@ -109,7 +109,17 @@ func (mw *MainWindow) ClientBounds() Rectangle {
 	return bounds
 }
 
-func (mw *MainWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (mw *MainWindow) Show() {
+	DrawMenuBar(mw.hWnd)
+
+	if mw.clientComposite.layout != nil {
+		mw.clientComposite.layout.Update(false)
+	}
+
+	mw.TopLevelWindow.Show()
+}
+
+func (mw *MainWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
 		SendMessage(mw.toolBar.hWnd, TB_AUTOSIZE, 0, 0)
@@ -117,5 +127,5 @@ func (mw *MainWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		mw.clientComposite.SetBounds(mw.ClientBounds())
 	}
 
-	return mw.TopLevelWindow.wndProc(hwnd, msg, wParam, lParam)
+	return mw.TopLevelWindow.WndProc(hwnd, msg, wParam, lParam)
 }

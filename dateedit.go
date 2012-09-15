@@ -31,9 +31,6 @@ func timeToSystemTime(t time.Time) *SYSTEMTIME {
 	}
 }
 
-var dateEditOrigWndProcPtr uintptr
-var _ subclassedWidget = &DateEdit{}
-
 type DateEdit struct {
 	WidgetBase
 	valueChangedPublisher EventPublisher
@@ -42,7 +39,7 @@ type DateEdit struct {
 func NewDateEdit(parent Container) (*DateEdit, error) {
 	de := &DateEdit{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		de,
 		parent,
 		"SysDateTimePick32",
@@ -54,20 +51,16 @@ func NewDateEdit(parent Container) (*DateEdit, error) {
 	return de, nil
 }
 
-func (*DateEdit) origWndProcPtr() uintptr {
-	return dateEditOrigWndProcPtr
-}
-
-func (*DateEdit) setOrigWndProcPtr(ptr uintptr) {
-	dateEditOrigWndProcPtr = ptr
-}
-
 func (*DateEdit) LayoutFlags() LayoutFlags {
 	return GrowableHorz
 }
 
-func (de *DateEdit) SizeHint() Size {
+func (de *DateEdit) MinSizeHint() Size {
 	return de.dialogBaseUnitsToPixels(Size{64, 12})
+}
+
+func (de *DateEdit) SizeHint() Size {
+	return de.MinSizeHint()
 }
 
 func (de *DateEdit) systemTime() (*SYSTEMTIME, error) {
@@ -168,7 +161,7 @@ func (de *DateEdit) ValueChanged() *Event {
 	return de.valueChangedPublisher.Event()
 }
 
-func (de *DateEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (de *DateEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_NOTIFY:
 		switch uint32(((*NMHDR)(unsafe.Pointer(lParam))).Code) {
@@ -177,5 +170,5 @@ func (de *DateEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		}
 	}
 
-	return de.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return de.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

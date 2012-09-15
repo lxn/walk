@@ -6,13 +6,17 @@ package main
 
 import (
 	"math/rand"
+	"sort"
 	"strings"
 	"time"
 )
 
-import "github.com/lxn/walk"
+import (
+	"github.com/lxn/walk"
+)
 
 type Foo struct {
+	Index   int
 	Bar     string
 	Baz     float64
 	Quux    time.Time
@@ -20,14 +24,28 @@ type Foo struct {
 }
 
 type FooModel struct {
-	items               []*Foo
-	rowsResetPublisher  walk.EventPublisher
-	rowChangedPublisher walk.IntEventPublisher
+	walk.TableModelBase
+	walk.SorterBase
+	sortColumn int
+	sortOrder  walk.SortOrder
+	evenBitmap *walk.Bitmap
+	oddIcon    *walk.Icon
+	items      []*Foo
 }
 
 // Make sure we implement all required interfaces.
-var _ walk.TableModel = &FooModel{}
+var _ walk.ImageProvider = &FooModel{}
 var _ walk.ItemChecker = &FooModel{}
+var _ walk.Sorter = &FooModel{}
+var _ walk.TableModel = &FooModel{}
+
+func NewFooModel() *FooModel {
+	m := new(FooModel)
+	m.evenBitmap, _ = walk.NewBitmapFromFile("../img/open.png")
+	m.oddIcon, _ = walk.NewIconFromFile("../img/x.ico")
+	m.ResetRows()
+	return m
+}
 
 // Called by the TableView from SetModel to retrieve column information. 
 func (m *FooModel) Columns() []walk.TableColumn {
@@ -51,7 +69,7 @@ func (m *FooModel) Value(row, col int) interface{} {
 
 	switch col {
 	case 0:
-		return row
+		return item.Index
 
 	case 1:
 		return item.Bar
@@ -66,17 +84,6 @@ func (m *FooModel) Value(row, col int) interface{} {
 	panic("unexpected col")
 }
 
-// The TableView attaches to this event to synchronize its internal item count.
-func (m *FooModel) RowsReset() *walk.Event {
-	return m.rowsResetPublisher.Event()
-}
-
-// The TableView attaches to this event to get notified when a row changed and
-// needs to be repainted.
-func (m *FooModel) RowChanged() *walk.IntEvent {
-	return m.rowChangedPublisher.Event()
-}
-
 // Called by the TableView to retrieve if a given row is checked.
 func (m *FooModel) Checked(row int) bool {
 	return m.items[row].checked
@@ -89,6 +96,60 @@ func (m *FooModel) SetChecked(row int, checked bool) error {
 	return nil
 }
 
+// Called by the TableView to sort the model.
+func (m *FooModel) Sort(col int, order walk.SortOrder) error {
+	m.sortColumn, m.sortOrder = col, order
+
+	sort.Sort(m)
+
+	return m.SorterBase.Sort(col, order)
+}
+
+func (m *FooModel) Len() int {
+	return len(m.items)
+}
+
+func (m *FooModel) Less(i, j int) bool {
+	a, b := m.items[i], m.items[j]
+
+	c := func(ls bool) bool {
+		if m.sortOrder == walk.SortAscending {
+			return ls
+		}
+
+		return !ls
+	}
+
+	switch m.sortColumn {
+	case 0:
+		return c(a.Index < b.Index)
+
+	case 1:
+		return c(a.Bar < b.Bar)
+
+	case 2:
+		return c(a.Baz < b.Baz)
+
+	case 3:
+		return c(a.Quux.Before(b.Quux))
+	}
+
+	panic("unreachable")
+}
+
+func (m *FooModel) Swap(i, j int) {
+	m.items[i], m.items[j] = m.items[j], m.items[i]
+}
+
+// Called by the TableView to retrieve an item image.
+func (m *FooModel) Image(row int) interface{} {
+	if m.items[row].Index%2 == 0 {
+		return m.evenBitmap
+	}
+
+	return m.oddIcon
+}
+
 func (m *FooModel) ResetRows() {
 	// Create some random data.
 	m.items = make([]*Foo, rand.Intn(50000))
@@ -97,14 +158,17 @@ func (m *FooModel) ResetRows() {
 
 	for i := range m.items {
 		m.items[i] = &Foo{
-			Bar:  strings.Repeat("*", rand.Intn(5)+1),
-			Baz:  rand.Float64() * 1000,
-			Quux: time.Unix(rand.Int63n(now.Unix()), 0),
+			Index: i,
+			Bar:   strings.Repeat("*", rand.Intn(5)+1),
+			Baz:   rand.Float64() * 1000,
+			Quux:  time.Unix(rand.Int63n(now.Unix()), 0),
 		}
 	}
 
 	// Notify TableView and other interested parties about the reset.
-	m.rowsResetPublisher.Publish()
+	m.PublishRowsReset()
+
+	m.Sort(m.sortColumn, m.sortOrder)
 }
 
 type MainWindow struct {
@@ -122,34 +186,11 @@ func main() {
 
 	mw := &MainWindow{
 		MainWindow: mainWnd,
-		model:      &FooModel{},
+		model:      NewFooModel(),
 	}
-
-	// We want the model to be populated right from the beginning.
-	mw.model.ResetRows()
 
 	mw.SetLayout(walk.NewVBoxLayout())
 	mw.SetTitle("Walk TableView Example")
-
-	fileMenu, _ := walk.NewMenu()
-	fileMenuAction, _ := mw.Menu().Actions().AddMenu(fileMenu)
-	fileMenuAction.SetText("&File")
-
-	exitAction := walk.NewAction()
-	exitAction.SetText("E&xit")
-	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
-	fileMenu.Actions().Add(exitAction)
-
-	helpMenu, _ := walk.NewMenu()
-	helpMenuAction, _ := mw.Menu().Actions().AddMenu(helpMenu)
-	helpMenuAction.SetText("&Help")
-
-	aboutAction := walk.NewAction()
-	aboutAction.SetText("&About")
-	aboutAction.Triggered().Attach(func() {
-		walk.MsgBox(mw, "About", "Walk TableView Example", walk.MsgBoxOK|walk.MsgBoxIconInformation)
-	})
-	helpMenu.Actions().Add(aboutAction)
 
 	resetRowsButton, _ := walk.NewPushButton(mw)
 	resetRowsButton.SetText("Reset Rows")
@@ -160,6 +201,9 @@ func main() {
 	})
 
 	tableView, _ := walk.NewTableView(mw)
+
+	tableView.SetAlternatingRowBGColor(walk.RGB(255, 255, 224))
+	tableView.SetReorderColumnsEnabled(true)
 
 	// Everybody loves check boxes.
 	tableView.SetCheckBoxes(true)

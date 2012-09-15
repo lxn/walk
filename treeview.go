@@ -11,9 +11,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var treeViewOrigWndProcPtr uintptr
-var _ subclassedWidget = &TreeView{}
-
 type TreeView struct {
 	WidgetBase
 	items                      *TreeViewItemList
@@ -28,7 +25,7 @@ type TreeView struct {
 func NewTreeView(parent Container) (*TreeView, error) {
 	tv := &TreeView{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		tv,
 		parent,
 		"SysTreeView32",
@@ -53,14 +50,6 @@ func NewTreeView(parent Container) (*TreeView, error) {
 	succeeded = true
 
 	return tv, nil
-}
-
-func (*TreeView) origWndProcPtr() uintptr {
-	return treeViewOrigWndProcPtr
-}
-
-func (*TreeView) setOrigWndProcPtr(ptr uintptr) {
-	treeViewOrigWndProcPtr = ptr
 }
 
 func (*TreeView) LayoutFlags() LayoutFlags {
@@ -99,7 +88,7 @@ func (tv *TreeView) SelectionChanging() *TreeViewItemSelectionEvent {
 	return tv.selectionChangingPublisher.Event()
 }
 
-func (tv *TreeView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tv *TreeView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_NOTIFY:
 		nmtv := (*NMTREEVIEW)(unsafe.Pointer(lParam))
@@ -151,7 +140,7 @@ func (tv *TreeView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		}
 	}
 
-	return tv.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return tv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
 func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) (err error) {

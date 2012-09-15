@@ -143,7 +143,7 @@ func (cb *ContainerBase) SetSuspended(suspend bool) {
 	}
 }
 
-func (cb *ContainerBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (cb *ContainerBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		if lParam == 0 {
@@ -190,7 +190,7 @@ func (cb *ContainerBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) 
 			// The widget that sent the notification shall handle it itself.
 			hWnd := HWND(lParam)
 			if widget := widgetFromHWND(hWnd); widget != nil {
-				widget.wndProc(hwnd, msg, wParam, lParam)
+				widget.WndProc(hwnd, msg, wParam, lParam)
 				return 0
 			}
 		}
@@ -199,7 +199,7 @@ func (cb *ContainerBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) 
 		nmh := (*NMHDR)(unsafe.Pointer(lParam))
 		if widget := widgetFromHWND(nmh.HwndFrom); widget != nil {
 			// The widget that sent the notification shall handle it itself.
-			widget.wndProc(hwnd, msg, wParam, lParam)
+			return widget.WndProc(hwnd, msg, wParam, lParam)
 		}
 
 	case WM_SIZE, WM_SIZING:
@@ -208,7 +208,7 @@ func (cb *ContainerBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) 
 		}
 	}
 
-	return cb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return cb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
 func (cb *ContainerBase) onInsertingWidget(index int, widget Widget) (err error) {

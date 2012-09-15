@@ -15,7 +15,9 @@ import . "github.com/lxn/go-winapi"
 
 const numberEditWindowClass = `\o/ Walk_NumberEdit_Class \o/`
 
-var numberEditWindowClassRegistered bool
+func init() {
+	MustRegisterWindowClass(numberEditWindowClass)
+}
 
 type NumberEdit struct {
 	WidgetBase
@@ -27,11 +29,9 @@ type NumberEdit struct {
 }
 
 func NewNumberEdit(parent Container) (*NumberEdit, error) {
-	ensureRegisteredWindowClass(numberEditWindowClass, &numberEditWindowClassRegistered)
-
 	ne := &NumberEdit{increment: 1}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		ne,
 		parent,
 		numberEditWindowClass,
@@ -103,6 +103,10 @@ func (*NumberEdit) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | GrowableHorz
 }
 
+func (ne *NumberEdit) MinSizeHint() Size {
+	return ne.dialogBaseUnitsToPixels(Size{20, 12})
+}
+
 func (ne *NumberEdit) SizeHint() Size {
 	s := ne.dialogBaseUnitsToPixels(Size{50, 12})
 	return Size{s.Width, maxi(s.Height, 22)}
@@ -143,19 +147,28 @@ func (ne *NumberEdit) SetRange(min, max float64) error {
 }
 
 func (ne *NumberEdit) Value() float64 {
-	val, _ := strconv.ParseFloat(ne.edit.Text(), 64)
-
+	val, _ := parseFloat(ne.edit.Text())
 	return val
 }
 
-func (ne *NumberEdit) SetValue(value float64) error {
-	text := strconv.FormatFloat(value, 'f', ne.Decimals(), 64)
+func (ne *NumberEdit) SetValue(value float64) (err error) {
+	var text string
+	prec := ne.Decimals()
 
-	if err := ne.edit.SetText(text); err != nil {
-		return err
+	if prec == 0 {
+		text = strconv.Itoa(int(value))
+	} else {
+		text, err = formatFloat(value, prec)
+		if err != nil {
+			return
+		}
 	}
 
-	return nil
+	if err = ne.edit.SetText(text); err != nil {
+		return
+	}
+
+	return
 }
 
 func (ne *NumberEdit) ValueChanged() *Event {
@@ -178,7 +191,7 @@ func (ne *NumberEdit) SetTextSelection(start, end int) {
 	ne.edit.SetTextSelection(start, end)
 }
 
-func (ne *NumberEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (ne *NumberEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if ne.hWndUpDown != 0 {
 		switch msg {
 		case WM_COMMAND:
@@ -212,5 +225,5 @@ func (ne *NumberEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		}
 	}
 
-	return ne.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return ne.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

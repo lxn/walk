@@ -13,7 +13,9 @@ import . "github.com/lxn/go-winapi"
 
 const webViewWindowClass = `\o/ Walk_WebView_Class \o/`
 
-var webViewWindowClassRegistered bool
+func init() {
+	MustRegisterWindowClass(webViewWindowClass)
+}
 
 type WebView struct {
 	WidgetBase
@@ -22,8 +24,6 @@ type WebView struct {
 }
 
 func NewWebView(parent Container) (*WebView, error) {
-	ensureRegisteredWindowClass(webViewWindowClass, &webViewWindowClassRegistered)
-
 	wv := &WebView{
 		clientSite: webViewIOleClientSite{
 			IOleClientSite: IOleClientSite{
@@ -52,7 +52,7 @@ func NewWebView(parent Container) (*WebView, error) {
 		},
 	}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		wv,
 		parent,
 		webViewWindowClass,
@@ -205,7 +205,7 @@ func (wv *WebView) onResize() {
 	})
 }
 
-func (wv *WebView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (wv *WebView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
 		if wv.clientSite.inPlaceSite.inPlaceFrame.webView == nil {
@@ -215,5 +215,5 @@ func (wv *WebView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 		wv.onResize()
 	}
 
-	return wv.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return wv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

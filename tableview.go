@@ -18,8 +18,7 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var tableViewOrigWndProcPtr uintptr
-var _ subclassedWidget = &TableView{}
+var defaultTVRowBGColor Color = Color(GetSysColor(COLOR_WINDOW))
 
 const (
 	tableViewCurrentIndexChangedTimerId = 1 + iota
@@ -34,10 +33,15 @@ type TableView struct {
 	WidgetBase
 	model                           TableModel
 	itemChecker                     ItemChecker
+	imageProvider                   ImageProvider
+	hasAppliedImageList             bool
+	imageList                       *ImageList
+	imageUintptr2Index              map[uintptr]int32
+	filePath2IconIndex              map[string]int32
 	rowsResetHandlerHandle          int
 	rowChangedHandlerHandle         int
+	sortChangedHandlerHandle        int
 	columns                         []TableColumn
-	imageList                       *ImageList
 	currentIndex                    int
 	currentIndexChangedPublisher    EventPublisher
 	selectedIndexes                 *IndexList
@@ -45,18 +49,23 @@ type TableView struct {
 	itemActivatedPublisher          EventPublisher
 	columnClickedPublisher          IntEventPublisher
 	lastColumnStretched             bool
+	inEraseBkgnd                    bool
 	persistent                      bool
 	itemStateChangedEventDelay      int
+	alternatingRowBGColor           Color
 }
 
 // NewTableView creates and returns a *TableView as child of the specified
 // Container.
 func NewTableView(parent Container) (*TableView, error) {
 	tv := &TableView{
-		selectedIndexes: NewIndexList(nil),
+		alternatingRowBGColor: defaultTVRowBGColor,
+		imageUintptr2Index:    make(map[uintptr]int32),
+		filePath2IconIndex:    make(map[string]int32),
+		selectedIndexes:       NewIndexList(nil),
 	}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		tv,
 		parent,
 		"SysListView32",
@@ -87,14 +96,6 @@ func NewTableView(parent Container) (*TableView, error) {
 	succeeded = true
 
 	return tv, nil
-}
-
-func (*TableView) origWndProcPtr() uintptr {
-	return tableViewOrigWndProcPtr
-}
-
-func (*TableView) setOrigWndProcPtr(ptr uintptr) {
-	tableViewOrigWndProcPtr = ptr
 }
 
 // Dispose releases the operating system resources, associated with the 
@@ -131,25 +132,66 @@ func (tv *TableView) SizeHint() Size {
 	return Size{100, 100}
 }
 
+// ReorderColumnsEnabled returns if the user can reorder columns by dragging and
+// dropping column headers.
+func (tv *TableView) ReorderColumnsEnabled() bool {
+	exStyle := SendMessage(tv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	return exStyle&LVS_EX_HEADERDRAGDROP > 0
+}
+
+// SetReorderColumnsEnabled sets if the user can reorder columns by dragging and
+// dropping column headers.
+func (tv *TableView) SetReorderColumnsEnabled(enabled bool) {
+	exStyle := SendMessage(tv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	if enabled {
+		exStyle |= LVS_EX_HEADERDRAGDROP
+	} else {
+		exStyle &^= LVS_EX_HEADERDRAGDROP
+	}
+	SendMessage(tv.hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+}
+
+// AlternatingRowBGColor returns the alternating row background color.
+func (tv *TableView) AlternatingRowBGColor() Color {
+	return tv.alternatingRowBGColor
+}
+
+// SetAlternatingRowBGColor sets the alternating row background color.
+func (tv *TableView) SetAlternatingRowBGColor(c Color) {
+	tv.alternatingRowBGColor = c
+
+	tv.Invalidate()
+}
+
 func (tv *TableView) attachModel() {
-	rowsResetHandler := func() {
+	tv.rowsResetHandlerHandle = tv.model.RowsReset().Attach(func() {
 		tv.setItemCount()
 
 		tv.SetCurrentIndex(-1)
-	}
-	tv.rowsResetHandlerHandle = tv.model.RowsReset().Attach(rowsResetHandler)
+	})
 
-	rowChangedHandler := func(row int) {
+	tv.rowChangedHandlerHandle = tv.model.RowChanged().Attach(func(row int) {
 		if FALSE == SendMessage(tv.hWnd, LVM_UPDATE, uintptr(row), 0) {
 			newError("SendMessage(LVM_UPDATE)")
 		}
+	})
+
+	if sorter, ok := tv.model.(Sorter); ok {
+		tv.sortChangedHandlerHandle = sorter.SortChanged().Attach(func() {
+			col := sorter.SortedColumn()
+			tv.setSelectedColumnIndex(col)
+			tv.setSortIcon(col, sorter.SortOrder())
+			tv.Invalidate()
+		})
 	}
-	tv.rowChangedHandlerHandle = tv.model.RowChanged().Attach(rowChangedHandler)
 }
 
 func (tv *TableView) detachModel() {
 	tv.model.RowsReset().Detach(tv.rowsResetHandlerHandle)
 	tv.model.RowChanged().Detach(tv.rowChangedHandlerHandle)
+	if sorter, ok := tv.model.(Sorter); ok {
+		sorter.SortChanged().Detach(tv.sortChangedHandlerHandle)
+	}
 }
 
 // Model returns the TableModel that provides data to the *TableView.
@@ -175,6 +217,14 @@ func (tv *TableView) SetModel(model TableModel) error {
 	tv.model = model
 
 	tv.itemChecker, _ = model.(ItemChecker)
+	tv.imageProvider, _ = model.(ImageProvider)
+
+	if tv.imageList != nil {
+		SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, 0)
+		tv.imageList.Dispose()
+		tv.imageList = nil
+	}
+	tv.hasAppliedImageList = false
 
 	if model != nil {
 		tv.attachModel()
@@ -209,6 +259,12 @@ func (tv *TableView) SetModel(model TableModel) error {
 			if int(j) == -1 {
 				return newError("TableView.SetModel: Failed to insert column.")
 			}
+		}
+
+		if sorter, ok := tv.model.(Sorter); ok {
+			col := sorter.SortedColumn()
+			tv.setSelectedColumnIndex(col)
+			tv.setSortIcon(col, sorter.SortOrder())
 		}
 
 		return tv.setItemCount()
@@ -262,17 +318,51 @@ func (tv *TableView) SetCheckBoxes(value bool) {
 	}
 }
 
-// SelectedColumnIndex returns the index of the selected column or -1 if no 
-// column is selected.
-func (tv *TableView) SelectedColumnIndex() int {
+func (tv *TableView) selectedColumnIndex() int {
 	return int(SendMessage(tv.hWnd, LVM_GETSELECTEDCOLUMN, 0, 0))
 }
 
-// SetSelectedColumnIndex sets the index of the selected column.
-//
-// Call this with a value of -1 to clear any column selection.
-func (tv *TableView) SetSelectedColumnIndex(value int) {
+func (tv *TableView) setSelectedColumnIndex(value int) {
 	SendMessage(tv.hWnd, LVM_SETSELECTEDCOLUMN, uintptr(value), 0)
+}
+
+func (tv *TableView) setSortIcon(index int, order SortOrder) error {
+	headerHwnd := HWND(SendMessage(tv.hWnd, LVM_GETHEADER, 0, 0))
+
+	count := len(tv.model.Columns())
+
+	for i := 0; i < count; i++ {
+		item := HDITEM{
+			Mask: HDI_FORMAT,
+		}
+
+		iPtr := uintptr(i)
+		itemPtr := uintptr(unsafe.Pointer(&item))
+
+		if SendMessage(headerHwnd, HDM_GETITEM, iPtr, itemPtr) == 0 {
+			return newError("SendMessage(HDM_GETITEM)")
+		}
+
+		if i == index {
+			switch order {
+			case SortAscending:
+				item.Fmt &^= HDF_SORTDOWN
+				item.Fmt |= HDF_SORTUP
+
+			case SortDescending:
+				item.Fmt &^= HDF_SORTUP
+				item.Fmt |= HDF_SORTDOWN
+			}
+		} else {
+			item.Fmt &^= HDF_SORTDOWN | HDF_SORTUP
+		}
+
+		if SendMessage(headerHwnd, HDM_SETITEM, iPtr, itemPtr) == 0 {
+			return newError("SendMessage(HDM_SETITEM)")
+		}
+	}
+
+	return nil
 }
 
 // ColumnClicked returns the event that is published after a column header was
@@ -488,6 +578,21 @@ func (tv *TableView) SaveState() error {
 		buf.WriteString(strconv.Itoa(int(width)))
 	}
 
+	buf.WriteString(";")
+
+	indices := make([]int32, count)
+	lParam := uintptr(unsafe.Pointer(&indices[0]))
+
+	SendMessage(tv.hWnd, LVM_GETCOLUMNORDERARRAY, uintptr(count), lParam)
+
+	for i, idx := range indices {
+		if i > 0 {
+			buf.WriteString(" ")
+		}
+
+		buf.WriteString(strconv.Itoa(int(idx)))
+	}
+
 	return tv.putState(buf.String())
 }
 
@@ -501,7 +606,9 @@ func (tv *TableView) RestoreState() error {
 		return nil
 	}
 
-	widthStrs := strings.Split(state, " ")
+	parts := strings.Split(state, ";")
+
+	widthStrs := strings.Split(parts[0], " ")
 
 	// FIXME: Solve this in a better way.
 	if len(widthStrs) != len(tv.columns) {
@@ -523,37 +630,109 @@ func (tv *TableView) RestoreState() error {
 		}
 	}
 
-	return nil
-}
+	if len(parts) > 1 {
+		indexStrs := strings.Split(parts[1], " ")
 
-/*func (tv *TableView) ImageList() *ImageList {
-	return tv.imageList
-}
+		indices := make([]int32, len(indexStrs))
 
-func (tv *TableView) SetImageList(value *ImageList) {
-	var hIml HIMAGELIST
+		var failed bool
+		for i, s := range indexStrs {
+			idx, err := strconv.Atoi(s)
+			if err != nil {
+				failed = true
+				break
+			}
+			indices[i] = int32(idx)
+		}
 
-	if value != nil {
-		hIml = value.hIml
-	}
-
-	SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(hIml))
-
-	tv.imageList = value
-}
-
-func (tv *TableView) imageIndex(image *Bitmap) (imageIndex int, err os.Error) {
-	imageIndex = -1
-	if image != nil {
-		// FIXME: Protect against duplicate insertion
-		imageIndex, err = tv.imageList.AddMasked(image)
-		if err != nil {
-			return
+		if !failed {
+			wParam := uintptr(len(indices))
+			lParam := uintptr(unsafe.Pointer(&indices[0]))
+			SendMessage(tv.hWnd, LVM_SETCOLUMNORDERARRAY, wParam, lParam)
 		}
 	}
 
-	return
-}*/
+	return nil
+}
+
+func (tv *TableView) applyImageList(image interface{}) {
+	var himl HIMAGELIST
+
+	if filePath, ok := image.(string); ok {
+		_, himl = tv.iconIndexAndHIml(filePath)
+	} else {
+		imgSize := Size{
+			int(GetSystemMetrics(SM_CXSMICON)),
+			int(GetSystemMetrics(SM_CYSMICON)),
+		}
+
+		var err error
+		if tv.imageList, err = NewImageList(imgSize, 0); err != nil {
+			return
+		}
+
+		himl = tv.imageList.hIml
+	}
+
+	if himl != 0 {
+		SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(himl))
+
+		tv.hasAppliedImageList = true
+	}
+}
+
+func (tv *TableView) iconIndexAndHIml(filePath string) (int32, HIMAGELIST) {
+	var shfi SHFILEINFO
+
+	if hIml := HIMAGELIST(SHGetFileInfo(
+		syscall.StringToUTF16Ptr(filePath),
+		0,
+		&shfi,
+		uint32(unsafe.Sizeof(shfi)),
+		SHGFI_SYSICONINDEX|SHGFI_SMALLICON)); hIml != 0 {
+
+		return shfi.IIcon, hIml
+	}
+
+	return -1, 0
+}
+
+func (tv *TableView) imageIndex(image interface{}) int32 {
+	imageIndex := int32(-1)
+
+	if image != nil {
+		var ptr uintptr
+		switch img := image.(type) {
+		case *Bitmap:
+			ptr = uintptr(unsafe.Pointer(img))
+
+		case *Icon:
+			ptr = uintptr(unsafe.Pointer(img))
+		}
+
+		if ptr == 0 {
+			return -1
+		}
+
+		if imageIndex, ok := tv.imageUintptr2Index[ptr]; ok {
+			return imageIndex
+		}
+
+		switch img := image.(type) {
+		case *Bitmap:
+			imageIndex = ImageList_AddMasked(tv.imageList.hIml, img.hBmp, 0)
+
+		case *Icon:
+			imageIndex = ImageList_ReplaceIcon(tv.imageList.hIml, -1, img.hIcon)
+		}
+
+		if imageIndex > -1 {
+			tv.imageUintptr2Index[ptr] = imageIndex
+		}
+	}
+
+	return imageIndex
+}
 
 func (tv *TableView) toggleItemChecked(index int) error {
 	checked := tv.itemChecker.Checked(index)
@@ -569,10 +748,14 @@ func (tv *TableView) toggleItemChecked(index int) error {
 	return nil
 }
 
-func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ERASEBKGND:
-		if tv.lastColumnStretched {
+		if tv.lastColumnStretched && !tv.inEraseBkgnd {
+			tv.inEraseBkgnd = true
+			defer func() {
+				tv.inEraseBkgnd = false
+			}()
 			tv.StretchLastColumn()
 		}
 		return 1
@@ -626,11 +809,29 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 				case string:
 					text = val
 
+				case float32:
+					prec := tv.columns[col].Precision
+					if prec == 0 {
+						prec = 2
+					}
+					text, _ = formatFloat(float64(val), prec)
+
+				case float64:
+					prec := tv.columns[col].Precision
+					if prec == 0 {
+						prec = 2
+					}
+					text, _ = formatFloat(val, prec)
+
 				case time.Time:
 					text = val.Format(tv.columns[col].Format)
 
 				case *big.Rat:
-					text = val.FloatString(tv.columns[col].Precision)
+					prec := tv.columns[col].Precision
+					if prec == 0 {
+						prec = 2
+					}
+					text, _ = formatRat(val, prec)
 
 				default:
 					text = fmt.Sprintf(tv.columns[col].Format, val)
@@ -640,6 +841,31 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 				buf := (*[256]uint16)(unsafe.Pointer(di.Item.PszText))
 				max := mini(len(utf16), int(di.Item.CchTextMax))
 				copy((*buf)[:], utf16[:max])
+			}
+
+			if tv.imageProvider != nil && di.Item.Mask&LVIF_IMAGE > 0 {
+				image := tv.imageProvider.Image(row)
+
+				if !tv.hasAppliedImageList {
+					tv.applyImageList(image)
+				}
+
+				if tv.hasAppliedImageList {
+					if tv.imageList != nil {
+						di.Item.IImage = int32(tv.imageIndex(image))
+					} else if filePath, ok := image.(string); ok {
+						if iIcon, ok := tv.filePath2IconIndex[filePath]; ok {
+							di.Item.IImage = iIcon
+							break
+						}
+
+						if iIcon, _ := tv.iconIndexAndHIml(filePath); iIcon != -1 {
+							tv.filePath2IconIndex[filePath] = iIcon
+
+							di.Item.IImage = iIcon
+						}
+					}
+				}
 			}
 
 			if di.Item.StateMask&LVIS_STATEIMAGEMASK > 0 &&
@@ -653,9 +879,39 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 				}
 			}
 
+		case NM_CUSTOMDRAW:
+			if tv.alternatingRowBGColor != defaultTVRowBGColor {
+				nmlvcd := (*NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
+
+				switch nmlvcd.Nmcd.DwDrawStage {
+				case CDDS_PREPAINT:
+					return CDRF_NOTIFYITEMDRAW
+
+				case CDDS_ITEMPREPAINT:
+					if nmlvcd.Nmcd.DwItemSpec%2 == 1 {
+						nmlvcd.ClrTextBk = COLORREF(tv.alternatingRowBGColor)
+					}
+				}
+			}
+
+			return CDRF_DODEFAULT
+
 		case LVN_COLUMNCLICK:
 			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
-			tv.columnClickedPublisher.Publish(int(nmlv.ISubItem))
+
+			col := int(nmlv.ISubItem)
+			tv.columnClickedPublisher.Publish(col)
+
+			if sorter, ok := tv.model.(Sorter); ok && sorter.ColumnSortable(col) {
+				prevCol := sorter.SortedColumn()
+				var order SortOrder
+				if col != prevCol || sorter.SortOrder() == SortDescending {
+					order = SortAscending
+				} else {
+					order = SortDescending
+				}
+				sorter.Sort(col, order)
+			}
 
 		case LVN_ITEMCHANGED:
 			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
@@ -694,5 +950,5 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 		}
 	}
 
-	return tv.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return tv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

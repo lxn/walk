@@ -14,7 +14,9 @@ import . "github.com/lxn/go-winapi"
 
 const tabWidgetWindowClass = `\o/ Walk_TabWidget_Class \o/`
 
-var tabWidgetWindowClassRegistered bool
+func init() {
+	MustRegisterWindowClass(tabWidgetWindowClass)
+}
 
 type TabWidget struct {
 	WidgetBase
@@ -26,12 +28,10 @@ type TabWidget struct {
 }
 
 func NewTabWidget(parent Container) (*TabWidget, error) {
-	ensureRegisteredWindowClass(tabWidgetWindowClass, &tabWidgetWindowClassRegistered)
-
 	tw := &TabWidget{currentIndex: -1}
 	tw.pages = newTabPageList(tw)
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		tw,
 		parent,
 		tabWidgetWindowClass,
@@ -250,7 +250,7 @@ func (tw *TabWidget) onSelChange() {
 	tw.currentIndexChangedPublisher.Publish()
 }
 
-func (tw *TabWidget) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tw *TabWidget) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if tw.hWndTab != 0 {
 		switch msg {
 		case WM_SIZE, WM_SIZING:
@@ -266,7 +266,7 @@ func (tw *TabWidget) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 		}
 	}
 
-	return tw.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return tw.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
 func (tw *TabWidget) onPageChanged(page *TabPage) (err error) {

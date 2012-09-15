@@ -14,9 +14,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var listBoxOrigWndProcPtr uintptr
-var _ subclassedWidget = &ListBox{}
-
 type ListBox struct {
 	WidgetBase
 	model                        ListModel
@@ -32,7 +29,7 @@ type ListBox struct {
 
 func NewListBox(parent Container) (*ListBox, error) {
 	lb := &ListBox{}
-	err := initChildWidget(
+	err := InitChildWidget(
 		lb,
 		parent,
 		"LISTBOX",
@@ -44,16 +41,8 @@ func NewListBox(parent Container) (*ListBox, error) {
 	return lb, nil
 }
 
-func (*ListBox) origWndProcPtr() uintptr {
-	return listBoxOrigWndProcPtr
-}
-
-func (*ListBox) setOrigWndProcPtr(ptr uintptr) {
-	listBoxOrigWndProcPtr = ptr
-}
-
 func (*ListBox) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert 
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
 func (lb *ListBox) itemString(index int) string {
@@ -78,7 +67,7 @@ func (lb *ListBox) itemString(index int) string {
 func (lb *ListBox) insertItemAt(index int) error {
 	str := lb.itemString(index)
 	lp := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(str)))
-	ret := int (SendMessage(lb.hWnd, LB_INSERTSTRING, uintptr(index), lp))
+	ret := int(SendMessage(lb.hWnd, LB_INSERTSTRING, uintptr(index), lp))
 	if ret == LB_ERRSPACE || ret == LB_ERR {
 		return newError("SendMessage(LB_INSERTSTRING)")
 	}
@@ -110,7 +99,6 @@ func (lb *ListBox) resetItems() error {
 
 	return nil
 }
-
 
 func (lb *ListBox) attachModel() {
 	itemsResetHandler := func() {
@@ -184,7 +172,7 @@ func (lb *ListBox) calculateMaxItemTextWidth() int {
 
 	var maxWidth int
 
-	if lb.model == nil{
+	if lb.model == nil {
 		return -1
 	}
 	count := lb.model.ItemCount()
@@ -248,16 +236,17 @@ func (lb *ListBox) DblClicked() *Event {
 	return lb.dblClickedPublisher.Event()
 }
 
-func (lb *ListBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (lb *ListBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
 		case LBN_SELCHANGE:
 			lb.currentIndexChangedPublisher.Publish()
+
 		case LBN_DBLCLK:
 			lb.dblClickedPublisher.Publish()
 		}
 	}
 
-	return lb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return lb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

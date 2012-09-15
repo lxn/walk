@@ -14,9 +14,6 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-var comboBoxOrigWndProcPtr uintptr
-var _ subclassedWidget = &ComboBox{}
-
 type ComboBox struct {
 	WidgetBase
 	model                        ListModel
@@ -32,7 +29,7 @@ type ComboBox struct {
 func NewComboBox(parent Container) (*ComboBox, error) {
 	cb := &ComboBox{prevCurIndex: -1, precision: 2}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		cb,
 		parent,
 		"COMBOBOX",
@@ -44,19 +41,11 @@ func NewComboBox(parent Container) (*ComboBox, error) {
 	return cb, nil
 }
 
-func (*ComboBox) origWndProcPtr() uintptr {
-	return comboBoxOrigWndProcPtr
-}
-
-func (*ComboBox) setOrigWndProcPtr(ptr uintptr) {
-	comboBoxOrigWndProcPtr = ptr
-}
-
 func (*ComboBox) LayoutFlags() LayoutFlags {
 	return GrowableHorz
 }
 
-func (cb *ComboBox) SizeHint() Size {
+func (cb *ComboBox) MinSizeHint() Size {
 	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 12})
 
 	if cb.model != nil && cb.maxItemTextWidth <= 0 {
@@ -68,6 +57,10 @@ func (cb *ComboBox) SizeHint() Size {
 	h := defaultSize.Height + 1
 
 	return Size{w, h}
+}
+
+func (cb *ComboBox) SizeHint() Size {
+	return cb.MinSizeHint()
 }
 
 func (cb *ComboBox) itemString(index int) string {
@@ -162,11 +155,9 @@ func (cb *ComboBox) SetModel(model ListModel) error {
 
 	if model != nil {
 		cb.attachModel()
-
-		return cb.resetItems()
 	}
 
-	return nil
+	return cb.resetItems()
 }
 
 func (cb *ComboBox) Format() string {
@@ -254,7 +245,7 @@ func (cb *ComboBox) SetTextSelection(start, end int) {
 	SendMessage(cb.hWnd, CB_SETEDITSEL, 0, uintptr(MAKELONG(uint16(start), uint16(end))))
 }
 
-func (cb *ComboBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (cb *ComboBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
@@ -267,5 +258,5 @@ func (cb *ComboBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		}
 	}
 
-	return cb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return cb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

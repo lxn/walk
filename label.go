@@ -6,9 +6,6 @@ package walk
 
 import . "github.com/lxn/go-winapi"
 
-var labelOrigWndProcPtr uintptr
-var _ subclassedWidget = &Label{}
-
 type Label struct {
 	WidgetBase
 }
@@ -16,7 +13,7 @@ type Label struct {
 func NewLabel(parent Container) (*Label, error) {
 	l := &Label{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		l,
 		parent,
 		"STATIC",
@@ -28,14 +25,6 @@ func NewLabel(parent Container) (*Label, error) {
 	return l, nil
 }
 
-func (*Label) origWndProcPtr() uintptr {
-	return labelOrigWndProcPtr
-}
-
-func (*Label) setOrigWndProcPtr(ptr uintptr) {
-	labelOrigWndProcPtr = ptr
-}
-
 func (*Label) LayoutFlags() LayoutFlags {
 	return GrowableVert
 }
@@ -45,7 +34,7 @@ func (l *Label) MinSizeHint() Size {
 }
 
 func (l *Label) SizeHint() Size {
-	return l.calculateTextSize()
+	return l.MinSizeHint()
 }
 
 func (l *Label) Text() string {
@@ -62,4 +51,13 @@ func (l *Label) SetText(value string) error {
 	}
 
 	return l.updateParentLayout()
+}
+
+func (l *Label) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	switch msg {
+	case WM_SIZE, WM_SIZING:
+		l.Invalidate()
+	}
+
+	return l.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

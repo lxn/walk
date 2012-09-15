@@ -6,9 +6,6 @@ package walk
 
 import . "github.com/lxn/go-winapi"
 
-var radioButtonOrigWndProcPtr uintptr
-var _ subclassedWidget = &RadioButton{}
-
 type RadioButton struct {
 	Button
 }
@@ -16,7 +13,7 @@ type RadioButton struct {
 func NewRadioButton(parent Container) (*RadioButton, error) {
 	rb := &RadioButton{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		rb,
 		parent,
 		"BUTTON",
@@ -28,19 +25,11 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 	return rb, nil
 }
 
-func (*RadioButton) origWndProcPtr() uintptr {
-	return radioButtonOrigWndProcPtr
-}
-
-func (*RadioButton) setOrigWndProcPtr(ptr uintptr) {
-	radioButtonOrigWndProcPtr = ptr
-}
-
 func (*RadioButton) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (rb *RadioButton) SizeHint() Size {
+func (rb *RadioButton) MinSizeHint() Size {
 	defaultSize := rb.dialogBaseUnitsToPixels(Size{50, 10})
 	textSize := rb.calculateTextSize()
 
@@ -49,4 +38,8 @@ func (rb *RadioButton) SizeHint() Size {
 	h := maxi(defaultSize.Height, textSize.Height)
 
 	return Size{w, h}
+}
+
+func (rb *RadioButton) SizeHint() Size {
+	return rb.MinSizeHint()
 }

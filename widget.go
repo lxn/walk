@@ -106,6 +106,9 @@ type Widget interface {
 	// By default this is a MS Shell Dlg 2, 8 point font.
 	Font() *Font
 
+	// Handle returns the window handle of the Widget.
+	Handle() HWND
+
 	// Height returns the outer height of the Widget, including decorations.
 	Height() int
 
@@ -266,6 +269,12 @@ type Widget interface {
 	// Width returns the outer width of the Widget, including decorations.
 	Width() int
 
+	// WndProc is the window procedure of the widget.
+	//
+	// When implementing your own WndProc to add or modify behavior, call the
+	// WndProc of the embedded widget for messages you don't handle yourself.
+	WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr
+
 	// X returns the x coordinate of the Widget, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
 	// child Widgets.
@@ -277,23 +286,11 @@ type Widget interface {
 	Y() int
 }
 
-type widgetInternal interface {
-	Widget
-	path() string
-	wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr
-	writePath(buf *bytes.Buffer)
-}
-
-type subclassedWidget interface {
-	widgetInternal
-	origWndProcPtr() uintptr
-	setOrigWndProcPtr(ptr uintptr)
-}
-
 // WidgetBase implements many operations common to all Widgets.
 type WidgetBase struct {
-	widget               widgetInternal
+	widget               Widget
 	hWnd                 HWND
+	origWndProcPtr       uintptr
 	name                 string
 	parent               Container
 	font                 *Font
@@ -307,35 +304,38 @@ type WidgetBase struct {
 	minSize              Size
 	background           Brush
 	cursor               Cursor
-	layoutFlags          LayoutFlags
 	suspended            bool
 	hidden               bool
 }
 
 var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
 
-func ensureRegisteredWindowClass(className string, registered *bool) {
-	if registered == nil {
-		panic("registered cannot be nil")
-	}
+var registeredWindowClasses map[string]bool = make(map[string]bool)
 
-	if *registered {
-		return
+// MustRegisterWindowClass registers the specified window class.
+//
+// MustRegisterWindowClass must be called once for every widget type that is not
+// based on any system provided control, before calling InitChildWidget or
+// InitWidget. Calling MustRegisterWindowClass twice with the same className
+// results in a panic.
+func MustRegisterWindowClass(className string) {
+	if registeredWindowClasses[className] {
+		panic("window class already registered")
 	}
 
 	hInst := GetModuleHandle(nil)
 	if hInst == 0 {
-		panic("GetModuleHandle failed")
+		panic("GetModuleHandle")
 	}
 
 	hIcon := LoadIcon(0, (*uint16)(unsafe.Pointer(uintptr(IDI_APPLICATION))))
 	if hIcon == 0 {
-		panic("LoadIcon failed")
+		panic("LoadIcon")
 	}
 
 	hCursor := LoadCursor(0, (*uint16)(unsafe.Pointer(uintptr(IDC_ARROW))))
 	if hCursor == 0 {
-		panic("LoadCursor failed")
+		panic("LoadCursor")
 	}
 
 	var wc WNDCLASSEX
@@ -351,10 +351,14 @@ func ensureRegisteredWindowClass(className string, registered *bool) {
 		panic("RegisterClassEx")
 	}
 
-	*registered = true
+	registeredWindowClasses[className] = true
 }
 
-func initWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint32) error {
+// InitWidget initializes a widget.
+//
+// Most widgets have a parent and so are child widgets that should be
+// initialized using InitChildWidget instead.
+func InitWidget(widget, parent Widget, className string, style, exStyle uint32) error {
 	wb := widget.BaseWidget()
 	wb.widget = widget
 
@@ -393,14 +397,11 @@ func initWidget(widget widgetInternal, parent Widget, className string, style, e
 
 	SetWindowLongPtr(wb.hWnd, GWLP_USERDATA, uintptr(unsafe.Pointer(wb)))
 
-	if subclassed, ok := widget.(subclassedWidget); ok {
-		origWndProcPtr := SetWindowLongPtr(wb.hWnd, GWLP_WNDPROC, widgetWndProcPtr)
-		if origWndProcPtr == 0 {
+	if !registeredWindowClasses[className] {
+		// We subclass all widgets of system classes.
+		wb.origWndProcPtr = SetWindowLongPtr(wb.hWnd, GWLP_WNDPROC, widgetWndProcPtr)
+		if wb.origWndProcPtr == 0 {
 			return lastError("SetWindowLongPtr")
-		}
-
-		if subclassed.origWndProcPtr() == 0 {
-			subclassed.setOrigWndProcPtr(origWndProcPtr)
 		}
 	}
 
@@ -411,12 +412,13 @@ func initWidget(widget widgetInternal, parent Widget, className string, style, e
 	return nil
 }
 
-func initChildWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint32) error {
+// InitChildWidget initializes a child widget.
+func InitChildWidget(widget, parent Widget, className string, style, exStyle uint32) error {
 	if parent == nil {
 		return newError("parent cannot be nil")
 	}
 
-	if err := initWidget(widget, parent, className, style|WS_CHILD, exStyle); err != nil {
+	if err := InitWidget(widget, parent, className, style|WS_CHILD, exStyle); err != nil {
 		return err
 	}
 
@@ -483,6 +485,11 @@ func (wb *WidgetBase) ensureStyleBits(bits uint32, set bool) error {
 	return wb.setAndClearStyleBits(setBits, clearBits)
 }
 
+// Handle returns the window handle of the Widget.
+func (wb *WidgetBase) Handle() HWND {
+	return wb.hWnd
+}
+
 // Name returns the name of the *WidgetBase.
 func (wb *WidgetBase) Name() string {
 	return wb.name
@@ -496,7 +503,7 @@ func (wb *WidgetBase) SetName(name string) {
 func (wb *WidgetBase) writePath(buf *bytes.Buffer) {
 	hWndParent := GetAncestor(wb.hWnd, GA_PARENT)
 	if pwi := widgetFromHWND(hWndParent); pwi != nil {
-		pwi.writePath(buf)
+		pwi.BaseWidget().writePath(buf)
 		buf.WriteByte('/')
 	}
 
@@ -562,6 +569,8 @@ func (wb *WidgetBase) Background() Brush {
 // SetBackground sets the background Brush of the *WidgetBase.
 func (wb *WidgetBase) SetBackground(value Brush) {
 	wb.background = value
+
+	wb.Invalidate()
 }
 
 // Cursor returns the Cursor of the *WidgetBase.
@@ -902,16 +911,20 @@ func (wb *WidgetBase) LayoutFlags() LayoutFlags {
 	return 0
 }
 
+func (wb *WidgetBase) minSizeEffective() Size {
+	return maxSize(wb.minSize, wb.widget.MinSizeHint())
+}
+
 // MinSizeHint returns the minimum outer Size, including decorations, that 
 // makes sense for the respective type of Widget.
 func (wb *WidgetBase) MinSizeHint() Size {
-	return wb.widget.SizeHint()
+	return Size{10, 10}
 }
 
 // SizeHint returns a default Size that should be "overidden" by a concrete
 // Widget type.
 func (wb *WidgetBase) SizeHint() Size {
-	return Size{10, 10}
+	return wb.widget.MinSizeHint()
 }
 
 func (wb *WidgetBase) calculateTextSize() Size {
@@ -1164,7 +1177,7 @@ func (wb *WidgetBase) putState(state string) error {
 	return settings.Put(wb.path(), state)
 }
 
-func widgetFromHWND(hwnd HWND) widgetInternal {
+func widgetFromHWND(hwnd HWND) Widget {
 	ptr := GetWindowLongPtr(hwnd, GWLP_USERDATA)
 	if ptr == 0 {
 		return nil
@@ -1201,12 +1214,16 @@ func widgetWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) (result uintpt
 		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	result = wi.wndProc(hwnd, msg, wParam, lParam)
+	result = wi.WndProc(hwnd, msg, wParam, lParam)
 
 	return
 }
 
-func (wb *WidgetBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+// WndProc is the window procedure of the widget.
+//
+// When implementing your own WndProc to add or modify behavior, call the
+// WndProc of the embedded widget for messages you don't handle yourself.
+func (wb *WidgetBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ERASEBKGND:
 		if wb.background == nil {
@@ -1226,7 +1243,7 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		return 1
 
 	case WM_LBUTTONDOWN:
-		if _, isSubclassed := widgetFromHWND(wb.hWnd).(subclassedWidget); !isSubclassed {
+		if wb.origWndProcPtr == 0 {
 			// Only call SetCapture if this is no subclassed control.
 			// (Otherwise e.g. WM_COMMAND(BN_CLICKED) would no longer
 			// be generated for PushButton.)
@@ -1235,7 +1252,7 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		wb.publishMouseEvent(&wb.mouseDownPublisher, wParam, lParam)
 
 	case WM_LBUTTONUP:
-		if _, isSubclassed := widgetFromHWND(wb.hWnd).(subclassedWidget); !isSubclassed {
+		if wb.origWndProcPtr == 0 {
 			// See WM_LBUTTONDOWN for why we require origWndProcPtr == 0 here.
 			if !ReleaseCapture() {
 				lastError("ReleaseCapture")
@@ -1288,13 +1305,9 @@ func (wb *WidgetBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 	}
 
 	if widget := widgetFromHWND(hwnd); widget != nil {
-		if subclassed, ok := widget.(subclassedWidget); ok {
-			return CallWindowProc(
-				subclassed.origWndProcPtr(),
-				hwnd,
-				msg,
-				wParam,
-				lParam)
+		origWndProcPtr := widget.BaseWidget().origWndProcPtr
+		if origWndProcPtr != 0 {
+			return CallWindowProc(origWndProcPtr, hwnd, msg, wParam, lParam)
 		}
 	}
 

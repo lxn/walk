@@ -38,6 +38,21 @@ func NewIconFromFile(filePath string) (*Icon, error) {
 	return &Icon{hIcon: hIcon}, nil
 }
 
+// NewIconFromResource returns a new Icon, using the specified icon resource.
+func NewIconFromResource(resName string) (ic *Icon, err error) {
+	hInst := GetModuleHandle(nil)
+	if hInst == 0 {
+		err = lastError("GetModuleHandle")
+		return
+	}
+	if hIcon := LoadIcon(hInst, syscall.StringToUTF16Ptr(resName)); hIcon == 0 {
+		err = lastError("LoadIcon")
+	} else {
+		ic = &Icon{hIcon: hIcon}
+	}
+	return
+}
+
 // Dispose releases the operating system resources associated with the Icon.
 func (i *Icon) Dispose() error {
 	if i.hIcon == 0 {
