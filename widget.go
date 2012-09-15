@@ -106,6 +106,9 @@ type Widget interface {
 	// By default this is a MS Shell Dlg 2, 8 point font.
 	Font() *Font
 
+	// Handle returns the window handle of the Widget.
+	Handle() HWND
+
 	// Height returns the outer height of the Widget, including decorations.
 	Height() int
 
@@ -480,6 +483,11 @@ func (wb *WidgetBase) ensureStyleBits(bits uint32, set bool) error {
 		clearBits = bits
 	}
 	return wb.setAndClearStyleBits(setBits, clearBits)
+}
+
+// Handle returns the window handle of the Widget.
+func (wb *WidgetBase) Handle() HWND {
+	return wb.hWnd
 }
 
 // Name returns the name of the *WidgetBase.
