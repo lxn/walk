@@ -11,7 +11,7 @@ import . "github.com/lxn/go-winapi"
 const groupBoxWindowClass = `\o/ Walk_GroupBox_Class \o/`
 
 func init() {
-	mustRegisterWindowClass(groupBoxWindowClass)
+	MustRegisterWindowClass(groupBoxWindowClass)
 }
 
 type GroupBox struct {

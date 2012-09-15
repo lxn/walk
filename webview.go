@@ -14,7 +14,7 @@ import . "github.com/lxn/go-winapi"
 const webViewWindowClass = `\o/ Walk_WebView_Class \o/`
 
 func init() {
-	mustRegisterWindowClass(webViewWindowClass)
+	MustRegisterWindowClass(webViewWindowClass)
 }
 
 type WebView struct {

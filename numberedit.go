@@ -16,7 +16,7 @@ import . "github.com/lxn/go-winapi"
 const numberEditWindowClass = `\o/ Walk_NumberEdit_Class \o/`
 
 func init() {
-	mustRegisterWindowClass(numberEditWindowClass)
+	MustRegisterWindowClass(numberEditWindowClass)
 }
 
 type NumberEdit struct {

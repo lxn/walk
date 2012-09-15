@@ -14,7 +14,7 @@ import . "github.com/lxn/go-winapi"
 const notifyIconWindowClass = `\o/ Walk_NotifyIcon_Class \o/`
 
 func init() {
-	mustRegisterWindowClass(notifyIconWindowClass)
+	MustRegisterWindowClass(notifyIconWindowClass)
 }
 
 func notifyIconWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) (result uintptr) {

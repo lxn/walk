@@ -15,7 +15,7 @@ import . "github.com/lxn/go-winapi"
 const tabWidgetWindowClass = `\o/ Walk_TabWidget_Class \o/`
 
 func init() {
-	mustRegisterWindowClass(tabWidgetWindowClass)
+	MustRegisterWindowClass(tabWidgetWindowClass)
 }
 
 type TabWidget struct {

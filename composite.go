@@ -9,7 +9,7 @@ import . "github.com/lxn/go-winapi"
 const compositeWindowClass = `\o/ Walk_Composite_Class \o/`
 
 func init() {
-	mustRegisterWindowClass(compositeWindowClass)
+	MustRegisterWindowClass(compositeWindowClass)
 }
 
 type Composite struct {

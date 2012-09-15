@@ -29,7 +29,7 @@ const (
 const dialogWindowClass = `\o/ Walk_Dialog_Class \o/`
 
 func init() {
-	mustRegisterWindowClass(dialogWindowClass)
+	MustRegisterWindowClass(dialogWindowClass)
 }
 
 type dialogish interface {

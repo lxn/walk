@@ -309,7 +309,7 @@ var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
 
 var registeredWindowClasses map[string]bool = make(map[string]bool)
 
-func mustRegisterWindowClass(className string) {
+func MustRegisterWindowClass(className string) {
 	if registeredWindowClasses[className] {
 		panic("window class already registered")
 	}

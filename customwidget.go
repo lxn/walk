@@ -9,7 +9,7 @@ import . "github.com/lxn/go-winapi"
 const customWidgetWindowClass = `\o/ Walk_CustomWidget_Class \o/`
 
 func init() {
-	mustRegisterWindowClass(customWidgetWindowClass)
+	MustRegisterWindowClass(customWidgetWindowClass)
 }
 
 type PaintFunc func(canvas *Canvas, updateBounds Rectangle) error

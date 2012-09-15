@@ -9,7 +9,7 @@ import . "github.com/lxn/go-winapi"
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
 
 func init() {
-	mustRegisterWindowClass(mainWindowWindowClass)
+	MustRegisterWindowClass(mainWindowWindowClass)
 }
 
 type MainWindow struct {

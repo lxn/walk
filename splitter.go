@@ -17,7 +17,8 @@ const splitterWindowClass = `\o/ Walk_Splitter_Class \o/`
 var splitterHandleDraggingBrush *SolidColorBrush
 
 func init() {
-	mustRegisterWindowClass(splitterWindowClass)
+	MustRegisterWindowClass(splitterWindowClass)
+
 	splitterHandleDraggingBrush, _ = NewSolidColorBrush(Color(GetSysColor(COLOR_BTNSHADOW)))
 }
 

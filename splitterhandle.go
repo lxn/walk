@@ -9,7 +9,7 @@ import . "github.com/lxn/go-winapi"
 const splitterHandleWindowClass = `\o/ Walk_SplitterHandle_Class \o/`
 
 func init() {
-	mustRegisterWindowClass(splitterHandleWindowClass)
+	MustRegisterWindowClass(splitterHandleWindowClass)
 }
 
 type splitterHandle struct {
