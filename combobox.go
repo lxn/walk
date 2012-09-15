@@ -245,7 +245,7 @@ func (cb *ComboBox) SetTextSelection(start, end int) {
 	SendMessage(cb.hWnd, CB_SETEDITSEL, 0, uintptr(MAKELONG(uint16(start), uint16(end))))
 }
 
-func (cb *ComboBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (cb *ComboBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
@@ -258,5 +258,5 @@ func (cb *ComboBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		}
 	}
 
-	return cb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return cb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

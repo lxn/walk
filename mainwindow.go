@@ -119,7 +119,7 @@ func (mw *MainWindow) Show() {
 	mw.TopLevelWindow.Show()
 }
 
-func (mw *MainWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (mw *MainWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
 		SendMessage(mw.toolBar.hWnd, TB_AUTOSIZE, 0, 0)
@@ -127,5 +127,5 @@ func (mw *MainWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		mw.clientComposite.SetBounds(mw.ClientBounds())
 	}
 
-	return mw.TopLevelWindow.wndProc(hwnd, msg, wParam, lParam)
+	return mw.TopLevelWindow.WndProc(hwnd, msg, wParam, lParam)
 }

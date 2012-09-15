@@ -266,6 +266,12 @@ type Widget interface {
 	// Width returns the outer width of the Widget, including decorations.
 	Width() int
 
+	// WndProc is the window procedure of the widget.
+	//
+	// When implementing your own WndProc to add or modify behavior, call the
+	// WndProc of the embedded widget for messages you don't handle yourself.
+	WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr
+
 	// X returns the x coordinate of the Widget, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
 	// child Widgets.
@@ -277,16 +283,9 @@ type Widget interface {
 	Y() int
 }
 
-type widgetInternal interface {
-	Widget
-	path() string
-	wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr
-	writePath(buf *bytes.Buffer)
-}
-
 // WidgetBase implements many operations common to all Widgets.
 type WidgetBase struct {
-	widget               widgetInternal
+	widget               Widget
 	hWnd                 HWND
 	origWndProcPtr       uintptr
 	name                 string
@@ -346,7 +345,7 @@ func mustRegisterWindowClass(className string) {
 	registeredWindowClasses[className] = true
 }
 
-func initWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint32) error {
+func initWidget(widget, parent Widget, className string, style, exStyle uint32) error {
 	wb := widget.BaseWidget()
 	wb.widget = widget
 
@@ -400,7 +399,7 @@ func initWidget(widget widgetInternal, parent Widget, className string, style, e
 	return nil
 }
 
-func initChildWidget(widget widgetInternal, parent Widget, className string, style, exStyle uint32) error {
+func initChildWidget(widget, parent Widget, className string, style, exStyle uint32) error {
 	if parent == nil {
 		return newError("parent cannot be nil")
 	}
@@ -485,7 +484,7 @@ func (wb *WidgetBase) SetName(name string) {
 func (wb *WidgetBase) writePath(buf *bytes.Buffer) {
 	hWndParent := GetAncestor(wb.hWnd, GA_PARENT)
 	if pwi := widgetFromHWND(hWndParent); pwi != nil {
-		pwi.writePath(buf)
+		pwi.BaseWidget().writePath(buf)
 		buf.WriteByte('/')
 	}
 
@@ -1159,7 +1158,7 @@ func (wb *WidgetBase) putState(state string) error {
 	return settings.Put(wb.path(), state)
 }
 
-func widgetFromHWND(hwnd HWND) widgetInternal {
+func widgetFromHWND(hwnd HWND) Widget {
 	ptr := GetWindowLongPtr(hwnd, GWLP_USERDATA)
 	if ptr == 0 {
 		return nil
@@ -1196,12 +1195,16 @@ func widgetWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) (result uintpt
 		return DefWindowProc(hwnd, msg, wParam, lParam)
 	}
 
-	result = wi.wndProc(hwnd, msg, wParam, lParam)
+	result = wi.WndProc(hwnd, msg, wParam, lParam)
 
 	return
 }
 
-func (wb *WidgetBase) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+// WndProc is the window procedure of the widget.
+//
+// When implementing your own WndProc to add or modify behavior, call the
+// WndProc of the embedded widget for messages you don't handle yourself.
+func (wb *WidgetBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ERASEBKGND:
 		if wb.background == nil {

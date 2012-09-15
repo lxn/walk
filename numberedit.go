@@ -191,7 +191,7 @@ func (ne *NumberEdit) SetTextSelection(start, end int) {
 	ne.edit.SetTextSelection(start, end)
 }
 
-func (ne *NumberEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (ne *NumberEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if ne.hWndUpDown != 0 {
 		switch msg {
 		case WM_COMMAND:
@@ -225,5 +225,5 @@ func (ne *NumberEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		}
 	}
 
-	return ne.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return ne.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

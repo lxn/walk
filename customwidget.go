@@ -60,7 +60,7 @@ func (cw *CustomWidget) SetInvalidatesOnResize(value bool) {
 	cw.invalidatesOnResize = value
 }
 
-func (cw *CustomWidget) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (cw *CustomWidget) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_PAINT:
 		if cw.paint == nil {
@@ -111,5 +111,5 @@ func (cw *CustomWidget) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) u
 		}
 	}
 
-	return cw.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return cw.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

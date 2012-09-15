@@ -37,11 +37,11 @@ func (tb *ToolButton) SizeHint() Size {
 	return tb.dialogBaseUnitsToPixels(Size{16, 12})
 }
 
-func (tb *ToolButton) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tb *ToolButton) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
 		return DLGC_BUTTON
 	}
 
-	return tb.Button.wndProc(hwnd, msg, wParam, lParam)
+	return tb.Button.WndProc(hwnd, msg, wParam, lParam)
 }

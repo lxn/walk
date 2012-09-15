@@ -236,16 +236,17 @@ func (lb *ListBox) DblClicked() *Event {
 	return lb.dblClickedPublisher.Event()
 }
 
-func (lb *ListBox) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (lb *ListBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
 		case LBN_SELCHANGE:
 			lb.currentIndexChangedPublisher.Publish()
+
 		case LBN_DBLCLK:
 			lb.dblClickedPublisher.Publish()
 		}
 	}
 
-	return lb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return lb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

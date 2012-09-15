@@ -188,7 +188,7 @@ func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
 	return
 }
 
-func (tb *ToolBar) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tb *ToolBar) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_NOTIFY:
 		nmm := (*NMMOUSE)(unsafe.Pointer(lParam))
@@ -202,7 +202,7 @@ func (tb *ToolBar) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 		}
 	}
 
-	return tb.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return tb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
 func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image *int32, text *uintptr) (err error) {

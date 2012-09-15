@@ -748,7 +748,7 @@ func (tv *TableView) toggleItemChecked(index int) error {
 	return nil
 }
 
-func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ERASEBKGND:
 		if tv.lastColumnStretched && !tv.inEraseBkgnd {
@@ -950,5 +950,5 @@ func (tv *TableView) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 		}
 	}
 
-	return tv.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return tv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

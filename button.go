@@ -55,7 +55,7 @@ func (b *Button) raiseClicked() {
 	b.clickedPublisher.Publish()
 }
 
-func (b *Button) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (b *Button) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
@@ -64,5 +64,5 @@ func (b *Button) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr 
 		}
 	}
 
-	return b.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return b.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

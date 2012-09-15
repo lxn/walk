@@ -53,11 +53,11 @@ func (l *Label) SetText(value string) error {
 	return l.updateParentLayout()
 }
 
-func (l *Label) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (l *Label) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
 		l.Invalidate()
 	}
 
-	return l.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return l.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

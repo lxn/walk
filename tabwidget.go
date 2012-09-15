@@ -250,7 +250,7 @@ func (tw *TabWidget) onSelChange() {
 	tw.currentIndexChangedPublisher.Publish()
 }
 
-func (tw *TabWidget) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tw *TabWidget) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if tw.hWndTab != 0 {
 		switch msg {
 		case WM_SIZE, WM_SIZING:
@@ -266,7 +266,7 @@ func (tw *TabWidget) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 		}
 	}
 
-	return tw.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return tw.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
 func (tw *TabWidget) onPageChanged(page *TabPage) (err error) {

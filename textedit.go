@@ -68,7 +68,7 @@ func (te *TextEdit) SetReadOnly(readOnly bool) error {
 	return nil
 }
 
-func (te *TextEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (te *TextEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
 		if wParam == VK_RETURN {
@@ -78,5 +78,5 @@ func (te *TextEdit) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		return DLGC_HASSETSEL | DLGC_WANTARROWS | DLGC_WANTCHARS
 	}
 
-	return te.WidgetBase.wndProc(hwnd, msg, wParam, lParam)
+	return te.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

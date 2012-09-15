@@ -233,7 +233,7 @@ func (tlw *TopLevelWindow) Closing() *CloseEvent {
 	return tlw.closingPublisher.Event()
 }
 
-func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tlw *TopLevelWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ACTIVATE:
 		switch LOWORD(uint32(wParam)) {
@@ -288,5 +288,5 @@ func (tlw *TopLevelWindow) wndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 		}
 	}
 
-	return tlw.ContainerBase.wndProc(hwnd, msg, wParam, lParam)
+	return tlw.ContainerBase.WndProc(hwnd, msg, wParam, lParam)
 }
