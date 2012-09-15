@@ -23,7 +23,7 @@ type GroupBox struct {
 func NewGroupBox(parent Container) (*GroupBox, error) {
 	gb := &GroupBox{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		gb,
 		parent,
 		groupBoxWindowClass,

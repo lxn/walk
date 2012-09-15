@@ -22,7 +22,7 @@ func newSpacer(parent Container, layoutFlags LayoutFlags, sizeHint Size) (*Space
 		sizeHint:    sizeHint,
 	}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		s,
 		parent,
 		spacerWindowClass,

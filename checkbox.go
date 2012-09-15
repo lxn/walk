@@ -13,7 +13,7 @@ type CheckBox struct {
 func NewCheckBox(parent Container) (*CheckBox, error) {
 	cb := &CheckBox{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		cb,
 		parent,
 		"BUTTON",

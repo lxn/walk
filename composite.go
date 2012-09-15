@@ -21,7 +21,7 @@ func newCompositeWithStyle(parent Container, style uint32) (*Composite, error) {
 	c.children = newWidgetList(c)
 	c.SetPersistent(true)
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		c,
 		parent,
 		compositeWindowClass,

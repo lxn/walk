@@ -18,7 +18,7 @@ type ToolTip struct {
 func NewToolTip(parent Container) (*ToolTip, error) {
 	tt := &ToolTip{}
 
-	if err := initWidget(
+	if err := InitWidget(
 		tt,
 		parent,
 		"tooltips_class32",

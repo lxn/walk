@@ -52,7 +52,7 @@ func NewDialog(owner RootWidget) (*Dialog, error) {
 		},
 	}
 
-	if err := initWidget(
+	if err := InitWidget(
 		dlg,
 		owner,
 		dialogWindowClass,

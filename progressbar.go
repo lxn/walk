@@ -13,7 +13,7 @@ type ProgressBar struct {
 func NewProgressBar(parent Container) (*ProgressBar, error) {
 	pb := &ProgressBar{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		pb,
 		parent,
 		"msctls_progress32",

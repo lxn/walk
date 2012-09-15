@@ -22,7 +22,7 @@ type LineEdit struct {
 func newLineEdit(parent Widget) (*LineEdit, error) {
 	le := &LineEdit{}
 
-	if err := initWidget(
+	if err := InitWidget(
 		le,
 		parent,
 		"EDIT",

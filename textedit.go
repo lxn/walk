@@ -15,7 +15,7 @@ type TextEdit struct {
 func NewTextEdit(parent Container) (*TextEdit, error) {
 	te := &TextEdit{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		te,
 		parent,
 		"EDIT",

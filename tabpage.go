@@ -23,7 +23,7 @@ type TabPage struct {
 func NewTabPage() (*TabPage, error) {
 	tp := &TabPage{}
 
-	if err := initWidget(
+	if err := InitWidget(
 		tp,
 		nil,
 		tabPageWindowClass,

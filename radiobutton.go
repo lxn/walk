@@ -13,7 +13,7 @@ type RadioButton struct {
 func NewRadioButton(parent Container) (*RadioButton, error) {
 	rb := &RadioButton{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		rb,
 		parent,
 		"BUTTON",

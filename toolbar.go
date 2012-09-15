@@ -23,7 +23,7 @@ func newToolBar(parent Container, style uint32) (*ToolBar, error) {
 	tb := &ToolBar{}
 	tb.actions = newActionList(tb)
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		tb,
 		parent,
 		"ToolbarWindow32",

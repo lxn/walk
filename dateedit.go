@@ -39,7 +39,7 @@ type DateEdit struct {
 func NewDateEdit(parent Container) (*DateEdit, error) {
 	de := &DateEdit{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		de,
 		parent,
 		"SysDateTimePick32",

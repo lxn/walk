@@ -15,7 +15,7 @@ type PushButton struct {
 func NewPushButton(parent Container) (*PushButton, error) {
 	pb := &PushButton{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		pb,
 		parent,
 		"BUTTON",

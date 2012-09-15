@@ -22,7 +22,7 @@ type MainWindow struct {
 func NewMainWindow() (*MainWindow, error) {
 	mw := &MainWindow{}
 
-	if err := initWidget(
+	if err := InitWidget(
 		mw,
 		nil,
 		mainWindowWindowClass,

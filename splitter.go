@@ -41,7 +41,7 @@ func NewSplitter(parent Container) (*Splitter, error) {
 	s.children = newWidgetList(s)
 	layout.container = s
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		s,
 		parent,
 		splitterWindowClass,

@@ -52,7 +52,7 @@ func NewWebView(parent Container) (*WebView, error) {
 		},
 	}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		wv,
 		parent,
 		webViewWindowClass,

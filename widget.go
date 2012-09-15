@@ -309,6 +309,12 @@ var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
 
 var registeredWindowClasses map[string]bool = make(map[string]bool)
 
+// MustRegisterWindowClass registers the specified window class.
+//
+// MustRegisterWindowClass must be called once for every widget type that is not
+// based on any system provided control, before calling InitChildWidget or
+// InitWidget. Calling MustRegisterWindowClass twice with the same className
+// results in a panic.
 func MustRegisterWindowClass(className string) {
 	if registeredWindowClasses[className] {
 		panic("window class already registered")
@@ -345,7 +351,11 @@ func MustRegisterWindowClass(className string) {
 	registeredWindowClasses[className] = true
 }
 
-func initWidget(widget, parent Widget, className string, style, exStyle uint32) error {
+// InitWidget initializes a widget.
+//
+// Most widgets have a parent and so are child widgets that should be
+// initialized using InitChildWidget instead.
+func InitWidget(widget, parent Widget, className string, style, exStyle uint32) error {
 	wb := widget.BaseWidget()
 	wb.widget = widget
 
@@ -399,12 +409,13 @@ func initWidget(widget, parent Widget, className string, style, exStyle uint32) 
 	return nil
 }
 
-func initChildWidget(widget, parent Widget, className string, style, exStyle uint32) error {
+// InitChildWidget initializes a child widget.
+func InitChildWidget(widget, parent Widget, className string, style, exStyle uint32) error {
 	if parent == nil {
 		return newError("parent cannot be nil")
 	}
 
-	if err := initWidget(widget, parent, className, style|WS_CHILD, exStyle); err != nil {
+	if err := InitWidget(widget, parent, className, style|WS_CHILD, exStyle); err != nil {
 		return err
 	}
 

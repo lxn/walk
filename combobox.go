@@ -29,7 +29,7 @@ type ComboBox struct {
 func NewComboBox(parent Container) (*ComboBox, error) {
 	cb := &ComboBox{prevCurIndex: -1, precision: 2}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		cb,
 		parent,
 		"COMBOBOX",

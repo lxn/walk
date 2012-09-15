@@ -13,7 +13,7 @@ type ToolButton struct {
 func NewToolButton(parent Container) (*ToolButton, error) {
 	tb := &ToolButton{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		tb,
 		parent,
 		"BUTTON",

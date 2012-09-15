@@ -31,7 +31,7 @@ type NumberEdit struct {
 func NewNumberEdit(parent Container) (*NumberEdit, error) {
 	ne := &NumberEdit{increment: 1}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		ne,
 		parent,
 		numberEditWindowClass,

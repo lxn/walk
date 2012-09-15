@@ -29,7 +29,7 @@ type ListBox struct {
 
 func NewListBox(parent Container) (*ListBox, error) {
 	lb := &ListBox{}
-	err := initChildWidget(
+	err := InitChildWidget(
 		lb,
 		parent,
 		"LISTBOX",

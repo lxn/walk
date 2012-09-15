@@ -13,7 +13,7 @@ type Label struct {
 func NewLabel(parent Container) (*Label, error) {
 	l := &Label{}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		l,
 		parent,
 		"STATIC",

@@ -65,7 +65,7 @@ func NewTableView(parent Container) (*TableView, error) {
 		selectedIndexes:       NewIndexList(nil),
 	}
 
-	if err := initChildWidget(
+	if err := InitChildWidget(
 		tv,
 		parent,
 		"SysListView32",
