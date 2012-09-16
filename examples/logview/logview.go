@@ -19,6 +19,10 @@ type LogView struct {
 	logChan chan string
 }
 
+const (
+    TEM_APPENDTEXT  = WM_USER + 6
+)
+
 func NewLogView(parent walk.Container) (*LogView, error) {
 	lc := make(chan string, 1024)
 	te := &LogView{logChan:lc}
