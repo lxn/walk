@@ -168,6 +168,9 @@ type Widget interface {
 	// usually a *MainWindow or *Dialog.
 	RootWidget() RootWidget
 
+	// SendMessage sends a message to the window and returns the result.
+	SendMessage(msg uint32, wParam, lParam uintptr) uintptr
+
 	// SetBackground sets the background Brush of the Widget.
 	SetBackground(value Brush)
 
@@ -512,6 +515,11 @@ func (wb *WidgetBase) ensureStyleBits(bits uint32, set bool) error {
 // Handle returns the window handle of the Widget.
 func (wb *WidgetBase) Handle() HWND {
 	return wb.hWnd
+}
+
+// SendMessage sends a message to the window and returns the result.
+func (wb *WidgetBase) SendMessage(msg uint32, wParam, lParam uintptr) uintptr {
+	return SendMessage(wb.hWnd, msg, wParam, lParam)
 }
 
 // Name returns the name of the *WidgetBase.
