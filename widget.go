@@ -438,6 +438,30 @@ func InitChildWidget(widget, parent Widget, className string, style, exStyle uin
 	return nil
 }
 
+// InitWrapperWidget initializes a widget that wraps (embeds) another widget.
+//
+// Calling this method is necessary, if you want to be able to override the
+// WndProc method of the embedded widget. The embedded widget should only be
+// used as inseparable part of the wrapper widget to avoid undefined behavior.
+func InitWrapperWidget(widget Widget) error {
+	wb := widget.BaseWidget()
+
+	wb.widget = widget
+
+	if wb.parent != nil {
+		children := wb.parent.Children().items
+
+		for i, w := range children {
+			if w.BaseWidget() == wb {
+				children[i] = widget
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 func rootWidget(w Widget) RootWidget {
 	if w == nil {
 		return nil
