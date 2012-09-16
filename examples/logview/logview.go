@@ -5,12 +5,12 @@ package main
 
 import (
 	"errors"
-	"unsafe"
 	"syscall"
+	"unsafe"
 )
 
-import . "github.com/lxn/go-winapi"
 import (
+	. "github.com/lxn/go-winapi"
 	"github.com/lxn/walk"
 )
 
@@ -20,71 +20,71 @@ type LogView struct {
 }
 
 const (
-    TEM_APPENDTEXT  = WM_USER + 6
+	TEM_APPENDTEXT = WM_USER + 6
 )
 
 func NewLogView(parent walk.Container) (*LogView, error) {
 	lc := make(chan string, 1024)
-	te := &LogView{logChan:lc}
+	lv := &LogView{logChan: lc}
 
 	if err := walk.InitChildWidget(
-		te,
+		lv,
 		parent,
 		"EDIT",
 		WS_TABSTOP|WS_VISIBLE|WS_VSCROLL|ES_MULTILINE|ES_WANTRETURN,
 		WS_EX_CLIENTEDGE); err != nil {
 		return nil, err
 	}
-	te.setReadOnly(true)
-	SendMessage(te.Handle(), EM_SETLIMITTEXT, 4294967295, 0)
-	return te, nil
+	lv.setReadOnly(true)
+	lv.SendMessage(EM_SETLIMITTEXT, 4294967295, 0)
+	return lv, nil
 }
 
 func (*LogView) LayoutFlags() walk.LayoutFlags {
 	return walk.ShrinkableHorz | walk.ShrinkableVert | walk.GrowableHorz | walk.GrowableVert | walk.GreedyHorz | walk.GreedyVert
 }
 
-func (te *LogView) MinSizeHint() walk.Size {
+func (*LogView) MinSizeHint() walk.Size {
 	return walk.Size{20, 12}
 }
 
-func (te *LogView) SizeHint() walk.Size {
+func (*LogView) SizeHint() walk.Size {
 	return walk.Size{100, 100}
 }
 
-func (te *LogView) setTextSelection(start, end int) {
-	SendMessage(te.Handle(), EM_SETSEL, uintptr(start), uintptr(end))
+func (lv *LogView) setTextSelection(start, end int) {
+	lv.SendMessage(EM_SETSEL, uintptr(start), uintptr(end))
 }
 
-func (te *LogView) textLength() int{
-	return int(SendMessage(te.Handle(), 0x000E, uintptr(0), uintptr(0)))
+func (lv *LogView) textLength() int {
+	return int(lv.SendMessage(0x000E, uintptr(0), uintptr(0)))
 }
 
-func (te *LogView) AppendText(value string) {
-	textLength := te.textLength()
-	te.setTextSelection(textLength, textLength)
-	SendMessage(te.Handle(), EM_REPLACESEL, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value))))
+func (lv *LogView) AppendText(value string) {
+	textLength := lv.textLength()
+	lv.setTextSelection(textLength, textLength)
+	lv.SendMessage(EM_REPLACESEL, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value))))
 }
 
-func (te *LogView) setReadOnly(readOnly bool) error {
-	if 0 == SendMessage(te.Handle(), EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
+func (lv *LogView) setReadOnly(readOnly bool) error {
+	if 0 == lv.SendMessage(EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
 		return errors.New("fail to call EM_SETREADONLY")
 	}
 
 	return nil
 }
 
-func (te *LogView) PostAppendText(value string){
-	te.logChan <- value
-	PostMessage(te.Handle(), TEM_APPENDTEXT, 0, 0)
+func (lv *LogView) PostAppendText(value string) {
+	lv.logChan <- value
+	PostMessage(lv.Handle(), TEM_APPENDTEXT, 0, 0)
 }
 
-func (te *LogView)  Write(p []byte)(int, error){
-	te.PostAppendText(string(p) + "\r\n")
+func (lv *LogView) Write(p []byte) (int, error) {
+	lv.PostAppendText(string(p) + "\r\n")
 	return len(p), nil
 }
 
-func (te *LogView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (lv *LogView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_GETDLGCODE:
 		if wParam == VK_RETURN {
@@ -94,12 +94,12 @@ func (te *LogView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 		return DLGC_HASSETSEL | DLGC_WANTARROWS | DLGC_WANTCHARS
 	case TEM_APPENDTEXT:
 		select {
-		case value := <- te.logChan:
-			te.AppendText(value)
+		case value := <-lv.logChan:
+			lv.AppendText(value)
 		default:
 			return 0
 		}
 	}
 
-	return te.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+	return lv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

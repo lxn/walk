@@ -83,9 +83,9 @@ func NewTableView(parent Container) (*TableView, error) {
 
 	tv.SetPersistent(true)
 
-	exStyle := SendMessage(tv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	exStyle := tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	exStyle |= LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT
-	SendMessage(tv.hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	tv.SendMessage(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 
 	if err := tv.setTheme("Explorer"); err != nil {
 		return nil, err
@@ -135,20 +135,20 @@ func (tv *TableView) SizeHint() Size {
 // ReorderColumnsEnabled returns if the user can reorder columns by dragging and
 // dropping column headers.
 func (tv *TableView) ReorderColumnsEnabled() bool {
-	exStyle := SendMessage(tv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	exStyle := tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	return exStyle&LVS_EX_HEADERDRAGDROP > 0
 }
 
 // SetReorderColumnsEnabled sets if the user can reorder columns by dragging and
 // dropping column headers.
 func (tv *TableView) SetReorderColumnsEnabled(enabled bool) {
-	exStyle := SendMessage(tv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	exStyle := tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	if enabled {
 		exStyle |= LVS_EX_HEADERDRAGDROP
 	} else {
 		exStyle &^= LVS_EX_HEADERDRAGDROP
 	}
-	SendMessage(tv.hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	tv.SendMessage(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 }
 
 // AlternatingRowBGColor returns the alternating row background color.
@@ -171,7 +171,7 @@ func (tv *TableView) attachModel() {
 	})
 
 	tv.rowChangedHandlerHandle = tv.model.RowChanged().Attach(func(row int) {
-		if FALSE == SendMessage(tv.hWnd, LVM_UPDATE, uintptr(row), 0) {
+		if FALSE == tv.SendMessage(LVM_UPDATE, uintptr(row), 0) {
 			newError("SendMessage(LVM_UPDATE)")
 		}
 	})
@@ -206,7 +206,7 @@ func (tv *TableView) SetModel(model TableModel) error {
 
 	if tv.model != nil {
 		for _ = range tv.columns {
-			if FALSE == SendMessage(tv.hWnd, LVM_DELETECOLUMN, 0, 0) {
+			if FALSE == tv.SendMessage(LVM_DELETECOLUMN, 0, 0) {
 				return newError("SendMessage(LVM_DELETECOLUMN)")
 			}
 		}
@@ -220,7 +220,7 @@ func (tv *TableView) SetModel(model TableModel) error {
 	tv.imageProvider, _ = model.(ImageProvider)
 
 	if tv.imageList != nil {
-		SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, 0)
+		tv.SendMessage(LVM_SETIMAGELIST, LVSIL_SMALL, 0)
 		tv.imageList.Dispose()
 		tv.imageList = nil
 	}
@@ -255,7 +255,7 @@ func (tv *TableView) SetModel(model TableModel) error {
 				lvc.Fmt = 1
 			}
 
-			j := SendMessage(tv.hWnd, LVM_INSERTCOLUMN, uintptr(i), uintptr(unsafe.Pointer(&lvc)))
+			j := tv.SendMessage(LVM_INSERTCOLUMN, uintptr(i), uintptr(unsafe.Pointer(&lvc)))
 			if int(j) == -1 {
 				return newError("TableView.SetModel: Failed to insert column.")
 			}
@@ -280,7 +280,7 @@ func (tv *TableView) setItemCount() error {
 		count = tv.model.RowCount()
 	}
 
-	if 0 == SendMessage(tv.hWnd, LVM_SETITEMCOUNT, uintptr(count), 0) {
+	if 0 == tv.SendMessage(LVM_SETITEMCOUNT, uintptr(count), 0) {
 		return newError("SendMessage(LVM_SETITEMCOUNT)")
 	}
 
@@ -289,12 +289,12 @@ func (tv *TableView) setItemCount() error {
 
 // CheckBoxes returns if the *TableView has check boxes.
 func (tv *TableView) CheckBoxes() bool {
-	return SendMessage(tv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)&LVS_EX_CHECKBOXES > 0
+	return tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)&LVS_EX_CHECKBOXES > 0
 }
 
 // SetCheckBoxes sets if the *TableView has check boxes.
 func (tv *TableView) SetCheckBoxes(value bool) {
-	exStyle := SendMessage(tv.hWnd, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	exStyle := tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	oldStyle := exStyle
 	if value {
 		exStyle |= LVS_EX_CHECKBOXES
@@ -302,10 +302,10 @@ func (tv *TableView) SetCheckBoxes(value bool) {
 		exStyle &^= LVS_EX_CHECKBOXES
 	}
 	if exStyle != oldStyle {
-		SendMessage(tv.hWnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+		tv.SendMessage(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 	}
 
-	mask := SendMessage(tv.hWnd, LVM_GETCALLBACKMASK, 0, 0)
+	mask := tv.SendMessage(LVM_GETCALLBACKMASK, 0, 0)
 
 	if value {
 		mask |= LVIS_STATEIMAGEMASK
@@ -313,21 +313,21 @@ func (tv *TableView) SetCheckBoxes(value bool) {
 		mask &^= LVIS_STATEIMAGEMASK
 	}
 
-	if FALSE == SendMessage(tv.hWnd, LVM_SETCALLBACKMASK, mask, 0) {
+	if FALSE == tv.SendMessage(LVM_SETCALLBACKMASK, mask, 0) {
 		newError("SendMessage(LVM_SETCALLBACKMASK)")
 	}
 }
 
 func (tv *TableView) selectedColumnIndex() int {
-	return int(SendMessage(tv.hWnd, LVM_GETSELECTEDCOLUMN, 0, 0))
+	return int(tv.SendMessage(LVM_GETSELECTEDCOLUMN, 0, 0))
 }
 
 func (tv *TableView) setSelectedColumnIndex(value int) {
-	SendMessage(tv.hWnd, LVM_SETSELECTEDCOLUMN, uintptr(value), 0)
+	tv.SendMessage(LVM_SETSELECTEDCOLUMN, uintptr(value), 0)
 }
 
 func (tv *TableView) setSortIcon(index int, order SortOrder) error {
-	headerHwnd := HWND(SendMessage(tv.hWnd, LVM_GETHEADER, 0, 0))
+	headerHwnd := HWND(tv.SendMessage(LVM_GETHEADER, 0, 0))
 
 	count := len(tv.model.Columns())
 
@@ -397,12 +397,12 @@ func (tv *TableView) SetCurrentIndex(value int) error {
 		lvi.State = LVIS_FOCUSED | LVIS_SELECTED
 	}
 
-	if FALSE == SendMessage(tv.hWnd, LVM_SETITEMSTATE, uintptr(value), uintptr(unsafe.Pointer(&lvi))) {
+	if FALSE == tv.SendMessage(LVM_SETITEMSTATE, uintptr(value), uintptr(unsafe.Pointer(&lvi))) {
 		return newError("SendMessage(LVM_SETITEMSTATE)")
 	}
 
 	if value != -1 {
-		if FALSE == SendMessage(tv.hWnd, LVM_ENSUREVISIBLE, uintptr(value), uintptr(0)) {
+		if FALSE == tv.SendMessage(LVM_ENSUREVISIBLE, uintptr(value), uintptr(0)) {
 			return newError("SendMessage(LVM_ENSUREVISIBLE)")
 		}
 	}
@@ -467,12 +467,12 @@ func (tv *TableView) SetItemStateChangedEventDelay(delay int) {
 }
 
 func (tv *TableView) updateSelectedIndexes() {
-	count := int(SendMessage(tv.hWnd, LVM_GETSELECTEDCOUNT, 0, 0))
+	count := int(tv.SendMessage(LVM_GETSELECTEDCOUNT, 0, 0))
 	indexes := make([]int, count)
 
 	j := -1
 	for i := 0; i < count; i++ {
-		j = int(SendMessage(tv.hWnd, LVM_GETNEXTITEM, uintptr(j), LVNI_SELECTED))
+		j = int(tv.SendMessage(LVM_GETNEXTITEM, uintptr(j), LVNI_SELECTED))
 		indexes[i] = j
 	}
 
@@ -541,7 +541,7 @@ func (tv *TableView) StretchLastColumn() error {
 		return nil
 	}
 
-	if 0 == SendMessage(tv.hWnd, LVM_SETCOLUMNWIDTH, uintptr(colCount-1), LVSCW_AUTOSIZE_USEHEADER) {
+	if 0 == tv.SendMessage(LVM_SETCOLUMNWIDTH, uintptr(colCount-1), LVSCW_AUTOSIZE_USEHEADER) {
 		return newError("LVM_SETCOLUMNWIDTH failed")
 	}
 
@@ -570,7 +570,7 @@ func (tv *TableView) SaveState() error {
 			buf.WriteString(" ")
 		}
 
-		width := SendMessage(tv.hWnd, LVM_GETCOLUMNWIDTH, uintptr(i), 0)
+		width := tv.SendMessage(LVM_GETCOLUMNWIDTH, uintptr(i), 0)
 		if width == 0 {
 			width = 100
 		}
@@ -583,7 +583,7 @@ func (tv *TableView) SaveState() error {
 	indices := make([]int32, count)
 	lParam := uintptr(unsafe.Pointer(&indices[0]))
 
-	SendMessage(tv.hWnd, LVM_GETCOLUMNORDERARRAY, uintptr(count), lParam)
+	tv.SendMessage(LVM_GETCOLUMNORDERARRAY, uintptr(count), lParam)
 
 	for i, idx := range indices {
 		if i > 0 {
@@ -625,7 +625,7 @@ func (tv *TableView) RestoreState() error {
 			return err
 		}
 
-		if FALSE == SendMessage(tv.hWnd, LVM_SETCOLUMNWIDTH, uintptr(i), uintptr(width)) {
+		if FALSE == tv.SendMessage(LVM_SETCOLUMNWIDTH, uintptr(i), uintptr(width)) {
 			return newError("LVM_SETCOLUMNWIDTH failed")
 		}
 	}
@@ -648,7 +648,7 @@ func (tv *TableView) RestoreState() error {
 		if !failed {
 			wParam := uintptr(len(indices))
 			lParam := uintptr(unsafe.Pointer(&indices[0]))
-			SendMessage(tv.hWnd, LVM_SETCOLUMNORDERARRAY, wParam, lParam)
+			tv.SendMessage(LVM_SETCOLUMNORDERARRAY, wParam, lParam)
 		}
 	}
 
@@ -675,7 +675,7 @@ func (tv *TableView) applyImageList(image interface{}) {
 	}
 
 	if himl != 0 {
-		SendMessage(tv.hWnd, LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(himl))
+		tv.SendMessage(LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(himl))
 
 		tv.hasAppliedImageList = true
 	}
@@ -741,7 +741,7 @@ func (tv *TableView) toggleItemChecked(index int) error {
 		return wrapError(err)
 	}
 
-	if FALSE == SendMessage(tv.hWnd, LVM_UPDATE, uintptr(index), 0) {
+	if FALSE == tv.SendMessage(LVM_UPDATE, uintptr(index), 0) {
 		return newError("SendMessage(LVM_UPDATE)")
 	}
 
@@ -768,7 +768,7 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 	case WM_LBUTTONDOWN, WM_RBUTTONDOWN, WM_LBUTTONDBLCLK, WM_RBUTTONDBLCLK:
 		var hti LVHITTESTINFO
 		hti.Pt = POINT{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)}
-		SendMessage(tv.hWnd, LVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
+		tv.SendMessage(LVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
 
 		if hti.Flags == LVHT_NOWHERE && tv.SingleItemSelection() {
 			// We keep the current item, if in single item selection mode. 

@@ -32,7 +32,7 @@ func (b *Button) SetText(value string) error {
 }
 
 func (b *Button) Checked() bool {
-	return SendMessage(b.hWnd, BM_GETCHECK, 0, 0) == BST_CHECKED
+	return b.SendMessage(BM_GETCHECK, 0, 0) == BST_CHECKED
 }
 
 func (b *Button) SetChecked(value bool) {
@@ -44,7 +44,7 @@ func (b *Button) SetChecked(value bool) {
 		chk = BST_UNCHECKED
 	}
 
-	SendMessage(b.hWnd, BM_SETCHECK, chk, 0)
+	b.SendMessage(BM_SETCHECK, chk, 0)
 }
 
 func (b *Button) Clicked() *Event {

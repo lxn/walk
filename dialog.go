@@ -66,7 +66,7 @@ func NewDialog(owner RootWidget) (*Dialog, error) {
 	dlg.children = newWidgetList(dlg)
 
 	// This forces display of focus rectangles, as soon as the user starts to type.
-	SendMessage(dlg.hWnd, WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
+	dlg.SendMessage(WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
 	dlg.result = DlgCmdClose
 

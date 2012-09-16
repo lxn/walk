@@ -85,7 +85,7 @@ func (cb *ComboBox) insertItemAt(index int) error {
 	str := cb.itemString(index)
 	lp := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(str)))
 
-	if CB_ERR == SendMessage(cb.hWnd, CB_INSERTSTRING, uintptr(index), lp) {
+	if CB_ERR == cb.SendMessage(CB_INSERTSTRING, uintptr(index), lp) {
 		return newError("SendMessage(CB_INSERTSTRING)")
 	}
 
@@ -96,7 +96,7 @@ func (cb *ComboBox) resetItems() error {
 	cb.SetSuspended(true)
 	defer cb.SetSuspended(false)
 
-	if FALSE == SendMessage(cb.hWnd, CB_RESETCONTENT, 0, 0) {
+	if FALSE == cb.SendMessage(CB_RESETCONTENT, 0, 0) {
 		return newError("SendMessage(CB_RESETCONTENT)")
 	}
 
@@ -126,7 +126,7 @@ func (cb *ComboBox) attachModel() {
 	cb.itemsResetHandlerHandle = cb.model.ItemsReset().Attach(itemsResetHandler)
 
 	itemChangedHandler := func(index int) {
-		if CB_ERR == SendMessage(cb.hWnd, CB_DELETESTRING, uintptr(index), 0) {
+		if CB_ERR == cb.SendMessage(CB_DELETESTRING, uintptr(index), 0) {
 			newError("SendMessage(CB_DELETESTRING)")
 		}
 
@@ -206,11 +206,11 @@ func (cb *ComboBox) calculateMaxItemTextWidth() int {
 }
 
 func (cb *ComboBox) CurrentIndex() int {
-	return int(SendMessage(cb.hWnd, CB_GETCURSEL, 0, 0))
+	return int(cb.SendMessage(CB_GETCURSEL, 0, 0))
 }
 
 func (cb *ComboBox) SetCurrentIndex(value int) error {
-	index := int(SendMessage(cb.hWnd, CB_SETCURSEL, uintptr(value), 0))
+	index := int(cb.SendMessage(CB_SETCURSEL, uintptr(value), 0))
 
 	if index != value {
 		return newError("invalid index")
@@ -237,12 +237,12 @@ func (cb *ComboBox) SetText(value string) error {
 }
 
 func (cb *ComboBox) TextSelection() (start, end int) {
-	SendMessage(cb.hWnd, CB_GETEDITSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
+	cb.SendMessage(CB_GETEDITSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
 	return
 }
 
 func (cb *ComboBox) SetTextSelection(start, end int) {
-	SendMessage(cb.hWnd, CB_SETEDITSEL, 0, uintptr(MAKELONG(uint16(start), uint16(end))))
+	cb.SendMessage(CB_SETEDITSEL, 0, uintptr(MAKELONG(uint16(start), uint16(end))))
 }
 
 func (cb *ComboBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {

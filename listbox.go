@@ -67,7 +67,7 @@ func (lb *ListBox) itemString(index int) string {
 func (lb *ListBox) insertItemAt(index int) error {
 	str := lb.itemString(index)
 	lp := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(str)))
-	ret := int(SendMessage(lb.hWnd, LB_INSERTSTRING, uintptr(index), lp))
+	ret := int(lb.SendMessage(LB_INSERTSTRING, uintptr(index), lp))
 	if ret == LB_ERRSPACE || ret == LB_ERR {
 		return newError("SendMessage(LB_INSERTSTRING)")
 	}
@@ -79,7 +79,7 @@ func (lb *ListBox) resetItems() error {
 	lb.SetSuspended(true)
 	defer lb.SetSuspended(false)
 
-	SendMessage(lb.hWnd, LB_RESETCONTENT, 0, 0)
+	lb.SendMessage(LB_RESETCONTENT, 0, 0)
 
 	lb.maxItemTextWidth = 0
 
@@ -107,7 +107,7 @@ func (lb *ListBox) attachModel() {
 	lb.itemsResetHandlerHandle = lb.model.ItemsReset().Attach(itemsResetHandler)
 
 	itemChangedHandler := func(index int) {
-		if CB_ERR == SendMessage(lb.hWnd, LB_DELETESTRING, uintptr(index), 0) {
+		if CB_ERR == lb.SendMessage(LB_DELETESTRING, uintptr(index), 0) {
 			newError("SendMessage(CB_DELETESTRING)")
 		}
 
@@ -209,14 +209,14 @@ func (lb *ListBox) SizeHint() Size {
 }
 
 func (lb *ListBox) CurrentIndex() int {
-	return int(SendMessage(lb.hWnd, LB_GETCURSEL, 0, 0))
+	return int(lb.SendMessage(LB_GETCURSEL, 0, 0))
 }
 
 func (lb *ListBox) SetCurrentIndex(value int) error {
 	if value < 0 {
 		return nil
 	}
-	ret := int(SendMessage(lb.hWnd, LB_SETCURSEL, uintptr(value), 0))
+	ret := int(lb.SendMessage(LB_SETCURSEL, uintptr(value), 0))
 	if ret == LB_ERR {
 		return newError("Invalid index or ensure lb is single-selection listbox")
 	}

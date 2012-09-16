@@ -48,12 +48,12 @@ func (te *TextEdit) SetText(value string) error {
 }
 
 func (te *TextEdit) TextSelection() (start, end int) {
-	SendMessage(te.hWnd, EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
+	te.SendMessage(EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
 	return
 }
 
 func (te *TextEdit) SetTextSelection(start, end int) {
-	SendMessage(te.hWnd, EM_SETSEL, uintptr(start), uintptr(end))
+	te.SendMessage(EM_SETSEL, uintptr(start), uintptr(end))
 }
 
 func (te *TextEdit) ReadOnly() bool {
@@ -61,7 +61,7 @@ func (te *TextEdit) ReadOnly() bool {
 }
 
 func (te *TextEdit) SetReadOnly(readOnly bool) error {
-	if 0 == SendMessage(te.hWnd, EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
+	if 0 == te.SendMessage(EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
 		return newError("SendMessage(EM_SETREADONLY)")
 	}
 

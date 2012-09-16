@@ -62,13 +62,13 @@ func (tt *ToolTip) Title() string {
 	gt.Cch = uint32(len(buf))
 	gt.PszTitle = &buf[0]
 
-	SendMessage(tt.hWnd, TTM_GETTITLE, 0, uintptr(unsafe.Pointer(&gt)))
+	tt.SendMessage(TTM_GETTITLE, 0, uintptr(unsafe.Pointer(&gt)))
 
 	return syscall.UTF16ToString(buf)
 }
 
 func (tt *ToolTip) SetTitle(value string) error {
-	if FALSE == SendMessage(tt.hWnd, TTM_SETTITLE, uintptr(TTI_INFO), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value)))) {
+	if FALSE == tt.SendMessage(TTM_SETTITLE, uintptr(TTI_INFO), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value)))) {
 		return newError("TTM_SETTITLE failed")
 	}
 
@@ -87,7 +87,7 @@ func (tt *ToolTip) AddWidget(widget Widget, text string) error {
 	ti.UId = uintptr(widget.BaseWidget().hWnd)
 	ti.LpszText = syscall.StringToUTF16Ptr(text)
 
-	if FALSE == SendMessage(tt.hWnd, TTM_ADDTOOL, 0, uintptr(unsafe.Pointer(&ti))) {
+	if FALSE == tt.SendMessage(TTM_ADDTOOL, 0, uintptr(unsafe.Pointer(&ti))) {
 		return newError("TTM_ADDTOOL failed")
 	}
 

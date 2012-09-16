@@ -57,7 +57,7 @@ func NewMainWindow() (*MainWindow, error) {
 	mw.clientComposite.SetName("clientComposite")
 
 	// This forces display of focus rectangles, as soon as the user starts to type.
-	SendMessage(mw.hWnd, WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
+	mw.SendMessage(WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
 	succeeded = true
 
@@ -122,7 +122,7 @@ func (mw *MainWindow) Show() {
 func (mw *MainWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
-		SendMessage(mw.toolBar.hWnd, TB_AUTOSIZE, 0, 0)
+		mw.toolBar.SendMessage(TB_AUTOSIZE, 0, 0)
 
 		mw.clientComposite.SetBounds(mw.ClientBounds())
 	}

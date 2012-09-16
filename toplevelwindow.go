@@ -144,8 +144,8 @@ func (tlw *TopLevelWindow) SetIcon(icon *Icon) {
 		hIcon = uintptr(icon.hIcon)
 	}
 
-	SendMessage(tlw.hWnd, WM_SETICON, 0, hIcon)
-	SendMessage(tlw.hWnd, WM_SETICON, 1, hIcon)
+	tlw.SendMessage(WM_SETICON, 0, hIcon)
+	tlw.SendMessage(WM_SETICON, 1, hIcon)
 }
 
 func (tlw *TopLevelWindow) Hide() {
@@ -163,7 +163,7 @@ func (tlw *TopLevelWindow) close() error {
 }
 
 func (tlw *TopLevelWindow) Close() error {
-	SendMessage(tlw.hWnd, WM_CLOSE, 0, 0)
+	tlw.SendMessage(WM_CLOSE, 0, 0)
 
 	return nil
 }

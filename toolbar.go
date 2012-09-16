@@ -71,7 +71,7 @@ func (tb *ToolBar) SizeHint() Size {
 		return Size{}
 	}
 
-	size := uint32(SendMessage(tb.hWnd, TB_GETBUTTONSIZE, 0, 0))
+	size := uint32(tb.SendMessage(TB_GETBUTTONSIZE, 0, 0))
 
 	width := tb.defaultButtonWidth
 	if width == 0 {
@@ -90,15 +90,15 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 
 	lParam := uintptr(
 		MAKELONG(uint16(tb.defaultButtonWidth), uint16(tb.defaultButtonWidth)))
-	if 0 == SendMessage(tb.hWnd, TB_SETBUTTONWIDTH, 0, lParam) {
+	if 0 == tb.SendMessage(TB_SETBUTTONWIDTH, 0, lParam) {
 		return newError("SendMessage(TB_SETBUTTONWIDTH)")
 	}
 
-	size := uint32(SendMessage(tb.hWnd, TB_GETBUTTONSIZE, 0, 0))
+	size := uint32(tb.SendMessage(TB_GETBUTTONSIZE, 0, 0))
 	height := HIWORD(size)
 
 	lParam = uintptr(MAKELONG(uint16(tb.defaultButtonWidth), height))
-	if FALSE == SendMessage(tb.hWnd, TB_SETBUTTONSIZE, 0, lParam) {
+	if FALSE == tb.SendMessage(TB_SETBUTTONSIZE, 0, lParam) {
 		return newError("SendMessage(TB_SETBUTTONSIZE)")
 	}
 
@@ -147,7 +147,7 @@ func (tb *ToolBar) MaxTextRows() int {
 }
 
 func (tb *ToolBar) SetMaxTextRows(maxTextRows int) error {
-	if 0 == SendMessage(tb.hWnd, TB_SETMAXTEXTROWS, uintptr(maxTextRows), 0) {
+	if 0 == tb.SendMessage(TB_SETMAXTEXTROWS, uintptr(maxTextRows), 0) {
 		return newError("SendMessage(TB_SETMAXTEXTROWS)")
 	}
 
@@ -171,7 +171,7 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 		hIml = value.hIml
 	}
 
-	SendMessage(tb.hWnd, TB_SETIMAGELIST, 0, uintptr(hIml))
+	tb.SendMessage(TB_SETIMAGELIST, 0, uintptr(hIml))
 
 	tb.imageList = value
 }
@@ -254,8 +254,7 @@ func (tb *ToolBar) onActionChanged(action *Action) error {
 		return err
 	}
 
-	if 0 == SendMessage(
-		tb.hWnd,
+	if 0 == tb.SendMessage(
 		TB_SETBUTTONINFO,
 		uintptr(action.id),
 		uintptr(unsafe.Pointer(&tbbi))) {
@@ -283,9 +282,9 @@ func (tb *ToolBar) onInsertingAction(index int, action *Action) error {
 
 	tb.SetVisible(true)
 
-	SendMessage(tb.hWnd, TB_BUTTONSTRUCTSIZE, uintptr(unsafe.Sizeof(tbb)), 0)
+	tb.SendMessage(TB_BUTTONSTRUCTSIZE, uintptr(unsafe.Sizeof(tbb)), 0)
 
-	if FALSE == SendMessage(tb.hWnd, TB_ADDBUTTONS, 1, uintptr(unsafe.Pointer(&tbb))) {
+	if FALSE == tb.SendMessage(TB_ADDBUTTONS, 1, uintptr(unsafe.Pointer(&tbb))) {
 		return newError("SendMessage(TB_ADDBUTTONS)")
 	}
 
@@ -293,7 +292,7 @@ func (tb *ToolBar) onInsertingAction(index int, action *Action) error {
 		return err
 	}
 
-	SendMessage(tb.hWnd, TB_AUTOSIZE, 0, 0)
+	tb.SendMessage(TB_AUTOSIZE, 0, 0)
 
 	action.addChangedHandler(tb)
 
@@ -304,7 +303,7 @@ func (tb *ToolBar) removeAt(index int) error {
 	action := tb.actions.At(index)
 	action.removeChangedHandler(tb)
 
-	if 0 == SendMessage(tb.hWnd, TB_DELETEBUTTON, uintptr(index), 0) {
+	if 0 == tb.SendMessage(TB_DELETEBUTTON, uintptr(index), 0) {
 		return newError("SendMessage(TB_DELETEBUTTON) failed")
 	}
 

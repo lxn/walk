@@ -38,21 +38,21 @@ func (pb *ProgressBar) SizeHint() Size {
 }
 
 func (pb *ProgressBar) MinValue() int {
-	return int(SendMessage(pb.hWnd, PBM_GETRANGE, 1, 0))
+	return int(pb.SendMessage(PBM_GETRANGE, 1, 0))
 }
 
 func (pb *ProgressBar) MaxValue() int {
-	return int(SendMessage(pb.hWnd, PBM_GETRANGE, 0, 0))
+	return int(pb.SendMessage(PBM_GETRANGE, 0, 0))
 }
 
 func (pb *ProgressBar) SetRange(min, max int) {
-	SendMessage(pb.hWnd, PBM_SETRANGE32, uintptr(min), uintptr(max))
+	pb.SendMessage(PBM_SETRANGE32, uintptr(min), uintptr(max))
 }
 
 func (pb *ProgressBar) Value() int {
-	return int(SendMessage(pb.hWnd, PBM_GETPOS, 0, 0))
+	return int(pb.SendMessage(PBM_GETPOS, 0, 0))
 }
 
 func (pb *ProgressBar) SetValue(value int) {
-	SendMessage(pb.hWnd, PBM_SETPOS, uintptr(value), 0)
+	pb.SendMessage(PBM_SETPOS, uintptr(value), 0)
 }

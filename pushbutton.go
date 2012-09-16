@@ -34,7 +34,7 @@ func (*PushButton) LayoutFlags() LayoutFlags {
 func (pb *PushButton) MinSizeHint() Size {
 	var s Size
 
-	SendMessage(pb.hWnd, BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
+	pb.SendMessage(BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
 
 	return maxSize(s, pb.dialogBaseUnitsToPixels(Size{50, 14}))
 }

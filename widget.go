@@ -672,7 +672,7 @@ func (wb *WidgetBase) SetSuspended(suspend bool) {
 		wParam = 1
 	}
 
-	SendMessage(wb.hWnd, WM_SETREDRAW, uintptr(wParam), 0)
+	wb.SendMessage(WM_SETREDRAW, uintptr(wParam), 0)
 
 	wb.suspended = suspend
 }
@@ -906,7 +906,7 @@ func (wb *WidgetBase) dialogBaseUnits() Size {
 	hdc := GetDC(wb.hWnd)
 	defer ReleaseDC(wb.hWnd, hdc)
 
-	hFont := widget.Font().handleForDPI(0) //HFONT(SendMessage(wb.hWnd, WM_GETFONT, 0, 0))
+	hFont := widget.Font().handleForDPI(0)
 	hFontOld := SelectObject(hdc, HGDIOBJ(hFont))
 	defer SelectObject(hdc, HGDIOBJ(hFontOld))
 

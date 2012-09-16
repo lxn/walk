@@ -171,7 +171,7 @@ func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, ite
 		tvins.HInsertAfter = items.At(index - 1).handle
 	}
 
-	item.handle = HTREEITEM(SendMessage(tv.hWnd, TVM_INSERTITEM, 0, uintptr(unsafe.Pointer(&tvins))))
+	item.handle = HTREEITEM(tv.SendMessage(TVM_INSERTITEM, 0, uintptr(unsafe.Pointer(&tvins))))
 	if item.handle == 0 {
 		err = newError("TVM_INSERTITEM failed")
 	} else {
@@ -191,7 +191,7 @@ func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, ite
 }
 
 func (tv *TreeView) onRemovingTreeViewItem(index int, item *TreeViewItem) (err error) {
-	if 0 == SendMessage(tv.hWnd, TVM_DELETEITEM, 0, uintptr(item.handle)) {
+	if 0 == tv.SendMessage(TVM_DELETEITEM, 0, uintptr(item.handle)) {
 		err = newError("SendMessage(TVM_DELETEITEM) failed")
 	}
 

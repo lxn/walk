@@ -63,7 +63,7 @@ func NewLineEdit(parent Container) (*LineEdit, error) {
 
 func (le *LineEdit) CueBanner() string {
 	buf := make([]uint16, 128)
-	if FALSE == SendMessage(le.hWnd, EM_GETCUEBANNER, uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf))) {
+	if FALSE == le.SendMessage(EM_GETCUEBANNER, uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf))) {
 		newError("EM_GETCUEBANNER failed")
 		return ""
 	}
@@ -72,7 +72,7 @@ func (le *LineEdit) CueBanner() string {
 }
 
 func (le *LineEdit) SetCueBanner(value string) error {
-	if FALSE == SendMessage(le.hWnd, EM_SETCUEBANNER, FALSE, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value)))) {
+	if FALSE == le.SendMessage(EM_SETCUEBANNER, FALSE, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value)))) {
 		return newError("EM_SETCUEBANNER failed")
 	}
 
@@ -80,11 +80,11 @@ func (le *LineEdit) SetCueBanner(value string) error {
 }
 
 func (le *LineEdit) MaxLength() int {
-	return int(SendMessage(le.hWnd, EM_GETLIMITTEXT, 0, 0))
+	return int(le.SendMessage(EM_GETLIMITTEXT, 0, 0))
 }
 
 func (le *LineEdit) SetMaxLength(value int) {
-	SendMessage(le.hWnd, EM_LIMITTEXT, uintptr(value), 0)
+	le.SendMessage(EM_LIMITTEXT, uintptr(value), 0)
 }
 
 func (le *LineEdit) Text() string {
@@ -96,20 +96,20 @@ func (le *LineEdit) SetText(value string) error {
 }
 
 func (le *LineEdit) TextSelection() (start, end int) {
-	SendMessage(le.hWnd, EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
+	le.SendMessage(EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
 	return
 }
 
 func (le *LineEdit) SetTextSelection(start, end int) {
-	SendMessage(le.hWnd, EM_SETSEL, uintptr(start), uintptr(end))
+	le.SendMessage(EM_SETSEL, uintptr(start), uintptr(end))
 }
 
 func (le *LineEdit) PasswordMode() bool {
-	return SendMessage(le.hWnd, EM_GETPASSWORDCHAR, 0, 0) != 0
+	return le.SendMessage(EM_GETPASSWORDCHAR, 0, 0) != 0
 }
 
 func (le *LineEdit) SetPasswordMode(value bool) {
-	SendMessage(le.hWnd, EM_SETPASSWORDCHAR, uintptr('*'), 0)
+	le.SendMessage(EM_SETPASSWORDCHAR, uintptr('*'), 0)
 }
 
 func (le *LineEdit) ReadOnly() bool {
@@ -117,7 +117,7 @@ func (le *LineEdit) ReadOnly() bool {
 }
 
 func (le *LineEdit) SetReadOnly(readOnly bool) error {
-	if 0 == SendMessage(le.hWnd, EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
+	if 0 == le.SendMessage(EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
 		return newError("SendMessage(EM_SETREADONLY)")
 	}
 

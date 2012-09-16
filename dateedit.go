@@ -66,7 +66,7 @@ func (de *DateEdit) SizeHint() Size {
 func (de *DateEdit) systemTime() (*SYSTEMTIME, error) {
 	var st SYSTEMTIME
 
-	switch SendMessage(de.hWnd, DTM_GETSYSTEMTIME, 0, uintptr(unsafe.Pointer(&st))) {
+	switch de.SendMessage(DTM_GETSYSTEMTIME, 0, uintptr(unsafe.Pointer(&st))) {
 	case GDT_VALID:
 		return &st, nil
 
@@ -86,7 +86,7 @@ func (de *DateEdit) setSystemTime(st *SYSTEMTIME) error {
 		wParam = GDT_NONE
 	}
 
-	if 0 == SendMessage(de.hWnd, DTM_SETSYSTEMTIME, wParam, uintptr(unsafe.Pointer(st))) {
+	if 0 == de.SendMessage(DTM_SETSYSTEMTIME, wParam, uintptr(unsafe.Pointer(st))) {
 		return newError("SendMessage(DTM_SETSYSTEMTIME)")
 	}
 
@@ -98,7 +98,7 @@ func (de *DateEdit) setSystemTime(st *SYSTEMTIME) error {
 func (de *DateEdit) Range() (min, max time.Time) {
 	var st [2]SYSTEMTIME
 
-	ret := SendMessage(de.hWnd, DTM_GETRANGE, 0, uintptr(unsafe.Pointer(&st[0])))
+	ret := de.SendMessage(DTM_GETRANGE, 0, uintptr(unsafe.Pointer(&st[0])))
 
 	if ret&GDTR_MIN > 0 {
 		min = systemTimeToTime(&st[0])
@@ -133,7 +133,7 @@ func (de *DateEdit) SetRange(min, max time.Time) error {
 		st[1] = *timeToSystemTime(max)
 	}
 
-	if 0 == SendMessage(de.hWnd, DTM_SETRANGE, wParam, uintptr(unsafe.Pointer(&st[0]))) {
+	if 0 == de.SendMessage(DTM_SETRANGE, wParam, uintptr(unsafe.Pointer(&st[0]))) {
 		return newError("SendMessage(DTM_SETRANGE)")
 	}
 
