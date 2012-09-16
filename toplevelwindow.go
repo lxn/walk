@@ -1,4 +1,4 @@
-// Copyright 2010 The Walk Authors. All rights reserved.
+// Copyright 2012 The Walk Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -26,9 +26,11 @@ var syncFuncs struct {
 }
 
 var syncMsgId uint32
+var taskbarButtonCreatedMsgId uint32
 
 func init() {
 	syncMsgId = RegisterWindowMessage(syscall.StringToUTF16Ptr("WalkSync"))
+	taskbarButtonCreatedMsgId = RegisterWindowMessage(syscall.StringToUTF16Ptr("TaskbarButtonCreated"))
 }
 
 func synchronize(f func()) {
@@ -57,6 +59,7 @@ type TopLevelWindow struct {
 	prevFocusHWnd     HWND
 	isInRestoreState  bool
 	startingPublisher EventPublisher
+	progressIndicator *ProgressIndicator
 	icon              *Icon
 }
 
@@ -233,6 +236,9 @@ func (tlw *TopLevelWindow) Closing() *CloseEvent {
 	return tlw.closingPublisher.Event()
 }
 
+func (tlw *TopLevelWindow) ProgressIndicator() *ProgressIndicator {
+	return tlw.progressIndicator
+}
 func (tlw *TopLevelWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ACTIVATE:
@@ -285,6 +291,15 @@ func (tlw *TopLevelWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 	case WM_SYSCOMMAND:
 		if wParam == SC_CLOSE {
 			tlw.closeReason = CloseReasonUser
+		}
+
+	case taskbarButtonCreatedMsgId:
+		version := GetVersion()
+		major := version & 0xFF
+		minor := version & 0xFF00 >> 8
+		// Check that the OS is Win 7 or later (Win 7 is v6.1).
+		if major > 6 || (major == 6 && minor > 0) {
+			tlw.progressIndicator, _ = newTaskbarList3(tlw.hWnd)
 		}
 	}
 
