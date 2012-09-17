@@ -249,7 +249,7 @@ func (cb *ComboBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 	switch msg {
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
-		case CBN_SELENDOK:
+		case CBN_SELENDCANCEL, CBN_SELENDOK:
 			if selIndex := cb.CurrentIndex(); selIndex != cb.prevCurIndex {
 				cb.currentIndexChangedPublisher.Publish()
 				cb.prevCurIndex = selIndex
