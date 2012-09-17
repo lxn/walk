@@ -23,11 +23,12 @@ type ComboBox struct {
 	itemChangedHandlerHandle     int
 	maxItemTextWidth             int
 	prevCurIndex                 int
+	selChangeIndex               int
 	currentIndexChangedPublisher EventPublisher
 }
 
 func NewComboBox(parent Container) (*ComboBox, error) {
-	cb := &ComboBox{prevCurIndex: -1, precision: 2}
+	cb := &ComboBox{prevCurIndex: -1, selChangeIndex: -1, precision: 2}
 
 	if err := InitChildWidget(
 		cb,
@@ -248,13 +249,28 @@ func (cb *ComboBox) SetTextSelection(start, end int) {
 func (cb *ComboBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_COMMAND:
-		switch HIWORD(uint32(wParam)) {
-		case CBN_SELENDCANCEL, CBN_SELENDOK:
-			if selIndex := cb.CurrentIndex(); selIndex != cb.prevCurIndex {
+		code := HIWORD(uint32(wParam))
+		selIndex := cb.CurrentIndex()
+
+		switch code {
+		case CBN_SELCHANGE:
+			cb.selChangeIndex = selIndex
+
+		case CBN_SELENDCANCEL:
+			if cb.selChangeIndex != -1 {
+				cb.SetCurrentIndex(cb.selChangeIndex)
+
+				cb.selChangeIndex = -1
+			}
+
+		case CBN_SELENDOK:
+			if selIndex != cb.prevCurIndex {
 				cb.currentIndexChangedPublisher.Publish()
 				cb.prevCurIndex = selIndex
 				return 0
 			}
+
+			cb.selChangeIndex = -1
 		}
 	}
 
