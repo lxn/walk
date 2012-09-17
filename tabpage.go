@@ -10,8 +10,12 @@ import . "github.com/lxn/go-winapi"
 
 const tabPageWindowClass = `\o/ Walk_TabPage_Class \o/`
 
+var tabPageBackgroundBrush Brush
+
 func init() {
 	MustRegisterWindowClass(tabPageWindowClass)
+
+	tabPageBackgroundBrush, _ = NewSystemColorBrush(COLOR_WINDOW)
 }
 
 type TabPage struct {
@@ -34,12 +38,7 @@ func NewTabPage() (*TabPage, error) {
 
 	tp.children = newWidgetList(tp)
 
-	b, err := NewSolidColorBrush(Color(GetSysColor(COLOR_WINDOW)))
-	if err != nil {
-		return nil, err
-	}
-
-	tp.SetBackground(b)
+	tp.SetBackground(tabPageBackgroundBrush)
 
 	return tp, nil
 }
