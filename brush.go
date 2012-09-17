@@ -60,6 +60,39 @@ func NullBrush() Brush {
 	return nullBrushSingleton
 }
 
+type SystemColorBrush struct {
+	hBrush     HBRUSH
+	colorIndex int
+}
+
+func NewSystemColorBrush(colorIndex int) (*SystemColorBrush, error) {
+	hBrush := GetSysColorBrush(colorIndex)
+	if hBrush == 0 {
+		return nil, newError("GetSysColorBrush failed")
+	}
+
+	return &SystemColorBrush{hBrush, colorIndex}, nil
+}
+
+func (b *SystemColorBrush) ColorIndex() int {
+	return b.colorIndex
+}
+
+func (b *SystemColorBrush) Dispose() {
+	// nop
+}
+
+func (b *SystemColorBrush) handle() HBRUSH {
+	return b.hBrush
+}
+
+func (b *SystemColorBrush) logbrush() *LOGBRUSH {
+	return &LOGBRUSH{
+		LbStyle: BS_SOLID,
+		LbColor: COLORREF(GetSysColor(b.colorIndex)),
+	}
+}
+
 type SolidColorBrush struct {
 	hBrush HBRUSH
 	color  Color
