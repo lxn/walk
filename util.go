@@ -86,6 +86,11 @@ func formatFloatString(s string, prec int) (string, error) {
 		0)
 
 	if bufSize == 0 {
+		switch s {
+		case "NaN", "-Inf", "+Inf":
+			return s, nil
+		}
+
 		return "", lastError("GetNumberFormat")
 	}
 
