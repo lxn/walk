@@ -67,6 +67,14 @@ func (te *TextEdit) ReplaceSelectedText(text string, canUndo bool) {
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))))
 }
 
+func (te *TextEdit) AppendText(value string) {
+	s, e := te.TextSelection()
+	l := te.TextLength()
+	te.SetTextSelection(l, l)
+	te.ReplaceSelectedText(value, false)
+	te.SetTextSelection(s, e)
+}
+
 func (te *TextEdit) ReadOnly() bool {
 	return te.hasStyleBits(ES_READONLY)
 }
