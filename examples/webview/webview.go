@@ -8,34 +8,26 @@ import (
 	"github.com/lxn/walk"
 )
 
-type MainWindow struct {
-	*walk.MainWindow
-	urlLineEdit *walk.LineEdit
-	webView     *walk.WebView
-}
-
 func main() {
 	walk.Initialize(walk.InitParams{PanicOnError: true})
 	defer walk.Shutdown()
 
-	mainWnd, _ := walk.NewMainWindow()
-
-	mw := &MainWindow{MainWindow: mainWnd}
+	mw, _ := walk.NewMainWindow()
 	mw.SetTitle("Walk WebView Example")
 	mw.SetLayout(walk.NewVBoxLayout())
-
-	mw.urlLineEdit, _ = walk.NewLineEdit(mw)
-	mw.urlLineEdit.ReturnPressed().Attach(func() {
-		mw.webView.SetURL(mw.urlLineEdit.Text())
-	})
-
-	mw.webView, _ = walk.NewWebView(mw)
-
-	mw.webView.SetURL("http://golang.org")
-
 	mw.SetMinMaxSize(walk.Size{600, 400}, walk.Size{})
 	mw.SetSize(walk.Size{800, 600})
-	mw.Show()
 
+	var webView *walk.WebView
+
+	urlLineEdit, _ := walk.NewLineEdit(mw)
+	urlLineEdit.ReturnPressed().Attach(func() {
+		webView.SetURL(urlLineEdit.Text())
+	})
+
+	webView, _ = walk.NewWebView(mw)
+	webView.SetURL("http://golang.org")
+
+	mw.Show()
 	mw.Run()
 }
