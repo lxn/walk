@@ -7,6 +7,7 @@ package walk
 import "unsafe"
 
 import . "github.com/lxn/go-winapi"
+import "syscall"
 
 type TextEdit struct {
 	WidgetBase
@@ -43,6 +44,10 @@ func (te *TextEdit) Text() string {
 	return widgetText(te.hWnd)
 }
 
+func (te *TextEdit) TextLength() int {
+	return int(SendMessage(te.hWnd, WM_GETTEXTLENGTH, 0, 0))
+}
+
 func (te *TextEdit) SetText(value string) error {
 	return setWidgetText(te.hWnd, value)
 }
@@ -54,6 +59,20 @@ func (te *TextEdit) TextSelection() (start, end int) {
 
 func (te *TextEdit) SetTextSelection(start, end int) {
 	te.SendMessage(EM_SETSEL, uintptr(start), uintptr(end))
+}
+
+func (te *TextEdit) ReplaceSelectedText(text string, canUndo bool) {
+	te.SendMessage(EM_REPLACESEL,
+		uintptr(BoolToBOOL(canUndo)),
+		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))))
+}
+
+func (te *TextEdit) AppendText(value string) {
+	s, e := te.TextSelection()
+	l := te.TextLength()
+	te.SetTextSelection(l, l)
+	te.ReplaceSelectedText(value, false)
+	te.SetTextSelection(s, e)
 }
 
 func (te *TextEdit) ReadOnly() bool {
