@@ -70,6 +70,8 @@ func (l *BoxLayout) SetMargins(value Margins) error {
 
 	l.margins = value
 
+	l.Update(false)
+
 	return nil
 }
 
@@ -296,7 +298,7 @@ func (l *BoxLayout) MinSize() Size {
 
 func (l *BoxLayout) Update(reset bool) error {
 	if l.container == nil {
-		return newError("container required")
+		return nil
 	}
 
 	if reset {
