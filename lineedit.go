@@ -11,12 +11,19 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
+const (
+	lineEditMinChars    = 10 // number of characters needed to make a LineEdit usable
+	lineEditGreedyLimit = 80 // fields with MaxLength larger than this will be greedy (default length is 32767)
+)
+
 type LineEdit struct {
 	WidgetBase
 	validator                Validator
 	editingFinishedPublisher EventPublisher
 	returnPressedPublisher   EventPublisher
 	textChanged              EventPublisher
+	charWidthFont            *Font
+	charWidth                int
 }
 
 func newLineEdit(parent Widget) (*LineEdit, error) {
@@ -132,16 +139,59 @@ func (le *LineEdit) SetValidator(validator Validator) {
 	le.validator = validator
 }
 
-func (*LineEdit) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | GrowableHorz | GreedyHorz
+func (le *LineEdit) LayoutFlags() (lf LayoutFlags) {
+	lf = ShrinkableHorz | GrowableHorz
+	if le.MaxLength() > lineEditGreedyLimit {
+		lf |= GreedyHorz
+	}
+	return
 }
 
 func (le *LineEdit) MinSizeHint() Size {
-	return le.dialogBaseUnitsToPixels(Size{20, 12})
+	return le.sizeHintForLimit(lineEditMinChars)
 }
 
-func (le *LineEdit) SizeHint() Size {
-	return le.dialogBaseUnitsToPixels(Size{50, 12})
+func (le *LineEdit) SizeHint() (size Size) {
+	return le.sizeHintForLimit(lineEditGreedyLimit)
+}
+
+func (le *LineEdit) sizeHintForLimit(limit int) (size Size) {
+	size = le.dialogBaseUnitsToPixels(Size{50, 12})
+	le.initCharWidth()
+	n := le.MaxLength()
+	if n > limit {
+		n = limit
+	}
+	size.Width = le.charWidth * (n + 1)
+	return
+}
+
+func (le *LineEdit) initCharWidth() {
+
+	font := le.Font()
+	if font == le.charWidthFont {
+		return
+	}
+	le.charWidthFont = font
+	le.charWidth = 8
+
+	hdc := GetDC(le.hWnd)
+	if hdc == 0 {
+		newError("GetDC failed")
+		return
+	}
+	defer ReleaseDC(le.hWnd, hdc)
+
+	defer SelectObject(hdc, SelectObject(hdc, HGDIOBJ(font.handleForDPI(0))))
+
+	buf := []uint16{'M'}
+
+	var s SIZE
+	if !GetTextExtentPoint32(hdc, &buf[0], int32(len(buf)), &s) {
+		newError("GetTextExtentPoint32 failed")
+		return
+	}
+	le.charWidth = int(s.CX)
 }
 
 func (le *LineEdit) EditingFinished() *Event {
