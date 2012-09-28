@@ -34,16 +34,11 @@ func (l Label) Create(parent walk.Container) (walk.Widget, error) {
 		}
 	}()
 
-	w.SetName(l.Name)
-
-	f, err := l.Font.Create()
-	if err != nil {
+	if err := initWidget(l, w); err != nil {
 		return nil, err
 	}
 
-	if f != nil {
-		w.SetFont(f)
-	}
+	w.SetName(l.Name)
 
 	if err := w.SetText(l.Text); err != nil {
 		return nil, err
@@ -56,4 +51,8 @@ func (l Label) Create(parent walk.Container) (walk.Widget, error) {
 	succeeded = true
 
 	return w, nil
+}
+
+func (l Label) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
+	return l.HStretch, l.VStretch, l.Row, l.RowSpan, l.Column, l.ColumnSpan
 }

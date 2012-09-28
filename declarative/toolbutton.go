@@ -35,16 +35,11 @@ func (tb ToolButton) Create(parent walk.Container) (walk.Widget, error) {
 		}
 	}()
 
-	w.SetName(tb.Name)
-
-	f, err := tb.Font.Create()
-	if err != nil {
+	if err := initWidget(tb, w); err != nil {
 		return nil, err
 	}
 
-	if f != nil {
-		w.SetFont(f)
-	}
+	w.SetName(tb.Name)
 
 	if err := w.SetText(tb.Text); err != nil {
 		return nil, err
@@ -61,4 +56,8 @@ func (tb ToolButton) Create(parent walk.Container) (walk.Widget, error) {
 	succeeded = true
 
 	return w, nil
+}
+
+func (tb ToolButton) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
+	return tb.HStretch, tb.VStretch, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan
 }

@@ -19,12 +19,27 @@ type HSpacer struct {
 	Size       int
 }
 
-func (hs HSpacer) Create(parent walk.Container) (walk.Widget, error) {
+func (hs HSpacer) Create(parent walk.Container) (widget walk.Widget, err error) {
+	var w *walk.Spacer
 	if hs.Size > 0 {
-		return walk.NewHSpacerFixed(parent, hs.Size)
+		if w, err = walk.NewHSpacerFixed(parent, hs.Size); err != nil {
+			return
+		}
+	} else {
+		if w, err = walk.NewHSpacer(parent); err != nil {
+			return
+		}
 	}
 
-	return walk.NewHSpacer(parent)
+	if err = initWidget(hs, w); err != nil {
+		return
+	}
+
+	return w, nil
+}
+
+func (hs HSpacer) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
+	return hs.HStretch, hs.VStretch, hs.Row, hs.RowSpan, hs.Column, hs.ColumnSpan
 }
 
 type VSpacer struct {
@@ -38,10 +53,25 @@ type VSpacer struct {
 	Size       int
 }
 
-func (vs VSpacer) Create(parent walk.Container) (walk.Widget, error) {
+func (vs VSpacer) Create(parent walk.Container) (widget walk.Widget, err error) {
+	var w *walk.Spacer
 	if vs.Size > 0 {
-		return walk.NewVSpacerFixed(parent, vs.Size)
+		if w, err = walk.NewVSpacerFixed(parent, vs.Size); err != nil {
+			return
+		}
+	} else {
+		if w, err = walk.NewVSpacer(parent); err != nil {
+			return
+		}
 	}
 
-	return walk.NewVSpacer(parent)
+	if err = initWidget(vs, w); err != nil {
+		return
+	}
+
+	return w, nil
+}
+
+func (vs VSpacer) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
+	return vs.HStretch, vs.VStretch, vs.Row, vs.RowSpan, vs.Column, vs.ColumnSpan
 }

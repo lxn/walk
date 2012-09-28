@@ -32,6 +32,10 @@ func (pb ProgressBar) Create(parent walk.Container) (walk.Widget, error) {
 		}
 	}()
 
+	if err := initWidget(pb, w); err != nil {
+		return nil, err
+	}
+
 	w.SetName(pb.Name)
 
 	if pb.Widget != nil {
@@ -41,4 +45,8 @@ func (pb ProgressBar) Create(parent walk.Container) (walk.Widget, error) {
 	succeeded = true
 
 	return w, nil
+}
+
+func (pb ProgressBar) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
+	return pb.HStretch, pb.VStretch, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
 }

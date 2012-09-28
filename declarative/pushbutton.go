@@ -35,16 +35,11 @@ func (pb PushButton) Create(parent walk.Container) (walk.Widget, error) {
 		}
 	}()
 
-	w.SetName(pb.Name)
-
-	f, err := pb.Font.Create()
-	if err != nil {
+	if err := initWidget(pb, w); err != nil {
 		return nil, err
 	}
 
-	if f != nil {
-		w.SetFont(f)
-	}
+	w.SetName(pb.Name)
 
 	if err := w.SetText(pb.Text); err != nil {
 		return nil, err
@@ -61,4 +56,8 @@ func (pb PushButton) Create(parent walk.Container) (walk.Widget, error) {
 	succeeded = true
 
 	return w, nil
+}
+
+func (pb PushButton) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
+	return pb.HStretch, pb.VStretch, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
 }

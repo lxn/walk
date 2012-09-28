@@ -30,22 +30,13 @@ func (mw MainWindow) Create(parent walk.Container) (walk.Widget, error) {
 		}
 	}()
 
+	if err := initWidget(mw, w); err != nil {
+		return nil, err
+	}
+
 	w.SetName(mw.Name)
 
-	f, err := mw.Font.Create()
-	if err != nil {
-		return nil, err
-	}
-
-	if f != nil {
-		w.SetFont(f)
-	}
-
 	if err := w.SetTitle(mw.Title); err != nil {
-		return nil, err
-	}
-
-	if err := initWidget(mw, w); err != nil {
 		return nil, err
 	}
 
@@ -56,6 +47,10 @@ func (mw MainWindow) Create(parent walk.Container) (walk.Widget, error) {
 	succeeded = true
 
 	return w, nil
+}
+
+func (mw MainWindow) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
+	return 0, 0, 0, 0, 0, 0
 }
 
 func (mw MainWindow) Layout_() Layout {

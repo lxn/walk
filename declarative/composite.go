@@ -34,11 +34,11 @@ func (c Composite) Create(parent walk.Container) (walk.Widget, error) {
 		}
 	}()
 
-	w.SetName(c.Name)
-
 	if err := initWidget(c, w); err != nil {
 		return nil, err
 	}
+
+	w.SetName(c.Name)
 
 	if c.Widget != nil {
 		*c.Widget = w
@@ -47,6 +47,10 @@ func (c Composite) Create(parent walk.Container) (walk.Widget, error) {
 	succeeded = true
 
 	return w, nil
+}
+
+func (c Composite) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
+	return c.HStretch, c.VStretch, c.Row, c.RowSpan, c.Column, c.ColumnSpan
 }
 
 func (c Composite) Layout_() Layout {

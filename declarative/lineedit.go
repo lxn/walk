@@ -36,23 +36,17 @@ func (le LineEdit) Create(parent walk.Container) (walk.Widget, error) {
 		}
 	}()
 
-	w.SetName(le.Name)
-
-	f, err := le.Font.Create()
-	if err != nil {
+	if err := initWidget(le, w); err != nil {
 		return nil, err
 	}
 
-	if f != nil {
-		w.SetFont(f)
-	}
+	w.SetName(le.Name)
 
 	if err := w.SetText(le.Text); err != nil {
 		return nil, err
 	}
 
 	w.SetReadOnly(le.ReadOnly)
-
 	w.SetMaxLength(le.MaxLength)
 
 	if le.Widget != nil {
@@ -62,4 +56,8 @@ func (le LineEdit) Create(parent walk.Container) (walk.Widget, error) {
 	succeeded = true
 
 	return w, nil
+}
+
+func (le LineEdit) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
+	return le.HStretch, le.VStretch, le.Row, le.RowSpan, le.Column, le.ColumnSpan
 }

@@ -35,16 +35,11 @@ func (te TextEdit) Create(parent walk.Container) (walk.Widget, error) {
 		}
 	}()
 
-	w.SetName(te.Name)
-
-	f, err := te.Font.Create()
-	if err != nil {
+	if err := initWidget(te, w); err != nil {
 		return nil, err
 	}
 
-	if f != nil {
-		w.SetFont(f)
-	}
+	w.SetName(te.Name)
 
 	if err := w.SetText(te.Text); err != nil {
 		return nil, err
@@ -59,4 +54,8 @@ func (te TextEdit) Create(parent walk.Container) (walk.Widget, error) {
 	succeeded = true
 
 	return w, nil
+}
+
+func (te TextEdit) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
+	return te.HStretch, te.VStretch, te.Row, te.RowSpan, te.Column, te.ColumnSpan
 }
