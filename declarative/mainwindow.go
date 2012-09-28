@@ -45,21 +45,8 @@ func (mw MainWindow) Create(parent walk.Container) (walk.Widget, error) {
 		return nil, err
 	}
 
-	if mw.Layout != nil {
-		l, err := mw.Layout.Create()
-		if err != nil {
-			return nil, err
-		}
-
-		if err := w.SetLayout(l); err != nil {
-			return nil, err
-		}
-	}
-
-	for _, child := range mw.Children {
-		if _, err := child.Create(w); err != nil {
-			return nil, err
-		}
+	if err := initWidget(mw, w); err != nil {
+		return nil, err
 	}
 
 	if mw.Widget != nil {
@@ -69,4 +56,12 @@ func (mw MainWindow) Create(parent walk.Container) (walk.Widget, error) {
 	succeeded = true
 
 	return w, nil
+}
+
+func (mw MainWindow) Layout_() Layout {
+	return mw.Layout
+}
+
+func (mw MainWindow) Children_() []Widget {
+	return mw.Children
 }

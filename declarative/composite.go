@@ -36,21 +36,8 @@ func (c Composite) Create(parent walk.Container) (walk.Widget, error) {
 
 	w.SetName(c.Name)
 
-	if c.Layout != nil {
-		l, err := c.Layout.Create()
-		if err != nil {
-			return nil, err
-		}
-
-		if err := w.SetLayout(l); err != nil {
-			return nil, err
-		}
-	}
-
-	for _, child := range c.Children {
-		if _, err := child.Create(w); err != nil {
-			return nil, err
-		}
+	if err := initWidget(c, w); err != nil {
+		return nil, err
 	}
 
 	if c.Widget != nil {
@@ -60,4 +47,12 @@ func (c Composite) Create(parent walk.Container) (walk.Widget, error) {
 	succeeded = true
 
 	return w, nil
+}
+
+func (c Composite) Layout_() Layout {
+	return c.Layout
+}
+
+func (c Composite) Children_() []Widget {
+	return c.Children
 }

@@ -15,3 +15,8 @@ type Widget interface {
 type Layout interface {
 	Create() (walk.Layout, error)
 }
+
+type Container interface {
+	Layout_() Layout
+	Children_() []Widget
+}
