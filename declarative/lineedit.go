@@ -22,10 +22,10 @@ type LineEdit struct {
 	MaxLength     int
 }
 
-func (le LineEdit) Create(parent walk.Container) (walk.Widget, error) {
+func (le LineEdit) Create(parent walk.Container) error {
 	w, err := walk.NewLineEdit(parent)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var succeeded bool
@@ -36,13 +36,13 @@ func (le LineEdit) Create(parent walk.Container) (walk.Widget, error) {
 	}()
 
 	if err := initWidget(le, w); err != nil {
-		return nil, err
+		return err
 	}
 
 	w.SetName(le.Name)
 
 	if err := w.SetText(le.Text); err != nil {
-		return nil, err
+		return err
 	}
 
 	w.SetReadOnly(le.ReadOnly)
@@ -54,7 +54,7 @@ func (le LineEdit) Create(parent walk.Container) (walk.Widget, error) {
 
 	succeeded = true
 
-	return w, nil
+	return nil
 }
 
 func (le LineEdit) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

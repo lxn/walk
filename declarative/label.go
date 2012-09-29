@@ -20,10 +20,10 @@ type Label struct {
 	Text          string
 }
 
-func (l Label) Create(parent walk.Container) (walk.Widget, error) {
+func (l Label) Create(parent walk.Container) error {
 	w, err := walk.NewLabel(parent)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var succeeded bool
@@ -34,13 +34,13 @@ func (l Label) Create(parent walk.Container) (walk.Widget, error) {
 	}()
 
 	if err := initWidget(l, w); err != nil {
-		return nil, err
+		return err
 	}
 
 	w.SetName(l.Name)
 
 	if err := w.SetText(l.Text); err != nil {
-		return nil, err
+		return err
 	}
 
 	if l.Widget != nil {
@@ -49,7 +49,7 @@ func (l Label) Create(parent walk.Container) (walk.Widget, error) {
 
 	succeeded = true
 
-	return w, nil
+	return nil
 }
 
 func (l Label) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

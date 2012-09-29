@@ -21,10 +21,10 @@ type TextEdit struct {
 	ReadOnly      bool
 }
 
-func (te TextEdit) Create(parent walk.Container) (walk.Widget, error) {
+func (te TextEdit) Create(parent walk.Container) error {
 	w, err := walk.NewTextEdit(parent)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var succeeded bool
@@ -35,13 +35,13 @@ func (te TextEdit) Create(parent walk.Container) (walk.Widget, error) {
 	}()
 
 	if err := initWidget(te, w); err != nil {
-		return nil, err
+		return err
 	}
 
 	w.SetName(te.Name)
 
 	if err := w.SetText(te.Text); err != nil {
-		return nil, err
+		return err
 	}
 
 	w.SetReadOnly(te.ReadOnly)
@@ -52,7 +52,7 @@ func (te TextEdit) Create(parent walk.Container) (walk.Widget, error) {
 
 	succeeded = true
 
-	return w, nil
+	return nil
 }
 
 func (te TextEdit) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

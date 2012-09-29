@@ -17,10 +17,10 @@ type MainWindow struct {
 	Children []Widget
 }
 
-func (mw MainWindow) Create(parent walk.Container) (walk.Widget, error) {
+func (mw MainWindow) Create(parent walk.Container) error {
 	w, err := walk.NewMainWindow()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var succeeded bool
@@ -31,13 +31,13 @@ func (mw MainWindow) Create(parent walk.Container) (walk.Widget, error) {
 	}()
 
 	if err := initWidget(mw, w); err != nil {
-		return nil, err
+		return err
 	}
 
 	w.SetName(mw.Name)
 
 	if err := w.SetTitle(mw.Title); err != nil {
-		return nil, err
+		return err
 	}
 
 	if mw.Widget != nil {
@@ -46,7 +46,7 @@ func (mw MainWindow) Create(parent walk.Container) (walk.Widget, error) {
 
 	succeeded = true
 
-	return w, nil
+	return nil
 }
 
 func (mw MainWindow) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

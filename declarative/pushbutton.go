@@ -21,10 +21,10 @@ type PushButton struct {
 	OnClicked     walk.EventHandler
 }
 
-func (pb PushButton) Create(parent walk.Container) (walk.Widget, error) {
+func (pb PushButton) Create(parent walk.Container) error {
 	w, err := walk.NewPushButton(parent)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var succeeded bool
@@ -35,13 +35,13 @@ func (pb PushButton) Create(parent walk.Container) (walk.Widget, error) {
 	}()
 
 	if err := initWidget(pb, w); err != nil {
-		return nil, err
+		return err
 	}
 
 	w.SetName(pb.Name)
 
 	if err := w.SetText(pb.Text); err != nil {
-		return nil, err
+		return err
 	}
 
 	if pb.OnClicked != nil {
@@ -54,7 +54,7 @@ func (pb PushButton) Create(parent walk.Container) (walk.Widget, error) {
 
 	succeeded = true
 
-	return w, nil
+	return nil
 }
 
 func (pb PushButton) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

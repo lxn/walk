@@ -21,10 +21,10 @@ type ToolButton struct {
 	OnClicked     walk.EventHandler
 }
 
-func (tb ToolButton) Create(parent walk.Container) (walk.Widget, error) {
+func (tb ToolButton) Create(parent walk.Container) error {
 	w, err := walk.NewToolButton(parent)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var succeeded bool
@@ -35,13 +35,13 @@ func (tb ToolButton) Create(parent walk.Container) (walk.Widget, error) {
 	}()
 
 	if err := initWidget(tb, w); err != nil {
-		return nil, err
+		return err
 	}
 
 	w.SetName(tb.Name)
 
 	if err := w.SetText(tb.Text); err != nil {
-		return nil, err
+		return err
 	}
 
 	if tb.OnClicked != nil {
@@ -54,7 +54,7 @@ func (tb ToolButton) Create(parent walk.Container) (walk.Widget, error) {
 
 	succeeded = true
 
-	return w, nil
+	return nil
 }
 
 func (tb ToolButton) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

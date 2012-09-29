@@ -63,7 +63,7 @@ func initWidget(d Widget, w walk.Widget) error {
 			}
 
 			for _, child := range dc.Children_() {
-				if _, err := child.Create(wc); err != nil {
+				if err := child.Create(wc); err != nil {
 					return err
 				}
 			}

@@ -20,10 +20,10 @@ type Composite struct {
 	Children      []Widget
 }
 
-func (c Composite) Create(parent walk.Container) (walk.Widget, error) {
+func (c Composite) Create(parent walk.Container) error {
 	w, err := walk.NewComposite(parent)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var succeeded bool
@@ -34,7 +34,7 @@ func (c Composite) Create(parent walk.Container) (walk.Widget, error) {
 	}()
 
 	if err := initWidget(c, w); err != nil {
-		return nil, err
+		return err
 	}
 
 	w.SetName(c.Name)
@@ -45,7 +45,7 @@ func (c Composite) Create(parent walk.Container) (walk.Widget, error) {
 
 	succeeded = true
 
-	return w, nil
+	return nil
 }
 
 func (c Composite) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

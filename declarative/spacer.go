@@ -18,7 +18,7 @@ type HSpacer struct {
 	Size          int
 }
 
-func (hs HSpacer) Create(parent walk.Container) (widget walk.Widget, err error) {
+func (hs HSpacer) Create(parent walk.Container) (err error) {
 	var w *walk.Spacer
 	if hs.Size > 0 {
 		if w, err = walk.NewHSpacerFixed(parent, hs.Size); err != nil {
@@ -34,7 +34,7 @@ func (hs HSpacer) Create(parent walk.Container) (widget walk.Widget, err error) 
 		return
 	}
 
-	return w, nil
+	return
 }
 
 func (hs HSpacer) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
@@ -51,7 +51,7 @@ type VSpacer struct {
 	Size          int
 }
 
-func (vs VSpacer) Create(parent walk.Container) (widget walk.Widget, err error) {
+func (vs VSpacer) Create(parent walk.Container) (err error) {
 	var w *walk.Spacer
 	if vs.Size > 0 {
 		if w, err = walk.NewVSpacerFixed(parent, vs.Size); err != nil {
@@ -67,7 +67,7 @@ func (vs VSpacer) Create(parent walk.Container) (widget walk.Widget, err error) 
 		return
 	}
 
-	return w, nil
+	return
 }
 
 func (vs VSpacer) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

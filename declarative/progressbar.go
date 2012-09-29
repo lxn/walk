@@ -18,10 +18,10 @@ type ProgressBar struct {
 	ColumnSpan    int
 }
 
-func (pb ProgressBar) Create(parent walk.Container) (walk.Widget, error) {
+func (pb ProgressBar) Create(parent walk.Container) error {
 	w, err := walk.NewProgressBar(parent)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var succeeded bool
@@ -32,7 +32,7 @@ func (pb ProgressBar) Create(parent walk.Container) (walk.Widget, error) {
 	}()
 
 	if err := initWidget(pb, w); err != nil {
-		return nil, err
+		return err
 	}
 
 	w.SetName(pb.Name)
@@ -43,7 +43,7 @@ func (pb ProgressBar) Create(parent walk.Container) (walk.Widget, error) {
 
 	succeeded = true
 
-	return w, nil
+	return nil
 }
 
 func (pb ProgressBar) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

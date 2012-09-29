@@ -9,7 +9,7 @@ import (
 )
 
 type Widget interface {
-	Create(parent walk.Container) (walk.Widget, error)
+	Create(parent walk.Container) error
 	LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int)
 }
 
