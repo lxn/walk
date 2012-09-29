@@ -33,7 +33,7 @@ func main() {
 			Composite{
 				Layout: HBox{Margins: new(Margins)},
 				Children: []Widget{
-					Label{Text: "File"},
+					Label{Text: "File", Font: Font{Family: "Courier New", PointSize: 20}},
 					LineEdit{},
 					ToolButton{Text: "..."},
 				},

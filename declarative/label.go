@@ -42,3 +42,7 @@ func (l Label) Create(parent walk.Container) error {
 func (l Label) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
 	return l.Name, l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan
 }
+
+func (l Label) Font_() *Font {
+	return &l.Font
+}

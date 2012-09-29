@@ -47,3 +47,7 @@ func (tb ToolButton) Create(parent walk.Container) error {
 func (tb ToolButton) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
 	return tb.Name, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan
 }
+
+func (tb ToolButton) Font_() *Font {
+	return &tb.Font
+}

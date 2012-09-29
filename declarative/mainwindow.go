@@ -40,6 +40,10 @@ func (mw MainWindow) CommonInfo() (name string, stretchFactor, row, rowSpan, col
 	return mw.Name, 0, 0, 0, 0, 0
 }
 
+func (mw MainWindow) Font_() *Font {
+	return &mw.Font
+}
+
 func (mw MainWindow) ContainerInfo() (Layout, []Widget) {
 	return mw.Layout, mw.Children
 }

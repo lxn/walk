@@ -47,3 +47,7 @@ func (pb PushButton) Create(parent walk.Container) error {
 func (pb PushButton) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
 	return pb.Name, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
 }
+
+func (pb PushButton) Font_() *Font {
+	return &pb.Font
+}

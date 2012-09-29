@@ -47,3 +47,7 @@ func (le LineEdit) Create(parent walk.Container) error {
 func (le LineEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
 	return le.Name, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan
 }
+
+func (le LineEdit) Font_() *Font {
+	return &le.Font
+}
