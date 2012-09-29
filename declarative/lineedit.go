@@ -9,17 +9,22 @@ import (
 )
 
 type LineEdit struct {
-	Widget        **walk.LineEdit
-	Name          string
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	Font          Font
-	Text          string
-	ReadOnly      bool
-	MaxLength     int
+	Widget            **walk.LineEdit
+	Name              string
+	StretchFactor     int
+	Row               int
+	RowSpan           int
+	Column            int
+	ColumnSpan        int
+	Font              Font
+	Text              string
+	ReadOnly          bool
+	CueBanner         string
+	MaxLength         int
+	PasswordMode      bool
+	OnEditingFinished walk.EventHandler
+	OnReturnPressed   walk.EventHandler
+	OnTextChanged     walk.EventHandler
 }
 
 func (le LineEdit) Create(parent walk.Container) error {
@@ -34,7 +39,22 @@ func (le LineEdit) Create(parent walk.Container) error {
 		}
 
 		w.SetReadOnly(le.ReadOnly)
+
+		if err := w.SetCueBanner(le.CueBanner); err != nil {
+			return err
+		}
 		w.SetMaxLength(le.MaxLength)
+		w.SetPasswordMode(le.PasswordMode)
+
+		if le.OnEditingFinished != nil {
+			w.EditingFinished().Attach(le.OnEditingFinished)
+		}
+		if le.OnReturnPressed != nil {
+			w.ReturnPressed().Attach(le.OnReturnPressed)
+		}
+		if le.OnTextChanged != nil {
+			w.TextChanged().Attach(le.OnTextChanged)
+		}
 
 		if le.Widget != nil {
 			*le.Widget = w
