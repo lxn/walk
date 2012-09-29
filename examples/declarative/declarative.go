@@ -53,7 +53,7 @@ func main() {
 				Layout: HBox{Margins: new(Margins)},
 				Children: []Widget{
 					LineEdit{Text: "Ready.", ReadOnly: true},
-					ProgressBar{HStretch: 10},
+					ProgressBar{StretchFactor: 10},
 				},
 			},
 			TextEdit{ReadOnly: true},

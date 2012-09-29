@@ -9,16 +9,15 @@ import (
 )
 
 type Composite struct {
-	Widget     **walk.Composite
-	Name       string
-	HStretch   int
-	VStretch   int
-	Row        int
-	RowSpan    int
-	Column     int
-	ColumnSpan int
-	Layout     Layout
-	Children   []Widget
+	Widget        **walk.Composite
+	Name          string
+	StretchFactor int
+	Row           int
+	RowSpan       int
+	Column        int
+	ColumnSpan    int
+	Layout        Layout
+	Children      []Widget
 }
 
 func (c Composite) Create(parent walk.Container) (walk.Widget, error) {
@@ -49,8 +48,8 @@ func (c Composite) Create(parent walk.Container) (walk.Widget, error) {
 	return w, nil
 }
 
-func (c Composite) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
-	return c.HStretch, c.VStretch, c.Row, c.RowSpan, c.Column, c.ColumnSpan
+func (c Composite) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
+	return c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan
 }
 
 func (c Composite) Layout_() Layout {

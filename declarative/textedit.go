@@ -9,17 +9,16 @@ import (
 )
 
 type TextEdit struct {
-	Widget     **walk.TextEdit
-	Name       string
-	HStretch   int
-	VStretch   int
-	Row        int
-	RowSpan    int
-	Column     int
-	ColumnSpan int
-	Font       Font
-	Text       string
-	ReadOnly   bool
+	Widget        **walk.TextEdit
+	Name          string
+	StretchFactor int
+	Row           int
+	RowSpan       int
+	Column        int
+	ColumnSpan    int
+	Font          Font
+	Text          string
+	ReadOnly      bool
 }
 
 func (te TextEdit) Create(parent walk.Container) (walk.Widget, error) {
@@ -56,6 +55,6 @@ func (te TextEdit) Create(parent walk.Container) (walk.Widget, error) {
 	return w, nil
 }
 
-func (te TextEdit) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
-	return te.HStretch, te.VStretch, te.Row, te.RowSpan, te.Column, te.ColumnSpan
+func (te TextEdit) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
+	return te.StretchFactor, te.Row, te.RowSpan, te.Column, te.ColumnSpan
 }

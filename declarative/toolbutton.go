@@ -9,17 +9,16 @@ import (
 )
 
 type ToolButton struct {
-	Widget     **walk.ToolButton
-	Name       string
-	HStretch   int
-	VStretch   int
-	Row        int
-	RowSpan    int
-	Column     int
-	ColumnSpan int
-	Font       Font
-	Text       string
-	OnClicked  walk.EventHandler
+	Widget        **walk.ToolButton
+	Name          string
+	StretchFactor int
+	Row           int
+	RowSpan       int
+	Column        int
+	ColumnSpan    int
+	Font          Font
+	Text          string
+	OnClicked     walk.EventHandler
 }
 
 func (tb ToolButton) Create(parent walk.Container) (walk.Widget, error) {
@@ -58,6 +57,6 @@ func (tb ToolButton) Create(parent walk.Container) (walk.Widget, error) {
 	return w, nil
 }
 
-func (tb ToolButton) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
-	return tb.HStretch, tb.VStretch, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan
+func (tb ToolButton) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
+	return tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan
 }

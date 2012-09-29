@@ -9,17 +9,16 @@ import (
 )
 
 type PushButton struct {
-	Widget     **walk.PushButton
-	Name       string
-	HStretch   int
-	VStretch   int
-	Row        int
-	RowSpan    int
-	Column     int
-	ColumnSpan int
-	Font       Font
-	Text       string
-	OnClicked  walk.EventHandler
+	Widget        **walk.PushButton
+	Name          string
+	StretchFactor int
+	Row           int
+	RowSpan       int
+	Column        int
+	ColumnSpan    int
+	Font          Font
+	Text          string
+	OnClicked     walk.EventHandler
 }
 
 func (pb PushButton) Create(parent walk.Container) (walk.Widget, error) {
@@ -58,6 +57,6 @@ func (pb PushButton) Create(parent walk.Container) (walk.Widget, error) {
 	return w, nil
 }
 
-func (pb PushButton) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
-	return pb.HStretch, pb.VStretch, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
+func (pb PushButton) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
+	return pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
 }

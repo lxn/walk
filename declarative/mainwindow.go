@@ -49,8 +49,8 @@ func (mw MainWindow) Create(parent walk.Container) (walk.Widget, error) {
 	return w, nil
 }
 
-func (mw MainWindow) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
-	return 0, 0, 0, 0, 0, 0
+func (mw MainWindow) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
+	return 0, 0, 0, 0, 0
 }
 
 func (mw MainWindow) Layout_() Layout {

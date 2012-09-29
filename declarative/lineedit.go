@@ -9,18 +9,17 @@ import (
 )
 
 type LineEdit struct {
-	Widget     **walk.LineEdit
-	Name       string
-	HStretch   int
-	VStretch   int
-	Row        int
-	RowSpan    int
-	Column     int
-	ColumnSpan int
-	Font       Font
-	Text       string
-	ReadOnly   bool
-	MaxLength  int
+	Widget        **walk.LineEdit
+	Name          string
+	StretchFactor int
+	Row           int
+	RowSpan       int
+	Column        int
+	ColumnSpan    int
+	Font          Font
+	Text          string
+	ReadOnly      bool
+	MaxLength     int
 }
 
 func (le LineEdit) Create(parent walk.Container) (walk.Widget, error) {
@@ -58,6 +57,6 @@ func (le LineEdit) Create(parent walk.Container) (walk.Widget, error) {
 	return w, nil
 }
 
-func (le LineEdit) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
-	return le.HStretch, le.VStretch, le.Row, le.RowSpan, le.Column, le.ColumnSpan
+func (le LineEdit) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
+	return le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan
 }

@@ -11,25 +11,19 @@ import (
 func initWidget(d Widget, w walk.Widget) error {
 	// Widget
 	if p := w.Parent(); p != nil {
-		hStretch, vStretch, row, rowSpan, col, colSpan := d.LayoutParams()
+		stretchFactor, row, rowSpan, column, columnSpan := d.LayoutParams()
 
 		switch l := p.Layout().(type) {
 		case *walk.BoxLayout:
-			var sf int
-			if l.Orientation() == walk.Horizontal {
-				sf = hStretch
-			} else {
-				sf = vStretch
+			if stretchFactor < 1 {
+				stretchFactor = 1
 			}
-			if sf < 1 {
-				sf = 1
-			}
-			if err := l.SetStretchFactor(w, sf); err != nil {
+			if err := l.SetStretchFactor(w, stretchFactor); err != nil {
 				return err
 			}
 
 		case *walk.GridLayout:
-			cs := colSpan
+			cs := columnSpan
 			if cs < 1 {
 				cs = 1
 			}
@@ -37,7 +31,7 @@ func initWidget(d Widget, w walk.Widget) error {
 			if rs < 1 {
 				rs = 1
 			}
-			r := walk.Rectangle{col, row, cs, rs}
+			r := walk.Rectangle{column, row, cs, rs}
 
 			if err := l.SetRange(w, r); err != nil {
 				return err

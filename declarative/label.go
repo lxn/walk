@@ -9,16 +9,15 @@ import (
 )
 
 type Label struct {
-	Widget     **walk.Label
-	Name       string
-	HStretch   int
-	VStretch   int
-	Row        int
-	RowSpan    int
-	Column     int
-	ColumnSpan int
-	Font       Font
-	Text       string
+	Widget        **walk.Label
+	Name          string
+	StretchFactor int
+	Row           int
+	RowSpan       int
+	Column        int
+	ColumnSpan    int
+	Font          Font
+	Text          string
 }
 
 func (l Label) Create(parent walk.Container) (walk.Widget, error) {
@@ -53,6 +52,6 @@ func (l Label) Create(parent walk.Container) (walk.Widget, error) {
 	return w, nil
 }
 
-func (l Label) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
-	return l.HStretch, l.VStretch, l.Row, l.RowSpan, l.Column, l.ColumnSpan
+func (l Label) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
+	return l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan
 }

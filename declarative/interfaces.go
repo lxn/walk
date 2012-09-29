@@ -10,7 +10,7 @@ import (
 
 type Widget interface {
 	Create(parent walk.Container) (walk.Widget, error)
-	LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int)
+	LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int)
 }
 
 type Fonter interface {

@@ -9,14 +9,13 @@ import (
 )
 
 type ProgressBar struct {
-	Widget     **walk.ProgressBar
-	Name       string
-	HStretch   int
-	VStretch   int
-	Row        int
-	RowSpan    int
-	Column     int
-	ColumnSpan int
+	Widget        **walk.ProgressBar
+	Name          string
+	StretchFactor int
+	Row           int
+	RowSpan       int
+	Column        int
+	ColumnSpan    int
 }
 
 func (pb ProgressBar) Create(parent walk.Container) (walk.Widget, error) {
@@ -47,6 +46,6 @@ func (pb ProgressBar) Create(parent walk.Container) (walk.Widget, error) {
 	return w, nil
 }
 
-func (pb ProgressBar) LayoutParams() (hStretch, vStretch, row, rowSpan, col, colSpan int) {
-	return pb.HStretch, pb.VStretch, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
+func (pb ProgressBar) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
+	return pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
 }
