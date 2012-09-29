@@ -27,8 +27,6 @@ func (c Composite) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(c, w, func() error {
-		w.SetName(c.Name)
-
 		if c.Widget != nil {
 			*c.Widget = w
 		}
@@ -37,8 +35,8 @@ func (c Composite) Create(parent walk.Container) error {
 	})
 }
 
-func (c Composite) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
-	return c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan
+func (c Composite) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
+	return c.Name, c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan
 }
 
 func (c Composite) Layout_() Layout {

@@ -27,8 +27,6 @@ func (l Label) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(l, w, func() error {
-		w.SetName(l.Name)
-
 		if err := w.SetText(l.Text); err != nil {
 			return err
 		}
@@ -41,6 +39,6 @@ func (l Label) Create(parent walk.Container) error {
 	})
 }
 
-func (l Label) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
-	return l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan
+func (l Label) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
+	return l.Name, l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan
 }

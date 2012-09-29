@@ -25,8 +25,6 @@ func (pb ProgressBar) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(pb, w, func() error {
-		w.SetName(pb.Name)
-
 		if pb.Widget != nil {
 			*pb.Widget = w
 		}
@@ -35,6 +33,6 @@ func (pb ProgressBar) Create(parent walk.Container) error {
 	})
 }
 
-func (pb ProgressBar) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
-	return pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
+func (pb ProgressBar) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
+	return pb.Name, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
 }

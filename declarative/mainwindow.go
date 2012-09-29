@@ -24,8 +24,6 @@ func (mw MainWindow) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(mw, w, func() error {
-		w.SetName(mw.Name)
-
 		if err := w.SetTitle(mw.Title); err != nil {
 			return err
 		}
@@ -38,8 +36,8 @@ func (mw MainWindow) Create(parent walk.Container) error {
 	})
 }
 
-func (mw MainWindow) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
-	return 0, 0, 0, 0, 0
+func (mw MainWindow) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
+	return mw.Name, 0, 0, 0, 0, 0
 }
 
 func (mw MainWindow) Layout_() Layout {

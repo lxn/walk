@@ -18,7 +18,9 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 
 	// Widget
 	if p := w.Parent(); p != nil {
-		stretchFactor, row, rowSpan, column, columnSpan := d.LayoutParams()
+		name, stretchFactor, row, rowSpan, column, columnSpan := d.CommonInfo()
+
+		w.SetName(name)
 
 		switch l := p.Layout().(type) {
 		case *walk.BoxLayout:

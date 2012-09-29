@@ -28,8 +28,6 @@ func (te TextEdit) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(te, w, func() error {
-		w.SetName(te.Name)
-
 		if err := w.SetText(te.Text); err != nil {
 			return err
 		}
@@ -44,6 +42,6 @@ func (te TextEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (te TextEdit) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
-	return te.StretchFactor, te.Row, te.RowSpan, te.Column, te.ColumnSpan
+func (te TextEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
+	return te.Name, te.StretchFactor, te.Row, te.RowSpan, te.Column, te.ColumnSpan
 }

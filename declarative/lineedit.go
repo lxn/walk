@@ -29,8 +29,6 @@ func (le LineEdit) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(le, w, func() error {
-		w.SetName(le.Name)
-
 		if err := w.SetText(le.Text); err != nil {
 			return err
 		}
@@ -46,6 +44,6 @@ func (le LineEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (le LineEdit) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
-	return le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan
+func (le LineEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
+	return le.Name, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan
 }

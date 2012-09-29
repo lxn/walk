@@ -28,8 +28,6 @@ func (pb PushButton) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(pb, w, func() error {
-		w.SetName(pb.Name)
-
 		if err := w.SetText(pb.Text); err != nil {
 			return err
 		}
@@ -46,6 +44,6 @@ func (pb PushButton) Create(parent walk.Container) error {
 	})
 }
 
-func (pb PushButton) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
-	return pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
+func (pb PushButton) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
+	return pb.Name, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
 }

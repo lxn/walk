@@ -28,8 +28,6 @@ func (tb ToolButton) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(tb, w, func() error {
-		w.SetName(tb.Name)
-
 		if err := w.SetText(tb.Text); err != nil {
 			return err
 		}
@@ -46,6 +44,6 @@ func (tb ToolButton) Create(parent walk.Container) error {
 	})
 }
 
-func (tb ToolButton) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
-	return tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan
+func (tb ToolButton) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
+	return tb.Name, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan
 }

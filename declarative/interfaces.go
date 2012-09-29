@@ -10,7 +10,7 @@ import (
 
 type Widget interface {
 	Create(parent walk.Container) error
-	LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int)
+	CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int)
 }
 
 type Fonter interface {

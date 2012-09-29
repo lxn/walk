@@ -33,8 +33,8 @@ func (hs HSpacer) Create(parent walk.Container) (err error) {
 	return InitWidget(hs, w, nil)
 }
 
-func (hs HSpacer) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
-	return hs.StretchFactor, hs.Row, hs.RowSpan, hs.Column, hs.ColumnSpan
+func (hs HSpacer) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
+	return hs.Name, hs.StretchFactor, hs.Row, hs.RowSpan, hs.Column, hs.ColumnSpan
 }
 
 type VSpacer struct {
@@ -62,6 +62,6 @@ func (vs VSpacer) Create(parent walk.Container) (err error) {
 	return InitWidget(vs, w, nil)
 }
 
-func (vs VSpacer) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
-	return vs.StretchFactor, vs.Row, vs.RowSpan, vs.Column, vs.ColumnSpan
+func (vs VSpacer) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
+	return vs.Name, vs.StretchFactor, vs.Row, vs.RowSpan, vs.Column, vs.ColumnSpan
 }
