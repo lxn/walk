@@ -27,34 +27,23 @@ func (tb ToolButton) Create(parent walk.Container) error {
 		return err
 	}
 
-	var succeeded bool
-	defer func() {
-		if !succeeded {
-			w.Dispose()
+	return InitWidget(tb, w, func() error {
+		w.SetName(tb.Name)
+
+		if err := w.SetText(tb.Text); err != nil {
+			return err
 		}
-	}()
 
-	if err := initWidget(tb, w); err != nil {
-		return err
-	}
+		if tb.OnClicked != nil {
+			w.Clicked().Attach(tb.OnClicked)
+		}
 
-	w.SetName(tb.Name)
+		if tb.Widget != nil {
+			*tb.Widget = w
+		}
 
-	if err := w.SetText(tb.Text); err != nil {
-		return err
-	}
-
-	if tb.OnClicked != nil {
-		w.Clicked().Attach(tb.OnClicked)
-	}
-
-	if tb.Widget != nil {
-		*tb.Widget = w
-	}
-
-	succeeded = true
-
-	return nil
+		return nil
+	})
 }
 
 func (tb ToolButton) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

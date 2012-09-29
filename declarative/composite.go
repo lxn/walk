@@ -26,26 +26,15 @@ func (c Composite) Create(parent walk.Container) error {
 		return err
 	}
 
-	var succeeded bool
-	defer func() {
-		if !succeeded {
-			w.Dispose()
+	return InitWidget(c, w, func() error {
+		w.SetName(c.Name)
+
+		if c.Widget != nil {
+			*c.Widget = w
 		}
-	}()
 
-	if err := initWidget(c, w); err != nil {
-		return err
-	}
-
-	w.SetName(c.Name)
-
-	if c.Widget != nil {
-		*c.Widget = w
-	}
-
-	succeeded = true
-
-	return nil
+		return nil
+	})
 }
 
 func (c Composite) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

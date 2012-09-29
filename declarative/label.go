@@ -26,30 +26,19 @@ func (l Label) Create(parent walk.Container) error {
 		return err
 	}
 
-	var succeeded bool
-	defer func() {
-		if !succeeded {
-			w.Dispose()
+	return InitWidget(l, w, func() error {
+		w.SetName(l.Name)
+
+		if err := w.SetText(l.Text); err != nil {
+			return err
 		}
-	}()
 
-	if err := initWidget(l, w); err != nil {
-		return err
-	}
+		if l.Widget != nil {
+			*l.Widget = w
+		}
 
-	w.SetName(l.Name)
-
-	if err := w.SetText(l.Text); err != nil {
-		return err
-	}
-
-	if l.Widget != nil {
-		*l.Widget = w
-	}
-
-	succeeded = true
-
-	return nil
+		return nil
+	})
 }
 
 func (l Label) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

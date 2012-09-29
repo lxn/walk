@@ -27,32 +27,21 @@ func (te TextEdit) Create(parent walk.Container) error {
 		return err
 	}
 
-	var succeeded bool
-	defer func() {
-		if !succeeded {
-			w.Dispose()
+	return InitWidget(te, w, func() error {
+		w.SetName(te.Name)
+
+		if err := w.SetText(te.Text); err != nil {
+			return err
 		}
-	}()
 
-	if err := initWidget(te, w); err != nil {
-		return err
-	}
+		w.SetReadOnly(te.ReadOnly)
 
-	w.SetName(te.Name)
+		if te.Widget != nil {
+			*te.Widget = w
+		}
 
-	if err := w.SetText(te.Text); err != nil {
-		return err
-	}
-
-	w.SetReadOnly(te.ReadOnly)
-
-	if te.Widget != nil {
-		*te.Widget = w
-	}
-
-	succeeded = true
-
-	return nil
+		return nil
+	})
 }
 
 func (te TextEdit) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

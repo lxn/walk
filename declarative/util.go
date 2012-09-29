@@ -8,7 +8,14 @@ import (
 	"github.com/lxn/walk"
 )
 
-func initWidget(d Widget, w walk.Widget) error {
+func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
+	var succeeded bool
+	defer func() {
+		if !succeeded {
+			w.Dispose()
+		}
+	}()
+
 	// Widget
 	if p := w.Parent(); p != nil {
 		stretchFactor, row, rowSpan, column, columnSpan := d.LayoutParams()
@@ -69,6 +76,15 @@ func initWidget(d Widget, w walk.Widget) error {
 			}
 		}
 	}
+
+	// Custom
+	if customInit != nil {
+		if err := customInit(); err != nil {
+			return err
+		}
+	}
+
+	succeeded = true
 
 	return nil
 }

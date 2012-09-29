@@ -27,34 +27,23 @@ func (pb PushButton) Create(parent walk.Container) error {
 		return err
 	}
 
-	var succeeded bool
-	defer func() {
-		if !succeeded {
-			w.Dispose()
+	return InitWidget(pb, w, func() error {
+		w.SetName(pb.Name)
+
+		if err := w.SetText(pb.Text); err != nil {
+			return err
 		}
-	}()
 
-	if err := initWidget(pb, w); err != nil {
-		return err
-	}
+		if pb.OnClicked != nil {
+			w.Clicked().Attach(pb.OnClicked)
+		}
 
-	w.SetName(pb.Name)
+		if pb.Widget != nil {
+			*pb.Widget = w
+		}
 
-	if err := w.SetText(pb.Text); err != nil {
-		return err
-	}
-
-	if pb.OnClicked != nil {
-		w.Clicked().Attach(pb.OnClicked)
-	}
-
-	if pb.Widget != nil {
-		*pb.Widget = w
-	}
-
-	succeeded = true
-
-	return nil
+		return nil
+	})
 }
 
 func (pb PushButton) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

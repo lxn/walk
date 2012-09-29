@@ -30,11 +30,7 @@ func (hs HSpacer) Create(parent walk.Container) (err error) {
 		}
 	}
 
-	if err = initWidget(hs, w); err != nil {
-		return
-	}
-
-	return
+	return InitWidget(hs, w, nil)
 }
 
 func (hs HSpacer) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
@@ -63,11 +59,7 @@ func (vs VSpacer) Create(parent walk.Container) (err error) {
 		}
 	}
 
-	if err = initWidget(vs, w); err != nil {
-		return
-	}
-
-	return
+	return InitWidget(vs, w, nil)
 }
 
 func (vs VSpacer) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

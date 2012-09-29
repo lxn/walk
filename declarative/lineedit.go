@@ -28,33 +28,22 @@ func (le LineEdit) Create(parent walk.Container) error {
 		return err
 	}
 
-	var succeeded bool
-	defer func() {
-		if !succeeded {
-			w.Dispose()
+	return InitWidget(le, w, func() error {
+		w.SetName(le.Name)
+
+		if err := w.SetText(le.Text); err != nil {
+			return err
 		}
-	}()
 
-	if err := initWidget(le, w); err != nil {
-		return err
-	}
+		w.SetReadOnly(le.ReadOnly)
+		w.SetMaxLength(le.MaxLength)
 
-	w.SetName(le.Name)
+		if le.Widget != nil {
+			*le.Widget = w
+		}
 
-	if err := w.SetText(le.Text); err != nil {
-		return err
-	}
-
-	w.SetReadOnly(le.ReadOnly)
-	w.SetMaxLength(le.MaxLength)
-
-	if le.Widget != nil {
-		*le.Widget = w
-	}
-
-	succeeded = true
-
-	return nil
+		return nil
+	})
 }
 
 func (le LineEdit) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

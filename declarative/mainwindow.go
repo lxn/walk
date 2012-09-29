@@ -23,30 +23,19 @@ func (mw MainWindow) Create(parent walk.Container) error {
 		return err
 	}
 
-	var succeeded bool
-	defer func() {
-		if !succeeded {
-			w.Dispose()
+	return InitWidget(mw, w, func() error {
+		w.SetName(mw.Name)
+
+		if err := w.SetTitle(mw.Title); err != nil {
+			return err
 		}
-	}()
 
-	if err := initWidget(mw, w); err != nil {
-		return err
-	}
+		if mw.Widget != nil {
+			*mw.Widget = w
+		}
 
-	w.SetName(mw.Name)
-
-	if err := w.SetTitle(mw.Title); err != nil {
-		return err
-	}
-
-	if mw.Widget != nil {
-		*mw.Widget = w
-	}
-
-	succeeded = true
-
-	return nil
+		return nil
+	})
 }
 
 func (mw MainWindow) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {

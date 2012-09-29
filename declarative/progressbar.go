@@ -24,26 +24,15 @@ func (pb ProgressBar) Create(parent walk.Container) error {
 		return err
 	}
 
-	var succeeded bool
-	defer func() {
-		if !succeeded {
-			w.Dispose()
+	return InitWidget(pb, w, func() error {
+		w.SetName(pb.Name)
+
+		if pb.Widget != nil {
+			*pb.Widget = w
 		}
-	}()
 
-	if err := initWidget(pb, w); err != nil {
-		return err
-	}
-
-	w.SetName(pb.Name)
-
-	if pb.Widget != nil {
-		*pb.Widget = w
-	}
-
-	succeeded = true
-
-	return nil
+		return nil
+	})
 }
 
 func (pb ProgressBar) LayoutParams() (stretchFactor, row, rowSpan, column, columnSpan int) {
