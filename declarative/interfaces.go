@@ -22,6 +22,5 @@ type Layout interface {
 }
 
 type Container interface {
-	Layout_() Layout
-	Children_() []Widget
+	ContainerInfo() (Layout, []Widget)
 }

@@ -40,10 +40,6 @@ func (mw MainWindow) CommonInfo() (name string, stretchFactor, row, rowSpan, col
 	return mw.Name, 0, 0, 0, 0, 0
 }
 
-func (mw MainWindow) Layout_() Layout {
-	return mw.Layout
-}
-
-func (mw MainWindow) Children_() []Widget {
-	return mw.Children
+func (mw MainWindow) ContainerInfo() (Layout, []Widget) {
+	return mw.Layout, mw.Children
 }

@@ -60,8 +60,10 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	// Container
 	if dc, ok := d.(Container); ok {
 		if wc, ok := w.(walk.Container); ok {
-			if dl := dc.Layout_(); dl != nil {
-				l, err := dl.Create()
+			layout, children := dc.ContainerInfo()
+
+			if layout != nil {
+				l, err := layout.Create()
 				if err != nil {
 					return err
 				}
@@ -71,7 +73,7 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 				}
 			}
 
-			for _, child := range dc.Children_() {
+			for _, child := range children {
 				if err := child.Create(wc); err != nil {
 					return err
 				}

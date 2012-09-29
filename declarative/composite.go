@@ -39,10 +39,6 @@ func (c Composite) CommonInfo() (name string, stretchFactor, row, rowSpan, colum
 	return c.Name, c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan
 }
 
-func (c Composite) Layout_() Layout {
-	return c.Layout
-}
-
-func (c Composite) Children_() []Widget {
-	return c.Children
+func (c Composite) ContainerInfo() (Layout, []Widget) {
+	return c.Layout, c.Children
 }
