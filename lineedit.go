@@ -116,7 +116,12 @@ func (le *LineEdit) PasswordMode() bool {
 }
 
 func (le *LineEdit) SetPasswordMode(value bool) {
-	le.SendMessage(EM_SETPASSWORDCHAR, uintptr('*'), 0)
+	var c uintptr
+	if value {
+		c = uintptr('*')
+	}
+
+	le.SendMessage(EM_SETPASSWORDCHAR, c, 0)
 }
 
 func (le *LineEdit) ReadOnly() bool {
