@@ -16,6 +16,9 @@ type ProgressBar struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	MinValue      int
+	MaxValue      int
+	Value         int
 }
 
 func (pb ProgressBar) Create(parent walk.Container) error {
@@ -25,6 +28,9 @@ func (pb ProgressBar) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(pb, w, func() error {
+		w.SetRange(pb.MinValue, pb.MaxValue)
+		w.SetValue(pb.Value)
+
 		if pb.Widget != nil {
 			*pb.Widget = w
 		}
