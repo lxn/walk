@@ -18,6 +18,7 @@ type ToolBar struct {
 	ColumnSpan    int
 	Font          Font
 	Orientation   walk.Orientation
+	Actions       []*walk.Action
 }
 
 func (tb ToolBar) Create(parent walk.Container) (err error) {
@@ -32,12 +33,34 @@ func (tb ToolBar) Create(parent walk.Container) (err error) {
 	}
 
 	return InitWidget(tb, w, func() error {
+		imageList, err := walk.NewImageList(walk.Size{16, 16}, 0)
+		if err != nil {
+			return err
+		}
+		w.SetImageList(imageList)
+
+		if err := tb.initActions(w); err != nil {
+			return err
+		}
+
 		if tb.Widget != nil {
 			*tb.Widget = w
 		}
 
 		return nil
 	})
+}
+
+func (tb ToolBar) initActions(w *walk.ToolBar) error {
+	actions := w.Actions()
+
+	for _, a := range tb.Actions {
+		if err := actions.Add(a); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (tb ToolBar) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {

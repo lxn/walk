@@ -13,8 +13,8 @@ type MyMainWindow struct {
 	*walk.MainWindow
 }
 
-func (mw *MyMainWindow) checkPushButton_Clicked() {
-	walk.MsgBox(mw, "Check", "Doing some checking now...", walk.MsgBoxIconInformation|walk.MsgBoxOK)
+func (mw *MyMainWindow) openAction_Triggered() {
+	walk.MsgBox(mw, "Open", "Nothing to see here...", walk.MsgBoxIconInformation|walk.MsgBoxOK)
 }
 
 func main() {
@@ -23,40 +23,79 @@ func main() {
 
 	mw := new(MyMainWindow)
 
-	MainWindow{
-		Widget: &mw.MainWindow,
-		Title:  "FTPS cycle finder",
-		Layout: VBox{
-			Margins: &Margins{6, 6, 6, 6},
+	openImage, _ := walk.NewBitmapFromFile("../img/open.png")
+
+	var openAction *walk.Action
+
+	menuActions, _ := CreateMenuActions(
+		[]MenuItem{
+			SubMenu{
+				Text: "&File",
+				Items: []MenuItem{
+					Action{
+						AssignTo:    &openAction,
+						Text:        "&Open",
+						Image:       openImage,
+						OnTriggered: func() { mw.openAction_Triggered() },
+					},
+					Action{},
+					Action{
+						Text:        "E&xit",
+						OnTriggered: func() { walk.App().Exit(0) },
+					},
+				},
+			},
+		})
+
+	toolBarActions, _ := CreateToolBarActions(
+		[]ToolBarItem{
+			ActionRef{openAction},
+			Action{Text: "NOP"},
 		},
+	)
+
+	marg0 := &Margins{}
+
+	MainWindow{
+		Widget:  &mw.MainWindow,
+		Title:   "FTPS cycle finder",
+		Menu:    Menu{Actions: menuActions},
+		ToolBar: ToolBar{Actions: toolBarActions},
+		Layout:  HBox{Margins: &Margins{6, 6, 6, 6}},
 		Children: []Widget{
+			ToolBar{Orientation: walk.Vertical, Actions: toolBarActions},
 			Composite{
-				Layout: HBox{Margins: new(Margins)},
+				Layout: VBox{Margins: marg0},
 				Children: []Widget{
-					Label{Text: "File"},
-					LineEdit{},
-					ToolButton{Text: "..."},
+					Composite{
+						Layout: HBox{Margins: marg0},
+						Children: []Widget{
+							Label{Text: "File"},
+							LineEdit{},
+							ToolButton{Text: "..."},
+						},
+					},
+					Composite{
+						Layout: HBox{Margins: marg0},
+						Children: []Widget{
+							PushButton{Text: "Check"},
+							PushButton{Text: "Check and Fix"},
+							PushButton{Text: "Clear"},
+							HSpacer{},
+							Label{Text: "Parameter"},
+							LineEdit{MaxLength: 10},
+						},
+					},
+					Composite{
+						Layout: HBox{Margins: marg0},
+						Children: []Widget{
+							LineEdit{Text: "Ready.", ReadOnly: true},
+							ProgressBar{StretchFactor: 10},
+						},
+					},
+					TextEdit{ReadOnly: true},
 				},
 			},
-			Composite{
-				Layout: HBox{Margins: new(Margins)},
-				Children: []Widget{
-					PushButton{Text: "Check", OnClicked: func() { mw.checkPushButton_Clicked() }},
-					PushButton{Text: "Check and Fix"},
-					PushButton{Text: "Clear"},
-					HSpacer{},
-					Label{Text: "Parameter"},
-					LineEdit{MaxLength: 10},
-				},
-			},
-			Composite{
-				Layout: HBox{Margins: new(Margins)},
-				Children: []Widget{
-					LineEdit{Text: "Ready.", ReadOnly: true},
-					ProgressBar{StretchFactor: 10},
-				},
-			},
-			TextEdit{ReadOnly: true},
 		},
 	}.Create(nil)
 

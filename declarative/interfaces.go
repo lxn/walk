@@ -8,6 +8,10 @@ import (
 	"github.com/lxn/walk"
 )
 
+type Layout interface {
+	Create() (walk.Layout, error)
+}
+
 type Widget interface {
 	Create(parent walk.Container) error
 	CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int)
@@ -17,10 +21,14 @@ type Fonter interface {
 	Font_() *Font
 }
 
-type Layout interface {
-	Create() (walk.Layout, error)
-}
-
 type Container interface {
 	ContainerInfo() (Layout, []Widget)
+}
+
+type MenuItem interface {
+	createMenuAction(menu *walk.Menu) (*walk.Action, error)
+}
+
+type ToolBarItem interface {
+	createToolBarAction() (*walk.Action, error)
 }
