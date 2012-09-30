@@ -54,7 +54,7 @@ func (tw TabWidget) Create(parent walk.Container) error {
 	})
 }
 
-func (tw TabWidget) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (tw TabWidget) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return tw.Name, tw.MinSize, tw.MaxSize, tw.StretchFactor, tw.Row, tw.RowSpan, tw.Column, tw.ColumnSpan, &tw.ContextMenu
 }
 

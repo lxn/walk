@@ -42,6 +42,6 @@ func (pb ProgressBar) Create(parent walk.Container) error {
 	})
 }
 
-func (pb ProgressBar) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (pb ProgressBar) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return pb.Name, pb.MinSize, pb.MaxSize, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, &pb.ContextMenu
 }

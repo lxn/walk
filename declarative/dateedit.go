@@ -59,7 +59,7 @@ func (de DateEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (de DateEdit) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (de DateEdit) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return de.Name, de.MinSize, de.MaxSize, de.StretchFactor, de.Row, de.RowSpan, de.Column, de.ColumnSpan, &de.ContextMenu
 }
 

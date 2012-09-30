@@ -17,7 +17,7 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	}()
 
 	// Widget
-	name, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenu := d.CommonInfo()
+	name, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenu := d.WidgetInfo()
 
 	w.SetName(name)
 

@@ -47,7 +47,7 @@ func (cb CheckBox) Create(parent walk.Container) error {
 	})
 }
 
-func (cb CheckBox) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (cb CheckBox) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return cb.Name, cb.MinSize, cb.MaxSize, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, &cb.ContextMenu
 }
 

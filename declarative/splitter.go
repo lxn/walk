@@ -49,7 +49,7 @@ func (s Splitter) Create(parent walk.Container) error {
 	})
 }
 
-func (s Splitter) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (s Splitter) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return s.Name, s.MinSize, s.MaxSize, s.StretchFactor, s.Row, s.RowSpan, s.Column, s.ColumnSpan, &s.ContextMenu
 }
 

@@ -38,7 +38,7 @@ func (c Composite) Create(parent walk.Container) error {
 	})
 }
 
-func (c Composite) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (c Composite) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return c.Name, c.MinSize, c.MaxSize, c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan, &c.ContextMenu
 }
 

@@ -72,7 +72,7 @@ func (tv TableView) Create(parent walk.Container) error {
 	})
 }
 
-func (tv TableView) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (tv TableView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return tv.Name, tv.MinSize, tv.MaxSize, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, &tv.ContextMenu
 }
 

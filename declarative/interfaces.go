@@ -14,7 +14,7 @@ type Layout interface {
 
 type Widget interface {
 	Create(parent walk.Container) error
-	CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu)
+	WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu)
 }
 
 type Fonter interface {

@@ -47,7 +47,7 @@ func (rb RadioButton) Create(parent walk.Container) error {
 	})
 }
 
-func (rb RadioButton) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (rb RadioButton) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return rb.Name, rb.MinSize, rb.MaxSize, rb.StretchFactor, rb.Row, rb.RowSpan, rb.Column, rb.ColumnSpan, &rb.ContextMenu
 }
 

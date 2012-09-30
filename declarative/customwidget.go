@@ -43,6 +43,6 @@ func (cw CustomWidget) Create(parent walk.Container) error {
 	})
 }
 
-func (cw CustomWidget) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (cw CustomWidget) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return cw.Name, cw.MinSize, cw.MaxSize, cw.StretchFactor, cw.Row, cw.RowSpan, cw.Column, cw.ColumnSpan, &cw.ContextMenu
 }

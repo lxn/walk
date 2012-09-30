@@ -62,7 +62,7 @@ func (d Dialog) Create(parent walk.Container) error {
 	})
 }
 
-func (d Dialog) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (d Dialog) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return d.Name, d.MinSize, d.MaxSize, 0, 0, 0, 0, 0, &d.ContextMenu
 }
 

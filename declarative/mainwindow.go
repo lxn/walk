@@ -60,7 +60,7 @@ func (mw MainWindow) Create(parent walk.Container) error {
 	})
 }
 
-func (mw MainWindow) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (mw MainWindow) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return mw.Name, mw.MinSize, mw.MaxSize, 0, 0, 0, 0, 0, &mw.ContextMenu
 }
 

@@ -44,7 +44,7 @@ func (gb GroupBox) Create(parent walk.Container) error {
 	})
 }
 
-func (gb GroupBox) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (gb GroupBox) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return gb.Name, gb.MinSize, gb.MaxSize, gb.StretchFactor, gb.Row, gb.RowSpan, gb.Column, gb.ColumnSpan, &gb.ContextMenu
 }
 

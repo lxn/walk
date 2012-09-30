@@ -41,6 +41,6 @@ func (iv ImageView) Create(parent walk.Container) error {
 	})
 }
 
-func (iv ImageView) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (iv ImageView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return iv.Name, iv.MinSize, iv.MaxSize, iv.StretchFactor, iv.Row, iv.RowSpan, iv.Column, iv.ColumnSpan, &iv.ContextMenu
 }

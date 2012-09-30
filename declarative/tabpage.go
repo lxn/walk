@@ -38,7 +38,7 @@ func (tp TabPage) Create(parent walk.Container) error {
 	})
 }
 
-func (tp TabPage) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (tp TabPage) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return tp.Name, tp.MinSize, tp.MaxSize, 0, 0, 0, 0, 0, &tp.ContextMenu
 }
 

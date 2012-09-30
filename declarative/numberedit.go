@@ -70,7 +70,7 @@ func (ne NumberEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (ne NumberEdit) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (ne NumberEdit) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return ne.Name, ne.MinSize, ne.MaxSize, ne.StretchFactor, ne.Row, ne.RowSpan, ne.Column, ne.ColumnSpan, &ne.ContextMenu
 }
 

@@ -41,6 +41,6 @@ func (wv WebView) Create(parent walk.Container) error {
 	})
 }
 
-func (wv WebView) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+func (wv WebView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
 	return wv.Name, wv.MinSize, wv.MaxSize, wv.StretchFactor, wv.Row, wv.RowSpan, wv.Column, wv.ColumnSpan, &wv.ContextMenu
 }
