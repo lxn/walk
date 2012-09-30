@@ -9,25 +9,25 @@ import (
 )
 
 type LineEdit struct {
-	AssignTo          **walk.LineEdit
-	Name              string
-	MinSize           Size
-	MaxSize           Size
-	StretchFactor     int
-	Row               int
-	RowSpan           int
-	Column            int
-	ColumnSpan        int
-	ContextMenu       Menu
-	Font              Font
-	Text              string
-	ReadOnly          bool
-	CueBanner         string
-	MaxLength         int
-	PasswordMode      bool
-	OnEditingFinished walk.EventHandler
-	OnReturnPressed   walk.EventHandler
-	OnTextChanged     walk.EventHandler
+	AssignTo           **walk.LineEdit
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	Font               Font
+	Text               string
+	ReadOnly           bool
+	CueBanner          string
+	MaxLength          int
+	PasswordMode       bool
+	OnEditingFinished  walk.EventHandler
+	OnReturnPressed    walk.EventHandler
+	OnTextChanged      walk.EventHandler
 }
 
 func (le LineEdit) Create(parent walk.Container) error {
@@ -67,8 +67,8 @@ func (le LineEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (le LineEdit) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return le.Name, le.MinSize, le.MaxSize, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan, &le.ContextMenu
+func (le LineEdit) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return le.Name, le.MinSize, le.MaxSize, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan, le.ContextMenuActions
 }
 
 func (le LineEdit) Font_() *Font {

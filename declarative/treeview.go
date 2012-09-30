@@ -9,17 +9,17 @@ import (
 )
 
 type TreeView struct {
-	AssignTo      **walk.TreeView
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	ContextMenu   Menu
-	Font          Font
+	AssignTo           **walk.TreeView
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	Font               Font
 }
 
 func (tv TreeView) Create(parent walk.Container) error {
@@ -37,8 +37,8 @@ func (tv TreeView) Create(parent walk.Container) error {
 	})
 }
 
-func (tv TreeView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return tv.Name, tv.MinSize, tv.MaxSize, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, &tv.ContextMenu
+func (tv TreeView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return tv.Name, tv.MinSize, tv.MaxSize, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, tv.ContextMenuActions
 }
 
 func (tv TreeView) Font_() *Font {

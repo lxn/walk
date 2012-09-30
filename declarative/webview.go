@@ -9,17 +9,17 @@ import (
 )
 
 type WebView struct {
-	AssignTo      **walk.WebView
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	ContextMenu   Menu
-	URL           string
+	AssignTo           **walk.WebView
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	URL                string
 }
 
 func (wv WebView) Create(parent walk.Container) error {
@@ -41,6 +41,6 @@ func (wv WebView) Create(parent walk.Container) error {
 	})
 }
 
-func (wv WebView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return wv.Name, wv.MinSize, wv.MaxSize, wv.StretchFactor, wv.Row, wv.RowSpan, wv.Column, wv.ColumnSpan, &wv.ContextMenu
+func (wv WebView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return wv.Name, wv.MinSize, wv.MaxSize, wv.StretchFactor, wv.Row, wv.RowSpan, wv.Column, wv.ColumnSpan, wv.ContextMenuActions
 }

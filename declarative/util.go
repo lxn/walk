@@ -17,7 +17,7 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	}()
 
 	// Widget
-	name, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenu := d.WidgetInfo()
+	name, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions := d.WidgetInfo()
 
 	w.SetName(name)
 
@@ -25,12 +25,12 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 		return err
 	}
 
-	if contextMenu != nil {
+	if len(contextMenuActions) > 0 {
 		cm, err := walk.NewMenu()
 		if err != nil {
 			return err
 		}
-		if err := addToActionList(cm.Actions(), contextMenu.Actions); err != nil {
+		if err := addToActionList(cm.Actions(), contextMenuActions); err != nil {
 			return err
 		}
 		w.SetContextMenu(cm)

@@ -131,7 +131,7 @@ func main() {
 						Layout: HBox{Margins: marg0},
 						Children: []Widget{
 							Label{Text: "File"},
-							LineEdit{ContextMenu: Menu{Actions: []*walk.Action{openAction}}},
+							LineEdit{ContextMenuActions: []*walk.Action{openAction}},
 							ToolButton{Text: "..."},
 						},
 					},

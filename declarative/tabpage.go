@@ -9,14 +9,14 @@ import (
 )
 
 type TabPage struct {
-	AssignTo    **walk.TabPage
-	Name        string
-	MinSize     Size
-	MaxSize     Size
-	ContextMenu Menu
-	Title       string
-	Layout      Layout
-	Children    []Widget
+	AssignTo           **walk.TabPage
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	ContextMenuActions []*walk.Action
+	Title              string
+	Layout             Layout
+	Children           []Widget
 }
 
 func (tp TabPage) Create(parent walk.Container) error {
@@ -38,8 +38,8 @@ func (tp TabPage) Create(parent walk.Container) error {
 	})
 }
 
-func (tp TabPage) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return tp.Name, tp.MinSize, tp.MaxSize, 0, 0, 0, 0, 0, &tp.ContextMenu
+func (tp TabPage) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return tp.Name, tp.MinSize, tp.MaxSize, 0, 0, 0, 0, 0, tp.ContextMenuActions
 }
 
 func (tp TabPage) ContainerInfo() (Layout, []Widget) {

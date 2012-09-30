@@ -9,18 +9,18 @@ import (
 )
 
 type MainWindow struct {
-	AssignTo       **walk.MainWindow
-	Name           string
-	MinSize        Size
-	MaxSize        Size
-	ContextMenu    Menu
-	Font           Font
-	Title          string
-	Size           Size
-	Layout         Layout
-	Children       []Widget
-	MenuActions    []*walk.Action
-	ToolBarActions []*walk.Action
+	AssignTo           **walk.MainWindow
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	ContextMenuActions []*walk.Action
+	Font               Font
+	Title              string
+	Size               Size
+	Layout             Layout
+	Children           []Widget
+	MenuActions        []*walk.Action
+	ToolBarActions     []*walk.Action
 }
 
 func (mw MainWindow) Create(parent walk.Container) error {
@@ -60,8 +60,8 @@ func (mw MainWindow) Create(parent walk.Container) error {
 	})
 }
 
-func (mw MainWindow) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return mw.Name, mw.MinSize, mw.MaxSize, 0, 0, 0, 0, 0, &mw.ContextMenu
+func (mw MainWindow) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return mw.Name, mw.MinSize, mw.MaxSize, 0, 0, 0, 0, 0, mw.ContextMenuActions
 }
 
 func (mw MainWindow) Font_() *Font {

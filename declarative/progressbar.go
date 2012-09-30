@@ -9,19 +9,19 @@ import (
 )
 
 type ProgressBar struct {
-	AssignTo      **walk.ProgressBar
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	ContextMenu   Menu
-	MinValue      int
-	MaxValue      int
-	Value         int
+	AssignTo           **walk.ProgressBar
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	MinValue           int
+	MaxValue           int
+	Value              int
 }
 
 func (pb ProgressBar) Create(parent walk.Container) error {
@@ -42,6 +42,6 @@ func (pb ProgressBar) Create(parent walk.Container) error {
 	})
 }
 
-func (pb ProgressBar) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return pb.Name, pb.MinSize, pb.MaxSize, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, &pb.ContextMenu
+func (pb ProgressBar) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return pb.Name, pb.MinSize, pb.MaxSize, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, pb.ContextMenuActions
 }

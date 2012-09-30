@@ -9,20 +9,20 @@ import (
 )
 
 type GroupBox struct {
-	AssignTo      **walk.GroupBox
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	ContextMenu   Menu
-	Font          Font
-	Title         string
-	Layout        Layout
-	Children      []Widget
+	AssignTo           **walk.GroupBox
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	Font               Font
+	Title              string
+	Layout             Layout
+	Children           []Widget
 }
 
 func (gb GroupBox) Create(parent walk.Container) error {
@@ -44,8 +44,8 @@ func (gb GroupBox) Create(parent walk.Container) error {
 	})
 }
 
-func (gb GroupBox) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return gb.Name, gb.MinSize, gb.MaxSize, gb.StretchFactor, gb.Row, gb.RowSpan, gb.Column, gb.ColumnSpan, &gb.ContextMenu
+func (gb GroupBox) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return gb.Name, gb.MinSize, gb.MaxSize, gb.StretchFactor, gb.Row, gb.RowSpan, gb.Column, gb.ColumnSpan, gb.ContextMenuActions
 }
 
 func (gb GroupBox) Font_() *Font {

@@ -18,7 +18,7 @@ type TableView struct {
 	RowSpan                    int
 	Column                     int
 	ColumnSpan                 int
-	ContextMenu                Menu
+	ContextMenuActions         []*walk.Action
 	Font                       Font
 	Model                      walk.TableModel
 	AlternatingRowBGColor      walk.Color
@@ -72,8 +72,8 @@ func (tv TableView) Create(parent walk.Container) error {
 	})
 }
 
-func (tv TableView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return tv.Name, tv.MinSize, tv.MaxSize, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, &tv.ContextMenu
+func (tv TableView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return tv.Name, tv.MinSize, tv.MaxSize, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, tv.ContextMenuActions
 }
 
 func (tv TableView) Font_() *Font {

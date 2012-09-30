@@ -9,20 +9,20 @@ import (
 )
 
 type Splitter struct {
-	AssignTo      **walk.Splitter
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	ContextMenu   Menu
-	Layout        Layout
-	Children      []Widget
-	HandleWidth   int
-	Orientation   walk.Orientation
+	AssignTo           **walk.Splitter
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	Layout             Layout
+	Children           []Widget
+	HandleWidth        int
+	Orientation        walk.Orientation
 }
 
 func (s Splitter) Create(parent walk.Container) error {
@@ -49,8 +49,8 @@ func (s Splitter) Create(parent walk.Container) error {
 	})
 }
 
-func (s Splitter) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return s.Name, s.MinSize, s.MaxSize, s.StretchFactor, s.Row, s.RowSpan, s.Column, s.ColumnSpan, &s.ContextMenu
+func (s Splitter) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return s.Name, s.MinSize, s.MaxSize, s.StretchFactor, s.Row, s.RowSpan, s.Column, s.ColumnSpan, s.ContextMenuActions
 }
 
 func (s Splitter) ContainerInfo() (Layout, []Widget) {

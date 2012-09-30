@@ -9,18 +9,18 @@ import (
 )
 
 type Label struct {
-	AssignTo      **walk.Label
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	ContextMenu   Menu
-	Font          Font
-	Text          string
+	AssignTo           **walk.Label
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	Font               Font
+	Text               string
 }
 
 func (l Label) Create(parent walk.Container) error {
@@ -42,8 +42,8 @@ func (l Label) Create(parent walk.Container) error {
 	})
 }
 
-func (l Label) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return l.Name, l.MinSize, l.MaxSize, l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan, &l.ContextMenu
+func (l Label) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return l.Name, l.MinSize, l.MaxSize, l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan, l.ContextMenuActions
 }
 
 func (l Label) Font_() *Font {

@@ -9,19 +9,19 @@ import (
 )
 
 type ToolBar struct {
-	AssignTo      **walk.ToolBar
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	ContextMenu   Menu
-	Font          Font
-	Orientation   walk.Orientation
-	Actions       []*walk.Action
+	AssignTo           **walk.ToolBar
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	Font               Font
+	Orientation        walk.Orientation
+	Actions            []*walk.Action
 }
 
 func (tb ToolBar) Create(parent walk.Container) (err error) {
@@ -54,8 +54,8 @@ func (tb ToolBar) Create(parent walk.Container) (err error) {
 	})
 }
 
-func (tb ToolBar) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return tb.Name, tb.MinSize, tb.MaxSize, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan, &tb.ContextMenu
+func (tb ToolBar) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return tb.Name, tb.MinSize, tb.MaxSize, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan, tb.ContextMenuActions
 }
 
 func (tb ToolBar) Font_() *Font {

@@ -18,7 +18,7 @@ type CustomWidget struct {
 	RowSpan             int
 	Column              int
 	ColumnSpan          int
-	ContextMenu         Menu
+	ContextMenuActions  []*walk.Action
 	Style               uint32
 	Paint               walk.PaintFunc
 	ClearsBackground    bool
@@ -43,6 +43,6 @@ func (cw CustomWidget) Create(parent walk.Container) error {
 	})
 }
 
-func (cw CustomWidget) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return cw.Name, cw.MinSize, cw.MaxSize, cw.StretchFactor, cw.Row, cw.RowSpan, cw.Column, cw.ColumnSpan, &cw.ContextMenu
+func (cw CustomWidget) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return cw.Name, cw.MinSize, cw.MaxSize, cw.StretchFactor, cw.Row, cw.RowSpan, cw.Column, cw.ColumnSpan, cw.ContextMenuActions
 }

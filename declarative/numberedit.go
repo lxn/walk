@@ -9,23 +9,23 @@ import (
 )
 
 type NumberEdit struct {
-	AssignTo       **walk.NumberEdit
-	Name           string
-	MinSize        Size
-	MaxSize        Size
-	StretchFactor  int
-	Row            int
-	RowSpan        int
-	Column         int
-	ColumnSpan     int
-	ContextMenu    Menu
-	Font           Font
-	Decimals       int
-	Increment      float64
-	MinValue       float64
-	MaxValue       float64
-	Value          float64
-	OnValueChanged walk.EventHandler
+	AssignTo           **walk.NumberEdit
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	Font               Font
+	Decimals           int
+	Increment          float64
+	MinValue           float64
+	MaxValue           float64
+	Value              float64
+	OnValueChanged     walk.EventHandler
 }
 
 func (ne NumberEdit) Create(parent walk.Container) error {
@@ -70,8 +70,8 @@ func (ne NumberEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (ne NumberEdit) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return ne.Name, ne.MinSize, ne.MaxSize, ne.StretchFactor, ne.Row, ne.RowSpan, ne.Column, ne.ColumnSpan, &ne.ContextMenu
+func (ne NumberEdit) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return ne.Name, ne.MinSize, ne.MaxSize, ne.StretchFactor, ne.Row, ne.RowSpan, ne.Column, ne.ColumnSpan, ne.ContextMenuActions
 }
 
 func (ne NumberEdit) Font_() *Font {

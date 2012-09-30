@@ -9,18 +9,18 @@ import (
 )
 
 type Dialog struct {
-	AssignTo      **walk.Dialog
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	ContextMenu   Menu
-	Font          Font
-	Title         string
-	Size          Size
-	Layout        Layout
-	Children      []Widget
-	DefaultButton **walk.PushButton
-	CancelButton  **walk.PushButton
+	AssignTo           **walk.Dialog
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	ContextMenuActions []*walk.Action
+	Font               Font
+	Title              string
+	Size               Size
+	Layout             Layout
+	Children           []Widget
+	DefaultButton      **walk.PushButton
+	CancelButton       **walk.PushButton
 }
 
 func (d Dialog) Create(parent walk.Container) error {
@@ -62,8 +62,8 @@ func (d Dialog) Create(parent walk.Container) error {
 	})
 }
 
-func (d Dialog) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return d.Name, d.MinSize, d.MaxSize, 0, 0, 0, 0, 0, &d.ContextMenu
+func (d Dialog) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return d.Name, d.MinSize, d.MaxSize, 0, 0, 0, 0, 0, d.ContextMenuActions
 }
 
 func (d Dialog) Font_() *Font {

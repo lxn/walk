@@ -9,17 +9,17 @@ import (
 )
 
 type ImageView struct {
-	AssignTo      **walk.ImageView
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	ContextMenu   Menu
-	Image         walk.Image
+	AssignTo           **walk.ImageView
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	Image              walk.Image
 }
 
 func (iv ImageView) Create(parent walk.Container) error {
@@ -41,6 +41,6 @@ func (iv ImageView) Create(parent walk.Container) error {
 	})
 }
 
-func (iv ImageView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return iv.Name, iv.MinSize, iv.MaxSize, iv.StretchFactor, iv.Row, iv.RowSpan, iv.Column, iv.ColumnSpan, &iv.ContextMenu
+func (iv ImageView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return iv.Name, iv.MinSize, iv.MaxSize, iv.StretchFactor, iv.Row, iv.RowSpan, iv.Column, iv.ColumnSpan, iv.ContextMenuActions
 }

@@ -18,7 +18,7 @@ type ComboBox struct {
 	RowSpan               int
 	Column                int
 	ColumnSpan            int
-	ContextMenu           Menu
+	ContextMenuActions    []*walk.Action
 	Font                  Font
 	Format                string
 	Precision             int
@@ -52,8 +52,8 @@ func (cb ComboBox) Create(parent walk.Container) error {
 	})
 }
 
-func (cb ComboBox) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return cb.Name, cb.MinSize, cb.MaxSize, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, &cb.ContextMenu
+func (cb ComboBox) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return cb.Name, cb.MinSize, cb.MaxSize, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, cb.ContextMenuActions
 }
 
 func (cb ComboBox) Font_() *Font {

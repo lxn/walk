@@ -18,7 +18,7 @@ type ListBox struct {
 	RowSpan               int
 	Column                int
 	ColumnSpan            int
-	ContextMenu           Menu
+	ContextMenuActions    []*walk.Action
 	Font                  Font
 	Format                string
 	Precision             int
@@ -56,8 +56,8 @@ func (lb ListBox) Create(parent walk.Container) error {
 	})
 }
 
-func (lb ListBox) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return lb.Name, lb.MinSize, lb.MaxSize, lb.StretchFactor, lb.Row, lb.RowSpan, lb.Column, lb.ColumnSpan, &lb.ContextMenu
+func (lb ListBox) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return lb.Name, lb.MinSize, lb.MaxSize, lb.StretchFactor, lb.Row, lb.RowSpan, lb.Column, lb.ColumnSpan, lb.ContextMenuActions
 }
 
 func (lb ListBox) Font_() *Font {

@@ -9,18 +9,18 @@ import (
 )
 
 type Composite struct {
-	AssignTo      **walk.Composite
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	ContextMenu   Menu
-	Layout        Layout
-	Children      []Widget
+	AssignTo           **walk.Composite
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	Layout             Layout
+	Children           []Widget
 }
 
 func (c Composite) Create(parent walk.Container) error {
@@ -38,8 +38,8 @@ func (c Composite) Create(parent walk.Container) error {
 	})
 }
 
-func (c Composite) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return c.Name, c.MinSize, c.MaxSize, c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan, &c.ContextMenu
+func (c Composite) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return c.Name, c.MinSize, c.MaxSize, c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan, c.ContextMenuActions
 }
 
 func (c Composite) ContainerInfo() (Layout, []Widget) {

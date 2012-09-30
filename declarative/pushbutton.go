@@ -9,19 +9,19 @@ import (
 )
 
 type PushButton struct {
-	AssignTo      **walk.PushButton
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	ContextMenu   Menu
-	Font          Font
-	Text          string
-	OnClicked     walk.EventHandler
+	AssignTo           **walk.PushButton
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	Font               Font
+	Text               string
+	OnClicked          walk.EventHandler
 }
 
 func (pb PushButton) Create(parent walk.Container) error {
@@ -47,8 +47,8 @@ func (pb PushButton) Create(parent walk.Container) error {
 	})
 }
 
-func (pb PushButton) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return pb.Name, pb.MinSize, pb.MaxSize, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, &pb.ContextMenu
+func (pb PushButton) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return pb.Name, pb.MinSize, pb.MaxSize, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, pb.ContextMenuActions
 }
 
 func (pb PushButton) Font_() *Font {

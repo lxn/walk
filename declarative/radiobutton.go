@@ -9,19 +9,19 @@ import (
 )
 
 type RadioButton struct {
-	AssignTo      **walk.RadioButton
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
-	Column        int
-	ColumnSpan    int
-	ContextMenu   Menu
-	Font          Font
-	Text          string
-	OnClicked     walk.EventHandler
+	AssignTo           **walk.RadioButton
+	Name               string
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuActions []*walk.Action
+	Font               Font
+	Text               string
+	OnClicked          walk.EventHandler
 }
 
 func (rb RadioButton) Create(parent walk.Container) error {
@@ -47,8 +47,8 @@ func (rb RadioButton) Create(parent walk.Container) error {
 	})
 }
 
-func (rb RadioButton) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return rb.Name, rb.MinSize, rb.MaxSize, rb.StretchFactor, rb.Row, rb.RowSpan, rb.Column, rb.ColumnSpan, &rb.ContextMenu
+func (rb RadioButton) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return rb.Name, rb.MinSize, rb.MaxSize, rb.StretchFactor, rb.Row, rb.RowSpan, rb.Column, rb.ColumnSpan, rb.ContextMenuActions
 }
 
 func (rb RadioButton) Font_() *Font {
