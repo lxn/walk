@@ -8,6 +8,13 @@ import (
 	"github.com/lxn/walk"
 )
 
+type Orientation byte
+
+const (
+	Horizontal Orientation = Orientation(walk.Horizontal)
+	Vertical   Orientation = Orientation(walk.Vertical)
+)
+
 type Margins struct {
 	Left   int
 	Top    int

@@ -20,13 +20,13 @@ type ToolBar struct {
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
 	Font               Font
-	Orientation        walk.Orientation
+	Orientation        Orientation
 	Actions            []*walk.Action
 }
 
 func (tb ToolBar) Create(parent walk.Container) (err error) {
 	var w *walk.ToolBar
-	if tb.Orientation == walk.Vertical {
+	if tb.Orientation == Vertical {
 		w, err = walk.NewVerticalToolBar(parent)
 	} else {
 		w, err = walk.NewToolBar(parent)

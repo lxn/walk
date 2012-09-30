@@ -22,7 +22,7 @@ type Splitter struct {
 	Layout             Layout
 	Children           []Widget
 	HandleWidth        int
-	Orientation        walk.Orientation
+	Orientation        Orientation
 }
 
 func (s Splitter) Create(parent walk.Container) error {
@@ -37,7 +37,7 @@ func (s Splitter) Create(parent walk.Container) error {
 				return err
 			}
 		}
-		if err := w.SetOrientation(s.Orientation); err != nil {
+		if err := w.SetOrientation(walk.Orientation(s.Orientation)); err != nil {
 			return err
 		}
 

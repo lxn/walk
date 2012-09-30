@@ -140,7 +140,7 @@ func main() {
 		Size:           Size{800, 600},
 		Layout:         HBox{Margins: &Margins{6, 6, 6, 6}},
 		Children: []Widget{
-			ToolBar{Orientation: walk.Vertical, Actions: toolBarActions},
+			ToolBar{Orientation: Vertical, Actions: toolBarActions},
 			Composite{
 				Layout: VBox{Margins: marg0},
 				Children: []Widget{
