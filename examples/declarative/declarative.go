@@ -5,6 +5,10 @@
 package main
 
 import (
+	"log"
+)
+
+import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
@@ -18,16 +22,19 @@ func (mw *MyMainWindow) openAction_Triggered() {
 }
 
 func main() {
-	walk.Initialize(walk.InitParams{PanicOnError: true})
+	walk.Initialize(walk.InitParams{})
 	defer walk.Shutdown()
 
 	mw := new(MyMainWindow)
 
-	openImage, _ := walk.NewBitmapFromFile("../img/open.png")
+	openImage, err := walk.NewBitmapFromFile("../img/open.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	var openAction *walk.Action
 
-	menuActions, _ := CreateMenuActions(
+	menuActions, err := CreateMenuActions(
 		SubMenu{
 			Text: "&File",
 			Items: []MenuItem{
@@ -44,14 +51,20 @@ func main() {
 				},
 			},
 		})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	toolBarActions, _ := CreateToolBarActions(
+	toolBarActions, err := CreateToolBarActions(
 		ActionRef{openAction},
 		Action{Text: "NOP"})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	marg0 := &Margins{}
 
-	MainWindow{
+	if err := (MainWindow{
 		AssignTo: &mw.MainWindow,
 		Title:    "FTPS cycle finder",
 		Menu:     Menu{Actions: menuActions},
@@ -92,7 +105,9 @@ func main() {
 				},
 			},
 		},
-	}.Create(nil)
+	}.Create(nil)); err != nil {
+		log.Fatal(err)
+	}
 
 	mw.Show()
 	mw.Run()
