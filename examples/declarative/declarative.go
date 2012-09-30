@@ -83,6 +83,7 @@ func main() {
 	}
 
 	var openAction *walk.Action
+	var recentMenu *walk.Menu
 
 	menuActions, err := CreateMenuActions(
 		SubMenu{
@@ -94,6 +95,10 @@ func main() {
 					Image:       openImage,
 					OnTriggered: func() { mw.openAction_Triggered() },
 				},
+				SubMenu{
+					AssignMenuTo: &recentMenu,
+					Text:         "Recent",
+				},
 				Action{},
 				Action{
 					Text:        "E&xit",
@@ -104,6 +109,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	openRecent1Action := walk.NewAction()
+	openRecent1Action.SetText("Blah")
+	recentMenu.Actions().Add(openRecent1Action)
+
+	openRecent2Action := walk.NewAction()
+	openRecent2Action.SetText("Yadda")
+	recentMenu.Actions().Add(openRecent2Action)
+
+	openRecent3Action := walk.NewAction()
+	openRecent3Action.SetText("Oink")
+	recentMenu.Actions().Add(openRecent3Action)
 
 	toolBarActions, err := CreateToolBarActions(
 		ActionRef{openAction},

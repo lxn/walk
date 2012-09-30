@@ -77,8 +77,10 @@ func (ar ActionRef) createToolBarAction() (*walk.Action, error) {
 }
 
 type SubMenu struct {
-	Text  string
-	Items []MenuItem
+	AssignTo     **walk.Action
+	AssignMenuTo **walk.Menu
+	Text         string
+	Items        []MenuItem
 }
 
 func (sm SubMenu) createMenuAction(menu *walk.Menu) (*walk.Action, error) {
@@ -107,6 +109,13 @@ func (sm SubMenu) createMenuAction(menu *walk.Menu) (*walk.Action, error) {
 		if _, err := item.createMenuAction(subMenu); err != nil {
 			return nil, err
 		}
+	}
+
+	if sm.AssignMenuTo != nil {
+		*sm.AssignMenuTo = subMenu
+	}
+	if sm.AssignTo != nil {
+		*sm.AssignTo = action
 	}
 
 	return action, nil
