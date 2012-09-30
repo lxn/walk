@@ -30,7 +30,7 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 		if err != nil {
 			return err
 		}
-		if err := contextMenu.init(cm); err != nil {
+		if err := addToActionList(cm.Actions(), contextMenu.Actions); err != nil {
 			return err
 		}
 		w.SetContextMenu(cm)

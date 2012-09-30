@@ -115,13 +115,13 @@ func main() {
 	marg0 := &Margins{}
 
 	if err := (MainWindow{
-		AssignTo: &mw.MainWindow,
-		Title:    "FTPS cycle finder",
-		Menu:     Menu{Actions: menuActions},
-		ToolBar:  ToolBar{Actions: toolBarActions},
-		MinSize:  Size{600, 400},
-		Size:     Size{800, 600},
-		Layout:   HBox{Margins: &Margins{6, 6, 6, 6}},
+		AssignTo:       &mw.MainWindow,
+		Title:          "FTPS cycle finder",
+		MenuActions:    menuActions,
+		ToolBarActions: toolBarActions,
+		MinSize:        Size{600, 400},
+		Size:           Size{800, 600},
+		Layout:         HBox{Margins: &Margins{6, 6, 6, 6}},
 		Children: []Widget{
 			ToolBar{Orientation: walk.Vertical, Actions: toolBarActions},
 			Composite{

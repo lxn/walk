@@ -12,18 +12,6 @@ type Menu struct {
 	Actions []*walk.Action
 }
 
-func (m Menu) init(menu *walk.Menu) error {
-	actions := menu.Actions()
-
-	for _, a := range m.Actions {
-		if err := actions.Add(a); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 type SubMenu struct {
 	Text  string
 	Items []MenuItem

@@ -76,6 +76,16 @@ func (ar ActionRef) createToolBarAction() (*walk.Action, error) {
 	return ar.Action, nil
 }
 
+func addToActionList(list *walk.ActionList, actions []*walk.Action) error {
+	for _, a := range actions {
+		if err := list.Add(a); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func CreateMenuActions(items ...MenuItem) ([]*walk.Action, error) {
 	var actions []*walk.Action
 

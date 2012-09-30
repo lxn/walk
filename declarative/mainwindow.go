@@ -9,18 +9,18 @@ import (
 )
 
 type MainWindow struct {
-	AssignTo    **walk.MainWindow
-	Name        string
-	MinSize     Size
-	MaxSize     Size
-	ContextMenu Menu
-	Font        Font
-	Title       string
-	Size        Size
-	Layout      Layout
-	Children    []Widget
-	Menu        Menu
-	ToolBar     ToolBar
+	AssignTo       **walk.MainWindow
+	Name           string
+	MinSize        Size
+	MaxSize        Size
+	ContextMenu    Menu
+	Font           Font
+	Title          string
+	Size           Size
+	Layout         Layout
+	Children       []Widget
+	MenuActions    []*walk.Action
+	ToolBarActions []*walk.Action
 }
 
 func (mw MainWindow) Create(parent walk.Container) error {
@@ -38,7 +38,7 @@ func (mw MainWindow) Create(parent walk.Container) error {
 			return err
 		}
 
-		if err := mw.Menu.init(w.Menu()); err != nil {
+		if err := addToActionList(w.Menu().Actions(), mw.MenuActions); err != nil {
 			return err
 		}
 
@@ -48,7 +48,7 @@ func (mw MainWindow) Create(parent walk.Container) error {
 		}
 		w.ToolBar().SetImageList(imageList)
 
-		if err := mw.ToolBar.initActions(w.ToolBar()); err != nil {
+		if err := addToActionList(w.ToolBar().Actions(), mw.ToolBarActions); err != nil {
 			return err
 		}
 

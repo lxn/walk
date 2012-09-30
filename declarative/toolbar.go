@@ -42,7 +42,7 @@ func (tb ToolBar) Create(parent walk.Container) (err error) {
 		}
 		w.SetImageList(imageList)
 
-		if err := tb.initActions(w); err != nil {
+		if err := addToActionList(w.Actions(), tb.Actions); err != nil {
 			return err
 		}
 
@@ -52,18 +52,6 @@ func (tb ToolBar) Create(parent walk.Container) (err error) {
 
 		return nil
 	})
-}
-
-func (tb ToolBar) initActions(w *walk.ToolBar) error {
-	actions := w.Actions()
-
-	for _, a := range tb.Actions {
-		if err := actions.Add(a); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (tb ToolBar) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
