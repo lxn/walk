@@ -11,6 +11,8 @@ import (
 type ComboBox struct {
 	AssignTo              **walk.ComboBox
 	Name                  string
+	MinSize               Size
+	MaxSize               Size
 	StretchFactor         int
 	Row                   int
 	RowSpan               int
@@ -50,8 +52,8 @@ func (cb ComboBox) Create(parent walk.Container) error {
 	})
 }
 
-func (cb ComboBox) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return cb.Name, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, &cb.ContextMenu
+func (cb ComboBox) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return cb.Name, cb.MinSize, cb.MaxSize, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, &cb.ContextMenu
 }
 
 func (cb ComboBox) Font_() *Font {

@@ -36,6 +36,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		Title:         "My Dialog",
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
+		MinSize:       Size{400, 300},
 		Size:          Size{400, 300},
 		Layout:        VBox{},
 		Children: []Widget{
@@ -118,6 +119,7 @@ func main() {
 		Title:    "FTPS cycle finder",
 		Menu:     Menu{Actions: menuActions},
 		ToolBar:  ToolBar{Actions: toolBarActions},
+		MinSize:  Size{600, 400},
 		Size:     Size{800, 600},
 		Layout:   HBox{Margins: &Margins{6, 6, 6, 6}},
 		Children: []Widget{

@@ -15,6 +15,8 @@ import (
 type DateEdit struct {
 	AssignTo      **walk.DateEdit
 	Name          string
+	MinSize       Size
+	MaxSize       Size
 	StretchFactor int
 	Row           int
 	RowSpan       int
@@ -57,8 +59,8 @@ func (de DateEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (de DateEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return de.Name, de.StretchFactor, de.Row, de.RowSpan, de.Column, de.ColumnSpan, &de.ContextMenu
+func (de DateEdit) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return de.Name, de.MinSize, de.MaxSize, de.StretchFactor, de.Row, de.RowSpan, de.Column, de.ColumnSpan, &de.ContextMenu
 }
 
 func (de DateEdit) Font_() *Font {

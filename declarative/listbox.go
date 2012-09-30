@@ -11,6 +11,8 @@ import (
 type ListBox struct {
 	AssignTo              **walk.ListBox
 	Name                  string
+	MinSize               Size
+	MaxSize               Size
 	StretchFactor         int
 	Row                   int
 	RowSpan               int
@@ -54,8 +56,8 @@ func (lb ListBox) Create(parent walk.Container) error {
 	})
 }
 
-func (lb ListBox) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return lb.Name, lb.StretchFactor, lb.Row, lb.RowSpan, lb.Column, lb.ColumnSpan, &lb.ContextMenu
+func (lb ListBox) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return lb.Name, lb.MinSize, lb.MaxSize, lb.StretchFactor, lb.Row, lb.RowSpan, lb.Column, lb.ColumnSpan, &lb.ContextMenu
 }
 
 func (lb ListBox) Font_() *Font {

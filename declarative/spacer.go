@@ -10,6 +10,8 @@ import (
 
 type HSpacer struct {
 	Name          string
+	MinSize       Size
+	MaxSize       Size
 	StretchFactor int
 	Row           int
 	RowSpan       int
@@ -33,12 +35,14 @@ func (hs HSpacer) Create(parent walk.Container) (err error) {
 	return InitWidget(hs, w, nil)
 }
 
-func (hs HSpacer) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return hs.Name, hs.StretchFactor, hs.Row, hs.RowSpan, hs.Column, hs.ColumnSpan, nil
+func (hs HSpacer) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return hs.Name, hs.MinSize, hs.MaxSize, hs.StretchFactor, hs.Row, hs.RowSpan, hs.Column, hs.ColumnSpan, nil
 }
 
 type VSpacer struct {
 	Name          string
+	MinSize       Size
+	MaxSize       Size
 	StretchFactor int
 	Row           int
 	RowSpan       int
@@ -62,6 +66,6 @@ func (vs VSpacer) Create(parent walk.Container) (err error) {
 	return InitWidget(vs, w, nil)
 }
 
-func (vs VSpacer) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return vs.Name, vs.StretchFactor, vs.Row, vs.RowSpan, vs.Column, vs.ColumnSpan, nil
+func (vs VSpacer) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return vs.Name, vs.MinSize, vs.MaxSize, vs.StretchFactor, vs.Row, vs.RowSpan, vs.Column, vs.ColumnSpan, nil
 }

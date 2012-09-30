@@ -11,6 +11,8 @@ import (
 type LineEdit struct {
 	AssignTo          **walk.LineEdit
 	Name              string
+	MinSize           Size
+	MaxSize           Size
 	StretchFactor     int
 	Row               int
 	RowSpan           int
@@ -65,8 +67,8 @@ func (le LineEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (le LineEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return le.Name, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan, &le.ContextMenu
+func (le LineEdit) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return le.Name, le.MinSize, le.MaxSize, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan, &le.ContextMenu
 }
 
 func (le LineEdit) Font_() *Font {

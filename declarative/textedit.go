@@ -11,6 +11,8 @@ import (
 type TextEdit struct {
 	AssignTo      **walk.TextEdit
 	Name          string
+	MinSize       Size
+	MaxSize       Size
 	StretchFactor int
 	Row           int
 	RowSpan       int
@@ -43,8 +45,8 @@ func (te TextEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (te TextEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return te.Name, te.StretchFactor, te.Row, te.RowSpan, te.Column, te.ColumnSpan, &te.ContextMenu
+func (te TextEdit) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return te.Name, te.MinSize, te.MaxSize, te.StretchFactor, te.Row, te.RowSpan, te.Column, te.ColumnSpan, &te.ContextMenu
 }
 
 func (te TextEdit) Font_() *Font {

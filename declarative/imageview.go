@@ -11,6 +11,8 @@ import (
 type ImageView struct {
 	AssignTo      **walk.ImageView
 	Name          string
+	MinSize       Size
+	MaxSize       Size
 	StretchFactor int
 	Row           int
 	RowSpan       int
@@ -39,6 +41,6 @@ func (iv ImageView) Create(parent walk.Container) error {
 	})
 }
 
-func (iv ImageView) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return iv.Name, iv.StretchFactor, iv.Row, iv.RowSpan, iv.Column, iv.ColumnSpan, &iv.ContextMenu
+func (iv ImageView) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return iv.Name, iv.MinSize, iv.MaxSize, iv.StretchFactor, iv.Row, iv.RowSpan, iv.Column, iv.ColumnSpan, &iv.ContextMenu
 }

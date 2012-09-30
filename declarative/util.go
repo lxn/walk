@@ -17,11 +17,26 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	}()
 
 	// Widget
+	name, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenu := d.CommonInfo()
+
+	w.SetName(name)
+
+	if err := w.SetMinMaxSize(minSize.toW(), maxSize.toW()); err != nil {
+		return err
+	}
+
+	if contextMenu != nil {
+		cm, err := walk.NewMenu()
+		if err != nil {
+			return err
+		}
+		if err := contextMenu.init(cm); err != nil {
+			return err
+		}
+		w.SetContextMenu(cm)
+	}
+
 	if p := w.Parent(); p != nil {
-		name, stretchFactor, row, rowSpan, column, columnSpan, contextMenu := d.CommonInfo()
-
-		w.SetName(name)
-
 		switch l := p.Layout().(type) {
 		case *walk.BoxLayout:
 			if stretchFactor < 1 {
@@ -45,17 +60,6 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 			if err := l.SetRange(w, r); err != nil {
 				return err
 			}
-		}
-
-		if contextMenu != nil {
-			cm, err := walk.NewMenu()
-			if err != nil {
-				return err
-			}
-			if err := contextMenu.init(cm); err != nil {
-				return err
-			}
-			w.SetContextMenu(cm)
 		}
 	}
 

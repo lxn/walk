@@ -11,6 +11,8 @@ import (
 type ToolBar struct {
 	AssignTo      **walk.ToolBar
 	Name          string
+	MinSize       Size
+	MaxSize       Size
 	StretchFactor int
 	Row           int
 	RowSpan       int
@@ -64,8 +66,8 @@ func (tb ToolBar) initActions(w *walk.ToolBar) error {
 	return nil
 }
 
-func (tb ToolBar) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return tb.Name, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan, &tb.ContextMenu
+func (tb ToolBar) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return tb.Name, tb.MinSize, tb.MaxSize, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan, &tb.ContextMenu
 }
 
 func (tb ToolBar) Font_() *Font {

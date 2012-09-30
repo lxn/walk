@@ -11,6 +11,8 @@ import (
 type ToolButton struct {
 	AssignTo      **walk.ToolButton
 	Name          string
+	MinSize       Size
+	MaxSize       Size
 	StretchFactor int
 	Row           int
 	RowSpan       int
@@ -45,8 +47,8 @@ func (tb ToolButton) Create(parent walk.Container) error {
 	})
 }
 
-func (tb ToolButton) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return tb.Name, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan, &tb.ContextMenu
+func (tb ToolButton) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return tb.Name, tb.MinSize, tb.MaxSize, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan, &tb.ContextMenu
 }
 
 func (tb ToolButton) Font_() *Font {

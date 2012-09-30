@@ -11,6 +11,8 @@ import (
 type CustomWidget struct {
 	AssignTo            **walk.CustomWidget
 	Name                string
+	MinSize             Size
+	MaxSize             Size
 	StretchFactor       int
 	Row                 int
 	RowSpan             int
@@ -41,6 +43,6 @@ func (cw CustomWidget) Create(parent walk.Container) error {
 	})
 }
 
-func (cw CustomWidget) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return cw.Name, cw.StretchFactor, cw.Row, cw.RowSpan, cw.Column, cw.ColumnSpan, &cw.ContextMenu
+func (cw CustomWidget) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return cw.Name, cw.MinSize, cw.MaxSize, cw.StretchFactor, cw.Row, cw.RowSpan, cw.Column, cw.ColumnSpan, &cw.ContextMenu
 }

@@ -11,6 +11,8 @@ import (
 type Dialog struct {
 	AssignTo      **walk.Dialog
 	Name          string
+	MinSize       Size
+	MaxSize       Size
 	ContextMenu   Menu
 	Font          Font
 	Title         string
@@ -60,8 +62,8 @@ func (d Dialog) Create(parent walk.Container) error {
 	})
 }
 
-func (d Dialog) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return d.Name, 0, 0, 0, 0, 0, &d.ContextMenu
+func (d Dialog) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return d.Name, d.MinSize, d.MaxSize, 0, 0, 0, 0, 0, &d.ContextMenu
 }
 
 func (d Dialog) Font_() *Font {

@@ -11,6 +11,8 @@ import (
 type ProgressBar struct {
 	AssignTo      **walk.ProgressBar
 	Name          string
+	MinSize       Size
+	MaxSize       Size
 	StretchFactor int
 	Row           int
 	RowSpan       int
@@ -40,6 +42,6 @@ func (pb ProgressBar) Create(parent walk.Container) error {
 	})
 }
 
-func (pb ProgressBar) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return pb.Name, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, &pb.ContextMenu
+func (pb ProgressBar) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return pb.Name, pb.MinSize, pb.MaxSize, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, &pb.ContextMenu
 }

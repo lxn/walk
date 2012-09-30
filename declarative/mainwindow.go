@@ -11,6 +11,8 @@ import (
 type MainWindow struct {
 	AssignTo    **walk.MainWindow
 	Name        string
+	MinSize     Size
+	MaxSize     Size
 	ContextMenu Menu
 	Font        Font
 	Title       string
@@ -58,8 +60,8 @@ func (mw MainWindow) Create(parent walk.Container) error {
 	})
 }
 
-func (mw MainWindow) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return mw.Name, 0, 0, 0, 0, 0, &mw.ContextMenu
+func (mw MainWindow) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return mw.Name, mw.MinSize, mw.MaxSize, 0, 0, 0, 0, 0, &mw.ContextMenu
 }
 
 func (mw MainWindow) Font_() *Font {

@@ -11,6 +11,8 @@ import (
 type TreeView struct {
 	AssignTo      **walk.TreeView
 	Name          string
+	MinSize       Size
+	MaxSize       Size
 	StretchFactor int
 	Row           int
 	RowSpan       int
@@ -35,8 +37,8 @@ func (tv TreeView) Create(parent walk.Container) error {
 	})
 }
 
-func (tv TreeView) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
-	return tv.Name, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, &tv.ContextMenu
+func (tv TreeView) CommonInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return tv.Name, tv.MinSize, tv.MaxSize, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, &tv.ContextMenu
 }
 
 func (tv TreeView) Font_() *Font {
