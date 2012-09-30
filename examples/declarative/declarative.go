@@ -17,8 +17,57 @@ type MyMainWindow struct {
 	*walk.MainWindow
 }
 
+type MyDialog struct {
+	*walk.Dialog
+}
+
 func (mw *MyMainWindow) openAction_Triggered() {
 	walk.MsgBox(mw, "Open", "Nothing to see here...", walk.MsgBoxIconInformation|walk.MsgBoxOK)
+}
+
+func (mw *MyMainWindow) showDialogAction_Triggered() {
+	dlg := new(MyDialog)
+
+	var acceptPB *walk.PushButton
+	var cancelPB *walk.PushButton
+
+	if err := (Dialog{
+		AssignTo:      &dlg.Dialog,
+		Title:         "My Dialog",
+		DefaultButton: &acceptPB,
+		CancelButton:  &cancelPB,
+		Size:          Size{400, 300},
+		Layout:        VBox{},
+		Children: []Widget{
+			Composite{
+				Layout: Grid{},
+				Children: []Widget{
+					Label{Row: 0, Column: 0, Text: "A LineEdit:"},
+					LineEdit{Row: 0, Column: 1},
+					ToolButton{Row: 0, Column: 2, Text: "..."},
+					Label{Row: 1, Column: 0, Text: "Another LineEdit:"},
+					LineEdit{Row: 1, Column: 1},
+					Label{Row: 2, Column: 0, Text: "A ComboBox:"},
+					ComboBox{Row: 2, Column: 1},
+					VSpacer{Row: 3, Column: 0, Size: 10},
+					Label{Row: 4, Column: 0, ColumnSpan: 2, Text: "A TextEdit:"},
+					TextEdit{Row: 5, Column: 0, ColumnSpan: 2},
+				},
+			},
+			Composite{
+				Layout: HBox{},
+				Children: []Widget{
+					HSpacer{},
+					PushButton{AssignTo: &acceptPB, Text: "OK", OnClicked: func() { dlg.Accept() }},
+					PushButton{AssignTo: &cancelPB, Text: "Cancel", OnClicked: func() { dlg.Cancel() }},
+				},
+			},
+		},
+	}.Create(mw)); err != nil {
+		log.Fatal(err)
+	}
+
+	dlg.Run()
 }
 
 func main() {
@@ -57,7 +106,7 @@ func main() {
 
 	toolBarActions, err := CreateToolBarActions(
 		ActionRef{openAction},
-		Action{Text: "NOP"})
+		Action{Text: "Show Dialog", OnTriggered: func() { mw.showDialogAction_Triggered() }})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,6 +118,7 @@ func main() {
 		Title:    "FTPS cycle finder",
 		Menu:     Menu{Actions: menuActions},
 		ToolBar:  ToolBar{Actions: toolBarActions},
+		Size:     Size{800, 600},
 		Layout:   HBox{Margins: &Margins{6, 6, 6, 6}},
 		Children: []Widget{
 			ToolBar{Orientation: walk.Vertical, Actions: toolBarActions},

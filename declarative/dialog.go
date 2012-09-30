@@ -14,6 +14,7 @@ type Dialog struct {
 	ContextMenu   Menu
 	Font          Font
 	Title         string
+	Size          Size
 	Layout        Layout
 	Children      []Widget
 	DefaultButton **walk.PushButton
@@ -33,6 +34,10 @@ func (d Dialog) Create(parent walk.Container) error {
 
 	return InitWidget(d, w, func() error {
 		if err := w.SetTitle(d.Title); err != nil {
+			return err
+		}
+
+		if err := w.SetSize(d.Size.toW()); err != nil {
 			return err
 		}
 

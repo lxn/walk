@@ -15,6 +15,23 @@ type Margins struct {
 	Bottom int
 }
 
+func (m *Margins) toW() walk.Margins {
+	if m == nil {
+		return walk.Margins{9, 9, 9, 9}
+	}
+
+	return walk.Margins{m.Left, m.Top, m.Right, m.Bottom}
+}
+
+type Size struct {
+	Width  int
+	Height int
+}
+
+func (s Size) toW() walk.Size {
+	return walk.Size{s.Width, s.Height}
+}
+
 type HBox struct {
 	Margins *Margins
 	Spacing int
@@ -23,16 +40,7 @@ type HBox struct {
 func (hb HBox) Create() (walk.Layout, error) {
 	l := walk.NewHBoxLayout()
 
-	var m walk.Margins
-	if hb.Margins == nil {
-		m = walk.Margins{9, 9, 9, 9}
-	} else {
-		hbm := hb.Margins
-
-		m = walk.Margins{hbm.Left, hbm.Top, hbm.Right, hbm.Bottom}
-	}
-
-	if err := l.SetMargins(m); err != nil {
+	if err := l.SetMargins(hb.Margins.toW()); err != nil {
 		return nil, err
 	}
 
@@ -62,16 +70,7 @@ type VBox struct {
 func (vb VBox) Create() (walk.Layout, error) {
 	l := walk.NewVBoxLayout()
 
-	var m walk.Margins
-	if vb.Margins == nil {
-		m = walk.Margins{9, 9, 9, 9}
-	} else {
-		vbm := vb.Margins
-
-		m = walk.Margins{vbm.Left, vbm.Top, vbm.Right, vbm.Bottom}
-	}
-
-	if err := l.SetMargins(m); err != nil {
+	if err := l.SetMargins(vb.Margins.toW()); err != nil {
 		return nil, err
 	}
 
@@ -101,16 +100,7 @@ type Grid struct {
 func (g Grid) Create() (walk.Layout, error) {
 	l := walk.NewGridLayout()
 
-	var m walk.Margins
-	if g.Margins == nil {
-		m = walk.Margins{9, 9, 9, 9}
-	} else {
-		gm := g.Margins
-
-		m = walk.Margins{gm.Left, gm.Top, gm.Right, gm.Bottom}
-	}
-
-	if err := l.SetMargins(m); err != nil {
+	if err := l.SetMargins(g.Margins.toW()); err != nil {
 		return nil, err
 	}
 

@@ -14,6 +14,7 @@ type MainWindow struct {
 	ContextMenu Menu
 	Font        Font
 	Title       string
+	Size        Size
 	Layout      Layout
 	Children    []Widget
 	Menu        Menu
@@ -28,6 +29,10 @@ func (mw MainWindow) Create(parent walk.Container) error {
 
 	return InitWidget(mw, w, func() error {
 		if err := w.SetTitle(mw.Title); err != nil {
+			return err
+		}
+
+		if err := w.SetSize(mw.Size.toW()); err != nil {
 			return err
 		}
 
