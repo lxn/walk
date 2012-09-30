@@ -86,7 +86,7 @@ func main() {
 	var recentMenu *walk.Menu
 
 	menuActions, err := CreateMenuActions(
-		SubMenu{
+		Menu{
 			Text: "&File",
 			Items: []MenuItem{
 				Action{
@@ -95,9 +95,9 @@ func main() {
 					Image:       openImage,
 					OnTriggered: func() { mw.openAction_Triggered() },
 				},
-				SubMenu{
-					AssignMenuTo: &recentMenu,
-					Text:         "Recent",
+				Menu{
+					AssignTo: &recentMenu,
+					Text:     "Recent",
 				},
 				Action{},
 				Action{

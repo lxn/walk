@@ -76,14 +76,14 @@ func (ar ActionRef) createToolBarAction() (*walk.Action, error) {
 	return ar.Action, nil
 }
 
-type SubMenu struct {
-	AssignTo     **walk.Action
-	AssignMenuTo **walk.Menu
-	Text         string
-	Items        []MenuItem
+type Menu struct {
+	AssignTo       **walk.Menu
+	AssignActionTo **walk.Action
+	Text           string
+	Items          []MenuItem
 }
 
-func (sm SubMenu) createMenuAction(menu *walk.Menu) (*walk.Action, error) {
+func (m Menu) createMenuAction(menu *walk.Menu) (*walk.Action, error) {
 	if menu == nil {
 		var err error
 		if menu, err = walk.NewMenu(); err != nil {
@@ -101,21 +101,21 @@ func (sm SubMenu) createMenuAction(menu *walk.Menu) (*walk.Action, error) {
 		return nil, err
 	}
 
-	if err := action.SetText(sm.Text); err != nil {
+	if err := action.SetText(m.Text); err != nil {
 		return nil, err
 	}
 
-	for _, item := range sm.Items {
+	for _, item := range m.Items {
 		if _, err := item.createMenuAction(subMenu); err != nil {
 			return nil, err
 		}
 	}
 
-	if sm.AssignMenuTo != nil {
-		*sm.AssignMenuTo = subMenu
+	if m.AssignActionTo != nil {
+		*m.AssignActionTo = action
 	}
-	if sm.AssignTo != nil {
-		*sm.AssignTo = action
+	if m.AssignTo != nil {
+		*m.AssignTo = subMenu
 	}
 
 	return action, nil
