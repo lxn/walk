@@ -16,6 +16,7 @@ type TabPage struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Title         string
 	Layout        Layout
 	Children      []Widget
@@ -40,8 +41,8 @@ func (tp TabPage) Create(parent walk.Container) error {
 	})
 }
 
-func (tp TabPage) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return tp.Name, tp.StretchFactor, tp.Row, tp.RowSpan, tp.Column, tp.ColumnSpan
+func (tp TabPage) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return tp.Name, tp.StretchFactor, tp.Row, tp.RowSpan, tp.Column, tp.ColumnSpan, &tp.ContextMenu
 }
 
 func (tp TabPage) ContainerInfo() (Layout, []Widget) {

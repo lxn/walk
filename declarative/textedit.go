@@ -16,6 +16,7 @@ type TextEdit struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Font          Font
 	Text          string
 	ReadOnly      bool
@@ -42,8 +43,8 @@ func (te TextEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (te TextEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return te.Name, te.StretchFactor, te.Row, te.RowSpan, te.Column, te.ColumnSpan
+func (te TextEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return te.Name, te.StretchFactor, te.Row, te.RowSpan, te.Column, te.ColumnSpan, &te.ContextMenu
 }
 
 func (te TextEdit) Font_() *Font {

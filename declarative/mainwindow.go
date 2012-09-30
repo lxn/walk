@@ -9,14 +9,15 @@ import (
 )
 
 type MainWindow struct {
-	AssignTo **walk.MainWindow
-	Name     string
-	Font     Font
-	Title    string
-	Layout   Layout
-	Children []Widget
-	Menu     Menu
-	ToolBar  ToolBar
+	AssignTo    **walk.MainWindow
+	Name        string
+	ContextMenu Menu
+	Font        Font
+	Title       string
+	Layout      Layout
+	Children    []Widget
+	Menu        Menu
+	ToolBar     ToolBar
 }
 
 func (mw MainWindow) Create(parent walk.Container) error {
@@ -52,8 +53,8 @@ func (mw MainWindow) Create(parent walk.Container) error {
 	})
 }
 
-func (mw MainWindow) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return mw.Name, 0, 0, 0, 0, 0
+func (mw MainWindow) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return mw.Name, 0, 0, 0, 0, 0, &mw.ContextMenu
 }
 
 func (mw MainWindow) Font_() *Font {

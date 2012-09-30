@@ -16,6 +16,7 @@ type ToolBar struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Font          Font
 	Orientation   walk.Orientation
 	Actions       []*walk.Action
@@ -63,8 +64,8 @@ func (tb ToolBar) initActions(w *walk.ToolBar) error {
 	return nil
 }
 
-func (tb ToolBar) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return tb.Name, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan
+func (tb ToolBar) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return tb.Name, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan, &tb.ContextMenu
 }
 
 func (tb ToolBar) Font_() *Font {

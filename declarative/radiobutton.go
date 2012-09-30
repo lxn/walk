@@ -16,6 +16,7 @@ type RadioButton struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Font          Font
 	Text          string
 	OnClicked     walk.EventHandler
@@ -44,8 +45,8 @@ func (rb RadioButton) Create(parent walk.Container) error {
 	})
 }
 
-func (rb RadioButton) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return rb.Name, rb.StretchFactor, rb.Row, rb.RowSpan, rb.Column, rb.ColumnSpan
+func (rb RadioButton) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return rb.Name, rb.StretchFactor, rb.Row, rb.RowSpan, rb.Column, rb.ColumnSpan, &rb.ContextMenu
 }
 
 func (rb RadioButton) Font_() *Font {

@@ -16,6 +16,7 @@ type TableView struct {
 	RowSpan                    int
 	Column                     int
 	ColumnSpan                 int
+	ContextMenu                Menu
 	Font                       Font
 	Model                      walk.TableModel
 	AlternatingRowBGColor      walk.Color
@@ -69,8 +70,8 @@ func (tv TableView) Create(parent walk.Container) error {
 	})
 }
 
-func (tv TableView) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return tv.Name, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan
+func (tv TableView) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return tv.Name, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, &tv.ContextMenu
 }
 
 func (tv TableView) Font_() *Font {

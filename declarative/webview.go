@@ -16,6 +16,7 @@ type WebView struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	URL           string
 }
 
@@ -38,6 +39,6 @@ func (wv WebView) Create(parent walk.Container) error {
 	})
 }
 
-func (wv WebView) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return wv.Name, wv.StretchFactor, wv.Row, wv.RowSpan, wv.Column, wv.ColumnSpan
+func (wv WebView) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return wv.Name, wv.StretchFactor, wv.Row, wv.RowSpan, wv.Column, wv.ColumnSpan, &wv.ContextMenu
 }

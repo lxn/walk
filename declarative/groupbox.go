@@ -16,6 +16,7 @@ type GroupBox struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Font          Font
 	Title         string
 	Layout        Layout
@@ -41,8 +42,8 @@ func (gb GroupBox) Create(parent walk.Container) error {
 	})
 }
 
-func (gb GroupBox) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return gb.Name, gb.StretchFactor, gb.Row, gb.RowSpan, gb.Column, gb.ColumnSpan
+func (gb GroupBox) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return gb.Name, gb.StretchFactor, gb.Row, gb.RowSpan, gb.Column, gb.ColumnSpan, &gb.ContextMenu
 }
 
 func (gb GroupBox) Font_() *Font {

@@ -16,6 +16,7 @@ type Label struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Font          Font
 	Text          string
 }
@@ -39,8 +40,8 @@ func (l Label) Create(parent walk.Container) error {
 	})
 }
 
-func (l Label) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return l.Name, l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan
+func (l Label) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return l.Name, l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan, &l.ContextMenu
 }
 
 func (l Label) Font_() *Font {

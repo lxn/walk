@@ -16,6 +16,7 @@ type Composite struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Layout        Layout
 	Children      []Widget
 }
@@ -35,8 +36,8 @@ func (c Composite) Create(parent walk.Container) error {
 	})
 }
 
-func (c Composite) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return c.Name, c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan
+func (c Composite) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return c.Name, c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan, &c.ContextMenu
 }
 
 func (c Composite) ContainerInfo() (Layout, []Widget) {

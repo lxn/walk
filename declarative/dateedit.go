@@ -20,6 +20,7 @@ type DateEdit struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Font          Font
 	MinDate       time.Time
 	MaxDate       time.Time
@@ -56,8 +57,8 @@ func (de DateEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (de DateEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return de.Name, de.StretchFactor, de.Row, de.RowSpan, de.Column, de.ColumnSpan
+func (de DateEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return de.Name, de.StretchFactor, de.Row, de.RowSpan, de.Column, de.ColumnSpan, &de.ContextMenu
 }
 
 func (de DateEdit) Font_() *Font {

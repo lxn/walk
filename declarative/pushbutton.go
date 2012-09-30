@@ -16,6 +16,7 @@ type PushButton struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Font          Font
 	Text          string
 	OnClicked     walk.EventHandler
@@ -44,8 +45,8 @@ func (pb PushButton) Create(parent walk.Container) error {
 	})
 }
 
-func (pb PushButton) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return pb.Name, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan
+func (pb PushButton) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return pb.Name, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, &pb.ContextMenu
 }
 
 func (pb PushButton) Font_() *Font {

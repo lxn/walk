@@ -18,7 +18,7 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 
 	// Widget
 	if p := w.Parent(); p != nil {
-		name, stretchFactor, row, rowSpan, column, columnSpan := d.CommonInfo()
+		name, stretchFactor, row, rowSpan, column, columnSpan, contextMenu := d.CommonInfo()
 
 		w.SetName(name)
 
@@ -45,6 +45,17 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 			if err := l.SetRange(w, r); err != nil {
 				return err
 			}
+		}
+
+		if contextMenu != nil {
+			cm, err := walk.NewMenu()
+			if err != nil {
+				return err
+			}
+			if err := contextMenu.init(cm); err != nil {
+				return err
+			}
+			w.SetContextMenu(cm)
 		}
 	}
 

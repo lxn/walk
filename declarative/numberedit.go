@@ -16,6 +16,7 @@ type NumberEdit struct {
 	RowSpan        int
 	Column         int
 	ColumnSpan     int
+	ContextMenu    Menu
 	Font           Font
 	Decimals       int
 	Increment      float64
@@ -67,8 +68,8 @@ func (ne NumberEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (ne NumberEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return ne.Name, ne.StretchFactor, ne.Row, ne.RowSpan, ne.Column, ne.ColumnSpan
+func (ne NumberEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return ne.Name, ne.StretchFactor, ne.Row, ne.RowSpan, ne.Column, ne.ColumnSpan, &ne.ContextMenu
 }
 
 func (ne NumberEdit) Font_() *Font {

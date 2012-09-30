@@ -16,6 +16,7 @@ type ListBox struct {
 	RowSpan               int
 	Column                int
 	ColumnSpan            int
+	ContextMenu           Menu
 	Font                  Font
 	Format                string
 	Precision             int
@@ -53,8 +54,8 @@ func (lb ListBox) Create(parent walk.Container) error {
 	})
 }
 
-func (lb ListBox) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return lb.Name, lb.StretchFactor, lb.Row, lb.RowSpan, lb.Column, lb.ColumnSpan
+func (lb ListBox) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return lb.Name, lb.StretchFactor, lb.Row, lb.RowSpan, lb.Column, lb.ColumnSpan, &lb.ContextMenu
 }
 
 func (lb ListBox) Font_() *Font {

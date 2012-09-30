@@ -16,6 +16,7 @@ type CustomWidget struct {
 	RowSpan             int
 	Column              int
 	ColumnSpan          int
+	ContextMenu         Menu
 	Style               uint32
 	Paint               walk.PaintFunc
 	ClearsBackground    bool
@@ -40,6 +41,6 @@ func (cw CustomWidget) Create(parent walk.Container) error {
 	})
 }
 
-func (cw CustomWidget) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return cw.Name, cw.StretchFactor, cw.Row, cw.RowSpan, cw.Column, cw.ColumnSpan
+func (cw CustomWidget) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return cw.Name, cw.StretchFactor, cw.Row, cw.RowSpan, cw.Column, cw.ColumnSpan, &cw.ContextMenu
 }

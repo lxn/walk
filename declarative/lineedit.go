@@ -16,6 +16,7 @@ type LineEdit struct {
 	RowSpan           int
 	Column            int
 	ColumnSpan        int
+	ContextMenu       Menu
 	Font              Font
 	Text              string
 	ReadOnly          bool
@@ -64,8 +65,8 @@ func (le LineEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (le LineEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return le.Name, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan
+func (le LineEdit) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return le.Name, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan, &le.ContextMenu
 }
 
 func (le LineEdit) Font_() *Font {

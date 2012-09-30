@@ -16,6 +16,7 @@ type Splitter struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Layout        Layout
 	Children      []Widget
 	HandleWidth   int
@@ -46,8 +47,8 @@ func (s Splitter) Create(parent walk.Container) error {
 	})
 }
 
-func (s Splitter) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return s.Name, s.StretchFactor, s.Row, s.RowSpan, s.Column, s.ColumnSpan
+func (s Splitter) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return s.Name, s.StretchFactor, s.Row, s.RowSpan, s.Column, s.ColumnSpan, &s.ContextMenu
 }
 
 func (s Splitter) ContainerInfo() (Layout, []Widget) {

@@ -16,6 +16,7 @@ type ToolButton struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Font          Font
 	Text          string
 	OnClicked     walk.EventHandler
@@ -44,8 +45,8 @@ func (tb ToolButton) Create(parent walk.Container) error {
 	})
 }
 
-func (tb ToolButton) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return tb.Name, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan
+func (tb ToolButton) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return tb.Name, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan, &tb.ContextMenu
 }
 
 func (tb ToolButton) Font_() *Font {

@@ -11,6 +11,7 @@ import (
 type Dialog struct {
 	AssignTo      **walk.Dialog
 	Name          string
+	ContextMenu   Menu
 	Font          Font
 	Title         string
 	Layout        Layout
@@ -54,8 +55,8 @@ func (d Dialog) Create(parent walk.Container) error {
 	})
 }
 
-func (d Dialog) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return d.Name, 0, 0, 0, 0, 0
+func (d Dialog) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return d.Name, 0, 0, 0, 0, 0, &d.ContextMenu
 }
 
 func (d Dialog) Font_() *Font {

@@ -16,6 +16,7 @@ type TabWidget struct {
 	RowSpan       int
 	Column        int
 	ColumnSpan    int
+	ContextMenu   Menu
 	Font          Font
 	Pages         []TabPage
 }
@@ -51,8 +52,8 @@ func (tw TabWidget) Create(parent walk.Container) error {
 	})
 }
 
-func (tw TabWidget) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int) {
-	return tw.Name, tw.StretchFactor, tw.Row, tw.RowSpan, tw.Column, tw.ColumnSpan
+func (tw TabWidget) CommonInfo() (name string, stretchFactor, row, rowSpan, column, columnSpan int, contextMenu *Menu) {
+	return tw.Name, tw.StretchFactor, tw.Row, tw.RowSpan, tw.Column, tw.ColumnSpan, &tw.ContextMenu
 }
 
 func (tw TabWidget) Font_() *Font {
