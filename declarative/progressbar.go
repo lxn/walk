@@ -9,7 +9,7 @@ import (
 )
 
 type ProgressBar struct {
-	Widget        **walk.ProgressBar
+	AssignTo      **walk.ProgressBar
 	Name          string
 	StretchFactor int
 	Row           int
@@ -31,8 +31,8 @@ func (pb ProgressBar) Create(parent walk.Container) error {
 		w.SetRange(pb.MinValue, pb.MaxValue)
 		w.SetValue(pb.Value)
 
-		if pb.Widget != nil {
-			*pb.Widget = w
+		if pb.AssignTo != nil {
+			*pb.AssignTo = w
 		}
 
 		return nil

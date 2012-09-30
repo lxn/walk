@@ -9,7 +9,7 @@ import (
 )
 
 type NumberEdit struct {
-	Widget         **walk.NumberEdit
+	AssignTo       **walk.NumberEdit
 	Name           string
 	StretchFactor  int
 	Row            int
@@ -59,8 +59,8 @@ func (ne NumberEdit) Create(parent walk.Container) error {
 			w.ValueChanged().Attach(ne.OnValueChanged)
 		}
 
-		if ne.Widget != nil {
-			*ne.Widget = w
+		if ne.AssignTo != nil {
+			*ne.AssignTo = w
 		}
 
 		return nil

@@ -13,7 +13,7 @@ import (
 )
 
 type DateEdit struct {
-	Widget        **walk.DateEdit
+	AssignTo      **walk.DateEdit
 	Name          string
 	StretchFactor int
 	Row           int
@@ -48,8 +48,8 @@ func (de DateEdit) Create(parent walk.Container) error {
 			w.ValueChanged().Attach(de.OnDateChanged)
 		}
 
-		if de.Widget != nil {
-			*de.Widget = w
+		if de.AssignTo != nil {
+			*de.AssignTo = w
 		}
 
 		return nil

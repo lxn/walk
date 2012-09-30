@@ -9,7 +9,7 @@ import (
 )
 
 type TabWidget struct {
-	Widget        **walk.TabWidget
+	AssignTo      **walk.TabWidget
 	Name          string
 	StretchFactor int
 	Row           int
@@ -30,8 +30,8 @@ func (tw TabWidget) Create(parent walk.Container) error {
 		var p *walk.TabPage
 
 		for _, page := range tw.Pages {
-			if page.Widget == nil {
-				page.Widget = &p
+			if page.AssignTo == nil {
+				page.AssignTo = &p
 			}
 
 			if err := page.Create(nil); err != nil {
@@ -43,8 +43,8 @@ func (tw TabWidget) Create(parent walk.Container) error {
 			}
 		}
 
-		if tw.Widget != nil {
-			*tw.Widget = w
+		if tw.AssignTo != nil {
+			*tw.AssignTo = w
 		}
 
 		return nil

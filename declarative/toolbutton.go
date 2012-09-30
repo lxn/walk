@@ -9,7 +9,7 @@ import (
 )
 
 type ToolButton struct {
-	Widget        **walk.ToolButton
+	AssignTo      **walk.ToolButton
 	Name          string
 	StretchFactor int
 	Row           int
@@ -36,8 +36,8 @@ func (tb ToolButton) Create(parent walk.Container) error {
 			w.Clicked().Attach(tb.OnClicked)
 		}
 
-		if tb.Widget != nil {
-			*tb.Widget = w
+		if tb.AssignTo != nil {
+			*tb.AssignTo = w
 		}
 
 		return nil

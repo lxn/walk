@@ -9,7 +9,7 @@ import (
 )
 
 type Label struct {
-	Widget        **walk.Label
+	AssignTo      **walk.Label
 	Name          string
 	StretchFactor int
 	Row           int
@@ -31,8 +31,8 @@ func (l Label) Create(parent walk.Container) error {
 			return err
 		}
 
-		if l.Widget != nil {
-			*l.Widget = w
+		if l.AssignTo != nil {
+			*l.AssignTo = w
 		}
 
 		return nil

@@ -9,7 +9,7 @@ import (
 )
 
 type TreeView struct {
-	Widget        **walk.TreeView
+	AssignTo      **walk.TreeView
 	Name          string
 	StretchFactor int
 	Row           int
@@ -26,8 +26,8 @@ func (tv TreeView) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(tv, w, func() error {
-		if tv.Widget != nil {
-			*tv.Widget = w
+		if tv.AssignTo != nil {
+			*tv.AssignTo = w
 		}
 
 		return nil

@@ -9,7 +9,7 @@ import (
 )
 
 type Splitter struct {
-	Widget        **walk.Splitter
+	AssignTo      **walk.Splitter
 	Name          string
 	StretchFactor int
 	Row           int
@@ -38,8 +38,8 @@ func (s Splitter) Create(parent walk.Container) error {
 			return err
 		}
 
-		if s.Widget != nil {
-			*s.Widget = w
+		if s.AssignTo != nil {
+			*s.AssignTo = w
 		}
 
 		return nil

@@ -9,7 +9,7 @@ import (
 )
 
 type ListBox struct {
-	Widget                **walk.ListBox
+	AssignTo              **walk.ListBox
 	Name                  string
 	StretchFactor         int
 	Row                   int
@@ -45,8 +45,8 @@ func (lb ListBox) Create(parent walk.Container) error {
 			w.DblClicked().Attach(lb.OnItemActivated)
 		}
 
-		if lb.Widget != nil {
-			*lb.Widget = w
+		if lb.AssignTo != nil {
+			*lb.AssignTo = w
 		}
 
 		return nil

@@ -9,7 +9,7 @@ import (
 )
 
 type TableView struct {
-	Widget                     **walk.TableView
+	AssignTo                   **walk.TableView
 	Name                       string
 	StretchFactor              int
 	Row                        int
@@ -61,8 +61,8 @@ func (tv TableView) Create(parent walk.Container) error {
 			w.ItemActivated().Attach(tv.OnItemActivated)
 		}
 
-		if tv.Widget != nil {
-			*tv.Widget = w
+		if tv.AssignTo != nil {
+			*tv.AssignTo = w
 		}
 
 		return nil

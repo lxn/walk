@@ -9,7 +9,7 @@ import (
 )
 
 type RadioButton struct {
-	Widget        **walk.RadioButton
+	AssignTo      **walk.RadioButton
 	Name          string
 	StretchFactor int
 	Row           int
@@ -36,8 +36,8 @@ func (rb RadioButton) Create(parent walk.Container) error {
 			w.Clicked().Attach(rb.OnClicked)
 		}
 
-		if rb.Widget != nil {
-			*rb.Widget = w
+		if rb.AssignTo != nil {
+			*rb.AssignTo = w
 		}
 
 		return nil

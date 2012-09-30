@@ -9,7 +9,7 @@ import (
 )
 
 type MainWindow struct {
-	Widget   **walk.MainWindow
+	AssignTo **walk.MainWindow
 	Name     string
 	Font     Font
 	Title    string
@@ -44,8 +44,8 @@ func (mw MainWindow) Create(parent walk.Container) error {
 			return err
 		}
 
-		if mw.Widget != nil {
-			*mw.Widget = w
+		if mw.AssignTo != nil {
+			*mw.AssignTo = w
 		}
 
 		return nil

@@ -9,7 +9,7 @@ import (
 )
 
 type WebView struct {
-	Widget        **walk.WebView
+	AssignTo      **walk.WebView
 	Name          string
 	StretchFactor int
 	Row           int
@@ -30,8 +30,8 @@ func (wv WebView) Create(parent walk.Container) error {
 			return err
 		}
 
-		if wv.Widget != nil {
-			*wv.Widget = w
+		if wv.AssignTo != nil {
+			*wv.AssignTo = w
 		}
 
 		return nil

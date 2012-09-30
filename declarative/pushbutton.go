@@ -9,7 +9,7 @@ import (
 )
 
 type PushButton struct {
-	Widget        **walk.PushButton
+	AssignTo      **walk.PushButton
 	Name          string
 	StretchFactor int
 	Row           int
@@ -36,8 +36,8 @@ func (pb PushButton) Create(parent walk.Container) error {
 			w.Clicked().Attach(pb.OnClicked)
 		}
 
-		if pb.Widget != nil {
-			*pb.Widget = w
+		if pb.AssignTo != nil {
+			*pb.AssignTo = w
 		}
 
 		return nil

@@ -9,7 +9,7 @@ import (
 )
 
 type CheckBox struct {
-	Widget        **walk.CheckBox
+	AssignTo      **walk.CheckBox
 	Name          string
 	StretchFactor int
 	Row           int
@@ -36,8 +36,8 @@ func (cb CheckBox) Create(parent walk.Container) error {
 			w.Clicked().Attach(cb.OnClicked)
 		}
 
-		if cb.Widget != nil {
-			*cb.Widget = w
+		if cb.AssignTo != nil {
+			*cb.AssignTo = w
 		}
 
 		return nil

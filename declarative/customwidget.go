@@ -9,7 +9,7 @@ import (
 )
 
 type CustomWidget struct {
-	Widget              **walk.CustomWidget
+	AssignTo            **walk.CustomWidget
 	Name                string
 	StretchFactor       int
 	Row                 int
@@ -32,8 +32,8 @@ func (cw CustomWidget) Create(parent walk.Container) error {
 		w.SetClearsBackground(cw.ClearsBackground)
 		w.SetInvalidatesOnResize(cw.InvalidatesOnResize)
 
-		if cw.Widget != nil {
-			*cw.Widget = w
+		if cw.AssignTo != nil {
+			*cw.AssignTo = w
 		}
 
 		return nil

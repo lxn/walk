@@ -9,7 +9,7 @@ import (
 )
 
 type TextEdit struct {
-	Widget        **walk.TextEdit
+	AssignTo      **walk.TextEdit
 	Name          string
 	StretchFactor int
 	Row           int
@@ -34,8 +34,8 @@ func (te TextEdit) Create(parent walk.Container) error {
 
 		w.SetReadOnly(te.ReadOnly)
 
-		if te.Widget != nil {
-			*te.Widget = w
+		if te.AssignTo != nil {
+			*te.AssignTo = w
 		}
 
 		return nil

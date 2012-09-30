@@ -57,11 +57,11 @@ func main() {
 	marg0 := &Margins{}
 
 	MainWindow{
-		Widget:  &mw.MainWindow,
-		Title:   "FTPS cycle finder",
-		Menu:    Menu{Actions: menuActions},
-		ToolBar: ToolBar{Actions: toolBarActions},
-		Layout:  HBox{Margins: &Margins{6, 6, 6, 6}},
+		AssignTo: &mw.MainWindow,
+		Title:    "FTPS cycle finder",
+		Menu:     Menu{Actions: menuActions},
+		ToolBar:  ToolBar{Actions: toolBarActions},
+		Layout:   HBox{Margins: &Margins{6, 6, 6, 6}},
 		Children: []Widget{
 			ToolBar{Orientation: walk.Vertical, Actions: toolBarActions},
 			Composite{

@@ -9,7 +9,7 @@ import (
 )
 
 type Composite struct {
-	Widget        **walk.Composite
+	AssignTo      **walk.Composite
 	Name          string
 	StretchFactor int
 	Row           int
@@ -27,8 +27,8 @@ func (c Composite) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(c, w, func() error {
-		if c.Widget != nil {
-			*c.Widget = w
+		if c.AssignTo != nil {
+			*c.AssignTo = w
 		}
 
 		return nil

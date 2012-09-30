@@ -9,7 +9,7 @@ import (
 )
 
 type ComboBox struct {
-	Widget                **walk.ComboBox
+	AssignTo              **walk.ComboBox
 	Name                  string
 	StretchFactor         int
 	Row                   int
@@ -41,8 +41,8 @@ func (cb ComboBox) Create(parent walk.Container) error {
 			w.CurrentIndexChanged().Attach(cb.OnCurrentIndexChanged)
 		}
 
-		if cb.Widget != nil {
-			*cb.Widget = w
+		if cb.AssignTo != nil {
+			*cb.AssignTo = w
 		}
 
 		return nil

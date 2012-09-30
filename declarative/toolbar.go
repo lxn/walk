@@ -9,7 +9,7 @@ import (
 )
 
 type ToolBar struct {
-	Widget        **walk.ToolBar
+	AssignTo      **walk.ToolBar
 	Name          string
 	StretchFactor int
 	Row           int
@@ -43,8 +43,8 @@ func (tb ToolBar) Create(parent walk.Container) (err error) {
 			return err
 		}
 
-		if tb.Widget != nil {
-			*tb.Widget = w
+		if tb.AssignTo != nil {
+			*tb.AssignTo = w
 		}
 
 		return nil

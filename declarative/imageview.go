@@ -9,7 +9,7 @@ import (
 )
 
 type ImageView struct {
-	Widget        **walk.ImageView
+	AssignTo      **walk.ImageView
 	Name          string
 	StretchFactor int
 	Row           int
@@ -30,8 +30,8 @@ func (iv ImageView) Create(parent walk.Container) error {
 			return err
 		}
 
-		if iv.Widget != nil {
-			*iv.Widget = w
+		if iv.AssignTo != nil {
+			*iv.AssignTo = w
 		}
 
 		return nil

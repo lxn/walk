@@ -9,7 +9,7 @@ import (
 )
 
 type GroupBox struct {
-	Widget        **walk.GroupBox
+	AssignTo      **walk.GroupBox
 	Name          string
 	StretchFactor int
 	Row           int
@@ -33,8 +33,8 @@ func (gb GroupBox) Create(parent walk.Container) error {
 			return err
 		}
 
-		if gb.Widget != nil {
-			*gb.Widget = w
+		if gb.AssignTo != nil {
+			*gb.AssignTo = w
 		}
 
 		return nil

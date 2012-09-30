@@ -9,7 +9,7 @@ import (
 )
 
 type Dialog struct {
-	Widget        **walk.Dialog
+	AssignTo      **walk.Dialog
 	Name          string
 	Font          Font
 	Title         string
@@ -46,8 +46,8 @@ func (d Dialog) Create(parent walk.Container) error {
 			}
 		}
 
-		if d.Widget != nil {
-			*d.Widget = w
+		if d.AssignTo != nil {
+			*d.AssignTo = w
 		}
 
 		return nil

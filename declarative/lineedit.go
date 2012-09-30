@@ -9,7 +9,7 @@ import (
 )
 
 type LineEdit struct {
-	Widget            **walk.LineEdit
+	AssignTo          **walk.LineEdit
 	Name              string
 	StretchFactor     int
 	Row               int
@@ -56,8 +56,8 @@ func (le LineEdit) Create(parent walk.Container) error {
 			w.TextChanged().Attach(le.OnTextChanged)
 		}
 
-		if le.Widget != nil {
-			*le.Widget = w
+		if le.AssignTo != nil {
+			*le.AssignTo = w
 		}
 
 		return nil
