@@ -76,7 +76,7 @@ func (ar ActionRef) createToolBarAction() (*walk.Action, error) {
 	return ar.Action, nil
 }
 
-func CreateMenuActions(items []MenuItem) ([]*walk.Action, error) {
+func CreateMenuActions(items ...MenuItem) ([]*walk.Action, error) {
 	var actions []*walk.Action
 
 	for _, item := range items {
@@ -91,7 +91,7 @@ func CreateMenuActions(items []MenuItem) ([]*walk.Action, error) {
 	return actions, nil
 }
 
-func CreateToolBarActions(items []ToolBarItem) ([]*walk.Action, error) {
+func CreateToolBarActions(items ...ToolBarItem) ([]*walk.Action, error) {
 	var actions []*walk.Action
 
 	for _, item := range items {

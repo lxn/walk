@@ -28,31 +28,26 @@ func main() {
 	var openAction *walk.Action
 
 	menuActions, _ := CreateMenuActions(
-		[]MenuItem{
-			SubMenu{
-				Text: "&File",
-				Items: []MenuItem{
-					Action{
-						AssignTo:    &openAction,
-						Text:        "&Open",
-						Image:       openImage,
-						OnTriggered: func() { mw.openAction_Triggered() },
-					},
-					Action{},
-					Action{
-						Text:        "E&xit",
-						OnTriggered: func() { walk.App().Exit(0) },
-					},
+		SubMenu{
+			Text: "&File",
+			Items: []MenuItem{
+				Action{
+					AssignTo:    &openAction,
+					Text:        "&Open",
+					Image:       openImage,
+					OnTriggered: func() { mw.openAction_Triggered() },
+				},
+				Action{},
+				Action{
+					Text:        "E&xit",
+					OnTriggered: func() { walk.App().Exit(0) },
 				},
 			},
 		})
 
 	toolBarActions, _ := CreateToolBarActions(
-		[]ToolBarItem{
-			ActionRef{openAction},
-			Action{Text: "NOP"},
-		},
-	)
+		ActionRef{openAction},
+		Action{Text: "NOP"})
 
 	marg0 := &Margins{}
 
