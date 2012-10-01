@@ -75,6 +75,10 @@ func (tlw *TopLevelWindow) Enabled() bool {
 	return tlw.enabled
 }
 
+func (tlw *TopLevelWindow) SetEnabled(enabled bool) {
+	tlw.WidgetBase.SetEnabled(enabled)
+}
+
 func (tlw *TopLevelWindow) Font() *Font {
 	if tlw.font != nil {
 		return tlw.font
