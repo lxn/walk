@@ -11,6 +11,8 @@ import (
 type CheckBox struct {
 	AssignTo           **walk.CheckBox
 	Name               string
+	Disabled           bool
+	Hidden             bool
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -47,8 +49,8 @@ func (cb CheckBox) Create(parent walk.Container) error {
 	})
 }
 
-func (cb CheckBox) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return cb.Name, cb.MinSize, cb.MaxSize, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, cb.ContextMenuActions
+func (cb CheckBox) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return cb.Name, cb.Disabled, cb.Hidden, cb.MinSize, cb.MaxSize, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, cb.ContextMenuActions
 }
 
 func (cb CheckBox) Font_() *Font {

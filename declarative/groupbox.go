@@ -11,6 +11,8 @@ import (
 type GroupBox struct {
 	AssignTo           **walk.GroupBox
 	Name               string
+	Disabled           bool
+	Hidden             bool
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -44,8 +46,8 @@ func (gb GroupBox) Create(parent walk.Container) error {
 	})
 }
 
-func (gb GroupBox) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return gb.Name, gb.MinSize, gb.MaxSize, gb.StretchFactor, gb.Row, gb.RowSpan, gb.Column, gb.ColumnSpan, gb.ContextMenuActions
+func (gb GroupBox) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return gb.Name, gb.Disabled, gb.Hidden, gb.MinSize, gb.MaxSize, gb.StretchFactor, gb.Row, gb.RowSpan, gb.Column, gb.ColumnSpan, gb.ContextMenuActions
 }
 
 func (gb GroupBox) Font_() *Font {

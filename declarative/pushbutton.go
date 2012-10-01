@@ -11,6 +11,8 @@ import (
 type PushButton struct {
 	AssignTo           **walk.PushButton
 	Name               string
+	Disabled           bool
+	Hidden             bool
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -47,8 +49,8 @@ func (pb PushButton) Create(parent walk.Container) error {
 	})
 }
 
-func (pb PushButton) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return pb.Name, pb.MinSize, pb.MaxSize, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, pb.ContextMenuActions
+func (pb PushButton) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return pb.Name, pb.Disabled, pb.Hidden, pb.MinSize, pb.MaxSize, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, pb.ContextMenuActions
 }
 
 func (pb PushButton) Font_() *Font {

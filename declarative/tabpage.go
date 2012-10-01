@@ -11,6 +11,8 @@ import (
 type TabPage struct {
 	AssignTo           **walk.TabPage
 	Name               string
+	Disabled           bool
+	Hidden             bool
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
@@ -38,8 +40,8 @@ func (tp TabPage) Create(parent walk.Container) error {
 	})
 }
 
-func (tp TabPage) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return tp.Name, tp.MinSize, tp.MaxSize, 0, 0, 0, 0, 0, tp.ContextMenuActions
+func (tp TabPage) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return tp.Name, tp.Disabled, tp.Hidden, tp.MinSize, tp.MaxSize, 0, 0, 0, 0, 0, tp.ContextMenuActions
 }
 
 func (tp TabPage) ContainerInfo() (Layout, []Widget) {

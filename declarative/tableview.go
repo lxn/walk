@@ -11,6 +11,8 @@ import (
 type TableView struct {
 	AssignTo                   **walk.TableView
 	Name                       string
+	Disabled                   bool
+	Hidden                     bool
 	MinSize                    Size
 	MaxSize                    Size
 	StretchFactor              int
@@ -72,8 +74,8 @@ func (tv TableView) Create(parent walk.Container) error {
 	})
 }
 
-func (tv TableView) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return tv.Name, tv.MinSize, tv.MaxSize, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, tv.ContextMenuActions
+func (tv TableView) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return tv.Name, tv.Disabled, tv.Hidden, tv.MinSize, tv.MaxSize, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, tv.ContextMenuActions
 }
 
 func (tv TableView) Font_() *Font {

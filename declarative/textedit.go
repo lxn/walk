@@ -11,6 +11,8 @@ import (
 type TextEdit struct {
 	AssignTo           **walk.TextEdit
 	Name               string
+	Disabled           bool
+	Hidden             bool
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -45,8 +47,8 @@ func (te TextEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (te TextEdit) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return te.Name, te.MinSize, te.MaxSize, te.StretchFactor, te.Row, te.RowSpan, te.Column, te.ColumnSpan, te.ContextMenuActions
+func (te TextEdit) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return te.Name, te.Disabled, te.Hidden, te.MinSize, te.MaxSize, te.StretchFactor, te.Row, te.RowSpan, te.Column, te.ColumnSpan, te.ContextMenuActions
 }
 
 func (te TextEdit) Font_() *Font {

@@ -17,9 +17,12 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	}()
 
 	// Widget
-	name, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions := d.WidgetInfo()
+	name, disabled, hidden, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions := d.WidgetInfo()
 
 	w.SetName(name)
+
+	w.SetEnabled(!disabled)
+	w.SetVisible(!hidden)
 
 	if err := w.SetMinMaxSize(minSize.toW(), maxSize.toW()); err != nil {
 		return err

@@ -11,6 +11,8 @@ import (
 type Dialog struct {
 	AssignTo           **walk.Dialog
 	Name               string
+	Disabled           bool
+	Hidden             bool
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
@@ -62,8 +64,8 @@ func (d Dialog) Create(parent walk.Container) error {
 	})
 }
 
-func (d Dialog) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return d.Name, d.MinSize, d.MaxSize, 0, 0, 0, 0, 0, d.ContextMenuActions
+func (d Dialog) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return d.Name, d.Disabled, d.Hidden, d.MinSize, d.MaxSize, 0, 0, 0, 0, 0, d.ContextMenuActions
 }
 
 func (d Dialog) Font_() *Font {

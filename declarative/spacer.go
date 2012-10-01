@@ -35,8 +35,8 @@ func (hs HSpacer) Create(parent walk.Container) (err error) {
 	return InitWidget(hs, w, nil)
 }
 
-func (hs HSpacer) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return hs.Name, hs.MinSize, hs.MaxSize, hs.StretchFactor, hs.Row, hs.RowSpan, hs.Column, hs.ColumnSpan, nil
+func (hs HSpacer) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return hs.Name, false, false, hs.MinSize, hs.MaxSize, hs.StretchFactor, hs.Row, hs.RowSpan, hs.Column, hs.ColumnSpan, nil
 }
 
 type VSpacer struct {
@@ -66,6 +66,6 @@ func (vs VSpacer) Create(parent walk.Container) (err error) {
 	return InitWidget(vs, w, nil)
 }
 
-func (vs VSpacer) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return vs.Name, vs.MinSize, vs.MaxSize, vs.StretchFactor, vs.Row, vs.RowSpan, vs.Column, vs.ColumnSpan, nil
+func (vs VSpacer) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return vs.Name, false, false, vs.MinSize, vs.MaxSize, vs.StretchFactor, vs.Row, vs.RowSpan, vs.Column, vs.ColumnSpan, nil
 }

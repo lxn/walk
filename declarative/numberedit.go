@@ -11,6 +11,8 @@ import (
 type NumberEdit struct {
 	AssignTo           **walk.NumberEdit
 	Name               string
+	Disabled           bool
+	Hidden             bool
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -70,8 +72,8 @@ func (ne NumberEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (ne NumberEdit) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return ne.Name, ne.MinSize, ne.MaxSize, ne.StretchFactor, ne.Row, ne.RowSpan, ne.Column, ne.ColumnSpan, ne.ContextMenuActions
+func (ne NumberEdit) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return ne.Name, ne.Disabled, ne.Hidden, ne.MinSize, ne.MaxSize, ne.StretchFactor, ne.Row, ne.RowSpan, ne.Column, ne.ColumnSpan, ne.ContextMenuActions
 }
 
 func (ne NumberEdit) Font_() *Font {

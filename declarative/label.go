@@ -11,6 +11,8 @@ import (
 type Label struct {
 	AssignTo           **walk.Label
 	Name               string
+	Disabled           bool
+	Hidden             bool
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -42,8 +44,8 @@ func (l Label) Create(parent walk.Container) error {
 	})
 }
 
-func (l Label) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return l.Name, l.MinSize, l.MaxSize, l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan, l.ContextMenuActions
+func (l Label) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return l.Name, l.Disabled, l.Hidden, l.MinSize, l.MaxSize, l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan, l.ContextMenuActions
 }
 
 func (l Label) Font_() *Font {

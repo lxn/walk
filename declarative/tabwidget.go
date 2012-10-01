@@ -11,6 +11,8 @@ import (
 type TabWidget struct {
 	AssignTo           **walk.TabWidget
 	Name               string
+	Disabled           bool
+	Hidden             bool
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -54,8 +56,8 @@ func (tw TabWidget) Create(parent walk.Container) error {
 	})
 }
 
-func (tw TabWidget) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return tw.Name, tw.MinSize, tw.MaxSize, tw.StretchFactor, tw.Row, tw.RowSpan, tw.Column, tw.ColumnSpan, tw.ContextMenuActions
+func (tw TabWidget) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return tw.Name, tw.Disabled, tw.Hidden, tw.MinSize, tw.MaxSize, tw.StretchFactor, tw.Row, tw.RowSpan, tw.Column, tw.ColumnSpan, tw.ContextMenuActions
 }
 
 func (tw TabWidget) Font_() *Font {

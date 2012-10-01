@@ -11,6 +11,8 @@ import (
 type MainWindow struct {
 	AssignTo           **walk.MainWindow
 	Name               string
+	Disabled           bool
+	Hidden             bool
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
@@ -60,8 +62,8 @@ func (mw MainWindow) Create(parent walk.Container) error {
 	})
 }
 
-func (mw MainWindow) WidgetInfo() (name string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return mw.Name, mw.MinSize, mw.MaxSize, 0, 0, 0, 0, 0, mw.ContextMenuActions
+func (mw MainWindow) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return mw.Name, mw.Disabled, mw.Hidden, mw.MinSize, mw.MaxSize, 0, 0, 0, 0, 0, mw.ContextMenuActions
 }
 
 func (mw MainWindow) Font_() *Font {
