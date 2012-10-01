@@ -408,7 +408,7 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 		}
 	}
 
-	wb.SetFont(defaultFont)
+	setWidgetFont(wb.hWnd, defaultFont)
 
 	succeeded = true
 
@@ -631,7 +631,13 @@ func (wb *WidgetBase) SetEnabled(value bool) {
 //
 // By default this is a MS Shell Dlg 2, 8 point font.
 func (wb *WidgetBase) Font() *Font {
-	return wb.font
+	if wb.font != nil {
+		return wb.font
+	} else if wb.parent != nil {
+		return wb.parent.Font()
+	}
+
+	return defaultFont
 }
 
 func setWidgetFont(hwnd HWND, font *Font) {

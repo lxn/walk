@@ -92,7 +92,13 @@ func (ne *NumberEdit) Font() *Font {
 		return ne.font
 	}
 
-	return ne.edit.Font()
+	if f := ne.edit.font; f != nil {
+		return f
+	} else if ne.parent != nil {
+		return ne.parent.Font()
+	}
+
+	return defaultFont
 }
 
 func (ne *NumberEdit) SetFont(value *Font) {
