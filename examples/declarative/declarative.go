@@ -129,8 +129,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	marg0 := &Margins{}
-
 	if err := (MainWindow{
 		AssignTo:       &mw.MainWindow,
 		Title:          "FTPS cycle finder",
@@ -138,14 +136,14 @@ func main() {
 		ToolBarActions: toolBarActions,
 		MinSize:        Size{600, 400},
 		Size:           Size{800, 600},
-		Layout:         HBox{Margins: &Margins{6, 6, 6, 6}},
+		Layout:         HBox{Margins: Margins{6, 6, 6, 6}},
 		Children: []Widget{
 			ToolBar{Orientation: Vertical, Actions: toolBarActions},
 			Composite{
-				Layout: VBox{Margins: marg0},
+				Layout: VBox{MarginsZero: true},
 				Children: []Widget{
 					Composite{
-						Layout: HBox{Margins: marg0},
+						Layout: HBox{MarginsZero: true},
 						Children: []Widget{
 							Label{Text: "File"},
 							LineEdit{ContextMenuActions: []*walk.Action{openAction}},
@@ -153,7 +151,7 @@ func main() {
 						},
 					},
 					Composite{
-						Layout: HBox{Margins: marg0},
+						Layout: HBox{MarginsZero: true},
 						Children: []Widget{
 							PushButton{Text: "Check"},
 							PushButton{Text: "Check and Fix"},
@@ -164,7 +162,7 @@ func main() {
 						},
 					},
 					Composite{
-						Layout: HBox{Margins: marg0},
+						Layout: HBox{MarginsZero: true},
 						Children: []Widget{
 							LineEdit{Text: "Ready.", ReadOnly: true},
 							ProgressBar{StretchFactor: 10},

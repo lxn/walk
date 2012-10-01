@@ -22,11 +22,11 @@ type Margins struct {
 	Bottom int
 }
 
-func (m *Margins) toW() walk.Margins {
-	if m == nil {
-		return walk.Margins{9, 9, 9, 9}
-	}
+func (m Margins) isZero() bool {
+	return m.Left == 0 && m.Top == 0 && m.Right == 0 && m.Bottom == 0
+}
 
+func (m Margins) toW() walk.Margins {
 	return walk.Margins{m.Left, m.Top, m.Right, m.Bottom}
 }
 
@@ -39,30 +39,37 @@ func (s Size) toW() walk.Size {
 	return walk.Size{s.Width, s.Height}
 }
 
+func setLayoutMargins(layout walk.Layout, margins Margins, marginsZero bool) error {
+	if !marginsZero && margins.isZero() {
+		margins = Margins{9, 9, 9, 9}
+	}
+
+	return layout.SetMargins(margins.toW())
+}
+
+func setLayoutSpacing(layout walk.Layout, spacing int, spacingZero bool) error {
+	if !spacingZero && spacing == 0 {
+		spacing = 6
+	}
+
+	return layout.SetSpacing(spacing)
+}
+
 type HBox struct {
-	Margins *Margins
-	Spacing int
+	Margins     Margins
+	Spacing     int
+	MarginsZero bool
+	SpacingZero bool
 }
 
 func (hb HBox) Create() (walk.Layout, error) {
 	l := walk.NewHBoxLayout()
 
-	if err := l.SetMargins(hb.Margins.toW()); err != nil {
+	if err := setLayoutMargins(l, hb.Margins, hb.MarginsZero); err != nil {
 		return nil, err
 	}
 
-	var s int
-	switch hb.Spacing {
-	case -1:
-		s = 0
-
-	case 0:
-		s = 6
-
-	default:
-		s = hb.Spacing
-	}
-	if err := l.SetSpacing(s); err != nil {
+	if err := setLayoutSpacing(l, hb.Spacing, hb.SpacingZero); err != nil {
 		return nil, err
 	}
 
@@ -70,29 +77,20 @@ func (hb HBox) Create() (walk.Layout, error) {
 }
 
 type VBox struct {
-	Margins *Margins
-	Spacing int
+	Margins     Margins
+	Spacing     int
+	MarginsZero bool
+	SpacingZero bool
 }
 
 func (vb VBox) Create() (walk.Layout, error) {
 	l := walk.NewVBoxLayout()
 
-	if err := l.SetMargins(vb.Margins.toW()); err != nil {
+	if err := setLayoutMargins(l, vb.Margins, vb.MarginsZero); err != nil {
 		return nil, err
 	}
 
-	var s int
-	switch vb.Spacing {
-	case -1:
-		s = 0
-
-	case 0:
-		s = 6
-
-	default:
-		s = vb.Spacing
-	}
-	if err := l.SetSpacing(s); err != nil {
+	if err := setLayoutSpacing(l, vb.Spacing, vb.SpacingZero); err != nil {
 		return nil, err
 	}
 
@@ -100,29 +98,20 @@ func (vb VBox) Create() (walk.Layout, error) {
 }
 
 type Grid struct {
-	Margins *Margins
-	Spacing int
+	Margins     Margins
+	Spacing     int
+	MarginsZero bool
+	SpacingZero bool
 }
 
 func (g Grid) Create() (walk.Layout, error) {
 	l := walk.NewGridLayout()
 
-	if err := l.SetMargins(g.Margins.toW()); err != nil {
+	if err := setLayoutMargins(l, g.Margins, g.MarginsZero); err != nil {
 		return nil, err
 	}
 
-	var s int
-	switch g.Spacing {
-	case -1:
-		s = 0
-
-	case 0:
-		s = 6
-
-	default:
-		s = g.Spacing
-	}
-	if err := l.SetSpacing(s); err != nil {
+	if err := setLayoutSpacing(l, g.Spacing, g.SpacingZero); err != nil {
 		return nil, err
 	}
 
