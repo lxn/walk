@@ -42,3 +42,77 @@ func (b *box) CreateElement(parent walk.Container, defaults LayoutFlag) error {
 	}
 	return err
 }
+
+func setupContainer(composite walk.Container,
+	defaults LayoutFlag,
+	options LayoutFlag,
+	children []Widget) (err error) {
+	if defaults != nil {
+		defaults.SetupLayout(composite.Layout(), true)
+	}
+	if options != nil {
+		options.SetupLayout(composite.Layout(), false)
+	}
+	for _, child := range children {
+		if err = child.CreateElement(composite, defaults); err != nil {
+			return
+		}
+	}
+	return
+}
+
+func CreateBox(
+	parent walk.Container,
+	orientation walk.Orientation,
+	defaults LayoutFlag,
+	options LayoutFlag,
+	children []Widget) error {
+
+	composite, err := walk.NewComposite(parent)
+	if err != nil {
+		return err
+	}
+	if orientation == walk.Horizontal {
+		composite.SetLayout(walk.NewHBoxLayout())
+	} else {
+		composite.SetLayout(walk.NewVBoxLayout())
+	}
+	if err = setupContainer(composite, options, defaults, children); err != nil {
+		composite.Dispose()
+		return err
+	}
+	return nil
+}
+
+type HBoxComposite struct {
+	Options  LayoutFlag
+	Children []Widget
+}
+
+func (b HBoxComposite) CreateElement(parent walk.Container, defaults LayoutFlag) error {
+	return CreateBox(parent, walk.Horizontal, defaults, b.Options, b.Children)
+}
+
+type VBoxComposite struct {
+	Options  LayoutFlag
+	Children []Widget
+	//FurtherDefaults LayoutFlag
+}
+
+func (b VBoxComposite) CreateElement(parent walk.Container, defaults LayoutFlag) error {
+	//if b.FurtherDefaults != nil {
+	//	defaults = LayoutFlags(defaults, b.FurtherDefaults)
+	//}
+	return CreateBox(parent, walk.Vertical, defaults, b.Options, b.Children)
+}
+
+type HBoxCompositeChildren []Widget
+func (b HBoxCompositeChildren) CreateElement(parent walk.Container, defaults LayoutFlag) error {
+	return CreateBox(parent, walk.Horizontal, defaults, nil, []Widget(b))
+}
+
+type VBoxCompositeChildren []Widget
+func (b VBoxCompositeChildren) CreateElement(parent walk.Container, defaults LayoutFlag) error {
+	return CreateBox(parent, walk.Vertical, defaults, nil, []Widget(b))
+}
+

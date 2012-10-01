@@ -26,32 +26,32 @@ func main() {
 		progressBar *walk.ProgressBar
 		output *walk.TextEdit
 	)
-	frame, err := MainWindow("FTPS cycle finder",
+	frame, err := (MainWindow{"Test tool",
 		Spacing(6),
-		VBox(
-			Margins(6,6,6,6),
-			HBox(
-				nil,
-				Label("File"),
-				LineEdit(&editFile, "", nil),
-				ToolButton(&buttonFile, "...", nil, nil),
-			),
-			HBox(
-				nil,
-				PushButton(&buttonChk, "Check", nil, nil),
-				PushButton(&buttonFix, "Check and Fix", nil, nil),
-				PushButton(&buttonClr, "Clear", nil, nil),
-				HSpacer(StretchFaktor(10)),
-				Label("Parameter"),
-				LineEdit(&editParameter, "", MaxLength(10)),
-			),
-			HBox(
-				nil,
-				LineEdit(&editStatus, "Ready.", ReadOnly),
-				ProgressBar(&progressBar, 0, 100, StretchFaktor(10)),
-			),
-			TextEdit(&output, "", WidgetFlags(Font(console_font()), ReadOnly)),
-		))
+		VBoxComposite{
+			Options: Margins(6,6,6,6),
+			Children: []Widget{
+				HBoxCompositeChildren{
+					Label("File"),
+					LineEdit(&editFile, "", nil),
+					ToolButton(&buttonFile, "...", nil, nil),
+				},
+				HBoxCompositeChildren{
+					PushButton(&buttonChk, "Check", nil, nil),
+					PushButton(&buttonFix, "Check and Fix", nil, nil),
+					PushButton(&buttonClr, "Clear", nil, nil),
+					HSpacer(StretchFaktor(10)),
+					Label("Parameter"),
+					LineEdit(&editParameter, "", MaxLength(10)),
+				},
+				HBoxCompositeChildren{
+					LineEdit(&editStatus, "Ready.", ReadOnly),
+					ProgressBar(&progressBar, 0, 100, StretchFaktor(10)),
+				},
+				TextEdit(&output, "", WidgetFlags(Font(console_font()), ReadOnly)),
+			},
+		},
+	}).Create(nil)
 
 	if err != nil {
 		panic(err)

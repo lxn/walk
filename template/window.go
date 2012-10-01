@@ -4,18 +4,20 @@ import (
 	"walk"
 )
 
-func MainWindow(title string, defaults LayoutFlag, tmpl Widget) (w *walk.MainWindow, err error) {
-	w, err = walk.NewMainWindow()
-	if err == nil {
-		err = w.SetTitle(title)
-		w.SetLayout(walk.NewVBoxLayout())
-		if err == nil {
-			err = tmpl.CreateElement(w, defaults)
-		}
+type MainWindow struct {
+	Title    string
+	Defaults LayoutFlag
+	Widget   Widget
+}
+
+func (wt MainWindow) Create(parent walk.Container) (w *walk.MainWindow, err error) {
+	if w, err = walk.NewMainWindow(); err != nil {
+		return
 	}
-	if err != nil {
-		w.Dispose()
-		w = nil
+	w.SetLayout(walk.NewVBoxLayout())
+
+	if err = wt.Widget.CreateElement(w, wt.Defaults); err != nil {
+		return nil, err
 	}
 	return
 }
