@@ -31,7 +31,7 @@ func shouldLayoutWidget(widget Widget) bool {
 
 	_, isSpacer := widget.(*Spacer)
 
-	return isSpacer || !widget.BaseWidget().hidden
+	return isSpacer || widget.BaseWidget().visible
 }
 
 type Container interface {
@@ -71,6 +71,18 @@ func (cb *ContainerBase) MinSizeHint() Size {
 
 func (cb *ContainerBase) SizeHint() Size {
 	return Size{100, 100}
+}
+
+func (cb *ContainerBase) SetEnabled(enabled bool) {
+	cb.WidgetBase.SetEnabled(enabled)
+
+	setDescendantsEnabled(cb.widget, enabled)
+}
+
+func (cb *ContainerBase) SetFont(f *Font) {
+	cb.WidgetBase.SetFont(f)
+
+	setDescendantsFont(cb.widget, f)
 }
 
 func (cb *ContainerBase) Children() *WidgetList {

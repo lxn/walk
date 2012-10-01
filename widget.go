@@ -308,7 +308,8 @@ type WidgetBase struct {
 	background           Brush
 	cursor               Cursor
 	suspended            bool
-	hidden               bool
+	visible              bool
+	enabled              bool
 }
 
 var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
@@ -364,6 +365,8 @@ func MustRegisterWindowClass(className string) {
 func InitWidget(widget, parent Widget, className string, style, exStyle uint32) error {
 	wb := widget.BaseWidget()
 	wb.widget = widget
+	wb.enabled = true
+	wb.visible = true
 
 	var hwndParent HWND
 	if parent != nil {
@@ -408,7 +411,7 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 		}
 	}
 
-	wb.SetFont(defaultFont)
+	setWidgetFont(wb.hWnd, defaultFont)
 
 	succeeded = true
 
@@ -619,19 +622,31 @@ func (wb *WidgetBase) SetCursor(value Cursor) {
 
 // Enabled returns if the *WidgetBase is enabled for user interaction.
 func (wb *WidgetBase) Enabled() bool {
-	return IsWindowEnabled(wb.hWnd)
+	if wb.parent != nil {
+		return wb.enabled && wb.parent.Enabled()
+	}
+
+	return wb.enabled
 }
 
 // SetEnabled sets if the *WidgetBase is enabled for user interaction.
 func (wb *WidgetBase) SetEnabled(value bool) {
-	EnableWindow(wb.hWnd, value)
+	wb.enabled = value
+
+	EnableWindow(wb.hWnd, wb.Enabled())
 }
 
 // Font returns the *Font of the *WidgetBase.
 //
 // By default this is a MS Shell Dlg 2, 8 point font.
 func (wb *WidgetBase) Font() *Font {
-	return wb.font
+	if wb.font != nil {
+		return wb.font
+	} else if wb.parent != nil {
+		return wb.parent.Font()
+	}
+
+	return defaultFont
 }
 
 func setWidgetFont(hwnd HWND, font *Font) {
@@ -788,7 +803,7 @@ func (wb *WidgetBase) SetVisible(visible bool) {
 	}
 	ShowWindow(wb.hWnd, cmd)
 
-	wb.hidden = !visible
+	wb.visible = visible
 
 	wb.updateParentLayout()
 }

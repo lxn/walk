@@ -109,3 +109,62 @@ func formatFloatString(s string, prec int) (string, error) {
 
 	return UTF16PtrToString(&buf[0]), nil
 }
+
+func setDescendantsEnabled(widget Widget, enabled bool) {
+	wb := widget.BaseWidget()
+	wb.SetEnabled(enabled)
+
+	walkDescendants(widget, func(w Widget) bool {
+		if w.Handle() == wb.hWnd {
+			return true
+		}
+
+		EnableWindow(w.Handle(), enabled && w.BaseWidget().enabled)
+
+		return true
+	})
+}
+
+func setDescendantsFont(widget Widget, f *Font) {
+	wb := widget.BaseWidget()
+	wb.SetFont(f)
+
+	walkDescendants(widget, func(w Widget) bool {
+		if w.Handle() == wb.hWnd {
+			return true
+		}
+
+		if w.BaseWidget().font != nil {
+			return false
+		}
+
+		setWidgetFont(w.Handle(), f)
+
+		return true
+	})
+}
+
+func walkDescendants(widget Widget, f func(w Widget) bool) {
+	if !f(widget) {
+		return
+	}
+
+	var children []Widget
+
+	switch w := widget.(type) {
+	case *NumberEdit:
+		children = append(children, w.edit)
+
+	case *TabWidget:
+		for _, p := range w.Pages().items {
+			children = append(children, p)
+		}
+
+	case Container:
+		children = w.Children().items
+	}
+
+	for _, w := range children {
+		walkDescendants(w, f)
+	}
+}
