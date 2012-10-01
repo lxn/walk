@@ -7,6 +7,7 @@ type WidgetFlag interface {
 }
 
 type WidgetFlagFunc func(widget walk.Widget) error
+
 func (f WidgetFlagFunc) SetupWidget(widget walk.Widget) error {
 	return f(widget)
 }
@@ -60,5 +61,3 @@ func Font(f *walk.Font) WidgetFlag {
 		return nil
 	})
 }
-
-

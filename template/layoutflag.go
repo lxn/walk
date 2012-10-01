@@ -10,6 +10,7 @@ type LayoutFlag interface {
 }
 
 type LayoutFlagFunc func(layout walk.Layout, isdefault bool) error
+
 func (f LayoutFlagFunc) SetupLayout(layout walk.Layout, isdefault bool) error {
 	return f(layout, isdefault)
 }
@@ -44,4 +45,3 @@ func Margins(hn, vn, hf, vf int) LayoutFlag {
 		return layout.SetMargins(walk.Margins{hn, vn, hf, vf})
 	})
 }
-

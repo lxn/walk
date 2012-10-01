@@ -4,8 +4,8 @@ import (
 	"walk"
 )
 
-func Spacer(o walk.Orientation, wf WidgetFlag) GuiTemplate {
-	return &SimpleGuiTemplate{wf, func(parent walk.Container) (w walk.Widget, err error) {
+func Spacer(o walk.Orientation, wf WidgetFlag) Widget {
+	return &SimpleWidget{wf, func(parent walk.Container) (w walk.Widget, err error) {
 		if o == walk.Horizontal {
 			w, err = walk.NewHSpacer(parent)
 		} else {
@@ -15,11 +15,11 @@ func Spacer(o walk.Orientation, wf WidgetFlag) GuiTemplate {
 	}}
 }
 
-func HSpacer(wf WidgetFlag) GuiTemplate { return Spacer(walk.Horizontal, wf) }
-func VSpacer(wf WidgetFlag) GuiTemplate { return Spacer(walk.Vertical, wf) }
+func HSpacer(wf WidgetFlag) Widget { return Spacer(walk.Horizontal, wf) }
+func VSpacer(wf WidgetFlag) Widget { return Spacer(walk.Vertical, wf) }
 
-func SpacerFixed(o walk.Orientation, s int, wf WidgetFlag) GuiTemplate {
-	return &SimpleGuiTemplate{wf, func(parent walk.Container) (w walk.Widget, err error) {
+func SpacerFixed(o walk.Orientation, s int, wf WidgetFlag) Widget {
+	return &SimpleWidget{wf, func(parent walk.Container) (w walk.Widget, err error) {
 		if o == walk.Horizontal {
 			w, err = walk.NewHSpacerFixed(parent, s)
 		} else {
@@ -29,6 +29,5 @@ func SpacerFixed(o walk.Orientation, s int, wf WidgetFlag) GuiTemplate {
 	}}
 }
 
-func HSpacerFixed(s int, wf WidgetFlag) GuiTemplate { return SpacerFixed(walk.Horizontal, s, wf) }
-func VSpacerFixed(s int, wf WidgetFlag) GuiTemplate { return SpacerFixed(walk.Vertical, s, wf) }
-
+func HSpacerFixed(s int, wf WidgetFlag) Widget { return SpacerFixed(walk.Horizontal, s, wf) }
+func VSpacerFixed(s int, wf WidgetFlag) Widget { return SpacerFixed(walk.Vertical, s, wf) }

@@ -4,7 +4,7 @@ import (
 	"walk"
 )
 
-func MainWindow(title string, defaults LayoutFlag, tmpl GuiTemplate) (w *walk.MainWindow, err error) {
+func MainWindow(title string, defaults LayoutFlag, tmpl Widget) (w *walk.MainWindow, err error) {
 	w, err = walk.NewMainWindow()
 	if err == nil {
 		err = w.SetTitle(title)
@@ -19,5 +19,3 @@ func MainWindow(title string, defaults LayoutFlag, tmpl GuiTemplate) (w *walk.Ma
 	}
 	return
 }
-
-

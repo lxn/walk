@@ -7,12 +7,13 @@ import (
 type box struct {
 	orientation walk.Orientation
 	lf          LayoutFlag
-	elems       []GuiTemplate
+	elems       []Widget
 }
-func HBox(lf LayoutFlag, elems ...GuiTemplate) GuiTemplate {
+
+func HBox(lf LayoutFlag, elems ...Widget) Widget {
 	return &box{walk.Horizontal, lf, elems}
 }
-func VBox(lf LayoutFlag, elems ...GuiTemplate) GuiTemplate {
+func VBox(lf LayoutFlag, elems ...Widget) Widget {
 	return &box{walk.Vertical, lf, elems}
 }
 func (b *box) CreateElement(parent walk.Container, defaults LayoutFlag) error {
@@ -41,4 +42,3 @@ func (b *box) CreateElement(parent walk.Container, defaults LayoutFlag) error {
 	}
 	return err
 }
-
