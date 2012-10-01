@@ -21,17 +21,6 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 
 	w.SetName(name)
 
-	w.SetEnabled(!disabled)
-	w.SetVisible(!hidden)
-
-	if font != nil {
-		if f, err := font.Create(); err != nil {
-			return err
-		} else if f != nil {
-			w.SetFont(f)
-		}
-	}
-
 	if err := w.SetMinMaxSize(minSize.toW(), maxSize.toW()); err != nil {
 		return err
 	}
@@ -95,6 +84,18 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 					return err
 				}
 			}
+		}
+	}
+
+	// Widget continued
+	w.SetEnabled(!disabled)
+	w.SetVisible(!hidden)
+
+	if font != nil {
+		if f, err := font.Create(); err != nil {
+			return err
+		} else if f != nil {
+			w.SetFont(f)
 		}
 	}
 
