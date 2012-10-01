@@ -308,7 +308,7 @@ type WidgetBase struct {
 	background           Brush
 	cursor               Cursor
 	suspended            bool
-	hidden               bool
+	visible              bool
 }
 
 var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
@@ -364,6 +364,7 @@ func MustRegisterWindowClass(className string) {
 func InitWidget(widget, parent Widget, className string, style, exStyle uint32) error {
 	wb := widget.BaseWidget()
 	wb.widget = widget
+	wb.visible = true
 
 	var hwndParent HWND
 	if parent != nil {
@@ -794,7 +795,7 @@ func (wb *WidgetBase) SetVisible(visible bool) {
 	}
 	ShowWindow(wb.hWnd, cmd)
 
-	wb.hidden = !visible
+	wb.visible = visible
 
 	wb.updateParentLayout()
 }

@@ -31,7 +31,7 @@ func shouldLayoutWidget(widget Widget) bool {
 
 	_, isSpacer := widget.(*Spacer)
 
-	return isSpacer || !widget.BaseWidget().hidden
+	return isSpacer || widget.BaseWidget().visible
 }
 
 type Container interface {
