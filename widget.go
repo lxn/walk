@@ -633,7 +633,7 @@ func (wb *WidgetBase) Enabled() bool {
 func (wb *WidgetBase) SetEnabled(value bool) {
 	wb.enabled = value
 
-	EnableWindow(wb.hWnd, wb.Enabled())
+	EnableWindow(wb.hWnd, wb.widget.Enabled())
 }
 
 // Font returns the *Font of the *WidgetBase.

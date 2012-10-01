@@ -71,6 +71,18 @@ func (tlw *TopLevelWindow) SizeHint() Size {
 	return tlw.dialogBaseUnitsToPixels(Size{252, 218})
 }
 
+func (tlw *TopLevelWindow) Enabled() bool {
+	return tlw.enabled
+}
+
+func (tlw *TopLevelWindow) Font() *Font {
+	if tlw.font != nil {
+		return tlw.font
+	}
+
+	return defaultFont
+}
+
 func (tlw *TopLevelWindow) Title() string {
 	return widgetText(tlw.hWnd)
 }
