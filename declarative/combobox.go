@@ -13,6 +13,7 @@ type ComboBox struct {
 	Name                  string
 	Disabled              bool
 	Hidden                bool
+	Font                  Font
 	MinSize               Size
 	MaxSize               Size
 	StretchFactor         int
@@ -21,7 +22,6 @@ type ComboBox struct {
 	Column                int
 	ColumnSpan            int
 	ContextMenuActions    []*walk.Action
-	Font                  Font
 	Format                string
 	Precision             int
 	Model                 walk.ListModel
@@ -54,10 +54,6 @@ func (cb ComboBox) Create(parent walk.Container) error {
 	})
 }
 
-func (cb ComboBox) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return cb.Name, cb.Disabled, cb.Hidden, cb.MinSize, cb.MaxSize, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, cb.ContextMenuActions
-}
-
-func (cb ComboBox) Font_() *Font {
-	return &cb.Font
+func (cb ComboBox) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return cb.Name, cb.Disabled, cb.Hidden, &cb.Font, cb.MinSize, cb.MaxSize, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, cb.ContextMenuActions
 }

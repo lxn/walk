@@ -13,6 +13,7 @@ type TableView struct {
 	Name                       string
 	Disabled                   bool
 	Hidden                     bool
+	Font                       Font
 	MinSize                    Size
 	MaxSize                    Size
 	StretchFactor              int
@@ -21,7 +22,6 @@ type TableView struct {
 	Column                     int
 	ColumnSpan                 int
 	ContextMenuActions         []*walk.Action
-	Font                       Font
 	Model                      walk.TableModel
 	AlternatingRowBGColor      walk.Color
 	CheckBoxes                 bool
@@ -74,10 +74,6 @@ func (tv TableView) Create(parent walk.Container) error {
 	})
 }
 
-func (tv TableView) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return tv.Name, tv.Disabled, tv.Hidden, tv.MinSize, tv.MaxSize, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, tv.ContextMenuActions
-}
-
-func (tv TableView) Font_() *Font {
-	return &tv.Font
+func (tv TableView) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return tv.Name, tv.Disabled, tv.Hidden, &tv.Font, tv.MinSize, tv.MaxSize, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, tv.ContextMenuActions
 }

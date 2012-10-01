@@ -13,6 +13,7 @@ type TextEdit struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -21,7 +22,6 @@ type TextEdit struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
-	Font               Font
 	Text               string
 	ReadOnly           bool
 }
@@ -47,10 +47,6 @@ func (te TextEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (te TextEdit) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return te.Name, te.Disabled, te.Hidden, te.MinSize, te.MaxSize, te.StretchFactor, te.Row, te.RowSpan, te.Column, te.ColumnSpan, te.ContextMenuActions
-}
-
-func (te TextEdit) Font_() *Font {
-	return &te.Font
+func (te TextEdit) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return te.Name, te.Disabled, te.Hidden, &te.Font, te.MinSize, te.MaxSize, te.StretchFactor, te.Row, te.RowSpan, te.Column, te.ColumnSpan, te.ContextMenuActions
 }

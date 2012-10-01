@@ -17,12 +17,20 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	}()
 
 	// Widget
-	name, disabled, hidden, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions := d.WidgetInfo()
+	name, disabled, hidden, font, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions := d.WidgetInfo()
 
 	w.SetName(name)
 
 	w.SetEnabled(!disabled)
 	w.SetVisible(!hidden)
+
+	if font != nil {
+		if f, err := font.Create(); err != nil {
+			return err
+		} else if f != nil {
+			w.SetFont(f)
+		}
+	}
 
 	if err := w.SetMinMaxSize(minSize.toW(), maxSize.toW()); err != nil {
 		return err
@@ -63,15 +71,6 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 			if err := l.SetRange(w, r); err != nil {
 				return err
 			}
-		}
-	}
-
-	// Fonter
-	if fonter, ok := d.(Fonter); ok {
-		if f, err := fonter.Font_().Create(); err != nil {
-			return err
-		} else if f != nil {
-			w.SetFont(f)
 		}
 	}
 

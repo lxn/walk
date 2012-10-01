@@ -13,10 +13,10 @@ type Dialog struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
-	Font               Font
 	Title              string
 	Size               Size
 	Layout             Layout
@@ -64,12 +64,8 @@ func (d Dialog) Create(parent walk.Container) error {
 	})
 }
 
-func (d Dialog) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return d.Name, d.Disabled, d.Hidden, d.MinSize, d.MaxSize, 0, 0, 0, 0, 0, d.ContextMenuActions
-}
-
-func (d Dialog) Font_() *Font {
-	return &d.Font
+func (d Dialog) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return d.Name, d.Disabled, d.Hidden, &d.Font, d.MinSize, d.MaxSize, 0, 0, 0, 0, 0, d.ContextMenuActions
 }
 
 func (d Dialog) ContainerInfo() (Layout, []Widget) {

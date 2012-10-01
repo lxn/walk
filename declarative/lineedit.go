@@ -13,6 +13,7 @@ type LineEdit struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -21,7 +22,6 @@ type LineEdit struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
-	Font               Font
 	Text               string
 	ReadOnly           bool
 	CueBanner          string
@@ -69,10 +69,6 @@ func (le LineEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (le LineEdit) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return le.Name, le.Disabled, le.Hidden, le.MinSize, le.MaxSize, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan, le.ContextMenuActions
-}
-
-func (le LineEdit) Font_() *Font {
-	return &le.Font
+func (le LineEdit) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return le.Name, le.Disabled, le.Hidden, &le.Font, le.MinSize, le.MaxSize, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan, le.ContextMenuActions
 }

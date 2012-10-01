@@ -13,6 +13,7 @@ type ImageView struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -43,6 +44,6 @@ func (iv ImageView) Create(parent walk.Container) error {
 	})
 }
 
-func (iv ImageView) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return iv.Name, iv.Disabled, iv.Hidden, iv.MinSize, iv.MaxSize, iv.StretchFactor, iv.Row, iv.RowSpan, iv.Column, iv.ColumnSpan, iv.ContextMenuActions
+func (iv ImageView) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return iv.Name, iv.Disabled, iv.Hidden, &iv.Font, iv.MinSize, iv.MaxSize, iv.StretchFactor, iv.Row, iv.RowSpan, iv.Column, iv.ColumnSpan, iv.ContextMenuActions
 }

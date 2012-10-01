@@ -13,6 +13,7 @@ type Label struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -21,7 +22,6 @@ type Label struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
-	Font               Font
 	Text               string
 }
 
@@ -44,10 +44,6 @@ func (l Label) Create(parent walk.Container) error {
 	})
 }
 
-func (l Label) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return l.Name, l.Disabled, l.Hidden, l.MinSize, l.MaxSize, l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan, l.ContextMenuActions
-}
-
-func (l Label) Font_() *Font {
-	return &l.Font
+func (l Label) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return l.Name, l.Disabled, l.Hidden, &l.Font, l.MinSize, l.MaxSize, l.StretchFactor, l.Row, l.RowSpan, l.Column, l.ColumnSpan, l.ContextMenuActions
 }

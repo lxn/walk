@@ -13,6 +13,7 @@ type ProgressBar struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -44,6 +45,6 @@ func (pb ProgressBar) Create(parent walk.Container) error {
 	})
 }
 
-func (pb ProgressBar) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return pb.Name, pb.Disabled, pb.Hidden, pb.MinSize, pb.MaxSize, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, pb.ContextMenuActions
+func (pb ProgressBar) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return pb.Name, pb.Disabled, pb.Hidden, &pb.Font, pb.MinSize, pb.MaxSize, pb.StretchFactor, pb.Row, pb.RowSpan, pb.Column, pb.ColumnSpan, pb.ContextMenuActions
 }

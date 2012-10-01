@@ -13,6 +13,7 @@ type TabWidget struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -21,7 +22,6 @@ type TabWidget struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
-	Font               Font
 	Pages              []TabPage
 }
 
@@ -56,10 +56,6 @@ func (tw TabWidget) Create(parent walk.Container) error {
 	})
 }
 
-func (tw TabWidget) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return tw.Name, tw.Disabled, tw.Hidden, tw.MinSize, tw.MaxSize, tw.StretchFactor, tw.Row, tw.RowSpan, tw.Column, tw.ColumnSpan, tw.ContextMenuActions
-}
-
-func (tw TabWidget) Font_() *Font {
-	return &tw.Font
+func (tw TabWidget) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return tw.Name, tw.Disabled, tw.Hidden, &tw.Font, tw.MinSize, tw.MaxSize, tw.StretchFactor, tw.Row, tw.RowSpan, tw.Column, tw.ColumnSpan, tw.ContextMenuActions
 }

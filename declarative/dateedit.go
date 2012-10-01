@@ -17,6 +17,7 @@ type DateEdit struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -25,7 +26,6 @@ type DateEdit struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
-	Font               Font
 	MinDate            time.Time
 	MaxDate            time.Time
 	Date               time.Time
@@ -61,10 +61,6 @@ func (de DateEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (de DateEdit) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return de.Name, de.Disabled, de.Hidden, de.MinSize, de.MaxSize, de.StretchFactor, de.Row, de.RowSpan, de.Column, de.ColumnSpan, de.ContextMenuActions
-}
-
-func (de DateEdit) Font_() *Font {
-	return &de.Font
+func (de DateEdit) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return de.Name, de.Disabled, de.Hidden, &de.Font, de.MinSize, de.MaxSize, de.StretchFactor, de.Row, de.RowSpan, de.Column, de.ColumnSpan, de.ContextMenuActions
 }

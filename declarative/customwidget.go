@@ -13,6 +13,7 @@ type CustomWidget struct {
 	Name                string
 	Disabled            bool
 	Hidden              bool
+	Font                Font
 	MinSize             Size
 	MaxSize             Size
 	StretchFactor       int
@@ -45,6 +46,6 @@ func (cw CustomWidget) Create(parent walk.Container) error {
 	})
 }
 
-func (cw CustomWidget) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return cw.Name, cw.Disabled, cw.Hidden, cw.MinSize, cw.MaxSize, cw.StretchFactor, cw.Row, cw.RowSpan, cw.Column, cw.ColumnSpan, cw.ContextMenuActions
+func (cw CustomWidget) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return cw.Name, cw.Disabled, cw.Hidden, &cw.Font, cw.MinSize, cw.MaxSize, cw.StretchFactor, cw.Row, cw.RowSpan, cw.Column, cw.ColumnSpan, cw.ContextMenuActions
 }

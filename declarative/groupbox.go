@@ -13,6 +13,7 @@ type GroupBox struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -21,7 +22,6 @@ type GroupBox struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
-	Font               Font
 	Title              string
 	Layout             Layout
 	Children           []Widget
@@ -46,12 +46,8 @@ func (gb GroupBox) Create(parent walk.Container) error {
 	})
 }
 
-func (gb GroupBox) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return gb.Name, gb.Disabled, gb.Hidden, gb.MinSize, gb.MaxSize, gb.StretchFactor, gb.Row, gb.RowSpan, gb.Column, gb.ColumnSpan, gb.ContextMenuActions
-}
-
-func (gb GroupBox) Font_() *Font {
-	return &gb.Font
+func (gb GroupBox) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return gb.Name, gb.Disabled, gb.Hidden, &gb.Font, gb.MinSize, gb.MaxSize, gb.StretchFactor, gb.Row, gb.RowSpan, gb.Column, gb.ColumnSpan, gb.ContextMenuActions
 }
 
 func (gb GroupBox) ContainerInfo() (Layout, []Widget) {

@@ -13,6 +13,7 @@ type CheckBox struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -21,7 +22,6 @@ type CheckBox struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
-	Font               Font
 	Text               string
 	OnClicked          walk.EventHandler
 }
@@ -49,10 +49,6 @@ func (cb CheckBox) Create(parent walk.Container) error {
 	})
 }
 
-func (cb CheckBox) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return cb.Name, cb.Disabled, cb.Hidden, cb.MinSize, cb.MaxSize, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, cb.ContextMenuActions
-}
-
-func (cb CheckBox) Font_() *Font {
-	return &cb.Font
+func (cb CheckBox) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return cb.Name, cb.Disabled, cb.Hidden, &cb.Font, cb.MinSize, cb.MaxSize, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, cb.ContextMenuActions
 }

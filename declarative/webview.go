@@ -13,6 +13,7 @@ type WebView struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -43,6 +44,6 @@ func (wv WebView) Create(parent walk.Container) error {
 	})
 }
 
-func (wv WebView) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return wv.Name, wv.Disabled, wv.Hidden, wv.MinSize, wv.MaxSize, wv.StretchFactor, wv.Row, wv.RowSpan, wv.Column, wv.ColumnSpan, wv.ContextMenuActions
+func (wv WebView) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return wv.Name, wv.Disabled, wv.Hidden, &wv.Font, wv.MinSize, wv.MaxSize, wv.StretchFactor, wv.Row, wv.RowSpan, wv.Column, wv.ColumnSpan, wv.ContextMenuActions
 }

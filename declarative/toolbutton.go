@@ -13,6 +13,7 @@ type ToolButton struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -21,7 +22,6 @@ type ToolButton struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
-	Font               Font
 	Text               string
 	OnClicked          walk.EventHandler
 }
@@ -49,10 +49,6 @@ func (tb ToolButton) Create(parent walk.Container) error {
 	})
 }
 
-func (tb ToolButton) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return tb.Name, tb.Disabled, tb.Hidden, tb.MinSize, tb.MaxSize, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan, tb.ContextMenuActions
-}
-
-func (tb ToolButton) Font_() *Font {
-	return &tb.Font
+func (tb ToolButton) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return tb.Name, tb.Disabled, tb.Hidden, &tb.Font, tb.MinSize, tb.MaxSize, tb.StretchFactor, tb.Row, tb.RowSpan, tb.Column, tb.ColumnSpan, tb.ContextMenuActions
 }

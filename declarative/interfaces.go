@@ -14,11 +14,7 @@ type Layout interface {
 
 type Widget interface {
 	Create(parent walk.Container) error
-	WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action)
-}
-
-type Fonter interface {
-	Font_() *Font
+	WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action)
 }
 
 type Container interface {

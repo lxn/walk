@@ -13,6 +13,7 @@ type Splitter struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -51,8 +52,8 @@ func (s Splitter) Create(parent walk.Container) error {
 	})
 }
 
-func (s Splitter) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return s.Name, s.Disabled, s.Hidden, s.MinSize, s.MaxSize, s.StretchFactor, s.Row, s.RowSpan, s.Column, s.ColumnSpan, s.ContextMenuActions
+func (s Splitter) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return s.Name, s.Disabled, s.Hidden, &s.Font, s.MinSize, s.MaxSize, s.StretchFactor, s.Row, s.RowSpan, s.Column, s.ColumnSpan, s.ContextMenuActions
 }
 
 func (s Splitter) ContainerInfo() (Layout, []Widget) {

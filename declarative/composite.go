@@ -13,6 +13,7 @@ type Composite struct {
 	Name               string
 	Disabled           bool
 	Hidden             bool
+	Font               Font
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -40,8 +41,8 @@ func (c Composite) Create(parent walk.Container) error {
 	})
 }
 
-func (c Composite) WidgetInfo() (name string, disabled, hidden bool, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return c.Name, c.Disabled, c.Hidden, c.MinSize, c.MaxSize, c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan, c.ContextMenuActions
+func (c Composite) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
+	return c.Name, c.Disabled, c.Hidden, &c.Font, c.MinSize, c.MaxSize, c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan, c.ContextMenuActions
 }
 
 func (c Composite) ContainerInfo() (Layout, []Widget) {
