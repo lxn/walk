@@ -53,6 +53,14 @@ func (tp *TabPage) Dispose() {
 	tp.ContainerBase.Dispose()
 }
 
+func (tp *TabPage) Enabled() bool {
+	if tp.tabWidget != nil {
+		return tp.tabWidget.Enabled() && tp.enabled
+	}
+
+	return tp.enabled
+}
+
 func (tp *TabPage) Font() *Font {
 	if tp.font != nil {
 		return tp.font

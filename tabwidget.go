@@ -104,22 +104,16 @@ func (tw *TabWidget) SizeHint() Size {
 	return Size{100, 100}
 }
 
+func (tw *TabWidget) SetEnabled(enabled bool) {
+	tw.WidgetBase.SetEnabled(enabled)
+
+	setDescendantsEnabled(tw, enabled)
+}
+
 func (tw *TabWidget) SetFont(f *Font) {
 	tw.WidgetBase.SetFont(f)
 
-	walkDescendants(tw, func(w Widget) bool {
-		if w.Handle() == tw.hWnd {
-			return true
-		}
-
-		if w.BaseWidget().font != nil {
-			return false
-		}
-
-		setWidgetFont(w.Handle(), f)
-
-		return true
-	})
+	setDescendantsFont(tw, f)
 }
 
 func (tw *TabWidget) CurrentIndex() int {

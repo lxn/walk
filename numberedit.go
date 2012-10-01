@@ -80,11 +80,12 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 }
 
 func (ne *NumberEdit) Enabled() bool {
-	return ne.edit.Enabled()
+	return ne.WidgetBase.Enabled()
 }
 
 func (ne *NumberEdit) SetEnabled(value bool) {
 	ne.edit.SetEnabled(value)
+	ne.WidgetBase.SetEnabled(value)
 }
 
 func (ne *NumberEdit) Font() *Font {

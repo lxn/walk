@@ -309,6 +309,7 @@ type WidgetBase struct {
 	cursor               Cursor
 	suspended            bool
 	visible              bool
+	enabled              bool
 }
 
 var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
@@ -364,6 +365,7 @@ func MustRegisterWindowClass(className string) {
 func InitWidget(widget, parent Widget, className string, style, exStyle uint32) error {
 	wb := widget.BaseWidget()
 	wb.widget = widget
+	wb.enabled = true
 	wb.visible = true
 
 	var hwndParent HWND
@@ -620,12 +622,18 @@ func (wb *WidgetBase) SetCursor(value Cursor) {
 
 // Enabled returns if the *WidgetBase is enabled for user interaction.
 func (wb *WidgetBase) Enabled() bool {
-	return IsWindowEnabled(wb.hWnd)
+	if wb.parent != nil {
+		return wb.enabled && wb.parent.Enabled()
+	}
+
+	return wb.enabled
 }
 
 // SetEnabled sets if the *WidgetBase is enabled for user interaction.
 func (wb *WidgetBase) SetEnabled(value bool) {
-	EnableWindow(wb.hWnd, value)
+	wb.enabled = value
+
+	EnableWindow(wb.hWnd, wb.Enabled())
 }
 
 // Font returns the *Font of the *WidgetBase.

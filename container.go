@@ -73,22 +73,16 @@ func (cb *ContainerBase) SizeHint() Size {
 	return Size{100, 100}
 }
 
+func (cb *ContainerBase) SetEnabled(enabled bool) {
+	cb.WidgetBase.SetEnabled(enabled)
+
+	setDescendantsEnabled(cb.widget, enabled)
+}
+
 func (cb *ContainerBase) SetFont(f *Font) {
 	cb.WidgetBase.SetFont(f)
 
-	walkDescendants(cb, func(w Widget) bool {
-		if w.Handle() == cb.hWnd {
-			return true
-		}
-
-		if w.BaseWidget().font != nil {
-			return false
-		}
-
-		setWidgetFont(w.Handle(), f)
-
-		return true
-	})
+	setDescendantsFont(cb.widget, f)
 }
 
 func (cb *ContainerBase) Children() *WidgetList {
