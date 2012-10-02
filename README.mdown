@@ -16,14 +16,77 @@ Now run `go get github.com/lxn/walk`
 Using Walk
 ==========
 
-See the examples directory for inspiration.
+There are three ways to create GUIs with Walk:
 
-Some gui features require an application manifest file alongside or embedded
-into your executable, to make use of common controls 6.0. See the examples
-directory for such a file.
+1. Imperative code
+==================
 
-ui2walk
-=======
+	import "github.com/lxn/walk"
+
+	func runMainWindow() error {
+		mw, err := walk.NewMainWindow()
+		if err != nil {
+			return err
+		}
+		
+		if err := mw.SetTitle("My Cool App"); err != nil {
+			return err
+		}
+		
+		if err := mw.SetLayout(walk.NewVBoxLayout()); err != nil {
+			return err
+		}
+		
+		pb, err := walk.NewPushButton(mw)
+		if err != nil {
+			return err
+		}
+
+		if err := pb.SetText("Don't Click Me!"); err != nil {
+			return err
+		}
+		
+		pb.Clicked().Attach(func(){
+			panic("Ouch!")
+		})
+		
+		mw.Show()
+		mw.Run()
+	}
+
+Using this approach, a lot of error handling is required. In this code
+it is hard to see the hierarchical structure of the GUI.
+
+2. Declarative code
+===================
+
+	import (
+		"github.com/lxn/walk"
+		. "github.com/lxn/walk/declarative"
+	)
+	
+	func runMainWindow() error {
+		var mw *walk.MainWindow
+		
+		if err := (MainWindow{
+			AssignTo: &mw,
+			Title:    "My Cool App",
+			Layout:   VBox{},
+			Children: []Widget{
+				PushButton{Text: "Don't Click Me!", OnClicked: func() { panic("Ouch!") }}
+			},
+		}.Create(nil)); err != nil {
+			return err
+		}
+		
+		mw.Show()
+		mw.Run()
+	}
+
+This requires much less error handling and the hierarchical structure of the GUI is reflected in the code.
+
+3. Qt Designer and ui2walk
+==========================
 
 The ui2walk tool generates Go code for use with Walk from Qt Designer ui files.
 
