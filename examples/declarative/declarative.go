@@ -21,6 +21,44 @@ type MyDialog struct {
 	*walk.Dialog
 }
 
+type DialogDecl struct {
+	Owner    walk.RootWidget
+	Dialog   **walk.Dialog
+	AcceptPB **walk.PushButton
+	Widgets  []Widget
+	Title    string
+	Size     Size
+	MinSize  Size
+}
+
+func (dd *DialogDecl) Create() error {
+	var cancelPB *walk.PushButton
+
+	return Dialog{
+		AssignTo:      dd.Dialog,
+		Title:         dd.Title,
+		DefaultButton: dd.AcceptPB,
+		CancelButton:  &cancelPB,
+		MinSize:       dd.MinSize,
+		Size:          dd.Size,
+		Layout:        VBox{},
+		Children: []Widget{
+			Composite{
+				Layout:   Grid{},
+				Children: dd.Widgets,
+			},
+			Composite{
+				Layout: HBox{},
+				Children: []Widget{
+					HSpacer{},
+					PushButton{AssignTo: dd.AcceptPB, Text: "OK"},
+					PushButton{AssignTo: &cancelPB, Text: "Cancel", OnClicked: func() { dd.Dialog.Cancel() }},
+				},
+			},
+		},
+	}.Create(dd.Owner)
+}
+
 func (mw *MyMainWindow) openAction_Triggered() {
 	walk.MsgBox(mw, "Open", "Nothing to see here...", walk.MsgBoxIconInformation|walk.MsgBoxOK)
 }
@@ -29,44 +67,37 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 	dlg := new(MyDialog)
 
 	var acceptPB *walk.PushButton
-	var cancelPB *walk.PushButton
+	var le1, le2 *walk.LineEdit
 
-	if err := (Dialog{
-		AssignTo:      &dlg.Dialog,
-		Title:         "My Dialog",
-		DefaultButton: &acceptPB,
-		CancelButton:  &cancelPB,
-		MinSize:       Size{400, 300},
-		Size:          Size{400, 300},
-		Layout:        VBox{},
-		Children: []Widget{
-			Composite{
-				Layout: Grid{},
-				Children: []Widget{
-					Label{Row: 0, Column: 0, Text: "A LineEdit:"},
-					LineEdit{Row: 0, Column: 1},
-					ToolButton{Row: 0, Column: 2, Text: "..."},
-					Label{Row: 1, Column: 0, Text: "Another LineEdit:"},
-					LineEdit{Row: 1, Column: 1},
-					Label{Row: 2, Column: 0, Text: "A ComboBox:"},
-					ComboBox{Row: 2, Column: 1},
-					VSpacer{Row: 3, Column: 0, Size: 10},
-					Label{Row: 4, Column: 0, ColumnSpan: 2, Text: "A TextEdit:"},
-					TextEdit{Row: 5, Column: 0, ColumnSpan: 2},
-				},
-			},
-			Composite{
-				Layout: HBox{},
-				Children: []Widget{
-					HSpacer{},
-					PushButton{AssignTo: &acceptPB, Text: "OK", OnClicked: func() { dlg.Accept() }},
-					PushButton{AssignTo: &cancelPB, Text: "Cancel", OnClicked: func() { dlg.Cancel() }},
-				},
-			},
-		},
-	}.Create(mw)); err != nil {
+	widgets := []Widget{
+		Label{Row: 0, Column: 0, Text: "A LineEdit:"},
+		LineEdit{Row: 0, Column: 1, AssignTo: &le1, OnTextChanged: func() { le2.SetText(le1.Text()) }},
+		ToolButton{Row: 0, Column: 2, Text: "..."},
+		Label{Row: 1, Column: 0, Text: "Another LineEdit:"},
+		LineEdit{Row: 1, Column: 1, AssignTo: &le2},
+		Label{Row: 2, Column: 0, Text: "A ComboBox:"},
+		ComboBox{Row: 2, Column: 1},
+		VSpacer{Row: 3, Column: 0, Size: 10},
+		Label{Row: 4, Column: 0, ColumnSpan: 2, Text: "A TextEdit:"},
+		TextEdit{Row: 5, Column: 0, ColumnSpan: 2},
+	}
+
+	dd := &DialogDecl{
+		Title:    "My Dialog",
+		Owner:    mw,
+		Dialog:   &dlg.Dialog,
+		AcceptPB: &acceptPB,
+		Widgets:  widgets,
+		MinSize:  Size{400, 300},
+	}
+
+	if err := dd.Create(); err != nil {
 		log.Fatal(err)
 	}
+
+	acceptPB.Clicked().Attach(func() {
+		dlg.Accept()
+	})
 
 	dlg.Run()
 }
