@@ -72,6 +72,7 @@ type Menu struct {
 	AssignTo       **walk.Menu
 	AssignActionTo **walk.Action
 	Text           string
+	Image          *walk.Bitmap
 	Items          []MenuItem
 }
 
@@ -94,6 +95,9 @@ func (m Menu) createAction(menu *walk.Menu) (*walk.Action, error) {
 	}
 
 	if err := action.SetText(m.Text); err != nil {
+		return nil, err
+	}
+	if err := action.SetImage(m.Image); err != nil {
 		return nil, err
 	}
 
