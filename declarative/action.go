@@ -15,7 +15,7 @@ type Action struct {
 	OnTriggered walk.EventHandler
 }
 
-func (a Action) createMenuAction(menu *walk.Menu) (*walk.Action, error) {
+func (a Action) createAction(menu *walk.Menu) (*walk.Action, error) {
 	action := walk.NewAction()
 
 	if _, err := a.initAction(action); err != nil {
@@ -29,10 +29,6 @@ func (a Action) createMenuAction(menu *walk.Menu) (*walk.Action, error) {
 	}
 
 	return action, nil
-}
-
-func (a Action) createToolBarAction() (*walk.Action, error) {
-	return a.initAction(walk.NewAction())
 }
 
 func (a Action) initAction(wa *walk.Action) (*walk.Action, error) {
@@ -62,17 +58,13 @@ type ActionRef struct {
 	Action *walk.Action
 }
 
-func (ar ActionRef) createMenuAction(menu *walk.Menu) (*walk.Action, error) {
+func (ar ActionRef) createAction(menu *walk.Menu) (*walk.Action, error) {
 	if menu != nil {
 		if err := menu.Actions().Add(ar.Action); err != nil {
 			return nil, err
 		}
 	}
 
-	return ar.Action, nil
-}
-
-func (ar ActionRef) createToolBarAction() (*walk.Action, error) {
 	return ar.Action, nil
 }
 
@@ -83,7 +75,7 @@ type Menu struct {
 	Items          []MenuItem
 }
 
-func (m Menu) createMenuAction(menu *walk.Menu) (*walk.Action, error) {
+func (m Menu) createAction(menu *walk.Menu) (*walk.Action, error) {
 	if menu == nil {
 		var err error
 		if menu, err = walk.NewMenu(); err != nil {
@@ -106,7 +98,7 @@ func (m Menu) createMenuAction(menu *walk.Menu) (*walk.Action, error) {
 	}
 
 	for _, item := range m.Items {
-		if _, err := item.createMenuAction(subMenu); err != nil {
+		if _, err := item.createAction(subMenu); err != nil {
 			return nil, err
 		}
 	}
@@ -131,26 +123,11 @@ func addToActionList(list *walk.ActionList, actions []*walk.Action) error {
 	return nil
 }
 
-func CreateMenuActions(items ...MenuItem) ([]*walk.Action, error) {
+func CreateActions(items ...MenuItem) ([]*walk.Action, error) {
 	var actions []*walk.Action
 
 	for _, item := range items {
-		action, err := item.createMenuAction(nil)
-		if err != nil {
-			return nil, err
-		}
-
-		actions = append(actions, action)
-	}
-
-	return actions, nil
-}
-
-func CreateToolBarActions(items ...ToolBarItem) ([]*walk.Action, error) {
-	var actions []*walk.Action
-
-	for _, item := range items {
-		action, err := item.createToolBarAction()
+		action, err := item.createAction(nil)
 		if err != nil {
 			return nil, err
 		}

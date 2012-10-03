@@ -22,9 +22,5 @@ type Container interface {
 }
 
 type MenuItem interface {
-	createMenuAction(menu *walk.Menu) (*walk.Action, error)
-}
-
-type ToolBarItem interface {
-	createToolBarAction() (*walk.Action, error)
+	createAction(menu *walk.Menu) (*walk.Action, error)
 }

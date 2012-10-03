@@ -116,7 +116,7 @@ func main() {
 	var openAction *walk.Action
 	var recentMenu *walk.Menu
 
-	menuActions, err := CreateMenuActions(
+	menuActions, err := CreateActions(
 		Menu{
 			Text: "&File",
 			Items: []MenuItem{
@@ -153,7 +153,7 @@ func main() {
 	openRecent3Action.SetText("Oink")
 	recentMenu.Actions().Add(openRecent3Action)
 
-	toolBarActions, err := CreateToolBarActions(
+	toolBarActions, err := CreateActions(
 		ActionRef{openAction},
 		Action{Text: "Show Dialog", OnTriggered: func() { mw.showDialogAction_Triggered() }})
 	if err != nil {
