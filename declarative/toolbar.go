@@ -22,8 +22,9 @@ type ToolBar struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
-	Orientation        Orientation
 	Actions            []*walk.Action
+	MaxTextRows        int
+	Orientation        Orientation
 }
 
 func (tb ToolBar) Create(parent walk.Container) (err error) {
@@ -43,6 +44,14 @@ func (tb ToolBar) Create(parent walk.Container) (err error) {
 			return err
 		}
 		w.SetImageList(imageList)
+
+		mtr := tb.MaxTextRows
+		if mtr < 1 {
+			mtr = 1
+		}
+		if err := w.SetMaxTextRows(mtr); err != nil {
+			return err
+		}
 
 		if err := addToActionList(w.Actions(), tb.Actions); err != nil {
 			return err
