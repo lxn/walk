@@ -228,6 +228,10 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 		*style |= BTNS_GROUP
 	}
 
+	if action.text == "-" {
+		*style = BTNS_SEP
+	}
+
 	if *image, err = tb.imageIndex(action.image); err != nil {
 		return
 	}
