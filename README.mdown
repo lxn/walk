@@ -16,51 +16,56 @@ Now run `go get github.com/lxn/walk`
 Using Walk
 ==========
 
-There are three ways to create GUIs with Walk:
+There are three options to create GUIs with Walk:
 
 1. Imperative code
 ==================
 
 	package main
 	
-	import (
-		"github.com/lxn/walk"
-		"log"
-	)
+	import "github.com/lxn/walk"
 	
-	func main() {
+	func newMainWindow() (*walk.MainWindow, error) {
 		mw, err := walk.NewMainWindow()
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		
+		succeeded := false
+		defer func(){
+			if !succeeded {
+				mw.Dispose()
+			}
+		}()
+		
 		if err := mw.SetTitle("My Cool App"); err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		
 		if err := mw.SetMinMaxSize(walk.Size{400, 300}, walk.Size{}); err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		
 		if err := mw.SetLayout(walk.NewVBoxLayout()); err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		
 		pb, err := walk.NewPushButton(mw)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		
 		if err := pb.SetText("Don't Click Me!"); err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		
 		pb.Clicked().Attach(func() {
 			panic("Ouch!")
 		})
 		
-		mw.Show()
-		mw.Run()
+		succeeded = true
+		
+		return mw, nil
 	}
 
 Using this approach, a lot of error handling is required. In this code
@@ -74,13 +79,12 @@ it is hard to see the hierarchical structure of the GUI.
 	import (
 		"github.com/lxn/walk"
 		. "github.com/lxn/walk/declarative"
-		"log"
 	)
 	
-	func main() {
+	func newMainWindow() (*walk.MainWindow, error) {
 		var mw *walk.MainWindow
 		
-		if err := (MainWindow{
+		return mw, MainWindow{
 			AssignTo: &mw,
 			Title:    "My Cool App",
 			MinSize:  Size{400, 300},
@@ -91,12 +95,7 @@ it is hard to see the hierarchical structure of the GUI.
 					OnClicked: func() { panic("Ouch!") },
 				},
 			},
-		}.Create(nil)); err != nil {
-			log.Fatal(err)
-		}
-		
-		mw.Show()
-		mw.Run()
+		}.Create(nil)
 	}
 
 This requires much less error handling and the hierarchical structure of the GUI is reflected in the code.
