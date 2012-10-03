@@ -21,9 +21,11 @@ There are three ways to create GUIs with Walk:
 1. Imperative code
 ==================
 
+	package main
+	
 	import (
-		"log"
 		"github.com/lxn/walk"
+		"log"
 	)
 	
 	func main() {
@@ -36,6 +38,10 @@ There are three ways to create GUIs with Walk:
 			log.Fatal(err)
 		}
 		
+		if err := mw.SetMinMaxSize(walk.Size{400, 300}, walk.Size{}); err != nil {
+			log.Fatal(err)
+		}
+		
 		if err := mw.SetLayout(walk.NewVBoxLayout()); err != nil {
 			log.Fatal(err)
 		}
@@ -44,12 +50,12 @@ There are three ways to create GUIs with Walk:
 		if err != nil {
 			log.Fatal(err)
 		}
-
+		
 		if err := pb.SetText("Don't Click Me!"); err != nil {
 			log.Fatal(err)
 		}
 		
-		pb.Clicked().Attach(func(){
+		pb.Clicked().Attach(func() {
 			panic("Ouch!")
 		})
 		
@@ -63,26 +69,32 @@ it is hard to see the hierarchical structure of the GUI.
 2. Declarative code
 ===================
 
+	package main
+	
 	import (
-		"log"
 		"github.com/lxn/walk"
 		. "github.com/lxn/walk/declarative"
+		"log"
 	)
 	
 	func main() {
 		var mw *walk.MainWindow
-	
+		
 		if err := (MainWindow{
 			AssignTo: &mw,
 			Title:    "My Cool App",
+			MinSize:  Size{400, 300},
 			Layout:   VBox{},
 			Children: []Widget{
-				PushButton{Text: "Don't Click Me!", OnClicked: func() { panic("Ouch!") }},
+				PushButton{
+					Text:      "Don't Click Me!",
+					OnClicked: func() { panic("Ouch!") },
+				},
 			},
 		}.Create(nil)); err != nil {
 			log.Fatal(err)
 		}
-	
+		
 		mw.Show()
 		mw.Run()
 	}
