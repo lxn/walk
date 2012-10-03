@@ -21,29 +21,32 @@ There are three ways to create GUIs with Walk:
 1. Imperative code
 ==================
 
-	import "github.com/lxn/walk"
-
-	func runMainWindow() error {
+	import (
+		"log"
+		"github.com/lxn/walk"
+	)
+	
+	func main() {
 		mw, err := walk.NewMainWindow()
 		if err != nil {
-			return err
+			log.Fatal(err)
 		}
 		
 		if err := mw.SetTitle("My Cool App"); err != nil {
-			return err
+			log.Fatal(err)
 		}
 		
 		if err := mw.SetLayout(walk.NewVBoxLayout()); err != nil {
-			return err
+			log.Fatal(err)
 		}
 		
 		pb, err := walk.NewPushButton(mw)
 		if err != nil {
-			return err
+			log.Fatal(err)
 		}
 
 		if err := pb.SetText("Don't Click Me!"); err != nil {
-			return err
+			log.Fatal(err)
 		}
 		
 		pb.Clicked().Attach(func(){
@@ -61,24 +64,25 @@ it is hard to see the hierarchical structure of the GUI.
 ===================
 
 	import (
+		"log"
 		"github.com/lxn/walk"
 		. "github.com/lxn/walk/declarative"
 	)
 	
-	func runMainWindow() error {
+	func main() {
 		var mw *walk.MainWindow
-		
+	
 		if err := (MainWindow{
 			AssignTo: &mw,
 			Title:    "My Cool App",
 			Layout:   VBox{},
 			Children: []Widget{
-				PushButton{Text: "Don't Click Me!", OnClicked: func() { panic("Ouch!") }}
+				PushButton{Text: "Don't Click Me!", OnClicked: func() { panic("Ouch!") }},
 			},
 		}.Create(nil)); err != nil {
-			return err
+			log.Fatal(err)
 		}
-		
+	
 		mw.Show()
 		mw.Run()
 	}
