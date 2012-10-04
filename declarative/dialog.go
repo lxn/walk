@@ -25,18 +25,25 @@ type Dialog struct {
 	CancelButton       **walk.PushButton
 }
 
-func (d Dialog) Create(parent walk.Container) error {
-	var owner walk.RootWidget
-	if o, ok := parent.(walk.RootWidget); ok {
-		owner = o
-	}
-
+func (d Dialog) Create(owner walk.RootWidget) error {
 	w, err := walk.NewDialog(owner)
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(d, w, func() error {
+	tlwi := topLevelWindowInfo{
+		Name:               d.Name,
+		Disabled:           d.Disabled,
+		Hidden:             d.Hidden,
+		Font:               d.Font,
+		MinSize:            d.MinSize,
+		MaxSize:            d.MaxSize,
+		ContextMenuActions: d.ContextMenuActions,
+		Layout:             d.Layout,
+		Children:           d.Children,
+	}
+
+	return InitWidget(tlwi, w, func() error {
 		if err := w.SetTitle(d.Title); err != nil {
 			return err
 		}
@@ -62,12 +69,4 @@ func (d Dialog) Create(parent walk.Container) error {
 
 		return nil
 	})
-}
-
-func (d Dialog) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return d.Name, d.Disabled, d.Hidden, &d.Font, d.MinSize, d.MaxSize, 0, 0, 0, 0, 0, d.ContextMenuActions
-}
-
-func (d Dialog) ContainerInfo() (Layout, []Widget) {
-	return d.Layout, d.Children
 }

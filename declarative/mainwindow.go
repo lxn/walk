@@ -25,13 +25,25 @@ type MainWindow struct {
 	ToolBarActions     []*walk.Action
 }
 
-func (mw MainWindow) Create(parent walk.Container) error {
+func (mw MainWindow) Create() error {
 	w, err := walk.NewMainWindow()
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(mw, w, func() error {
+	tlwi := topLevelWindowInfo{
+		Name:               mw.Name,
+		Disabled:           mw.Disabled,
+		Hidden:             mw.Hidden,
+		Font:               mw.Font,
+		MinSize:            mw.MinSize,
+		MaxSize:            mw.MaxSize,
+		ContextMenuActions: mw.ContextMenuActions,
+		Layout:             mw.Layout,
+		Children:           mw.Children,
+	}
+
+	return InitWidget(tlwi, w, func() error {
 		if err := w.SetTitle(mw.Title); err != nil {
 			return err
 		}
@@ -60,12 +72,4 @@ func (mw MainWindow) Create(parent walk.Container) error {
 
 		return nil
 	})
-}
-
-func (mw MainWindow) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return mw.Name, mw.Disabled, mw.Hidden, &mw.Font, mw.MinSize, mw.MaxSize, 0, 0, 0, 0, 0, mw.ContextMenuActions
-}
-
-func (mw MainWindow) ContainerInfo() (Layout, []Widget) {
-	return mw.Layout, mw.Children
 }

@@ -95,7 +95,7 @@ it is hard to see the hierarchical structure of the GUI.
 					OnClicked: func() { panic("Ouch!") },
 				},
 			},
-		}.Create(nil)
+		}.Create()
 	}
 
 This requires much less error handling and the hierarchical structure of the GUI is reflected in the code.
