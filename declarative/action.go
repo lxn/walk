@@ -18,8 +18,15 @@ type Action struct {
 func (a Action) createAction(menu *walk.Menu) (*walk.Action, error) {
 	action := walk.NewAction()
 
-	if _, err := a.initAction(action); err != nil {
+	if err := action.SetText(a.Text); err != nil {
 		return nil, err
+	}
+	if err := action.SetImage(a.Image); err != nil {
+		return nil, err
+	}
+
+	if a.OnTriggered != nil {
+		action.Triggered().Attach(a.OnTriggered)
 	}
 
 	if menu != nil {
@@ -28,26 +35,11 @@ func (a Action) createAction(menu *walk.Menu) (*walk.Action, error) {
 		}
 	}
 
-	return action, nil
-}
-
-func (a Action) initAction(wa *walk.Action) (*walk.Action, error) {
-	if err := wa.SetText(a.Text); err != nil {
-		return nil, err
-	}
-	if err := wa.SetImage(a.Image); err != nil {
-		return nil, err
-	}
-
-	if a.OnTriggered != nil {
-		wa.Triggered().Attach(a.OnTriggered)
-	}
-
 	if a.AssignTo != nil {
-		*a.AssignTo = wa
+		*a.AssignTo = action
 	}
 
-	return wa, nil
+	return action, nil
 }
 
 type ActionRef struct {
