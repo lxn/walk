@@ -32,11 +32,7 @@ func (a Action) createAction(menu *walk.Menu) (*walk.Action, error) {
 }
 
 func (a Action) initAction(wa *walk.Action) (*walk.Action, error) {
-	text := a.Text
-	if text == "" {
-		text = "-"
-	}
-	if err := wa.SetText(text); err != nil {
+	if err := wa.SetText(a.Text); err != nil {
 		return nil, err
 	}
 	if err := wa.SetImage(a.Image); err != nil {
