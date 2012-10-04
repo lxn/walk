@@ -108,11 +108,6 @@ func main() {
 
 	mw := new(MyMainWindow)
 
-	openImage, err := walk.NewBitmapFromFile("../img/open.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	var openAction *walk.Action
 	var recentMenu *walk.Menu
 
@@ -123,7 +118,7 @@ func main() {
 				Action{
 					AssignTo:    &openAction,
 					Text:        "&Open",
-					Image:       openImage,
+					Image:       "../img/open.png",
 					OnTriggered: func() { mw.openAction_Triggered() },
 				},
 				Menu{

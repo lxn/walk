@@ -5,13 +5,17 @@
 package declarative
 
 import (
+	"errors"
+)
+
+import (
 	"github.com/lxn/walk"
 )
 
 type Action struct {
 	AssignTo    **walk.Action
 	Text        string
-	Image       *walk.Bitmap
+	Image       interface{}
 	OnTriggered walk.EventHandler
 }
 
@@ -21,7 +25,7 @@ func (a Action) createAction(menu *walk.Menu) (*walk.Action, error) {
 	if err := action.SetText(a.Text); err != nil {
 		return nil, err
 	}
-	if err := action.SetImage(a.Image); err != nil {
+	if err := setActionImage(action, a.Image); err != nil {
 		return nil, err
 	}
 
@@ -60,7 +64,7 @@ type Menu struct {
 	AssignTo       **walk.Menu
 	AssignActionTo **walk.Action
 	Text           string
-	Image          *walk.Bitmap
+	Image          interface{}
 	Items          []MenuItem
 }
 
@@ -85,7 +89,7 @@ func (m Menu) createAction(menu *walk.Menu) (*walk.Action, error) {
 	if err := action.SetText(m.Text); err != nil {
 		return nil, err
 	}
-	if err := action.SetImage(m.Image); err != nil {
+	if err := setActionImage(action, m.Image); err != nil {
 		return nil, err
 	}
 
@@ -132,6 +136,28 @@ func addToActionList(list *walk.ActionList, actions []*walk.Action) error {
 	}
 
 	return nil
+}
+
+func setActionImage(action *walk.Action, image interface{}) (err error) {
+	var img *walk.Bitmap
+
+	switch image := image.(type) {
+	case nil:
+		return nil
+
+	case *walk.Bitmap:
+		img = image
+
+	case string:
+		if img, err = walk.NewBitmapFromFile(image); err != nil {
+			return
+		}
+
+	default:
+		return errors.New("invalid type for Image")
+	}
+
+	return action.SetImage(img)
 }
 
 func CreateActions(items ...MenuItem) ([]*walk.Action, error) {
