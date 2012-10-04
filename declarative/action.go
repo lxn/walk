@@ -117,6 +117,25 @@ func (m Menu) createAction(menu *walk.Menu) (*walk.Action, error) {
 	return action, nil
 }
 
+type Separator struct {
+}
+
+func (s Separator) createAction(menu *walk.Menu) (*walk.Action, error) {
+	action := walk.NewAction()
+
+	if err := action.SetText("-"); err != nil {
+		return nil, err
+	}
+
+	if menu != nil {
+		if err := menu.Actions().Add(action); err != nil {
+			return nil, err
+		}
+	}
+
+	return action, nil
+}
+
 func addToActionList(list *walk.ActionList, actions []*walk.Action) error {
 	for _, a := range actions {
 		if err := list.Add(a); err != nil {

@@ -130,7 +130,7 @@ func main() {
 					AssignTo: &recentMenu,
 					Text:     "Recent",
 				},
-				Action{},
+				Separator{},
 				Action{
 					Text:        "E&xit",
 					OnTriggered: func() { walk.App().Exit(0) },
@@ -155,6 +155,7 @@ func main() {
 
 	toolBarActions, err := CreateActions(
 		ActionRef{openAction},
+		Separator{},
 		Action{Text: "Show Dialog", OnTriggered: func() { mw.showDialogAction_Triggered() }})
 	if err != nil {
 		log.Fatal(err)
