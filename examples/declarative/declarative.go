@@ -86,19 +86,21 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		NumberEdit{Row: 2, Column: 1, BindTo: "Qty"},
 		VSpacer{Row: 3, Column: 0, Size: 10},
 		Label{Row: 4, Column: 0, ColumnSpan: 2, Text: "Memo:"},
-		TextEdit{Row: 5, Column: 0, ColumnSpan: 2},
+		TextEdit{Row: 5, Column: 0, ColumnSpan: 2, BindTo: "Memo"},
 	}
 
 	type Item struct {
 		Name      string
 		ShortText string
 		Qty       float64
+		Memo      string
 	}
 
 	item := &Item{
 		Name:      "Name",
 		ShortText: "ShortText",
 		Qty:       123,
+		Memo:      "Memo",
 	}
 
 	db := &DialogBuilder{

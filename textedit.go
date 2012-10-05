@@ -4,13 +4,19 @@
 
 package walk
 
-import "unsafe"
+import (
+	"syscall"
+	"unsafe"
+)
 
-import . "github.com/lxn/go-winapi"
-import "syscall"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 type TextEdit struct {
 	WidgetBase
+	bindingMember        string
+	textChangedPublisher EventPublisher
 }
 
 func NewTextEdit(parent Container) (*TextEdit, error) {
@@ -38,6 +44,32 @@ func (te *TextEdit) MinSizeHint() Size {
 
 func (te *TextEdit) SizeHint() Size {
 	return Size{100, 100}
+}
+
+func (te *TextEdit) BindingMember() string {
+	return te.bindingMember
+}
+
+func (te *TextEdit) SetBindingMember(member string) error {
+	if err := validateBindingMemberSyntax(member); err != nil {
+		return err
+	}
+
+	te.bindingMember = member
+
+	return nil
+}
+
+func (te *TextEdit) BindingValue() interface{} {
+	return te.Text()
+}
+
+func (te *TextEdit) SetBindingValue(value interface{}) error {
+	return te.SetText(value.(string))
+}
+
+func (te *TextEdit) BindingValueChanged() *Event {
+	return te.TextChanged()
 }
 
 func (te *TextEdit) Text() string {
@@ -87,8 +119,18 @@ func (te *TextEdit) SetReadOnly(readOnly bool) error {
 	return nil
 }
 
+func (te *TextEdit) TextChanged() *Event {
+	return te.textChangedPublisher.Event()
+}
+
 func (te *TextEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
+	case WM_COMMAND:
+		switch HIWORD(uint32(wParam)) {
+		case EN_CHANGE:
+			te.textChangedPublisher.Publish()
+		}
+
 	case WM_GETDLGCODE:
 		if wParam == VK_RETURN {
 			return DLGC_WANTALLKEYS

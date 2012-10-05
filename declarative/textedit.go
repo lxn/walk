@@ -22,6 +22,7 @@ type TextEdit struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
+	BindTo             string
 	Text               string
 	ReadOnly           bool
 }
@@ -33,6 +34,10 @@ func (te TextEdit) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(te, w, func() error {
+		if err := w.SetBindingMember(te.BindTo); err != nil {
+			return err
+		}
+
 		if err := w.SetText(te.Text); err != nil {
 			return err
 		}
