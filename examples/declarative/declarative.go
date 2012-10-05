@@ -87,9 +87,11 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		NumberEdit{Row: 2, Column: 1, BindTo: "Qty"},
 		Label{Row: 3, Column: 0, Text: "Date:"},
 		DateEdit{Row: 3, Column: 1, BindTo: "Date"},
-		VSpacer{Row: 4, Column: 0, Size: 10},
-		Label{Row: 5, Column: 0, ColumnSpan: 2, Text: "Memo:"},
-		TextEdit{Row: 6, Column: 0, ColumnSpan: 2, BindTo: "Memo"},
+		Label{Row: 4, Column: 0, Text: "Checked:"},
+		CheckBox{Row: 4, Column: 1, BindTo: "Checked"},
+		VSpacer{Row: 5, Column: 0, Size: 10},
+		Label{Row: 6, Column: 0, ColumnSpan: 2, Text: "Memo:"},
+		TextEdit{Row: 7, Column: 0, ColumnSpan: 2, BindTo: "Memo"},
 	}
 
 	type Item struct {
@@ -97,6 +99,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		ShortText string
 		Qty       float64
 		Date      time.Time
+		Checked   bool
 		Memo      string
 	}
 
@@ -105,6 +108,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		ShortText: "ShortText",
 		Qty:       123,
 		Date:      time.Now(),
+		Checked:   true,
 		Memo:      "Memo",
 	}
 
@@ -113,7 +117,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		Owner:      mw,
 		Dialog:     &dlg.Dialog,
 		Widgets:    widgets,
-		MinSize:    Size{400, 300},
+		MinSize:    Size{400, 400},
 		DataSource: item,
 	}
 

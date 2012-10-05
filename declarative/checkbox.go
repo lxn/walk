@@ -22,6 +22,7 @@ type CheckBox struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
+	BindTo             string
 	Text               string
 	OnClicked          walk.EventHandler
 }
@@ -33,6 +34,10 @@ func (cb CheckBox) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(cb, w, func() error {
+		if err := w.SetBindingMember(cb.BindTo); err != nil {
+			return err
+		}
+
 		if err := w.SetText(cb.Text); err != nil {
 			return err
 		}

@@ -8,6 +8,7 @@ import . "github.com/lxn/go-winapi"
 
 type CheckBox struct {
 	Button
+	bindingMember string
 }
 
 func NewCheckBox(parent Container) (*CheckBox, error) {
@@ -42,4 +43,32 @@ func (cb *CheckBox) MinSizeHint() Size {
 
 func (cb *CheckBox) SizeHint() Size {
 	return cb.MinSizeHint()
+}
+
+func (cb *CheckBox) BindingMember() string {
+	return cb.bindingMember
+}
+
+func (cb *CheckBox) SetBindingMember(member string) error {
+	if err := validateBindingMemberSyntax(member); err != nil {
+		return err
+	}
+
+	cb.bindingMember = member
+
+	return nil
+}
+
+func (cb *CheckBox) BindingValue() interface{} {
+	return cb.Checked()
+}
+
+func (cb *CheckBox) SetBindingValue(value interface{}) error {
+	cb.SetChecked(value.(bool))
+
+	return nil
+}
+
+func (cb *CheckBox) BindingValueChanged() *Event {
+	return cb.Clicked()
 }
