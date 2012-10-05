@@ -22,7 +22,7 @@ type LineEdit struct {
 	validator                Validator
 	editingFinishedPublisher EventPublisher
 	returnPressedPublisher   EventPublisher
-	textChanged              EventPublisher
+	textChangedPublisher     EventPublisher
 	charWidthFont            *Font
 	charWidth                int
 }
@@ -235,7 +235,7 @@ func (le *LineEdit) ReturnPressed() *Event {
 }
 
 func (le *LineEdit) TextChanged() *Event {
-	return le.textChanged.Event()
+	return le.textChangedPublisher.Event()
 }
 
 func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -255,7 +255,7 @@ func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
 		case EN_CHANGE:
-			le.textChanged.Publish()
+			le.textChangedPublisher.Publish()
 		}
 
 	case WM_GETDLGCODE:
