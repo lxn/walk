@@ -54,6 +54,38 @@ func (m *FooModel) BindingValue(index int) interface{} {
 	return m.items[index].Id
 }
 
+type Bar struct {
+	Key  string
+	Text string
+}
+
+type BarModel struct {
+	walk.ListModelBase
+	items []*Bar
+}
+
+func NewBarModel() *BarModel {
+	return &BarModel{
+		items: []*Bar{
+			{"one", "1"},
+			{"two", "2"},
+			{"three", "3"},
+		},
+	}
+}
+
+func (m *BarModel) ItemCount() int {
+	return len(m.items)
+}
+
+func (m *BarModel) Value(index int) interface{} {
+	return m.items[index].Text
+}
+
+func (m *BarModel) BindingValue(index int) interface{} {
+	return m.items[index].Key
+}
+
 type DialogBuilder struct {
 	Owner      walk.RootWidget
 	Dialog     **walk.Dialog
@@ -114,26 +146,28 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		Label{Row: 0, Column: 1, BindTo: "Name"},
 		Label{Row: 1, Column: 0, Text: "Short Text:"},
 		LineEdit{Row: 1, Column: 1, BindTo: "ShortText"},
-		ToolButton{Row: 1, Column: 2, Text: "..."},
-		Label{Row: 2, Column: 0, Text: "Short Text:"},
+		Label{Row: 2, Column: 0, Text: "Foo (int BindingValue):"},
 		ComboBox{Row: 2, Column: 1, BindTo: "FooId", Model: NewFooModel()},
-		Label{Row: 3, Column: 0, Text: "Float64:"},
-		NumberEdit{Row: 3, Column: 1, BindTo: "Float64", Decimals: 2},
-		Label{Row: 4, Column: 0, Text: "Int:"},
-		NumberEdit{Row: 4, Column: 1, BindTo: "Int"},
-		Label{Row: 5, Column: 0, Text: "Date:"},
-		DateEdit{Row: 5, Column: 1, BindTo: "Date"},
-		Label{Row: 6, Column: 0, Text: "Checked:"},
-		CheckBox{Row: 6, Column: 1, BindTo: "Checked"},
-		VSpacer{Row: 7, Column: 0, Size: 10},
-		Label{Row: 8, Column: 0, ColumnSpan: 2, Text: "Memo:"},
-		TextEdit{Row: 9, Column: 0, ColumnSpan: 2, BindTo: "Memo"},
+		Label{Row: 3, Column: 0, Text: "Bar (string BindingValue):"},
+		ComboBox{Row: 3, Column: 1, BindTo: "BarKey", Model: NewBarModel()},
+		Label{Row: 4, Column: 0, Text: "Float64:"},
+		NumberEdit{Row: 4, Column: 1, BindTo: "Float64", Decimals: 2},
+		Label{Row: 5, Column: 0, Text: "Int:"},
+		NumberEdit{Row: 5, Column: 1, BindTo: "Int"},
+		Label{Row: 6, Column: 0, Text: "Date:"},
+		DateEdit{Row: 6, Column: 1, BindTo: "Date"},
+		Label{Row: 7, Column: 0, Text: "Checked:"},
+		CheckBox{Row: 7, Column: 1, BindTo: "Checked"},
+		VSpacer{Row: 8, Column: 0, Size: 10},
+		Label{Row: 9, Column: 0, ColumnSpan: 2, Text: "Memo:"},
+		TextEdit{Row: 10, Column: 0, ColumnSpan: 2, BindTo: "Memo"},
 	}
 
 	type Item struct {
 		Name      string
 		ShortText string
 		FooId     int
+		BarKey    string
 		Float64   float64
 		Int       int
 		Date      time.Time
@@ -145,6 +179,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		Name:      "Name",
 		ShortText: "ShortText",
 		FooId:     2,
+		BarKey:    "three",
 		Float64:   123.45,
 		Int:       67890,
 		Date:      time.Now(),
@@ -157,7 +192,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		Owner:      mw,
 		Dialog:     &dlg.Dialog,
 		Widgets:    widgets,
-		MinSize:    Size{400, 400},
+		MinSize:    Size{320, 480},
 		DataSource: item,
 	}
 
@@ -226,44 +261,54 @@ func main() {
 
 	if err := (MainWindow{
 		AssignTo:       &mw.MainWindow,
-		Title:          "FTPS cycle finder",
+		Title:          "Walk Declarative Example",
 		MenuActions:    menuActions,
 		ToolBarActions: toolBarActions,
 		MinSize:        Size{600, 400},
-		Size:           Size{800, 600},
-		Layout:         HBox{Margins: Margins{6, 6, 6, 6}},
+		Size:           Size{1024, 768},
+		Layout:         HBox{},
 		Children: []Widget{
-			ToolBar{Orientation: Vertical, Actions: toolBarActions},
-			Composite{
-				Layout: VBox{MarginsZero: true},
-				Children: []Widget{
-					Composite{
-						Layout: HBox{MarginsZero: true},
+			TabWidget{
+				Pages: []TabPage{
+					TabPage{
+						Title:  "golang.org/doc/",
+						Layout: VBox{},
 						Children: []Widget{
-							Label{Text: "File"},
-							LineEdit{ContextMenuActions: []*walk.Action{openAction}},
-							ToolButton{Text: "..."},
+							Splitter{
+								Orientation: Vertical,
+								Children: []Widget{
+									WebView{URL: "http://golang.org/doc/"},
+									TextEdit{},
+								},
+							},
 						},
 					},
-					Composite{
-						Layout: HBox{MarginsZero: true},
+					TabPage{
+						Title:  "golang.org/ref/",
+						Layout: VBox{},
 						Children: []Widget{
-							PushButton{Text: "Check"},
-							PushButton{Text: "Check and Fix"},
-							PushButton{Text: "Clear"},
-							HSpacer{},
-							Label{Text: "Parameter"},
-							LineEdit{MaxLength: 10},
+							Splitter{
+								Orientation: Vertical,
+								Children: []Widget{
+									WebView{URL: "http://golang.org/ref/"},
+									TextEdit{},
+								},
+							},
 						},
 					},
-					Composite{
-						Layout: HBox{MarginsZero: true},
+					TabPage{
+						Title:  "golang.org/pkg/",
+						Layout: VBox{},
 						Children: []Widget{
-							LineEdit{Text: "Ready.", ReadOnly: true},
-							ProgressBar{StretchFactor: 10},
+							Splitter{
+								Orientation: Vertical,
+								Children: []Widget{
+									WebView{URL: "http://golang.org/pkg/"},
+									TextEdit{},
+								},
+							},
 						},
 					},
-					TextEdit{ReadOnly: true},
 				},
 			},
 		},
