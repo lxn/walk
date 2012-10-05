@@ -79,10 +79,10 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 
 	widgets := []Widget{
 		Label{Row: 0, Column: 0, Text: "Name:"},
-		LineEdit{Row: 0, Column: 1, BindTo: "Name"},
-		ToolButton{Row: 0, Column: 2, Text: "..."},
+		Label{Row: 0, Column: 1, BindTo: "Name"},
 		Label{Row: 1, Column: 0, Text: "Short Text:"},
 		LineEdit{Row: 1, Column: 1, BindTo: "ShortText"},
+		ToolButton{Row: 1, Column: 2, Text: "..."},
 		Label{Row: 2, Column: 0, Text: "Qty:"},
 		NumberEdit{Row: 2, Column: 1, BindTo: "Qty"},
 		Label{Row: 3, Column: 0, Text: "Date:"},

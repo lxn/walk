@@ -22,6 +22,7 @@ type Label struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
+	BindTo             string
 	Text               string
 }
 
@@ -32,6 +33,10 @@ func (l Label) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(l, w, func() error {
+		if err := w.SetBindingMember(l.BindTo); err != nil {
+			return err
+		}
+
 		if err := w.SetText(l.Text); err != nil {
 			return err
 		}
