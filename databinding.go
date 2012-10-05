@@ -44,12 +44,78 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []DataBindable) {
 
 func (db *DataBinder) Reset() error {
 	return db.forEach(func(widget DataBindable, field reflect.Value) error {
+		if f64, ok := widget.BindingValue().(float64); ok {
+			switch v := field.Interface().(type) {
+			case float32:
+				f64 = float64(v)
+
+			case float64:
+				f64 = v
+
+			case int:
+				f64 = float64(v)
+
+			case int8:
+				f64 = float64(v)
+
+			case int16:
+				f64 = float64(v)
+
+			case int32:
+				f64 = float64(v)
+
+			case int64:
+				f64 = float64(v)
+
+			case uint:
+				f64 = float64(v)
+
+			case uint8:
+				f64 = float64(v)
+
+			case uint16:
+				f64 = float64(v)
+
+			case uint32:
+				f64 = float64(v)
+
+			case uint64:
+				f64 = float64(v)
+
+			case uintptr:
+				f64 = float64(v)
+
+			default:
+				return newError(fmt.Sprintf("Field '%s': Can't convert %s to float64.", widget.BindingMember(), field.Type().Name()))
+			}
+
+			return widget.SetBindingValue(f64)
+		}
+
 		return widget.SetBindingValue(field.Interface())
 	})
 }
 
 func (db *DataBinder) Submit() error {
 	return db.forEach(func(widget DataBindable, field reflect.Value) error {
+		if f64, ok := widget.BindingValue().(float64); ok {
+			switch field.Kind() {
+			case reflect.Float32, reflect.Float64:
+				field.SetFloat(f64)
+
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				field.SetInt(int64(f64))
+
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+				field.SetUint(uint64(f64))
+
+			default:
+				return newError(fmt.Sprintf("Field '%s': Can't convert float64 to %s.", widget.BindingMember(), field.Type().Name()))
+			}
+
+			return nil
+		}
+
 		field.Set(reflect.ValueOf(widget.BindingValue()))
 
 		return nil

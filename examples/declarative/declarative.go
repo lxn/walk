@@ -83,21 +83,24 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		Label{Row: 1, Column: 0, Text: "Short Text:"},
 		LineEdit{Row: 1, Column: 1, BindTo: "ShortText"},
 		ToolButton{Row: 1, Column: 2, Text: "..."},
-		Label{Row: 2, Column: 0, Text: "Qty:"},
-		NumberEdit{Row: 2, Column: 1, BindTo: "Qty"},
-		Label{Row: 3, Column: 0, Text: "Date:"},
-		DateEdit{Row: 3, Column: 1, BindTo: "Date"},
-		Label{Row: 4, Column: 0, Text: "Checked:"},
-		CheckBox{Row: 4, Column: 1, BindTo: "Checked"},
-		VSpacer{Row: 5, Column: 0, Size: 10},
-		Label{Row: 6, Column: 0, ColumnSpan: 2, Text: "Memo:"},
-		TextEdit{Row: 7, Column: 0, ColumnSpan: 2, BindTo: "Memo"},
+		Label{Row: 2, Column: 0, Text: "Float64:"},
+		NumberEdit{Row: 2, Column: 1, BindTo: "Float64", Decimals: 2},
+		Label{Row: 3, Column: 0, Text: "Int:"},
+		NumberEdit{Row: 3, Column: 1, BindTo: "Int"},
+		Label{Row: 4, Column: 0, Text: "Date:"},
+		DateEdit{Row: 4, Column: 1, BindTo: "Date"},
+		Label{Row: 5, Column: 0, Text: "Checked:"},
+		CheckBox{Row: 5, Column: 1, BindTo: "Checked"},
+		VSpacer{Row: 6, Column: 0, Size: 10},
+		Label{Row: 7, Column: 0, ColumnSpan: 2, Text: "Memo:"},
+		TextEdit{Row: 8, Column: 0, ColumnSpan: 2, BindTo: "Memo"},
 	}
 
 	type Item struct {
 		Name      string
 		ShortText string
-		Qty       float64
+		Float64   float64
+		Int       int
 		Date      time.Time
 		Checked   bool
 		Memo      string
@@ -106,7 +109,8 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 	item := &Item{
 		Name:      "Name",
 		ShortText: "ShortText",
-		Qty:       123,
+		Float64:   123.45,
+		Int:       67890,
 		Date:      time.Now(),
 		Checked:   true,
 		Memo:      "Memo",
