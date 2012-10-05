@@ -26,6 +26,7 @@ type DateEdit struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
+	BindTo             string
 	MinDate            time.Time
 	MaxDate            time.Time
 	Date               time.Time
@@ -39,6 +40,10 @@ func (de DateEdit) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(de, w, func() error {
+		if err := w.SetBindingMember(de.BindTo); err != nil {
+			return err
+		}
+
 		if err := w.SetRange(de.MinDate, de.MaxDate); err != nil {
 			return err
 		}

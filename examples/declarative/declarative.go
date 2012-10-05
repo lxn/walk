@@ -6,6 +6,7 @@ package main
 
 import (
 	"log"
+	"time"
 )
 
 import (
@@ -84,15 +85,18 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		LineEdit{Row: 1, Column: 1, BindTo: "ShortText"},
 		Label{Row: 2, Column: 0, Text: "Qty:"},
 		NumberEdit{Row: 2, Column: 1, BindTo: "Qty"},
-		VSpacer{Row: 3, Column: 0, Size: 10},
-		Label{Row: 4, Column: 0, ColumnSpan: 2, Text: "Memo:"},
-		TextEdit{Row: 5, Column: 0, ColumnSpan: 2, BindTo: "Memo"},
+		Label{Row: 3, Column: 0, Text: "Date:"},
+		DateEdit{Row: 3, Column: 1, BindTo: "Date"},
+		VSpacer{Row: 4, Column: 0, Size: 10},
+		Label{Row: 5, Column: 0, ColumnSpan: 2, Text: "Memo:"},
+		TextEdit{Row: 6, Column: 0, ColumnSpan: 2, BindTo: "Memo"},
 	}
 
 	type Item struct {
 		Name      string
 		ShortText string
 		Qty       float64
+		Date      time.Time
 		Memo      string
 	}
 
@@ -100,6 +104,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		Name:      "Name",
 		ShortText: "ShortText",
 		Qty:       123,
+		Date:      time.Now(),
 		Memo:      "Memo",
 	}
 

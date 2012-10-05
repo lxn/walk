@@ -33,6 +33,7 @@ func timeToSystemTime(t time.Time) *SYSTEMTIME {
 
 type DateEdit struct {
 	WidgetBase
+	bindingMember         string
 	valueChangedPublisher EventPublisher
 }
 
@@ -61,6 +62,32 @@ func (de *DateEdit) MinSizeHint() Size {
 
 func (de *DateEdit) SizeHint() Size {
 	return de.MinSizeHint()
+}
+
+func (de *DateEdit) BindingMember() string {
+	return de.bindingMember
+}
+
+func (de *DateEdit) SetBindingMember(member string) error {
+	if err := validateBindingMemberSyntax(member); err != nil {
+		return err
+	}
+
+	de.bindingMember = member
+
+	return nil
+}
+
+func (de *DateEdit) BindingValue() interface{} {
+	return de.Value()
+}
+
+func (de *DateEdit) SetBindingValue(value interface{}) error {
+	return de.SetValue(value.(time.Time))
+}
+
+func (de *DateEdit) BindingValueChanged() *Event {
+	return de.ValueChanged()
 }
 
 func (de *DateEdit) systemTime() (*SYSTEMTIME, error) {
