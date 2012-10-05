@@ -35,7 +35,7 @@ func (db *DialogBuilder) Build() error {
 	var dataBinder *walk.DataBinder
 	var acceptPB, cancelPB *walk.PushButton
 
-	onAccept := func() {
+	onAcceptClicked := func() {
 		if err := dataBinder.Submit(); err != nil {
 			log.Fatal(err)
 		}
@@ -61,7 +61,7 @@ func (db *DialogBuilder) Build() error {
 				Layout: HBox{},
 				Children: []Widget{
 					HSpacer{},
-					PushButton{AssignTo: &acceptPB, Text: "OK", OnClicked: onAccept},
+					PushButton{AssignTo: &acceptPB, Text: "OK", OnClicked: onAcceptClicked},
 					PushButton{AssignTo: &cancelPB, Text: "Cancel", OnClicked: func() { db.Dialog.Cancel() }},
 				},
 			},
@@ -82,21 +82,23 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		ToolButton{Row: 0, Column: 2, Text: "..."},
 		Label{Row: 1, Column: 0, Text: "Short Text:"},
 		LineEdit{Row: 1, Column: 1, BindTo: "ShortText"},
-		Label{Row: 2, Column: 0, Text: "A ComboBox:"},
-		ComboBox{Row: 2, Column: 1},
+		Label{Row: 2, Column: 0, Text: "Qty:"},
+		NumberEdit{Row: 2, Column: 1, BindTo: "Qty"},
 		VSpacer{Row: 3, Column: 0, Size: 10},
-		Label{Row: 4, Column: 0, ColumnSpan: 2, Text: "A TextEdit:"},
+		Label{Row: 4, Column: 0, ColumnSpan: 2, Text: "Memo:"},
 		TextEdit{Row: 5, Column: 0, ColumnSpan: 2},
 	}
 
 	type Item struct {
 		Name      string
 		ShortText string
+		Qty       float64
 	}
 
 	item := &Item{
-		Name:      "The Name",
-		ShortText: "The ShortText",
+		Name:      "Name",
+		ShortText: "ShortText",
+		Qty:       123,
 	}
 
 	db := &DialogBuilder{

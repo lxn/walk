@@ -22,6 +22,7 @@ type NumberEdit struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
+	BindTo             string
 	Decimals           int
 	Increment          float64
 	MinValue           float64
@@ -37,6 +38,10 @@ func (ne NumberEdit) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(ne, w, func() error {
+		if err := w.SetBindingMember(ne.BindTo); err != nil {
+			return err
+		}
+
 		if err := w.SetDecimals(ne.Decimals); err != nil {
 			return err
 		}
