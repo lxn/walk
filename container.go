@@ -39,6 +39,8 @@ type Container interface {
 	Children() *WidgetList
 	Layout() Layout
 	SetLayout(value Layout) error
+	DataBinder() *DataBinder
+	SetDataBinder(dbm *DataBinder)
 }
 
 type RootWidget interface {
@@ -50,6 +52,7 @@ type ContainerBase struct {
 	WidgetBase
 	layout     Layout
 	children   *WidgetList
+	dataBinder *DataBinder
 	persistent bool
 }
 
@@ -107,6 +110,44 @@ func (cb *ContainerBase) SetLayout(value Layout) error {
 	}
 
 	return nil
+}
+
+func (cb *ContainerBase) DataBinder() *DataBinder {
+	return cb.dataBinder
+}
+
+func (cb *ContainerBase) SetDataBinder(db *DataBinder) {
+	if db == cb.dataBinder {
+		return
+	}
+
+	if cb.dataBinder != nil {
+		cb.dataBinder.SetBoundWidgets(nil)
+	}
+
+	cb.dataBinder = db
+
+	if db != nil {
+		var boundWidgets []DataBindable
+
+		walkDescendants(cb.widget, func(w Widget) bool {
+			if w.BaseWidget().Handle() == cb.hWnd {
+				return true
+			}
+
+			if c, ok := w.(Container); ok && c.DataBinder() != nil {
+				return false
+			}
+
+			if bindable, ok := w.(DataBindable); ok && bindable.BindingMember() != "" {
+				boundWidgets = append(boundWidgets, bindable)
+			}
+
+			return true
+		})
+
+		db.SetBoundWidgets(boundWidgets)
+	}
 }
 
 func (cb *ContainerBase) forEachPersistableChild(f func(p Persistable) error) error {

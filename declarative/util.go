@@ -66,7 +66,7 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	// Container
 	if dc, ok := d.(Container); ok {
 		if wc, ok := w.(walk.Container); ok {
-			layout, children := dc.ContainerInfo()
+			dataBinder, layout, children := dc.ContainerInfo()
 
 			if layout != nil {
 				l, err := layout.Create()
@@ -81,6 +81,16 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 
 			for _, child := range children {
 				if err := child.Create(wc); err != nil {
+					return err
+				}
+			}
+
+			if db, err := dataBinder.create(); err != nil {
+				return err
+			} else if db != nil {
+				wc.SetDataBinder(db)
+
+				if err := db.Reset(); err != nil {
 					return err
 				}
 			}

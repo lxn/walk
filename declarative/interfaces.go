@@ -18,7 +18,7 @@ type Widget interface {
 }
 
 type Container interface {
-	ContainerInfo() (Layout, []Widget)
+	ContainerInfo() (DataBinder, Layout, []Widget)
 }
 
 type MenuItem interface {
@@ -33,6 +33,7 @@ type topLevelWindowInfo struct {
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
+	DataBinder         DataBinder
 	Layout             Layout
 	Children           []Widget
 }
@@ -45,6 +46,6 @@ func (i topLevelWindowInfo) WidgetInfo() (name string, disabled, hidden bool, fo
 	return i.Name, i.Disabled, i.Hidden, &i.Font, i.MinSize, i.MaxSize, 0, 0, 0, 0, 0, i.ContextMenuActions
 }
 
-func (i topLevelWindowInfo) ContainerInfo() (Layout, []Widget) {
-	return i.Layout, i.Children
+func (i topLevelWindowInfo) ContainerInfo() (DataBinder, Layout, []Widget) {
+	return i.DataBinder, i.Layout, i.Children
 }

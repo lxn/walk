@@ -105,6 +105,14 @@ func (gb *GroupBox) SetFont(value *Font) {
 	}
 }
 
+func (gb *GroupBox) DataBinder() *DataBinder {
+	return gb.composite.dataBinder
+}
+
+func (gb *GroupBox) SetDataBinder(dataBinder *DataBinder) {
+	gb.composite.SetDataBinder(dataBinder)
+}
+
 func (gb *GroupBox) Title() string {
 	return widgetText(gb.hWndGroupBox)
 }

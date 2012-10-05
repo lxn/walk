@@ -21,42 +21,52 @@ type MyDialog struct {
 	*walk.Dialog
 }
 
-type DialogDecl struct {
-	Owner    walk.RootWidget
-	Dialog   **walk.Dialog
-	AcceptPB **walk.PushButton
-	Widgets  []Widget
-	Title    string
-	Size     Size
-	MinSize  Size
+type DialogBuilder struct {
+	Owner      walk.RootWidget
+	Dialog     **walk.Dialog
+	Widgets    []Widget
+	Title      string
+	Size       Size
+	MinSize    Size
+	DataSource interface{}
 }
 
-func (dd *DialogDecl) Create() error {
-	var cancelPB *walk.PushButton
+func (db *DialogBuilder) Build() error {
+	var dataBinder *walk.DataBinder
+	var acceptPB, cancelPB *walk.PushButton
+
+	onAccept := func() {
+		if err := dataBinder.Submit(); err != nil {
+			log.Fatal(err)
+		}
+
+		db.Dialog.Accept()
+	}
 
 	return Dialog{
-		AssignTo:      dd.Dialog,
-		Title:         dd.Title,
-		DefaultButton: dd.AcceptPB,
+		AssignTo:      db.Dialog,
+		Title:         db.Title,
+		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
-		MinSize:       dd.MinSize,
-		Size:          dd.Size,
+		MinSize:       db.MinSize,
+		Size:          db.Size,
+		DataBinder:    DataBinder{AssignTo: &dataBinder, DataSource: db.DataSource},
 		Layout:        VBox{},
 		Children: []Widget{
 			Composite{
 				Layout:   Grid{},
-				Children: dd.Widgets,
+				Children: db.Widgets,
 			},
 			Composite{
 				Layout: HBox{},
 				Children: []Widget{
 					HSpacer{},
-					PushButton{AssignTo: dd.AcceptPB, Text: "OK"},
-					PushButton{AssignTo: &cancelPB, Text: "Cancel", OnClicked: func() { dd.Dialog.Cancel() }},
+					PushButton{AssignTo: &acceptPB, Text: "OK", OnClicked: onAccept},
+					PushButton{AssignTo: &cancelPB, Text: "Cancel", OnClicked: func() { db.Dialog.Cancel() }},
 				},
 			},
 		},
-	}.Create(dd.Owner)
+	}.Create(db.Owner)
 }
 
 func (mw *MyMainWindow) openAction_Triggered() {
@@ -66,15 +76,12 @@ func (mw *MyMainWindow) openAction_Triggered() {
 func (mw *MyMainWindow) showDialogAction_Triggered() {
 	dlg := new(MyDialog)
 
-	var acceptPB *walk.PushButton
-	var le1, le2 *walk.LineEdit
-
 	widgets := []Widget{
-		Label{Row: 0, Column: 0, Text: "A LineEdit:"},
-		LineEdit{Row: 0, Column: 1, AssignTo: &le1, OnTextChanged: func() { le2.SetText(le1.Text()) }},
+		Label{Row: 0, Column: 0, Text: "Name:"},
+		LineEdit{Row: 0, Column: 1, BindTo: "Name"},
 		ToolButton{Row: 0, Column: 2, Text: "..."},
-		Label{Row: 1, Column: 0, Text: "Another LineEdit:"},
-		LineEdit{Row: 1, Column: 1, AssignTo: &le2},
+		Label{Row: 1, Column: 0, Text: "Short Text:"},
+		LineEdit{Row: 1, Column: 1, BindTo: "ShortText"},
 		Label{Row: 2, Column: 0, Text: "A ComboBox:"},
 		ComboBox{Row: 2, Column: 1},
 		VSpacer{Row: 3, Column: 0, Size: 10},
@@ -82,24 +89,32 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		TextEdit{Row: 5, Column: 0, ColumnSpan: 2},
 	}
 
-	dd := &DialogDecl{
-		Title:    "My Dialog",
-		Owner:    mw,
-		Dialog:   &dlg.Dialog,
-		AcceptPB: &acceptPB,
-		Widgets:  widgets,
-		MinSize:  Size{400, 300},
+	type Item struct {
+		Name      string
+		ShortText string
 	}
 
-	if err := dd.Create(); err != nil {
+	item := &Item{
+		Name:      "The Name",
+		ShortText: "The ShortText",
+	}
+
+	db := &DialogBuilder{
+		Title:      "My Dialog",
+		Owner:      mw,
+		Dialog:     &dlg.Dialog,
+		Widgets:    widgets,
+		MinSize:    Size{400, 300},
+		DataSource: item,
+	}
+
+	if err := db.Build(); err != nil {
 		log.Fatal(err)
 	}
 
-	acceptPB.Clicked().Attach(func() {
-		dlg.Accept()
-	})
-
-	dlg.Run()
+	if dlg.Run() == walk.DlgCmdOK {
+		log.Printf("item: %+v", item)
+	}
 }
 
 func main() {

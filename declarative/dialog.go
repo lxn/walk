@@ -19,6 +19,7 @@ type Dialog struct {
 	ContextMenuActions []*walk.Action
 	Title              string
 	Size               Size
+	DataBinder         DataBinder
 	Layout             Layout
 	Children           []Widget
 	DefaultButton      **walk.PushButton
@@ -39,6 +40,7 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 		MinSize:            d.MinSize,
 		MaxSize:            d.MaxSize,
 		ContextMenuActions: d.ContextMenuActions,
+		DataBinder:         d.DataBinder,
 		Layout:             d.Layout,
 		Children:           d.Children,
 	}

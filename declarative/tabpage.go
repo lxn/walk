@@ -17,9 +17,10 @@ type TabPage struct {
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
-	Title              string
+	DataBinder         DataBinder
 	Layout             Layout
 	Children           []Widget
+	Title              string
 }
 
 func (tp TabPage) Create(parent walk.Container) error {
@@ -45,6 +46,6 @@ func (tp TabPage) WidgetInfo() (name string, disabled, hidden bool, font *Font, 
 	return tp.Name, tp.Disabled, tp.Hidden, &tp.Font, tp.MinSize, tp.MaxSize, 0, 0, 0, 0, 0, tp.ContextMenuActions
 }
 
-func (tp TabPage) ContainerInfo() (Layout, []Widget) {
-	return tp.Layout, tp.Children
+func (tp TabPage) ContainerInfo() (DataBinder, Layout, []Widget) {
+	return tp.DataBinder, tp.Layout, tp.Children
 }

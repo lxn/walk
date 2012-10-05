@@ -22,6 +22,7 @@ type LineEdit struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
+	BindTo             string
 	Text               string
 	ReadOnly           bool
 	CueBanner          string
@@ -39,6 +40,10 @@ func (le LineEdit) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(le, w, func() error {
+		if err := w.SetBindingMember(le.BindTo); err != nil {
+			return err
+		}
+
 		if err := w.SetText(le.Text); err != nil {
 			return err
 		}

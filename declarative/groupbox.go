@@ -23,6 +23,7 @@ type GroupBox struct {
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
 	Title              string
+	DataBinder         DataBinder
 	Layout             Layout
 	Children           []Widget
 }
@@ -50,6 +51,6 @@ func (gb GroupBox) WidgetInfo() (name string, disabled, hidden bool, font *Font,
 	return gb.Name, gb.Disabled, gb.Hidden, &gb.Font, gb.MinSize, gb.MaxSize, gb.StretchFactor, gb.Row, gb.RowSpan, gb.Column, gb.ColumnSpan, gb.ContextMenuActions
 }
 
-func (gb GroupBox) ContainerInfo() (Layout, []Widget) {
-	return gb.Layout, gb.Children
+func (gb GroupBox) ContainerInfo() (DataBinder, Layout, []Widget) {
+	return gb.DataBinder, gb.Layout, gb.Children
 }

@@ -22,6 +22,7 @@ type Composite struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
+	DataBinder         DataBinder
 	Layout             Layout
 	Children           []Widget
 }
@@ -45,6 +46,6 @@ func (c Composite) WidgetInfo() (name string, disabled, hidden bool, font *Font,
 	return c.Name, c.Disabled, c.Hidden, &c.Font, c.MinSize, c.MaxSize, c.StretchFactor, c.Row, c.RowSpan, c.Column, c.ColumnSpan, c.ContextMenuActions
 }
 
-func (c Composite) ContainerInfo() (Layout, []Widget) {
-	return c.Layout, c.Children
+func (c Composite) ContainerInfo() (DataBinder, Layout, []Widget) {
+	return c.DataBinder, c.Layout, c.Children
 }

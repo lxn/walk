@@ -19,6 +19,7 @@ type MainWindow struct {
 	ContextMenuActions []*walk.Action
 	Title              string
 	Size               Size
+	DataBinder         DataBinder
 	Layout             Layout
 	Children           []Widget
 	MenuActions        []*walk.Action
@@ -39,6 +40,7 @@ func (mw MainWindow) Create() error {
 		MinSize:            mw.MinSize,
 		MaxSize:            mw.MaxSize,
 		ContextMenuActions: mw.ContextMenuActions,
+		DataBinder:         mw.DataBinder,
 		Layout:             mw.Layout,
 		Children:           mw.Children,
 	}
