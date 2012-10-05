@@ -5,6 +5,10 @@
 package declarative
 
 import (
+	"errors"
+)
+
+import (
 	"github.com/lxn/walk"
 )
 
@@ -22,6 +26,7 @@ type ComboBox struct {
 	Column                int
 	ColumnSpan            int
 	ContextMenuActions    []*walk.Action
+	BindTo                string
 	Format                string
 	Precision             int
 	Model                 walk.ListModel
@@ -35,6 +40,14 @@ func (cb ComboBox) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(cb, w, func() error {
+		if _, ok := cb.Model.(walk.BindingValueProvider); !ok && cb.BindTo != "" {
+			return errors.New("declarative.ComboBox: Data binding is only supported using a model that implements BindingValueProvider.")
+		}
+
+		if err := w.SetBindingMember(cb.BindTo); err != nil {
+			return err
+		}
+
 		w.SetFormat(cb.Format)
 		w.SetPrecision(cb.Precision)
 

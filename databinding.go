@@ -98,7 +98,14 @@ func (db *DataBinder) Reset() error {
 
 func (db *DataBinder) Submit() error {
 	return db.forEach(func(widget DataBindable, field reflect.Value) error {
-		if f64, ok := widget.BindingValue().(float64); ok {
+		value := widget.BindingValue()
+		if value == nil {
+			// This happens e.g. if CurrentIndex() of a ComboBox returns -1.
+			// FIXME: Should we handle this differently?
+			return nil
+		}
+
+		if f64, ok := value.(float64); ok {
 			switch field.Kind() {
 			case reflect.Float32, reflect.Float64:
 				field.SetFloat(f64)

@@ -4,6 +4,12 @@
 
 package walk
 
+// BindingValueProvider is the interface that a model must implement to support
+// data binding with widgets like ComboBox.
+type BindingValueProvider interface {
+	BindingValue(index int) interface{}
+}
+
 // ListModel is the interface that a model must implement to support widgets
 // like ComboBox.
 type ListModel interface {
