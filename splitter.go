@@ -91,6 +91,19 @@ func (s *Splitter) Orientation() Orientation {
 }
 
 func (s *Splitter) SetOrientation(value Orientation) error {
+	var cursor Cursor
+	if value == Horizontal {
+		cursor = CursorSizeWE()
+	} else {
+		cursor = CursorSizeNS()
+	}
+
+	for i, w := range s.Children().items {
+		if i%2 == 1 {
+			w.SetCursor(cursor)
+		}
+	}
+
 	layout := s.layout.(*splitterLayout)
 	return layout.SetOrientation(value)
 }
