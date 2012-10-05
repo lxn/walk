@@ -23,7 +23,6 @@ type Splitter struct {
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
 	DataBinder         DataBinder
-	Layout             Layout
 	Children           []Widget
 	HandleWidth        int
 	Orientation        Orientation
@@ -58,5 +57,5 @@ func (s Splitter) WidgetInfo() (name string, disabled, hidden bool, font *Font, 
 }
 
 func (s Splitter) ContainerInfo() (DataBinder, Layout, []Widget) {
-	return s.DataBinder, s.Layout, s.Children
+	return s.DataBinder, nil, s.Children
 }
