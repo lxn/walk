@@ -90,11 +90,12 @@ func (ne *NumberEdit) SetEnabled(value bool) {
 }
 
 func (ne *NumberEdit) Font() *Font {
-	if ne.edit == nil {
-		return ne.font
+	var f *Font
+	if ne.edit != nil {
+		f = ne.font
 	}
 
-	if f := ne.edit.font; f != nil {
+	if f != nil {
 		return f
 	} else if ne.parent != nil {
 		return ne.parent.Font()
