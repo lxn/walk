@@ -266,49 +266,15 @@ func main() {
 		ToolBarActions: toolBarActions,
 		MinSize:        Size{600, 400},
 		Size:           Size{1024, 768},
-		Layout:         HBox{},
+		Layout:         HBox{MarginsZero: true},
 		Children: []Widget{
 			TabWidget{
-				Pages: []TabPage{
-					TabPage{
-						Title:  "golang.org/doc/",
-						Layout: VBox{},
-						Children: []Widget{
-							Splitter{
-								Orientation: Vertical,
-								Children: []Widget{
-									WebView{URL: "http://golang.org/doc/"},
-									TextEdit{},
-								},
-							},
-						},
-					},
-					TabPage{
-						Title:  "golang.org/ref/",
-						Layout: VBox{},
-						Children: []Widget{
-							Splitter{
-								Orientation: Vertical,
-								Children: []Widget{
-									WebView{URL: "http://golang.org/ref/"},
-									TextEdit{},
-								},
-							},
-						},
-					},
-					TabPage{
-						Title:  "golang.org/pkg/",
-						Layout: VBox{},
-						Children: []Widget{
-							Splitter{
-								Orientation: Vertical,
-								Children: []Widget{
-									WebView{URL: "http://golang.org/pkg/"},
-									TextEdit{},
-								},
-							},
-						},
-					},
+				MarginsZero: true,
+				PageTitles:  []string{"golang.org/doc/", "golang.org/ref/", "golang.org/pkg/"},
+				Pages: []Widget{
+					WebView{URL: "http://golang.org/doc/"},
+					WebView{URL: "http://golang.org/ref/"},
+					WebView{URL: "http://golang.org/pkg/"},
 				},
 			},
 		},
