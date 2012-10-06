@@ -97,6 +97,13 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 		}
 	}
 
+	// Custom
+	if customInit != nil {
+		if err := customInit(); err != nil {
+			return err
+		}
+	}
+
 	// Widget continued
 	w.SetEnabled(!disabled)
 	w.SetVisible(!hidden)
@@ -106,13 +113,6 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 			return err
 		} else if f != nil {
 			w.SetFont(f)
-		}
-	}
-
-	// Custom
-	if customInit != nil {
-		if err := customInit(); err != nil {
-			return err
 		}
 	}
 
