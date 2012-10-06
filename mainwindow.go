@@ -56,6 +56,8 @@ func NewMainWindow() (*MainWindow, error) {
 	}
 	mw.clientComposite.SetName("clientComposite")
 
+	mw.clientComposite.children.observer = mw
+
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	mw.SendMessage(WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
@@ -117,6 +119,40 @@ func (mw *MainWindow) Show() {
 	}
 
 	mw.TopLevelWindow.Show()
+}
+
+func (mw *MainWindow) onInsertingWidget(index int, widget Widget) error {
+	return mw.clientComposite.onInsertingWidget(index, widget)
+}
+
+func (mw *MainWindow) onInsertedWidget(index int, widget Widget) error {
+	err := mw.clientComposite.onInsertedWidget(index, widget)
+	if err == nil {
+		minClientSize := mw.Layout().MinSize()
+		clientSize := mw.clientComposite.Size()
+
+		if clientSize.Width < minClientSize.Width || clientSize.Height < minClientSize.Height {
+			mw.SetClientSize(minClientSize)
+		}
+	}
+
+	return err
+}
+
+func (mw *MainWindow) onRemovingWidget(index int, widget Widget) error {
+	return mw.clientComposite.onRemovingWidget(index, widget)
+}
+
+func (mw *MainWindow) onRemovedWidget(index int, widget Widget) error {
+	return mw.clientComposite.onRemovedWidget(index, widget)
+}
+
+func (mw *MainWindow) onClearingWidgets() error {
+	return mw.clientComposite.onClearingWidgets()
+}
+
+func (mw *MainWindow) onClearedWidgets() error {
+	return mw.clientComposite.onClearedWidgets()
 }
 
 func (mw *MainWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {

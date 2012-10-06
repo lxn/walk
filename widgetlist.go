@@ -88,6 +88,10 @@ func (l *WidgetList) insertIntoSlice(index int, item Widget) {
 }
 
 func (l *WidgetList) Insert(index int, item Widget) error {
+	if l.Contains(item) {
+		return newError("cannot insert same widget multiple times")
+	}
+
 	observer := l.observer
 	if observer != nil {
 		if err := observer.onInsertingWidget(index, item); err != nil {
