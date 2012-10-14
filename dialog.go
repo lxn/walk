@@ -12,6 +12,7 @@ import (
 import . "github.com/lxn/go-winapi"
 
 const (
+	DlgCmdNone     = 0
 	DlgCmdOK       = IDOK
 	DlgCmdCancel   = IDCANCEL
 	DlgCmdAbort    = IDABORT
@@ -68,7 +69,7 @@ func NewDialog(owner RootWidget) (*Dialog, error) {
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	dlg.SendMessage(WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
-	dlg.result = DlgCmdClose
+	dlg.result = DlgCmdNone
 
 	return dlg, nil
 }
@@ -119,6 +120,10 @@ func (dlg *Dialog) SetCancelButton(button *PushButton) error {
 	dlg.cancelButton = button
 
 	return nil
+}
+
+func (dlg *Dialog) Result() int {
+	return dlg.result
 }
 
 func (dlg *Dialog) Accept() {
