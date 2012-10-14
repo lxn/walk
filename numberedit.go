@@ -24,13 +24,16 @@ type NumberEdit struct {
 	edit                  *LineEdit
 	hWndUpDown            HWND
 	bindingMember         string
+	decimals              int
+	minValue              float64
+	maxValue              float64
 	increment             float64
 	oldValue              float64
 	valueChangedPublisher EventPublisher
 }
 
 func NewNumberEdit(parent Container) (*NumberEdit, error) {
-	ne := &NumberEdit{increment: 1}
+	ne := &NumberEdit{decimals: 2, maxValue: 100, increment: 1}
 
 	if err := InitChildWidget(
 		ne,
@@ -56,10 +59,6 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 	if err = ne.edit.setAndClearStyleBits(ES_RIGHT, ES_LEFT|ES_CENTER); err != nil {
 		return nil, err
 	}
-	nv := NewNumberValidator()
-	ne.edit.SetValidator(nv)
-	nv.SetDecimals(2)
-	nv.SetRange(0, 100)
 
 	ne.hWndUpDown = CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("msctls_updown32"), nil,
@@ -148,13 +147,15 @@ func (ne *NumberEdit) BindingValueChanged() *Event {
 }
 
 func (ne *NumberEdit) Decimals() int {
-	return ne.edit.Validator().(*NumberValidator).Decimals()
+	return ne.decimals
 }
 
 func (ne *NumberEdit) SetDecimals(value int) error {
-	if err := ne.edit.Validator().(*NumberValidator).SetDecimals(value); err != nil {
-		return err
+	if value < 0 {
+		return newError("invalid value")
 	}
+
+	ne.decimals = value
 
 	return ne.SetValue(ne.oldValue)
 }
@@ -170,15 +171,22 @@ func (ne *NumberEdit) SetIncrement(value float64) error {
 }
 
 func (ne *NumberEdit) MinValue() float64 {
-	return ne.edit.Validator().(*NumberValidator).MinValue()
+	return ne.minValue
 }
 
 func (ne *NumberEdit) MaxValue() float64 {
-	return ne.edit.Validator().(*NumberValidator).MaxValue()
+	return ne.maxValue
 }
 
 func (ne *NumberEdit) SetRange(min, max float64) error {
-	return ne.edit.Validator().(*NumberValidator).SetRange(min, max)
+	if min > max {
+		return newError("invalid range")
+	}
+
+	ne.minValue = min
+	ne.maxValue = max
+
+	return nil
 }
 
 func (ne *NumberEdit) Value() float64 {
@@ -188,12 +196,11 @@ func (ne *NumberEdit) Value() float64 {
 
 func (ne *NumberEdit) SetValue(value float64) (err error) {
 	var text string
-	prec := ne.Decimals()
 
-	if prec == 0 {
+	if ne.decimals == 0 {
 		text = strconv.Itoa(int(value))
 	} else {
-		text, err = formatFloat(value, prec)
+		text, err = formatFloat(value, ne.decimals)
 		if err != nil {
 			return
 		}
