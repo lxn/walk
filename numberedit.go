@@ -24,6 +24,7 @@ type NumberEdit struct {
 	edit                  *LineEdit
 	hWndUpDown            HWND
 	bindingMember         string
+	validator             Validator
 	decimals              int
 	minValue              float64
 	maxValue              float64
@@ -144,6 +145,14 @@ func (ne *NumberEdit) SetBindingValue(value interface{}) error {
 
 func (ne *NumberEdit) BindingValueChanged() *Event {
 	return ne.ValueChanged()
+}
+
+func (ne *NumberEdit) Validator() Validator {
+	return ne.validator
+}
+
+func (ne *NumberEdit) SetValidator(validator Validator) {
+	ne.validator = validator
 }
 
 func (ne *NumberEdit) Decimals() int {

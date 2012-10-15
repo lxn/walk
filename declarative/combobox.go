@@ -27,6 +27,7 @@ type ComboBox struct {
 	ColumnSpan            int
 	ContextMenuActions    []*walk.Action
 	BindTo                string
+	Optional              bool
 	Format                string
 	Precision             int
 	Model                 walk.ListModel
@@ -46,6 +47,10 @@ func (cb ComboBox) Create(parent walk.Container) error {
 
 		if err := w.SetBindingMember(cb.BindTo); err != nil {
 			return err
+		}
+
+		if !cb.Optional {
+			w.SetValidator(walk.SelectionRequiredValidator())
 		}
 
 		w.SetFormat(cb.Format)

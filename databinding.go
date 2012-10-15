@@ -5,11 +5,17 @@
 package walk
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 )
 
+var (
+	errValidationFailed = errors.New("validation failed")
+)
+
 type DataBindable interface {
+	Widget
 	BindingMember() string
 	SetBindingMember(member string) error
 	BindingValue() interface{}
@@ -17,9 +23,22 @@ type DataBindable interface {
 	BindingValueChanged() *Event
 }
 
+type Validatable interface {
+	Validator() Validator
+	SetValidator(v Validator)
+}
+
+type ErrorPresenter interface {
+	PresentError(err error, widget Widget)
+}
+
 type DataBinder struct {
-	dataSource   interface{}
-	boundWidgets []DataBindable
+	dataSource                interface{}
+	boundWidgets              []DataBindable
+	widget2ChangedHandle      map[DataBindable]int
+	invalidValueWidgets       map[DataBindable]bool
+	errorPresenter            ErrorPresenter
+	canSubmitChangedPublisher EventPublisher
 }
 
 func NewDataBinder() *DataBinder {
@@ -39,7 +58,85 @@ func (db *DataBinder) BoundWidgets() []DataBindable {
 }
 
 func (db *DataBinder) SetBoundWidgets(boundWidgets []DataBindable) {
+	for widget, handle := range db.widget2ChangedHandle {
+		widget.BindingValueChanged().Detach(handle)
+	}
+
 	db.boundWidgets = boundWidgets
+
+	db.widget2ChangedHandle = make(map[DataBindable]int)
+	db.invalidValueWidgets = make(map[DataBindable]bool)
+
+	for _, widget := range boundWidgets {
+		widget := widget
+
+		changedEvent := widget.BindingValueChanged()
+		if changedEvent == nil {
+			continue
+		}
+
+		db.widget2ChangedHandle[widget] = changedEvent.Attach(func() {
+			db.validateWidget(widget)
+		})
+	}
+}
+
+func (db *DataBinder) validateWidget(widget DataBindable) {
+	validatable, ok := widget.(Validatable)
+	if !ok {
+		return
+	}
+
+	validator := validatable.Validator()
+	if validator == nil {
+		return
+	}
+
+	if err := validator.Validate(widget.BindingValue()); err != nil {
+		if db.invalidValueWidgets[widget] {
+			return
+		}
+
+		db.invalidValueWidgets[widget] = true
+
+		if len(db.invalidValueWidgets) == 1 {
+			db.canSubmitChangedPublisher.Publish()
+		}
+
+		if db.errorPresenter != nil {
+			db.errorPresenter.PresentError(err, widget)
+		}
+	} else {
+		if !db.invalidValueWidgets[widget] {
+			return
+		}
+
+		delete(db.invalidValueWidgets, widget)
+
+		if len(db.invalidValueWidgets) == 0 {
+			db.canSubmitChangedPublisher.Publish()
+		}
+
+		if db.errorPresenter != nil {
+			db.errorPresenter.PresentError(nil, widget)
+		}
+	}
+}
+
+func (db *DataBinder) ErrorPresenter() ErrorPresenter {
+	return db.errorPresenter
+}
+
+func (db *DataBinder) SetErrorPresenter(ep ErrorPresenter) {
+	db.errorPresenter = ep
+}
+
+func (db *DataBinder) CanSubmit() bool {
+	return len(db.invalidValueWidgets) == 0
+}
+
+func (db *DataBinder) CanSubmitChanged() *Event {
+	return db.canSubmitChangedPublisher.Event()
 }
 
 func (db *DataBinder) Reset() error {
@@ -89,14 +186,25 @@ func (db *DataBinder) Reset() error {
 				return newError(fmt.Sprintf("Field '%s': Can't convert %s to float64.", widget.BindingMember(), field.Type().Name()))
 			}
 
-			return widget.SetBindingValue(f64)
+			if err := widget.SetBindingValue(f64); err != nil {
+				return err
+			}
+		} else {
+			if err := widget.SetBindingValue(field.Interface()); err != nil {
+				return err
+			}
 		}
 
-		return widget.SetBindingValue(field.Interface())
+		db.validateWidget(widget)
+		return nil
 	})
 }
 
 func (db *DataBinder) Submit() error {
+	if !db.CanSubmit() {
+		return errValidationFailed
+	}
+
 	return db.forEach(func(widget DataBindable, field reflect.Value) error {
 		value := widget.BindingValue()
 		if value == nil {

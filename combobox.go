@@ -18,6 +18,7 @@ type ComboBox struct {
 	WidgetBase
 	bindingMember                string
 	bindingValueProvider         BindingValueProvider
+	validator                    Validator
 	model                        ListModel
 	format                       string
 	precision                    int
@@ -110,6 +111,14 @@ func (cb *ComboBox) SetBindingValue(value interface{}) error {
 
 func (cb *ComboBox) BindingValueChanged() *Event {
 	return cb.CurrentIndexChanged()
+}
+
+func (cb *ComboBox) Validator() Validator {
+	return cb.validator
+}
+
+func (cb *ComboBox) SetValidator(validator Validator) {
+	cb.validator = validator
 }
 
 func (cb *ComboBox) itemString(index int) string {

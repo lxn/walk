@@ -25,6 +25,30 @@ type MenuItem interface {
 	createAction(menu *walk.Menu) (*walk.Action, error)
 }
 
+type Validator interface {
+	Create() (walk.Validator, error)
+}
+
+type Validatable interface {
+	ValidatableInfo() Validator
+}
+
+type ErrorPresenter interface {
+	Create() (walk.ErrorPresenter, error)
+}
+
+type ErrorPresenterRef struct {
+	ErrorPresenter *walk.ErrorPresenter
+}
+
+func (epr ErrorPresenterRef) Create() (walk.ErrorPresenter, error) {
+	if epr.ErrorPresenter != nil {
+		return *epr.ErrorPresenter, nil
+	}
+
+	return nil, nil
+}
+
 type topLevelWindowInfo struct {
 	Name               string
 	Disabled           bool

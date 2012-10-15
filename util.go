@@ -145,7 +145,7 @@ func setDescendantsFont(widget Widget, f *Font) {
 }
 
 func walkDescendants(widget Widget, f func(w Widget) bool) {
-	if !f(widget) {
+	if widget == nil || !f(widget) {
 		return
 	}
 

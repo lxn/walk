@@ -98,6 +98,7 @@ type DialogBuilder struct {
 
 func (db *DialogBuilder) Build() error {
 	var dataBinder *walk.DataBinder
+	var errorPresenter walk.ErrorPresenter
 	var acceptPB, cancelPB *walk.PushButton
 
 	onAcceptClicked := func() {
@@ -115,12 +116,22 @@ func (db *DialogBuilder) Build() error {
 		CancelButton:  &cancelPB,
 		MinSize:       db.MinSize,
 		Size:          db.Size,
-		DataBinder:    DataBinder{AssignTo: &dataBinder, DataSource: db.DataSource},
-		Layout:        VBox{},
+		DataBinder: DataBinder{
+			AssignTo:       &dataBinder,
+			DataSource:     db.DataSource,
+			ErrorPresenter: ErrorPresenterRef{&errorPresenter},
+		},
+		Layout: VBox{},
 		Children: []Widget{
 			Composite{
 				Layout:   Grid{},
 				Children: db.Widgets,
+			},
+			Composite{
+				Layout: VBox{Margins: Margins{9, 0, 9, 0}},
+				Children: []Widget{
+					LineErrorPresenter{AssignTo: &errorPresenter},
+				},
 			},
 			Composite{
 				Layout: HBox{},
@@ -143,48 +154,53 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 
 	widgets := []Widget{
 		Label{Row: 0, Column: 0, Text: "Name:"},
-		Label{Row: 0, Column: 1, BindTo: "Name"},
-		Label{Row: 1, Column: 0, Text: "Short Text:"},
-		LineEdit{Row: 1, Column: 1, BindTo: "ShortText"},
+		LineEdit{Row: 0, Column: 1, BindTo: "Name", Validator: Regexp{`^[A-Z][a-z]*$`}},
+
+		Label{Row: 1, Column: 0, Text: "No.:"},
+		LineEdit{Row: 1, Column: 1, BindTo: "No", Validator: Regexp{`^[\d]{3}[ ]{1}[\d]{3}$`}, MaxLength: 7, CueBanner: "### ###"},
+
 		Label{Row: 2, Column: 0, Text: "Foo (int BindingValue):"},
 		ComboBox{Row: 2, Column: 1, BindTo: "FooId", Model: NewFooModel()},
+
 		Label{Row: 3, Column: 0, Text: "Bar (string BindingValue):"},
-		ComboBox{Row: 3, Column: 1, BindTo: "BarKey", Model: NewBarModel()},
+		ComboBox{Row: 3, Column: 1, BindTo: "BarKey", Model: NewBarModel(), Optional: true},
+
 		Label{Row: 4, Column: 0, Text: "Float64:"},
-		NumberEdit{Row: 4, Column: 1, BindTo: "Float64", Decimals: 2},
+		NumberEdit{Row: 4, Column: 1, BindTo: "Float64", Decimals: 2, Validator: Number{0.01, 999.99}},
+
 		Label{Row: 5, Column: 0, Text: "Int:"},
 		NumberEdit{Row: 5, Column: 1, BindTo: "Int"},
+
 		Label{Row: 6, Column: 0, Text: "Date:"},
 		DateEdit{Row: 6, Column: 1, BindTo: "Date"},
+
 		Label{Row: 7, Column: 0, Text: "Checked:"},
 		CheckBox{Row: 7, Column: 1, BindTo: "Checked"},
+
 		VSpacer{Row: 8, Column: 0, Size: 10},
+
 		Label{Row: 9, Column: 0, ColumnSpan: 2, Text: "Memo:"},
 		TextEdit{Row: 10, Column: 0, ColumnSpan: 2, BindTo: "Memo"},
 	}
 
 	type Item struct {
-		Name      string
-		ShortText string
-		FooId     int
-		BarKey    string
-		Float64   float64
-		Int       int
-		Date      time.Time
-		Checked   bool
-		Memo      string
+		Name    string
+		No      string
+		FooId   int
+		BarKey  string
+		Float64 float64
+		Int     int
+		Date    time.Time
+		Checked bool
+		Memo    string
 	}
 
 	item := &Item{
-		Name:      "Name",
-		ShortText: "ShortText",
-		FooId:     2,
-		BarKey:    "three",
-		Float64:   123.45,
-		Int:       67890,
-		Date:      time.Now(),
-		Checked:   true,
-		Memo:      "Memo",
+		Name:    "Name",
+		Int:     67890,
+		Date:    time.Now(),
+		Checked: true,
+		Memo:    "Memo",
 	}
 
 	db := &DialogBuilder{
@@ -192,7 +208,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		Owner:      mw,
 		Dialog:     &dlg.Dialog,
 		Widgets:    widgets,
-		MinSize:    Size{320, 480},
+		MinSize:    Size{0, 480},
 		DataSource: item,
 	}
 

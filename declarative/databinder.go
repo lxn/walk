@@ -9,8 +9,9 @@ import (
 )
 
 type DataBinder struct {
-	AssignTo   **walk.DataBinder
-	DataSource interface{}
+	AssignTo       **walk.DataBinder
+	DataSource     interface{}
+	ErrorPresenter ErrorPresenter
 }
 
 func (db DataBinder) create() (*walk.DataBinder, error) {
@@ -19,6 +20,14 @@ func (db DataBinder) create() (*walk.DataBinder, error) {
 	}
 
 	b := walk.NewDataBinder()
+
+	if db.ErrorPresenter != nil {
+		ep, err := db.ErrorPresenter.Create()
+		if err != nil {
+			return nil, err
+		}
+		b.SetErrorPresenter(ep)
+	}
 
 	b.SetDataSource(db.DataSource)
 

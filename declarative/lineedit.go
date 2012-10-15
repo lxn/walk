@@ -23,6 +23,7 @@ type LineEdit struct {
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
 	BindTo             string
+	Validator          Validator
 	Text               string
 	ReadOnly           bool
 	CueBanner          string
@@ -76,4 +77,8 @@ func (le LineEdit) Create(parent walk.Container) error {
 
 func (le LineEdit) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
 	return le.Name, le.Disabled, le.Hidden, &le.Font, le.MinSize, le.MaxSize, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan, le.ContextMenuActions
+}
+
+func (le LineEdit) ValidatableInfo() Validator {
+	return le.Validator
 }

@@ -843,7 +843,7 @@ func (wb *WidgetBase) Bounds() Rectangle {
 		int(r.Bottom - r.Top),
 	}
 
-	if wb.parent != nil {
+	if _, ok := wb.widget.(RootWidget); !ok && wb.parent != nil {
 		p := POINT{int32(b.X), int32(b.Y)}
 		if !ScreenToClient(wb.parent.BaseWidget().hWnd, &p) {
 			newError("ScreenToClient failed")
@@ -974,7 +974,7 @@ func (wb *WidgetBase) SizeHint() Size {
 	return wb.widget.MinSizeHint()
 }
 
-func (wb *WidgetBase) calculateTextSize() Size {
+func (wb *WidgetBase) calculateTextSizeImpl(text string) Size {
 	hdc := GetDC(wb.hWnd)
 	if hdc == 0 {
 		newError("GetDC failed")
@@ -986,7 +986,7 @@ func (wb *WidgetBase) calculateTextSize() Size {
 	defer SelectObject(hdc, hFontOld)
 
 	var size Size
-	lines := strings.Split(widgetText(wb.hWnd), "\n")
+	lines := strings.Split(text, "\n")
 
 	for _, line := range lines {
 		var s SIZE
@@ -1002,6 +1002,10 @@ func (wb *WidgetBase) calculateTextSize() Size {
 	}
 
 	return size
+}
+
+func (wb *WidgetBase) calculateTextSize() Size {
+	return wb.calculateTextSizeImpl(widgetText(wb.hWnd))
 }
 
 func (wb *WidgetBase) updateParentLayout() error {

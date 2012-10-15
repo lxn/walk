@@ -63,6 +63,20 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 		}
 	}
 
+	// Validatable
+	if dva, ok := d.(Validatable); ok {
+		wva := w.(walk.Validatable)
+
+		if dvr := dva.ValidatableInfo(); dvr != nil {
+			wvr, err := dvr.Create()
+			if err != nil {
+				return err
+			}
+
+			wva.SetValidator(wvr)
+		}
+	}
+
 	// Container
 	if dc, ok := d.(Container); ok {
 		if wc, ok := w.(walk.Container); ok {
@@ -89,10 +103,6 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 				return err
 			} else if db != nil {
 				wc.SetDataBinder(db)
-
-				if err := db.Reset(); err != nil {
-					return err
-				}
 			}
 		}
 	}
@@ -101,6 +111,19 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	if customInit != nil {
 		if err := customInit(); err != nil {
 			return err
+		}
+	}
+
+	// Call Reset on DataBinder after customInit, so a Dialog gets a chance to first
+	// wire up its DefaultButton to the CanSubmitChanged event of a DataBinder.
+	if _, ok := d.(Container); ok {
+		if wc, ok := w.(walk.Container); ok {
+			db := wc.DataBinder()
+			if db != nil {
+				if err := db.Reset(); err != nil {
+					return err
+				}
+			}
 		}
 	}
 

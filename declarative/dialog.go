@@ -45,6 +45,11 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 		Children:           d.Children,
 	}
 
+	var db *walk.DataBinder
+	if d.DataBinder.AssignTo == nil {
+		d.DataBinder.AssignTo = &db
+	}
+
 	return InitWidget(tlwi, w, func() error {
 		if err := w.SetTitle(d.Title); err != nil {
 			return err
@@ -57,6 +62,13 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 		if d.DefaultButton != nil {
 			if err := w.SetDefaultButton(*d.DefaultButton); err != nil {
 				return err
+			}
+
+			db := *d.DataBinder.AssignTo
+			if db != nil {
+				db.CanSubmitChanged().Attach(func() {
+					(*d.DefaultButton).SetEnabled(db.CanSubmit())
+				})
 			}
 		}
 		if d.CancelButton != nil {

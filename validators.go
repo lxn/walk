@@ -4,82 +4,108 @@
 
 package walk
 
-import "strconv"
+import (
+	"errors"
+	"fmt"
+	"regexp"
+)
 
-type ValidationStatus uint
-
-const (
-	Invalid ValidationStatus = iota
-	Partial
-	Valid
+var (
+	errNumberOutOfRange  = errors.New("The number is out of the allowed range.")
+	errPatternNotMatched = errors.New("The text does not match the required pattern.")
+	errSelectionRequired = errors.New("A selection is required.")
 )
 
 type Validator interface {
-	Validate(s string) ValidationStatus
+	Validate(v interface{}) error
 }
 
 type NumberValidator struct {
-	decimals int
-	minValue float64
-	maxValue float64
+	min float64
+	max float64
 }
 
-func NewNumberValidator() *NumberValidator {
-	return &NumberValidator{}
+func NewNumberValidator(min, max float64) (*NumberValidator, error) {
+	if max <= min {
+		return nil, errors.New("max <= min")
+	}
+
+	return &NumberValidator{min: min, max: max}, nil
 }
 
-func (nv *NumberValidator) Validate(s string) ValidationStatus {
-	num, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return Invalid
-	}
-
-	if num < nv.minValue {
-		return Partial
-	}
-
-	if num > nv.maxValue {
-		return Invalid
-	}
-
-	str := strconv.FormatFloat(num, 'f', nv.decimals, 64)
-
-	if s != str {
-		return Invalid
-	}
-
-	return Valid
+func (nv *NumberValidator) Min() float64 {
+	return nv.min
 }
 
-func (nv *NumberValidator) Decimals() int {
-	return nv.decimals
+func (nv *NumberValidator) Max() float64 {
+	return nv.max
 }
 
-func (nv *NumberValidator) SetDecimals(value int) error {
-	if value < 0 {
-		return newError("invalid value")
-	}
+func (nv *NumberValidator) Validate(v interface{}) error {
+	f64 := v.(float64)
 
-	nv.decimals = value
+	if f64 < nv.min || f64 > nv.max {
+		return errNumberOutOfRange
+	}
 
 	return nil
 }
 
-func (nv *NumberValidator) MinValue() float64 {
-	return nv.minValue
+type RegexpValidator struct {
+	re *regexp.Regexp
 }
 
-func (nv *NumberValidator) MaxValue() float64 {
-	return nv.maxValue
-}
-
-func (nv *NumberValidator) SetRange(min, max float64) error {
-	if min > max {
-		return newError("invalid range")
+func NewRegexpValidator(pattern string) (*RegexpValidator, error) {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
 	}
 
-	nv.minValue = min
-	nv.maxValue = max
+	return &RegexpValidator{re}, nil
+}
+
+func (rv *RegexpValidator) Pattern() string {
+	return rv.re.String()
+}
+
+func (rv *RegexpValidator) Validate(v interface{}) error {
+	var matched bool
+
+	switch val := v.(type) {
+	case string:
+		matched = rv.re.MatchString(val)
+
+	case []byte:
+		matched = rv.re.Match(val)
+
+	case fmt.Stringer:
+		matched = rv.re.MatchString(val.String())
+
+	default:
+		panic("Unsupported type")
+	}
+
+	if !matched {
+		return errPatternNotMatched
+	}
+
+	return nil
+}
+
+type selectionRequiredValidator struct {
+}
+
+var selectionRequiredValidatorSingleton Validator = selectionRequiredValidator{}
+
+func SelectionRequiredValidator() Validator {
+	return selectionRequiredValidatorSingleton
+}
+
+func (selectionRequiredValidator) Validate(v interface{}) error {
+	if v == nil {
+		// For Widgets like ComboBox nil is passed to indicate "no selection".
+		return errSelectionRequired
+	}
 
 	return nil
 }

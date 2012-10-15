@@ -16,7 +16,7 @@ type Composite struct {
 	ContainerBase
 }
 
-func newCompositeWithStyle(parent Container, style uint32) (*Composite, error) {
+func newCompositeWithStyle(parent Widget, style uint32) (*Composite, error) {
 	c := &Composite{}
 	c.children = newWidgetList(c)
 	c.SetPersistent(true)
