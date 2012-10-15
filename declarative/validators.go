@@ -16,13 +16,13 @@ func (vr ValidatorRef) Create() (walk.Validator, error) {
 	return vr.Validator, nil
 }
 
-type Number struct {
+type Range struct {
 	Min float64
 	Max float64
 }
 
-func (n Number) Create() (walk.Validator, error) {
-	return walk.NewNumberValidator(n.Min, n.Max)
+func (r Range) Create() (walk.Validator, error) {
+	return walk.NewRangeValidator(r.Min, r.Max)
 }
 
 type Regexp struct {

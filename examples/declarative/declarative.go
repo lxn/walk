@@ -166,7 +166,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		ComboBox{Row: 3, Column: 1, BindTo: "BarKey", Model: NewBarModel(), Optional: true},
 
 		Label{Row: 4, Column: 0, Text: "Float64:"},
-		NumberEdit{Row: 4, Column: 1, BindTo: "Float64", Decimals: 2, Validator: Number{0.01, 999.99}},
+		NumberEdit{Row: 4, Column: 1, BindTo: "Float64", Decimals: 2, Validator: Range{0.01, 999.99}},
 
 		Label{Row: 5, Column: 0, Text: "Int:"},
 		NumberEdit{Row: 5, Column: 1, BindTo: "Int"},

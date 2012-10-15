@@ -20,31 +20,31 @@ type Validator interface {
 	Validate(v interface{}) error
 }
 
-type NumberValidator struct {
+type RangeValidator struct {
 	min float64
 	max float64
 }
 
-func NewNumberValidator(min, max float64) (*NumberValidator, error) {
+func NewRangeValidator(min, max float64) (*RangeValidator, error) {
 	if max <= min {
 		return nil, errors.New("max <= min")
 	}
 
-	return &NumberValidator{min: min, max: max}, nil
+	return &RangeValidator{min: min, max: max}, nil
 }
 
-func (nv *NumberValidator) Min() float64 {
-	return nv.min
+func (rv *RangeValidator) Min() float64 {
+	return rv.min
 }
 
-func (nv *NumberValidator) Max() float64 {
-	return nv.max
+func (rv *RangeValidator) Max() float64 {
+	return rv.max
 }
 
-func (nv *NumberValidator) Validate(v interface{}) error {
+func (rv *RangeValidator) Validate(v interface{}) error {
 	f64 := v.(float64)
 
-	if f64 < nv.min || f64 > nv.max {
+	if f64 < rv.min || f64 > rv.max {
 		return errNumberOutOfRange
 	}
 
