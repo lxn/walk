@@ -5,6 +5,7 @@
 package walk
 
 import . "github.com/lxn/go-winapi"
+import "image"
 
 type Cursor interface {
 	Dispose()
@@ -85,4 +86,24 @@ func CursorIcon() Cursor {
 
 func CursorSize() Cursor {
 	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_SIZE))}
+}
+
+type customCursor struct {
+	hCursor HCURSOR
+}
+
+func NewCursorFromImage(im image.Image, hotspot image.Point) (Cursor, error) {
+	i, err := createAlphaCursorOrIconFromImage(im, hotspot, false)
+	if err != nil {
+		return nil, err
+	}
+	return customCursor{HCURSOR(i)}, nil
+}
+
+func (cc customCursor) Dispose() {
+	DestroyIcon(HICON(cc.hCursor))
+}
+
+func (cc customCursor) handle() HCURSOR {
+	return cc.hCursor
 }

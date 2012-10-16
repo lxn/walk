@@ -6,6 +6,7 @@ package walk
 
 import (
 	"fmt"
+	"image"
 	"syscall"
 	"unsafe"
 )
@@ -48,6 +49,50 @@ func hPackedDIBFromHBITMAP(hBmp HBITMAP) (HGLOBAL, error) {
 	MoveMemory(dest, src, pixelsSize)
 
 	return hPackedDIB, nil
+}
+
+func hBitmapFromImage(im image.Image) (HBITMAP, error) {
+	var bi BITMAPV5HEADER
+	bi.BiSize = uint32(unsafe.Sizeof(bi))
+	bi.BiWidth = int32(im.Bounds().Dx())
+	bi.BiHeight = -int32(im.Bounds().Dy())
+	bi.BiPlanes = 1
+	bi.BiBitCount = 32
+	bi.BiCompression = BI_BITFIELDS
+	// The following mask specification specifies a supported 32 BPP
+	// alpha format for Windows XP.
+	bi.BV4RedMask = 0x00FF0000
+	bi.BV4GreenMask = 0x0000FF00
+	bi.BV4BlueMask = 0x000000FF
+	bi.BV4AlphaMask = 0xFF000000
+
+	hdc := GetDC(0)
+	defer ReleaseDC(0, hdc)
+
+	var lpBits unsafe.Pointer
+
+	// Create the DIB section with an alpha channel.
+	hBitmap := CreateDIBSection(hdc, &bi.BITMAPINFOHEADER, DIB_RGB_COLORS, &lpBits, 0, 0)
+	switch hBitmap {
+	case 0, ERROR_INVALID_PARAMETER:
+		return 0, newError("CreateDIBSection failed")
+	}
+
+	// Fill the image
+	bitmap_array := (*[1 << 30]byte)(unsafe.Pointer(lpBits))
+	i := 0
+	for y := im.Bounds().Min.Y; y != im.Bounds().Max.Y; y++ {
+		for x := im.Bounds().Min.X; x != im.Bounds().Max.X; x++ {
+			r, g, b, a := im.At(x, y).RGBA()
+			bitmap_array[i+3] = byte(a >> 8)
+			bitmap_array[i+2] = byte(r >> 8)
+			bitmap_array[i+1] = byte(g >> 8)
+			bitmap_array[i+0] = byte(b >> 8)
+			i += 4
+		}
+	}
+
+	return hBitmap, nil
 }
 
 type Bitmap struct {
@@ -93,9 +138,8 @@ func newBitmapFromHBITMAP(hBmp HBITMAP) (bmp *Bitmap, err error) {
 }
 
 func NewBitmap(size Size) (bmp *Bitmap, err error) {
-	var bmi BITMAPINFO
-	hdr := &bmi.BmiHeader
-	hdr.BiSize = uint32(unsafe.Sizeof(*hdr))
+	var hdr BITMAPINFOHEADER
+	hdr.BiSize = uint32(unsafe.Sizeof(hdr))
 	hdr.BiBitCount = 24
 	hdr.BiCompression = BI_RGB
 	hdr.BiPlanes = 1
@@ -103,7 +147,7 @@ func NewBitmap(size Size) (bmp *Bitmap, err error) {
 	hdr.BiHeight = int32(size.Height)
 
 	err = withCompatibleDC(func(hdc HDC) error {
-		hBmp := CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, nil, 0, 0)
+		hBmp := CreateDIBSection(hdc, &hdr, DIB_RGB_COLORS, nil, 0, 0)
 		switch hBmp {
 		case 0, ERROR_INVALID_PARAMETER:
 			return newError("CreateDIBSection failed")
@@ -128,6 +172,14 @@ func NewBitmapFromFile(filePath string) (*Bitmap, error) {
 		return nil, newError(fmt.Sprintf("GdipCreateHBITMAPFromBitmap failed with status '%s' for file '%s'", status, filePath))
 	}
 
+	return newBitmapFromHBITMAP(hBmp)
+}
+
+func NewBitmapFromImage(im image.Image) (*Bitmap, error) {
+	hBmp, err := hBitmapFromImage(im)
+	if err != nil {
+		return nil, err
+	}
 	return newBitmapFromHBITMAP(hBmp)
 }
 
