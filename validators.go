@@ -10,12 +10,6 @@ import (
 	"regexp"
 )
 
-var (
-	errNumberOutOfRange  = errors.New("The number is out of the allowed range.")
-	errPatternNotMatched = errors.New("The text does not match the required pattern.")
-	errSelectionRequired = errors.New("A selection is required.")
-)
-
 type Validator interface {
 	Validate(v interface{}) error
 }
@@ -45,7 +39,7 @@ func (rv *RangeValidator) Validate(v interface{}) error {
 	f64 := v.(float64)
 
 	if f64 < rv.min || f64 > rv.max {
-		return errNumberOutOfRange
+		return errors.New(tr("The number is out of the allowed range.", "walk"))
 	}
 
 	return nil
@@ -86,7 +80,7 @@ func (rv *RegexpValidator) Validate(v interface{}) error {
 	}
 
 	if !matched {
-		return errPatternNotMatched
+		return errors.New(tr("The text does not match the required pattern.", "walk"))
 	}
 
 	return nil
@@ -104,7 +98,7 @@ func SelectionRequiredValidator() Validator {
 func (selectionRequiredValidator) Validate(v interface{}) error {
 	if v == nil {
 		// For Widgets like ComboBox nil is passed to indicate "no selection".
-		return errSelectionRequired
+		return errors.New(tr("A selection is required.", "walk"))
 	}
 
 	return nil

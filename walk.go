@@ -14,6 +14,7 @@ import "github.com/lxn/go-winapi"
 type InitParams struct {
 	LogErrors    bool
 	PanicOnError bool
+	Translation  func(source string, context ...string) string
 }
 
 func Initialize(params InitParams) {
@@ -21,6 +22,7 @@ func Initialize(params InitParams) {
 
 	logErrors = params.LogErrors
 	panicOnError = params.PanicOnError
+	translation = params.Translation
 
 	if hr := winapi.OleInitialize(); winapi.FAILED(hr) {
 		panic(fmt.Sprint("OleInitialize Error: ", hr))
@@ -32,4 +34,14 @@ func Initialize(params InitParams) {
 func Shutdown() {
 	winapi.GdiplusShutdown()
 	winapi.OleUninitialize()
+}
+
+var translation func(source string, context ...string) string
+
+func tr(source string, context ...string) string {
+	if translation == nil {
+		return source
+	}
+
+	return translation(source, context...)
 }

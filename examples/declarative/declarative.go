@@ -10,6 +10,7 @@ import (
 )
 
 import (
+	"github.com/lxn/polyglot"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
@@ -221,9 +222,20 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 	}
 }
 
+var trDict *polyglot.Dict
+
+func tr(source string, context ...string) string {
+	return trDict.Translation(source, context...)
+}
+
 func main() {
-	walk.Initialize(walk.InitParams{})
+	walk.Initialize(walk.InitParams{Translation: tr})
 	defer walk.Shutdown()
+
+	var err error
+	if trDict, err = polyglot.NewDict("../../l10n", "en"); err != nil {
+		log.Fatal(err)
+	}
 
 	mw := new(MyMainWindow)
 
