@@ -165,7 +165,7 @@ func (tlw *TopLevelWindow) SetIcon(icon *Icon) {
 }
 
 func (tlw *TopLevelWindow) Hide() {
-	tlw.SetVisible(false)
+	tlw.widget.SetVisible(false)
 }
 
 func (tlw *TopLevelWindow) Show() {
@@ -173,7 +173,7 @@ func (tlw *TopLevelWindow) Show() {
 }
 
 func (tlw *TopLevelWindow) close() error {
-	tlw.Dispose()
+	tlw.widget.Dispose()
 
 	return nil
 }
