@@ -111,14 +111,16 @@ func (mw *MainWindow) ClientBounds() Rectangle {
 	return bounds
 }
 
-func (mw *MainWindow) Show() {
-	DrawMenuBar(mw.hWnd)
+func (mw *MainWindow) SetVisible(visible bool) {
+	if visible {
+		DrawMenuBar(mw.hWnd)
 
-	if mw.clientComposite.layout != nil {
-		mw.clientComposite.layout.Update(false)
+		if mw.clientComposite.layout != nil {
+			mw.clientComposite.layout.Update(false)
+		}
 	}
 
-	mw.TopLevelWindow.Show()
+	mw.ContainerBase.SetVisible(visible)
 }
 
 func (mw *MainWindow) onInsertingWidget(index int, widget Widget) error {

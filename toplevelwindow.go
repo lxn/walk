@@ -169,7 +169,7 @@ func (tlw *TopLevelWindow) Hide() {
 }
 
 func (tlw *TopLevelWindow) Show() {
-	tlw.SetVisible(true)
+	tlw.widget.SetVisible(true)
 }
 
 func (tlw *TopLevelWindow) close() error {
