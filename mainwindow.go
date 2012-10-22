@@ -120,7 +120,7 @@ func (mw *MainWindow) SetVisible(visible bool) {
 		}
 	}
 
-	mw.ContainerBase.SetVisible(visible)
+	mw.TopLevelWindow.SetVisible(visible)
 }
 
 func (mw *MainWindow) onInsertingWidget(index int, widget Widget) error {
