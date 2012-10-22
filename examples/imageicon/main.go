@@ -46,7 +46,6 @@ func main() {
 		panic(err)
 	}
 
-	mw.Show()
 	mw.Run()
 }
 

@@ -310,6 +310,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	mw.Show()
 	mw.Run()
 }
