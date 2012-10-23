@@ -84,3 +84,17 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 		return nil
 	})
 }
+
+func (d Dialog) Run(owner walk.RootWidget) (int, error) {
+	var w *walk.Dialog
+
+	if d.AssignTo == nil {
+		d.AssignTo = &w
+	}
+
+	if err := d.Create(owner); err != nil {
+		return 0, err
+	}
+
+	return (*d.AssignTo).Run(), nil
+}
