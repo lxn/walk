@@ -297,12 +297,22 @@ func main() {
 		Layout:         HBox{MarginsZero: true},
 		Children: []Widget{
 			TabWidget{
-				MarginsZero: true,
-				PageTitles:  []string{"golang.org/doc/", "golang.org/ref/", "golang.org/pkg/"},
-				Pages: []Widget{
-					WebView{URL: "http://golang.org/doc/"},
-					WebView{URL: "http://golang.org/ref/"},
-					WebView{URL: "http://golang.org/pkg/"},
+				ContentMarginsZero: true,
+				Pages: []TabPage{
+					TabPage{Title: "golang.org/doc/", Content: WebView{URL: "http://golang.org/doc/"}},
+					TabPage{Title: "golang.org/ref/", Content: WebView{URL: "http://golang.org/ref/"}},
+					TabPage{Title: "golang.org/pkg/", Content: WebView{URL: "http://golang.org/pkg/"}},
+					TabPage{
+						Title:  "Composite Stuff",
+						Layout: Grid{},
+						Children: []Widget{
+							TextEdit{Row: 0, Column: 0, RowSpan: 4},
+							PushButton{Row: 0, Column: 1, Text: "Foo"},
+							PushButton{Row: 1, Column: 1, Text: "Bar"},
+							PushButton{Row: 2, Column: 1, Text: "Baz"},
+							VSpacer{Row: 3, Column: 1},
+						},
+					},
 				},
 			},
 		},

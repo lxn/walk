@@ -22,10 +22,9 @@ type TabWidget struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
-	Margins            Margins
-	MarginsZero        bool
-	PageTitles         []string
-	Pages              []Widget
+	ContentMargins     Margins
+	ContentMarginsZero bool
+	Pages              []TabPage
 }
 
 func (tw TabWidget) Create(parent walk.Container) error {
@@ -35,37 +34,21 @@ func (tw TabWidget) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(tw, w, func() error {
-		for i, page := range tw.Pages {
-			wp, err := walk.NewTabPage()
-			if err != nil {
+		for _, tp := range tw.Pages {
+			var wp *walk.TabPage
+			if tp.AssignTo == nil {
+				tp.AssignTo = &wp
+			}
+
+			if tp.Content != nil && len(tp.Children) == 0 {
+				tp.Layout = HBox{Margins: tw.ContentMargins, MarginsZero: tw.ContentMarginsZero}
+			}
+
+			if err := tp.Create(nil); err != nil {
 				return err
 			}
 
-			if len(tw.PageTitles) > i {
-				if err := wp.SetTitle(tw.PageTitles[i]); err != nil {
-					return err
-				}
-			}
-
-			if err := w.Pages().Add(wp); err != nil {
-				return err
-			}
-
-			l := walk.NewHBoxLayout()
-			m := tw.Margins
-			if !tw.MarginsZero && m.isZero() {
-				m = Margins{9, 9, 9, 9}
-			}
-
-			if err := l.SetMargins(m.toW()); err != nil {
-				return err
-			}
-
-			if err := wp.SetLayout(l); err != nil {
-				return err
-			}
-
-			if err := page.Create(wp); err != nil {
+			if err := w.Pages().Add(*tp.AssignTo); err != nil {
 				return err
 			}
 		}
