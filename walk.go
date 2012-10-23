@@ -29,7 +29,6 @@ func Initialize(params InitParams) {
 }
 
 func Shutdown() {
-	winapi.GdiplusShutdown()
 	winapi.OleUninitialize()
 }
 

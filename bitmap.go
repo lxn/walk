@@ -161,6 +161,13 @@ func NewBitmap(size Size) (bmp *Bitmap, err error) {
 }
 
 func NewBitmapFromFile(filePath string) (*Bitmap, error) {
+	var si GdiplusStartupInput
+	si.GdiplusVersion = 1
+	if status := GdiplusStartup(&si, nil); status != Ok {
+		return nil, newError(fmt.Sprintf("GdiplusStartup failed with status '%s'", status))
+	}
+	defer GdiplusShutdown()
+
 	var gpBmp *GpBitmap
 	if status := GdipCreateBitmapFromFile(syscall.StringToUTF16Ptr(filePath), &gpBmp); status != Ok {
 		return nil, newError(fmt.Sprintf("GdipCreateBitmapFromFile failed with status '%s' for file '%s'", status, filePath))
