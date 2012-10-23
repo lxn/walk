@@ -6,27 +6,21 @@ package main
 
 import (
 	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 )
 
 func main() {
-	walk.SetPanicOnError(true)
+	var le *walk.LineEdit
+	var wv *walk.WebView
 
-	mw, _ := walk.NewMainWindow()
-	mw.SetTitle("Walk WebView Example")
-	mw.SetLayout(walk.NewVBoxLayout())
-	mw.SetMinMaxSize(walk.Size{600, 400}, walk.Size{})
-	mw.SetSize(walk.Size{800, 600})
-
-	var webView *walk.WebView
-
-	urlLineEdit, _ := walk.NewLineEdit(mw)
-	urlLineEdit.ReturnPressed().Attach(func() {
-		webView.SetURL(urlLineEdit.Text())
-	})
-
-	webView, _ = walk.NewWebView(mw)
-	webView.SetURL("http://golang.org")
-
-	mw.Show()
-	mw.Run()
+	MainWindow{
+		Title:   "Walk WebView Example",
+		MinSize: Size{600, 400},
+		Size:    Size{800, 600},
+		Layout:  VBox{},
+		Children: []Widget{
+			LineEdit{AssignTo: &le, OnReturnPressed: func() { wv.SetURL(le.Text()) }},
+			WebView{AssignTo: &wv, URL: "http://golang.org"},
+		},
+	}.Run()
 }
