@@ -4,22 +4,33 @@
 
 package walk
 
-type InitParams struct {
-	LogErrors    bool
-	PanicOnError bool
-	Translation  func(source string, context ...string) string
+func LogErrors() bool {
+	return logErrors
 }
 
-func Initialize(params InitParams) {
-	logErrors = params.LogErrors
-	panicOnError = params.PanicOnError
-	translation = params.Translation
+func SetLogErrors(v bool) {
+	logErrors = v
 }
 
-func Shutdown() {
+func PanicOnError() bool {
+	return panicOnError
 }
 
-var translation func(source string, context ...string) string
+func SetPanicOnError(v bool) {
+	panicOnError = v
+}
+
+func TranslationFunc() TranslationFunction {
+	return translation
+}
+
+func SetTranslationFunc(f TranslationFunction) {
+	translation = f
+}
+
+type TranslationFunction func(source string, context ...string) string
+
+var translation TranslationFunction
 
 func tr(source string, context ...string) string {
 	if translation == nil {

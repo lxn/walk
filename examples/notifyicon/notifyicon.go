@@ -9,9 +9,8 @@ import (
 )
 
 func main() {
-	// Initialize walk and specify that we want errors to be panics.
-	walk.Initialize(walk.InitParams{PanicOnError: true})
-	defer walk.Shutdown()
+	// Specify that we want errors to be panics.
+	walk.SetPanicOnError(true)
 
 	// We need either a walk.MainWindow or a walk.Dialog for their message loop.
 	// We will not make it visible in this example, though.

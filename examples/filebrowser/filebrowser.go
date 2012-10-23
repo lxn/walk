@@ -187,8 +187,7 @@ func newTreeViewItem(text string) *walk.TreeViewItem {
 }
 
 func main() {
-	walk.Initialize(walk.InitParams{PanicOnError: true})
-	defer walk.Shutdown()
+	walk.SetPanicOnError(true)
 
 	mainWnd, _ := walk.NewMainWindow()
 

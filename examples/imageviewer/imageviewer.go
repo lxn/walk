@@ -67,8 +67,7 @@ func (mw *MainWindow) openImage() {
 }
 
 func main() {
-	walk.Initialize(walk.InitParams{PanicOnError: true})
-	defer walk.Shutdown()
+	walk.SetPanicOnError(true)
 
 	mainWnd, _ := walk.NewMainWindow()
 

@@ -87,8 +87,7 @@ func (mpb *MyPushButton) WndProc(hwnd winapi.HWND, msg uint32, wParam, lParam ui
 }
 
 func main() {
-	walk.Initialize(walk.InitParams{PanicOnError: true})
-	defer walk.Shutdown()
+	walk.SetPanicOnError(true)
 
 	mw, _ := walk.NewMainWindow()
 

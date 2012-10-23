@@ -17,39 +17,35 @@ type EnvItem struct {
 	value   string
 }
 
-type EnvModel struct{
+type EnvModel struct {
 	walk.ListModelBase
-	envItems []EnvItem
+	envItems             []EnvItem
 	itemsResetPublisher  walk.EventPublisher
-	itemChangedPublisher walk.IntEventPublisher	
+	itemChangedPublisher walk.IntEventPublisher
 }
 
-func NewEnvModel() *EnvModel{
+func NewEnvModel() *EnvModel {
 	em := &EnvModel{}
 	em.envItems = make([]EnvItem, 0)
 	return em
 }
 
-func (em *EnvModel) ItemCount()int{
+func (em *EnvModel) ItemCount() int {
 	return len(em.envItems)
 }
 
-func (em *EnvModel) Value( index int) interface{} {
+func (em *EnvModel) Value(index int) interface{} {
 	return em.envItems[index].varName
 }
 
-
-
 func main() {
-	walk.Initialize(walk.InitParams{PanicOnError: true})
-	defer walk.Shutdown()
+	walk.SetPanicOnError(true)
 
 	myWindow, _ := walk.NewMainWindow()
 
 	myWindow.SetLayout(walk.NewVBoxLayout())
 	myWindow.SetTitle("Listbox example")
 
-	
 	splitter, _ := walk.NewSplitter(myWindow)
 	splitter.SetOrientation(walk.Vertical)
 
@@ -69,7 +65,7 @@ func main() {
 		varName := env[0:i]
 		value := env[i+1:]
 		envItem := EnvItem{varName, value}
-		
+
 		em.envItems = append(em.envItems, envItem)
 	}
 
@@ -81,10 +77,10 @@ func main() {
 			value = strings.Replace(value, ";", "\r\n", -1)
 			valueEdit.SetText(value)
 			fmt.Println("CurrentIndex:", lb.CurrentIndex())
-			fmt.Println("CurrentEnvVarName:",curVar)
+			fmt.Println("CurrentEnvVarName:", curVar)
 		}
 	})
-	lb.DblClicked().Attach(func() { 
+	lb.DblClicked().Attach(func() {
 		value := em.envItems[lb.CurrentIndex()].value
 		value = strings.Replace(value, ";", "\r\n", -1)
 		valueEdit.SetText(value)

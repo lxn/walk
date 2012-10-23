@@ -63,8 +63,7 @@ func RunMyDialog(owner walk.RootWidget) (int, error) {
 	return dlg.Run(), nil
 }
 func main() {
-	walk.Initialize(walk.InitParams{PanicOnError: true})
-	defer walk.Shutdown()
+	walk.SetPanicOnError(true)
 
 	RunMyDialog(nil)
 }

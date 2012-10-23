@@ -77,8 +77,7 @@ func (mw *MainWindow) drawStuff(canvas *walk.Canvas, updateBounds walk.Rectangle
 }
 
 func main() {
-	walk.Initialize(walk.InitParams{PanicOnError: true})
-	defer walk.Shutdown()
+	walk.SetPanicOnError(true)
 
 	mainWnd, _ := walk.NewMainWindow()
 

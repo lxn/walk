@@ -229,8 +229,7 @@ func tr(source string, context ...string) string {
 }
 
 func main() {
-	walk.Initialize(walk.InitParams{Translation: tr})
-	defer walk.Shutdown()
+	walk.SetTranslationFunc(tr)
 
 	var err error
 	if trDict, err = polyglot.NewDict("../../l10n", "en"); err != nil {

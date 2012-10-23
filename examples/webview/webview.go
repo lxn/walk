@@ -9,8 +9,7 @@ import (
 )
 
 func main() {
-	walk.Initialize(walk.InitParams{PanicOnError: true})
-	defer walk.Shutdown()
+	walk.SetPanicOnError(true)
 
 	mw, _ := walk.NewMainWindow()
 	mw.SetTitle("Walk WebView Example")

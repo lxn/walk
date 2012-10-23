@@ -8,14 +8,7 @@ import (
 	"log"
 )
 
-import (
-	"github.com/lxn/walk"
-)
-
 func main() {
-	walk.Initialize(walk.InitParams{})
-	defer walk.Shutdown()
-
 	if _, err := runMainWindow(); err != nil {
 		log.Fatal(err)
 	}

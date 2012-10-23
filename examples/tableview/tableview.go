@@ -177,8 +177,7 @@ type MainWindow struct {
 }
 
 func main() {
-	walk.Initialize(walk.InitParams{PanicOnError: true})
-	defer walk.Shutdown()
+	walk.SetPanicOnError(true)
 
 	rand.Seed(time.Now().UnixNano())
 

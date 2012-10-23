@@ -13,9 +13,6 @@ import (
 )
 
 func main() {
-	walk.Initialize(walk.InitParams{})
-	defer walk.Shutdown()
-
 	var windowIcon *walk.Icon
 	counter := 0
 	var mw *walk.MainWindow
