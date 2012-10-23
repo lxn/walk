@@ -5,6 +5,7 @@
 package walk
 
 import (
+	"fmt"
 	"syscall"
 	"unsafe"
 )
@@ -24,6 +25,10 @@ type WebView struct {
 }
 
 func NewWebView(parent Container) (*WebView, error) {
+	if hr := OleInitialize(); hr != S_OK && hr != S_FALSE {
+		return nil, newError(fmt.Sprint("OleInitialize Error: ", hr))
+	}
+
 	wv := &WebView{
 		clientSite: webViewIOleClientSite{
 			IOleClientSite: IOleClientSite{
@@ -137,6 +142,8 @@ func (wv *WebView) Dispose() {
 		wv.browserObject.Release()
 
 		wv.browserObject = nil
+
+		OleUninitialize()
 	}
 
 	wv.WidgetBase.Dispose()

@@ -4,12 +4,6 @@
 
 package walk
 
-import (
-	"fmt"
-)
-
-import "github.com/lxn/go-winapi"
-
 type InitParams struct {
 	LogErrors    bool
 	PanicOnError bool
@@ -20,16 +14,9 @@ func Initialize(params InitParams) {
 	logErrors = params.LogErrors
 	panicOnError = params.PanicOnError
 	translation = params.Translation
-
-	if hr := winapi.OleInitialize(); winapi.FAILED(hr) {
-		panic(fmt.Sprint("OleInitialize Error: ", hr))
-	}
-
-	// TODO: Should we setup winapi syscalls from here instead using init funcs?
 }
 
 func Shutdown() {
-	winapi.OleUninitialize()
 }
 
 var translation func(source string, context ...string) string
