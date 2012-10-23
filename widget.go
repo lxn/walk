@@ -565,9 +565,10 @@ func (wb *WidgetBase) BaseWidget() *WidgetBase {
 // Also, if a Container is disposed of, all its descendants will be released
 // as well.
 func (wb *WidgetBase) Dispose() {
-	if wb.hWnd != 0 {
-		DestroyWindow(wb.hWnd)
+	hWnd := wb.hWnd
+	if hWnd != 0 {
 		wb.hWnd = 0
+		DestroyWindow(hWnd)
 	}
 }
 
@@ -1353,6 +1354,8 @@ func (wb *WidgetBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 
 	case WM_DESTROY:
 		wb.persistState(false)
+		wb.hWnd = 0
+		wb.widget.Dispose()
 	}
 
 	if widget := widgetFromHWND(hwnd); widget != nil {
