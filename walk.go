@@ -6,7 +6,6 @@ package walk
 
 import (
 	"fmt"
-	"runtime"
 )
 
 import "github.com/lxn/go-winapi"
@@ -18,8 +17,6 @@ type InitParams struct {
 }
 
 func Initialize(params InitParams) {
-	runtime.LockOSThread()
-
 	logErrors = params.LogErrors
 	panicOnError = params.PanicOnError
 	translation = params.Translation
