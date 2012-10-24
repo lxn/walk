@@ -21,17 +21,22 @@ as illustrated in this small example:
 
 	package main
 	
-	import . "github.com/lxn/walk/declarative"
+	import (
+		"github.com/lxn/walk"
+		. "github.com/lxn/walk/declarative"
+	)
 	
 	func main() {
+		var le *walk.LineEdit
+		var wv *walk.WebView
+	
 		MainWindow{
-			Title:   "My Cool App",
-			MinSize: Size{400, 300},
-			Layout:  HBox{},
+			Title:   "Walk WebView Example",
+			MinSize: Size{800, 600},
+			Layout:  VBox{},
 			Children: []Widget{
-				HSpacer{},
-				PushButton{Text: "Don't Click Me!", OnClicked: func() { panic("Ouch!") }},
-				HSpacer{},
+				LineEdit{AssignTo: &le, OnReturnPressed: func() { wv.SetURL(le.Text()) }},
+				WebView{AssignTo: &wv, URL: "http://golang.org"},
 			},
 		}.Run()
 	}

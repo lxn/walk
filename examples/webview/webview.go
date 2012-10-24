@@ -15,8 +15,7 @@ func main() {
 
 	MainWindow{
 		Title:   "Walk WebView Example",
-		MinSize: Size{600, 400},
-		Size:    Size{800, 600},
+		MinSize: Size{800, 600},
 		Layout:  VBox{},
 		Children: []Widget{
 			LineEdit{AssignTo: &le, OnReturnPressed: func() { wv.SetURL(le.Text()) }},
