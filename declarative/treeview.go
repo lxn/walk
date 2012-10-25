@@ -9,19 +9,23 @@ import (
 )
 
 type TreeView struct {
-	AssignTo           **walk.TreeView
-	Name               string
-	Disabled           bool
-	Hidden             bool
-	Font               Font
-	MinSize            Size
-	MaxSize            Size
-	StretchFactor      int
-	Row                int
-	RowSpan            int
-	Column             int
-	ColumnSpan         int
-	ContextMenuActions []*walk.Action
+	AssignTo             **walk.TreeView
+	Name                 string
+	Disabled             bool
+	Hidden               bool
+	Font                 Font
+	MinSize              Size
+	MaxSize              Size
+	StretchFactor        int
+	Row                  int
+	RowSpan              int
+	Column               int
+	ColumnSpan           int
+	ContextMenuActions   []*walk.Action
+	Model                walk.TreeModel
+	OnCurrentItemChanged walk.EventHandler
+	OnItemCollapsed      walk.TreeItemEventHandler
+	OnItemExpanded       walk.TreeItemEventHandler
 }
 
 func (tv TreeView) Create(parent walk.Container) error {
@@ -31,6 +35,22 @@ func (tv TreeView) Create(parent walk.Container) error {
 	}
 
 	return InitWidget(tv, w, func() error {
+		if err := w.SetModel(tv.Model); err != nil {
+			return err
+		}
+
+		if tv.OnCurrentItemChanged != nil {
+			w.CurrentItemChanged().Attach(tv.OnCurrentItemChanged)
+		}
+
+		if tv.OnItemCollapsed != nil {
+			w.ItemCollapsed().Attach(tv.OnItemCollapsed)
+		}
+
+		if tv.OnItemExpanded != nil {
+			w.ItemExpanded().Attach(tv.OnItemExpanded)
+		}
+
 		if tv.AssignTo != nil {
 			*tv.AssignTo = w
 		}

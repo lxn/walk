@@ -11,19 +11,27 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
+type treeViewItemInfo struct {
+	handle       HTREEITEM
+	child2Handle map[TreeItem]HTREEITEM
+}
+
 type TreeView struct {
 	WidgetBase
-	items                      *TreeViewItemList
-	itemCollapsedPublisher     TreeViewItemEventPublisher
-	itemCollapsingPublisher    TreeViewItemEventPublisher
-	itemExpandedPublisher      TreeViewItemEventPublisher
-	itemExpandingPublisher     TreeViewItemEventPublisher
-	selectionChangedPublisher  TreeViewItemSelectionEventPublisher
-	selectionChangingPublisher TreeViewItemSelectionEventPublisher
+	model                         TreeModel
+	lazyPopulation                bool
+	itemsResetEventHandlerHandle  int
+	itemChangedEventHandlerHandle int
+	item2Info                     map[TreeItem]*treeViewItemInfo
+	handle2Item                   map[HTREEITEM]TreeItem
+	itemCollapsedPublisher        TreeItemEventPublisher
+	itemExpandedPublisher         TreeItemEventPublisher
+	currentItemChangedPublisher   EventPublisher
+	currItem                      TreeItem
 }
 
 func NewTreeView(parent Container) (*TreeView, error) {
-	tv := &TreeView{}
+	tv := new(TreeView)
 
 	if err := InitChildWidget(
 		tv,
@@ -45,8 +53,6 @@ func NewTreeView(parent Container) (*TreeView, error) {
 		return nil, err
 	}
 
-	tv.items = newTreeViewItemList(tv)
-
 	succeeded = true
 
 	return tv, nil
@@ -60,42 +66,276 @@ func (tv *TreeView) SizeHint() Size {
 	return tv.dialogBaseUnitsToPixels(Size{100, 100})
 }
 
-func (tv *TreeView) Items() *TreeViewItemList {
-	return tv.items
+func (tv *TreeView) Model() TreeModel {
+	return tv.model
 }
 
-func (tv *TreeView) ItemCollapsed() *TreeViewItemEvent {
+func (tv *TreeView) SetModel(model TreeModel) error {
+	if tv.model != nil {
+		tv.model.ItemsReset().Detach(tv.itemsResetEventHandlerHandle)
+		tv.model.ItemChanged().Detach(tv.itemChangedEventHandlerHandle)
+	}
+
+	tv.model = model
+
+	if model != nil {
+		tv.lazyPopulation = model.LazyPopulation()
+
+		tv.itemsResetEventHandlerHandle = model.ItemsReset().Attach(func(parent TreeItem) {
+			if parent == nil {
+				tv.resetItems()
+			} else if tv.item2Info[parent] != nil {
+				if err := tv.removeDescendants(parent); err != nil {
+					return
+				}
+
+				if err := tv.insertChildren(parent); err != nil {
+					return
+				}
+			}
+		})
+
+		tv.itemChangedEventHandlerHandle = model.ItemChanged().Attach(func(item TreeItem) {
+			if item == nil || tv.item2Info[item] == nil {
+				return
+			}
+
+			if err := tv.updateItem(item); err != nil {
+				return
+			}
+		})
+	}
+
+	return tv.resetItems()
+}
+
+func (tv *TreeView) CurrentItem() TreeItem {
+	return tv.currItem
+}
+
+func (tv *TreeView) SetCurrentItem(item TreeItem) error {
+	if item == tv.currItem {
+		return nil
+	}
+
+	var handle HTREEITEM
+	if item != nil {
+		if info := tv.item2Info[item]; info == nil {
+			return newError("invalid item")
+		} else {
+			handle = info.handle
+		}
+	}
+
+	if 0 == tv.SendMessage(TVM_SELECTITEM, TVGN_CARET, uintptr(handle)) {
+		return newError("SendMessage(TVM_SELECTITEM) failed")
+	}
+
+	tv.currItem = item
+
+	return nil
+}
+
+func (tv *TreeView) resetItems() error {
+	tv.SetSuspended(true)
+	defer tv.SetSuspended(false)
+
+	if err := tv.clearItems(); err != nil {
+		return err
+	}
+
+	if tv.model == nil {
+		return nil
+	}
+
+	if err := tv.insertRoots(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (tv *TreeView) clearItems() error {
+	if 0 == tv.SendMessage(TVM_DELETEITEM, 0, 0) {
+		return newError("SendMessage(TVM_DELETEITEM) failed")
+	}
+
+	tv.item2Info = make(map[TreeItem]*treeViewItemInfo)
+	tv.handle2Item = make(map[HTREEITEM]TreeItem)
+
+	return nil
+}
+
+func (tv *TreeView) insertRoots() error {
+	count := tv.model.RootCount()
+
+	for i := 0; i < count; i++ {
+		if _, err := tv.insertItem(i, tv.model.RootAt(i)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (tv *TreeView) insertItem(index int, item TreeItem) (HTREEITEM, error) {
+	var tvi TVITEM
+	var tvins TVINSERTSTRUCT
+
+	tvi.Mask = TVIF_CHILDREN | TVIF_TEXT
+	tvi.PszText = syscall.StringToUTF16Ptr(item.Text())
+	tvi.CChildren = I_CHILDRENCALLBACK
+
+	tvins.Item = tvi
+
+	parent := item.Parent()
+
+	if parent == nil {
+		tvins.HParent = TVI_ROOT
+	} else {
+		info := tv.item2Info[parent]
+		if info == nil {
+			return 0, newError("invalid parent")
+		}
+		tvins.HParent = info.handle
+	}
+
+	if index == 0 {
+		tvins.HInsertAfter = TVI_LAST
+	} else {
+		var prevItem TreeItem
+		if parent == nil {
+			prevItem = tv.model.RootAt(index - 1)
+		} else {
+			prevItem = parent.ChildAt(index - 1)
+		}
+		info := tv.item2Info[prevItem]
+		if info == nil {
+			return 0, newError("invalid prev item")
+		}
+		tvins.HInsertAfter = info.handle
+	}
+
+	hItem := HTREEITEM(tv.SendMessage(TVM_INSERTITEM, 0, uintptr(unsafe.Pointer(&tvins))))
+	if hItem == 0 {
+		return 0, newError("TVM_INSERTITEM failed")
+	}
+	tv.item2Info[item] = &treeViewItemInfo{hItem, make(map[TreeItem]HTREEITEM)}
+	tv.handle2Item[hItem] = item
+
+	if !tv.lazyPopulation {
+		if err := tv.insertChildren(item); err != nil {
+			return 0, err
+		}
+	}
+
+	return hItem, nil
+}
+
+func (tv *TreeView) insertChildren(parent TreeItem) error {
+	info := tv.item2Info[parent]
+
+	count := parent.ChildCount()
+	for i := 0; i < count; i++ {
+		child := parent.ChildAt(i)
+
+		if handle, err := tv.insertItem(i, child); err != nil {
+			return err
+		} else {
+			info.child2Handle[child] = handle
+		}
+	}
+
+	return nil
+}
+
+func (tv *TreeView) updateItem(item TreeItem) error {
+	tvi := &TVITEM{
+		Mask:    TVIF_TEXT,
+		HItem:   tv.item2Info[item].handle,
+		PszText: syscall.StringToUTF16Ptr(item.Text()),
+	}
+
+	if 0 == tv.SendMessage(TVM_SETITEM, 0, uintptr(unsafe.Pointer(tvi))) {
+		return newError("SendMessage(TVM_SETITEM) failed")
+	}
+
+	return nil
+}
+
+func (tv *TreeView) removeItem(item TreeItem) error {
+	if err := tv.removeDescendants(item); err != nil {
+		return err
+	}
+
+	info := tv.item2Info[item]
+	if info == nil {
+		return newError("invalid item")
+	}
+
+	if 0 == tv.SendMessage(TVM_DELETEITEM, 0, uintptr(info.handle)) {
+		return newError("SendMessage(TVM_DELETEITEM) failed")
+	}
+
+	if parentInfo := tv.item2Info[item.Parent()]; parentInfo != nil {
+		delete(parentInfo.child2Handle, item)
+	}
+	delete(tv.item2Info, item)
+	delete(tv.handle2Item, info.handle)
+
+	return nil
+}
+
+func (tv *TreeView) removeDescendants(parent TreeItem) error {
+	for item, _ := range tv.item2Info[parent].child2Handle {
+		if err := tv.removeItem(item); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (tv *TreeView) ItemCollapsed() *TreeItemEvent {
 	return tv.itemCollapsedPublisher.Event()
 }
 
-func (tv *TreeView) ItemCollapsing() *TreeViewItemEvent {
-	return tv.itemCollapsingPublisher.Event()
-}
-
-func (tv *TreeView) ItemExpanded() *TreeViewItemEvent {
+func (tv *TreeView) ItemExpanded() *TreeItemEvent {
 	return tv.itemExpandedPublisher.Event()
 }
 
-func (tv *TreeView) ItemExpanding() *TreeViewItemEvent {
-	return tv.itemExpandingPublisher.Event()
-}
-
-func (tv *TreeView) SelectionChanged() *TreeViewItemSelectionEvent {
-	return tv.selectionChangedPublisher.Event()
-}
-
-func (tv *TreeView) SelectionChanging() *TreeViewItemSelectionEvent {
-	return tv.selectionChangingPublisher.Event()
+func (tv *TreeView) CurrentItemChanged() *Event {
+	return tv.currentItemChangedPublisher.Event()
 }
 
 func (tv *TreeView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_NOTIFY:
-		nmtv := (*NMTREEVIEW)(unsafe.Pointer(lParam))
+		nmhdr := (*NMHDR)(unsafe.Pointer(lParam))
 
-		switch nmtv.Hdr.Code {
+		switch nmhdr.Code {
+		case TVN_GETDISPINFO:
+			nmtvdi := (*NMTVDISPINFO)(unsafe.Pointer(lParam))
+			item := tv.handle2Item[nmtvdi.Item.HItem]
+
+			if nmtvdi.Item.Mask&TVIF_CHILDREN != 0 {
+				nmtvdi.Item.CChildren = int32(item.ChildCount())
+			}
+
+		case TVN_ITEMEXPANDING:
+			nmtv := (*NMTREEVIEW)(unsafe.Pointer(lParam))
+			item := tv.handle2Item[nmtv.ItemNew.HItem]
+
+			if nmtv.Action == TVE_EXPAND && tv.lazyPopulation {
+				info := tv.item2Info[item]
+				if len(info.child2Handle) == 0 {
+					tv.insertChildren(item)
+				}
+			}
+
 		case TVN_ITEMEXPANDED:
-			item := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
+			nmtv := (*NMTREEVIEW)(unsafe.Pointer(lParam))
+			item := tv.handle2Item[nmtv.ItemNew.HItem]
 
 			switch nmtv.Action {
 			case TVE_COLLAPSE:
@@ -111,100 +351,14 @@ func (tv *TreeView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 			case TVE_TOGGLE:
 			}
 
-		case TVN_ITEMEXPANDING:
-			item := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
-
-			switch nmtv.Action {
-			case TVE_COLLAPSE:
-				tv.itemCollapsingPublisher.Publish(item)
-
-			case TVE_COLLAPSERESET:
-
-			case TVE_EXPAND:
-				tv.itemExpandingPublisher.Publish(item)
-
-			case TVE_EXPANDPARTIAL:
-
-			case TVE_TOGGLE:
-			}
-
 		case TVN_SELCHANGED:
-			old := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemOld.LParam))
-			new := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
-			tv.selectionChangedPublisher.Publish(old, new)
+			nmtv := (*NMTREEVIEW)(unsafe.Pointer(lParam))
 
-		case TVN_SELCHANGING:
-			old := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemOld.LParam))
-			new := (*TreeViewItem)(unsafe.Pointer(nmtv.ItemNew.LParam))
-			tv.selectionChangingPublisher.Publish(old, new)
+			tv.currItem = tv.handle2Item[nmtv.ItemNew.HItem]
+
+			tv.currentItemChangedPublisher.Publish()
 		}
 	}
 
 	return tv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
-}
-
-func (tv *TreeView) onInsertingTreeViewItem(parent *TreeViewItem, index int, item *TreeViewItem) (err error) {
-	var tvi TVITEM
-	var tvins TVINSERTSTRUCT
-
-	tvi.LParam = uintptr(unsafe.Pointer(item))
-	tvi.Mask = TVIF_TEXT | TVIF_PARAM
-	tvi.PszText = syscall.StringToUTF16Ptr(item.text)
-
-	tvins.Item = tvi
-
-	if parent == nil {
-		tvins.HParent = TVI_ROOT
-	} else {
-		tvins.HParent = parent.handle
-	}
-
-	if index == 0 {
-		tvins.HInsertAfter = TVI_LAST
-	} else {
-		var items *TreeViewItemList
-		if parent == nil {
-			items = tv.items
-		} else {
-			items = parent.children
-		}
-		tvins.HInsertAfter = items.At(index - 1).handle
-	}
-
-	item.handle = HTREEITEM(tv.SendMessage(TVM_INSERTITEM, 0, uintptr(unsafe.Pointer(&tvins))))
-	if item.handle == 0 {
-		err = newError("TVM_INSERTITEM failed")
-	} else {
-		item.children.observer = tv
-	}
-
-	if err == nil {
-		for i, child := range item.children.items {
-			err = tv.onInsertingTreeViewItem(item, i, child)
-			if err != nil {
-				return
-			}
-		}
-	}
-
-	return
-}
-
-func (tv *TreeView) onRemovingTreeViewItem(index int, item *TreeViewItem) (err error) {
-	if 0 == tv.SendMessage(TVM_DELETEITEM, 0, uintptr(item.handle)) {
-		err = newError("SendMessage(TVM_DELETEITEM) failed")
-	}
-
-	return
-}
-
-func (tv *TreeView) onClearingTreeViewItems(parent *TreeViewItem) (err error) {
-	for i, child := range parent.children.items {
-		err = tv.onRemovingTreeViewItem(i, child)
-		if err != nil {
-			return
-		}
-	}
-
-	return
 }

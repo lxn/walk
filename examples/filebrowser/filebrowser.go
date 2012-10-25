@@ -5,6 +5,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -12,7 +13,120 @@ import (
 
 import (
 	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 )
+
+type Directory struct {
+	name     string
+	parent   *Directory
+	children []*Directory
+}
+
+func NewDirectory(name string, parent *Directory) *Directory {
+	return &Directory{name: name, parent: parent}
+}
+
+var _ walk.TreeItem = new(Directory)
+
+func (d *Directory) Text() string {
+	return d.name
+}
+
+func (d *Directory) Parent() walk.TreeItem {
+	if d.parent == nil {
+		// We can't simply return d.parent in this case, because the interface
+		// value then would not be nil.
+		return nil
+	}
+
+	return d.parent
+}
+
+func (d *Directory) ChildCount() int {
+	if d.children == nil {
+		// It seems this is the first time our child count is checked, so we
+		// use the opportunity to populate our direct children.
+		if err := d.ResetChildren(); err != nil {
+			log.Print(err)
+		}
+	}
+
+	return len(d.children)
+}
+
+func (d *Directory) ChildAt(index int) walk.TreeItem {
+	return d.children[index]
+}
+
+func (d *Directory) ResetChildren() error {
+	d.children = nil
+
+	dirPath := d.Path()
+
+	if err := filepath.Walk(d.Path(), func(path string, info os.FileInfo, err error) error {
+		name := info.Name()
+
+		if !info.IsDir() || path == dirPath || shouldExclude(name) {
+			return nil
+		}
+
+		d.children = append(d.children, NewDirectory(name, d))
+
+		return filepath.SkipDir
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Directory) Path() string {
+	elems := []string{d.name}
+
+	dir, _ := d.Parent().(*Directory)
+
+	for dir != nil {
+		elems = append([]string{dir.name}, elems...)
+		dir, _ = dir.Parent().(*Directory)
+	}
+
+	return filepath.Join(elems...)
+}
+
+type DirectoryTreeModel struct {
+	walk.TreeModelBase
+	roots []*Directory
+}
+
+var _ walk.TreeModel = new(DirectoryTreeModel)
+
+func NewDirectoryTreeModel() (*DirectoryTreeModel, error) {
+	model := new(DirectoryTreeModel)
+
+	drives, err := walk.DriveNames()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, drive := range drives {
+		model.roots = append(model.roots, NewDirectory(drive, nil))
+	}
+
+	return model, nil
+}
+
+func (*DirectoryTreeModel) LazyPopulation() bool {
+	// We don't want to eagerly populate our tree view with the whole file system.
+	return true
+}
+
+func (m *DirectoryTreeModel) RootCount() int {
+	return len(m.roots)
+}
+
+func (m *DirectoryTreeModel) RootAt(index int) walk.TreeItem {
+	return m.roots[index]
+}
 
 type FileInfo struct {
 	Name     string
@@ -24,6 +138,12 @@ type FileInfoModel struct {
 	walk.TableModelBase
 	dirPath string
 	items   []*FileInfo
+}
+
+var _ walk.TableModel = new(FileInfoModel)
+
+func NewFileInfoModel() *FileInfoModel {
+	return new(FileInfoModel)
 }
 
 func (m *FileInfoModel) Columns() []walk.TableColumn {
@@ -55,39 +175,32 @@ func (m *FileInfoModel) Value(row, col int) interface{} {
 	panic("unexpected col")
 }
 
-func (m *FileInfoModel) ResetRows(dirPath string) error {
-	dir, err := os.Open(dirPath)
-	if err != nil {
-		return err
-	}
-	defer dir.Close()
-
+func (m *FileInfoModel) SetDirPath(dirPath string) error {
 	m.dirPath = dirPath
+	m.items = nil
 
-	names, err := dir.Readdirnames(-1)
-	if err != nil {
-		return err
-	}
+	if err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		name := info.Name()
 
-	m.items = make([]*FileInfo, 0, len(names))
-
-	for _, name := range names {
-		if !excludePath(name) {
-			fullPath := filepath.Join(dirPath, name)
-
-			fi, err := os.Stat(fullPath)
-			if err != nil {
-				continue
-			}
-
-			item := &FileInfo{
-				Name:     name,
-				Size:     fi.Size(),
-				Modified: fi.ModTime(),
-			}
-
-			m.items = append(m.items, item)
+		if path == dirPath || shouldExclude(name) {
+			return nil
 		}
+
+		item := &FileInfo{
+			Name:     name,
+			Size:     info.Size(),
+			Modified: info.ModTime(),
+		}
+
+		m.items = append(m.items, item)
+
+		if info.IsDir() {
+			return filepath.SkipDir
+		}
+
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	m.TableModelBase.PublishRowsReset()
@@ -99,76 +212,8 @@ func (m *FileInfoModel) Image(row int) interface{} {
 	return filepath.Join(m.dirPath, m.items[row].Name)
 }
 
-type MainWindow struct {
-	*walk.MainWindow
-	fileInfoModel *FileInfoModel
-	treeView      *walk.TreeView
-	selTvwItem    *walk.TreeViewItem
-	tableView     *walk.TableView
-	preview       *walk.WebView
-}
-
-func (mw *MainWindow) showError(err error) {
-	if err == nil {
-		return
-	}
-
-	walk.MsgBox(mw, "Error", err.Error(), walk.MsgBoxOK|walk.MsgBoxIconError)
-}
-
-func (mw *MainWindow) populateTreeViewItem(parent *walk.TreeViewItem) {
-	mw.treeView.SetSuspended(true)
-	defer mw.treeView.SetSuspended(false)
-
-	// Remove dummy child
-	parent.Children().Clear()
-
-	dirPath := pathForTreeViewItem(parent)
-
-	dir, err := os.Open(dirPath)
-	if err != nil {
-		mw.showError(err)
-		return
-	}
-	defer dir.Close()
-
-	names, err := dir.Readdirnames(-1)
-	panicIfErr(err)
-
-	for _, name := range names {
-		if excludePath(name) {
-			continue
-		}
-
-		fi, err := os.Stat(filepath.Join(dirPath, name))
-		panicIfErr(err)
-
-		if fi.IsDir() {
-			child := newTreeViewItem(name)
-
-			parent.Children().Add(child)
-		}
-	}
-}
-
-func panicIfErr(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-func pathForTreeViewItem(item *walk.TreeViewItem) string {
-	var parts []string
-	for item != nil {
-		parts = append([]string{item.Text()}, parts...)
-		item = item.Parent()
-	}
-
-	return filepath.Join(parts...)
-}
-
-func excludePath(path string) bool {
-	switch path {
+func shouldExclude(name string) bool {
+	switch name {
 	case "System Volume Information", "pagefile.sys", "swapfile.sys":
 		return true
 	}
@@ -176,95 +221,64 @@ func excludePath(path string) bool {
 	return false
 }
 
-func newTreeViewItem(text string) *walk.TreeViewItem {
-	item := walk.NewTreeViewItem()
-	item.SetText(text)
-
-	// For now, we add a dummy child to make the item expandable.
-	item.Children().Add(walk.NewTreeViewItem())
-
-	return item
-}
-
 func main() {
-	walk.SetPanicOnError(true)
+	var mainWindow *walk.MainWindow
+	var treeView *walk.TreeView
+	var tableView *walk.TableView
+	var webView *walk.WebView
 
-	mainWnd, _ := walk.NewMainWindow()
+	treeModel, err := NewDirectoryTreeModel()
+	if err != nil {
+		log.Fatal(err)
+	}
+	tableModel := NewFileInfoModel()
 
-	mw := &MainWindow{
-		MainWindow:    mainWnd,
-		fileInfoModel: &FileInfoModel{},
+	if err := (MainWindow{
+		AssignTo: &mainWindow,
+		Title:    "Walk File Browser Example",
+		MinSize:  Size{600, 400},
+		Size:     Size{800, 600},
+		Layout:   HBox{},
+		Children: []Widget{
+			Splitter{
+				Children: []Widget{
+					TreeView{
+						AssignTo: &treeView,
+						Model:    treeModel,
+						OnCurrentItemChanged: func() {
+							dir := treeView.CurrentItem().(*Directory)
+							if err := tableModel.SetDirPath(dir.Path()); err != nil {
+								walk.MsgBox(
+									mainWindow,
+									"Error",
+									err.Error(),
+									walk.MsgBoxOK|walk.MsgBoxIconError)
+							}
+						},
+					},
+					TableView{
+						AssignTo: &tableView,
+						Model:    tableModel,
+						OnCurrentIndexChanged: func() {
+							var url string
+							if index := tableView.CurrentIndex(); index > -1 {
+								name := tableModel.items[index].Name
+								dir := treeView.CurrentItem().(*Directory)
+								url = filepath.Join(dir.Path(), name)
+							}
+
+							webView.SetURL(url)
+						},
+					},
+					WebView{
+						AssignTo: &webView,
+					},
+				},
+			},
+		},
+	}.Create()); err != nil {
+		log.Fatal(err)
 	}
 
-	mw.SetTitle("Walk File Browser Example")
-	mw.SetLayout(walk.NewHBoxLayout())
-
-	fileMenu, _ := walk.NewMenu()
-	fileMenuAction, _ := mw.Menu().Actions().AddMenu(fileMenu)
-	fileMenuAction.SetText("&File")
-
-	exitAction := walk.NewAction()
-	exitAction.SetText("E&xit")
-	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
-	fileMenu.Actions().Add(exitAction)
-
-	helpMenu, _ := walk.NewMenu()
-	helpMenuAction, _ := mw.Menu().Actions().AddMenu(helpMenu)
-	helpMenuAction.SetText("&Help")
-
-	aboutAction := walk.NewAction()
-	aboutAction.SetText("&About")
-	aboutAction.Triggered().Attach(func() {
-		walk.MsgBox(mw, "About", "Walk File Browser Example", walk.MsgBoxOK|walk.MsgBoxIconInformation)
-	})
-	helpMenu.Actions().Add(aboutAction)
-
-	splitter, _ := walk.NewSplitter(mw)
-
-	mw.treeView, _ = walk.NewTreeView(splitter)
-
-	mw.treeView.ItemExpanded().Attach(func(item *walk.TreeViewItem) {
-		children := item.Children()
-		if children.Len() == 1 && children.At(0).Text() == "" {
-			mw.populateTreeViewItem(item)
-		}
-	})
-
-	mw.treeView.SelectionChanged().Attach(func(old, new *walk.TreeViewItem) {
-		mw.selTvwItem = new
-		mw.showError(mw.fileInfoModel.ResetRows(pathForTreeViewItem(new)))
-	})
-
-	drives, _ := walk.DriveNames()
-
-	mw.treeView.SetSuspended(true)
-	for _, drive := range drives {
-		driveItem := newTreeViewItem(drive /*[:2]*/)
-		mw.treeView.Items().Add(driveItem)
-	}
-	mw.treeView.SetSuspended(false)
-
-	mw.tableView, _ = walk.NewTableView(splitter)
-	mw.tableView.SetModel(mw.fileInfoModel)
-	mw.tableView.SetSingleItemSelection(true)
-
-	mw.tableView.CurrentIndexChanged().Attach(func() {
-		var url string
-
-		index := mw.tableView.CurrentIndex()
-		if index > -1 {
-			name := mw.fileInfoModel.items[index].Name
-			url = filepath.Join(pathForTreeViewItem(mw.selTvwItem), name)
-		}
-
-		mw.preview.SetURL(url)
-	})
-
-	mw.preview, _ = walk.NewWebView(splitter)
-
-	mw.SetMinMaxSize(walk.Size{600, 400}, walk.Size{})
-	mw.SetSize(walk.Size{800, 600})
-	mw.Show()
-
-	mw.Run()
+	mainWindow.Run()
 }
