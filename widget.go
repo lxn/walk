@@ -1179,7 +1179,19 @@ func (wb *WidgetBase) publishMouseEvent(publisher *MouseEventPublisher, wParam, 
 	x := int(GET_X_LPARAM(lParam))
 	y := int(GET_Y_LPARAM(lParam))
 
-	publisher.Publish(x, y, 0)
+	var button MouseButton
+	switch true {
+	case wParam&MK_LBUTTON > 0:
+		button = LeftButton
+
+	case wParam&MK_MBUTTON > 0:
+		button = MiddleButton
+
+	case wParam&MK_RBUTTON > 0:
+		button = RightButton
+	}
+
+	publisher.Publish(x, y, button)
 }
 
 // SizeChanged returns an *Event that you can attach to for handling size
@@ -1294,8 +1306,8 @@ func (wb *WidgetBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 
 		return 1
 
-	case WM_LBUTTONDOWN:
-		if wb.origWndProcPtr == 0 {
+	case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN:
+		if msg == WM_LBUTTONDOWN && wb.origWndProcPtr == 0 {
 			// Only call SetCapture if this is no subclassed control.
 			// (Otherwise e.g. WM_COMMAND(BN_CLICKED) would no longer
 			// be generated for PushButton.)
@@ -1303,8 +1315,8 @@ func (wb *WidgetBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		}
 		wb.publishMouseEvent(&wb.mouseDownPublisher, wParam, lParam)
 
-	case WM_LBUTTONUP:
-		if wb.origWndProcPtr == 0 {
+	case WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP:
+		if msg == WM_LBUTTONUP && wb.origWndProcPtr == 0 {
 			// See WM_LBUTTONDOWN for why we require origWndProcPtr == 0 here.
 			if !ReleaseCapture() {
 				lastError("ReleaseCapture")
