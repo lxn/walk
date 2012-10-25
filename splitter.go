@@ -221,6 +221,10 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 			if err == nil {
 				// FIXME: These handlers will be leaked, if widgets get removed.
 				handle.MouseDown().Attach(func(x, y int, button MouseButton) {
+					if button != LeftButton {
+						return
+					}
+
 					s.draggedHandle = handle
 					s.mouseDownPos = Point{x, y}
 					handle.SetBackground(splitterHandleDraggingBrush)
