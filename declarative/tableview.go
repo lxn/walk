@@ -45,7 +45,9 @@ func (tv TableView) Create(parent walk.Container) error {
 			return err
 		}
 
-		w.SetAlternatingRowBGColor(tv.AlternatingRowBGColor)
+		if tv.AlternatingRowBGColor != 0 {
+			w.SetAlternatingRowBGColor(tv.AlternatingRowBGColor)
+		}
 		w.SetCheckBoxes(tv.CheckBoxes)
 		w.SetItemStateChangedEventDelay(tv.ItemStateChangedEventDelay)
 		if err := w.SetLastColumnStretched(tv.LastColumnStretched); err != nil {
