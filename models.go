@@ -208,3 +208,96 @@ func (sb *SorterBase) SortedColumn() int {
 func (sb *SorterBase) SortOrder() SortOrder {
 	return sb.order
 }
+
+// TreeItem represents an item in a TreeView widget.
+type TreeItem interface {
+	// Text returns the text of the item.
+	Text() string
+
+	// Parent returns the parent of the item.
+	Parent() TreeItem
+
+	// ChildCount returns the number of children of the item.
+	ChildCount() int
+
+	// ChildAt returns the child at the specified index.
+	ChildAt(index int) TreeItem
+}
+
+// Imager provides access to an image of objects like tree items.
+type Imager interface {
+	// Image returns the image to display for an item.
+	//
+	// Supported types are *walk.Bitmap, *walk.Icon and string. A string will be
+	// interpreted as a file path and the icon associated with the file will be
+	// used. It is not supported to use strings together with the other options
+	// in the same model instance.
+	Image() interface{}
+}
+
+// ExpandedImager provides access to an expanded state image of objects
+// like tree items.
+type ExpandedImager interface {
+	Imager
+	// ExpandedImage returns the expanded state image to display for an item.
+	//
+	// Supported types are *walk.Bitmap, *walk.Icon and string. A string will be
+	// interpreted as a file path and the icon associated with the file will be
+	// used. It is not supported to use strings together with the other options
+	// in the same model instance.
+	ExpandedImage() interface{}
+}
+
+// TreeModel provides widgets like TreeView with item data.
+type TreeModel interface {
+	// LazyPopulation returns if the model prefers on-demand population.
+	//
+	// This is useful for models that potentially contain huge amounts of items,
+	// e.g. a model that represents a file system.
+	LazyPopulation() bool
+
+	// RootCount returns the number of root items.
+	RootCount() int
+
+	// RootAt returns the root item at the specified index.
+	RootAt(index int) TreeItem
+
+	// ItemsReset returns the event that the model should publish when the
+	// descendants of the specified item, or all items if no item is specified,
+	// are reset.
+	ItemsReset() *TreeItemEvent
+
+	// ItemChanged returns the event that the model should publish when an item
+	// was changed.
+	ItemChanged() *TreeItemEvent
+}
+
+// TreeModelBase partially implements the TreeModel interface.
+//
+// You still need to provide your own implementation of at least the
+// RootCount and RootAt methods. If your model needs lazy population,
+// you will also have to implement LazyPopulation.
+type TreeModelBase struct {
+	itemsResetPublisher  TreeItemEventPublisher
+	itemChangedPublisher TreeItemEventPublisher
+}
+
+func (tmb *TreeModelBase) LazyPopulation() bool {
+	return false
+}
+
+func (tmb *TreeModelBase) ItemsReset() *TreeItemEvent {
+	return tmb.itemsResetPublisher.Event()
+}
+
+func (tmb *TreeModelBase) ItemChanged() *TreeItemEvent {
+	return tmb.itemChangedPublisher.Event()
+}
+
+func (tmb *TreeModelBase) PublishItemsReset(parent TreeItem) {
+	tmb.itemsResetPublisher.Publish(parent)
+}
+
+func (tmb *TreeModelBase) PublishItemChanged(item TreeItem) {
+	tmb.itemChangedPublisher.Publish(item)
+}

@@ -4,13 +4,13 @@
 
 package walk
 
-type TreeViewItemEventHandler func(item *TreeViewItem)
+type TreeItemEventHandler func(item TreeItem)
 
-type TreeViewItemEvent struct {
-	handlers []TreeViewItemEventHandler
+type TreeItemEvent struct {
+	handlers []TreeItemEventHandler
 }
 
-func (e *TreeViewItemEvent) Attach(handler TreeViewItemEventHandler) int {
+func (e *TreeItemEvent) Attach(handler TreeItemEventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -22,19 +22,19 @@ func (e *TreeViewItemEvent) Attach(handler TreeViewItemEventHandler) int {
 	return len(e.handlers) - 1
 }
 
-func (e *TreeViewItemEvent) Detach(handle int) {
+func (e *TreeItemEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type TreeViewItemEventPublisher struct {
-	event TreeViewItemEvent
+type TreeItemEventPublisher struct {
+	event TreeItemEvent
 }
 
-func (p *TreeViewItemEventPublisher) Event() *TreeViewItemEvent {
+func (p *TreeItemEventPublisher) Event() *TreeItemEvent {
 	return &p.event
 }
 
-func (p *TreeViewItemEventPublisher) Publish(item *TreeViewItem) {
+func (p *TreeItemEventPublisher) Publish(item TreeItem) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
 			handler(item)
