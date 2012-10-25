@@ -22,6 +22,11 @@ type ImageView struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
+	OnKeyDown          walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
 	Image              walk.Image
 }
 
@@ -44,6 +49,6 @@ func (iv ImageView) Create(parent walk.Container) error {
 	})
 }
 
-func (iv ImageView) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return iv.Name, iv.Disabled, iv.Hidden, &iv.Font, iv.MinSize, iv.MaxSize, iv.StretchFactor, iv.Row, iv.RowSpan, iv.Column, iv.ColumnSpan, iv.ContextMenuActions
+func (w ImageView) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+	return w.Name, w.Disabled, w.Hidden, &w.Font, w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

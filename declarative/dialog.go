@@ -17,6 +17,11 @@ type Dialog struct {
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
+	OnKeyDown          walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
 	Title              string
 	Size               Size
 	DataBinder         DataBinder
@@ -43,6 +48,11 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 		DataBinder:         d.DataBinder,
 		Layout:             d.Layout,
 		Children:           d.Children,
+		OnKeyDown:          d.OnKeyDown,
+		OnMouseDown:        d.OnMouseDown,
+		OnMouseMove:        d.OnMouseMove,
+		OnMouseUp:          d.OnMouseUp,
+		OnSizeChanged:      d.OnSizeChanged,
 	}
 
 	var db *walk.DataBinder

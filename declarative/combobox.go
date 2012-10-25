@@ -26,6 +26,11 @@ type ComboBox struct {
 	Column                int
 	ColumnSpan            int
 	ContextMenuActions    []*walk.Action
+	OnKeyDown             walk.KeyEventHandler
+	OnMouseDown           walk.MouseEventHandler
+	OnMouseMove           walk.MouseEventHandler
+	OnMouseUp             walk.MouseEventHandler
+	OnSizeChanged         walk.EventHandler
 	BindTo                string
 	Optional              bool
 	Format                string
@@ -72,6 +77,6 @@ func (cb ComboBox) Create(parent walk.Container) error {
 	})
 }
 
-func (cb ComboBox) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return cb.Name, cb.Disabled, cb.Hidden, &cb.Font, cb.MinSize, cb.MaxSize, cb.StretchFactor, cb.Row, cb.RowSpan, cb.Column, cb.ColumnSpan, cb.ContextMenuActions
+func (w ComboBox) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+	return w.Name, w.Disabled, w.Hidden, &w.Font, w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

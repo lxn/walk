@@ -22,6 +22,11 @@ type LineEdit struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
+	OnKeyDown          walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
 	BindTo             string
 	Validator          Validator
 	Text               string
@@ -75,8 +80,8 @@ func (le LineEdit) Create(parent walk.Container) error {
 	})
 }
 
-func (le LineEdit) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return le.Name, le.Disabled, le.Hidden, &le.Font, le.MinSize, le.MaxSize, le.StretchFactor, le.Row, le.RowSpan, le.Column, le.ColumnSpan, le.ContextMenuActions
+func (w LineEdit) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+	return w.Name, w.Disabled, w.Hidden, &w.Font, w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }
 
 func (le LineEdit) ValidatableInfo() Validator {

@@ -22,6 +22,11 @@ type GroupBox struct {
 	Column             int
 	ColumnSpan         int
 	ContextMenuActions []*walk.Action
+	OnKeyDown          walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
 	Title              string
 	DataBinder         DataBinder
 	Layout             Layout
@@ -47,8 +52,8 @@ func (gb GroupBox) Create(parent walk.Container) error {
 	})
 }
 
-func (gb GroupBox) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return gb.Name, gb.Disabled, gb.Hidden, &gb.Font, gb.MinSize, gb.MaxSize, gb.StretchFactor, gb.Row, gb.RowSpan, gb.Column, gb.ColumnSpan, gb.ContextMenuActions
+func (w GroupBox) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+	return w.Name, w.Disabled, w.Hidden, &w.Font, w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }
 
 func (gb GroupBox) ContainerInfo() (DataBinder, Layout, []Widget) {

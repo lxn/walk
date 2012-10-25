@@ -233,6 +233,9 @@ func main() {
 	}
 	tableModel := NewFileInfoModel()
 
+	dummyAction := walk.NewAction()
+	dummyAction.SetText("Dummy")
+
 	if err := (MainWindow{
 		AssignTo: &mainWindow,
 		Title:    "Walk File Browser Example",
@@ -243,8 +246,18 @@ func main() {
 			Splitter{
 				Children: []Widget{
 					TreeView{
-						AssignTo: &treeView,
-						Model:    treeModel,
+						AssignTo:           &treeView,
+						ContextMenuActions: []*walk.Action{dummyAction},
+						Model:              treeModel,
+						OnMouseDown: func(x, y int, button walk.MouseButton) {
+							if button != walk.RightButton {
+								return
+							}
+
+							if item := treeView.ItemAt(x, y); item != nil {
+								treeView.SetCurrentItem(item)
+							}
+						},
 						OnCurrentItemChanged: func() {
 							dir := treeView.CurrentItem().(*Directory)
 							if err := tableModel.SetDirPath(dir.Path()); err != nil {

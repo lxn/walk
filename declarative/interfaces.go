@@ -14,7 +14,7 @@ type Layout interface {
 
 type Widget interface {
 	Create(parent walk.Container) error
-	WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action)
+	WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler)
 }
 
 type Container interface {
@@ -57,6 +57,11 @@ type topLevelWindowInfo struct {
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
+	OnKeyDown          walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
 	DataBinder         DataBinder
 	Layout             Layout
 	Children           []Widget
@@ -66,8 +71,8 @@ func (topLevelWindowInfo) Create(parent walk.Container) error {
 	return nil
 }
 
-func (i topLevelWindowInfo) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return i.Name, i.Disabled, i.Hidden, &i.Font, i.MinSize, i.MaxSize, 0, 0, 0, 0, 0, i.ContextMenuActions
+func (i topLevelWindowInfo) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+	return i.Name, i.Disabled, i.Hidden, &i.Font, i.MinSize, i.MaxSize, 0, 0, 0, 0, 0, i.ContextMenuActions, i.OnKeyDown, i.OnMouseDown, i.OnMouseMove, i.OnMouseUp, i.OnSizeChanged
 }
 
 func (i topLevelWindowInfo) ContainerInfo() (DataBinder, Layout, []Widget) {

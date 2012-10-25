@@ -22,6 +22,11 @@ type TreeView struct {
 	Column               int
 	ColumnSpan           int
 	ContextMenuActions   []*walk.Action
+	OnKeyDown            walk.KeyEventHandler
+	OnMouseDown          walk.MouseEventHandler
+	OnMouseMove          walk.MouseEventHandler
+	OnMouseUp            walk.MouseEventHandler
+	OnSizeChanged        walk.EventHandler
 	Model                walk.TreeModel
 	OnCurrentItemChanged walk.EventHandler
 	OnItemCollapsed      walk.TreeItemEventHandler
@@ -59,6 +64,6 @@ func (tv TreeView) Create(parent walk.Container) error {
 	})
 }
 
-func (tv TreeView) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action) {
-	return tv.Name, tv.Disabled, tv.Hidden, &tv.Font, tv.MinSize, tv.MaxSize, tv.StretchFactor, tv.Row, tv.RowSpan, tv.Column, tv.ColumnSpan, tv.ContextMenuActions
+func (w TreeView) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+	return w.Name, w.Disabled, w.Hidden, &w.Font, w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

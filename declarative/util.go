@@ -17,7 +17,7 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	}()
 
 	// Widget
-	name, disabled, hidden, font, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions := d.WidgetInfo()
+	name, disabled, hidden, font, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions, onKeyDown, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
 
 	w.SetName(name)
 
@@ -34,6 +34,26 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 			return err
 		}
 		w.SetContextMenu(cm)
+	}
+
+	if onKeyDown != nil {
+		w.KeyDown().Attach(onKeyDown)
+	}
+
+	if onMouseDown != nil {
+		w.MouseDown().Attach(onMouseDown)
+	}
+
+	if onMouseMove != nil {
+		w.MouseMove().Attach(onMouseMove)
+	}
+
+	if onMouseUp != nil {
+		w.MouseUp().Attach(onMouseUp)
+	}
+
+	if onSizeChanged != nil {
+		w.SizeChanged().Attach(onSizeChanged)
 	}
 
 	if p := w.Parent(); p != nil {

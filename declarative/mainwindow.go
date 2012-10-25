@@ -17,6 +17,11 @@ type MainWindow struct {
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
+	OnKeyDown          walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
 	Title              string
 	Size               Size
 	DataBinder         DataBinder
@@ -40,6 +45,11 @@ func (mw MainWindow) Create() error {
 		MinSize:            mw.MinSize,
 		MaxSize:            mw.MaxSize,
 		ContextMenuActions: mw.ContextMenuActions,
+		OnKeyDown:          mw.OnKeyDown,
+		OnMouseDown:        mw.OnMouseDown,
+		OnMouseMove:        mw.OnMouseMove,
+		OnMouseUp:          mw.OnMouseUp,
+		OnSizeChanged:      mw.OnSizeChanged,
 		DataBinder:         mw.DataBinder,
 		Layout:             mw.Layout,
 		Children:           mw.Children,
