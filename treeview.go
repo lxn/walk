@@ -136,6 +136,18 @@ func (tv *TreeView) SetCurrentItem(item TreeItem) error {
 	return nil
 }
 
+func (tv *TreeView) ItemAt(x, y int) TreeItem {
+	hti := TVHITTESTINFO{Pt: POINT{int32(x), int32(y)}}
+
+	tv.SendMessage(TVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
+
+	if item, ok := tv.handle2Item[hti.HItem]; ok {
+		return item
+	}
+
+	return nil
+}
+
 func (tv *TreeView) resetItems() error {
 	tv.SetSuspended(true)
 	defer tv.SetSuspended(false)
