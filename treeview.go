@@ -24,10 +24,14 @@ type TreeView struct {
 	itemChangedEventHandlerHandle int
 	item2Info                     map[TreeItem]*treeViewItemInfo
 	handle2Item                   map[HTREEITEM]TreeItem
+	currItem                      TreeItem
+	hIml                          HIMAGELIST
+	usingSysIml                   bool
+	imageUintptr2Index            map[uintptr]int32
+	filePath2IconIndex            map[string]int32
 	itemCollapsedPublisher        TreeItemEventPublisher
 	itemExpandedPublisher         TreeItemEventPublisher
 	currentItemChangedPublisher   EventPublisher
-	currItem                      TreeItem
 }
 
 func NewTreeView(parent Container) (*TreeView, error) {
@@ -66,6 +70,12 @@ func (tv *TreeView) SizeHint() Size {
 	return tv.dialogBaseUnitsToPixels(Size{100, 100})
 }
 
+func (tv *TreeView) Dispose() {
+	tv.WidgetBase.Dispose()
+
+	tv.disposeImageListAndCaches()
+}
+
 func (tv *TreeView) Model() TreeModel {
 	return tv.model
 }
@@ -74,6 +84,8 @@ func (tv *TreeView) SetModel(model TreeModel) error {
 	if tv.model != nil {
 		tv.model.ItemsReset().Detach(tv.itemsResetEventHandlerHandle)
 		tv.model.ItemChanged().Detach(tv.itemChangedEventHandlerHandle)
+
+		tv.disposeImageListAndCaches()
 	}
 
 	tv.model = model
@@ -190,15 +202,55 @@ func (tv *TreeView) insertRoots() error {
 	return nil
 }
 
+func (tv *TreeView) applyImageListForImage(image interface{}) {
+	tv.hIml, tv.usingSysIml, _ = imageListForImage(image)
+
+	tv.SendMessage(TVM_SETIMAGELIST, 0, uintptr(tv.hIml))
+
+	tv.imageUintptr2Index = make(map[uintptr]int32)
+	tv.filePath2IconIndex = make(map[string]int32)
+}
+
+func (tv *TreeView) disposeImageListAndCaches() {
+	if tv.hIml != 0 && !tv.usingSysIml {
+		ImageList_Destroy(tv.hIml)
+	}
+	tv.hIml = 0
+
+	tv.imageUintptr2Index = nil
+	tv.filePath2IconIndex = nil
+}
+
+func (tv *TreeView) setTVITEMImageInfo(tvi *TVITEM, item TreeItem) {
+	if imager, ok := item.(Imager); ok {
+		if tv.hIml == 0 {
+			tv.applyImageListForImage(imager.Image())
+		}
+
+		// FIXME: If not setting TVIF_SELECTEDIMAGE and tvi.ISelectedImage, 
+		// some default icon will show up, even though we have not asked for it.
+
+		tvi.Mask |= TVIF_IMAGE | TVIF_SELECTEDIMAGE
+		tvi.IImage = imageIndexMaybeAdd(
+			imager.Image(),
+			tv.hIml,
+			tv.usingSysIml,
+			tv.imageUintptr2Index,
+			tv.filePath2IconIndex)
+
+		tvi.ISelectedImage = tvi.IImage
+	}
+}
+
 func (tv *TreeView) insertItem(index int, item TreeItem) (HTREEITEM, error) {
-	var tvi TVITEM
 	var tvins TVINSERTSTRUCT
+	tvi := &tvins.Item
 
 	tvi.Mask = TVIF_CHILDREN | TVIF_TEXT
 	tvi.PszText = syscall.StringToUTF16Ptr(item.Text())
 	tvi.CChildren = I_CHILDRENCALLBACK
 
-	tvins.Item = tvi
+	tv.setTVITEMImageInfo(tvi, item)
 
 	parent := item.Parent()
 
@@ -267,6 +319,8 @@ func (tv *TreeView) updateItem(item TreeItem) error {
 		HItem:   tv.item2Info[item].handle,
 		PszText: syscall.StringToUTF16Ptr(item.Text()),
 	}
+
+	tv.setTVITEMImageInfo(tvi, item)
 
 	if 0 == tv.SendMessage(TVM_SETITEM, 0, uintptr(unsafe.Pointer(tvi))) {
 		return newError("SendMessage(TVM_SETITEM) failed")
