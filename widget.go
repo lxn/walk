@@ -232,6 +232,9 @@ type Widget interface {
 	// SetSuspended(false) afterwards, which will update the Widget accordingly.
 	SetSuspended(suspend bool)
 
+	// SetToolTipText sets the tool tip text of the Widget.
+	SetToolTipText(s string) error
+
 	// SetVisible sets if the Widget is visible.
 	SetVisible(value bool)
 
@@ -265,6 +268,9 @@ type Widget interface {
 	// Synchronize enqueues func f to be called some time later by the main 
 	// goroutine from inside a message loop.
 	Synchronize(f func())
+
+	// ToolTipText returns the tool tip text of the Widget.
+	ToolTipText() string
 
 	// Visible returns if the Widget is visible.
 	Visible() bool
@@ -310,6 +316,7 @@ type WidgetBase struct {
 	suspended            bool
 	visible              bool
 	enabled              bool
+	toolTip              *ToolTip
 }
 
 var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
@@ -565,6 +572,11 @@ func (wb *WidgetBase) BaseWidget() *WidgetBase {
 // Also, if a Container is disposed of, all its descendants will be released
 // as well.
 func (wb *WidgetBase) Dispose() {
+	if wb.toolTip != nil {
+		wb.toolTip.Dispose()
+		wb.toolTip = nil
+	}
+
 	hWnd := wb.hWnd
 	if hWnd != 0 {
 		wb.hWnd = 0
@@ -1129,6 +1141,39 @@ func (wb *WidgetBase) SetClientSize(value Size) error {
 func (wb *WidgetBase) SetFocus() error {
 	if SetFocus(wb.hWnd) == 0 {
 		return lastError("SetFocus")
+	}
+
+	return nil
+}
+
+// ToolTipText returns the tool tip text of the *WidgetBase.
+func (wb *WidgetBase) ToolTipText() string {
+	if wb.toolTip == nil {
+		return ""
+	}
+
+	return wb.toolTip.Text(wb.widget)
+}
+
+// SetToolTipText sets the tool tip text of the *WidgetBase.
+func (wb *WidgetBase) SetToolTipText(s string) error {
+	if s != "" && wb.toolTip == nil {
+		if tt, err := NewToolTip(); err != nil {
+			return err
+		} else {
+			if err := tt.AddTool(wb.widget); err != nil {
+				tt.Dispose()
+				return err
+			}
+
+			wb.toolTip = tt
+		}
+	}
+
+	if wb.toolTip != nil {
+		if err := wb.toolTip.SetText(wb.widget, s); err != nil {
+			return err
+		}
 	}
 
 	return nil
