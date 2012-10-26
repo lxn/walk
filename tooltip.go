@@ -11,9 +11,18 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
+func init() {
+	var err error
+	if globalToolTip, err = NewToolTip(); err != nil {
+		panic(err)
+	}
+}
+
 type ToolTip struct {
 	WidgetBase
 }
+
+var globalToolTip *ToolTip
 
 func NewToolTip() (*ToolTip, error) {
 	tt := &ToolTip{}
@@ -96,7 +105,7 @@ func (tt *ToolTip) AddTool(tool Widget) error {
 
 	var ti TOOLINFO
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
-	ti.Hwnd = GetParent(hwnd)
+	ti.Hwnd = hwnd
 	ti.UFlags = TTF_IDISHWND | TTF_SUBCLASS
 	ti.UId = uintptr(hwnd)
 
@@ -112,12 +121,10 @@ func (tt *ToolTip) RemoveTool(tool Widget) error {
 
 	var ti TOOLINFO
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
-	ti.Hwnd = GetParent(hwnd)
+	ti.Hwnd = hwnd
 	ti.UId = uintptr(hwnd)
 
-	if FALSE == tt.SendMessage(TTM_DELTOOL, 0, uintptr(unsafe.Pointer(&ti))) {
-		return newError("SendMessage(TTM_DELTOOL) failed")
-	}
+	tt.SendMessage(TTM_DELTOOL, 0, uintptr(unsafe.Pointer(&ti)))
 
 	return nil
 }
@@ -155,7 +162,7 @@ func (tt *ToolTip) toolInfo(tool Widget) *TOOLINFO {
 	hwnd := tool.Handle()
 
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
-	ti.Hwnd = GetParent(hwnd)
+	ti.Hwnd = hwnd
 	ti.UId = uintptr(hwnd)
 	ti.LpszText = &buf[0]
 
