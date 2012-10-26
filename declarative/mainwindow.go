@@ -14,6 +14,7 @@ type MainWindow struct {
 	Disabled           bool
 	Hidden             bool
 	Font               Font
+	ToolTipText        string
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
@@ -42,6 +43,7 @@ func (mw MainWindow) Create() error {
 		Disabled:           mw.Disabled,
 		Hidden:             mw.Hidden,
 		Font:               mw.Font,
+		ToolTipText:        mw.ToolTipText,
 		MinSize:            mw.MinSize,
 		MaxSize:            mw.MaxSize,
 		ContextMenuActions: mw.ContextMenuActions,

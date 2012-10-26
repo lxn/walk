@@ -17,9 +17,13 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	}()
 
 	// Widget
-	name, disabled, hidden, font, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions, onKeyDown, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
+	name, disabled, hidden, font, toolTipText, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions, onKeyDown, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
 
 	w.SetName(name)
+
+	if err := w.SetToolTipText(toolTipText); err != nil {
+		return err
+	}
 
 	if err := w.SetMinMaxSize(minSize.toW(), maxSize.toW()); err != nil {
 		return err

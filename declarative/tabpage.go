@@ -14,6 +14,7 @@ type TabPage struct {
 	Disabled           bool
 	Hidden             bool
 	Font               Font
+	ToolTipText        string
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
@@ -54,8 +55,8 @@ func (tp TabPage) Create(parent walk.Container) error {
 	})
 }
 
-func (w TabPage) WidgetInfo() (name string, disabled, hidden bool, font *Font, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, w.Disabled, w.Hidden, &w.Font, w.MinSize, w.MaxSize, 0, 0, 0, 0, 0, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
+func (w TabPage) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+	return w.Name, w.Disabled, w.Hidden, &w.Font, w.ToolTipText, w.MinSize, w.MaxSize, 0, 0, 0, 0, 0, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }
 
 func (tp TabPage) ContainerInfo() (DataBinder, Layout, []Widget) {

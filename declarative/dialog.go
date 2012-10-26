@@ -14,6 +14,7 @@ type Dialog struct {
 	Disabled           bool
 	Hidden             bool
 	Font               Font
+	ToolTipText        string
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
@@ -42,6 +43,7 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 		Disabled:           d.Disabled,
 		Hidden:             d.Hidden,
 		Font:               d.Font,
+		ToolTipText:        d.ToolTipText,
 		MinSize:            d.MinSize,
 		MaxSize:            d.MaxSize,
 		ContextMenuActions: d.ContextMenuActions,
