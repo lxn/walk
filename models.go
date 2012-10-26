@@ -235,19 +235,6 @@ type Imager interface {
 	Image() interface{}
 }
 
-// ExpandedImager provides access to an expanded state image of objects
-// like tree items.
-type ExpandedImager interface {
-	Imager
-	// ExpandedImage returns the expanded state image to display for an item.
-	//
-	// Supported types are *walk.Bitmap, *walk.Icon and string. A string will be
-	// interpreted as a file path and the icon associated with the file will be
-	// used. It is not supported to use strings together with the other options
-	// in the same model instance.
-	ExpandedImage() interface{}
-}
-
 // TreeModel provides widgets like TreeView with item data.
 type TreeModel interface {
 	// LazyPopulation returns if the model prefers on-demand population.
