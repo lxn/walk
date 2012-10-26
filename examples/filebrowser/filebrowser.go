@@ -58,6 +58,10 @@ func (d *Directory) ChildAt(index int) walk.TreeItem {
 	return d.children[index]
 }
 
+func (d *Directory) Image() interface{} {
+	return d.Path()
+}
+
 func (d *Directory) ResetChildren() error {
 	d.children = nil
 
