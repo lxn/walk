@@ -15,14 +15,14 @@ type ToolTip struct {
 	WidgetBase
 }
 
-func NewToolTip(parent Container) (*ToolTip, error) {
+func NewToolTip() (*ToolTip, error) {
 	tt := &ToolTip{}
 
 	if err := InitWidget(
 		tt,
-		parent,
+		nil,
 		"tooltips_class32",
-		WS_POPUP|TTS_ALWAYSTIP|TTS_BALLOON,
+		WS_POPUP|TTS_ALWAYSTIP,
 		WS_EX_TOPMOST); err != nil {
 		return nil, err
 	}
@@ -33,10 +33,6 @@ func NewToolTip(parent Container) (*ToolTip, error) {
 			tt.Dispose()
 		}
 	}()
-
-	if err := parent.Children().Add(tt); err != nil {
-		return nil, err
-	}
 
 	SetWindowPos(tt.hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)
 
@@ -56,7 +52,7 @@ func (tt *ToolTip) SizeHint() Size {
 func (tt *ToolTip) Title() string {
 	var gt TTGETTITLE
 
-	buf := make([]uint16, 128)
+	buf := make([]uint16, 100)
 
 	gt.DwSize = uint32(unsafe.Sizeof(gt))
 	gt.Cch = uint32(len(buf))
@@ -67,25 +63,42 @@ func (tt *ToolTip) Title() string {
 	return syscall.UTF16ToString(buf)
 }
 
-func (tt *ToolTip) SetTitle(value string) error {
-	if FALSE == tt.SendMessage(TTM_SETTITLE, uintptr(TTI_INFO), uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value)))) {
+func (tt *ToolTip) SetTitle(title string) error {
+	return tt.setTitle(title, TTI_NONE)
+}
+
+func (tt *ToolTip) SetInfoTitle(title string) error {
+	return tt.setTitle(title, TTI_INFO)
+}
+
+func (tt *ToolTip) SetWarningTitle(title string) error {
+	return tt.setTitle(title, TTI_WARNING)
+}
+
+func (tt *ToolTip) SetErrorTitle(title string) error {
+	return tt.setTitle(title, TTI_ERROR)
+}
+
+func (tt *ToolTip) setTitle(title string, icon uintptr) error {
+	if len(title) > 99 {
+		title = title[:99]
+	}
+
+	if FALSE == tt.SendMessage(TTM_SETTITLE, icon, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(title)))) {
 		return newError("TTM_SETTITLE failed")
 	}
 
 	return nil
 }
 
-func (tt *ToolTip) AddWidget(widget Widget, text string) error {
-	var ti TOOLINFO
+func (tt *ToolTip) AddTool(tool Widget) error {
+	hwnd := tool.Handle()
 
+	var ti TOOLINFO
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
-	parent := widget.Parent()
-	if parent != nil {
-		ti.Hwnd = parent.BaseWidget().hWnd
-	}
+	ti.Hwnd = GetParent(hwnd)
 	ti.UFlags = TTF_IDISHWND | TTF_SUBCLASS
-	ti.UId = uintptr(widget.BaseWidget().hWnd)
-	ti.LpszText = syscall.StringToUTF16Ptr(text)
+	ti.UId = uintptr(hwnd)
 
 	if FALSE == tt.SendMessage(TTM_ADDTOOL, 0, uintptr(unsafe.Pointer(&ti))) {
 		return newError("TTM_ADDTOOL failed")
@@ -94,6 +107,61 @@ func (tt *ToolTip) AddWidget(widget Widget, text string) error {
 	return nil
 }
 
-func (tt *ToolTip) RemoveWidget(widget Widget) error {
-	panic("not implemented")
+func (tt *ToolTip) RemoveTool(tool Widget) error {
+	hwnd := tool.Handle()
+
+	var ti TOOLINFO
+	ti.CbSize = uint32(unsafe.Sizeof(ti))
+	ti.Hwnd = GetParent(hwnd)
+	ti.UId = uintptr(hwnd)
+
+	if FALSE == tt.SendMessage(TTM_DELTOOL, 0, uintptr(unsafe.Pointer(&ti))) {
+		return newError("SendMessage(TTM_DELTOOL) failed")
+	}
+
+	return nil
+}
+
+func (tt *ToolTip) Text(tool Widget) string {
+	ti := tt.toolInfo(tool)
+	if ti == nil {
+		return ""
+	}
+
+	return UTF16PtrToString(ti.LpszText)
+}
+
+func (tt *ToolTip) SetText(tool Widget, text string) error {
+	ti := tt.toolInfo(tool)
+	if ti == nil {
+		return newError("unknown tool")
+	}
+
+	if len(text) > 79 {
+		text = text[:79]
+	}
+
+	ti.LpszText = syscall.StringToUTF16Ptr(text)
+
+	tt.SendMessage(TTM_SETTOOLINFO, 0, uintptr(unsafe.Pointer(ti)))
+
+	return nil
+}
+
+func (tt *ToolTip) toolInfo(tool Widget) *TOOLINFO {
+	var ti TOOLINFO
+	var buf [80]uint16
+
+	hwnd := tool.Handle()
+
+	ti.CbSize = uint32(unsafe.Sizeof(ti))
+	ti.Hwnd = GetParent(hwnd)
+	ti.UId = uintptr(hwnd)
+	ti.LpszText = &buf[0]
+
+	if FALSE == tt.SendMessage(TTM_GETTOOLINFO, 0, uintptr(unsafe.Pointer(&ti))) {
+		return nil
+	}
+
+	return &ti
 }
