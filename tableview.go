@@ -34,8 +34,8 @@ type TableView struct {
 	model                           TableModel
 	itemChecker                     ItemChecker
 	imageProvider                   ImageProvider
-	hasAppliedImageList             bool
-	imageList                       *ImageList
+	hIml                            HIMAGELIST
+	usingSysIml                     bool
 	imageUintptr2Index              map[uintptr]int32
 	filePath2IconIndex              map[string]int32
 	rowsResetHandlerHandle          int
@@ -212,19 +212,14 @@ func (tv *TableView) SetModel(model TableModel) error {
 		}
 
 		tv.detachModel()
+
+		tv.disposeImageListAndCaches()
 	}
 
 	tv.model = model
 
 	tv.itemChecker, _ = model.(ItemChecker)
 	tv.imageProvider, _ = model.(ImageProvider)
-
-	if tv.imageList != nil {
-		tv.SendMessage(LVM_SETIMAGELIST, LVSIL_SMALL, 0)
-		tv.imageList.Dispose()
-		tv.imageList = nil
-	}
-	tv.hasAppliedImageList = false
 
 	if model != nil {
 		tv.attachModel()
@@ -655,85 +650,6 @@ func (tv *TableView) RestoreState() error {
 	return nil
 }
 
-func (tv *TableView) applyImageList(image interface{}) {
-	var himl HIMAGELIST
-
-	if filePath, ok := image.(string); ok {
-		_, himl = tv.iconIndexAndHIml(filePath)
-	} else {
-		imgSize := Size{
-			int(GetSystemMetrics(SM_CXSMICON)),
-			int(GetSystemMetrics(SM_CYSMICON)),
-		}
-
-		var err error
-		if tv.imageList, err = NewImageList(imgSize, 0); err != nil {
-			return
-		}
-
-		himl = tv.imageList.hIml
-	}
-
-	if himl != 0 {
-		tv.SendMessage(LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(himl))
-
-		tv.hasAppliedImageList = true
-	}
-}
-
-func (tv *TableView) iconIndexAndHIml(filePath string) (int32, HIMAGELIST) {
-	var shfi SHFILEINFO
-
-	if hIml := HIMAGELIST(SHGetFileInfo(
-		syscall.StringToUTF16Ptr(filePath),
-		0,
-		&shfi,
-		uint32(unsafe.Sizeof(shfi)),
-		SHGFI_SYSICONINDEX|SHGFI_SMALLICON)); hIml != 0 {
-
-		return shfi.IIcon, hIml
-	}
-
-	return -1, 0
-}
-
-func (tv *TableView) imageIndex(image interface{}) int32 {
-	imageIndex := int32(-1)
-
-	if image != nil {
-		var ptr uintptr
-		switch img := image.(type) {
-		case *Bitmap:
-			ptr = uintptr(unsafe.Pointer(img))
-
-		case *Icon:
-			ptr = uintptr(unsafe.Pointer(img))
-		}
-
-		if ptr == 0 {
-			return -1
-		}
-
-		if imageIndex, ok := tv.imageUintptr2Index[ptr]; ok {
-			return imageIndex
-		}
-
-		switch img := image.(type) {
-		case *Bitmap:
-			imageIndex = ImageList_AddMasked(tv.imageList.hIml, img.hBmp, 0)
-
-		case *Icon:
-			imageIndex = ImageList_ReplaceIcon(tv.imageList.hIml, -1, img.hIcon)
-		}
-
-		if imageIndex > -1 {
-			tv.imageUintptr2Index[ptr] = imageIndex
-		}
-	}
-
-	return imageIndex
-}
-
 func (tv *TableView) toggleItemChecked(index int) error {
 	checked := tv.itemChecker.Checked(index)
 
@@ -746,6 +662,27 @@ func (tv *TableView) toggleItemChecked(index int) error {
 	}
 
 	return nil
+}
+
+func (tv *TableView) applyImageListForImage(image interface{}) {
+	tv.hIml, tv.usingSysIml, _ = imageListForImage(image)
+
+	tv.SendMessage(LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(tv.hIml))
+
+	tv.imageUintptr2Index = make(map[uintptr]int32)
+	tv.filePath2IconIndex = make(map[string]int32)
+}
+
+func (tv *TableView) disposeImageListAndCaches() {
+	if tv.hIml != 0 && !tv.usingSysIml {
+		tv.SendMessage(LVM_SETIMAGELIST, LVSIL_SMALL, 0)
+
+		ImageList_Destroy(tv.hIml)
+	}
+	tv.hIml = 0
+
+	tv.imageUintptr2Index = nil
+	tv.filePath2IconIndex = nil
 }
 
 func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -846,26 +783,16 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 			if tv.imageProvider != nil && di.Item.Mask&LVIF_IMAGE > 0 {
 				image := tv.imageProvider.Image(row)
 
-				if !tv.hasAppliedImageList {
-					tv.applyImageList(image)
+				if tv.hIml == 0 {
+					tv.applyImageListForImage(image)
 				}
 
-				if tv.hasAppliedImageList {
-					if tv.imageList != nil {
-						di.Item.IImage = int32(tv.imageIndex(image))
-					} else if filePath, ok := image.(string); ok {
-						if iIcon, ok := tv.filePath2IconIndex[filePath]; ok {
-							di.Item.IImage = iIcon
-							break
-						}
-
-						if iIcon, _ := tv.iconIndexAndHIml(filePath); iIcon != -1 {
-							tv.filePath2IconIndex[filePath] = iIcon
-
-							di.Item.IImage = iIcon
-						}
-					}
-				}
+				di.Item.IImage = imageIndexMaybeAdd(
+					image,
+					tv.hIml,
+					tv.usingSysIml,
+					tv.imageUintptr2Index,
+					tv.filePath2IconIndex)
 			}
 
 			if di.Item.StateMask&LVIS_STATEIMAGEMASK > 0 &&
