@@ -247,7 +247,7 @@ func (tv *TreeView) insertItem(index int, item TreeItem) (HTREEITEM, error) {
 	tvi := &tvins.Item
 
 	tvi.Mask = TVIF_CHILDREN | TVIF_TEXT
-	tvi.PszText = syscall.StringToUTF16Ptr(item.Text())
+	tvi.PszText = LPSTR_TEXTCALLBACK
 	tvi.CChildren = I_CHILDRENCALLBACK
 
 	tv.setTVITEMImageInfo(tvi, item)
@@ -317,7 +317,7 @@ func (tv *TreeView) updateItem(item TreeItem) error {
 	tvi := &TVITEM{
 		Mask:    TVIF_TEXT,
 		HItem:   tv.item2Info[item].handle,
-		PszText: syscall.StringToUTF16Ptr(item.Text()),
+		PszText: LPSTR_TEXTCALLBACK,
 	}
 
 	tv.setTVITEMImageInfo(tvi, item)
@@ -384,6 +384,9 @@ func (tv *TreeView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 			nmtvdi := (*NMTVDISPINFO)(unsafe.Pointer(lParam))
 			item := tv.handle2Item[nmtvdi.Item.HItem]
 
+			if nmtvdi.Item.Mask&TVIF_TEXT != 0 {
+				nmtvdi.Item.PszText = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item.Text())))
+			}
 			if nmtvdi.Item.Mask&TVIF_CHILDREN != 0 {
 				nmtvdi.Item.CChildren = int32(item.ChildCount())
 			}
