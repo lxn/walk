@@ -34,13 +34,13 @@ type CustomWidget struct {
 	InvalidatesOnResize bool
 }
 
-func (cw CustomWidget) Create(parent walk.Container) error {
-	w, err := walk.NewCustomWidget(parent, uint(cw.Style), cw.Paint)
+func (cw CustomWidget) Create(builder *Builder) error {
+	w, err := walk.NewCustomWidget(builder.Parent(), uint(cw.Style), cw.Paint)
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(cw, w, func() error {
+	return builder.InitWidget(cw, w, func() error {
 		w.SetClearsBackground(cw.ClearsBackground)
 		w.SetInvalidatesOnResize(cw.InvalidatesOnResize)
 

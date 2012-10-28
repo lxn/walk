@@ -31,13 +31,13 @@ type ImageView struct {
 	Image              walk.Image
 }
 
-func (iv ImageView) Create(parent walk.Container) error {
-	w, err := walk.NewImageView(parent)
+func (iv ImageView) Create(builder *Builder) error {
+	w, err := walk.NewImageView(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(iv, w, func() error {
+	return builder.InitWidget(iv, w, func() error {
 		if err := w.SetImage(iv.Image); err != nil {
 			return err
 		}

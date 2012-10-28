@@ -32,13 +32,13 @@ type ToolButton struct {
 	OnClicked          walk.EventHandler
 }
 
-func (tb ToolButton) Create(parent walk.Container) error {
-	w, err := walk.NewToolButton(parent)
+func (tb ToolButton) Create(builder *Builder) error {
+	w, err := walk.NewToolButton(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(tb, w, func() error {
+	return builder.InitWidget(tb, w, func() error {
 		if err := w.SetText(tb.Text); err != nil {
 			return err
 		}

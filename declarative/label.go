@@ -32,13 +32,13 @@ type Label struct {
 	Text               string
 }
 
-func (l Label) Create(parent walk.Container) error {
-	w, err := walk.NewLabel(parent)
+func (l Label) Create(builder *Builder) error {
+	w, err := walk.NewLabel(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(l, w, func() error {
+	return builder.InitWidget(l, w, func() error {
 		if err := w.SetBindingMember(l.BindTo); err != nil {
 			return err
 		}

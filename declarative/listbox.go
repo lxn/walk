@@ -35,13 +35,13 @@ type ListBox struct {
 	OnItemActivated       walk.EventHandler
 }
 
-func (lb ListBox) Create(parent walk.Container) error {
-	w, err := walk.NewListBox(parent)
+func (lb ListBox) Create(builder *Builder) error {
+	w, err := walk.NewListBox(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(lb, w, func() error {
+	return builder.InitWidget(lb, w, func() error {
 		w.SetFormat(lb.Format)
 		w.SetPrecision(lb.Precision)
 

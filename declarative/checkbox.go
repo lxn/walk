@@ -33,13 +33,13 @@ type CheckBox struct {
 	OnClicked          walk.EventHandler
 }
 
-func (cb CheckBox) Create(parent walk.Container) error {
-	w, err := walk.NewCheckBox(parent)
+func (cb CheckBox) Create(builder *Builder) error {
+	w, err := walk.NewCheckBox(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(cb, w, func() error {
+	return builder.InitWidget(cb, w, func() error {
 		if err := w.SetBindingMember(cb.BindTo); err != nil {
 			return err
 		}

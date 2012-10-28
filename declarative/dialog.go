@@ -62,7 +62,9 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 		d.DataBinder.AssignTo = &db
 	}
 
-	return InitWidget(tlwi, w, func() error {
+	builder := NewBuilder(nil)
+
+	return builder.InitWidget(tlwi, w, func() error {
 		if err := w.SetTitle(d.Title); err != nil {
 			return err
 		}

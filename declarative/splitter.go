@@ -34,13 +34,13 @@ type Splitter struct {
 	Orientation        Orientation
 }
 
-func (s Splitter) Create(parent walk.Container) error {
-	w, err := walk.NewSplitter(parent)
+func (s Splitter) Create(builder *Builder) error {
+	w, err := walk.NewSplitter(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(s, w, func() error {
+	return builder.InitWidget(s, w, func() error {
 		if s.HandleWidth > 0 {
 			if err := w.SetHandleWidth(s.HandleWidth); err != nil {
 				return err

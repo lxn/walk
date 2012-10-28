@@ -13,7 +13,7 @@ type Layout interface {
 }
 
 type Widget interface {
-	Create(parent walk.Container) error
+	Create(builder *Builder) error
 	WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler)
 }
 
@@ -68,7 +68,7 @@ type topLevelWindowInfo struct {
 	Children           []Widget
 }
 
-func (topLevelWindowInfo) Create(parent walk.Container) error {
+func (topLevelWindowInfo) Create(builder *Builder) error {
 	return nil
 }
 

@@ -32,13 +32,13 @@ type PushButton struct {
 	OnClicked          walk.EventHandler
 }
 
-func (pb PushButton) Create(parent walk.Container) error {
-	w, err := walk.NewPushButton(parent)
+func (pb PushButton) Create(builder *Builder) error {
+	w, err := walk.NewPushButton(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(pb, w, func() error {
+	return builder.InitWidget(pb, w, func() error {
 		if err := w.SetText(pb.Text); err != nil {
 			return err
 		}

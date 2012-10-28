@@ -34,13 +34,13 @@ type GroupBox struct {
 	Children           []Widget
 }
 
-func (gb GroupBox) Create(parent walk.Container) error {
-	w, err := walk.NewGroupBox(parent)
+func (gb GroupBox) Create(builder *Builder) error {
+	w, err := walk.NewGroupBox(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(gb, w, func() error {
+	return builder.InitWidget(gb, w, func() error {
 		if err := w.SetTitle(gb.Title); err != nil {
 			return err
 		}

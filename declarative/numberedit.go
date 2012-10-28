@@ -38,13 +38,13 @@ type NumberEdit struct {
 	OnValueChanged     walk.EventHandler
 }
 
-func (ne NumberEdit) Create(parent walk.Container) error {
-	w, err := walk.NewNumberEdit(parent)
+func (ne NumberEdit) Create(builder *Builder) error {
+	w, err := walk.NewNumberEdit(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(ne, w, func() error {
+	return builder.InitWidget(ne, w, func() error {
 		if err := w.SetBindingMember(ne.BindTo); err != nil {
 			return err
 		}

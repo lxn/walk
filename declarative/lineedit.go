@@ -40,13 +40,13 @@ type LineEdit struct {
 	OnTextChanged      walk.EventHandler
 }
 
-func (le LineEdit) Create(parent walk.Container) error {
-	w, err := walk.NewLineEdit(parent)
+func (le LineEdit) Create(builder *Builder) error {
+	w, err := walk.NewLineEdit(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(le, w, func() error {
+	return builder.InitWidget(le, w, func() error {
 		if err := w.SetBindingMember(le.BindTo); err != nil {
 			return err
 		}

@@ -40,13 +40,13 @@ type ComboBox struct {
 	OnCurrentIndexChanged walk.EventHandler
 }
 
-func (cb ComboBox) Create(parent walk.Container) error {
-	w, err := walk.NewComboBox(parent)
+func (cb ComboBox) Create(builder *Builder) error {
+	w, err := walk.NewComboBox(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(cb, w, func() error {
+	return builder.InitWidget(cb, w, func() error {
 		if _, ok := cb.Model.(walk.BindingValueProvider); !ok && cb.BindTo != "" {
 			return errors.New("declarative.ComboBox: Data binding is only supported using a model that implements BindingValueProvider.")
 		}

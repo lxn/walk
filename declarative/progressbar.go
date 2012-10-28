@@ -33,13 +33,13 @@ type ProgressBar struct {
 	Value              int
 }
 
-func (pb ProgressBar) Create(parent walk.Container) error {
-	w, err := walk.NewProgressBar(parent)
+func (pb ProgressBar) Create(builder *Builder) error {
+	w, err := walk.NewProgressBar(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(pb, w, func() error {
+	return builder.InitWidget(pb, w, func() error {
 		w.SetRange(pb.MinValue, pb.MaxValue)
 		w.SetValue(pb.Value)
 

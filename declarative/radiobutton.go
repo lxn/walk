@@ -32,13 +32,13 @@ type RadioButton struct {
 	OnClicked          walk.EventHandler
 }
 
-func (rb RadioButton) Create(parent walk.Container) error {
-	w, err := walk.NewRadioButton(parent)
+func (rb RadioButton) Create(builder *Builder) error {
+	w, err := walk.NewRadioButton(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(rb, w, func() error {
+	return builder.InitWidget(rb, w, func() error {
 		if err := w.SetText(rb.Text); err != nil {
 			return err
 		}

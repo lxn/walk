@@ -33,18 +33,18 @@ type ToolBar struct {
 	Orientation        Orientation
 }
 
-func (tb ToolBar) Create(parent walk.Container) (err error) {
+func (tb ToolBar) Create(builder *Builder) (err error) {
 	var w *walk.ToolBar
 	if tb.Orientation == Vertical {
-		w, err = walk.NewVerticalToolBar(parent)
+		w, err = walk.NewVerticalToolBar(builder.Parent())
 	} else {
-		w, err = walk.NewToolBar(parent)
+		w, err = walk.NewToolBar(builder.Parent())
 	}
 	if err != nil {
 		return
 	}
 
-	return InitWidget(tb, w, func() error {
+	return builder.InitWidget(tb, w, func() error {
 		imageList, err := walk.NewImageList(walk.Size{16, 16}, 0)
 		if err != nil {
 			return err

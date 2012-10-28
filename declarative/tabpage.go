@@ -30,19 +30,19 @@ type TabPage struct {
 	Content            Widget
 }
 
-func (tp TabPage) Create(parent walk.Container) error {
+func (tp TabPage) Create(builder *Builder) error {
 	w, err := walk.NewTabPage()
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(tp, w, func() error {
+	return builder.InitWidget(tp, w, func() error {
 		if err := w.SetTitle(tp.Title); err != nil {
 			return err
 		}
 
 		if tp.Content != nil && len(tp.Children) == 0 {
-			if err := tp.Content.Create(w); err != nil {
+			if err := tp.Content.Create(builder); err != nil {
 				return err
 			}
 		}

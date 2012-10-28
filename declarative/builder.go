@@ -8,7 +8,19 @@ import (
 	"github.com/lxn/walk"
 )
 
-func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
+type Builder struct {
+	parent walk.Container
+}
+
+func NewBuilder(parent walk.Container) *Builder {
+	return &Builder{parent: parent}
+}
+
+func (b *Builder) Parent() walk.Container {
+	return b.parent
+}
+
+func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	var succeeded bool
 	defer func() {
 		if !succeeded {
@@ -101,6 +113,8 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 		}
 	}
 
+	oldParent := b.parent
+
 	// Container
 	if dc, ok := d.(Container); ok {
 		if wc, ok := w.(walk.Container); ok {
@@ -117,8 +131,13 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 				}
 			}
 
+			b.parent = wc
+			defer func() {
+				b.parent = oldParent
+			}()
+
 			for _, child := range children {
-				if err := child.Create(wc); err != nil {
+				if err := child.Create(b); err != nil {
 					return err
 				}
 			}
@@ -137,6 +156,8 @@ func InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 			return err
 		}
 	}
+
+	b.parent = oldParent
 
 	// Call Reset on DataBinder after customInit, so a Dialog gets a chance to first
 	// wire up its DefaultButton to the CanSubmitChanged event of a DataBinder.

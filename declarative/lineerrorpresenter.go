@@ -30,13 +30,13 @@ type LineErrorPresenter struct {
 	OnSizeChanged      walk.EventHandler
 }
 
-func (lep LineErrorPresenter) Create(parent walk.Container) error {
-	w, err := walk.NewLineErrorPresenter(parent)
+func (lep LineErrorPresenter) Create(builder *Builder) error {
+	w, err := walk.NewLineErrorPresenter(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(lep, w, func() error {
+	return builder.InitWidget(lep, w, func() error {
 		if lep.AssignTo != nil {
 			*lep.AssignTo = w
 		}

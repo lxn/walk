@@ -33,13 +33,13 @@ type TabWidget struct {
 	Pages              []TabPage
 }
 
-func (tw TabWidget) Create(parent walk.Container) error {
-	w, err := walk.NewTabWidget(parent)
+func (tw TabWidget) Create(builder *Builder) error {
+	w, err := walk.NewTabWidget(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(tw, w, func() error {
+	return builder.InitWidget(tw, w, func() error {
 		for _, tp := range tw.Pages {
 			var wp *walk.TabPage
 			if tp.AssignTo == nil {
@@ -50,7 +50,7 @@ func (tw TabWidget) Create(parent walk.Container) error {
 				tp.Layout = HBox{Margins: tw.ContentMargins, MarginsZero: tw.ContentMarginsZero}
 			}
 
-			if err := tp.Create(nil); err != nil {
+			if err := tp.Create(builder); err != nil {
 				return err
 			}
 

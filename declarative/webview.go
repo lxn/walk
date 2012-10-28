@@ -31,13 +31,13 @@ type WebView struct {
 	URL                string
 }
 
-func (wv WebView) Create(parent walk.Container) error {
-	w, err := walk.NewWebView(parent)
+func (wv WebView) Create(builder *Builder) error {
+	w, err := walk.NewWebView(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(wv, w, func() error {
+	return builder.InitWidget(wv, w, func() error {
 		if err := w.SetURL(wv.URL); err != nil {
 			return err
 		}

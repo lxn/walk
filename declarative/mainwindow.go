@@ -57,7 +57,9 @@ func (mw MainWindow) Create() error {
 		Children:           mw.Children,
 	}
 
-	return InitWidget(tlwi, w, func() error {
+	builder := NewBuilder(nil)
+
+	return builder.InitWidget(tlwi, w, func() error {
 		if err := w.SetTitle(mw.Title); err != nil {
 			return err
 		}

@@ -33,13 +33,13 @@ type TextEdit struct {
 	ReadOnly           bool
 }
 
-func (te TextEdit) Create(parent walk.Container) error {
-	w, err := walk.NewTextEdit(parent)
+func (te TextEdit) Create(builder *Builder) error {
+	w, err := walk.NewTextEdit(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(te, w, func() error {
+	return builder.InitWidget(te, w, func() error {
 		if err := w.SetBindingMember(te.BindTo); err != nil {
 			return err
 		}

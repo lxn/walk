@@ -40,13 +40,13 @@ type TableView struct {
 	OnItemActivated            walk.EventHandler
 }
 
-func (tv TableView) Create(parent walk.Container) error {
-	w, err := walk.NewTableView(parent)
+func (tv TableView) Create(builder *Builder) error {
+	w, err := walk.NewTableView(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(tv, w, func() error {
+	return builder.InitWidget(tv, w, func() error {
 		if err := w.SetModel(tv.Model); err != nil {
 			return err
 		}

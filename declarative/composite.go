@@ -33,13 +33,13 @@ type Composite struct {
 	Children           []Widget
 }
 
-func (c Composite) Create(parent walk.Container) error {
-	w, err := walk.NewComposite(parent)
+func (c Composite) Create(builder *Builder) error {
+	w, err := walk.NewComposite(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(c, w, func() error {
+	return builder.InitWidget(c, w, func() error {
 		if c.AssignTo != nil {
 			*c.AssignTo = w
 		}

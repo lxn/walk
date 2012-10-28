@@ -20,19 +20,19 @@ type HSpacer struct {
 	Size          int
 }
 
-func (hs HSpacer) Create(parent walk.Container) (err error) {
+func (hs HSpacer) Create(builder *Builder) (err error) {
 	var w *walk.Spacer
 	if hs.Size > 0 {
-		if w, err = walk.NewHSpacerFixed(parent, hs.Size); err != nil {
+		if w, err = walk.NewHSpacerFixed(builder.Parent(), hs.Size); err != nil {
 			return
 		}
 	} else {
-		if w, err = walk.NewHSpacer(parent); err != nil {
+		if w, err = walk.NewHSpacer(builder.Parent()); err != nil {
 			return
 		}
 	}
 
-	return InitWidget(hs, w, nil)
+	return builder.InitWidget(hs, w, nil)
 }
 
 func (hs HSpacer) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
@@ -51,19 +51,19 @@ type VSpacer struct {
 	Size          int
 }
 
-func (vs VSpacer) Create(parent walk.Container) (err error) {
+func (vs VSpacer) Create(builder *Builder) (err error) {
 	var w *walk.Spacer
 	if vs.Size > 0 {
-		if w, err = walk.NewVSpacerFixed(parent, vs.Size); err != nil {
+		if w, err = walk.NewVSpacerFixed(builder.Parent(), vs.Size); err != nil {
 			return
 		}
 	} else {
-		if w, err = walk.NewVSpacer(parent); err != nil {
+		if w, err = walk.NewVSpacer(builder.Parent()); err != nil {
 			return
 		}
 	}
 
-	return InitWidget(vs, w, nil)
+	return builder.InitWidget(vs, w, nil)
 }
 
 func (vs VSpacer) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {

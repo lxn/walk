@@ -39,13 +39,13 @@ type DateEdit struct {
 	OnDateChanged      walk.EventHandler
 }
 
-func (de DateEdit) Create(parent walk.Container) error {
-	w, err := walk.NewDateEdit(parent)
+func (de DateEdit) Create(builder *Builder) error {
+	w, err := walk.NewDateEdit(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(de, w, func() error {
+	return builder.InitWidget(de, w, func() error {
 		if err := w.SetBindingMember(de.BindTo); err != nil {
 			return err
 		}

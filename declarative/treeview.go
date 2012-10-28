@@ -34,13 +34,13 @@ type TreeView struct {
 	OnItemExpanded       walk.TreeItemEventHandler
 }
 
-func (tv TreeView) Create(parent walk.Container) error {
-	w, err := walk.NewTreeView(parent)
+func (tv TreeView) Create(builder *Builder) error {
+	w, err := walk.NewTreeView(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return InitWidget(tv, w, func() error {
+	return builder.InitWidget(tv, w, func() error {
 		if err := w.SetModel(tv.Model); err != nil {
 			return err
 		}
