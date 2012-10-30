@@ -9,6 +9,7 @@ import . "github.com/lxn/go-winapi"
 type Label struct {
 	WidgetBase
 	bindingMember string
+	textProperty  *Property
 }
 
 func NewLabel(parent Container) (*Label, error) {
@@ -22,6 +23,18 @@ func NewLabel(parent Container) (*Label, error) {
 		0); err != nil {
 		return nil, err
 	}
+
+	l.textProperty = NewProperty(
+		"Text",
+		func() interface{} {
+			return l.Text()
+		},
+		func(v interface{}) error {
+			return l.SetText(v.(string))
+		},
+		nil)
+
+	l.MustRegisterProperties(l.textProperty)
 
 	return l, nil
 }

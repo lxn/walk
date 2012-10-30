@@ -28,6 +28,8 @@ type ComboBox struct {
 	prevCurIndex                 int
 	selChangeIndex               int
 	currentIndexChangedPublisher EventPublisher
+	currentIndexProperty         *Property
+	valueProperty                *Property
 }
 
 func NewComboBox(parent Container) (*ComboBox, error) {
@@ -41,6 +43,48 @@ func NewComboBox(parent Container) (*ComboBox, error) {
 		0); err != nil {
 		return nil, err
 	}
+
+	cb.valueProperty = NewProperty(
+		"Value",
+		func() interface{} {
+			index := cb.CurrentIndex()
+
+			if cb.bindingValueProvider == nil || index == -1 {
+				return nil
+			}
+
+			return cb.bindingValueProvider.BindingValue(index)
+		},
+		func(v interface{}) error {
+			if cb.bindingValueProvider == nil {
+				return newError("Data binding is only supported using a model that implements BindingValueProvider.")
+			}
+
+			index := -1
+
+			count := cb.model.ItemCount()
+			for i := 0; i < count; i++ {
+				if cb.bindingValueProvider.BindingValue(i) == v {
+					index = i
+					break
+				}
+			}
+
+			return cb.SetCurrentIndex(index)
+		},
+		cb.CurrentIndexChanged())
+
+	cb.currentIndexProperty = NewProperty(
+		"CurrentIndex",
+		func() interface{} {
+			return cb.CurrentIndex()
+		},
+		func(v interface{}) error {
+			return cb.SetCurrentIndex(v.(int))
+		},
+		cb.CurrentIndexChanged())
+
+	cb.MustRegisterProperties(cb.valueProperty, cb.currentIndexProperty)
 
 	return cb, nil
 }

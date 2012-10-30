@@ -35,6 +35,7 @@ type DateEdit struct {
 	WidgetBase
 	bindingMember         string
 	valueChangedPublisher EventPublisher
+	dateProperty          *Property
 }
 
 func NewDateEdit(parent Container) (*DateEdit, error) {
@@ -48,6 +49,18 @@ func NewDateEdit(parent Container) (*DateEdit, error) {
 		0); err != nil {
 		return nil, err
 	}
+
+	de.dateProperty = NewProperty(
+		"Date",
+		func() interface{} {
+			return de.Value()
+		},
+		func(v interface{}) error {
+			return de.SetValue(v.(time.Time))
+		},
+		de.valueChangedPublisher.Event())
+
+	de.MustRegisterProperties(de.dateProperty)
 
 	return de, nil
 }

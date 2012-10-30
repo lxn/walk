@@ -20,8 +20,9 @@ func init() {
 
 type TabPage struct {
 	ContainerBase
-	title     string
-	tabWidget *TabWidget
+	title         string
+	tabWidget     *TabWidget
+	titleProperty *Property
 }
 
 func NewTabPage() (*TabPage, error) {
@@ -39,6 +40,18 @@ func NewTabPage() (*TabPage, error) {
 	tp.children = newWidgetList(tp)
 
 	tp.SetBackground(tabPageBackgroundBrush)
+
+	tp.titleProperty = NewProperty(
+		"Title",
+		func() interface{} {
+			return tp.Title()
+		},
+		func(v interface{}) error {
+			return tp.SetTitle(v.(string))
+		},
+		nil)
+
+	tp.MustRegisterProperties(tp.titleProperty)
 
 	return tp, nil
 }

@@ -23,6 +23,8 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 		return nil, err
 	}
 
+	cb.Button.init()
+
 	return cb, nil
 }
 

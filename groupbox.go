@@ -16,8 +16,9 @@ func init() {
 
 type GroupBox struct {
 	WidgetBase
-	hWndGroupBox HWND
-	composite    *Composite
+	hWndGroupBox  HWND
+	composite     *Composite
+	titleProperty *Property
 }
 
 func NewGroupBox(parent Container) (*GroupBox, error) {
@@ -56,6 +57,18 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	// Set font to nil first to outsmart SetFont.
 	gb.font = nil
 	gb.SetFont(defaultFont)
+
+	gb.titleProperty = NewProperty(
+		"Title",
+		func() interface{} {
+			return gb.Title()
+		},
+		func(v interface{}) error {
+			return gb.SetTitle(v.(string))
+		},
+		nil)
+
+	gb.MustRegisterProperties(gb.titleProperty)
 
 	succeeded = true
 

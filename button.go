@@ -12,7 +12,34 @@ type clickable interface {
 
 type Button struct {
 	WidgetBase
+	checkedProperty  *Property
 	clickedPublisher EventPublisher
+	textProperty     *Property
+}
+
+func (b *Button) init() {
+	b.checkedProperty = NewProperty(
+		"Checked",
+		func() interface{} {
+			return b.Checked()
+		},
+		func(v interface{}) error {
+			b.SetChecked(v.(bool))
+			return nil
+		},
+		b.Clicked())
+
+	b.textProperty = NewProperty(
+		"Text",
+		func() interface{} {
+			return b.Text()
+		},
+		func(v interface{}) error {
+			return b.SetText(v.(string))
+		},
+		nil)
+
+	b.MustRegisterProperties(b.checkedProperty, b.textProperty)
 }
 
 func (b *Button) Text() string {
@@ -45,6 +72,8 @@ func (b *Button) SetChecked(value bool) {
 	}
 
 	b.SendMessage(BM_SETCHECK, chk, 0)
+
+	b.clickedPublisher.Publish()
 }
 
 func (b *Button) Clicked() *Event {

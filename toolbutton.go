@@ -22,6 +22,8 @@ func NewToolButton(parent Container) (*ToolButton, error) {
 		return nil, err
 	}
 
+	tb.Button.init()
+
 	return tb, nil
 }
 

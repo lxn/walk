@@ -22,6 +22,8 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 		return nil, err
 	}
 
+	rb.Button.init()
+
 	return rb, nil
 }
 

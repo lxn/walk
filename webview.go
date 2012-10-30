@@ -22,6 +22,7 @@ type WebView struct {
 	WidgetBase
 	clientSite    webViewIOleClientSite
 	browserObject *IOleObject
+	urlProperty   *Property
 }
 
 func NewWebView(parent Container) (*WebView, error) {
@@ -130,6 +131,19 @@ func NewWebView(parent Container) (*WebView, error) {
 		}*/
 
 	wv.onResize()
+
+	wv.urlProperty = NewProperty(
+		"URL",
+		func() interface{} {
+			url, _ := wv.URL()
+			return url
+		},
+		func(v interface{}) error {
+			return wv.SetURL(v.(string))
+		},
+		nil)
+
+	wv.MustRegisterProperties(wv.urlProperty)
 
 	succeeded = true
 

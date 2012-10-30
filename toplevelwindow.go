@@ -61,6 +61,21 @@ type TopLevelWindow struct {
 	startingPublisher EventPublisher
 	progressIndicator *ProgressIndicator
 	icon              *Icon
+	titleProperty     *Property
+}
+
+func (tlw *TopLevelWindow) init() {
+	tlw.titleProperty = NewProperty(
+		"Title",
+		func() interface{} {
+			return tlw.Title()
+		},
+		func(v interface{}) error {
+			return tlw.SetTitle(v.(string))
+		},
+		nil)
+
+	tlw.MustRegisterProperties(tlw.titleProperty)
 }
 
 func (tlw *TopLevelWindow) LayoutFlags() LayoutFlags {

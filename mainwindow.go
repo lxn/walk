@@ -61,6 +61,8 @@ func NewMainWindow() (*MainWindow, error) {
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	mw.SendMessage(WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
+	mw.TopLevelWindow.init()
+
 	succeeded = true
 
 	return mw, nil

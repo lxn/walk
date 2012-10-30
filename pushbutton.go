@@ -24,6 +24,8 @@ func NewPushButton(parent Container) (*PushButton, error) {
 		return nil, err
 	}
 
+	pb.Button.init()
+
 	return pb, nil
 }
 

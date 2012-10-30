@@ -22,13 +22,15 @@ type LineEdit struct {
 	validator                Validator
 	editingFinishedPublisher EventPublisher
 	returnPressedPublisher   EventPublisher
-	textChangedPublisher     EventPublisher
-	charWidthFont            *Font
-	charWidth                int
+	//	textChangedPublisher     EventPublisher
+	textProperty     *Property
+	readOnlyProperty *Property
+	charWidthFont    *Font
+	charWidth        int
 }
 
 func newLineEdit(parent Widget) (*LineEdit, error) {
-	le := &LineEdit{}
+	le := new(LineEdit)
 
 	if err := InitWidget(
 		le,
@@ -38,6 +40,28 @@ func newLineEdit(parent Widget) (*LineEdit, error) {
 		WS_EX_CLIENTEDGE); err != nil {
 		return nil, err
 	}
+
+	le.textProperty = NewProperty(
+		"Text",
+		func() interface{} {
+			return le.Text()
+		},
+		func(v interface{}) error {
+			return le.SetText(v.(string))
+		},
+		nil)
+
+	le.readOnlyProperty = NewProperty(
+		"ReadOnly",
+		func() interface{} {
+			return le.ReadOnly()
+		},
+		func(v interface{}) error {
+			return le.SetReadOnly(v.(bool))
+		},
+		nil)
+
+	le.MustRegisterProperties(le.textProperty, le.readOnlyProperty)
 
 	return le, nil
 }
@@ -127,6 +151,10 @@ func (le *LineEdit) Text() string {
 
 func (le *LineEdit) SetText(value string) error {
 	return setWidgetText(le.hWnd, value)
+}
+
+func (le *LineEdit) TextProperty() *Property {
+	return le.textProperty
 }
 
 func (le *LineEdit) TextSelection() (start, end int) {
@@ -235,7 +263,7 @@ func (le *LineEdit) ReturnPressed() *Event {
 }
 
 func (le *LineEdit) TextChanged() *Event {
-	return le.textChangedPublisher.Event()
+	return le.textProperty.Changed()
 }
 
 func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -255,7 +283,7 @@ func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
 		case EN_CHANGE:
-			le.textChangedPublisher.Publish()
+			le.textProperty.changedEventPublisher.Publish()
 		}
 
 	case WM_GETDLGCODE:

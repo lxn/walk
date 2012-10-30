@@ -31,6 +31,7 @@ type NumberEdit struct {
 	increment             float64
 	oldValue              float64
 	valueChangedPublisher EventPublisher
+	valueProperty         *Property
 }
 
 func NewNumberEdit(parent Container) (*NumberEdit, error) {
@@ -74,6 +75,18 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 	if err = ne.SetValue(0); err != nil {
 		return nil, err
 	}
+
+	ne.valueProperty = NewProperty(
+		"Value",
+		func() interface{} {
+			return ne.Value()
+		},
+		func(v interface{}) error {
+			return ne.SetValue(v.(float64))
+		},
+		ne.valueChangedPublisher.Event())
+
+	ne.MustRegisterProperties(ne.valueProperty)
 
 	succeeded = true
 
