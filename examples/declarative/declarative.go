@@ -155,33 +155,33 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 
 	widgets := []Widget{
 		Label{Row: 0, Column: 0, Text: "Name:"},
-		LineEdit{Row: 0, Column: 1, BindTo: "Name", Validator: Regexp{`^[A-Z][a-z]*$`}},
+		LineEdit{Row: 0, Column: 1, Name: "nameLE", Enabled: BindProperty{"enabledCB.Checked"}, Text: Bind{"Name", Regexp{`^[A-Z][a-z]*$`}}},
 
 		Label{Row: 1, Column: 0, Text: "No.:"},
-		LineEdit{Row: 1, Column: 1, BindTo: "No", Validator: Regexp{`^[\d]{3}[ ]{1}[\d]{3}$`}, MaxLength: 7, CueBanner: "### ###"},
+		LineEdit{Row: 1, Column: 1, Name: "noLE", Enabled: BindProperty{"enabledCB.Checked"}, Text: Bind{"No", Regexp{`^[\d]{3}[ ]{1}[\d]{3}$`}}, MaxLength: 7, CueBanner: "### ###"},
 
 		Label{Row: 2, Column: 0, Text: "Foo (int BindingValue):"},
-		ComboBox{Row: 2, Column: 1, BindTo: "FooId", Model: NewFooModel()},
+		ComboBox{Row: 2, Column: 1, Name: "fooIdCB", Value: Bind{"FooId", SelRequired{}}, Model: NewFooModel()},
 
 		Label{Row: 3, Column: 0, Text: "Bar (string BindingValue):"},
-		ComboBox{Row: 3, Column: 1, BindTo: "BarKey", Model: NewBarModel(), Optional: true},
+		ComboBox{Row: 3, Column: 1, Value: BindTo{"BarKey"}, Model: NewBarModel()},
 
 		Label{Row: 4, Column: 0, Text: "Float64:"},
-		NumberEdit{Row: 4, Column: 1, BindTo: "Float64", Decimals: 2, Validator: Range{0.01, 999.99}},
+		NumberEdit{Row: 4, Column: 1, Value: Bind{"Float64", Range{0.01, 999.99}}, Decimals: 2},
 
 		Label{Row: 5, Column: 0, Text: "Int:"},
-		NumberEdit{Row: 5, Column: 1, BindTo: "Int"},
+		NumberEdit{Row: 5, Column: 1, Value: BindTo{"Int"}},
 
 		Label{Row: 6, Column: 0, Text: "Date:"},
-		DateEdit{Row: 6, Column: 1, BindTo: "Date"},
+		DateEdit{Row: 6, Column: 1, Date: BindTo{"Date"}},
 
-		Label{Row: 7, Column: 0, Text: "Checked:"},
-		CheckBox{Row: 7, Column: 1, BindTo: "Checked"},
+		Label{Row: 7, Column: 0, Text: "Enabled:"},
+		CheckBox{Row: 7, Column: 1, Name: "enabledCB", Checked: BindTo{"Enabled"}},
 
 		VSpacer{Row: 8, Column: 0, Size: 10},
 
 		Label{Row: 9, Column: 0, ColumnSpan: 2, Text: "Memo:"},
-		TextEdit{Row: 10, Column: 0, ColumnSpan: 2, BindTo: "Memo"},
+		TextEdit{Row: 10, Column: 0, ColumnSpan: 2, Text: BindTo{"Memo"}},
 	}
 
 	type Item struct {
@@ -192,7 +192,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		Float64 float64
 		Int     int
 		Date    time.Time
-		Checked bool
+		Enabled bool
 		Memo    string
 	}
 
@@ -200,7 +200,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		Name:    "Name",
 		Int:     67890,
 		Date:    time.Now(),
-		Checked: true,
+		Enabled: true,
 		Memo:    "Memo",
 	}
 
@@ -298,9 +298,9 @@ func main() {
 			TabWidget{
 				ContentMarginsZero: true,
 				Pages: []TabPage{
-					TabPage{Title: "golang.org/doc/", Content: WebView{URL: "http://golang.org/doc/"}},
-					TabPage{Title: "golang.org/ref/", Content: WebView{URL: "http://golang.org/ref/"}},
-					TabPage{Title: "golang.org/pkg/", Content: WebView{URL: "http://golang.org/pkg/"}},
+					//					TabPage{Title: "golang.org/doc/", Content: WebView{URL: "http://golang.org/doc/"}},
+					//					TabPage{Title: "golang.org/ref/", Content: WebView{URL: "http://golang.org/ref/"}},
+					//					TabPage{Title: "golang.org/pkg/", Content: WebView{URL: "http://golang.org/pkg/"}},
 					TabPage{
 						Title:  "Composite Stuff",
 						Layout: Grid{},

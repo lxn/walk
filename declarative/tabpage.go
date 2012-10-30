@@ -11,10 +11,12 @@ import (
 type TabPage struct {
 	AssignTo           **walk.TabPage
 	Name               string
+	Enabled            Property
+	Visible            Property
 	Disabled           bool
 	Hidden             bool
 	Font               Font
-	ToolTipText        string
+	ToolTipText        Property
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
@@ -26,7 +28,7 @@ type TabPage struct {
 	DataBinder         DataBinder
 	Layout             Layout
 	Children           []Widget
-	Title              string
+	Title              Property
 	Content            Widget
 }
 
@@ -37,10 +39,6 @@ func (tp TabPage) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(tp, w, func() error {
-		if err := w.SetTitle(tp.Title); err != nil {
-			return err
-		}
-
 		if tp.Content != nil && len(tp.Children) == 0 {
 			if err := tp.Content.Create(builder); err != nil {
 				return err
@@ -56,7 +54,7 @@ func (tp TabPage) Create(builder *Builder) error {
 }
 
 func (w TabPage) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, w.Disabled, w.Hidden, &w.Font, w.ToolTipText, w.MinSize, w.MaxSize, 0, 0, 0, 0, 0, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
+	return w.Name, w.Disabled, w.Hidden, &w.Font, "", w.MinSize, w.MaxSize, 0, 0, 0, 0, 0, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }
 
 func (tp TabPage) ContainerInfo() (DataBinder, Layout, []Widget) {

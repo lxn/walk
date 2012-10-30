@@ -11,10 +11,12 @@ import (
 type MainWindow struct {
 	AssignTo           **walk.MainWindow
 	Name               string
+	Enabled            Property
+	Visible            Property
 	Disabled           bool
 	Hidden             bool
 	Font               Font
-	ToolTipText        string
+	ToolTipText        Property
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
@@ -43,7 +45,7 @@ func (mw MainWindow) Create() error {
 		Disabled:           mw.Disabled,
 		Hidden:             mw.Hidden,
 		Font:               mw.Font,
-		ToolTipText:        mw.ToolTipText,
+		ToolTipText:        "",
 		MinSize:            mw.MinSize,
 		MaxSize:            mw.MaxSize,
 		ContextMenuActions: mw.ContextMenuActions,

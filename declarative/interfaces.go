@@ -8,6 +8,21 @@ import (
 	"github.com/lxn/walk"
 )
 
+type Property interface{}
+
+type Bind struct {
+	To        string
+	Validator Validator
+}
+
+type BindTo struct {
+	Name string
+}
+
+type BindProperty struct {
+	Name string
+}
+
 type Layout interface {
 	Create() (walk.Layout, error)
 }

@@ -11,10 +11,12 @@ import (
 type WebView struct {
 	AssignTo           **walk.WebView
 	Name               string
+	Enabled            Property
+	Visible            Property
 	Disabled           bool
 	Hidden             bool
 	Font               Font
-	ToolTipText        string
+	ToolTipText        Property
 	MinSize            Size
 	MaxSize            Size
 	StretchFactor      int
@@ -28,7 +30,7 @@ type WebView struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
-	URL                string
+	URL                Property
 }
 
 func (wv WebView) Create(builder *Builder) error {
@@ -38,10 +40,6 @@ func (wv WebView) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(wv, w, func() error {
-		if err := w.SetURL(wv.URL); err != nil {
-			return err
-		}
-
 		if wv.AssignTo != nil {
 			*wv.AssignTo = w
 		}
@@ -51,5 +49,5 @@ func (wv WebView) Create(builder *Builder) error {
 }
 
 func (w WebView) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, w.Disabled, w.Hidden, &w.Font, w.ToolTipText, w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
+	return w.Name, w.Disabled, w.Hidden, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

@@ -11,10 +11,12 @@ import (
 type Dialog struct {
 	AssignTo           **walk.Dialog
 	Name               string
+	Enabled            Property
+	Visible            Property
 	Disabled           bool
 	Hidden             bool
 	Font               Font
-	ToolTipText        string
+	ToolTipText        Property
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action
@@ -43,7 +45,7 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 		Disabled:           d.Disabled,
 		Hidden:             d.Hidden,
 		Font:               d.Font,
-		ToolTipText:        d.ToolTipText,
+		ToolTipText:        "",
 		MinSize:            d.MinSize,
 		MaxSize:            d.MaxSize,
 		ContextMenuActions: d.ContextMenuActions,
@@ -78,8 +80,7 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 				return err
 			}
 
-			db := *d.DataBinder.AssignTo
-			if db != nil {
+			if db := *d.DataBinder.AssignTo; db != nil {
 				db.CanSubmitChanged().Attach(func() {
 					(*d.DefaultButton).SetEnabled(db.CanSubmit())
 				})

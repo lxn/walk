@@ -32,3 +32,10 @@ type Regexp struct {
 func (re Regexp) Create() (walk.Validator, error) {
 	return walk.NewRegexpValidator(re.Pattern)
 }
+
+type SelRequired struct {
+}
+
+func (SelRequired) Create() (walk.Validator, error) {
+	return walk.SelectionRequiredValidator(), nil
+}

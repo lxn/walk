@@ -5,15 +5,32 @@
 package declarative
 
 import (
+	"fmt"
+	"reflect"
+	"strings"
+)
+
+import (
 	"github.com/lxn/walk"
 )
 
+type declWidget struct {
+	d Widget
+	w walk.Widget
+}
+
 type Builder struct {
-	parent walk.Container
+	level       int
+	parent      walk.Container
+	declWidgets []declWidget
+	name2Widget map[string]walk.Widget
 }
 
 func NewBuilder(parent walk.Container) *Builder {
-	return &Builder{parent: parent}
+	return &Builder{
+		parent:      parent,
+		name2Widget: make(map[string]walk.Widget),
+	}
 }
 
 func (b *Builder) Parent() walk.Container {
@@ -21,6 +38,11 @@ func (b *Builder) Parent() walk.Container {
 }
 
 func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) error {
+	b.level++
+	defer func() {
+		b.level--
+	}()
+
 	var succeeded bool
 	defer func() {
 		if !succeeded {
@@ -28,10 +50,16 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 		}
 	}()
 
+	b.declWidgets = append(b.declWidgets, declWidget{d, w})
+
 	// Widget
 	name, disabled, hidden, font, toolTipText, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions, onKeyDown, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
 
 	w.SetName(name)
+
+	if name != "" {
+		b.name2Widget[name] = w
+	}
 
 	if err := w.SetToolTipText(toolTipText); err != nil {
 		return err
@@ -116,6 +144,7 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 	oldParent := b.parent
 
 	// Container
+	var db *walk.DataBinder
 	if dc, ok := d.(Container); ok {
 		if wc, ok := w.(walk.Container); ok {
 			dataBinder, layout, children := dc.ContainerInfo()
@@ -142,10 +171,9 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 				}
 			}
 
-			if db, err := dataBinder.create(); err != nil {
+			var err error
+			if db, err = dataBinder.create(); err != nil {
 				return err
-			} else if db != nil {
-				wc.SetDataBinder(db)
 			}
 		}
 	}
@@ -159,19 +187,6 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 
 	b.parent = oldParent
 
-	// Call Reset on DataBinder after customInit, so a Dialog gets a chance to first
-	// wire up its DefaultButton to the CanSubmitChanged event of a DataBinder.
-	if _, ok := d.(Container); ok {
-		if wc, ok := w.(walk.Container); ok {
-			db := wc.DataBinder()
-			if db != nil {
-				if err := db.Reset(); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
 	// Widget continued
 	w.SetEnabled(!disabled)
 	w.SetVisible(!hidden)
@@ -184,7 +199,114 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 		}
 	}
 
+	if b.level == 1 {
+		if err := b.initProperties(); err != nil {
+			return err
+		}
+	}
+
+	// Call Reset on DataBinder after customInit, so a Dialog gets a chance to first
+	// wire up its DefaultButton to the CanSubmitChanged event of a DataBinder.
+	if db != nil {
+		if _, ok := d.(Container); ok {
+			if wc, ok := w.(walk.Container); ok {
+				// FIXME: Currently SetDataBinder must be called after initProperties.
+				wc.SetDataBinder(db)
+
+				if err := db.Reset(); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	succeeded = true
+
+	return nil
+}
+
+func (b *Builder) initProperties() error {
+	for _, dw := range b.declWidgets {
+		d, w := dw.d, dw.w
+
+		sv := reflect.ValueOf(d)
+		st := sv.Type()
+		if st.Kind() != reflect.Struct {
+			panic("d must be a struct value")
+		}
+
+		wb := w.BaseWidget()
+
+		fieldCount := st.NumField()
+		for i := 0; i < fieldCount; i++ {
+			sf := st.Field(i)
+
+			prop := wb.Property(sf.Name)
+
+			switch val := sv.Field(i).Interface().(type) {
+			case nil:
+				// nop
+
+			case Bind:
+				if prop == nil {
+					panic(sf.Name + " is not a property")
+				}
+
+				prop.SetSource(val.To)
+				if val.Validator != nil {
+					validator, err := val.Validator.Create()
+					if err != nil {
+						return err
+					}
+					prop.SetValidator(validator)
+				}
+
+			case BindTo:
+				if prop == nil {
+					panic(sf.Name + " is not a property")
+				}
+
+				prop.SetSource(val.Name)
+
+			case BindProperty:
+				if prop == nil {
+					panic(sf.Name + " is not a registered property")
+				}
+
+				parts := strings.Split(val.Name, ".")
+				if len(parts) != 2 {
+					panic("invalid BindProperty syntax: " + val.Name)
+				}
+
+				var srcProp *walk.Property
+				if sw, ok := b.name2Widget[parts[0]]; ok {
+					sbw := sw.BaseWidget()
+					srcProp = sbw.Property(parts[1])
+					if srcProp == nil {
+						panic("unknown source property: " + parts[1])
+					}
+					prop.SetSource(srcProp)
+				} else {
+					panic("unknown widget: " + parts[0])
+				}
+
+			default:
+				if prop == nil {
+					continue
+				}
+
+				v := prop.Get()
+				valt, vt := reflect.TypeOf(val), reflect.TypeOf(v)
+
+				if valt != vt {
+					panic(fmt.Sprintf("cannot assign value %v of type %T to property %s of type %T", val, val, prop.Name(), v))
+				}
+				if err := prop.Set(val); err != nil {
+					return err
+				}
+			}
+		}
+	}
 
 	return nil
 }
