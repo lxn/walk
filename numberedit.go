@@ -23,8 +23,6 @@ type NumberEdit struct {
 	WidgetBase
 	edit                  *LineEdit
 	hWndUpDown            HWND
-	bindingMember         string
-	validator             Validator
 	decimals              int
 	minValue              float64
 	maxValue              float64
@@ -132,40 +130,6 @@ func (ne *NumberEdit) MinSizeHint() Size {
 func (ne *NumberEdit) SizeHint() Size {
 	s := ne.dialogBaseUnitsToPixels(Size{50, 12})
 	return Size{s.Width, maxi(s.Height, 22)}
-}
-
-func (ne *NumberEdit) BindingMember() string {
-	return ne.bindingMember
-}
-
-func (ne *NumberEdit) SetBindingMember(member string) error {
-	if err := validateBindingMemberSyntax(member); err != nil {
-		return err
-	}
-
-	ne.bindingMember = member
-
-	return nil
-}
-
-func (ne *NumberEdit) BindingValue() interface{} {
-	return ne.Value()
-}
-
-func (ne *NumberEdit) SetBindingValue(value interface{}) error {
-	return ne.SetValue(value.(float64))
-}
-
-func (ne *NumberEdit) BindingValueChanged() *Event {
-	return ne.ValueChanged()
-}
-
-func (ne *NumberEdit) Validator() Validator {
-	return ne.validator
-}
-
-func (ne *NumberEdit) SetValidator(validator Validator) {
-	ne.validator = validator
 }
 
 func (ne *NumberEdit) Decimals() int {

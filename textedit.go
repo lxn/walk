@@ -15,7 +15,6 @@ import (
 
 type TextEdit struct {
 	WidgetBase
-	bindingMember        string
 	textChangedPublisher EventPublisher
 	textProperty         *Property
 	readOnlyProperty     *Property
@@ -68,32 +67,6 @@ func (te *TextEdit) MinSizeHint() Size {
 
 func (te *TextEdit) SizeHint() Size {
 	return Size{100, 100}
-}
-
-func (te *TextEdit) BindingMember() string {
-	return te.bindingMember
-}
-
-func (te *TextEdit) SetBindingMember(member string) error {
-	if err := validateBindingMemberSyntax(member); err != nil {
-		return err
-	}
-
-	te.bindingMember = member
-
-	return nil
-}
-
-func (te *TextEdit) BindingValue() interface{} {
-	return te.Text()
-}
-
-func (te *TextEdit) SetBindingValue(value interface{}) error {
-	return te.SetText(value.(string))
-}
-
-func (te *TextEdit) BindingValueChanged() *Event {
-	return te.TextChanged()
 }
 
 func (te *TextEdit) Text() string {

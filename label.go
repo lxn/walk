@@ -8,8 +8,7 @@ import . "github.com/lxn/go-winapi"
 
 type Label struct {
 	WidgetBase
-	bindingMember string
-	textProperty  *Property
+	textProperty *Property
 }
 
 func NewLabel(parent Container) (*Label, error) {
@@ -49,32 +48,6 @@ func (l *Label) MinSizeHint() Size {
 
 func (l *Label) SizeHint() Size {
 	return l.MinSizeHint()
-}
-
-func (l *Label) BindingMember() string {
-	return l.bindingMember
-}
-
-func (l *Label) SetBindingMember(member string) error {
-	if err := validateBindingMemberSyntax(member); err != nil {
-		return err
-	}
-
-	l.bindingMember = member
-
-	return nil
-}
-
-func (l *Label) BindingValue() interface{} {
-	return l.Text()
-}
-
-func (l *Label) SetBindingValue(value interface{}) error {
-	return l.SetText(value.(string))
-}
-
-func (l *Label) BindingValueChanged() *Event {
-	return nil
 }
 
 func (l *Label) Text() string {

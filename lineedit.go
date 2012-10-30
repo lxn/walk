@@ -18,15 +18,12 @@ const (
 
 type LineEdit struct {
 	WidgetBase
-	bindingMember            string
-	validator                Validator
 	editingFinishedPublisher EventPublisher
 	returnPressedPublisher   EventPublisher
-	//	textChangedPublisher     EventPublisher
-	textProperty     *Property
-	readOnlyProperty *Property
-	charWidthFont    *Font
-	charWidth        int
+	textProperty             *Property
+	readOnlyProperty         *Property
+	charWidthFont            *Font
+	charWidth                int
 }
 
 func newLineEdit(parent Widget) (*LineEdit, error) {
@@ -91,32 +88,6 @@ func NewLineEdit(parent Container) (*LineEdit, error) {
 	succeeded = true
 
 	return le, nil
-}
-
-func (le *LineEdit) BindingMember() string {
-	return le.bindingMember
-}
-
-func (le *LineEdit) SetBindingMember(member string) error {
-	if err := validateBindingMemberSyntax(member); err != nil {
-		return err
-	}
-
-	le.bindingMember = member
-
-	return nil
-}
-
-func (le *LineEdit) BindingValue() interface{} {
-	return le.Text()
-}
-
-func (le *LineEdit) SetBindingValue(value interface{}) error {
-	return le.SetText(value.(string))
-}
-
-func (le *LineEdit) BindingValueChanged() *Event {
-	return le.TextChanged()
 }
 
 func (le *LineEdit) CueBanner() string {
@@ -189,14 +160,6 @@ func (le *LineEdit) SetReadOnly(readOnly bool) error {
 	}
 
 	return nil
-}
-
-func (le *LineEdit) Validator() Validator {
-	return le.validator
-}
-
-func (le *LineEdit) SetValidator(validator Validator) {
-	le.validator = validator
 }
 
 func (le *LineEdit) LayoutFlags() (lf LayoutFlags) {

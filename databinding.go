@@ -14,20 +14,6 @@ var (
 	errValidationFailed = errors.New("validation failed")
 )
 
-type DataBindable interface {
-	Widget
-	BindingMember() string
-	SetBindingMember(member string) error
-	BindingValue() interface{}
-	SetBindingValue(value interface{}) error
-	BindingValueChanged() *Event
-}
-
-type Validatable interface {
-	Validator() Validator
-	SetValidator(v Validator)
-}
-
 type ErrorPresenter interface {
 	PresentError(err error, widget Widget)
 }

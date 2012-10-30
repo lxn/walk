@@ -16,9 +16,7 @@ import . "github.com/lxn/go-winapi"
 
 type ComboBox struct {
 	WidgetBase
-	bindingMember                string
 	bindingValueProvider         BindingValueProvider
-	validator                    Validator
 	model                        ListModel
 	format                       string
 	precision                    int
@@ -109,60 +107,6 @@ func (cb *ComboBox) MinSizeHint() Size {
 
 func (cb *ComboBox) SizeHint() Size {
 	return cb.MinSizeHint()
-}
-
-func (cb *ComboBox) BindingMember() string {
-	return cb.bindingMember
-}
-
-func (cb *ComboBox) SetBindingMember(member string) error {
-	if err := validateBindingMemberSyntax(member); err != nil {
-		return err
-	}
-
-	cb.bindingMember = member
-
-	return nil
-}
-
-func (cb *ComboBox) BindingValue() interface{} {
-	index := cb.CurrentIndex()
-
-	if cb.bindingValueProvider == nil || index == -1 {
-		return nil
-	}
-
-	return cb.bindingValueProvider.BindingValue(index)
-}
-
-func (cb *ComboBox) SetBindingValue(value interface{}) error {
-	if cb.bindingValueProvider == nil {
-		return newError("Data binding is only supported using a model that implements BindingValueProvider.")
-	}
-
-	index := -1
-
-	count := cb.model.ItemCount()
-	for i := 0; i < count; i++ {
-		if cb.bindingValueProvider.BindingValue(i) == value {
-			index = i
-			break
-		}
-	}
-
-	return cb.SetCurrentIndex(index)
-}
-
-func (cb *ComboBox) BindingValueChanged() *Event {
-	return cb.CurrentIndexChanged()
-}
-
-func (cb *ComboBox) Validator() Validator {
-	return cb.validator
-}
-
-func (cb *ComboBox) SetValidator(validator Validator) {
-	cb.validator = validator
 }
 
 func (cb *ComboBox) itemString(index int) string {
