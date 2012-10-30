@@ -44,10 +44,6 @@ type Validator interface {
 	Create() (walk.Validator, error)
 }
 
-type Validatable interface {
-	ValidatableInfo() Validator
-}
-
 type ErrorPresenter interface {
 	Create() (walk.ErrorPresenter, error)
 }

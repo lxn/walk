@@ -13,8 +13,6 @@ type Dialog struct {
 	Name               string
 	Enabled            Property
 	Visible            Property
-	Disabled           bool
-	Hidden             bool
 	Font               Font
 	ToolTipText        Property
 	MinSize            Size
@@ -42,8 +40,6 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 
 	tlwi := topLevelWindowInfo{
 		Name:               d.Name,
-		Disabled:           d.Disabled,
-		Hidden:             d.Hidden,
 		Font:               d.Font,
 		ToolTipText:        "",
 		MinSize:            d.MinSize,

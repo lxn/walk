@@ -13,8 +13,6 @@ type MainWindow struct {
 	Name               string
 	Enabled            Property
 	Visible            Property
-	Disabled           bool
-	Hidden             bool
 	Font               Font
 	ToolTipText        Property
 	MinSize            Size
@@ -42,8 +40,6 @@ func (mw MainWindow) Create() error {
 
 	tlwi := topLevelWindowInfo{
 		Name:               mw.Name,
-		Disabled:           mw.Disabled,
-		Hidden:             mw.Hidden,
 		Font:               mw.Font,
 		ToolTipText:        "",
 		MinSize:            mw.MinSize,

@@ -13,8 +13,6 @@ type LineEdit struct {
 	Name               string
 	Enabled            Property
 	Visible            Property
-	Disabled           bool
-	Hidden             bool
 	Font               Font
 	ToolTipText        Property
 	MinSize            Size
@@ -30,8 +28,6 @@ type LineEdit struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
-	BindTo             string
-	Validator          Validator
 	Text               Property
 	ReadOnly           Property
 	CueBanner          string
@@ -49,10 +45,6 @@ func (le LineEdit) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(le, w, func() error {
-		if err := w.SetBindingMember(le.BindTo); err != nil {
-			return err
-		}
-
 		if err := w.SetCueBanner(le.CueBanner); err != nil {
 			return err
 		}
@@ -78,9 +70,5 @@ func (le LineEdit) Create(builder *Builder) error {
 }
 
 func (w LineEdit) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, w.Disabled, w.Hidden, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
-}
-
-func (le LineEdit) ValidatableInfo() Validator {
-	return le.Validator
+	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

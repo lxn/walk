@@ -17,8 +17,6 @@ type ComboBox struct {
 	Name                  string
 	Enabled               Property
 	Visible               Property
-	Disabled              bool
-	Hidden                bool
 	Font                  Font
 	ToolTipText           Property
 	MinSize               Size
@@ -34,8 +32,6 @@ type ComboBox struct {
 	OnMouseMove           walk.MouseEventHandler
 	OnMouseUp             walk.MouseEventHandler
 	OnSizeChanged         walk.EventHandler
-	BindTo                string
-	Optional              bool
 	Format                string
 	Precision             int
 	Model                 walk.ListModel
@@ -51,16 +47,11 @@ func (cb ComboBox) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(cb, w, func() error {
-		if _, ok := cb.Model.(walk.BindingValueProvider); !ok && cb.BindTo != "" {
-			return errors.New("declarative.ComboBox: Data binding is only supported using a model that implements BindingValueProvider.")
-		}
-
-		if err := w.SetBindingMember(cb.BindTo); err != nil {
-			return err
-		}
-
-		if !cb.Optional {
-			w.SetValidator(walk.SelectionRequiredValidator())
+		_, valueIsBind := cb.Value.(Bind)
+		_, valueIsBindTo := cb.Value.(BindTo)
+		valueBound := valueIsBind || valueIsBindTo
+		if _, ok := cb.Model.(walk.BindingValueProvider); !ok && valueBound {
+			return errors.New("declarative.ComboBox: Data binding is only supported using a model that implements walk.BindingValueProvider.")
 		}
 
 		w.SetFormat(cb.Format)
@@ -83,5 +74,5 @@ func (cb ComboBox) Create(builder *Builder) error {
 }
 
 func (w ComboBox) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, w.Disabled, w.Hidden, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
+	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

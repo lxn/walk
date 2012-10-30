@@ -127,20 +127,6 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 		}
 	}
 
-	// Validatable
-	if dva, ok := d.(Validatable); ok {
-		wva := w.(walk.Validatable)
-
-		if dvr := dva.ValidatableInfo(); dvr != nil {
-			wvr, err := dvr.Create()
-			if err != nil {
-				return err
-			}
-
-			wva.SetValidator(wvr)
-		}
-	}
-
 	oldParent := b.parent
 
 	// Container
