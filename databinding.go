@@ -34,9 +34,11 @@ type ErrorPresenter interface {
 
 type DataBinder struct {
 	dataSource                interface{}
-	boundWidgets              []DataBindable
-	widget2ChangedHandle      map[DataBindable]int
-	invalidValueWidgets       map[DataBindable]bool
+	boundWidgets              []Widget
+	properties                []*Property
+	property2Widget           map[*Property]Widget
+	property2ChangedHandle    map[*Property]int
+	widget2Property2Error     map[Widget]map[*Property]error
 	errorPresenter            ErrorPresenter
 	canSubmitChangedPublisher EventPublisher
 }
@@ -53,73 +55,78 @@ func (db *DataBinder) SetDataSource(dataSource interface{}) {
 	db.dataSource = dataSource
 }
 
-func (db *DataBinder) BoundWidgets() []DataBindable {
+func (db *DataBinder) BoundWidgets() []Widget {
 	return db.boundWidgets
 }
 
-func (db *DataBinder) SetBoundWidgets(boundWidgets []DataBindable) {
-	for widget, handle := range db.widget2ChangedHandle {
-		widget.BindingValueChanged().Detach(handle)
+func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
+	for prop, handle := range db.property2ChangedHandle {
+		prop.Changed().Detach(handle)
 	}
 
 	db.boundWidgets = boundWidgets
 
-	db.widget2ChangedHandle = make(map[DataBindable]int)
-	db.invalidValueWidgets = make(map[DataBindable]bool)
+	db.property2Widget = make(map[*Property]Widget)
+	db.property2ChangedHandle = make(map[*Property]int)
+	db.widget2Property2Error = make(map[Widget]map[*Property]error)
 
 	for _, widget := range boundWidgets {
 		widget := widget
 
-		changedEvent := widget.BindingValueChanged()
-		if changedEvent == nil {
-			continue
-		}
+		for _, prop := range widget.BaseWidget().name2Property {
+			prop := prop
+			if _, ok := prop.Source().(string); !ok {
+				continue
+			}
 
-		db.widget2ChangedHandle[widget] = changedEvent.Attach(func() {
-			db.validateWidget(widget)
-		})
+			db.properties = append(db.properties, prop)
+			db.property2Widget[prop] = widget
+
+			db.property2ChangedHandle[prop] = prop.Changed().Attach(func() {
+				db.validateProperty(prop, widget)
+			})
+		}
 	}
 }
 
-func (db *DataBinder) validateWidget(widget DataBindable) {
-	validatable, ok := widget.(Validatable)
-	if !ok {
-		return
-	}
-
-	validator := validatable.Validator()
+func (db *DataBinder) validateProperty(prop *Property, widget Widget) {
+	validator := prop.Validator()
 	if validator == nil {
 		return
 	}
 
-	if err := validator.Validate(widget.BindingValue()); err != nil {
-		if db.invalidValueWidgets[widget] {
-			return
-		}
+	var changed bool
+	prop2Err := db.widget2Property2Error[widget]
 
-		db.invalidValueWidgets[widget] = true
+	err := validator.Validate(prop.Get())
+	if err != nil {
+		changed = len(db.widget2Property2Error) == 0
 
-		if len(db.invalidValueWidgets) == 1 {
-			db.canSubmitChangedPublisher.Publish()
+		if prop2Err == nil {
+			prop2Err = make(map[*Property]error)
+			db.widget2Property2Error[widget] = prop2Err
 		}
-
-		if db.errorPresenter != nil {
-			db.errorPresenter.PresentError(err, widget)
-		}
+		prop2Err[prop] = err
 	} else {
-		if !db.invalidValueWidgets[widget] {
+		if prop2Err == nil {
 			return
 		}
 
-		delete(db.invalidValueWidgets, widget)
+		delete(prop2Err, prop)
 
-		if len(db.invalidValueWidgets) == 0 {
-			db.canSubmitChangedPublisher.Publish()
-		}
+		if len(prop2Err) == 0 {
+			delete(db.widget2Property2Error, widget)
 
-		if db.errorPresenter != nil {
-			db.errorPresenter.PresentError(nil, widget)
+			changed = len(db.widget2Property2Error) == 0
 		}
+	}
+
+	if db.errorPresenter != nil {
+		db.errorPresenter.PresentError(err, widget)
+	}
+
+	if changed {
+		db.canSubmitChangedPublisher.Publish()
 	}
 }
 
@@ -132,7 +139,7 @@ func (db *DataBinder) SetErrorPresenter(ep ErrorPresenter) {
 }
 
 func (db *DataBinder) CanSubmit() bool {
-	return len(db.invalidValueWidgets) == 0
+	return len(db.widget2Property2Error) == 0
 }
 
 func (db *DataBinder) CanSubmitChanged() *Event {
@@ -140,8 +147,8 @@ func (db *DataBinder) CanSubmitChanged() *Event {
 }
 
 func (db *DataBinder) Reset() error {
-	return db.forEach(func(widget DataBindable, field reflect.Value) error {
-		if f64, ok := widget.BindingValue().(float64); ok {
+	return db.forEach(func(prop *Property, field reflect.Value) error {
+		if f64, ok := prop.Get().(float64); ok {
 			switch v := field.Interface().(type) {
 			case float32:
 				f64 = float64(v)
@@ -183,19 +190,19 @@ func (db *DataBinder) Reset() error {
 				f64 = float64(v)
 
 			default:
-				return newError(fmt.Sprintf("Field '%s': Can't convert %s to float64.", widget.BindingMember(), field.Type().Name()))
+				return newError(fmt.Sprintf("Field '%s': Can't convert %s to float64.", prop.Source().(string), field.Type().Name()))
 			}
 
-			if err := widget.SetBindingValue(f64); err != nil {
+			if err := prop.Set(f64); err != nil {
 				return err
 			}
 		} else {
-			if err := widget.SetBindingValue(field.Interface()); err != nil {
+			if err := prop.Set(field.Interface()); err != nil {
 				return err
 			}
 		}
 
-		db.validateWidget(widget)
+		db.validateProperty(prop, db.property2Widget[prop])
 		return nil
 	})
 }
@@ -205,8 +212,8 @@ func (db *DataBinder) Submit() error {
 		return errValidationFailed
 	}
 
-	return db.forEach(func(widget DataBindable, field reflect.Value) error {
-		value := widget.BindingValue()
+	return db.forEach(func(prop *Property, field reflect.Value) error {
+		value := prop.Get()
 		if value == nil {
 			// This happens e.g. if CurrentIndex() of a ComboBox returns -1.
 			// FIXME: Should we handle this differently?
@@ -225,19 +232,19 @@ func (db *DataBinder) Submit() error {
 				field.SetUint(uint64(f64))
 
 			default:
-				return newError(fmt.Sprintf("Field '%s': Can't convert float64 to %s.", widget.BindingMember(), field.Type().Name()))
+				return newError(fmt.Sprintf("Field '%s': Can't convert float64 to %s.", prop.Source().(string), field.Type().Name()))
 			}
 
 			return nil
 		}
 
-		field.Set(reflect.ValueOf(widget.BindingValue()))
+		field.Set(reflect.ValueOf(value))
 
 		return nil
 	})
 }
 
-func (db *DataBinder) forEach(f func(widget DataBindable, field reflect.Value) error) error {
+func (db *DataBinder) forEach(f func(prop *Property, field reflect.Value) error) error {
 	p := reflect.ValueOf(db.dataSource)
 	if p.Type().Kind() != reflect.Ptr {
 		return newError("DataSource must be a pointer to a struct.")
@@ -252,13 +259,13 @@ func (db *DataBinder) forEach(f func(widget DataBindable, field reflect.Value) e
 		return newError("DataSource must be a pointer to a struct.")
 	}
 
-	for _, widget := range db.boundWidgets {
-		if field := s.FieldByName(widget.BindingMember()); field.IsValid() {
-			if err := f(widget, field); err != nil {
+	for _, prop := range db.properties {
+		if field := s.FieldByName(prop.Source().(string)); field.IsValid() {
+			if err := f(prop, field); err != nil {
 				return err
 			}
 		} else {
-			return newError(fmt.Sprintf("Field '%s' not found in struct '%s'.", widget.BindingMember(), s.Type().Name()))
+			return newError(fmt.Sprintf("Struct '%s' has no field '%s'.", s.Type().Name(), prop.Source().(string)))
 		}
 	}
 

@@ -316,6 +316,10 @@ type WidgetBase struct {
 	suspended            bool
 	visible              bool
 	enabled              bool
+	name2Property        map[string]*Property
+	enabledProperty      *Property
+	visibleProperty      *Property
+	toolTipTextProperty  *Property
 }
 
 var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
@@ -374,6 +378,8 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 	wb.enabled = true
 	wb.visible = true
 
+	wb.name2Property = make(map[string]*Property)
+
 	var hwndParent HWND
 	if parent != nil {
 		hwndParent = parent.BaseWidget().hWnd
@@ -424,6 +430,41 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 			return err
 		}
 	}
+
+	wb.enabledProperty = NewProperty(
+		"Enabled",
+		func() interface{} {
+			return wb.widget.Enabled()
+		},
+		func(v interface{}) error {
+			wb.widget.SetEnabled(v.(bool))
+			return nil
+		},
+		nil)
+
+	wb.visibleProperty = NewProperty(
+		"Visible",
+		func() interface{} {
+			return wb.widget.Visible()
+		},
+		func(v interface{}) error {
+			wb.widget.SetVisible(v.(bool))
+			return nil
+		},
+		nil)
+
+	wb.toolTipTextProperty = NewProperty(
+		"ToolTipText",
+		func() interface{} {
+			return wb.widget.ToolTipText()
+		},
+		func(v interface{}) error {
+			wb.widget.SetToolTipText(v.(string))
+			return nil
+		},
+		nil)
+
+	wb.MustRegisterProperties(wb.enabledProperty, wb.visibleProperty, wb.toolTipTextProperty)
 
 	succeeded = true
 
@@ -489,6 +530,23 @@ func rootWidget(w Widget) RootWidget {
 
 	rw, _ := widgetFromHWND(hWndRoot).(RootWidget)
 	return rw
+}
+
+func (wb *WidgetBase) MustRegisterProperties(properties ...*Property) {
+	for _, prop := range properties {
+		if prop == nil {
+			panic("property must not be nil")
+		}
+		if wb.name2Property[prop.name] != nil {
+			panic("property already registered")
+		}
+
+		wb.name2Property[prop.name] = prop
+	}
+}
+
+func (wb *WidgetBase) Property(name string) *Property {
+	return wb.name2Property[name]
 }
 
 func (wb *WidgetBase) hasStyleBits(bits uint) bool {
@@ -651,6 +709,8 @@ func (wb *WidgetBase) SetEnabled(value bool) {
 	wb.enabled = value
 
 	EnableWindow(wb.hWnd, wb.widget.Enabled())
+
+	wb.enabledProperty.changedEventPublisher.Publish()
 }
 
 // Font returns the *Font of the *WidgetBase.
@@ -823,6 +883,8 @@ func (wb *WidgetBase) SetVisible(visible bool) {
 	wb.visible = visible
 
 	wb.updateParentLayout()
+
+	wb.visibleProperty.changedEventPublisher.Publish()
 }
 
 // BringToTop moves the *WidgetBase to the top of the keyboard focus order.

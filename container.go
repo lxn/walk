@@ -128,7 +128,7 @@ func (cb *ContainerBase) SetDataBinder(db *DataBinder) {
 	cb.dataBinder = db
 
 	if db != nil {
-		var boundWidgets []DataBindable
+		var boundWidgets []Widget
 
 		walkDescendants(cb.widget, func(w Widget) bool {
 			if w.BaseWidget().Handle() == cb.hWnd {
@@ -139,8 +139,11 @@ func (cb *ContainerBase) SetDataBinder(db *DataBinder) {
 				return false
 			}
 
-			if bindable, ok := w.(DataBindable); ok && bindable.BindingMember() != "" {
-				boundWidgets = append(boundWidgets, bindable)
+			for _, prop := range w.BaseWidget().name2Property {
+				if _, ok := prop.Source().(string); ok {
+					boundWidgets = append(boundWidgets, w)
+					break
+				}
 			}
 
 			return true
