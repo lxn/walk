@@ -99,6 +99,9 @@ func (tv *TreeView) SetModel(model TreeModel) error {
 			if parent == nil {
 				tv.resetItems()
 			} else if tv.item2Info[parent] != nil {
+				tv.SetSuspended(true)
+				defer tv.SetSuspended(false)
+
 				if err := tv.removeDescendants(parent); err != nil {
 					return
 				}
