@@ -29,7 +29,9 @@ type TreeView struct {
 	usingSysIml                   bool
 	imageUintptr2Index            map[uintptr]int32
 	filePath2IconIndex            map[string]int32
+	itemCollapsingPublisher       TreeItemEventPublisher
 	itemCollapsedPublisher        TreeItemEventPublisher
+	itemExpandingPublisher        TreeItemEventPublisher
 	itemExpandedPublisher         TreeItemEventPublisher
 	currentItemChangedPublisher   EventPublisher
 }
@@ -362,8 +364,16 @@ func (tv *TreeView) removeDescendants(parent TreeItem) error {
 	return nil
 }
 
+func (tv *TreeView) ItemCollapsing() *TreeItemEvent {
+	return tv.itemCollapsingPublisher.Event()
+}
+
 func (tv *TreeView) ItemCollapsed() *TreeItemEvent {
 	return tv.itemCollapsedPublisher.Event()
+}
+
+func (tv *TreeView) ItemExpanding() *TreeItemEvent {
+	return tv.itemExpandingPublisher.Event()
 }
 
 func (tv *TreeView) ItemExpanded() *TreeItemEvent {
@@ -400,6 +410,20 @@ func (tv *TreeView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 				if len(info.child2Handle) == 0 {
 					tv.insertChildren(item)
 				}
+			}
+
+			switch nmtv.Action {
+			case TVE_COLLAPSE:
+				tv.itemCollapsingPublisher.Publish(item)
+
+			case TVE_COLLAPSERESET:
+
+			case TVE_EXPAND:
+				tv.itemExpandingPublisher.Publish(item)
+
+			case TVE_EXPANDPARTIAL:
+
+			case TVE_TOGGLE:
 			}
 
 		case TVN_ITEMEXPANDED:
