@@ -30,9 +30,7 @@ type TreeView struct {
 	OnSizeChanged        walk.EventHandler
 	Model                walk.TreeModel
 	OnCurrentItemChanged walk.EventHandler
-	OnItemCollapsing     walk.TreeItemEventHandler
 	OnItemCollapsed      walk.TreeItemEventHandler
-	OnItemExpanding      walk.TreeItemEventHandler
 	OnItemExpanded       walk.TreeItemEventHandler
 }
 
@@ -51,16 +49,8 @@ func (tv TreeView) Create(builder *Builder) error {
 			w.CurrentItemChanged().Attach(tv.OnCurrentItemChanged)
 		}
 
-		if tv.OnItemCollapsing != nil {
-			w.ItemCollapsing().Attach(tv.OnItemCollapsing)
-		}
-
 		if tv.OnItemCollapsed != nil {
 			w.ItemCollapsed().Attach(tv.OnItemCollapsed)
-		}
-
-		if tv.OnItemExpanding != nil {
-			w.ItemExpanding().Attach(tv.OnItemExpanding)
 		}
 
 		if tv.OnItemExpanded != nil {
