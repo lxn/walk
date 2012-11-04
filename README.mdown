@@ -24,21 +24,34 @@ as illustrated in this small example:
 	import (
 		"github.com/lxn/walk"
 		. "github.com/lxn/walk/declarative"
+		"strings"
 	)
 	
 	func main() {
-		var le *walk.LineEdit
-		var wv *walk.WebView
+		var inTE, outTE *walk.TextEdit
 	
 		MainWindow{
-			Title:   "Walk WebView Example",
-			MinSize: Size{800, 600},
+			Title:   "SCREAMO",
+			MinSize: Size{600, 400},
 			Layout:  VBox{},
 			Children: []Widget{
-				LineEdit{AssignTo: &le, OnReturnPressed: func() { wv.SetURL(le.Text()) }},
-				WebView{AssignTo: &wv, URL: "http://golang.org"},
+				Splitter{
+					Children: []Widget{
+						TextEdit{AssignTo: &inTE},
+						TextEdit{AssignTo: &outTE, ReadOnly: true},
+					},
+				},
+				PushButton{
+					Text: "SCREAM",
+					OnClicked: func() {
+						outTE.SetText(strings.ToUpper(inTE.Text()))
+					},
+				},
 			},
 		}.Run()
 	}
 
 There are some [examples](walk/tree/master/examples) that should get you started.
+
+Some features of Walk require an application manifest file alongside your
+executable to use Common Controls 6. See the examples directory for such a file.
