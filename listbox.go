@@ -33,7 +33,7 @@ func NewListBox(parent Container) (*ListBox, error) {
 		lb,
 		parent,
 		"LISTBOX",
-		WS_TABSTOP|WS_VISIBLE|LBS_STANDARD,
+		WS_TABSTOP|WS_VISIBLE|LBS_NOINTEGRALHEIGHT|LBS_STANDARD,
 		0)
 	if err != nil {
 		return nil, err
