@@ -56,16 +56,6 @@ func NewTabPage() (*TabPage, error) {
 	return tp, nil
 }
 
-func (tp *TabPage) Dispose() {
-	b := tp.Background()
-	if b != nil {
-		b.Dispose()
-		tp.SetBackground(nil)
-	}
-
-	tp.ContainerBase.Dispose()
-}
-
 func (tp *TabPage) Enabled() bool {
 	if tp.tabWidget != nil {
 		return tp.tabWidget.Enabled() && tp.enabled
