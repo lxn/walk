@@ -521,6 +521,22 @@ func InitWrapperWidget(widget Widget) error {
 	return nil
 }
 
+// DescendantByName returns a widget contained in the given parent, or nil on not found
+func DescendantByName(parent Widget, name string) (widget Widget) {
+	widget = nil
+	
+	walkDescendants(parent, func(w Widget) bool {
+		if w.Name() == name {
+			widget = w
+			return false
+		}
+		
+		return true
+	})
+	
+	return widget
+}
+
 func rootWidget(w Widget) RootWidget {
 	if w == nil {
 		return nil
