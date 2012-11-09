@@ -850,6 +850,26 @@ func (wb *WidgetBase) SetParent(value Container) (err error) {
 	return nil
 }
 
+// DescendantByName returns a widget contained in the given parent, error on not found
+func (wb *WidgetBase) DescendantByName(name string) (widget Widget, err error) {
+	widget = nil
+	
+	walkDescendants(wb.widget, func(w Widget) bool {
+		if w.Name() == name {
+			widget = w
+			return false
+		}
+		
+		return true
+	})
+	
+	if widget == nil {
+		return nil,newError("Widget was not found")
+	}
+	
+	return widget,nil
+}
+
 func widgetText(hwnd HWND) string {
 	textLength := SendMessage(hwnd, WM_GETTEXTLENGTH, 0, 0)
 	buf := make([]uint16, textLength+1)
