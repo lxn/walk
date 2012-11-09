@@ -90,6 +90,10 @@ type Widget interface {
 	// By default this is nil.
 	Cursor() Cursor
 
+	// DescendantByName traverses a widget's children and returns a widget
+	// matching the given name, or nil if not found
+	DescendantByName(name string) Widget
+
 	// Dispose releases the operating system resources, associated with the 
 	// Widget.
 	//
@@ -547,6 +551,21 @@ func (wb *WidgetBase) MustRegisterProperties(properties ...*Property) {
 
 func (wb *WidgetBase) Property(name string) *Property {
 	return wb.name2Property[name]
+}
+
+func (wb *WidgetBase) DescendantByName(name string) (widget Widget) {
+	widget = nil
+
+	walkDescendants(wb.widget, func(w Widget) bool {
+		if w.Name() == name {
+			widget = w
+			return false
+		}
+
+		return true
+	})
+
+	return widget
 }
 
 func (wb *WidgetBase) hasStyleBits(bits uint) bool {
