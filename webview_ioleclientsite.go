@@ -43,9 +43,8 @@ func webView_IOleClientSite_QueryInterface(clientSite *webViewIOleClientSite, ri
 		*ppvObject = unsafe.Pointer(&clientSite.inPlaceSite)
 	} else if EqualREFIID(riid, &IID_IDocHostUIHandler) {
 		*ppvObject = unsafe.Pointer(&clientSite.docHostUIHandler)
-		// FIXME: Reactivate after fixing crash
-		//	} else if EqualREFIID(riid, &IID_IDispatch) {
-		//		*ppvObject = unsafe.Pointer(&clientSite.webBrowserEvents2)
+	} else if EqualREFIID(riid, &DIID_DWebBrowserEvents2) {
+		*ppvObject = unsafe.Pointer(&clientSite.webBrowserEvents2)
 	} else {
 		*ppvObject = nil
 		return E_NOINTERFACE

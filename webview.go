@@ -20,7 +20,7 @@ func init() {
 
 type WebView struct {
 	WidgetBase
-	clientSite    webViewIOleClientSite
+	clientSite    webViewIOleClientSite // IMPORTANT: Must remain first member after WidgetBase
 	browserObject *IOleObject
 	urlProperty   *Property
 }
@@ -62,7 +62,7 @@ func NewWebView(parent Container) (*WebView, error) {
 		wv,
 		parent,
 		webViewWindowClass,
-		WS_VISIBLE,
+		WS_CLIPCHILDREN|WS_VISIBLE,
 		0); err != nil {
 		return nil, err
 	}
@@ -111,24 +111,23 @@ func NewWebView(parent Container) (*WebView, error) {
 		return nil, errorFromHRESULT("IOleObject.DoVerb", hr)
 	}
 
-	// FIXME: Reactivate after fixing crash
-	/*	var cpcPtr unsafe.Pointer
-		if hr := browserObject.QueryInterface(&IID_IConnectionPointContainer, &cpcPtr); FAILED(hr) {
-			return nil, errorFromHRESULT("IOleObject.QueryInterface(IID_IConnectionPointContainer)", hr)
-		}
-		cpc := (*IConnectionPointContainer)(cpcPtr)
-		defer cpc.Release()
+	var cpcPtr unsafe.Pointer
+	if hr := browserObject.QueryInterface(&IID_IConnectionPointContainer, &cpcPtr); FAILED(hr) {
+		return nil, errorFromHRESULT("IOleObject.QueryInterface(IID_IConnectionPointContainer)", hr)
+	}
+	cpc := (*IConnectionPointContainer)(cpcPtr)
+	defer cpc.Release()
 
-		var cp *IConnectionPoint
-		if hr := cpc.FindConnectionPoint(&DIID_DWebBrowserEvents2, &cp); FAILED(hr) {
-			return nil, errorFromHRESULT("IConnectionPointContainer.FindConnectionPoint(DIID_DWebBrowserEvents2)", hr)
-		}
-		defer cp.Release()
+	var cp *IConnectionPoint
+	if hr := cpc.FindConnectionPoint(&DIID_DWebBrowserEvents2, &cp); FAILED(hr) {
+		return nil, errorFromHRESULT("IConnectionPointContainer.FindConnectionPoint(DIID_DWebBrowserEvents2)", hr)
+	}
+	defer cp.Release()
 
-		var cookie uint
-		if hr := cp.Advise(unsafe.Pointer(&wv.clientSite.webBrowserEvents2), &cookie); FAILED(hr) {
-			return nil, errorFromHRESULT("IConnectionPoint.Advise", hr)
-		}*/
+	var cookie uint32
+	if hr := cp.Advise(unsafe.Pointer(&wv.clientSite.webBrowserEvents2), &cookie); FAILED(hr) {
+		return nil, errorFromHRESULT("IConnectionPoint.Advise", hr)
+	}
 
 	wv.onResize()
 
@@ -199,6 +198,10 @@ func (wv *WebView) SetURL(url string) error {
 
 		return nil
 	})
+}
+
+func (wv *WebView) URLChanged() *Event {
+	return wv.urlProperty.Changed()
 }
 
 func (wv *WebView) withWebBrowser2(f func(webBrowser2 *IWebBrowser2) error) error {
