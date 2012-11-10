@@ -18,8 +18,18 @@ func main() {
 		MinSize: Size{800, 600},
 		Layout:  VBox{},
 		Children: []Widget{
-			LineEdit{AssignTo: &le, OnReturnPressed: func() { wv.SetURL(le.Text()) }},
-			WebView{AssignTo: &wv, URL: "http://golang.org"},
+			LineEdit{
+				AssignTo: &le,
+				Text:     BindProperty{"wv.URL"},
+				OnReturnPressed: func() {
+					wv.SetURL(le.Text())
+				},
+			},
+			WebView{
+				AssignTo: &wv,
+				Name:     "wv",
+				URL:      "http://golang.org",
+			},
 		},
 	}.Run()
 }
