@@ -80,6 +80,8 @@ func (mw MainWindow) Create() error {
 			return err
 		}
 
+		w.Show()
+
 		if mw.AssignTo != nil {
 			*mw.AssignTo = w
 		}
