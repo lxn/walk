@@ -29,6 +29,7 @@ type WebView struct {
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
 	URL                Property
+	OnURLChanged       walk.EventHandler
 }
 
 func (wv WebView) Create(builder *Builder) error {
@@ -38,6 +39,10 @@ func (wv WebView) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(wv, w, func() error {
+		if wv.OnURLChanged != nil {
+			w.URLChanged().Attach(wv.OnURLChanged)
+		}
+
 		if wv.AssignTo != nil {
 			*wv.AssignTo = w
 		}
