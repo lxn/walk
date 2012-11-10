@@ -9,28 +9,29 @@ import (
 )
 
 type TabWidget struct {
-	AssignTo           **walk.TabWidget
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	ToolTipText        Property
-	MinSize            Size
-	MaxSize            Size
-	StretchFactor      int
-	Row                int
-	RowSpan            int
-	Column             int
-	ColumnSpan         int
-	ContextMenuActions []*walk.Action
-	OnKeyDown          walk.KeyEventHandler
-	OnMouseDown        walk.MouseEventHandler
-	OnMouseMove        walk.MouseEventHandler
-	OnMouseUp          walk.MouseEventHandler
-	OnSizeChanged      walk.EventHandler
-	ContentMargins     Margins
-	ContentMarginsZero bool
-	Pages              []TabPage
+	AssignTo              **walk.TabWidget
+	Name                  string
+	Enabled               Property
+	Visible               Property
+	Font                  Font
+	ToolTipText           Property
+	MinSize               Size
+	MaxSize               Size
+	StretchFactor         int
+	Row                   int
+	RowSpan               int
+	Column                int
+	ColumnSpan            int
+	ContextMenuActions    []*walk.Action
+	OnKeyDown             walk.KeyEventHandler
+	OnMouseDown           walk.MouseEventHandler
+	OnMouseMove           walk.MouseEventHandler
+	OnMouseUp             walk.MouseEventHandler
+	OnSizeChanged         walk.EventHandler
+	ContentMargins        Margins
+	ContentMarginsZero    bool
+	Pages                 []TabPage
+	OnCurrentIndexChanged walk.EventHandler
 }
 
 func (tw TabWidget) Create(builder *Builder) error {
@@ -57,6 +58,10 @@ func (tw TabWidget) Create(builder *Builder) error {
 			if err := w.Pages().Add(*tp.AssignTo); err != nil {
 				return err
 			}
+		}
+
+		if tw.OnCurrentIndexChanged != nil {
+			w.CurrentIndexChanged().Attach(tw.OnCurrentIndexChanged)
 		}
 
 		if tw.AssignTo != nil {
