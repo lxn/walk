@@ -101,7 +101,9 @@ func NewTableView(parent Container) (*TableView, error) {
 // Dispose releases the operating system resources, associated with the 
 // *TableView.
 func (tv *TableView) Dispose() {
-	tv.detachModel()
+	if tv.model != nil {
+		tv.detachModel()
+	}
 
 	if tv.hWnd != 0 {
 		if !KillTimer(tv.hWnd, tableViewCurrentIndexChangedTimerId) {
