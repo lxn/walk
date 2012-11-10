@@ -68,6 +68,12 @@ func (d *Directory) ResetChildren() error {
 	dirPath := d.Path()
 
 	if err := filepath.Walk(d.Path(), func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			if info == nil {
+				return filepath.SkipDir
+			}
+		}
+
 		name := info.Name()
 
 		if !info.IsDir() || path == dirPath || shouldExclude(name) {
@@ -189,6 +195,12 @@ func (m *FileInfoModel) SetDirPath(dirPath string) error {
 	m.items = nil
 
 	if err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			if info == nil {
+				return filepath.SkipDir
+			}
+		}
+
 		name := info.Name()
 
 		if path == dirPath || shouldExclude(name) {
