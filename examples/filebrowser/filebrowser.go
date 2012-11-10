@@ -113,6 +113,11 @@ func NewDirectoryTreeModel() (*DirectoryTreeModel, error) {
 	}
 
 	for _, drive := range drives {
+		switch drive {
+		case "A:\\", "B:\\":
+			continue
+		}
+
 		model.roots = append(model.roots, NewDirectory(drive, nil))
 	}
 
