@@ -246,14 +246,16 @@ func (tw *TabWidget) onResize(lParam uintptr) {
 }
 
 func (tw *TabWidget) onSelChange() {
-	if tw.currentIndex != -1 {
+	pageCount := tw.pages.Len()
+
+	if tw.currentIndex > -1 && tw.currentIndex < pageCount {
 		page := tw.pages.At(tw.currentIndex)
 		page.SetVisible(false)
 	}
 
 	tw.currentIndex = int(SendMessage(tw.hWndTab, TCM_GETCURSEL, 0, 0))
 
-	if tw.currentIndex != -1 {
+	if tw.currentIndex > -1 && tw.currentIndex < pageCount {
 		page := tw.pages.At(tw.currentIndex)
 		page.SetVisible(true)
 		page.Invalidate()
@@ -318,7 +320,7 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err error) {
 
 	if tw.pages.Len() == 1 {
 		page.SetVisible(true)
-		tw.currentIndex = 0
+		tw.SetCurrentIndex(0)
 	}
 
 	item := page.tcItem()
@@ -367,7 +369,12 @@ func (tw *TabWidget) onRemovedPage(index int, page *TabPage) (err error) {
 
 	SendMessage(tw.hWndTab, TCM_DELETEITEM, uintptr(index), 0)
 
-	tw.currentIndex = -1
+	if tw.pages.Len() > 0 {
+		tw.currentIndex = 0
+		SendMessage(tw.hWndTab, TCM_SETCURSEL, uintptr(tw.currentIndex), 0)
+	} else {
+		tw.currentIndex = -1
+	}
 	tw.onSelChange()
 
 	return
