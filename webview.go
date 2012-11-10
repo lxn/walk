@@ -204,6 +204,16 @@ func (wv *WebView) URLChanged() *Event {
 	return wv.urlProperty.Changed()
 }
 
+func (wv *WebView) Refresh() error {
+	return wv.withWebBrowser2(func(webBrowser2 *IWebBrowser2) error {
+		if hr := webBrowser2.Refresh(); FAILED(hr) {
+			return errorFromHRESULT("IWebBrowser2.Refresh", hr)
+		}
+
+		return nil
+	})
+}
+
 func (wv *WebView) withWebBrowser2(f func(webBrowser2 *IWebBrowser2) error) error {
 	var webBrowser2Ptr unsafe.Pointer
 	if hr := wv.browserObject.QueryInterface(&IID_IWebBrowser2, &webBrowser2Ptr); FAILED(hr) {
