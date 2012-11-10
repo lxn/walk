@@ -53,7 +53,7 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 	b.declWidgets = append(b.declWidgets, declWidget{d, w})
 
 	// Widget
-	name, disabled, hidden, font, toolTipText, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions, onKeyDown, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
+	name, _, _, font, toolTipText, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions, onKeyDown, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
 
 	w.SetName(name)
 
@@ -174,9 +174,6 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 	b.parent = oldParent
 
 	// Widget continued
-	w.SetEnabled(!disabled)
-	w.SetVisible(!hidden)
-
 	if font != nil {
 		if f, err := font.Create(); err != nil {
 			return err
