@@ -299,6 +299,12 @@ func (tw *TabWidget) onInsertingPage(index int, page *TabPage) (err error) {
 }
 
 func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err error) {
+	item := page.tcItem()
+
+	if idx := int(SendMessage(tw.hWndTab, TCM_INSERTITEM, uintptr(index), uintptr(unsafe.Pointer(item)))); idx == -1 {
+		return newError("SendMessage(TCM_INSERTITEM) failed")
+	}
+
 	page.SetVisible(false)
 
 	style := uint32(GetWindowLong(page.hWnd, GWL_STYLE))
@@ -321,12 +327,6 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err error) {
 	if tw.pages.Len() == 1 {
 		page.SetVisible(true)
 		tw.SetCurrentIndex(0)
-	}
-
-	item := page.tcItem()
-
-	if idx := int(SendMessage(tw.hWndTab, TCM_INSERTITEM, uintptr(index), uintptr(unsafe.Pointer(item)))); idx == -1 {
-		return newError("SendMessage(TCM_INSERTITEM) failed")
 	}
 
 	tw.resizePages()
