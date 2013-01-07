@@ -33,7 +33,7 @@ func (*CheckBox) LayoutFlags() LayoutFlags {
 
 func (cb *CheckBox) MinSizeHint() Size {
 	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 10})
-	textSize := cb.calculateTextSize()
+	textSize := cb.calculateTextSizeImpl("n" + widgetText(cb.hWnd))
 
 	// FIXME: Use GetThemePartSize instead of GetSystemMetrics?
 	w := textSize.Width + int(GetSystemMetrics(SM_CXMENUCHECK))
