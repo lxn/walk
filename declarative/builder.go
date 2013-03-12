@@ -61,8 +61,10 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 		b.name2Widget[name] = w
 	}
 
-	if err := w.SetToolTipText(toolTipText); err != nil {
-		return err
+	if toolTipText != "" {
+		if err := w.SetToolTipText(toolTipText); err != nil {
+			return err
+		}
 	}
 
 	if err := w.SetMinMaxSize(minSize.toW(), maxSize.toW()); err != nil {
