@@ -14,7 +14,6 @@ type Dialog struct {
 	Enabled            Property
 	Visible            Property
 	Font               Font
-	ToolTipText        Property
 	MinSize            Size
 	MaxSize            Size
 	ContextMenuActions []*walk.Action

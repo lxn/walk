@@ -429,7 +429,10 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 
 	setWidgetFont(wb.hWnd, defaultFont)
 
-	if _, ok := widget.(*ToolTip); !ok {
+	switch widget.(type) {
+	case *ToolTip:
+	case RootWidget:
+	default:
 		if err := globalToolTip.AddTool(widget); err != nil {
 			return err
 		}
@@ -1233,11 +1236,19 @@ func (wb *WidgetBase) SetFocus() error {
 
 // ToolTipText returns the tool tip text of the *WidgetBase.
 func (wb *WidgetBase) ToolTipText() string {
+	if _, ok := wb.widget.(RootWidget); ok {
+		return ""
+	}
+
 	return globalToolTip.Text(wb.widget)
 }
 
 // SetToolTipText sets the tool tip text of the *WidgetBase.
 func (wb *WidgetBase) SetToolTipText(s string) error {
+	if _, ok := wb.widget.(RootWidget); ok {
+		return newError("not supported for a RootWidget")
+	}
+
 	return globalToolTip.SetText(wb.widget, s)
 }
 
