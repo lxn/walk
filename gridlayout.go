@@ -433,7 +433,7 @@ func (l gridLayoutSectionInfoList) Swap(i, j int) {
 
 func (l *GridLayout) Update(reset bool) error {
 	if l.container == nil {
-		return newError("container required")
+		return nil
 	}
 
 	if reset {
