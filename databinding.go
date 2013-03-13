@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 var (
@@ -246,12 +247,37 @@ func (db *DataBinder) forEach(f func(prop *Property, field reflect.Value) error)
 	}
 
 	for _, prop := range db.properties {
-		if field := s.FieldByName(prop.Source().(string)); field.IsValid() {
-			if err := f(prop, field); err != nil {
-				return err
+		path := prop.Source().(string)
+		names := strings.Split(path, ".")
+
+		p := p
+		s := s
+
+		for i, name := range names {
+			field := s.FieldByName(name)
+			if !field.IsValid() {
+				return newError(fmt.Sprintf("Struct '%s' has no field '%s'.",
+					s.Type().Name(), name))
 			}
-		} else {
-			return newError(fmt.Sprintf("Struct '%s' has no field '%s'.", s.Type().Name(), prop.Source().(string)))
+
+			if i == len(names)-1 {
+				if err := f(prop, field); err != nil {
+					return err
+				}
+			} else if p.Type().Kind() == reflect.Ptr {
+				p = field
+			} else {
+				return newError("Field must be a pointer to a struct.")
+			}
+
+			if p.IsNil() {
+				return newError("Pointer must not be nil.")
+			}
+
+			s = reflect.Indirect(p)
+			if s.Type().Kind() != reflect.Struct {
+				return newError("Pointer must point to a struct.")
+			}
 		}
 	}
 
