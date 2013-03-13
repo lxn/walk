@@ -38,7 +38,8 @@ func (p *Property) Get() interface{} {
 func (p *Property) Set(v interface{}) error {
 	p.assertNotReadOnly()
 
-	if v == p.Get() {
+	// FIXME: Ugly special case for Visible property
+	if p.name != "Visible" && v == p.Get() {
 		return nil
 	}
 
