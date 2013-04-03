@@ -11,40 +11,20 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-func systemTimeToTime(st *SYSTEMTIME) time.Time {
-	if st == nil {
-		return time.Time{}
-	}
-
-	return time.Date(int(st.WYear), time.Month(st.WMonth), int(st.WDay), 0, 0, 0, 0, time.Local)
-}
-
-func timeToSystemTime(t time.Time) *SYSTEMTIME {
-	if t.IsZero() {
-		return nil
-	}
-
-	return &SYSTEMTIME{
-		WYear:  uint16(t.Year()),
-		WMonth: uint16(t.Month()),
-		WDay:   uint16(t.Day()),
-	}
-}
-
 type DateEdit struct {
 	WidgetBase
 	valueChangedPublisher EventPublisher
 	dateProperty          *Property
 }
 
-func NewDateEdit(parent Container) (*DateEdit, error) {
+func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
 	de := &DateEdit{}
 
 	if err := InitChildWidget(
 		de,
 		parent,
 		"SysDateTimePick32",
-		WS_TABSTOP|WS_VISIBLE|DTS_SHORTDATEFORMAT,
+		WS_TABSTOP|WS_VISIBLE|DTS_SHORTDATEFORMAT|style,
 		0); err != nil {
 		return nil, err
 	}
@@ -64,6 +44,14 @@ func NewDateEdit(parent Container) (*DateEdit, error) {
 	return de, nil
 }
 
+func NewDateEdit(parent Container) (*DateEdit, error) {
+	return newDateEdit(parent, 0)
+}
+
+func NewDateEditWithNoneOption(parent Container) (*DateEdit, error) {
+	return newDateEdit(parent, DTS_SHOWNONE)
+}
+
 func (*DateEdit) LayoutFlags() LayoutFlags {
 	return GrowableHorz
 }
@@ -74,6 +62,34 @@ func (de *DateEdit) MinSizeHint() Size {
 
 func (de *DateEdit) SizeHint() Size {
 	return de.MinSizeHint()
+}
+
+func (de *DateEdit) systemTimeToTime(st *SYSTEMTIME) time.Time {
+	if st == nil || !de.hasStyleBits(DTS_SHOWNONE) && st.WYear == 1601 && st.WMonth == 1 && st.WDay == 1 {
+		return time.Time{}
+	}
+
+	return time.Date(int(st.WYear), time.Month(st.WMonth), int(st.WDay), 0, 0, 0, 0, time.Local)
+}
+
+func (de *DateEdit) timeToSystemTime(t time.Time) *SYSTEMTIME {
+	if t.IsZero() {
+		if de.hasStyleBits(DTS_SHOWNONE) {
+			return nil
+		} else {
+			return &SYSTEMTIME{
+				WYear:  uint16(1601),
+				WMonth: uint16(1),
+				WDay:   uint16(1),
+			}
+		}
+	}
+
+	return &SYSTEMTIME{
+		WYear:  uint16(t.Year()),
+		WMonth: uint16(t.Month()),
+		WDay:   uint16(t.Day()),
+	}
 }
 
 func (de *DateEdit) systemTime() (*SYSTEMTIME, error) {
@@ -114,11 +130,11 @@ func (de *DateEdit) Range() (min, max time.Time) {
 	ret := de.SendMessage(DTM_GETRANGE, 0, uintptr(unsafe.Pointer(&st[0])))
 
 	if ret&GDTR_MIN > 0 {
-		min = systemTimeToTime(&st[0])
+		min = de.systemTimeToTime(&st[0])
 	}
 
 	if ret&GDTR_MAX > 0 {
-		max = systemTimeToTime(&st[1])
+		max = de.systemTimeToTime(&st[1])
 	}
 
 	return
@@ -138,12 +154,12 @@ func (de *DateEdit) SetRange(min, max time.Time) error {
 
 	if !min.IsZero() {
 		wParam |= GDTR_MIN
-		st[0] = *timeToSystemTime(min)
+		st[0] = *de.timeToSystemTime(min)
 	}
 
 	if !max.IsZero() {
 		wParam |= GDTR_MAX
-		st[1] = *timeToSystemTime(max)
+		st[1] = *de.timeToSystemTime(max)
 	}
 
 	if 0 == de.SendMessage(DTM_SETRANGE, wParam, uintptr(unsafe.Pointer(&st[0]))) {
@@ -163,11 +179,11 @@ func (de *DateEdit) Value() time.Time {
 		return time.Time{}
 	}
 
-	return time.Unix(systemTimeToTime(st).Unix(), 0)
+	return time.Unix(de.systemTimeToTime(st).Unix(), 0)
 }
 
 func (de *DateEdit) SetValue(value time.Time) error {
-	return de.setSystemTime(timeToSystemTime(value))
+	return de.setSystemTime(de.timeToSystemTime(value))
 }
 
 func (de *DateEdit) ValueChanged() *Event {

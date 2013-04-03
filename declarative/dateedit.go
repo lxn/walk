@@ -32,6 +32,7 @@ type DateEdit struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
+	NoneOption         bool
 	MinDate            time.Time
 	MaxDate            time.Time
 	Date               Property
@@ -39,7 +40,14 @@ type DateEdit struct {
 }
 
 func (de DateEdit) Create(builder *Builder) error {
-	w, err := walk.NewDateEdit(builder.Parent())
+	var w *walk.DateEdit
+	var err error
+
+	if de.NoneOption {
+		w, err = walk.NewDateEditWithNoneOption(builder.Parent())
+	} else {
+		w, err = walk.NewDateEdit(builder.Parent())
+	}
 	if err != nil {
 		return err
 	}
