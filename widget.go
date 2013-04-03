@@ -1026,6 +1026,8 @@ func (wb *WidgetBase) SetMinMaxSize(min, max Size) error {
 	return nil
 }
 
+var dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+
 func (wb *WidgetBase) dialogBaseUnits() Size {
 	// The widget may use a font different from that in WidgetBase,
 	// like e.g. NumberEdit does, so we try to use the right one.
@@ -1046,7 +1048,7 @@ func (wb *WidgetBase) dialogBaseUnits() Size {
 	var size SIZE
 	if !GetTextExtentPoint32(
 		hdc,
-		syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"),
+		dialogBaseUnitsUTF16StringPtr,
 		52,
 		&size) {
 		newError("GetTextExtentPoint32 failed")
