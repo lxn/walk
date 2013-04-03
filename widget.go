@@ -861,12 +861,24 @@ func (wb *WidgetBase) SetParent(value Container) (err error) {
 
 	wb.parent = value
 
+	var oldChildren, newChildren *WidgetList
 	if oldParent != nil {
-		oldParent.Children().Remove(wb)
+		oldChildren = oldParent.Children()
+	}
+	if value != nil {
+		newChildren = value.Children()
 	}
 
-	if value != nil && !value.Children().containsHandle(wb.hWnd) {
-		value.Children().Add(wb)
+	if newChildren == oldChildren {
+		return nil
+	}
+
+	if oldChildren != nil {
+		oldChildren.Remove(wb.widget)
+	}
+
+	if newChildren != nil && !newChildren.containsHandle(wb.hWnd) {
+		newChildren.Add(wb.widget)
 	}
 
 	return nil

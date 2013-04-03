@@ -272,8 +272,8 @@ func (cb *ContainerBase) onInsertingWidget(index int, widget Widget) (err error)
 }
 
 func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err error) {
-	if widget.Parent().BaseWidget().hWnd != cb.hWnd {
-		err = widget.SetParent(widgetFromHWND(cb.hWnd).(Container))
+	if parent := widget.Parent(); parent == nil || parent.BaseWidget().hWnd != cb.hWnd {
+		err = widget.SetParent(cb.widget.(Container))
 		if err != nil {
 			return
 		}
@@ -287,6 +287,10 @@ func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err error) 
 }
 
 func (cb *ContainerBase) onRemovingWidget(index int, widget Widget) (err error) {
+	if widget.Parent() == nil {
+		return
+	}
+
 	if widget.Parent().BaseWidget().hWnd == cb.hWnd {
 		err = widget.SetParent(nil)
 	}
