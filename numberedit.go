@@ -176,7 +176,7 @@ func (ne *NumberEdit) SetRange(min, max float64) error {
 }
 
 func (ne *NumberEdit) Value() float64 {
-	val, _ := parseFloat(ne.edit.Text())
+	val, _ := ParseFloat(ne.edit.Text())
 	return val
 }
 
@@ -186,7 +186,7 @@ func (ne *NumberEdit) SetValue(value float64) (err error) {
 	if ne.decimals == 0 {
 		text = strconv.Itoa(int(value))
 	} else {
-		text, err = formatFloat(value, ne.decimals)
+		text, err = FormatFloat(value, ne.decimals)
 		if err != nil {
 			return
 		}

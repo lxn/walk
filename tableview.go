@@ -753,14 +753,14 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 					if prec == 0 {
 						prec = 2
 					}
-					text, _ = formatFloat(float64(val), prec)
+					text, _ = FormatFloat(float64(val), prec)
 
 				case float64:
 					prec := tv.columns[col].Precision
 					if prec == 0 {
 						prec = 2
 					}
-					text, _ = formatFloat(val, prec)
+					text, _ = FormatFloat(val, prec)
 
 				case time.Time:
 					text = val.Format(tv.columns[col].Format)
