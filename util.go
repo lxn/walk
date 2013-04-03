@@ -39,10 +39,10 @@ func boolToInt(value bool) int {
 	return 0
 }
 
-func parseFloat(s string) (float64, error) {
+func ParseFloat(s string) (float64, error) {
 	s = strings.TrimSpace(s)
 
-	t, _ := formatFloat(1000, 2)
+	t, _ := FormatFloat(1000, 2)
 
 	replaceSep := func(new string, index func(string, func(rune) bool) int) {
 		i := index(t, func(r rune) bool {
@@ -64,7 +64,7 @@ func parseFloat(s string) (float64, error) {
 	return strconv.ParseFloat(s, 64)
 }
 
-func formatFloat(f float64, prec int) (string, error) {
+func FormatFloat(f float64, prec int) (string, error) {
 	return formatFloatString(strconv.FormatFloat(f, 'f', prec, 64), prec)
 }
 
