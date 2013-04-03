@@ -185,6 +185,8 @@ func (tlw *TopLevelWindow) Hide() {
 
 func (tlw *TopLevelWindow) Show() {
 	tlw.widget.SetVisible(true)
+
+	tlw.SetSuspended(false)
 }
 
 func (tlw *TopLevelWindow) close() error {
@@ -270,6 +272,7 @@ func (tlw *TopLevelWindow) Closing() *CloseEvent {
 func (tlw *TopLevelWindow) ProgressIndicator() *ProgressIndicator {
 	return tlw.progressIndicator
 }
+
 func (tlw *TopLevelWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ACTIVATE:

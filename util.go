@@ -161,7 +161,11 @@ func walkDescendants(widget Widget, f func(w Widget) bool) {
 		}
 
 	case Container:
-		children = w.Children().items
+		if c := w.Children(); c != nil {
+			children = c.items
+		} else {
+			children = nil
+		}
 	}
 
 	for _, w := range children {

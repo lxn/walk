@@ -195,8 +195,22 @@ func (cb *ContainerBase) SetSuspended(suspend bool) {
 	cb.WidgetBase.SetSuspended(suspend)
 
 	if !suspend && wasSuspended && cb.layout != nil {
-		cb.layout.Update(false)
+		cb.layout.Update(true)
 	}
+
+	walkDescendants(cb, func(w Widget) bool {
+		if _, ok := w.(Container); !ok {
+			return false
+		}
+
+		if w.BaseWidget() != cb.BaseWidget() {
+			w.SetSuspended(suspend)
+		}
+
+		w.Invalidate()
+
+		return true
+	})
 }
 
 func (cb *ContainerBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {

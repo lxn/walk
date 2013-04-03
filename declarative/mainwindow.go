@@ -37,6 +37,8 @@ func (mw MainWindow) Create() error {
 		return err
 	}
 
+	w.SetSuspended(true)
+
 	tlwi := topLevelWindowInfo{
 		Name:               mw.Name,
 		Font:               mw.Font,

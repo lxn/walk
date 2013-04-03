@@ -40,6 +40,8 @@ func (gb GroupBox) Create(builder *Builder) error {
 		return err
 	}
 
+	w.SetSuspended(true)
+
 	return builder.InitWidget(gb, w, func() error {
 		if err := w.SetTitle(gb.Title); err != nil {
 			return err

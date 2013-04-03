@@ -39,6 +39,8 @@ func (c Composite) Create(builder *Builder) error {
 		return err
 	}
 
+	w.SetSuspended(true)
+
 	return builder.InitWidget(c, w, func() error {
 		if c.AssignTo != nil {
 			*c.AssignTo = w

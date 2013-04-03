@@ -37,6 +37,8 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 		return err
 	}
 
+	w.SetSuspended(true)
+
 	tlwi := topLevelWindowInfo{
 		Name:               d.Name,
 		Font:               d.Font,
