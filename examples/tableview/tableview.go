@@ -13,6 +13,7 @@ import (
 
 import (
 	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 )
 
 type Foo struct {
@@ -33,28 +34,12 @@ type FooModel struct {
 	items      []*Foo
 }
 
-// Make sure we implement all required interfaces.
-var _ walk.ImageProvider = &FooModel{}
-var _ walk.ItemChecker = &FooModel{}
-var _ walk.Sorter = &FooModel{}
-var _ walk.TableModel = &FooModel{}
-
 func NewFooModel() *FooModel {
 	m := new(FooModel)
 	m.evenBitmap, _ = walk.NewBitmapFromFile("../img/open.png")
 	m.oddIcon, _ = walk.NewIconFromFile("../img/x.ico")
 	m.ResetRows()
 	return m
-}
-
-// Called by the TableView from SetModel to retrieve column information. 
-func (m *FooModel) Columns() []walk.TableColumn {
-	return []walk.TableColumn{
-		{Title: "#"},
-		{Title: "Bar"},
-		{Title: "Baz", Format: "%.2f", Alignment: walk.AlignFar},
-		{Title: "Quux", Format: "2006-01-02 15:04:05", Width: 150},
-	}
 }
 
 // Called by the TableView from SetModel and every time the model publishes a
@@ -171,48 +156,34 @@ func (m *FooModel) ResetRows() {
 	m.Sort(m.sortColumn, m.sortOrder)
 }
 
-type MainWindow struct {
-	*walk.MainWindow
-	model *FooModel
-}
-
 func main() {
-	walk.SetPanicOnError(true)
-
 	rand.Seed(time.Now().UnixNano())
 
-	mainWnd, _ := walk.NewMainWindow()
+	model := NewFooModel()
 
-	mw := &MainWindow{
-		MainWindow: mainWnd,
-		model:      NewFooModel(),
-	}
-
-	mw.SetLayout(walk.NewVBoxLayout())
-	mw.SetTitle("Walk TableView Example")
-
-	resetRowsButton, _ := walk.NewPushButton(mw)
-	resetRowsButton.SetText("Reset Rows")
-
-	resetRowsButton.Clicked().Attach(func() {
-		// Get some fresh data.
-		mw.model.ResetRows()
-	})
-
-	tableView, _ := walk.NewTableView(mw)
-
-	tableView.SetAlternatingRowBGColor(walk.RGB(255, 255, 224))
-	tableView.SetReorderColumnsEnabled(true)
-
-	// Everybody loves check boxes.
-	tableView.SetCheckBoxes(true)
-
-	// Don't forget to set the model.
-	tableView.SetModel(mw.model)
-
-	mw.SetMinMaxSize(walk.Size{320, 240}, walk.Size{})
-	mw.SetSize(walk.Size{800, 600})
-	mw.Show()
-
-	mw.Run()
+	MainWindow{
+		Title:  "Walk TableView Example",
+		Size:   Size{800, 600},
+		Layout: VBox{},
+		Children: []Widget{
+			PushButton{
+				Text: "Reset Rows",
+				OnClicked: func() {
+					model.ResetRows()
+				},
+			},
+			TableView{
+				AlternatingRowBGColor: walk.RGB(255, 255, 224),
+				CheckBoxes:            true,
+				ReorderColumnsEnabled: true,
+				Columns: []TableViewColumn{
+					{Title: "#"},
+					{Title: "Bar"},
+					{Title: "Baz", Format: "%.2f", Alignment: AlignFar},
+					{Title: "Quux", Format: "2006-01-02 15:04:05", Width: 150},
+				},
+				Model: model,
+			},
+		},
+	}.Run()
 }

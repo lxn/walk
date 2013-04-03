@@ -161,14 +161,6 @@ func NewFileInfoModel() *FileInfoModel {
 	return new(FileInfoModel)
 }
 
-func (m *FileInfoModel) Columns() []walk.TableColumn {
-	return []walk.TableColumn{
-		{Title: "Name", Width: 200},
-		{Title: "Size", Format: "%d", Alignment: walk.AlignFar, Width: 80},
-		{Title: "Modified", Format: "2006-01-02 15:04:05", Width: 120},
-	}
-}
-
 func (m *FileInfoModel) RowCount() int {
 	return len(m.items)
 }
@@ -279,7 +271,24 @@ func main() {
 					},
 					TableView{
 						AssignTo: &tableView,
-						Model:    tableModel,
+						Columns: []TableViewColumn{
+							TableViewColumn{
+								Title: "Name",
+								Width: 200,
+							},
+							TableViewColumn{
+								Title:     "Size",
+								Format:    "%d",
+								Alignment: AlignFar,
+								Width:     80,
+							},
+							TableViewColumn{
+								Title:  "Modified",
+								Format: "2006-01-02 15:04:05",
+								Width:  120,
+							},
+						},
+						Model: tableModel,
 						OnCurrentIndexChanged: func() {
 							var url string
 							if index := tableView.CurrentIndex(); index > -1 {

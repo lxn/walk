@@ -31,6 +31,7 @@ const (
 // amounts of data.
 type TableView struct {
 	WidgetBase
+	columns                         *TableViewColumnList
 	model                           TableModel
 	itemChecker                     ItemChecker
 	imageProvider                   ImageProvider
@@ -41,7 +42,6 @@ type TableView struct {
 	rowsResetHandlerHandle          int
 	rowChangedHandlerHandle         int
 	sortChangedHandlerHandle        int
-	columns                         []TableColumn
 	currentIndex                    int
 	currentIndexChangedPublisher    EventPublisher
 	selectedIndexes                 *IndexList
@@ -64,6 +64,8 @@ func NewTableView(parent Container) (*TableView, error) {
 		filePath2IconIndex:    make(map[string]int32),
 		selectedIndexes:       NewIndexList(nil),
 	}
+
+	tv.columns = newTableViewColumnList(tv)
 
 	if err := InitChildWidget(
 		tv,
@@ -101,6 +103,8 @@ func NewTableView(parent Container) (*TableView, error) {
 // Dispose releases the operating system resources, associated with the 
 // *TableView.
 func (tv *TableView) Dispose() {
+	tv.columns.unsetColumnsTV()
+
 	if tv.model != nil {
 		tv.detachModel()
 	}
@@ -165,6 +169,23 @@ func (tv *TableView) SetAlternatingRowBGColor(c Color) {
 	tv.Invalidate()
 }
 
+// Columns returns the list of columns.
+func (tv *TableView) Columns() *TableViewColumnList {
+	return tv.columns
+}
+
+// ColumnDisplayOrder returns a slice of column indices in display order.
+func (tv *TableView) ColumnDisplayOrder() []int32 {
+	indices := make([]int32, tv.columns.Len())
+
+	if FALSE == tv.SendMessage(LVM_GETCOLUMNORDERARRAY, uintptr(len(indices)), uintptr(unsafe.Pointer(&indices[0]))) {
+		newError("LVM_GETCOLUMNORDERARRAY")
+		return nil
+	}
+
+	return indices
+}
+
 func (tv *TableView) attachModel() {
 	tv.rowsResetHandlerHandle = tv.model.RowsReset().Attach(func() {
 		tv.setItemCount()
@@ -207,12 +228,6 @@ func (tv *TableView) SetModel(model TableModel) error {
 	defer tv.SetSuspended(false)
 
 	if tv.model != nil {
-		for _ = range tv.columns {
-			if FALSE == tv.SendMessage(LVM_DELETECOLUMN, 0, 0) {
-				return newError("SendMessage(LVM_DELETECOLUMN)")
-			}
-		}
-
 		tv.detachModel()
 
 		tv.disposeImageListAndCaches()
@@ -225,38 +240,6 @@ func (tv *TableView) SetModel(model TableModel) error {
 
 	if model != nil {
 		tv.attachModel()
-
-		tv.columns = model.Columns()
-
-		for i, column := range tv.columns {
-			if column.Format == "" {
-				tv.columns[i].Format = "%v"
-			}
-
-			var lvc LVCOLUMN
-
-			lvc.Mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM
-			lvc.ISubItem = int32(i)
-			lvc.PszText = syscall.StringToUTF16Ptr(column.Title)
-			if column.Width > 0 {
-				lvc.Cx = int32(column.Width)
-			} else {
-				lvc.Cx = 100
-			}
-
-			switch column.Alignment {
-			case AlignCenter:
-				lvc.Fmt = 2
-
-			case AlignFar:
-				lvc.Fmt = 1
-			}
-
-			j := tv.SendMessage(LVM_INSERTCOLUMN, uintptr(i), uintptr(unsafe.Pointer(&lvc)))
-			if int(j) == -1 {
-				return newError("TableView.SetModel: Failed to insert column.")
-			}
-		}
 
 		if sorter, ok := tv.model.(Sorter); ok {
 			col := sorter.SortedColumn()
@@ -326,7 +309,7 @@ func (tv *TableView) setSelectedColumnIndex(value int) {
 func (tv *TableView) setSortIcon(index int, order SortOrder) error {
 	headerHwnd := HWND(tv.SendMessage(LVM_GETHEADER, 0, 0))
 
-	count := len(tv.model.Columns())
+	count := tv.columns.Len()
 
 	for i := 0; i < count; i++ {
 		item := HDITEM{
@@ -533,7 +516,7 @@ func (tv *TableView) SetLastColumnStretched(value bool) error {
 //
 // The effect of this is not persistent.
 func (tv *TableView) StretchLastColumn() error {
-	colCount := len(tv.columns)
+	colCount := tv.columns.Len()
 	if colCount == 0 {
 		return nil
 	}
@@ -561,7 +544,7 @@ func (tv *TableView) SetPersistent(value bool) {
 func (tv *TableView) SaveState() error {
 	buf := bytes.NewBuffer(nil)
 
-	count := len(tv.columns)
+	count := tv.columns.Len()
 	for i := 0; i < count; i++ {
 		if i > 0 {
 			buf.WriteString(" ")
@@ -608,7 +591,7 @@ func (tv *TableView) RestoreState() error {
 	widthStrs := strings.Split(parts[0], " ")
 
 	// FIXME: Solve this in a better way.
-	if len(widthStrs) != len(tv.columns) {
+	if len(widthStrs) != tv.columns.Len() {
 		log.Print("*TableView.RestoreState: failed due to unexpected column count (FIXME!)")
 		return nil
 	}
@@ -749,31 +732,31 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 					text = val
 
 				case float32:
-					prec := tv.columns[col].Precision
+					prec := tv.columns.items[col].precision
 					if prec == 0 {
 						prec = 2
 					}
 					text, _ = FormatFloat(float64(val), prec)
 
 				case float64:
-					prec := tv.columns[col].Precision
+					prec := tv.columns.items[col].precision
 					if prec == 0 {
 						prec = 2
 					}
 					text, _ = FormatFloat(val, prec)
 
 				case time.Time:
-					text = val.Format(tv.columns[col].Format)
+					text = val.Format(tv.columns.items[col].format)
 
 				case *big.Rat:
-					prec := tv.columns[col].Precision
+					prec := tv.columns.items[col].precision
 					if prec == 0 {
 						prec = 2
 					}
 					text, _ = formatRat(val, prec)
 
 				default:
-					text = fmt.Sprintf(tv.columns[col].Format, val)
+					text = fmt.Sprintf(tv.columns.items[col].format, val)
 				}
 
 				utf16 := syscall.StringToUTF16(text)

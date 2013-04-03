@@ -28,6 +28,7 @@ type TableView struct {
 	OnMouseMove                walk.MouseEventHandler
 	OnMouseUp                  walk.MouseEventHandler
 	OnSizeChanged              walk.EventHandler
+	Columns                    []TableViewColumn
 	Model                      walk.TableModel
 	AlternatingRowBGColor      walk.Color
 	CheckBoxes                 bool
@@ -47,6 +48,12 @@ func (tv TableView) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(tv, w, func() error {
+		for i := range tv.Columns {
+			if err := tv.Columns[i].Create(w); err != nil {
+				return err
+			}
+		}
+
 		if err := w.SetModel(tv.Model); err != nil {
 			return err
 		}

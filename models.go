@@ -51,34 +51,9 @@ func (lmb *ListModelBase) PublishItemChanged(index int) {
 	lmb.itemChangedPublisher.Publish(index)
 }
 
-// TableColumn provides column information for widgets like TableView.
-type TableColumn struct {
-	// Name is the optional name of the column.
-	Name string
-
-	// Title is the text to display in the column header.
-	Title string
-
-	// Format is the format string for converting a value into a string.
-	Format string
-
-	// Precision is the number of decimal places for formatting float32, float64
-	// or big.Rat values.
-	Precision int
-
-	// Width is the width of the column in pixels.
-	Width int
-
-	// Alignment is the alignment of the column (who would have thought).
-	Alignment Alignment1D
-}
-
 // TableModel is the interface that a model must implement to support widgets
 // like TableView.
 type TableModel interface {
-	// Columns returns information about the columns of the model.
-	Columns() []TableColumn
-
 	// RowCount returns the number of rows in the model.
 	RowCount() int
 
