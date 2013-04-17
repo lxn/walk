@@ -15,21 +15,20 @@ import (
 
 // TableViewColumn represents a column in a TableView.
 type TableViewColumn struct {
-	tv        *TableView
-	index     int
-	alignment Alignment1D
-	format    string
-	precision int
-	title     string
-	visible   bool
-	width     int
+	tv            *TableView
+	alignment     Alignment1D
+	format        string
+	precision     int
+	title         string
+	titleOverride string
+	visible       bool
+	width         int
 }
 
 // NewTableViewColumn returns a new TableViewColumn.
 func NewTableViewColumn() *TableViewColumn {
 	return &TableViewColumn{
 		format:  "%v",
-		index:   -1,
 		visible: true,
 		width:   50,
 	}
@@ -114,12 +113,12 @@ func (tvc *TableViewColumn) SetPrecision(precision int) (err error) {
 	return tvc.tv.Invalidate()
 }
 
-// Title returns the text to display in the column header.
+// Title returns the (default) text to display in the column header.
 func (tvc *TableViewColumn) Title() string {
 	return tvc.title
 }
 
-// SetTitle sets the text to display in the column header.
+// SetTitle sets the (default) text to display in the column header.
 func (tvc *TableViewColumn) SetTitle(title string) (err error) {
 	if title == tvc.title {
 		return nil
@@ -137,7 +136,41 @@ func (tvc *TableViewColumn) SetTitle(title string) (err error) {
 	return tvc.update()
 }
 
-/*// Visible returns if the column is visible.
+// TitleOverride returns the (overridden by user) text to display in the column 
+// header.
+func (tvc *TableViewColumn) TitleOverride() string {
+	return tvc.titleOverride
+}
+
+// SetTitleOverride sets the (overridden by user) text to display in the column 
+// header.
+func (tvc *TableViewColumn) SetTitleOverride(titleOverride string) (err error) {
+	if titleOverride == tvc.titleOverride {
+		return nil
+	}
+
+	old := tvc.titleOverride
+	defer func() {
+		if err != nil {
+			tvc.titleOverride = old
+		}
+	}()
+
+	tvc.titleOverride = titleOverride
+
+	return tvc.update()
+}
+
+// TitleEffective returns the effective text to display in the column header.
+func (tvc *TableViewColumn) TitleEffective() string {
+	if tvc.titleOverride != "" {
+		return tvc.titleOverride
+	}
+
+	return tvc.title
+}
+
+// Visible returns if the column is visible.
 func (tvc *TableViewColumn) Visible() bool {
 	return tvc.visible
 }
@@ -166,7 +199,7 @@ func (tvc *TableViewColumn) SetVisible(visible bool) (err error) {
 	}
 
 	return tvc.destroy()
-}*/
+}
 
 // Width returns the width of the column in pixels.
 func (tvc *TableViewColumn) Width() int {
@@ -174,12 +207,12 @@ func (tvc *TableViewColumn) Width() int {
 		return tvc.width
 	}
 
-	return int(tvc.tv.SendMessage(LVM_GETCOLUMNWIDTH, uintptr(tvc.index), 0))
+	return int(tvc.tv.SendMessage(LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0))
 }
 
 // SetWidth sets the width of the column in pixels.
 func (tvc *TableViewColumn) SetWidth(width int) (err error) {
-	if width == tvc.Width() {
+	if width == tvc.width {
 		return nil
 	}
 
@@ -195,12 +228,34 @@ func (tvc *TableViewColumn) SetWidth(width int) (err error) {
 	return tvc.update()
 }
 
+func (tvc *TableViewColumn) indexInListView() int32 {
+	if tvc.tv == nil {
+		return -1
+	}
+
+	var idx int32
+
+	for _, c := range tvc.tv.columns.items {
+		if c == tvc {
+			break
+		}
+
+		if c.visible {
+			idx++
+		}
+	}
+
+	return idx
+}
+
 func (tvc *TableViewColumn) create() error {
 	var lvc LVCOLUMN
 
+	index := tvc.indexInListView()
+
 	lvc.Mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM
-	lvc.ISubItem = int32(tvc.index)
-	lvc.PszText = syscall.StringToUTF16Ptr(tvc.title)
+	lvc.ISubItem = index
+	lvc.PszText = syscall.StringToUTF16Ptr(tvc.TitleEffective())
 	if tvc.width > 0 {
 		lvc.Cx = int32(tvc.width)
 	} else {
@@ -215,7 +270,7 @@ func (tvc *TableViewColumn) create() error {
 		lvc.Fmt = 1
 	}
 
-	j := tvc.tv.SendMessage(LVM_INSERTCOLUMN, uintptr(tvc.index), uintptr(unsafe.Pointer(&lvc)))
+	j := tvc.tv.SendMessage(LVM_INSERTCOLUMN, uintptr(index), uintptr(unsafe.Pointer(&lvc)))
 	if int(j) == -1 {
 		return newError("TableView.SetModel: Failed to insert column.")
 	}
@@ -224,7 +279,7 @@ func (tvc *TableViewColumn) create() error {
 }
 
 func (tvc *TableViewColumn) destroy() error {
-	if FALSE == tvc.tv.SendMessage(LVM_DELETECOLUMN, uintptr(tvc.index), 0) {
+	if FALSE == tvc.tv.SendMessage(LVM_DELETECOLUMN, uintptr(tvc.indexInListView()), 0) {
 		return newError("LVM_DELETECOLUMN")
 	}
 
@@ -238,7 +293,7 @@ func (tvc *TableViewColumn) update() error {
 
 	lvc := tvc.getLVCOLUMN()
 
-	if FALSE == tvc.tv.SendMessage(LVM_SETCOLUMN, uintptr(tvc.index), uintptr(unsafe.Pointer(lvc))) {
+	if FALSE == tvc.tv.SendMessage(LVM_SETCOLUMN, uintptr(tvc.indexInListView()), uintptr(unsafe.Pointer(lvc))) {
 		return newError("LVM_SETCOLUMN")
 	}
 
@@ -249,9 +304,9 @@ func (tvc *TableViewColumn) getLVCOLUMN() *LVCOLUMN {
 	var lvc LVCOLUMN
 
 	lvc.Mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM
-	lvc.ISubItem = int32(tvc.index)
-	lvc.PszText = syscall.StringToUTF16Ptr(tvc.title)
-	lvc.Cx = int32(tvc.Width())
+	lvc.ISubItem = int32(tvc.indexInListView())
+	lvc.PszText = syscall.StringToUTF16Ptr(tvc.TitleEffective())
+	lvc.Cx = int32(tvc.width)
 
 	switch tvc.alignment {
 	case AlignCenter:

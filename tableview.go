@@ -27,7 +27,7 @@ const (
 
 // TableView is a model based widget for record centric, tabular data.
 //
-// TableView is implemented as a virtual mode list view to support quite large 
+// TableView is implemented as a virtual mode list view to support quite large
 // amounts of data.
 type TableView struct {
 	WidgetBase
@@ -100,7 +100,7 @@ func NewTableView(parent Container) (*TableView, error) {
 	return tv, nil
 }
 
-// Dispose releases the operating system resources, associated with the 
+// Dispose releases the operating system resources, associated with the
 // *TableView.
 func (tv *TableView) Dispose() {
 	tv.columns.unsetColumnsTV()
@@ -127,7 +127,7 @@ func (*TableView) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
-// MinSizeHint returns the minimum outer Size, including decorations, that 
+// MinSizeHint returns the minimum outer Size, including decorations, that
 // makes sense for the *TableView.
 func (tv *TableView) MinSizeHint() Size {
 	return Size{10, 10}
@@ -174,16 +174,29 @@ func (tv *TableView) Columns() *TableViewColumnList {
 	return tv.columns
 }
 
-// ColumnDisplayOrder returns a slice of column indices in display order.
-func (tv *TableView) ColumnDisplayOrder() []int32 {
-	indices := make([]int32, tv.columns.Len())
+// VisibleColumnsInDisplayOrder returns a slice of visible columns in display
+// order.
+func (tv *TableView) VisibleColumnsInDisplayOrder() []*TableViewColumn {
+	visibleCols := tv.visibleColumns()
+	indices := make([]int32, len(visibleCols))
 
 	if FALSE == tv.SendMessage(LVM_GETCOLUMNORDERARRAY, uintptr(len(indices)), uintptr(unsafe.Pointer(&indices[0]))) {
 		newError("LVM_GETCOLUMNORDERARRAY")
 		return nil
 	}
 
-	return indices
+	orderedCols := make([]*TableViewColumn, len(visibleCols))
+
+	for i, j := range indices {
+		orderedCols[j] = visibleCols[i]
+	}
+
+	return orderedCols
+}
+
+// RowsPerPage returns the number of fully visible rows.
+func (tv *TableView) RowsPerPage() int {
+	return int(tv.SendMessage(LVM_GETCOUNTPERPAGE, 0, 0))
 }
 
 func (tv *TableView) attachModel() {
@@ -298,20 +311,76 @@ func (tv *TableView) SetCheckBoxes(value bool) {
 	}
 }
 
-func (tv *TableView) selectedColumnIndex() int {
-	return int(tv.SendMessage(LVM_GETSELECTEDCOLUMN, 0, 0))
+func (tv *TableView) fromLVColIdx(index int32) int {
+	var idx int32
+
+	for i, tvc := range tv.columns.items {
+		if tvc.visible {
+			if idx == index {
+				return i
+			}
+
+			idx++
+		}
+	}
+
+	return -1
 }
 
-func (tv *TableView) setSelectedColumnIndex(value int) {
-	tv.SendMessage(LVM_SETSELECTEDCOLUMN, uintptr(value), 0)
+func (tv *TableView) toLVColIdx(index int) int32 {
+	var idx int32
+
+	for i, tvc := range tv.columns.items {
+		if tvc.visible {
+			if i == index {
+				return idx
+			}
+
+			idx++
+		}
+	}
+
+	return -1
+}
+
+func (tv *TableView) visibleColumnCount() int {
+	var count int
+
+	for _, tvc := range tv.columns.items {
+		if tvc.visible {
+			count++
+		}
+	}
+
+	return count
+}
+
+func (tv *TableView) visibleColumns() []*TableViewColumn {
+	var cols []*TableViewColumn
+
+	for _, tvc := range tv.columns.items {
+		if tvc.visible {
+			cols = append(cols, tvc)
+		}
+	}
+
+	return cols
+}
+
+/*func (tv *TableView) selectedColumnIndex() int {
+	return tv.fromLVColIdx(tv.SendMessage(LVM_GETSELECTEDCOLUMN, 0, 0))
+}*/
+
+func (tv *TableView) setSelectedColumnIndex(index int) {
+	tv.SendMessage(LVM_SETSELECTEDCOLUMN, uintptr(tv.toLVColIdx(index)), 0)
 }
 
 func (tv *TableView) setSortIcon(index int, order SortOrder) error {
 	headerHwnd := HWND(tv.SendMessage(LVM_GETHEADER, 0, 0))
 
-	count := tv.columns.Len()
+	idx := int(tv.toLVColIdx(index))
 
-	for i := 0; i < count; i++ {
+	for i := range tv.visibleColumns() {
 		item := HDITEM{
 			Mask: HDI_FORMAT,
 		}
@@ -323,7 +392,7 @@ func (tv *TableView) setSortIcon(index int, order SortOrder) error {
 			return newError("SendMessage(HDM_GETITEM)")
 		}
 
-		if i == index {
+		if i == idx {
 			switch order {
 			case SortAscending:
 				item.Fmt &^= HDF_SORTDOWN
@@ -351,11 +420,11 @@ func (tv *TableView) ColumnClicked() *IntEvent {
 	return tv.columnClickedPublisher.Event()
 }
 
-// ItemActivated returns the event that is published after an item was 
+// ItemActivated returns the event that is published after an item was
 // activated.
 //
 // An item is activated when it is double clicked or the enter key is pressed
-// when the item is selected. 
+// when the item is selected.
 func (tv *TableView) ItemActivated() *Event {
 	return tv.itemActivatedPublisher.Event()
 }
@@ -438,7 +507,7 @@ func (tv *TableView) ItemStateChangedEventDelay() int {
 // moment the state of an item in the *TableView changes and the moment the
 // associated event is published.
 //
-// An example where this may be useful is a master-details scenario. If the 
+// An example where this may be useful is a master-details scenario. If the
 // master TableView is configured to delay the event, you can avoid pointless
 // updates of the details TableView, if the user uses arrow keys to rapidly
 // navigate the master view.
@@ -511,12 +580,12 @@ func (tv *TableView) SetLastColumnStretched(value bool) error {
 	return nil
 }
 
-// StretchLastColumn makes the last column take up all remaining horizontal 
+// StretchLastColumn makes the last column take up all remaining horizontal
 // space of the *TableView.
 //
 // The effect of this is not persistent.
 func (tv *TableView) StretchLastColumn() error {
-	colCount := tv.columns.Len()
+	colCount := tv.visibleColumnCount()
 	if colCount == 0 {
 		return nil
 	}
@@ -542,35 +611,75 @@ func (tv *TableView) SetPersistent(value bool) {
 
 // SaveState writes the UI state of the *TableView to the settings.
 func (tv *TableView) SaveState() error {
-	buf := bytes.NewBuffer(nil)
+	buf := new(bytes.Buffer)
 
 	count := tv.columns.Len()
-	for i := 0; i < count; i++ {
-		if i > 0 {
+	if count > 0 {
+		for i := 0; i < count; i++ {
+			if i > 0 {
+				buf.WriteString(" ")
+			}
+
+			width := tv.Columns().At(i).Width()
+			if width == 0 {
+				width = 100
+			}
+
+			buf.WriteString(strconv.Itoa(int(width)))
+		}
+
+		buf.WriteString(";")
+
+		visibleCount := tv.visibleColumnCount()
+
+		indices := make([]int32, visibleCount)
+		lParam := uintptr(unsafe.Pointer(&indices[0]))
+
+		if 0 == tv.SendMessage(LVM_GETCOLUMNORDERARRAY, uintptr(visibleCount), lParam) {
+			return newError("LVM_GETCOLUMNORDERARRAY")
+		}
+
+		for i, idx := range indices {
+			if i > 0 {
+				buf.WriteString(" ")
+			}
+
+			buf.WriteString(strconv.Itoa(int(idx)))
+		}
+
+		buf.WriteString(";")
+
+		for i, tvc := range tv.columns.items {
+			if i > 0 {
+				buf.WriteString("|")
+			}
+
+			buf.WriteString(tvc.TitleOverride())
+		}
+
+		buf.WriteString(";")
+
+		for i, tvc := range tv.columns.items {
+			if i > 0 {
+				buf.WriteString(" ")
+			}
+
+			if tvc.Visible() {
+				buf.WriteString("1")
+			} else {
+				buf.WriteString("0")
+			}
+		}
+
+		buf.WriteString(";")
+
+		if sorter, ok := tv.model.(Sorter); ok {
+			buf.WriteString(strconv.Itoa(sorter.SortedColumn()))
 			buf.WriteString(" ")
+			buf.WriteString(strconv.Itoa(int(sorter.SortOrder())))
+		} else {
+			buf.WriteString("- -")
 		}
-
-		width := tv.SendMessage(LVM_GETCOLUMNWIDTH, uintptr(i), 0)
-		if width == 0 {
-			width = 100
-		}
-
-		buf.WriteString(strconv.Itoa(int(width)))
-	}
-
-	buf.WriteString(";")
-
-	indices := make([]int32, count)
-	lParam := uintptr(unsafe.Pointer(&indices[0]))
-
-	tv.SendMessage(LVM_GETCOLUMNORDERARRAY, uintptr(count), lParam)
-
-	for i, idx := range indices {
-		if i > 0 {
-			buf.WriteString(" ")
-		}
-
-		buf.WriteString(strconv.Itoa(int(idx)))
 	}
 
 	return tv.putState(buf.String())
@@ -588,6 +697,20 @@ func (tv *TableView) RestoreState() error {
 
 	parts := strings.Split(state, ";")
 
+	tv.SetSuspended(true)
+	defer tv.SetSuspended(false)
+
+	// Do visibility stuff first.
+	if len(parts) > 3 {
+		visible := strings.Split(parts[3], " ")
+
+		for i, v := range visible {
+			if err := tv.columns.At(i).SetVisible(v == "1"); err != nil {
+				return err
+			}
+		}
+	}
+
 	widthStrs := strings.Split(parts[0], " ")
 
 	// FIXME: Solve this in a better way.
@@ -595,18 +718,14 @@ func (tv *TableView) RestoreState() error {
 		log.Print("*TableView.RestoreState: failed due to unexpected column count (FIXME!)")
 		return nil
 	}
-
-	tv.SetSuspended(true)
-	defer tv.SetSuspended(false)
-
 	for i, str := range widthStrs {
 		width, err := strconv.Atoi(str)
 		if err != nil {
 			return err
 		}
 
-		if FALSE == tv.SendMessage(LVM_SETCOLUMNWIDTH, uintptr(i), uintptr(width)) {
-			return newError("LVM_SETCOLUMNWIDTH failed")
+		if err := tv.Columns().At(i).SetWidth(width); err != nil {
+			return err
 		}
 	}
 
@@ -628,7 +747,38 @@ func (tv *TableView) RestoreState() error {
 		if !failed {
 			wParam := uintptr(len(indices))
 			lParam := uintptr(unsafe.Pointer(&indices[0]))
-			tv.SendMessage(LVM_SETCOLUMNORDERARRAY, wParam, lParam)
+			if 0 == tv.SendMessage(LVM_SETCOLUMNORDERARRAY, wParam, lParam) {
+				return newError("LVM_SETCOLUMNORDERARRAY")
+			}
+		}
+	}
+
+	if len(parts) > 2 {
+		titleOverrides := strings.Split(parts[2], "|")
+
+		for i, to := range titleOverrides {
+			if err := tv.columns.At(i).SetTitleOverride(to); err != nil {
+				return err
+			}
+		}
+	}
+
+	if sorter, ok := tv.model.(Sorter); ok && len(parts) > 4 {
+		sortParts := strings.Split(parts[4], " ")
+		if colStr := sortParts[0]; colStr != "-" {
+			col, err := strconv.Atoi(colStr)
+			if err != nil {
+				return err
+			}
+			if sorter.ColumnSortable(col) {
+				ord, err := strconv.Atoi(sortParts[1])
+				if err != nil {
+					return err
+				}
+				if err := sorter.Sort(col, SortOrder(ord)); err != nil {
+					return err
+				}
+			}
 		}
 	}
 
@@ -693,7 +843,7 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 		tv.SendMessage(LVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
 
 		if hti.Flags == LVHT_NOWHERE && tv.SingleItemSelection() {
-			// We keep the current item, if in single item selection mode. 
+			// We keep the current item, if in single item selection mode.
 			tv.SetFocus()
 			return 0
 		}
@@ -723,7 +873,7 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 			di := (*NMLVDISPINFO)(unsafe.Pointer(lParam))
 
 			row := int(di.Item.IItem)
-			col := int(di.Item.ISubItem)
+			col := tv.fromLVColIdx(di.Item.ISubItem)
 
 			if di.Item.Mask&LVIF_TEXT > 0 {
 				var text string
@@ -811,7 +961,7 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 		case LVN_COLUMNCLICK:
 			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
 
-			col := int(nmlv.ISubItem)
+			col := tv.fromLVColIdx(nmlv.ISubItem)
 			tv.columnClickedPublisher.Publish(col)
 
 			if sorter, ok := tv.model.(Sorter); ok && sorter.ColumnSortable(col) {

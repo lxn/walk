@@ -25,6 +25,22 @@ func (l *TableViewColumnList) At(index int) *TableViewColumn {
 	return l.items[index]
 }
 
+func (l *TableViewColumnList) atInListView(index int) *TableViewColumn {
+	var idx int
+
+	for _, item := range l.items {
+		if item.visible {
+			if idx == index {
+				return item
+			}
+
+			idx++
+		}
+	}
+
+	return nil
+}
+
 // Clear removes all TableViewColumns from the list.
 func (l *TableViewColumnList) Clear() error {
 	for _ = range l.items {
@@ -62,11 +78,9 @@ func (l *TableViewColumnList) Insert(index int, item *TableViewColumn) error {
 		return newError("duplicate insert")
 	}
 
-	item.index = index
 	item.tv = l.tv
 
 	if err := item.create(); err != nil {
-		item.index = -1
 		item.tv = nil
 		return err
 	}
@@ -74,8 +88,6 @@ func (l *TableViewColumnList) Insert(index int, item *TableViewColumn) error {
 	l.items = append(l.items, nil)
 	copy(l.items[index+1:], l.items[index:])
 	l.items[index] = item
-
-	l.updateIndexes()
 
 	return nil
 }
@@ -103,20 +115,11 @@ func (l *TableViewColumnList) RemoveAt(index int) error {
 		return err
 	}
 
-	tvc.index = -1
 	tvc.tv = nil
 
 	l.items = append(l.items[:index], l.items[index+1:]...)
 
-	l.updateIndexes()
-
 	return nil
-}
-
-func (l *TableViewColumnList) updateIndexes() {
-	for i, tvc := range l.items {
-		tvc.index = i
-	}
 }
 
 func (l *TableViewColumnList) unsetColumnsTV() {
