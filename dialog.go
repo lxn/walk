@@ -190,14 +190,24 @@ func (dlg *Dialog) focusFirstCandidateDescendant() {
 
 func (dlg *Dialog) Show() {
 	if dlg.owner != nil {
+		var size Size
+		if layout := dlg.Layout(); layout != nil {
+			size = layout.MinSize()
+			min := dlg.MinSize()
+			size.Width = maxi(size.Width, min.Width)
+			size.Height = maxi(size.Height, min.Height)
+		} else {
+			size = dlg.Size()
+		}
+
 		ob := dlg.owner.Bounds()
-		b := dlg.Bounds()
+
 		if dlg.centerInOwnerWhenRun {
 			dlg.SetBounds(Rectangle{
-				ob.X + (ob.Width-b.Width)/2,
-				ob.Y + (ob.Height-b.Height)/2,
-				b.Width,
-				b.Height,
+				ob.X + (ob.Width-size.Width)/2,
+				ob.Y + (ob.Height-size.Height)/2,
+				size.Width,
+				size.Height,
 			})
 		}
 	} else {
