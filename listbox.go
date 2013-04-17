@@ -241,6 +241,7 @@ func (lb *ListBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
 		case LBN_SELCHANGE:
+			lb.prevCurIndex = lb.CurrentIndex()
 			lb.currentIndexChangedPublisher.Publish()
 
 		case LBN_DBLCLK:
