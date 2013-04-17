@@ -390,9 +390,9 @@ func (tw *TabWidget) onRemovedPage(index int, page *TabPage) (err error) {
 
 		// select new tabpage if any :
 		if tw.pages.Len() > 0 {
-			// are we removing the rightmost page ? 
+			// are we removing the rightmost page ?
 			if index == tw.pages.Len()-1 {
-				// If so, select the page on the left 
+				// If so, select the page on the left
 				index -= 1
 			}
 		}

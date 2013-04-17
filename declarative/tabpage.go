@@ -37,6 +37,7 @@ func (tp TabPage) Create(builder *Builder) error {
 	}
 
 	w.SetSuspended(true)
+	defer w.SetSuspended(false)
 
 	return builder.InitWidget(tp, w, func() error {
 		if tp.Content != nil && len(tp.Children) == 0 {
