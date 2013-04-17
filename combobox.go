@@ -204,7 +204,15 @@ func (cb *ComboBox) SetModel(model ListModel) error {
 		cb.attachModel()
 	}
 
-	return cb.resetItems()
+	if err := cb.resetItems(); err != nil {
+		return err
+	}
+
+	if model != nil && model.ItemCount() == 1 {
+		cb.SetCurrentIndex(0)
+	}
+
+	return nil
 }
 
 func (cb *ComboBox) Format() string {
