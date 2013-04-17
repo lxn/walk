@@ -108,6 +108,17 @@ func (s *Splitter) SetOrientation(value Orientation) error {
 	return layout.SetOrientation(value)
 }
 
+func (s *Splitter) SetSuspended(suspend bool) {
+	// We don't want the behavior of ContainerBase.SetSuspended here.
+	wasSuspended := s.Suspended()
+
+	s.WidgetBase.SetSuspended(suspend)
+
+	if !suspend && wasSuspended {
+		s.layout.Update(false)
+	}
+}
+
 func (s *Splitter) Persistent() bool {
 	return s.persistent
 }
