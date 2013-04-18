@@ -4,7 +4,13 @@
 
 package walk
 
-import . "github.com/lxn/go-winapi"
+import (
+	"unsafe"
+)
+
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
 
@@ -14,6 +20,7 @@ func init() {
 
 type MainWindow struct {
 	TopLevelWindow
+	windowPlacement *WINDOWPLACEMENT
 	menu            *Menu
 	toolBar         *ToolBar
 	clientComposite *Composite
@@ -123,6 +130,62 @@ func (mw *MainWindow) SetVisible(visible bool) {
 	}
 
 	mw.TopLevelWindow.SetVisible(visible)
+}
+
+func (mw *MainWindow) Fullscreen() bool {
+	return GetWindowLong(mw.hWnd, GWL_STYLE)&WS_OVERLAPPEDWINDOW == 0
+}
+
+func (mw *MainWindow) SetFullscreen(fullscreen bool) error {
+	if fullscreen == mw.Fullscreen() {
+		return nil
+	}
+
+	if fullscreen {
+		var mi MONITORINFO
+		mi.CbSize = uint32(unsafe.Sizeof(mi))
+
+		if mw.windowPlacement == nil {
+			mw.windowPlacement = new(WINDOWPLACEMENT)
+		}
+
+		if !GetWindowPlacement(mw.hWnd, mw.windowPlacement) {
+			return lastError("GetWindowPlacement")
+		}
+		if !GetMonitorInfo(MonitorFromWindow(
+			mw.hWnd, MONITOR_DEFAULTTOPRIMARY), &mi) {
+
+			return newError("GetMonitorInfo")
+		}
+
+		if err := mw.ensureStyleBits(WS_OVERLAPPEDWINDOW, false); err != nil {
+			return err
+		}
+
+		if r := mi.RcMonitor; !SetWindowPos(
+			mw.hWnd, HWND_TOP,
+			r.Left, r.Top, r.Right-r.Left, r.Bottom-r.Top,
+			SWP_FRAMECHANGED|SWP_NOOWNERZORDER) {
+
+			return lastError("SetWindowPos")
+		}
+	} else {
+		if err := mw.ensureStyleBits(WS_OVERLAPPEDWINDOW, true); err != nil {
+			return err
+		}
+
+		if !SetWindowPlacement(mw.hWnd, mw.windowPlacement) {
+			return lastError("SetWindowPlacement")
+		}
+
+		if !SetWindowPos(mw.hWnd, 0, 0, 0, 0, 0, SWP_FRAMECHANGED|SWP_NOMOVE|
+			SWP_NOOWNERZORDER|SWP_NOSIZE|SWP_NOZORDER) {
+
+			return lastError("SetWindowPos")
+		}
+	}
+
+	return nil
 }
 
 func (mw *MainWindow) onInsertingWidget(index int, widget Widget) error {
