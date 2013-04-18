@@ -185,8 +185,6 @@ func (tlw *TopLevelWindow) Hide() {
 
 func (tlw *TopLevelWindow) Show() {
 	tlw.widget.SetVisible(true)
-
-	tlw.SetSuspended(false)
 }
 
 func (tlw *TopLevelWindow) close() error {

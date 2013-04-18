@@ -40,7 +40,10 @@ func (c Composite) Create(builder *Builder) error {
 	}
 
 	w.SetSuspended(true)
-	defer w.SetSuspended(false)
+	builder.Defer(func() error {
+		w.SetSuspended(false)
+		return nil
+	})
 
 	return builder.InitWidget(c, w, func() error {
 		if c.AssignTo != nil {

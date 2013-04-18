@@ -333,10 +333,6 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err error) {
 
 	page.tabWidget = tw
 
-	if !tw.Suspended() {
-		page.SetSuspended(false)
-	}
-
 	return
 }
 

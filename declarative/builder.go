@@ -20,10 +20,11 @@ type declWidget struct {
 }
 
 type Builder struct {
-	level       int
-	parent      walk.Container
-	declWidgets []declWidget
-	name2Widget map[string]walk.Widget
+	level         int
+	parent        walk.Container
+	declWidgets   []declWidget
+	name2Widget   map[string]walk.Widget
+	deferredFuncs []func() error
 }
 
 func NewBuilder(parent walk.Container) *Builder {
@@ -35,6 +36,10 @@ func NewBuilder(parent walk.Container) *Builder {
 
 func (b *Builder) Parent() walk.Container {
 	return b.parent
+}
+
+func (b *Builder) Defer(f func() error) {
+	b.deferredFuncs = append(b.deferredFuncs, f)
 }
 
 func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) error {
@@ -201,6 +206,14 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 				if err := db.Reset(); err != nil {
 					return err
 				}
+			}
+		}
+	}
+
+	if b.level == 1 {
+		for _, f := range b.deferredFuncs {
+			if err := f(); err != nil {
+				return err
 			}
 		}
 	}

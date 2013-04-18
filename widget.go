@@ -21,7 +21,7 @@ const (
 )
 
 // LayoutFlags specify how a Widget wants to be treated when used with a Layout.
-// 
+//
 // These flags are interpreted in respect to Widget.SizeHint.
 type LayoutFlags byte
 
@@ -54,7 +54,7 @@ type Widget interface {
 	// By default this is nil.
 	Background() Brush
 
-	// BaseWidget returns a *WidgetBase, a pointer to an instance of the struct 
+	// BaseWidget returns a *WidgetBase, a pointer to an instance of the struct
 	// that implements most operations common to all widgets.
 	BaseWidget() *WidgetBase
 
@@ -62,7 +62,7 @@ type Widget interface {
 	// decorations.
 	//
 	// For a RootWidget, like *MainWindow or *Dialog, the Rectangle is in screen
-	// coordinates, for a child Widget the coordinates are relative to its 
+	// coordinates, for a child Widget the coordinates are relative to its
 	// parent.
 	Bounds() Rectangle
 
@@ -81,8 +81,8 @@ type Widget interface {
 	// CreateCanvas creates and returns a *Canvas that can be used to draw
 	// inside the ClientBounds of the Widget.
 	//
-	// Remember to call the Dispose method on the canvas to release resources, 
-	// when you no longer need it. 
+	// Remember to call the Dispose method on the canvas to release resources,
+	// when you no longer need it.
 	CreateCanvas() (*Canvas, error)
 
 	// Cursor returns the Cursor of the Widget.
@@ -94,7 +94,7 @@ type Widget interface {
 	// matching the given name, or nil if not found
 	DescendantByName(name string) Widget
 
-	// Dispose releases the operating system resources, associated with the 
+	// Dispose releases the operating system resources, associated with the
 	// Widget.
 	//
 	// If a user closes a *MainWindow or *Dialog, it is automatically released.
@@ -133,30 +133,30 @@ type Widget interface {
 	// MaxSize returns the maximum allowed outer Size for the Widget, including
 	// decorations.
 	//
-	// For child widgets, this is only relevant when the parent of the Widget 
+	// For child widgets, this is only relevant when the parent of the Widget
 	// has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 	MaxSize() Size
 
 	// MinSize returns the minimum allowed outer Size for the Widget, including
 	// decorations.
 	//
-	// For child widgets, this is only relevant when the parent of the Widget 
+	// For child widgets, this is only relevant when the parent of the Widget
 	// has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 	MinSize() Size
 
-	// MinSizeHint returns the minimum outer Size, including decorations, that 
+	// MinSizeHint returns the minimum outer Size, including decorations, that
 	// makes sense for the respective type of Widget.
 	MinSizeHint() Size
 
-	// MouseDown returns a *MouseEvent that you can attach to for handling 
+	// MouseDown returns a *MouseEvent that you can attach to for handling
 	// mouse down events for the Widget.
 	MouseDown() *MouseEvent
 
-	// MouseMove returns a *MouseEvent that you can attach to for handling 
+	// MouseMove returns a *MouseEvent that you can attach to for handling
 	// mouse move events for the Widget.
 	MouseMove() *MouseEvent
 
-	// MouseUp returns a *MouseEvent that you can attach to for handling 
+	// MouseUp returns a *MouseEvent that you can attach to for handling
 	// mouse up events for the Widget.
 	MouseUp() *MouseEvent
 
@@ -182,7 +182,7 @@ type Widget interface {
 	// decorations.
 	//
 	// For a RootWidget, like *MainWindow or *Dialog, the Rectangle is in screen
-	// coordinates, for a child Widget the coordinates are relative to its 
+	// coordinates, for a child Widget the coordinates are relative to its
 	// parent.
 	SetBounds(value Rectangle) error
 
@@ -217,18 +217,18 @@ type Widget interface {
 	// SetName sets the name of the Widget.
 	//
 	// This is important if you want to make use of the built-in UI persistence.
-	// Some widgets support automatic state persistence. See Settings for 
+	// Some widgets support automatic state persistence. See Settings for
 	// details.
 	SetName(name string)
 
-	// SetParent sets the parent of the Widget and adds the Widget to the 
+	// SetParent sets the parent of the Widget and adds the Widget to the
 	// Children list of the Container.
 	SetParent(value Container) error
 
 	// SetSize sets the outer Size of the Widget, including decorations.
 	SetSize(value Size) error
 
-	// SetSuspended sets if the Widget is suspended for layout and repainting 
+	// SetSuspended sets if the Widget is suspended for layout and repainting
 	// purposes.
 	//
 	// You should call SetSuspended(true), before doing a batch of modifications
@@ -246,12 +246,12 @@ type Widget interface {
 	SetWidth(value int) error
 
 	// SetX sets the x coordinate of the Widget, relative to the screen for
-	// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
+	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Widgets.
 	SetX(value int) error
 
 	// SetY sets the y coordinate of the Widget, relative to the screen for
-	// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
+	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Widgets.
 	SetY(value int) error
 
@@ -265,11 +265,11 @@ type Widget interface {
 	// SizeHint returns the preferred Size for the respective type of Widget.
 	SizeHint() Size
 
-	// Suspended returns if the Widget is suspended for layout and repainting 
+	// Suspended returns if the Widget is suspended for layout and repainting
 	// purposes.
 	Suspended() bool
 
-	// Synchronize enqueues func f to be called some time later by the main 
+	// Synchronize enqueues func f to be called some time later by the main
 	// goroutine from inside a message loop.
 	Synchronize(f func())
 
@@ -289,12 +289,12 @@ type Widget interface {
 	WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr
 
 	// X returns the x coordinate of the Widget, relative to the screen for
-	// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
+	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Widgets.
 	X() int
 
 	// Y returns the y coordinate of the Widget, relative to the screen for
-	// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
+	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Widgets.
 	Y() int
 }
@@ -650,7 +650,7 @@ func (wb *WidgetBase) BaseWidget() *WidgetBase {
 	return wb
 }
 
-// Dispose releases the operating system resources, associated with the 
+// Dispose releases the operating system resources, associated with the
 // *WidgetBase.
 //
 // If a user closes a *MainWindow or *Dialog, it is automatically released.
@@ -761,18 +761,18 @@ func (wb *WidgetBase) SetFont(value *Font) {
 	}
 }
 
-// Suspended returns if the *WidgetBase is suspended for layout and repainting 
+// Suspended returns if the *WidgetBase is suspended for layout and repainting
 // purposes.
 func (wb *WidgetBase) Suspended() bool {
 	return wb.suspended
 }
 
-// SetSuspended sets if the *WidgetBase is suspended for layout and repainting 
+// SetSuspended sets if the *WidgetBase is suspended for layout and repainting
 // purposes.
 //
 // You should call SetSuspended(true), before doing a batch of modifications
 // that would cause multiple layout or drawing updates. Remember to call
-// SetSuspended(false) afterwards, which will update the *WidgetBase 
+// SetSuspended(false) afterwards, which will update the *WidgetBase
 // accordingly.
 func (wb *WidgetBase) SetSuspended(suspend bool) {
 	if suspend == wb.suspended {
@@ -807,7 +807,7 @@ func (wb *WidgetBase) Parent() Container {
 	return wb.parent
 }
 
-// SetParent sets the parent of the *WidgetBase and adds the *WidgetBase to the 
+// SetParent sets the parent of the *WidgetBase and adds the *WidgetBase to the
 // Children list of the Container.
 func (wb *WidgetBase) SetParent(value Container) (err error) {
 	if value == wb.parent {
@@ -969,7 +969,7 @@ func (wb *WidgetBase) Bounds() Rectangle {
 	return b
 }
 
-// SetBounds returns the outer bounding box Rectangle of the *WidgetBase, 
+// SetBounds returns the outer bounding box Rectangle of the *WidgetBase,
 // including decorations.
 //
 // For a RootWidget, like *MainWindow or *Dialog, the Rectangle is in screen
@@ -992,7 +992,7 @@ func (wb *WidgetBase) SetBounds(bounds Rectangle) error {
 // MinSize returns the minimum allowed outer Size for the *WidgetBase, including
 // decorations.
 //
-// For child widgets, this is only relevant when the parent of the *WidgetBase 
+// For child widgets, this is only relevant when the parent of the *WidgetBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WidgetBase) MinSize() Size {
 	return wb.minSize
@@ -1001,7 +1001,7 @@ func (wb *WidgetBase) MinSize() Size {
 // MaxSize returns the maximum allowed outer Size for the *WidgetBase, including
 // decorations.
 //
-// For child widgets, this is only relevant when the parent of the *WidgetBase 
+// For child widgets, this is only relevant when the parent of the *WidgetBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WidgetBase) MaxSize() Size {
 	return wb.maxSize
@@ -1077,7 +1077,7 @@ func (wb *WidgetBase) minSizeEffective() Size {
 	return maxSize(wb.minSize, wb.widget.MinSizeHint())
 }
 
-// MinSizeHint returns the minimum outer Size, including decorations, that 
+// MinSizeHint returns the minimum outer Size, including decorations, that
 // makes sense for the respective type of Widget.
 func (wb *WidgetBase) MinSizeHint() Size {
 	return Size{10, 10}
@@ -1124,7 +1124,7 @@ func (wb *WidgetBase) calculateTextSize() Size {
 }
 
 func (wb *WidgetBase) updateParentLayout() error {
-	if wb.parent == nil || wb.parent.Layout() == nil {
+	if wb.parent == nil || wb.parent.Layout() == nil || wb.parent.Suspended() {
 		return nil
 	}
 
@@ -1144,14 +1144,14 @@ func (wb *WidgetBase) SetSize(size Size) error {
 }
 
 // X returns the x coordinate of the *WidgetBase, relative to the screen for
-// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
+// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Widgets.
 func (wb *WidgetBase) X() int {
 	return wb.Bounds().X
 }
 
 // SetX sets the x coordinate of the *WidgetBase, relative to the screen for
-// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
+// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Widgets.
 func (wb *WidgetBase) SetX(value int) error {
 	bounds := wb.Bounds()
@@ -1161,14 +1161,14 @@ func (wb *WidgetBase) SetX(value int) error {
 }
 
 // Y returns the y coordinate of the *WidgetBase, relative to the screen for
-// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
+// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Widgets.
 func (wb *WidgetBase) Y() int {
 	return wb.Bounds().Y
 }
 
 // SetY sets the y coordinate of the *WidgetBase, relative to the screen for
-// RootWidgets like *MainWindow or *Dialog and relative to the parent for 
+// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Widgets.
 func (wb *WidgetBase) SetY(value int) error {
 	bounds := wb.Bounds()
@@ -1269,8 +1269,8 @@ func (wb *WidgetBase) SetToolTipText(s string) error {
 // CreateCanvas creates and returns a *Canvas that can be used to draw
 // inside the ClientBounds of the *WidgetBase.
 //
-// Remember to call the Dispose method on the canvas to release resources, 
-// when you no longer need it. 
+// Remember to call the Dispose method on the canvas to release resources,
+// when you no longer need it.
 func (wb *WidgetBase) CreateCanvas() (*Canvas, error) {
 	return newCanvasFromHWND(wb.hWnd)
 }
@@ -1289,19 +1289,19 @@ func (wb *WidgetBase) KeyDown() *KeyEvent {
 	return wb.keyDownPublisher.Event()
 }
 
-// MouseDown returns a *MouseEvent that you can attach to for handling 
+// MouseDown returns a *MouseEvent that you can attach to for handling
 // mouse down events for the *WidgetBase.
 func (wb *WidgetBase) MouseDown() *MouseEvent {
 	return wb.mouseDownPublisher.Event()
 }
 
-// MouseMove returns a *MouseEvent that you can attach to for handling 
+// MouseMove returns a *MouseEvent that you can attach to for handling
 // mouse move events for the *WidgetBase.
 func (wb *WidgetBase) MouseMove() *MouseEvent {
 	return wb.mouseMovePublisher.Event()
 }
 
-// MouseUp returns a *MouseEvent that you can attach to for handling 
+// MouseUp returns a *MouseEvent that you can attach to for handling
 // mouse up events for the *WidgetBase.
 func (wb *WidgetBase) MouseUp() *MouseEvent {
 	return wb.mouseUpPublisher.Event()
@@ -1332,7 +1332,7 @@ func (wb *WidgetBase) SizeChanged() *Event {
 	return wb.sizeChangedPublisher.Event()
 }
 
-// Synchronize enqueues func f to be called some time later by the main 
+// Synchronize enqueues func f to be called some time later by the main
 // goroutine from inside a message loop.
 func (wb *WidgetBase) Synchronize(f func()) {
 	synchronize(f)

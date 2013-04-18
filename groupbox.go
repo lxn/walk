@@ -118,6 +118,12 @@ func (gb *GroupBox) SetFont(value *Font) {
 	}
 }
 
+func (gb *GroupBox) SetSuspended(suspend bool) {
+	gb.composite.SetSuspended(suspend)
+	gb.WidgetBase.SetSuspended(suspend)
+	gb.Invalidate()
+}
+
 func (gb *GroupBox) DataBinder() *DataBinder {
 	return gb.composite.dataBinder
 }
