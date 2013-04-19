@@ -47,10 +47,8 @@ func (cb ComboBox) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(cb, w, func() error {
-		_, valueIsBind := cb.Value.(Bind)
-		_, valueIsBindTo := cb.Value.(BindTo)
-		valueBound := valueIsBind || valueIsBindTo
-		if _, ok := cb.Model.(walk.BindingValueProvider); !ok && valueBound {
+		_, valueIsBindData := cb.Value.(bindData)
+		if _, ok := cb.Model.(walk.BindingValueProvider); !ok && valueIsBindData {
 			return errors.New("declarative.ComboBox: Data binding is only supported using a model that implements walk.BindingValueProvider.")
 		}
 

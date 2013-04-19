@@ -20,7 +20,7 @@ func main() {
 		Children: []Widget{
 			LineEdit{
 				AssignTo: &le,
-				Text:     BindProperty{"wv.URL"},
+				Text:     Bind("wv.URL"),
 				OnReturnPressed: func() {
 					wv.SetURL(le.Text())
 				},

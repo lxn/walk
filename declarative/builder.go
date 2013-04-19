@@ -245,47 +245,35 @@ func (b *Builder) initProperties() error {
 			case nil:
 				// nop
 
-			case Bind:
+			case bindData:
 				if prop == nil {
 					panic(sf.Name + " is not a property")
 				}
 
-				prop.SetSource(val.To)
-				if val.Validator != nil {
-					validator, err := val.Validator.Create()
-					if err != nil {
-						return err
+				var done bool
+				parts := strings.Split(val.path, ".")
+				if len(parts) == 2 {
+					// First try a matching property.
+					if sw, ok := b.name2Widget[parts[0]]; ok {
+						sbw := sw.BaseWidget()
+						if srcProp := sbw.Property(parts[1]); srcProp != nil {
+							prop.SetSource(srcProp)
+							done = true
+						}
 					}
-					prop.SetValidator(validator)
 				}
 
-			case BindTo:
-				if prop == nil {
-					panic(sf.Name + " is not a property")
-				}
-
-				prop.SetSource(val.Name)
-
-			case BindProperty:
-				if prop == nil {
-					panic(sf.Name + " is not a registered property")
-				}
-
-				parts := strings.Split(val.Name, ".")
-				if len(parts) != 2 {
-					panic("invalid BindProperty syntax: " + val.Name)
-				}
-
-				var srcProp *walk.Property
-				if sw, ok := b.name2Widget[parts[0]]; ok {
-					sbw := sw.BaseWidget()
-					srcProp = sbw.Property(parts[1])
-					if srcProp == nil {
-						panic("unknown source property: " + parts[1])
+				if !done {
+					// We haven't found a matching property, so we assume the
+					// path refers to something in the data source.
+					prop.SetSource(val.path)
+					if val.validator != nil {
+						validator, err := val.validator.Create()
+						if err != nil {
+							return err
+						}
+						prop.SetValidator(validator)
 					}
-					prop.SetSource(srcProp)
-				} else {
-					panic("unknown widget: " + parts[0])
 				}
 
 			default:

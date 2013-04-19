@@ -10,17 +10,25 @@ import (
 
 type Property interface{}
 
-type Bind struct {
-	To        string
-	Validator Validator
+type bindData struct {
+	path      string
+	validator Validator
 }
 
-type BindTo struct {
-	Name string
-}
+func Bind(path string, validators ...Validator) Property {
+	bd := bindData{path: path}
+	switch len(validators) {
+	case 0:
+		// nop
 
-type BindProperty struct {
-	Name string
+	case 1:
+		bd.validator = validators[0]
+
+	default:
+		bd.validator = dMultiValidator{validators}
+	}
+
+	return bd
 }
 
 type Layout interface {

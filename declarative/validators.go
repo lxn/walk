@@ -39,3 +39,35 @@ type SelRequired struct {
 func (SelRequired) Create() (walk.Validator, error) {
 	return walk.SelectionRequiredValidator(), nil
 }
+
+type dMultiValidator struct {
+	validators []Validator
+}
+
+func (av dMultiValidator) Create() (walk.Validator, error) {
+	var validators []walk.Validator
+
+	for _, dv := range av.validators {
+		if wv, err := dv.Create(); err != nil {
+			return nil, err
+		} else {
+			validators = append(validators, wv)
+		}
+	}
+
+	return &wMultiValidator{validators}, nil
+}
+
+type wMultiValidator struct {
+	validators []walk.Validator
+}
+
+func (av *wMultiValidator) Validate(v interface{}) error {
+	for _, validator := range av.validators {
+		if err := validator.Validate(v); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
