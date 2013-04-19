@@ -88,11 +88,9 @@ func (gb *GroupBox) MinSizeHint() Size {
 		return gb.SizeHint()
 	}
 
-	cps := gb.composite.MinSizeHint()
-	wbcb := gb.WidgetBase.ClientBounds()
-	gbcb := gb.ClientBounds()
+	cmsh := gb.composite.MinSizeHint()
 
-	return Size{cps.Width + wbcb.Width - gbcb.Width, cps.Height + wbcb.Height - gbcb.Height}
+	return Size{cmsh.Width + 2, cmsh.Height + 9}
 }
 
 func (gb *GroupBox) SizeHint() Size {
