@@ -21,10 +21,12 @@ type FileDialog struct {
 }
 
 func (dlg *FileDialog) show(owner RootWidget, fun func(ofn *OPENFILENAME) bool) (accepted bool, err error) {
-	ofn := &OPENFILENAME{}
+	ofn := new(OPENFILENAME)
 
 	ofn.LStructSize = uint32(unsafe.Sizeof(*ofn))
-	ofn.HwndOwner = owner.BaseWidget().hWnd
+	if owner != nil {
+		ofn.HwndOwner = owner.Handle()
+	}
 
 	filter := make([]uint16, len(dlg.Filter)+2)
 	copy(filter, syscall.StringToUTF16(dlg.Filter))
@@ -67,4 +69,70 @@ func (dlg *FileDialog) ShowOpen(owner RootWidget) (accepted bool, err error) {
 
 func (dlg *FileDialog) ShowSave(owner RootWidget) (accepted bool, err error) {
 	return dlg.show(owner, GetSaveFileName)
+}
+
+func (dlg *FileDialog) ShowBrowseFolder(owner RootWidget) (accepted bool, err error) {
+	// Calling OleInitialize (or similar) is required for BIF_NEWDIALOGSTYLE.
+	if hr := OleInitialize(); hr != S_OK && hr != S_FALSE {
+		return false, newError(fmt.Sprint("OleInitialize Error: ", hr))
+	}
+	defer OleUninitialize()
+
+	pathFromPIDL := func(pidl uintptr) (string, error) {
+		var path [MAX_PATH]uint16
+		if !SHGetPathFromIDList(pidl, &path[0]) {
+			return "", newError("SHGetPathFromIDList failed")
+		}
+
+		return syscall.UTF16ToString(path[:]), nil
+	}
+
+	// We use this callback to disable the OK button in case of "invalid"
+	// selections.
+	callback := func(hwnd HWND, msg uint32, lp, wp uintptr) int32 {
+		const BFFM_SELCHANGED = 2
+		if msg == BFFM_SELCHANGED {
+			_, err := pathFromPIDL(lp)
+			var enabled uintptr
+			if err == nil {
+				enabled = 1
+			}
+
+			const BFFM_ENABLEOK = WM_USER + 101
+
+			SendMessage(hwnd, BFFM_ENABLEOK, 0, enabled)
+		}
+
+		return 0
+	}
+
+	var ownerHwnd HWND
+	if owner != nil {
+		ownerHwnd = owner.Handle()
+	}
+
+	// We need to put the initial path into a buffer of at least MAX_LENGTH
+	// length, or we may get random crashes.
+	var buf [MAX_PATH]uint16
+	copy(buf[:], syscall.StringToUTF16(dlg.InitialDirPath))
+
+	const BIF_NEWDIALOGSTYLE = 0x00000040
+
+	bi := BROWSEINFO{
+		HwndOwner:      ownerHwnd,
+		PszDisplayName: &buf[0],
+		LpszTitle:      syscall.StringToUTF16Ptr(dlg.Title),
+		UlFlags:        BIF_NEWDIALOGSTYLE,
+		Lpfn:           syscall.NewCallback(callback),
+	}
+
+	pidl := SHBrowseForFolder(&bi)
+	if pidl == 0 {
+		return false, nil
+	}
+	defer CoTaskMemFree(pidl)
+
+	dlg.FilePath, err = pathFromPIDL(pidl)
+	accepted = dlg.FilePath != ""
+	return
 }
