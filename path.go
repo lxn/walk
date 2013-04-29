@@ -11,8 +11,8 @@ import . "github.com/lxn/go-winapi"
 func knownFolderPath(id CSIDL) (string, error) {
 	var buf [MAX_PATH]uint16
 
-	if !ShGetSpecialFolderPath(0, &buf[0], id, false) {
-		return "", newError("ShGetSpecialFolderPath failed")
+	if !SHGetSpecialFolderPath(0, &buf[0], id, false) {
+		return "", newError("SHGetSpecialFolderPath failed")
 	}
 
 	return syscall.UTF16ToString(buf[0:]), nil
