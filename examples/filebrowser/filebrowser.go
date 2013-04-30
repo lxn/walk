@@ -150,36 +150,19 @@ type FileInfo struct {
 }
 
 type FileInfoModel struct {
-	walk.TableModelBase
+	walk.SortedReflectTableModelBase
 	dirPath string
 	items   []*FileInfo
 }
 
-var _ walk.TableModel = new(FileInfoModel)
+var _ walk.ReflectTableModel = new(FileInfoModel)
 
 func NewFileInfoModel() *FileInfoModel {
 	return new(FileInfoModel)
 }
 
-func (m *FileInfoModel) RowCount() int {
-	return len(m.items)
-}
-
-func (m *FileInfoModel) Value(row, col int) interface{} {
-	item := m.items[row]
-
-	switch col {
-	case 0:
-		return item.Name
-
-	case 1:
-		return item.Size
-
-	case 2:
-		return item.Modified
-	}
-
-	panic("unexpected col")
+func (m *FileInfoModel) Items() interface{} {
+	return m.items
 }
 
 func (m *FileInfoModel) SetDirPath(dirPath string) error {
@@ -216,7 +199,7 @@ func (m *FileInfoModel) SetDirPath(dirPath string) error {
 		return err
 	}
 
-	m.TableModelBase.PublishRowsReset()
+	m.PublishRowsReset()
 
 	return nil
 }
@@ -273,19 +256,22 @@ func main() {
 						AssignTo: &tableView,
 						Columns: []TableViewColumn{
 							TableViewColumn{
-								Title: "Name",
-								Width: 200,
+								Title:      "Name",
+								DataMember: "Name",
+								Width:      200,
 							},
 							TableViewColumn{
-								Title:     "Size",
-								Format:    "%d",
-								Alignment: AlignFar,
-								Width:     80,
+								Title:      "Size",
+								DataMember: "Size",
+								Format:     "%d",
+								Alignment:  AlignFar,
+								Width:      80,
 							},
 							TableViewColumn{
-								Title:  "Modified",
-								Format: "2006-01-02 15:04:05",
-								Width:  120,
+								Title:      "Modified",
+								DataMember: "Modified",
+								Format:     "2006-01-02 15:04:05",
+								Width:      120,
 							},
 						},
 						Model: tableModel,
