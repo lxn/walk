@@ -80,9 +80,11 @@ func (l *TableViewColumnList) Insert(index int, item *TableViewColumn) error {
 
 	item.tv = l.tv
 
-	if err := item.create(); err != nil {
-		item.tv = nil
-		return err
+	if item.visible {
+		if err := item.create(); err != nil {
+			item.tv = nil
+			return err
+		}
 	}
 
 	l.items = append(l.items, nil)
