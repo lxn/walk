@@ -17,11 +17,12 @@ const (
 )
 
 type TableViewColumn struct {
-	Alignment Alignment1D
-	Format    string
-	Precision int
-	Title     string
-	Width     int
+	Alignment  Alignment1D
+	DataMember string
+	Format     string
+	Precision  int
+	Title      string
+	Width      int
 }
 
 func (tvc TableViewColumn) Create(tv *walk.TableView) error {
@@ -30,6 +31,7 @@ func (tvc TableViewColumn) Create(tv *walk.TableView) error {
 	if err := w.SetAlignment(walk.Alignment1D(tvc.Alignment)); err != nil {
 		return err
 	}
+	w.SetDataMember(tvc.DataMember)
 	if tvc.Format != "" {
 		if err := w.SetFormat(tvc.Format); err != nil {
 			return err

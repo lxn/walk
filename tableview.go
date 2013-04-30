@@ -33,6 +33,7 @@ type TableView struct {
 	WidgetBase
 	columns                         *TableViewColumnList
 	model                           TableModel
+	providedModel                   interface{}
 	itemChecker                     ItemChecker
 	imageProvider                   ImageProvider
 	hIml                            HIMAGELIST
@@ -199,6 +200,25 @@ func (tv *TableView) RowsPerPage() int {
 	return int(tv.SendMessage(LVM_GETCOUNTPERPAGE, 0, 0))
 }
 
+// UpdateItem ensures the item at index will be redrawn.
+//
+// If the model supports sorting, it will be resorted.
+func (tv *TableView) UpdateItem(index int) error {
+	if s, ok := tv.model.(Sorter); ok {
+		if err := s.Sort(s.SortedColumn(), s.SortOrder()); err != nil {
+			return err
+		}
+
+		return tv.Invalidate()
+	} else {
+		if FALSE == tv.SendMessage(LVM_UPDATE, uintptr(index), 0) {
+			return newError("LVM_UPDATE")
+		}
+	}
+
+	return nil
+}
+
 func (tv *TableView) attachModel() {
 	tv.rowsResetHandlerHandle = tv.model.RowsReset().Attach(func() {
 		tv.setItemCount()
@@ -207,9 +227,7 @@ func (tv *TableView) attachModel() {
 	})
 
 	tv.rowChangedHandlerHandle = tv.model.RowChanged().Attach(func(row int) {
-		if FALSE == tv.SendMessage(LVM_UPDATE, uintptr(row), 0) {
-			newError("SendMessage(LVM_UPDATE)")
-		}
+		tv.UpdateItem(row)
 	})
 
 	if sorter, ok := tv.model.(Sorter); ok {
@@ -230,13 +248,30 @@ func (tv *TableView) detachModel() {
 	}
 }
 
-// Model returns the TableModel that provides data to the *TableView.
-func (tv *TableView) Model() TableModel {
-	return tv.model
+// Model returns the model of the TableView.
+func (tv *TableView) Model() interface{} {
+	return tv.providedModel
 }
 
-// SetModel sets the TableModel that provides data to the *TableView.
-func (tv *TableView) SetModel(model TableModel) error {
+// SetModel sets the model of the TableView.
+//
+// It is required that mdl either implements walk.TableModel,
+// walk.ReflectTableModel or be a slice of pointers to struct. A walk.TableModel
+// implementation must also implement walk.Sorter to support sorting, both other
+// options get sorting for free. To support item check boxes and icons, mdl must
+// implement walk.ItemChecker and walk.ImageProvider, respectively. On-demand
+// model population for a walk.ReflectTableModel or slice requires mdl to
+// implement walk.Populator.
+func (tv *TableView) SetModel(mdl interface{}) error {
+	model, ok := mdl.(TableModel)
+	if !ok && mdl != nil {
+		var err error
+		if model, err = newReflectTableModel(mdl); err != nil {
+			return err
+		}
+	}
+	tv.providedModel = mdl
+
 	tv.SetSuspended(true)
 	defer tv.SetSuspended(false)
 
@@ -253,6 +288,18 @@ func (tv *TableView) SetModel(model TableModel) error {
 
 	if model != nil {
 		tv.attachModel()
+
+		if dms, ok := model.(dataMembersSetter); ok {
+			// FIXME: This depends on columns to be initialized before
+			// calling this method.
+			dataMembers := make([]string, len(tv.columns.items))
+
+			for i, col := range tv.columns.items {
+				dataMembers[i] = col.dataMember
+			}
+
+			dms.setDataMembers(dataMembers)
+		}
 
 		if sorter, ok := tv.model.(Sorter); ok {
 			col := sorter.SortedColumn()

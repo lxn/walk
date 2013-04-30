@@ -16,6 +16,7 @@ import (
 // TableViewColumn represents a column in a TableView.
 type TableViewColumn struct {
 	tv            *TableView
+	dataMember    string
 	alignment     Alignment1D
 	format        string
 	precision     int
@@ -55,6 +56,16 @@ func (tvc *TableViewColumn) SetAlignment(alignment Alignment1D) (err error) {
 	tvc.alignment = alignment
 
 	return tvc.update()
+}
+
+// DataMember returns the data member this TableViewColumn is bound against.
+func (tvc *TableViewColumn) DataMember() string {
+	return tvc.dataMember
+}
+
+// SetDataMember sets the data member this TableViewColumn is bound against.
+func (tvc *TableViewColumn) SetDataMember(dataMember string) {
+	tvc.dataMember = dataMember
 }
 
 // Format returns the format string for converting a value into a string.
@@ -136,13 +147,13 @@ func (tvc *TableViewColumn) SetTitle(title string) (err error) {
 	return tvc.update()
 }
 
-// TitleOverride returns the (overridden by user) text to display in the column 
+// TitleOverride returns the (overridden by user) text to display in the column
 // header.
 func (tvc *TableViewColumn) TitleOverride() string {
 	return tvc.titleOverride
 }
 
-// SetTitleOverride sets the (overridden by user) text to display in the column 
+// SetTitleOverride sets the (overridden by user) text to display in the column
 // header.
 func (tvc *TableViewColumn) SetTitleOverride(titleOverride string) (err error) {
 	if titleOverride == tvc.titleOverride {

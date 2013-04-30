@@ -29,7 +29,7 @@ type TableView struct {
 	OnMouseUp                  walk.MouseEventHandler
 	OnSizeChanged              walk.EventHandler
 	Columns                    []TableViewColumn
-	Model                      walk.TableModel
+	Model                      interface{}
 	AlternatingRowBGColor      walk.Color
 	CheckBoxes                 bool
 	ItemStateChangedEventDelay int
