@@ -17,6 +17,8 @@ import . "github.com/lxn/go-winapi"
 type ListBox struct {
 	WidgetBase
 	model                        ListModel
+	providedModel                interface{}
+	dataMember                   string
 	format                       string
 	precision                    int
 	prevCurIndex                 int
@@ -123,11 +125,29 @@ func (lb *ListBox) detachModel() {
 	lb.model.ItemChanged().Detach(lb.itemChangedHandlerHandle)
 }
 
-func (lb *ListBox) Model() ListModel {
-	return lb.model
+// Model returns the model of the ListBox.
+func (lb *ListBox) Model() interface{} {
+	return lb.providedModel
 }
 
-func (lb *ListBox) SetModel(model ListModel) error {
+// SetModel sets the model of the ListBox.
+//
+// It is required that mdl either implements walk.ListModel or
+// walk.ReflectListModel or be a slice of pointers to struct.
+func (lb *ListBox) SetModel(mdl interface{}) error {
+	model, ok := mdl.(ListModel)
+	if !ok && mdl != nil {
+		var err error
+		if model, err = newReflectListModel(mdl); err != nil {
+			return err
+		}
+
+		if badms, ok := model.(bindingAndDisplayMemberSetter); ok {
+			badms.setDisplayMember(lb.dataMember)
+		}
+	}
+	lb.providedModel = mdl
+
 	if lb.model != nil {
 		lb.detachModel()
 	}
@@ -141,6 +161,39 @@ func (lb *ListBox) SetModel(model ListModel) error {
 	}
 
 	return nil
+}
+
+// DataMember returns the member from the model of the ListBox that is displayed
+// in the ListBox.
+//
+// This is only applicable to walk.ReflectListModel models and simple slices of
+// pointers to struct.
+func (lb *ListBox) DataMember() string {
+	return lb.dataMember
+}
+
+// SetDataMember sets the member from the model of the ListBox that is displayed
+// in the ListBox.
+//
+// This is only applicable to walk.ReflectListModel models and simple slices of
+// pointers to struct.
+//
+// For a model consisting of items of type S, the type of the specified member T
+// and displayMember "Foo", this can be one of the following:
+//
+//	A field		Foo T
+//	A method	func (s S) Foo() T
+//	A method	func (s S) Foo() (T, error)
+//
+// If displayMember is not a simple member name like "Foo", but a path to a
+// member like "A.B.Foo", members "A" and "B" both must be one of the options
+// mentioned above, but with T having type pointer to struct.
+func (lb *ListBox) SetDataMember(dataMember string) {
+	lb.dataMember = dataMember
+
+	if badms, ok := lb.model.(bindingAndDisplayMemberSetter); ok {
+		badms.setDisplayMember(dataMember)
+	}
 }
 
 func (lb *ListBox) Format() string {

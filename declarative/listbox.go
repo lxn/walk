@@ -30,7 +30,8 @@ type ListBox struct {
 	OnSizeChanged         walk.EventHandler
 	Format                string
 	Precision             int
-	Model                 walk.ListModel
+	DataMember            string
+	Model                 interface{}
 	OnCurrentIndexChanged walk.EventHandler
 	OnItemActivated       walk.EventHandler
 }
@@ -44,6 +45,8 @@ func (lb ListBox) Create(builder *Builder) error {
 	return builder.InitWidget(lb, w, func() error {
 		w.SetFormat(lb.Format)
 		w.SetPrecision(lb.Precision)
+
+		w.SetDataMember(lb.DataMember)
 
 		if err := w.SetModel(lb.Model); err != nil {
 			return err
