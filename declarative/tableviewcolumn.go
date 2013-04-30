@@ -20,6 +20,7 @@ type TableViewColumn struct {
 	Alignment  Alignment1D
 	DataMember string
 	Format     string
+	Hidden     bool
 	Precision  int
 	Title      string
 	Width      int
@@ -41,6 +42,9 @@ func (tvc TableViewColumn) Create(tv *walk.TableView) error {
 		return err
 	}
 	if err := w.SetTitle(tvc.Title); err != nil {
+		return err
+	}
+	if err := w.SetVisible(!tvc.Hidden); err != nil {
 		return err
 	}
 	if err := w.SetWidth(tvc.Width); err != nil {
