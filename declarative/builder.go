@@ -14,23 +14,41 @@ import (
 	"github.com/lxn/walk"
 )
 
+var conditionsByName = make(map[string]walk.Condition)
+
+func MustRegisterCondition(name string, condition walk.Condition) {
+	if name == "" {
+		panic(`name == ""`)
+	}
+	if condition == nil {
+		panic("condition == nil")
+	}
+	if _, ok := conditionsByName[name]; ok {
+		panic("name already registered")
+	}
+
+	conditionsByName[name] = condition
+}
+
 type declWidget struct {
 	d Widget
 	w walk.Widget
 }
 
 type Builder struct {
-	level         int
-	parent        walk.Container
-	declWidgets   []declWidget
-	name2Widget   map[string]walk.Widget
-	deferredFuncs []func() error
+	level                    int
+	parent                   walk.Container
+	declWidgets              []declWidget
+	name2Widget              map[string]walk.Widget
+	deferredFuncs            []func() error
+	knownCompositeConditions map[string]walk.Condition
 }
 
 func NewBuilder(parent walk.Container) *Builder {
 	return &Builder{
-		parent:      parent,
-		name2Widget: make(map[string]walk.Widget),
+		parent:                   parent,
+		name2Widget:              make(map[string]walk.Widget),
+		knownCompositeConditions: make(map[string]walk.Condition),
 	}
 }
 
@@ -250,30 +268,35 @@ func (b *Builder) initProperties() error {
 					panic(sf.Name + " is not a property")
 				}
 
-				var done bool
-				parts := strings.Split(val.path, ".")
-				if len(parts) == 2 {
-					// First try a matching property.
-					if sw, ok := b.name2Widget[parts[0]]; ok {
-						sbw := sw.BaseWidget()
-						if srcProp := sbw.Property(parts[1]); srcProp != nil {
-							prop.SetSource(srcProp)
-							done = true
-						}
-					}
-				}
+				src := b.conditionOrProperty(val)
 
-				if !done {
-					// We haven't found a matching property, so we assume the
-					// path refers to something in the data source.
-					prop.SetSource(val.path)
+				if src == nil {
+					// No luck so far, so we assume the expression refers to
+					// something in the data source.
+					src = val.expression
+
 					if val.validator != nil {
 						validator, err := val.validator.Create()
 						if err != nil {
 							return err
 						}
-						prop.SetValidator(validator)
+						if err := prop.SetValidator(validator); err != nil {
+							return err
+						}
 					}
+				}
+
+				if err := prop.SetSource(src); err != nil {
+					return err
+				}
+
+			case walk.Condition:
+				if prop == nil {
+					panic(sf.Name + " is not a property")
+				}
+
+				if err := prop.SetSource(val); err != nil {
+					return err
 				}
 
 			default:
@@ -285,12 +308,69 @@ func (b *Builder) initProperties() error {
 				valt, vt := reflect.TypeOf(val), reflect.TypeOf(v)
 
 				if valt != vt {
-					panic(fmt.Sprintf("cannot assign value %v of type %T to property %s of type %T", val, val, prop.Name(), v))
+					panic(fmt.Sprintf("cannot assign value %v of type %T to property %s of type %T", val, val, sf.Name, v))
 				}
 				if err := prop.Set(val); err != nil {
 					return err
 				}
 			}
+		}
+	}
+
+	return nil
+}
+
+func (b *Builder) conditionOrProperty(data Property) interface{} {
+	switch val := data.(type) {
+	case bindData:
+		if c, ok := b.knownCompositeConditions[val.expression]; ok {
+			return c
+		} else if conds := strings.Split(val.expression, "&&"); len(conds) > 1 {
+			// This looks like a composite condition.
+			for i, s := range conds {
+				conds[i] = strings.TrimSpace(s)
+			}
+
+			var conditions []walk.Condition
+
+			for _, cond := range conds {
+				if p := b.property(cond); p != nil {
+					conditions = append(conditions, p.(walk.Condition))
+				} else if c, ok := conditionsByName[cond]; ok {
+					conditions = append(conditions, c)
+				} else {
+					panic("unknown condition or property name: " + cond)
+				}
+			}
+
+			var condition walk.Condition
+			if len(conditions) > 1 {
+				condition = walk.NewAllCondition(conditions...)
+				b.knownCompositeConditions[val.expression] = condition
+			} else {
+				condition = conditions[0]
+			}
+
+			return condition
+		}
+
+		if p := b.property(val.expression); p != nil {
+			return p
+		}
+
+		return conditionsByName[val.expression]
+
+	case walk.Condition:
+		return val
+	}
+
+	return nil
+}
+
+func (b *Builder) property(expression string) walk.Property {
+	if parts := strings.Split(expression, "."); len(parts) == 2 {
+		if sw, ok := b.name2Widget[parts[0]]; ok {
+			return sw.BaseWidget().Property(parts[1])
 		}
 	}
 
