@@ -16,9 +16,10 @@ func init() {
 
 type GroupBox struct {
 	WidgetBase
-	hWndGroupBox  HWND
-	composite     *Composite
-	titleProperty *Property
+	hWndGroupBox          HWND
+	composite             *Composite
+	titleProperty         Property
+	titleChangedPublisher EventPublisher
 }
 
 func NewGroupBox(parent Container) (*GroupBox, error) {
@@ -59,16 +60,15 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	gb.SetFont(defaultFont)
 
 	gb.titleProperty = NewProperty(
-		"Title",
 		func() interface{} {
 			return gb.Title()
 		},
 		func(v interface{}) error {
 			return gb.SetTitle(v.(string))
 		},
-		nil)
+		gb.titleChangedPublisher.Event())
 
-	gb.MustRegisterProperties(gb.titleProperty)
+	gb.MustRegisterProperty("Title", gb.titleProperty)
 
 	succeeded = true
 
@@ -160,6 +160,9 @@ func (gb *GroupBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		switch msg {
 		case WM_COMMAND, WM_NOTIFY:
 			gb.composite.WndProc(hwnd, msg, wParam, lParam)
+
+		case WM_SETTEXT:
+			gb.titleChangedPublisher.Publish()
 
 		case WM_SIZE, WM_SIZING:
 			wbcb := gb.WidgetBase.ClientBounds()

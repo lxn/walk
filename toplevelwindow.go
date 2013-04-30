@@ -53,29 +53,29 @@ func runSynchronized() {
 
 type TopLevelWindow struct {
 	ContainerBase
-	owner             RootWidget
-	closingPublisher  CloseEventPublisher
-	closeReason       CloseReason
-	prevFocusHWnd     HWND
-	isInRestoreState  bool
-	startingPublisher EventPublisher
-	progressIndicator *ProgressIndicator
-	icon              *Icon
-	titleProperty     *Property
+	owner                 RootWidget
+	closingPublisher      CloseEventPublisher
+	closeReason           CloseReason
+	prevFocusHWnd         HWND
+	isInRestoreState      bool
+	startingPublisher     EventPublisher
+	progressIndicator     *ProgressIndicator
+	icon                  *Icon
+	titleProperty         Property
+	titleChangedPublisher EventPublisher
 }
 
 func (tlw *TopLevelWindow) init() {
 	tlw.titleProperty = NewProperty(
-		"Title",
 		func() interface{} {
 			return tlw.Title()
 		},
 		func(v interface{}) error {
 			return tlw.SetTitle(v.(string))
 		},
-		nil)
+		tlw.titleChangedPublisher.Event())
 
-	tlw.MustRegisterProperties(tlw.titleProperty)
+	tlw.MustRegisterProperty("Title", tlw.titleProperty)
 }
 
 func (tlw *TopLevelWindow) LayoutFlags() LayoutFlags {
@@ -319,6 +319,9 @@ func (tlw *TopLevelWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 			int32(maxi(min.Height, tlw.minSize.Height)),
 		}
 		return 0
+
+	case WM_SETTEXT:
+		tlw.titleChangedPublisher.Publish()
 
 	case WM_SYSCOMMAND:
 		if wParam == SC_CLOSE {

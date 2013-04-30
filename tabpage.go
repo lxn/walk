@@ -20,9 +20,10 @@ func init() {
 
 type TabPage struct {
 	ContainerBase
-	title         string
-	tabWidget     *TabWidget
-	titleProperty *Property
+	title                 string
+	tabWidget             *TabWidget
+	titleProperty         Property
+	titleChangedPublisher EventPublisher
 }
 
 func NewTabPage() (*TabPage, error) {
@@ -42,16 +43,15 @@ func NewTabPage() (*TabPage, error) {
 	tp.SetBackground(tabPageBackgroundBrush)
 
 	tp.titleProperty = NewProperty(
-		"Title",
 		func() interface{} {
 			return tp.Title()
 		},
 		func(v interface{}) error {
 			return tp.SetTitle(v.(string))
 		},
-		nil)
+		tp.titleChangedPublisher.Event())
 
-	tp.MustRegisterProperties(tp.titleProperty)
+	tp.MustRegisterProperty("Title", tp.titleProperty)
 
 	return tp, nil
 }
@@ -80,6 +80,8 @@ func (tp *TabPage) Title() string {
 
 func (tp *TabPage) SetTitle(value string) error {
 	tp.title = value
+
+	tp.titleChangedPublisher.Publish()
 
 	if tp.tabWidget == nil {
 		return nil

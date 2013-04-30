@@ -72,8 +72,8 @@ func webView_DWebBrowserEvents2_GetTypeInfo(args *uintptr) uintptr {
 				wbe2         *webViewDWebBrowserEvents2
 			})(unsafe.Pointer(args))
 
-		    unsigned int  iTInfo,         
-		    LCID  lcid,                   
+		    unsigned int  iTInfo,
+		    LCID  lcid,
 		    ITypeInfo FAR* FAR*  ppTInfo*/
 
 	return E_NOTIMPL
@@ -81,13 +81,13 @@ func webView_DWebBrowserEvents2_GetTypeInfo(args *uintptr) uintptr {
 
 func webView_DWebBrowserEvents2_GetIDsOfNames(args *uintptr) uintptr {
 	/*	p := (*struct {
-			wbe2      *webViewDWebBrowserEvents2
-			riid      REFIID
-			rgszNames **uint16
-			cNames    uint32
-			lcid      LCID
-			rgDispId  *DISPID
-		})(unsafe.Pointer(args))*/
+		wbe2      *webViewDWebBrowserEvents2
+		riid      REFIID
+		rgszNames **uint16
+		cNames    uint32
+		lcid      LCID
+		rgDispId  *DISPID
+	})(unsafe.Pointer(args))*/
 
 	return E_NOTIMPL
 }
@@ -113,7 +113,7 @@ func webView_DWebBrowserEvents2_Invoke(
 
 	switch dispIdMember {
 	case DISPID_NAVIGATECOMPLETE2:
-		wv.urlProperty.changedEventPublisher.Publish()
+		wv.urlChangedPublisher.Publish()
 	}
 
 	return DISP_E_MEMBERNOTFOUND

@@ -20,9 +20,10 @@ func init() {
 
 type WebView struct {
 	WidgetBase
-	clientSite    webViewIOleClientSite // IMPORTANT: Must remain first member after WidgetBase
-	browserObject *IOleObject
-	urlProperty   *Property
+	clientSite          webViewIOleClientSite // IMPORTANT: Must remain first member after WidgetBase
+	browserObject       *IOleObject
+	urlProperty         Property
+	urlChangedPublisher EventPublisher
 }
 
 func NewWebView(parent Container) (*WebView, error) {
@@ -132,7 +133,6 @@ func NewWebView(parent Container) (*WebView, error) {
 	wv.onResize()
 
 	wv.urlProperty = NewProperty(
-		"URL",
 		func() interface{} {
 			url, _ := wv.URL()
 			return url
@@ -140,9 +140,9 @@ func NewWebView(parent Container) (*WebView, error) {
 		func(v interface{}) error {
 			return wv.SetURL(v.(string))
 		},
-		nil)
+		wv.urlChangedPublisher.Event())
 
-	wv.MustRegisterProperties(wv.urlProperty)
+	wv.MustRegisterProperty("URL", wv.urlProperty)
 
 	succeeded = true
 
@@ -201,7 +201,7 @@ func (wv *WebView) SetURL(url string) error {
 }
 
 func (wv *WebView) URLChanged() *Event {
-	return wv.urlProperty.Changed()
+	return wv.urlChangedPublisher.Event()
 }
 
 func (wv *WebView) Refresh() error {

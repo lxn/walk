@@ -22,10 +22,10 @@ type ErrorPresenter interface {
 type DataBinder struct {
 	dataSource                interface{}
 	boundWidgets              []Widget
-	properties                []*Property
-	property2Widget           map[*Property]Widget
-	property2ChangedHandle    map[*Property]int
-	widget2Property2Error     map[Widget]map[*Property]error
+	properties                []Property
+	property2Widget           map[Property]Widget
+	property2ChangedHandle    map[Property]int
+	widget2Property2Error     map[Widget]map[Property]error
 	errorPresenter            ErrorPresenter
 	canSubmitChangedPublisher EventPublisher
 }
@@ -53,9 +53,9 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 
 	db.boundWidgets = boundWidgets
 
-	db.property2Widget = make(map[*Property]Widget)
-	db.property2ChangedHandle = make(map[*Property]int)
-	db.widget2Property2Error = make(map[Widget]map[*Property]error)
+	db.property2Widget = make(map[Property]Widget)
+	db.property2ChangedHandle = make(map[Property]int)
+	db.widget2Property2Error = make(map[Widget]map[Property]error)
 
 	for _, widget := range boundWidgets {
 		widget := widget
@@ -76,7 +76,7 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 	}
 }
 
-func (db *DataBinder) validateProperty(prop *Property, widget Widget) {
+func (db *DataBinder) validateProperty(prop Property, widget Widget) {
 	validator := prop.Validator()
 	if validator == nil {
 		return
@@ -90,7 +90,7 @@ func (db *DataBinder) validateProperty(prop *Property, widget Widget) {
 		changed = len(db.widget2Property2Error) == 0
 
 		if prop2Err == nil {
-			prop2Err = make(map[*Property]error)
+			prop2Err = make(map[Property]error)
 			db.widget2Property2Error[widget] = prop2Err
 		}
 		prop2Err[prop] = err
@@ -134,7 +134,7 @@ func (db *DataBinder) CanSubmitChanged() *Event {
 }
 
 func (db *DataBinder) Reset() error {
-	return db.forEach(func(prop *Property, field reflect.Value) error {
+	return db.forEach(func(prop Property, field reflect.Value) error {
 		if f64, ok := prop.Get().(float64); ok {
 			switch v := field.Interface().(type) {
 			case float32:
@@ -199,12 +199,15 @@ func (db *DataBinder) Submit() error {
 		return errValidationFailed
 	}
 
-	return db.forEach(func(prop *Property, field reflect.Value) error {
+	return db.forEach(func(prop Property, field reflect.Value) error {
 		value := prop.Get()
 		if value == nil {
 			// This happens e.g. if CurrentIndex() of a ComboBox returns -1.
 			// FIXME: Should we handle this differently?
 			return nil
+		}
+		if err, ok := value.(error); ok {
+			return err
 		}
 
 		if f64, ok := value.(float64); ok {
@@ -231,7 +234,7 @@ func (db *DataBinder) Submit() error {
 	})
 }
 
-func (db *DataBinder) forEach(f func(prop *Property, field reflect.Value) error) error {
+func (db *DataBinder) forEach(f func(prop Property, field reflect.Value) error) error {
 	p := reflect.ValueOf(db.dataSource)
 	if p.Type().Kind() != reflect.Ptr {
 		return newError("DataSource must be a pointer to a struct.")

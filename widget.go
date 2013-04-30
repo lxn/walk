@@ -301,29 +301,32 @@ type Widget interface {
 
 // WidgetBase implements many operations common to all Widgets.
 type WidgetBase struct {
-	widget               Widget
-	hWnd                 HWND
-	origWndProcPtr       uintptr
-	name                 string
-	parent               Container
-	font                 *Font
-	contextMenu          *Menu
-	keyDownPublisher     KeyEventPublisher
-	mouseDownPublisher   MouseEventPublisher
-	mouseUpPublisher     MouseEventPublisher
-	mouseMovePublisher   MouseEventPublisher
-	sizeChangedPublisher EventPublisher
-	maxSize              Size
-	minSize              Size
-	background           Brush
-	cursor               Cursor
-	suspended            bool
-	visible              bool
-	enabled              bool
-	name2Property        map[string]*Property
-	enabledProperty      *Property
-	visibleProperty      *Property
-	toolTipTextProperty  *Property
+	widget                      Widget
+	hWnd                        HWND
+	origWndProcPtr              uintptr
+	name                        string
+	parent                      Container
+	font                        *Font
+	contextMenu                 *Menu
+	keyDownPublisher            KeyEventPublisher
+	mouseDownPublisher          MouseEventPublisher
+	mouseUpPublisher            MouseEventPublisher
+	mouseMovePublisher          MouseEventPublisher
+	sizeChangedPublisher        EventPublisher
+	maxSize                     Size
+	minSize                     Size
+	background                  Brush
+	cursor                      Cursor
+	suspended                   bool
+	visible                     bool
+	enabled                     bool
+	name2Property               map[string]Property
+	enabledProperty             Property
+	enabledChangedPublisher     EventPublisher
+	visibleProperty             Property
+	visibleChangedPublisher     EventPublisher
+	toolTipTextProperty         Property
+	toolTipTextChangedPublisher EventPublisher
 }
 
 var widgetWndProcPtr uintptr = syscall.NewCallback(widgetWndProc)
@@ -382,7 +385,7 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 	wb.enabled = true
 	wb.visible = true
 
-	wb.name2Property = make(map[string]*Property)
+	wb.name2Property = make(map[string]Property)
 
 	var hwndParent HWND
 	if parent != nil {
@@ -438,30 +441,27 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 		}
 	}
 
-	wb.enabledProperty = NewProperty(
-		"Enabled",
-		func() interface{} {
+	wb.enabledProperty = NewBoolProperty(
+		func() bool {
 			return wb.widget.Enabled()
 		},
-		func(v interface{}) error {
-			wb.widget.SetEnabled(v.(bool))
+		func(b bool) error {
+			wb.widget.SetEnabled(b)
 			return nil
 		},
-		nil)
+		wb.enabledChangedPublisher.Event())
 
-	wb.visibleProperty = NewProperty(
-		"Visible",
-		func() interface{} {
-			return wb.widget.Visible()
+	wb.visibleProperty = NewBoolProperty(
+		func() bool {
+			return widget.Visible()
 		},
-		func(v interface{}) error {
-			wb.widget.SetVisible(v.(bool))
+		func(b bool) error {
+			wb.widget.SetVisible(b)
 			return nil
 		},
-		nil)
+		wb.visibleChangedPublisher.Event())
 
 	wb.toolTipTextProperty = NewProperty(
-		"ToolTipText",
 		func() interface{} {
 			return wb.widget.ToolTipText()
 		},
@@ -469,9 +469,11 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 			wb.widget.SetToolTipText(v.(string))
 			return nil
 		},
-		nil)
+		wb.toolTipTextChangedPublisher.Event())
 
-	wb.MustRegisterProperties(wb.enabledProperty, wb.visibleProperty, wb.toolTipTextProperty)
+	wb.MustRegisterProperty("Enabled", wb.enabledProperty)
+	wb.MustRegisterProperty("Visible", wb.visibleProperty)
+	wb.MustRegisterProperty("ToolTipText", wb.toolTipTextProperty)
 
 	succeeded = true
 
@@ -539,20 +541,18 @@ func rootWidget(w Widget) RootWidget {
 	return rw
 }
 
-func (wb *WidgetBase) MustRegisterProperties(properties ...*Property) {
-	for _, prop := range properties {
-		if prop == nil {
-			panic("property must not be nil")
-		}
-		if wb.name2Property[prop.name] != nil {
-			panic("property already registered")
-		}
-
-		wb.name2Property[prop.name] = prop
+func (wb *WidgetBase) MustRegisterProperty(name string, property Property) {
+	if property == nil {
+		panic("property must not be nil")
 	}
+	if wb.name2Property[name] != nil {
+		panic("property already registered")
+	}
+
+	wb.name2Property[name] = property
 }
 
-func (wb *WidgetBase) Property(name string) *Property {
+func (wb *WidgetBase) Property(name string) Property {
 	return wb.name2Property[name]
 }
 
@@ -732,7 +732,7 @@ func (wb *WidgetBase) SetEnabled(value bool) {
 
 	EnableWindow(wb.hWnd, wb.widget.Enabled())
 
-	wb.enabledProperty.changedEventPublisher.Publish()
+	wb.enabledChangedPublisher.Publish()
 }
 
 // Font returns the *Font of the *WidgetBase.
@@ -918,7 +918,7 @@ func (wb *WidgetBase) SetVisible(visible bool) {
 
 	wb.updateParentLayout()
 
-	wb.visibleProperty.changedEventPublisher.Publish()
+	wb.visibleChangedPublisher.Publish()
 }
 
 // BringToTop moves the *WidgetBase to the top of the keyboard focus order.
@@ -1263,7 +1263,13 @@ func (wb *WidgetBase) SetToolTipText(s string) error {
 		return newError("not supported for a RootWidget")
 	}
 
-	return globalToolTip.SetText(wb.widget, s)
+	if err := globalToolTip.SetText(wb.widget, s); err != nil {
+		return err
+	}
+
+	wb.toolTipTextChangedPublisher.Publish()
+
+	return nil
 }
 
 // CreateCanvas creates and returns a *Canvas that can be used to draw

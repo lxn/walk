@@ -20,8 +20,10 @@ type LineEdit struct {
 	WidgetBase
 	editingFinishedPublisher EventPublisher
 	returnPressedPublisher   EventPublisher
-	textProperty             *Property
-	readOnlyProperty         *Property
+	textProperty             Property
+	textChangedPublisher     EventPublisher
+	readOnlyProperty         Property
+	readOnlyChangedPublisher EventPublisher
 	charWidthFont            *Font
 	charWidth                int
 }
@@ -39,26 +41,25 @@ func newLineEdit(parent Widget) (*LineEdit, error) {
 	}
 
 	le.textProperty = NewProperty(
-		"Text",
 		func() interface{} {
 			return le.Text()
 		},
 		func(v interface{}) error {
 			return le.SetText(v.(string))
 		},
-		nil)
+		le.textChangedPublisher.Event())
 
 	le.readOnlyProperty = NewProperty(
-		"ReadOnly",
 		func() interface{} {
 			return le.ReadOnly()
 		},
 		func(v interface{}) error {
 			return le.SetReadOnly(v.(bool))
 		},
-		nil)
+		le.readOnlyChangedPublisher.Event())
 
-	le.MustRegisterProperties(le.textProperty, le.readOnlyProperty)
+	le.MustRegisterProperty("Text", le.textProperty)
+	le.MustRegisterProperty("ReadOnly", le.readOnlyProperty)
 
 	return le, nil
 }
@@ -124,10 +125,6 @@ func (le *LineEdit) SetText(value string) error {
 	return setWidgetText(le.hWnd, value)
 }
 
-func (le *LineEdit) TextProperty() *Property {
-	return le.textProperty
-}
-
 func (le *LineEdit) TextSelection() (start, end int) {
 	le.SendMessage(EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
 	return
@@ -158,6 +155,8 @@ func (le *LineEdit) SetReadOnly(readOnly bool) error {
 	if 0 == le.SendMessage(EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
 		return newError("SendMessage(EM_SETREADONLY)")
 	}
+
+	le.readOnlyChangedPublisher.Publish()
 
 	return nil
 }
@@ -246,7 +245,7 @@ func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
 		case EN_CHANGE:
-			le.textProperty.changedEventPublisher.Publish()
+			le.textChangedPublisher.Publish()
 		}
 
 	case WM_GETDLGCODE:
@@ -254,7 +253,7 @@ func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 			if dlg, ok := root.(dialogish); ok {
 				if dlg.DefaultButton() != nil {
 					// If the LineEdit lives in a Dialog that has a DefaultButton,
-					// we won't swallow the return key. 
+					// we won't swallow the return key.
 					break
 				}
 			}
