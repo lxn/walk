@@ -9,29 +9,29 @@ import (
 )
 
 type GroupBox struct {
-	AssignTo           **walk.GroupBox
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	ToolTipText        Property
-	MinSize            Size
-	MaxSize            Size
-	StretchFactor      int
-	Row                int
-	RowSpan            int
-	Column             int
-	ColumnSpan         int
-	ContextMenuActions []*walk.Action
-	OnKeyDown          walk.KeyEventHandler
-	OnMouseDown        walk.MouseEventHandler
-	OnMouseMove        walk.MouseEventHandler
-	OnMouseUp          walk.MouseEventHandler
-	OnSizeChanged      walk.EventHandler
-	Title              string
-	DataBinder         DataBinder
-	Layout             Layout
-	Children           []Widget
+	AssignTo         **walk.GroupBox
+	Name             string
+	Enabled          Property
+	Visible          Property
+	Font             Font
+	ToolTipText      Property
+	MinSize          Size
+	MaxSize          Size
+	StretchFactor    int
+	Row              int
+	RowSpan          int
+	Column           int
+	ColumnSpan       int
+	ContextMenuItems []MenuItem
+	OnKeyDown        walk.KeyEventHandler
+	OnMouseDown      walk.MouseEventHandler
+	OnMouseMove      walk.MouseEventHandler
+	OnMouseUp        walk.MouseEventHandler
+	OnSizeChanged    walk.EventHandler
+	Title            string
+	DataBinder       DataBinder
+	Layout           Layout
+	Children         []Widget
 }
 
 func (gb GroupBox) Create(builder *Builder) error {
@@ -59,8 +59,8 @@ func (gb GroupBox) Create(builder *Builder) error {
 	})
 }
 
-func (w GroupBox) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
+func (w GroupBox) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.ContextMenuItems, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }
 
 func (gb GroupBox) ContainerInfo() (DataBinder, Layout, []Widget) {

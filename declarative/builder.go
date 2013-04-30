@@ -60,6 +60,22 @@ func (b *Builder) Defer(f func() error) {
 	b.deferredFuncs = append(b.deferredFuncs, f)
 }
 
+func (b *Builder) deferBuildActions(actionList *walk.ActionList, items []MenuItem) {
+	if len(items) > 0 {
+		b.Defer(func() error {
+			actions, err := createActions(b, items...)
+			if err != nil {
+				return err
+			}
+			if err := addToActionList(actionList, actions); err != nil {
+				return err
+			}
+
+			return nil
+		})
+	}
+}
+
 func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) error {
 	b.level++
 	defer func() {
@@ -76,7 +92,7 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 	b.declWidgets = append(b.declWidgets, declWidget{d, w})
 
 	// Widget
-	name, _, _, font, toolTipText, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuActions, onKeyDown, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
+	name, _, _, font, toolTipText, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuItems, onKeyDown, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
 
 	w.SetName(name)
 
@@ -94,14 +110,13 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 		return err
 	}
 
-	if len(contextMenuActions) > 0 {
+	if len(contextMenuItems) > 0 {
 		cm, err := walk.NewMenu()
 		if err != nil {
 			return err
 		}
-		if err := addToActionList(cm.Actions(), contextMenuActions); err != nil {
-			return err
-		}
+
+		b.deferBuildActions(cm.Actions(), contextMenuItems)
 		w.SetContextMenu(cm)
 	}
 

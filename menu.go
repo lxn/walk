@@ -100,18 +100,43 @@ func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 }
 
 func (m *Menu) onActionChanged(action *Action) error {
+	if !action.Visible() {
+		return nil
+	}
+
 	var mii MENUITEMINFO
 
 	m.initMenuItemInfoFromAction(&mii, action)
 
-	if !SetMenuItemInfo(m.hMenu, uint32(m.actions.Index(action)), true, &mii) {
+	if !SetMenuItemInfo(m.hMenu, uint32(m.actions.indexInObserver(action)), true, &mii) {
 		return newError("SetMenuItemInfo failed")
 	}
 
 	return nil
 }
 
-func (m *Menu) onInsertingAction(index int, action *Action) error {
+func (m *Menu) onActionVisibleChanged(action *Action) error {
+	if action.Visible() {
+		return m.onInsertedAction(action)
+	}
+
+	return m.onRemovingAction(action)
+}
+
+func (m *Menu) onInsertedAction(action *Action) (err error) {
+	action.addChangedHandler(m)
+	defer func() {
+		if err != nil {
+			action.removeChangedHandler(m)
+		}
+	}()
+
+	if !action.Visible() {
+		return
+	}
+
+	index := m.actions.indexInObserver(action)
+
 	var mii MENUITEMINFO
 
 	m.initMenuItemInfoFromAction(&mii, action)
@@ -119,8 +144,6 @@ func (m *Menu) onInsertingAction(index int, action *Action) error {
 	if !InsertMenuItem(m.hMenu, uint32(index), true, &mii) {
 		return newError("InsertMenuItem failed")
 	}
-
-	action.addChangedHandler(m)
 
 	menu := action.menu
 	if menu != nil {
@@ -131,10 +154,12 @@ func (m *Menu) onInsertingAction(index int, action *Action) error {
 		DrawMenuBar(m.hWnd)
 	}
 
-	return nil
+	return
 }
 
-func (m *Menu) onRemovingAction(index int, action *Action) error {
+func (m *Menu) onRemovingAction(action *Action) error {
+	index := m.actions.indexInObserver(action)
+
 	if !RemoveMenu(m.hMenu, uint32(index), MF_BYPOSITION) {
 		return lastError("RemoveMenu")
 	}
@@ -150,15 +175,11 @@ func (m *Menu) onRemovingAction(index int, action *Action) error {
 
 func (m *Menu) onClearingActions() error {
 	for i := m.actions.Len() - 1; i >= 0; i-- {
-		if !RemoveMenu(m.hMenu, uint32(i), MF_BYPOSITION) {
-			return lastError("RemoveMenu")
+		if action := m.actions.At(i); action.Visible() {
+			if err := m.onRemovingAction(action); err != nil {
+				return err
+			}
 		}
-
-		m.actions.At(i).removeChangedHandler(m)
-	}
-
-	if m.hWnd != 0 {
-		DrawMenuBar(m.hWnd)
 	}
 
 	return nil

@@ -665,6 +665,26 @@ func (wb *WidgetBase) Dispose() {
 
 		wb.hWnd = 0
 		DestroyWindow(hWnd)
+
+		var disposeMenuActions func(menu *Menu)
+		disposeMenuActions = func(menu *Menu) {
+			if menu == nil {
+				return
+			}
+
+			for _, action := range menu.actions.actions {
+				if action.enabledCondition != nil {
+					action.enabledCondition.Changed().Detach(action.enabledConditionChangedHandle)
+				}
+				if action.visibleCondition != nil {
+					action.visibleCondition.Changed().Detach(action.visibleConditionChangedHandle)
+				}
+
+				disposeMenuActions(action.menu)
+			}
+		}
+
+		disposeMenuActions(wb.contextMenu)
 	}
 }
 

@@ -6,6 +6,7 @@ package declarative
 
 import (
 	"errors"
+	"fmt"
 )
 
 import (
@@ -16,10 +17,12 @@ type Action struct {
 	AssignTo    **walk.Action
 	Text        string
 	Image       interface{}
+	Enabled     Property
+	Visible     Property
 	OnTriggered walk.EventHandler
 }
 
-func (a Action) createAction(menu *walk.Menu) (*walk.Action, error) {
+func (a Action) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, error) {
 	action := walk.NewAction()
 
 	if err := action.SetText(a.Text); err != nil {
@@ -27,6 +30,33 @@ func (a Action) createAction(menu *walk.Menu) (*walk.Action, error) {
 	}
 	if err := setActionImage(action, a.Image); err != nil {
 		return nil, err
+	}
+
+	if a.Enabled != nil {
+		if b, ok := a.Enabled.(bool); ok {
+			if err := action.SetEnabled(b); err != nil {
+				return nil, err
+			}
+		} else if s := builder.conditionOrProperty(a.Enabled); s != nil {
+			if c, ok := s.(walk.Condition); ok {
+				action.SetEnabledCondition(c)
+			} else {
+				return nil, fmt.Errorf("value of invalid type bound to Action.Enabled: %T", s)
+			}
+		}
+	}
+	if a.Visible != nil {
+		if b, ok := a.Visible.(bool); ok {
+			if err := action.SetVisible(b); err != nil {
+				return nil, err
+			}
+		} else if s := builder.conditionOrProperty(a.Visible); s != nil {
+			if c, ok := s.(walk.Condition); ok {
+				action.SetVisibleCondition(c)
+			} else {
+				return nil, fmt.Errorf("value of invalid type bound to Action.Visible: %T", s)
+			}
+		}
 	}
 
 	if a.OnTriggered != nil {
@@ -47,17 +77,17 @@ func (a Action) createAction(menu *walk.Menu) (*walk.Action, error) {
 }
 
 type ActionRef struct {
-	Action *walk.Action
+	Action **walk.Action
 }
 
-func (ar ActionRef) createAction(menu *walk.Menu) (*walk.Action, error) {
+func (ar ActionRef) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, error) {
 	if menu != nil {
-		if err := menu.Actions().Add(ar.Action); err != nil {
+		if err := menu.Actions().Add(*ar.Action); err != nil {
 			return nil, err
 		}
 	}
 
-	return ar.Action, nil
+	return *ar.Action, nil
 }
 
 type Menu struct {
@@ -68,7 +98,7 @@ type Menu struct {
 	Items          []MenuItem
 }
 
-func (m Menu) createAction(menu *walk.Menu) (*walk.Action, error) {
+func (m Menu) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, error) {
 	if menu == nil {
 		var err error
 		if menu, err = walk.NewMenu(); err != nil {
@@ -94,7 +124,7 @@ func (m Menu) createAction(menu *walk.Menu) (*walk.Action, error) {
 	}
 
 	for _, item := range m.Items {
-		if _, err := item.createAction(subMenu); err != nil {
+		if _, err := item.createAction(builder, subMenu); err != nil {
 			return nil, err
 		}
 	}
@@ -112,7 +142,7 @@ func (m Menu) createAction(menu *walk.Menu) (*walk.Action, error) {
 type Separator struct {
 }
 
-func (s Separator) createAction(menu *walk.Menu) (*walk.Action, error) {
+func (s Separator) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, error) {
 	action := walk.NewAction()
 
 	if err := action.SetText("-"); err != nil {
@@ -161,10 +191,14 @@ func setActionImage(action *walk.Action, image interface{}) (err error) {
 }
 
 func CreateActions(items ...MenuItem) ([]*walk.Action, error) {
+	return createActions(NewBuilder(nil), items...)
+}
+
+func createActions(builder *Builder, items ...MenuItem) ([]*walk.Action, error) {
 	var actions []*walk.Action
 
 	for _, item := range items {
-		action, err := item.createAction(nil)
+		action, err := item.createAction(builder, nil)
 		if err != nil {
 			return nil, err
 		}

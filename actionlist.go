@@ -5,8 +5,8 @@
 package walk
 
 type actionListObserver interface {
-	onInsertingAction(index int, action *Action) error
-	onRemovingAction(index int, action *Action) error
+	onInsertedAction(action *Action) error
+	onRemovingAction(action *Action) error
 	onClearingActions() error
 }
 
@@ -58,17 +58,34 @@ func (l *ActionList) Index(action *Action) int {
 	return -1
 }
 
-func (l *ActionList) Insert(index int, action *Action) error {
-	observer := l.observer
-	if observer != nil {
-		if err := observer.onInsertingAction(index, action); err != nil {
-			return err
+func (l *ActionList) indexInObserver(action *Action) int {
+	var idx int
+
+	for _, a := range l.actions {
+		if a == action {
+			return idx
+		}
+		if a.Visible() {
+			idx++
 		}
 	}
 
+	return -1
+}
+
+func (l *ActionList) Insert(index int, action *Action) error {
 	l.actions = append(l.actions, nil)
 	copy(l.actions[index+1:], l.actions[index:])
 	l.actions[index] = action
+
+	observer := l.observer
+	if observer != nil {
+		if err := observer.onInsertedAction(action); err != nil {
+			l.actions = append(l.actions[:index], l.actions[index+1:]...)
+
+			return err
+		}
+	}
 
 	return nil
 }
@@ -101,8 +118,10 @@ func (l *ActionList) RemoveAt(index int) error {
 	observer := l.observer
 	if observer != nil {
 		action := l.actions[index]
-		if err := observer.onRemovingAction(index, action); err != nil {
-			return err
+		if action.Visible() {
+			if err := observer.onRemovingAction(action); err != nil {
+				return err
+			}
 		}
 	}
 

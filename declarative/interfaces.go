@@ -11,12 +11,12 @@ import (
 type Property interface{}
 
 type bindData struct {
-	path      string
-	validator Validator
+	expression string
+	validator  Validator
 }
 
-func Bind(path string, validators ...Validator) Property {
-	bd := bindData{path: path}
+func Bind(expression string, validators ...Validator) Property {
+	bd := bindData{expression: expression}
 	switch len(validators) {
 	case 0:
 		// nop
@@ -37,7 +37,7 @@ type Layout interface {
 
 type Widget interface {
 	Create(builder *Builder) error
-	WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler)
+	WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler)
 }
 
 type Container interface {
@@ -45,7 +45,7 @@ type Container interface {
 }
 
 type MenuItem interface {
-	createAction(menu *walk.Menu) (*walk.Action, error)
+	createAction(builder *Builder, menu *walk.Menu) (*walk.Action, error)
 }
 
 type Validator interface {
@@ -69,30 +69,30 @@ func (epr ErrorPresenterRef) Create() (walk.ErrorPresenter, error) {
 }
 
 type topLevelWindowInfo struct {
-	Name               string
-	Disabled           bool
-	Hidden             bool
-	Font               Font
-	ToolTipText        string
-	MinSize            Size
-	MaxSize            Size
-	ContextMenuActions []*walk.Action
-	OnKeyDown          walk.KeyEventHandler
-	OnMouseDown        walk.MouseEventHandler
-	OnMouseMove        walk.MouseEventHandler
-	OnMouseUp          walk.MouseEventHandler
-	OnSizeChanged      walk.EventHandler
-	DataBinder         DataBinder
-	Layout             Layout
-	Children           []Widget
+	Name             string
+	Disabled         bool
+	Hidden           bool
+	Font             Font
+	ToolTipText      string
+	MinSize          Size
+	MaxSize          Size
+	ContextMenuItems []MenuItem
+	OnKeyDown        walk.KeyEventHandler
+	OnMouseDown      walk.MouseEventHandler
+	OnMouseMove      walk.MouseEventHandler
+	OnMouseUp        walk.MouseEventHandler
+	OnSizeChanged    walk.EventHandler
+	DataBinder       DataBinder
+	Layout           Layout
+	Children         []Widget
 }
 
 func (topLevelWindowInfo) Create(builder *Builder) error {
 	return nil
 }
 
-func (i topLevelWindowInfo) WidgetInfo() (name string, disabled, hidden bool, font *Font, ToolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return i.Name, i.Disabled, i.Hidden, &i.Font, i.ToolTipText, i.MinSize, i.MaxSize, 0, 0, 0, 0, 0, i.ContextMenuActions, i.OnKeyDown, i.OnMouseDown, i.OnMouseMove, i.OnMouseUp, i.OnSizeChanged
+func (i topLevelWindowInfo) WidgetInfo() (name string, disabled, hidden bool, font *Font, ToolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+	return i.Name, i.Disabled, i.Hidden, &i.Font, i.ToolTipText, i.MinSize, i.MaxSize, 0, 0, 0, 0, 0, i.ContextMenuItems, i.OnKeyDown, i.OnMouseDown, i.OnMouseMove, i.OnMouseUp, i.OnSizeChanged
 }
 
 func (i topLevelWindowInfo) ContainerInfo() (DataBinder, Layout, []Widget) {

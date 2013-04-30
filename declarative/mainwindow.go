@@ -9,26 +9,26 @@ import (
 )
 
 type MainWindow struct {
-	AssignTo           **walk.MainWindow
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	MinSize            Size
-	MaxSize            Size
-	ContextMenuActions []*walk.Action
-	OnKeyDown          walk.KeyEventHandler
-	OnMouseDown        walk.MouseEventHandler
-	OnMouseMove        walk.MouseEventHandler
-	OnMouseUp          walk.MouseEventHandler
-	OnSizeChanged      walk.EventHandler
-	Title              string
-	Size               Size
-	DataBinder         DataBinder
-	Layout             Layout
-	Children           []Widget
-	MenuActions        []*walk.Action
-	ToolBarActions     []*walk.Action
+	AssignTo         **walk.MainWindow
+	Name             string
+	Enabled          Property
+	Visible          Property
+	Font             Font
+	MinSize          Size
+	MaxSize          Size
+	ContextMenuItems []MenuItem
+	OnKeyDown        walk.KeyEventHandler
+	OnMouseDown      walk.MouseEventHandler
+	OnMouseMove      walk.MouseEventHandler
+	OnMouseUp        walk.MouseEventHandler
+	OnSizeChanged    walk.EventHandler
+	Title            string
+	Size             Size
+	DataBinder       DataBinder
+	Layout           Layout
+	Children         []Widget
+	MenuItems        []MenuItem
+	ToolBarItems     []MenuItem
 }
 
 func (mw MainWindow) Create() error {
@@ -38,20 +38,20 @@ func (mw MainWindow) Create() error {
 	}
 
 	tlwi := topLevelWindowInfo{
-		Name:               mw.Name,
-		Font:               mw.Font,
-		ToolTipText:        "",
-		MinSize:            mw.MinSize,
-		MaxSize:            mw.MaxSize,
-		ContextMenuActions: mw.ContextMenuActions,
-		OnKeyDown:          mw.OnKeyDown,
-		OnMouseDown:        mw.OnMouseDown,
-		OnMouseMove:        mw.OnMouseMove,
-		OnMouseUp:          mw.OnMouseUp,
-		OnSizeChanged:      mw.OnSizeChanged,
-		DataBinder:         mw.DataBinder,
-		Layout:             mw.Layout,
-		Children:           mw.Children,
+		Name:             mw.Name,
+		Font:             mw.Font,
+		ToolTipText:      "",
+		MinSize:          mw.MinSize,
+		MaxSize:          mw.MaxSize,
+		ContextMenuItems: mw.ContextMenuItems,
+		OnKeyDown:        mw.OnKeyDown,
+		OnMouseDown:      mw.OnMouseDown,
+		OnMouseMove:      mw.OnMouseMove,
+		OnMouseUp:        mw.OnMouseUp,
+		OnSizeChanged:    mw.OnSizeChanged,
+		DataBinder:       mw.DataBinder,
+		Layout:           mw.Layout,
+		Children:         mw.Children,
 	}
 
 	builder := NewBuilder(nil)
@@ -65,25 +65,24 @@ func (mw MainWindow) Create() error {
 			return err
 		}
 
-		if err := addToActionList(w.Menu().Actions(), mw.MenuActions); err != nil {
-			return err
-		}
-
 		imageList, err := walk.NewImageList(walk.Size{16, 16}, 0)
 		if err != nil {
 			return err
 		}
 		w.ToolBar().SetImageList(imageList)
 
-		if err := addToActionList(w.ToolBar().Actions(), mw.ToolBarActions); err != nil {
-			return err
-		}
-
-		w.Show()
-
 		if mw.AssignTo != nil {
 			*mw.AssignTo = w
 		}
+
+		builder.deferBuildActions(w.Menu().Actions(), mw.MenuItems)
+		builder.deferBuildActions(w.ToolBar().Actions(), mw.ToolBarItems)
+
+		builder.Defer(func() error {
+			w.Show()
+
+			return nil
+		})
 
 		return nil
 	})

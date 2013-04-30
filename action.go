@@ -5,7 +5,8 @@
 package walk
 
 type actionChangedHandler interface {
-	onActionChanged(action *Action) (err error)
+	onActionChanged(action *Action) error
+	onActionVisibleChanged(action *Action) error
 }
 
 var (
@@ -17,18 +18,22 @@ var (
 )
 
 type Action struct {
-	menu               *Menu
-	triggeredPublisher EventPublisher
-	changedHandlers    []actionChangedHandler
-	text               string
-	toolTip            string
-	image              *Bitmap
-	enabled            bool
-	visible            bool
-	checkable          bool
-	checked            bool
-	exclusive          bool
-	id                 uint16
+	menu                          *Menu
+	triggeredPublisher            EventPublisher
+	changedHandlers               []actionChangedHandler
+	text                          string
+	toolTip                       string
+	image                         *Bitmap
+	enabledCondition              Condition
+	enabledConditionChangedHandle int
+	visibleCondition              Condition
+	visibleConditionChangedHandle int
+	enabled                       bool
+	visible                       bool
+	checkable                     bool
+	checked                       bool
+	exclusive                     bool
+	id                            uint16
 }
 
 func NewAction() *Action {
@@ -84,10 +89,18 @@ func (a *Action) SetChecked(value bool) (err error) {
 }
 
 func (a *Action) Enabled() bool {
+	if a.enabledCondition != nil {
+		return a.enabledCondition.Satisfied()
+	}
+
 	return a.enabled
 }
 
 func (a *Action) SetEnabled(value bool) (err error) {
+	if a.enabledCondition != nil {
+		return newError("EnabledCondition != nil")
+	}
+
 	if value != a.enabled {
 		old := a.enabled
 
@@ -100,6 +113,24 @@ func (a *Action) SetEnabled(value bool) (err error) {
 	}
 
 	return
+}
+
+func (a *Action) EnabledCondition() Condition {
+	return a.enabledCondition
+}
+
+func (a *Action) SetEnabledCondition(c Condition) {
+	if a.enabledCondition != nil {
+		a.enabledCondition.Changed().Detach(a.enabledConditionChangedHandle)
+	}
+
+	a.enabledCondition = c
+
+	if c != nil {
+		a.enabledConditionChangedHandle = c.Changed().Attach(func() {
+			a.raiseChanged()
+		})
+	}
 }
 
 func (a *Action) Exclusive() bool {
@@ -179,22 +210,48 @@ func (a *Action) SetToolTip(value string) (err error) {
 }
 
 func (a *Action) Visible() bool {
+	if a.visibleCondition != nil {
+		return a.visibleCondition.Satisfied()
+	}
+
 	return a.visible
 }
 
 func (a *Action) SetVisible(value bool) (err error) {
+	if a.visibleCondition != nil {
+		return newError("VisibleCondition != nil")
+	}
+
 	if value != a.visible {
 		old := a.visible
 
 		a.visible = value
 
-		if err = a.raiseChanged(); err != nil {
+		if err = a.raiseVisibleChanged(); err != nil {
 			a.visible = old
-			a.raiseChanged()
+			a.raiseVisibleChanged()
 		}
 	}
 
 	return
+}
+
+func (a *Action) VisibleCondition() Condition {
+	return a.visibleCondition
+}
+
+func (a *Action) SetVisibleCondition(c Condition) {
+	if a.visibleCondition != nil {
+		a.visibleCondition.Changed().Detach(a.visibleConditionChangedHandle)
+	}
+
+	a.visibleCondition = c
+
+	if c != nil {
+		a.visibleConditionChangedHandle = c.Changed().Attach(func() {
+			a.raiseVisibleChanged()
+		})
+	}
 }
 
 func (a *Action) Triggered() *Event {
@@ -218,12 +275,22 @@ func (a *Action) removeChangedHandler(handler actionChangedHandler) {
 	}
 }
 
-func (a *Action) raiseChanged() (err error) {
+func (a *Action) raiseChanged() error {
 	for _, handler := range a.changedHandlers {
-		if err = handler.onActionChanged(a); err != nil {
-			return
+		if err := handler.onActionChanged(a); err != nil {
+			return err
 		}
 	}
 
-	return
+	return nil
+}
+
+func (a *Action) raiseVisibleChanged() error {
+	for _, handler := range a.changedHandlers {
+		if err := handler.onActionVisibleChanged(a); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

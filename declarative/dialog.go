@@ -9,26 +9,26 @@ import (
 )
 
 type Dialog struct {
-	AssignTo           **walk.Dialog
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	MinSize            Size
-	MaxSize            Size
-	ContextMenuActions []*walk.Action
-	OnKeyDown          walk.KeyEventHandler
-	OnMouseDown        walk.MouseEventHandler
-	OnMouseMove        walk.MouseEventHandler
-	OnMouseUp          walk.MouseEventHandler
-	OnSizeChanged      walk.EventHandler
-	Title              string
-	Size               Size
-	DataBinder         DataBinder
-	Layout             Layout
-	Children           []Widget
-	DefaultButton      **walk.PushButton
-	CancelButton       **walk.PushButton
+	AssignTo         **walk.Dialog
+	Name             string
+	Enabled          Property
+	Visible          Property
+	Font             Font
+	MinSize          Size
+	MaxSize          Size
+	ContextMenuItems []MenuItem
+	OnKeyDown        walk.KeyEventHandler
+	OnMouseDown      walk.MouseEventHandler
+	OnMouseMove      walk.MouseEventHandler
+	OnMouseUp        walk.MouseEventHandler
+	OnSizeChanged    walk.EventHandler
+	Title            string
+	Size             Size
+	DataBinder       DataBinder
+	Layout           Layout
+	Children         []Widget
+	DefaultButton    **walk.PushButton
+	CancelButton     **walk.PushButton
 }
 
 func (d Dialog) Create(owner walk.RootWidget) error {
@@ -38,20 +38,20 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 	}
 
 	tlwi := topLevelWindowInfo{
-		Name:               d.Name,
-		Font:               d.Font,
-		ToolTipText:        "",
-		MinSize:            d.MinSize,
-		MaxSize:            d.MaxSize,
-		ContextMenuActions: d.ContextMenuActions,
-		DataBinder:         d.DataBinder,
-		Layout:             d.Layout,
-		Children:           d.Children,
-		OnKeyDown:          d.OnKeyDown,
-		OnMouseDown:        d.OnMouseDown,
-		OnMouseMove:        d.OnMouseMove,
-		OnMouseUp:          d.OnMouseUp,
-		OnSizeChanged:      d.OnSizeChanged,
+		Name:             d.Name,
+		Font:             d.Font,
+		ToolTipText:      "",
+		MinSize:          d.MinSize,
+		MaxSize:          d.MaxSize,
+		ContextMenuItems: d.ContextMenuItems,
+		DataBinder:       d.DataBinder,
+		Layout:           d.Layout,
+		Children:         d.Children,
+		OnKeyDown:        d.OnKeyDown,
+		OnMouseDown:      d.OnMouseDown,
+		OnMouseMove:      d.OnMouseMove,
+		OnMouseUp:        d.OnMouseUp,
+		OnSizeChanged:    d.OnSizeChanged,
 	}
 
 	var db *walk.DataBinder

@@ -58,7 +58,7 @@ func (tb *ToolBar) LayoutFlags() LayoutFlags {
 	}
 
 	// FIXME: Since reimplementation of BoxLayout we must return 0 here,
-	// otherwise the ToolBar contained in MainWindow will eat half the space.  
+	// otherwise the ToolBar contained in MainWindow will eat half the space.
 	return 0 //ShrinkableHorz | GrowableHorz
 }
 
@@ -108,15 +108,15 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 // DefaultButtonWidth returns the default button width of the ToolBar.
 //
 // The default value for a horizontal ToolBar is 0, resulting in automatic
-// sizing behavior. For a vertical ToolBar, the default is 100 pixels. 
+// sizing behavior. For a vertical ToolBar, the default is 100 pixels.
 func (tb *ToolBar) DefaultButtonWidth() int {
 	return tb.defaultButtonWidth
 }
 
 // SetDefaultButtonWidth sets the default button width of the ToolBar.
 //
-// Calling this method affects all buttons in the ToolBar, no matter if they are 
-// added before or after the call. A width of 0 results in automatic sizing 
+// Calling this method affects all buttons in the ToolBar, no matter if they are
+// added before or after the call. A width of 0 results in automatic sizing
 // behavior. Negative values are not allowed.
 func (tb *ToolBar) SetDefaultButtonWidth(width int) error {
 	if width == tb.defaultButtonWidth {
@@ -269,42 +269,62 @@ func (tb *ToolBar) onActionChanged(action *Action) error {
 	return nil
 }
 
-func (tb *ToolBar) onInsertingAction(index int, action *Action) error {
+func (tb *ToolBar) onActionVisibleChanged(action *Action) error {
+	if action.Visible() {
+		return tb.onInsertedAction(action)
+	}
+
+	return tb.onRemovingAction(action)
+}
+
+func (tb *ToolBar) onInsertedAction(action *Action) (err error) {
+	action.addChangedHandler(tb)
+	defer func() {
+		if err != nil {
+			action.removeChangedHandler(tb)
+		}
+	}()
+
+	if !action.Visible() {
+		return
+	}
+
+	index := tb.actions.indexInObserver(action)
+
 	tbb := TBBUTTON{
 		IdCommand: int32(action.id),
 	}
 
-	if err := tb.initButtonForAction(
+	if err = tb.initButtonForAction(
 		action,
 		&tbb.FsState,
 		&tbb.FsStyle,
 		&tbb.IBitmap,
 		&tbb.IString); err != nil {
 
-		return err
+		return
 	}
 
 	tb.SetVisible(true)
 
 	tb.SendMessage(TB_BUTTONSTRUCTSIZE, uintptr(unsafe.Sizeof(tbb)), 0)
 
-	if FALSE == tb.SendMessage(TB_ADDBUTTONS, 1, uintptr(unsafe.Pointer(&tbb))) {
+	if FALSE == tb.SendMessage(TB_INSERTBUTTON, uintptr(index), uintptr(unsafe.Pointer(&tbb))) {
 		return newError("SendMessage(TB_ADDBUTTONS)")
 	}
 
-	if err := tb.applyDefaultButtonWidth(); err != nil {
-		return err
+	if err = tb.applyDefaultButtonWidth(); err != nil {
+		return
 	}
 
 	tb.SendMessage(TB_AUTOSIZE, 0, 0)
 
-	action.addChangedHandler(tb)
-
-	return nil
+	return
 }
 
-func (tb *ToolBar) removeAt(index int) error {
-	action := tb.actions.At(index)
+func (tb *ToolBar) onRemovingAction(action *Action) error {
+	index := tb.actions.indexInObserver(action)
+
 	action.removeChangedHandler(tb)
 
 	if 0 == tb.SendMessage(TB_DELETEBUTTON, uintptr(index), 0) {
@@ -314,14 +334,12 @@ func (tb *ToolBar) removeAt(index int) error {
 	return nil
 }
 
-func (tb *ToolBar) onRemovingAction(index int, action *Action) error {
-	return tb.removeAt(index)
-}
-
 func (tb *ToolBar) onClearingActions() error {
 	for i := tb.actions.Len() - 1; i >= 0; i-- {
-		if err := tb.removeAt(i); err != nil {
-			return err
+		if action := tb.actions.At(i); action.Visible() {
+			if err := tb.onRemovingAction(action); err != nil {
+				return err
+			}
 		}
 	}
 

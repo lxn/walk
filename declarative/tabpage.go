@@ -9,25 +9,25 @@ import (
 )
 
 type TabPage struct {
-	AssignTo           **walk.TabPage
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	ToolTipText        Property
-	MinSize            Size
-	MaxSize            Size
-	ContextMenuActions []*walk.Action
-	OnKeyDown          walk.KeyEventHandler
-	OnMouseDown        walk.MouseEventHandler
-	OnMouseMove        walk.MouseEventHandler
-	OnMouseUp          walk.MouseEventHandler
-	OnSizeChanged      walk.EventHandler
-	DataBinder         DataBinder
-	Layout             Layout
-	Children           []Widget
-	Title              Property
-	Content            Widget
+	AssignTo         **walk.TabPage
+	Name             string
+	Enabled          Property
+	Visible          Property
+	Font             Font
+	ToolTipText      Property
+	MinSize          Size
+	MaxSize          Size
+	ContextMenuItems []MenuItem
+	OnKeyDown        walk.KeyEventHandler
+	OnMouseDown      walk.MouseEventHandler
+	OnMouseMove      walk.MouseEventHandler
+	OnMouseUp        walk.MouseEventHandler
+	OnSizeChanged    walk.EventHandler
+	DataBinder       DataBinder
+	Layout           Layout
+	Children         []Widget
+	Title            Property
+	Content          Widget
 }
 
 func (tp TabPage) Create(builder *Builder) error {
@@ -51,8 +51,8 @@ func (tp TabPage) Create(builder *Builder) error {
 	})
 }
 
-func (w TabPage) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuActions []*walk.Action, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, 0, 0, 0, 0, 0, w.ContextMenuActions, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
+func (w TabPage) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, 0, 0, 0, 0, 0, w.ContextMenuItems, w.OnKeyDown, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }
 
 func (tp TabPage) ContainerInfo() (DataBinder, Layout, []Widget) {
