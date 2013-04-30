@@ -18,6 +18,9 @@ type ComboBox struct {
 	WidgetBase
 	bindingValueProvider         BindingValueProvider
 	model                        ListModel
+	providedModel                interface{}
+	bindingMember                string
+	displayMember                string
 	format                       string
 	precision                    int
 	itemsResetHandlerHandle      int
@@ -188,11 +191,30 @@ func (cb *ComboBox) detachModel() {
 	cb.model.ItemChanged().Detach(cb.itemChangedHandlerHandle)
 }
 
-func (cb *ComboBox) Model() ListModel {
-	return cb.model
+// Model returns the model of the ComboBox.
+func (cb *ComboBox) Model() interface{} {
+	return cb.providedModel
 }
 
-func (cb *ComboBox) SetModel(model ListModel) error {
+// SetModel sets the model of the ComboBox.
+//
+// It is required that mdl either implements walk.ListModel or
+// walk.ReflectListModel or be a slice of pointers to struct.
+func (cb *ComboBox) SetModel(mdl interface{}) error {
+	model, ok := mdl.(ListModel)
+	if !ok && mdl != nil {
+		var err error
+		if model, err = newReflectListModel(mdl); err != nil {
+			return err
+		}
+
+		if badms, ok := model.(bindingAndDisplayMemberSetter); ok {
+			badms.setBindingMember(cb.bindingMember)
+			badms.setDisplayMember(cb.displayMember)
+		}
+	}
+	cb.providedModel = mdl
+
 	if cb.model != nil {
 		cb.detachModel()
 	}
@@ -213,6 +235,72 @@ func (cb *ComboBox) SetModel(model ListModel) error {
 	}
 
 	return nil
+}
+
+// BindingMember returns the member from the model of the ComboBox that is bound
+// to a field of the data source managed by an associated DataBinder.
+//
+// This is only applicable to walk.ReflectListModel models and simple slices of
+// pointers to struct.
+func (cb *ComboBox) BindingMember() string {
+	return cb.bindingMember
+}
+
+// SetBindingMember sets the member from the model of the ComboBox that is bound
+// to a field of the data source managed by an associated DataBinder.
+//
+// This is only applicable to walk.ReflectListModel models and simple slices of
+// pointers to struct.
+//
+// For a model consisting of items of type S, data source field of type T and
+// bindingMember "Foo", this can be one of the following:
+//
+//	A field		Foo T
+//	A method	func (s S) Foo() T
+//	A method	func (s S) Foo() (T, error)
+//
+// If bindingMember is not a simple member name like "Foo", but a path to a
+// member like "A.B.Foo", members "A" and "B" both must be one of the options
+// mentioned above, but with T having type pointer to struct.
+func (cb *ComboBox) SetBindingMember(bindingMember string) {
+	cb.bindingMember = bindingMember
+
+	if badms, ok := cb.model.(bindingAndDisplayMemberSetter); ok {
+		badms.setBindingMember(bindingMember)
+	}
+}
+
+// DisplayMember returns the member from the model of the ComboBox that is
+// displayed in the ComboBox.
+//
+// This is only applicable to walk.ReflectListModel models and simple slices of
+// pointers to struct.
+func (cb *ComboBox) DisplayMember() string {
+	return cb.displayMember
+}
+
+// SetDisplayMember sets the member from the model of the ComboBox that is
+// displayed in the ComboBox.
+//
+// This is only applicable to walk.ReflectListModel models and simple slices of
+// pointers to struct.
+//
+// For a model consisting of items of type S, the type of the specified member T
+// and displayMember "Foo", this can be one of the following:
+//
+//	A field		Foo T
+//	A method	func (s S) Foo() T
+//	A method	func (s S) Foo() (T, error)
+//
+// If displayMember is not a simple member name like "Foo", but a path to a
+// member like "A.B.Foo", members "A" and "B" both must be one of the options
+// mentioned above, but with T having type pointer to struct.
+func (cb *ComboBox) SetDisplayMember(displayMember string) {
+	cb.displayMember = displayMember
+
+	if badms, ok := cb.model.(bindingAndDisplayMemberSetter); ok {
+		badms.setDisplayMember(displayMember)
+	}
 }
 
 func (cb *ComboBox) Format() string {
