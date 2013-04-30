@@ -45,6 +45,7 @@ type TableView struct {
 	sortChangedHandlerHandle        int
 	currentIndex                    int
 	currentIndexChangedPublisher    EventPublisher
+	hasCurrentItemProperty          Property
 	selectedIndexes                 *IndexList
 	selectedIndexesChangedPublisher EventPublisher
 	itemActivatedPublisher          EventPublisher
@@ -95,6 +96,12 @@ func NewTableView(parent Container) (*TableView, error) {
 	}
 
 	tv.currentIndex = -1
+
+	tv.hasCurrentItemProperty = NewReadOnlyBoolProperty(func() bool {
+		return tv.CurrentIndex() != -1
+	}, tv.CurrentIndexChanged())
+
+	tv.MustRegisterProperty("HasCurrentItem", tv.hasCurrentItemProperty)
 
 	succeeded = true
 
