@@ -28,31 +28,12 @@ type Foo struct {
 	Text string
 }
 
-type FooModel struct {
-	walk.ListModelBase
-	items []*Foo
-}
-
-func NewFooModel() *FooModel {
-	return &FooModel{
-		items: []*Foo{
-			{1, "One"},
-			{2, "Two"},
-			{3, "Three"},
-		},
+func Foos() []*Foo {
+	return []*Foo{
+		{1, "One"},
+		{2, "Two"},
+		{3, "Three"},
 	}
-}
-
-func (m *FooModel) ItemCount() int {
-	return len(m.items)
-}
-
-func (m *FooModel) Value(index int) interface{} {
-	return m.items[index].Text
-}
-
-func (m *FooModel) BindingValue(index int) interface{} {
-	return m.items[index].Id
 }
 
 type Bar struct {
@@ -60,31 +41,12 @@ type Bar struct {
 	Text string
 }
 
-type BarModel struct {
-	walk.ListModelBase
-	items []*Bar
-}
-
-func NewBarModel() *BarModel {
-	return &BarModel{
-		items: []*Bar{
-			{"one", "1"},
-			{"two", "2"},
-			{"three", "3"},
-		},
+func Bars() []*Bar {
+	return []*Bar{
+		{"one", "1"},
+		{"two", "2"},
+		{"three", "3"},
 	}
-}
-
-func (m *BarModel) ItemCount() int {
-	return len(m.items)
-}
-
-func (m *BarModel) Value(index int) interface{} {
-	return m.items[index].Text
-}
-
-func (m *BarModel) BindingValue(index int) interface{} {
-	return m.items[index].Key
 }
 
 type DialogBuilder struct {
@@ -154,34 +116,106 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 	dlg := new(MyDialog)
 
 	widgets := []Widget{
-		Label{Row: 0, Column: 0, Text: "Name:"},
-		LineEdit{Row: 0, Column: 1, Name: "nameLE", Enabled: Bind("enabledCB.Checked"), Text: Bind("Name", Regexp{`^[A-Z][a-z]*$`})},
+		Label{
+			Row: 0, Column: 0,
+			Text: "Name:",
+		},
+		LineEdit{
+			Row: 0, Column: 1,
+			Name:    "nameLE",
+			Enabled: Bind("enabledCB.Checked"),
+			Text:    Bind("Name", Regexp{`^[A-Z][a-z]*$`}),
+		},
 
-		Label{Row: 1, Column: 0, Text: "No.:"},
-		LineEdit{Row: 1, Column: 1, Name: "noLE", Enabled: Bind("enabledCB.Checked"), Text: Bind("No", Regexp{`^[\d]{3}[ ]{1}[\d]{3}$`}), MaxLength: 7, CueBanner: "### ###"},
+		Label{
+			Row: 1, Column: 0,
+			Text: "No.:",
+		},
+		LineEdit{
+			Row: 1, Column: 1,
+			Name:      "noLE",
+			Enabled:   Bind("enabledCB.Checked"),
+			Text:      Bind("No", Regexp{`^[\d]{3}[ ]{1}[\d]{3}$`}),
+			MaxLength: 7,
+			CueBanner: "### ###",
+		},
 
-		Label{Row: 2, Column: 0, Text: "Foo (int BindingValue):"},
-		ComboBox{Row: 2, Column: 1, Name: "fooIdCB", Value: Bind("FooId", SelRequired{}), Model: NewFooModel()},
+		Label{
+			Row: 2, Column: 0,
+			Text: "Foo (int BindingValue):",
+		},
+		ComboBox{
+			Row: 2, Column: 1,
+			Name:          "fooIdCB",
+			BindingMember: "Id",
+			DisplayMember: "Text",
+			Model:         Foos(),
+			Value:         Bind("FooId", SelRequired{}),
+		},
 
-		Label{Row: 3, Column: 0, Text: "Bar (string BindingValue):"},
-		ComboBox{Row: 3, Column: 1, Value: Bind("BarKey"), Model: NewBarModel()},
+		Label{
+			Row: 3, Column: 0,
+			Text: "Bar (string BindingValue):",
+		},
+		ComboBox{
+			Row: 3, Column: 1,
+			BindingMember: "Key",
+			DisplayMember: "Text",
+			Model:         Bars(),
+			Value:         Bind("BarKey"),
+		},
 
-		Label{Row: 4, Column: 0, Text: "Float64:"},
-		NumberEdit{Row: 4, Column: 1, Value: Bind("Float64", Range{0.01, 999.99}), Decimals: 2},
+		Label{
+			Row: 4, Column: 0,
+			Text: "Float64:",
+		},
+		NumberEdit{
+			Row: 4, Column: 1,
+			Value:    Bind("Float64", Range{0.01, 999.99}),
+			Decimals: 2,
+		},
 
-		Label{Row: 5, Column: 0, Text: "Int:"},
-		NumberEdit{Row: 5, Column: 1, Value: Bind("Int")},
+		Label{
+			Row: 5, Column: 0,
+			Text: "Int:",
+		},
+		NumberEdit{
+			Row: 5, Column: 1,
+			Value: Bind("Int"),
+		},
 
-		Label{Row: 6, Column: 0, Text: "Date:"},
-		DateEdit{Row: 6, Column: 1, Date: Bind("Date")},
+		Label{
+			Row: 6, Column: 0,
+			Text: "Date:",
+		},
+		DateEdit{
+			Row: 6, Column: 1,
+			Date: Bind("Date"),
+		},
 
-		Label{Row: 7, Column: 0, Text: "Enabled:"},
-		CheckBox{Row: 7, Column: 1, Name: "enabledCB", Checked: Bind("Enabled")},
+		Label{
+			Row: 7, Column: 0,
+			Text: "Enabled:",
+		},
+		CheckBox{
+			Row: 7, Column: 1,
+			Name:    "enabledCB",
+			Checked: Bind("Enabled"),
+		},
 
-		VSpacer{Row: 8, Column: 0, Size: 10},
+		VSpacer{
+			Row: 8, Column: 0,
+			Size: 10,
+		},
 
-		Label{Row: 9, Column: 0, ColumnSpan: 2, Text: "Memo:"},
-		TextEdit{Row: 10, Column: 0, ColumnSpan: 2, Text: Bind("Memo")},
+		Label{
+			Row: 9, Column: 0, ColumnSpan: 2,
+			Text: "Memo:",
+		},
+		TextEdit{
+			Row: 10, Column: 0, ColumnSpan: 2,
+			Text: Bind("Memo"),
+		},
 	}
 
 	type Item struct {
@@ -241,59 +275,42 @@ func main() {
 	var openAction *walk.Action
 	var recentMenu *walk.Menu
 
-	menuActions, err := CreateActions(
-		Menu{
-			Text: "&File",
-			Items: []MenuItem{
-				Action{
-					AssignTo:    &openAction,
-					Text:        "&Open",
-					Image:       "../img/open.png",
-					OnTriggered: func() { mw.openAction_Triggered() },
-				},
-				Menu{
-					AssignTo: &recentMenu,
-					Text:     "Recent",
-				},
-				Separator{},
-				Action{
-					Text:        "E&xit",
-					OnTriggered: func() { walk.App().Exit(0) },
+	if err := (MainWindow{
+		AssignTo: &mw.MainWindow,
+		Title:    "Walk Declarative Example",
+		MenuItems: []MenuItem{
+			Menu{
+				Text: "&File",
+				Items: []MenuItem{
+					Action{
+						AssignTo:    &openAction,
+						Text:        "&Open",
+						Image:       "../img/open.png",
+						OnTriggered: func() { mw.openAction_Triggered() },
+					},
+					Menu{
+						AssignTo: &recentMenu,
+						Text:     "Recent",
+					},
+					Separator{},
+					Action{
+						Text:        "E&xit",
+						OnTriggered: func() { walk.App().Exit(0) },
+					},
 				},
 			},
-		})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	openRecent1Action := walk.NewAction()
-	openRecent1Action.SetText("Blah")
-	recentMenu.Actions().Add(openRecent1Action)
-
-	openRecent2Action := walk.NewAction()
-	openRecent2Action.SetText("Yadda")
-	recentMenu.Actions().Add(openRecent2Action)
-
-	openRecent3Action := walk.NewAction()
-	openRecent3Action.SetText("Oink")
-	recentMenu.Actions().Add(openRecent3Action)
-
-	toolBarActions, err := CreateActions(
-		ActionRef{openAction},
-		Separator{},
-		Action{Text: "Show Dialog", OnTriggered: func() { mw.showDialogAction_Triggered() }})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := (MainWindow{
-		AssignTo:       &mw.MainWindow,
-		Title:          "Walk Declarative Example",
-		MenuActions:    menuActions,
-		ToolBarActions: toolBarActions,
-		MinSize:        Size{600, 400},
-		Size:           Size{1024, 768},
-		Layout:         HBox{MarginsZero: true},
+		},
+		ToolBarItems: []MenuItem{
+			ActionRef{&openAction},
+			Separator{},
+			Action{
+				Text:        "Show Dialog",
+				OnTriggered: func() { mw.showDialogAction_Triggered() },
+			},
+		},
+		MinSize: Size{600, 400},
+		Size:    Size{1024, 768},
+		Layout:  HBox{MarginsZero: true},
 		Children: []Widget{
 			TabWidget{
 				ContentMarginsZero: true,
@@ -318,6 +335,18 @@ func main() {
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
+
+	openRecent1Action := walk.NewAction()
+	openRecent1Action.SetText("Blah")
+	recentMenu.Actions().Add(openRecent1Action)
+
+	openRecent2Action := walk.NewAction()
+	openRecent2Action.SetText("Yadda")
+	recentMenu.Actions().Add(openRecent2Action)
+
+	openRecent3Action := walk.NewAction()
+	openRecent3Action.SetText("Oink")
+	recentMenu.Actions().Add(openRecent3Action)
 
 	mw.Run()
 }
