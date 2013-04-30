@@ -259,11 +259,9 @@ func (tv *TableView) SetModel(model TableModel) error {
 			tv.setSelectedColumnIndex(col)
 			tv.setSortIcon(col, sorter.SortOrder())
 		}
-
-		return tv.setItemCount()
 	}
 
-	return nil
+	return tv.setItemCount()
 }
 
 func (tv *TableView) setItemCount() error {
