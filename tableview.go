@@ -914,18 +914,18 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 			}
 
 			if tv.imageProvider != nil && di.Item.Mask&LVIF_IMAGE > 0 {
-				image := tv.imageProvider.Image(row)
+				if image := tv.imageProvider.Image(row); image != nil {
+					if tv.hIml == 0 {
+						tv.applyImageListForImage(image)
+					}
 
-				if tv.hIml == 0 {
-					tv.applyImageListForImage(image)
+					di.Item.IImage = imageIndexMaybeAdd(
+						image,
+						tv.hIml,
+						tv.usingSysIml,
+						tv.imageUintptr2Index,
+						tv.filePath2IconIndex)
 				}
-
-				di.Item.IImage = imageIndexMaybeAdd(
-					image,
-					tv.hIml,
-					tv.usingSysIml,
-					tv.imageUintptr2Index,
-					tv.filePath2IconIndex)
 			}
 
 			if di.Item.StateMask&LVIS_STATEIMAGEMASK > 0 &&
