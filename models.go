@@ -19,7 +19,7 @@ type ListModel interface {
 	// Value returns the value that should be displayed for the given index.
 	Value(index int) interface{}
 
-	// ItemsReset returns the event that the model should publish when the 
+	// ItemsReset returns the event that the model should publish when the
 	// number of its items changes.
 	ItemsReset() *Event
 
@@ -49,6 +49,38 @@ func (lmb *ListModelBase) PublishItemsReset() {
 
 func (lmb *ListModelBase) PublishItemChanged(index int) {
 	lmb.itemChangedPublisher.Publish(index)
+}
+
+// ReflectListModel provides an alternative to the ListModel interface. It
+// uses reflection to obtain data.
+type ReflectListModel interface {
+	// Items returns the model data, which must be a slice of pointer to struct.
+	Items() interface{}
+
+	// ItemsReset returns the event that the model should publish when the
+	// number of its items changes.
+	ItemsReset() *Event
+
+	// ItemChanged returns the event that the model should publish when an item
+	// was changed.
+	ItemChanged() *IntEvent
+
+	setValueFunc(value func(index int) interface{})
+}
+
+// ReflectListModelBase implements the ItemsReset and ItemChanged methods of
+// the ReflectListModel interface.
+type ReflectListModelBase struct {
+	ListModelBase
+	value func(index int) interface{}
+}
+
+func (rlmb *ReflectListModelBase) setValueFunc(value func(index int) interface{}) {
+	rlmb.value = value
+}
+
+func (rlmb *ReflectListModelBase) Value(index int) interface{} {
+	return rlmb.value(index)
 }
 
 // TableModel is the interface that a model must implement to support widgets
@@ -92,8 +124,83 @@ func (tmb *TableModelBase) PublishRowChanged(row int) {
 	tmb.rowChangedPublisher.Publish(row)
 }
 
+// ReflectTableModel provides an alternative to the TableModel interface. It
+// uses reflection to obtain data.
+type ReflectTableModel interface {
+	// Items returns the model data, which must be a slice of pointer to struct.
+	Items() interface{}
+
+	// RowsReset returns the event that the model should publish when the
+	// number of its items changes.
+	RowsReset() *Event
+
+	// RowChanged returns the event that the model should publish when an item
+	// was changed.
+	RowChanged() *IntEvent
+
+	setValueFunc(value func(row, col int) interface{})
+}
+
+// ReflectTableModelBase implements the ItemsReset and ItemChanged methods of
+// the ReflectTableModel interface.
+type ReflectTableModelBase struct {
+	TableModelBase
+	value func(row, col int) interface{}
+}
+
+func (rtmb *ReflectTableModelBase) setValueFunc(value func(row, col int) interface{}) {
+	rtmb.value = value
+}
+
+func (rtmb *ReflectTableModelBase) Value(row, col int) interface{} {
+	return rtmb.value(row, col)
+}
+
+type interceptedSorter interface {
+	sorterBase() *SorterBase
+	setSortFunc(sort func(col int, order SortOrder) error)
+}
+
+// SortedReflectTableModelBase implements the RowsReset and RowChanged methods
+// of the ReflectTableModel interface as well as the Sorter interface for
+// pre-implemented in-memory sorting.
+type SortedReflectTableModelBase struct {
+	ReflectTableModelBase
+	SorterBase
+	sort func(col int, order SortOrder) error
+}
+
+func (srtmb *SortedReflectTableModelBase) setSortFunc(sort func(col int, order SortOrder) error) {
+	srtmb.sort = sort
+}
+
+func (srtmb *SortedReflectTableModelBase) sorterBase() *SorterBase {
+	return &srtmb.SorterBase
+}
+
+func (srtmb *SortedReflectTableModelBase) Sort(col int, order SortOrder) error {
+	if srtmb.sort != nil {
+		return srtmb.sort(col, order)
+	}
+
+	return srtmb.SorterBase.Sort(col, order)
+}
+
+// Populator is an interface that can be implemented by Reflect*Models and slice
+// types to populate themselves on demand.
+//
+// Widgets like TableView, ListBox and ComboBox support lazy population of a
+// Reflect*Model or slice, if it implements this interface.
+type Populator interface {
+	// Populate initializes the slot specified by index.
+	//
+	// For best performance it is probably a good idea to populate more than a
+	// single slot of the slice at once.
+	Populate(index int) error
+}
+
 // ImageProvider is the interface that a model must implement to support
-// displaying an item image. 
+// displaying an item image.
 type ImageProvider interface {
 	// Image returns the image to display for the item at index index.
 	//
@@ -104,7 +211,7 @@ type ImageProvider interface {
 	Image(index int) interface{}
 }
 
-// ItemChecker is the interface that a model must implement to support check 
+// ItemChecker is the interface that a model must implement to support check
 // boxes in a widget like TableView.
 type ItemChecker interface {
 	// Checked returns if the specified item is checked.
@@ -184,6 +291,17 @@ func (sb *SorterBase) SortOrder() SortOrder {
 	return sb.order
 }
 
+// Imager provides access to an image of objects like tree items.
+type Imager interface {
+	// Image returns the image to display for an item.
+	//
+	// Supported types are *walk.Bitmap, *walk.Icon and string. A string will be
+	// interpreted as a file path and the icon associated with the file will be
+	// used. It is not supported to use strings together with the other options
+	// in the same model instance.
+	Image() interface{}
+}
+
 // TreeItem represents an item in a TreeView widget.
 type TreeItem interface {
 	// Text returns the text of the item.
@@ -197,17 +315,6 @@ type TreeItem interface {
 
 	// ChildAt returns the child at the specified index.
 	ChildAt(index int) TreeItem
-}
-
-// Imager provides access to an image of objects like tree items.
-type Imager interface {
-	// Image returns the image to display for an item.
-	//
-	// Supported types are *walk.Bitmap, *walk.Icon and string. A string will be
-	// interpreted as a file path and the icon associated with the file will be
-	// used. It is not supported to use strings together with the other options
-	// in the same model instance.
-	Image() interface{}
 }
 
 // TreeModel provides widgets like TreeView with item data.
