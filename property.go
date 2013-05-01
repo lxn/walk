@@ -71,25 +71,27 @@ func (p *property) SetSource(source interface{}) error {
 		return ErrPropertyReadOnly
 	}
 
-	switch source := source.(type) {
-	case string:
-		// nop
+	if source != nil {
+		switch source := source.(type) {
+		case string:
+			// nop
 
-	case Property:
-		if err := checkPropertySource(p, source); err != nil {
-			return err
-		}
+		case Property:
+			if err := checkPropertySource(p, source); err != nil {
+				return err
+			}
 
-		if source != nil {
-			p.Set(source.Get())
-
-			p.sourceChangedHandle = source.Changed().Attach(func() {
+			if source != nil {
 				p.Set(source.Get())
-			})
-		}
 
-	default:
-		return newError("invalid source type")
+				p.sourceChangedHandle = source.Changed().Attach(func() {
+					p.Set(source.Get())
+				})
+			}
+
+		default:
+			return newError("invalid source type")
+		}
 	}
 
 	if oldProp, ok := p.source.(Property); ok {
@@ -210,25 +212,27 @@ func (bp *boolProperty) SetSource(source interface{}) error {
 		return ErrPropertyReadOnly
 	}
 
-	switch source := source.(type) {
-	case string:
-		// nop
+	if source != nil {
+		switch source := source.(type) {
+		case string:
+			// nop
 
-	case Condition:
-		if err := checkPropertySource(bp, source); err != nil {
-			return err
+		case Condition:
+			if err := checkPropertySource(bp, source); err != nil {
+				return err
+			}
+
+			if err := bp.Set(source.Satisfied()); err != nil {
+				return err
+			}
+
+			bp.sourceChangedHandle = source.Changed().Attach(func() {
+				bp.Set(source.Satisfied())
+			})
+
+		default:
+			return newError("invalid source type")
 		}
-
-		if err := bp.Set(source.Satisfied()); err != nil {
-			return err
-		}
-
-		bp.sourceChangedHandle = source.Changed().Attach(func() {
-			bp.Set(source.Satisfied())
-		})
-
-	default:
-		return newError("invalid source type")
 	}
 
 	if oldCond, ok := bp.source.(Condition); ok {
