@@ -45,11 +45,11 @@ type TableView struct {
 	sortChangedHandlerHandle        int
 	currentIndex                    int
 	currentIndexChangedPublisher    EventPublisher
-	hasCurrentItemProperty          Property
 	selectedIndexes                 *IndexList
 	selectedIndexesChangedPublisher EventPublisher
 	itemActivatedPublisher          EventPublisher
 	columnClickedPublisher          IntEventPublisher
+	columnsSizableChangedPublisher  EventPublisher
 	lastColumnStretched             bool
 	inEraseBkgnd                    bool
 	persistent                      bool
@@ -97,11 +97,20 @@ func NewTableView(parent Container) (*TableView, error) {
 
 	tv.currentIndex = -1
 
-	tv.hasCurrentItemProperty = NewReadOnlyBoolProperty(func() bool {
-		return tv.CurrentIndex() != -1
-	}, tv.CurrentIndexChanged())
+	tv.MustRegisterProperty("HasCurrentItem", NewReadOnlyBoolProperty(
+		func() bool {
+			return tv.CurrentIndex() != -1
+		},
+		tv.CurrentIndexChanged()))
 
-	tv.MustRegisterProperty("HasCurrentItem", tv.hasCurrentItemProperty)
+	tv.MustRegisterProperty("ColumnsSizable", NewBoolProperty(
+		func() bool {
+			return tv.ColumnsSizable()
+		},
+		func(b bool) error {
+			return tv.SetColumnsSizable(b)
+		},
+		tv.columnsSizableChangedPublisher.Event()))
 
 	succeeded = true
 
@@ -163,6 +172,38 @@ func (tv *TableView) SetReorderColumnsEnabled(enabled bool) {
 		exStyle &^= LVS_EX_HEADERDRAGDROP
 	}
 	tv.SendMessage(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+}
+
+// ColumnsSizable returns if the user can change column widths by dragging
+// dividers in the header.
+func (tv *TableView) ColumnsSizable() bool {
+	headerHWnd := HWND(tv.SendMessage(LVM_GETHEADER, 0, 0))
+
+	style := GetWindowLong(headerHWnd, GWL_STYLE)
+
+	return style&HDS_NOSIZING == 0
+}
+
+// SetColumnsSizable sets if the user can change column widths by dragging
+// dividers in the header.
+func (tv *TableView) SetColumnsSizable(b bool) error {
+	headerHWnd := HWND(tv.SendMessage(LVM_GETHEADER, 0, 0))
+
+	style := GetWindowLong(headerHWnd, GWL_STYLE)
+
+	if b {
+		style &^= HDS_NOSIZING
+	} else {
+		style |= HDS_NOSIZING
+	}
+
+	if 0 == SetWindowLong(headerHWnd, GWL_STYLE, style) {
+		return lastError("SetWindowLong(GWL_STYLE)")
+	}
+
+	tv.columnsSizableChangedPublisher.Publish()
+
+	return nil
 }
 
 // AlternatingRowBGColor returns the alternating row background color.

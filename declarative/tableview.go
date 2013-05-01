@@ -34,6 +34,7 @@ type TableView struct {
 	CheckBoxes                 bool
 	ItemStateChangedEventDelay int
 	LastColumnStretched        bool
+	ColumnsSizable             Property
 	ReorderColumnsEnabled      bool
 	SingleItemSelection        bool
 	OnCurrentIndexChanged      walk.EventHandler
