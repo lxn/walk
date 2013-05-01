@@ -31,30 +31,31 @@ const (
 // amounts of data.
 type TableView struct {
 	WidgetBase
-	columns                         *TableViewColumnList
-	model                           TableModel
-	providedModel                   interface{}
-	itemChecker                     ItemChecker
-	imageProvider                   ImageProvider
-	hIml                            HIMAGELIST
-	usingSysIml                     bool
-	imageUintptr2Index              map[uintptr]int32
-	filePath2IconIndex              map[string]int32
-	rowsResetHandlerHandle          int
-	rowChangedHandlerHandle         int
-	sortChangedHandlerHandle        int
-	currentIndex                    int
-	currentIndexChangedPublisher    EventPublisher
-	selectedIndexes                 *IndexList
-	selectedIndexesChangedPublisher EventPublisher
-	itemActivatedPublisher          EventPublisher
-	columnClickedPublisher          IntEventPublisher
-	columnsSizableChangedPublisher  EventPublisher
-	lastColumnStretched             bool
-	inEraseBkgnd                    bool
-	persistent                      bool
-	itemStateChangedEventDelay      int
-	alternatingRowBGColor           Color
+	columns                          *TableViewColumnList
+	model                            TableModel
+	providedModel                    interface{}
+	itemChecker                      ItemChecker
+	imageProvider                    ImageProvider
+	hIml                             HIMAGELIST
+	usingSysIml                      bool
+	imageUintptr2Index               map[uintptr]int32
+	filePath2IconIndex               map[string]int32
+	rowsResetHandlerHandle           int
+	rowChangedHandlerHandle          int
+	sortChangedHandlerHandle         int
+	currentIndex                     int
+	currentIndexChangedPublisher     EventPublisher
+	selectedIndexes                  *IndexList
+	selectedIndexesChangedPublisher  EventPublisher
+	itemActivatedPublisher           EventPublisher
+	columnClickedPublisher           IntEventPublisher
+	columnsOrderableChangedPublisher EventPublisher
+	columnsSizableChangedPublisher   EventPublisher
+	lastColumnStretched              bool
+	inEraseBkgnd                     bool
+	persistent                       bool
+	itemStateChangedEventDelay       int
+	alternatingRowBGColor            Color
 }
 
 // NewTableView creates and returns a *TableView as child of the specified
@@ -97,11 +98,15 @@ func NewTableView(parent Container) (*TableView, error) {
 
 	tv.currentIndex = -1
 
-	tv.MustRegisterProperty("HasCurrentItem", NewReadOnlyBoolProperty(
+	tv.MustRegisterProperty("ColumnsOrderable", NewBoolProperty(
 		func() bool {
-			return tv.CurrentIndex() != -1
+			return tv.ColumnsOrderable()
 		},
-		tv.CurrentIndexChanged()))
+		func(b bool) error {
+			tv.SetColumnsOrderable(b)
+			return nil
+		},
+		tv.columnsOrderableChangedPublisher.Event()))
 
 	tv.MustRegisterProperty("ColumnsSizable", NewBoolProperty(
 		func() bool {
@@ -111,6 +116,12 @@ func NewTableView(parent Container) (*TableView, error) {
 			return tv.SetColumnsSizable(b)
 		},
 		tv.columnsSizableChangedPublisher.Event()))
+
+	tv.MustRegisterProperty("HasCurrentItem", NewReadOnlyBoolProperty(
+		func() bool {
+			return tv.CurrentIndex() != -1
+		},
+		tv.CurrentIndexChanged()))
 
 	succeeded = true
 
@@ -155,16 +166,16 @@ func (tv *TableView) SizeHint() Size {
 	return Size{100, 100}
 }
 
-// ReorderColumnsEnabled returns if the user can reorder columns by dragging and
+// ColumnsOrderable returns if the user can reorder columns by dragging and
 // dropping column headers.
-func (tv *TableView) ReorderColumnsEnabled() bool {
+func (tv *TableView) ColumnsOrderable() bool {
 	exStyle := tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	return exStyle&LVS_EX_HEADERDRAGDROP > 0
 }
 
-// SetReorderColumnsEnabled sets if the user can reorder columns by dragging and
+// SetColumnsOrderable sets if the user can reorder columns by dragging and
 // dropping column headers.
-func (tv *TableView) SetReorderColumnsEnabled(enabled bool) {
+func (tv *TableView) SetColumnsOrderable(enabled bool) {
 	exStyle := tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	if enabled {
 		exStyle |= LVS_EX_HEADERDRAGDROP
@@ -172,6 +183,8 @@ func (tv *TableView) SetReorderColumnsEnabled(enabled bool) {
 		exStyle &^= LVS_EX_HEADERDRAGDROP
 	}
 	tv.SendMessage(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+
+	tv.columnsOrderableChangedPublisher.Publish()
 }
 
 // ColumnsSizable returns if the user can change column widths by dragging

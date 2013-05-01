@@ -34,8 +34,8 @@ type TableView struct {
 	CheckBoxes                 bool
 	ItemStateChangedEventDelay int
 	LastColumnStretched        bool
+	ColumnsOrderable           Property
 	ColumnsSizable             Property
-	ReorderColumnsEnabled      bool
 	SingleItemSelection        bool
 	OnCurrentIndexChanged      walk.EventHandler
 	OnSelectedIndexesChanged   walk.EventHandler
@@ -67,7 +67,6 @@ func (tv TableView) Create(builder *Builder) error {
 		if err := w.SetLastColumnStretched(tv.LastColumnStretched); err != nil {
 			return err
 		}
-		w.SetReorderColumnsEnabled(tv.ReorderColumnsEnabled)
 		if err := w.SetSingleItemSelection(tv.SingleItemSelection); err != nil {
 			return err
 		}
