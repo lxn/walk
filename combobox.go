@@ -343,11 +343,11 @@ func (cb *ComboBox) calculateMaxItemTextWidth() int {
 }
 
 func (cb *ComboBox) CurrentIndex() int {
-	return int(cb.SendMessage(CB_GETCURSEL, 0, 0))
+	return int(int32(cb.SendMessage(CB_GETCURSEL, 0, 0)))
 }
 
 func (cb *ComboBox) SetCurrentIndex(value int) error {
-	index := int(cb.SendMessage(CB_SETCURSEL, uintptr(value), 0))
+	index := int(int32(cb.SendMessage(CB_SETCURSEL, uintptr(value), 0)))
 
 	if index != value {
 		return newError("invalid index")

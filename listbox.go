@@ -262,14 +262,14 @@ func (lb *ListBox) SizeHint() Size {
 }
 
 func (lb *ListBox) CurrentIndex() int {
-	return int(lb.SendMessage(LB_GETCURSEL, 0, 0))
+	return int(int32(lb.SendMessage(LB_GETCURSEL, 0, 0)))
 }
 
 func (lb *ListBox) SetCurrentIndex(value int) error {
 	if value < 0 {
 		return nil
 	}
-	ret := int(lb.SendMessage(LB_SETCURSEL, uintptr(value), 0))
+	ret := int(int32(lb.SendMessage(LB_SETCURSEL, uintptr(value), 0)))
 	if ret == LB_ERR {
 		return newError("Invalid index or ensure lb is single-selection listbox")
 	}
