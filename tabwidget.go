@@ -279,7 +279,7 @@ func (tw *TabWidget) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 		case WM_NOTIFY:
 			nmhdr := (*NMHDR)(unsafe.Pointer(lParam))
 
-			switch int(nmhdr.Code) {
+			switch int32(nmhdr.Code) {
 			case TCN_SELCHANGE:
 				tw.onSelChange()
 			}
