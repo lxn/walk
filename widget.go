@@ -685,6 +685,10 @@ func (wb *WidgetBase) Dispose() {
 		}
 
 		disposeMenuActions(wb.contextMenu)
+
+		for _, p := range wb.name2Property {
+			p.SetSource(nil)
+		}
 	}
 }
 
