@@ -8,7 +8,6 @@ import . "github.com/lxn/go-winapi"
 
 type Label struct {
 	WidgetBase
-	textProperty         Property
 	textChangedPublisher EventPublisher
 }
 
@@ -24,16 +23,14 @@ func NewLabel(parent Container) (*Label, error) {
 		return nil, err
 	}
 
-	l.textProperty = NewProperty(
+	l.MustRegisterProperty("Text", NewProperty(
 		func() interface{} {
 			return l.Text()
 		},
 		func(v interface{}) error {
 			return l.SetText(v.(string))
 		},
-		l.textChangedPublisher.Event())
-
-	l.MustRegisterProperty("Text", l.textProperty)
+		l.textChangedPublisher.Event()))
 
 	return l, nil
 }

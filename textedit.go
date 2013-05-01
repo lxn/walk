@@ -15,10 +15,8 @@ import (
 
 type TextEdit struct {
 	WidgetBase
-	textProperty             Property
-	textChangedPublisher     EventPublisher
-	readOnlyProperty         Property
 	readOnlyChangedPublisher EventPublisher
+	textChangedPublisher     EventPublisher
 }
 
 func NewTextEdit(parent Container) (*TextEdit, error) {
@@ -33,26 +31,23 @@ func NewTextEdit(parent Container) (*TextEdit, error) {
 		return nil, err
 	}
 
-	te.textProperty = NewProperty(
-		func() interface{} {
-			return te.Text()
-		},
-		func(v interface{}) error {
-			return te.SetText(v.(string))
-		},
-		te.textChangedPublisher.Event())
-
-	te.readOnlyProperty = NewProperty(
+	te.MustRegisterProperty("ReadOnly", NewProperty(
 		func() interface{} {
 			return te.ReadOnly()
 		},
 		func(v interface{}) error {
 			return te.SetReadOnly(v.(bool))
 		},
-		te.readOnlyChangedPublisher.Event())
+		te.readOnlyChangedPublisher.Event()))
 
-	te.MustRegisterProperty("Text", te.textProperty)
-	te.MustRegisterProperty("ReadOnly", te.readOnlyProperty)
+	te.MustRegisterProperty("Text", NewProperty(
+		func() interface{} {
+			return te.Text()
+		},
+		func(v interface{}) error {
+			return te.SetText(v.(string))
+		},
+		te.textChangedPublisher.Event()))
 
 	return te, nil
 }

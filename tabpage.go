@@ -22,7 +22,6 @@ type TabPage struct {
 	ContainerBase
 	title                 string
 	tabWidget             *TabWidget
-	titleProperty         Property
 	titleChangedPublisher EventPublisher
 }
 
@@ -42,16 +41,14 @@ func NewTabPage() (*TabPage, error) {
 
 	tp.SetBackground(tabPageBackgroundBrush)
 
-	tp.titleProperty = NewProperty(
+	tp.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
 			return tp.Title()
 		},
 		func(v interface{}) error {
 			return tp.SetTitle(v.(string))
 		},
-		tp.titleChangedPublisher.Event())
-
-	tp.MustRegisterProperty("Title", tp.titleProperty)
+		tp.titleChangedPublisher.Event()))
 
 	return tp, nil
 }

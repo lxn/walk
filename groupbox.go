@@ -18,7 +18,6 @@ type GroupBox struct {
 	WidgetBase
 	hWndGroupBox          HWND
 	composite             *Composite
-	titleProperty         Property
 	titleChangedPublisher EventPublisher
 }
 
@@ -59,16 +58,14 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	gb.font = nil
 	gb.SetFont(defaultFont)
 
-	gb.titleProperty = NewProperty(
+	gb.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
 			return gb.Title()
 		},
 		func(v interface{}) error {
 			return gb.SetTitle(v.(string))
 		},
-		gb.titleChangedPublisher.Event())
-
-	gb.MustRegisterProperty("Title", gb.titleProperty)
+		gb.titleChangedPublisher.Event()))
 
 	succeeded = true
 

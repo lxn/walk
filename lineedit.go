@@ -19,11 +19,9 @@ const (
 type LineEdit struct {
 	WidgetBase
 	editingFinishedPublisher EventPublisher
-	returnPressedPublisher   EventPublisher
-	textProperty             Property
-	textChangedPublisher     EventPublisher
-	readOnlyProperty         Property
 	readOnlyChangedPublisher EventPublisher
+	returnPressedPublisher   EventPublisher
+	textChangedPublisher     EventPublisher
 	charWidthFont            *Font
 	charWidth                int
 }
@@ -40,26 +38,23 @@ func newLineEdit(parent Widget) (*LineEdit, error) {
 		return nil, err
 	}
 
-	le.textProperty = NewProperty(
-		func() interface{} {
-			return le.Text()
-		},
-		func(v interface{}) error {
-			return le.SetText(v.(string))
-		},
-		le.textChangedPublisher.Event())
-
-	le.readOnlyProperty = NewProperty(
+	le.MustRegisterProperty("ReadOnly", NewProperty(
 		func() interface{} {
 			return le.ReadOnly()
 		},
 		func(v interface{}) error {
 			return le.SetReadOnly(v.(bool))
 		},
-		le.readOnlyChangedPublisher.Event())
+		le.readOnlyChangedPublisher.Event()))
 
-	le.MustRegisterProperty("Text", le.textProperty)
-	le.MustRegisterProperty("ReadOnly", le.readOnlyProperty)
+	le.MustRegisterProperty("Text", NewProperty(
+		func() interface{} {
+			return le.Text()
+		},
+		func(v interface{}) error {
+			return le.SetText(v.(string))
+		},
+		le.textChangedPublisher.Event()))
 
 	return le, nil
 }
@@ -225,7 +220,7 @@ func (le *LineEdit) ReturnPressed() *Event {
 }
 
 func (le *LineEdit) TextChanged() *Event {
-	return le.textProperty.Changed()
+	return le.textChangedPublisher.Event()
 }
 
 func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {

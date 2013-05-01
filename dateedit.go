@@ -14,7 +14,6 @@ import . "github.com/lxn/go-winapi"
 type DateEdit struct {
 	WidgetBase
 	valueChangedPublisher EventPublisher
-	dateProperty          Property
 }
 
 func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
@@ -29,16 +28,14 @@ func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
 		return nil, err
 	}
 
-	de.dateProperty = NewProperty(
+	de.MustRegisterProperty("Date", NewProperty(
 		func() interface{} {
 			return de.Value()
 		},
 		func(v interface{}) error {
 			return de.SetValue(v.(time.Time))
 		},
-		de.valueChangedPublisher.Event())
-
-	de.MustRegisterProperty("Date", de.dateProperty)
+		de.valueChangedPublisher.Event()))
 
 	return de, nil
 }

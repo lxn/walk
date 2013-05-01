@@ -29,8 +29,6 @@ type ComboBox struct {
 	prevCurIndex                 int
 	selChangeIndex               int
 	currentIndexChangedPublisher EventPublisher
-	currentIndexProperty         Property
-	valueProperty                Property
 }
 
 func NewComboBox(parent Container) (*ComboBox, error) {
@@ -45,7 +43,16 @@ func NewComboBox(parent Container) (*ComboBox, error) {
 		return nil, err
 	}
 
-	cb.valueProperty = NewProperty(
+	cb.MustRegisterProperty("CurrentIndex", NewProperty(
+		func() interface{} {
+			return cb.CurrentIndex()
+		},
+		func(v interface{}) error {
+			return cb.SetCurrentIndex(v.(int))
+		},
+		cb.CurrentIndexChanged()))
+
+	cb.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
 			index := cb.CurrentIndex()
 
@@ -72,19 +79,7 @@ func NewComboBox(parent Container) (*ComboBox, error) {
 
 			return cb.SetCurrentIndex(index)
 		},
-		cb.CurrentIndexChanged())
-
-	cb.currentIndexProperty = NewProperty(
-		func() interface{} {
-			return cb.CurrentIndex()
-		},
-		func(v interface{}) error {
-			return cb.SetCurrentIndex(v.(int))
-		},
-		cb.CurrentIndexChanged())
-
-	cb.MustRegisterProperty("Value", cb.valueProperty)
-	cb.MustRegisterProperty("CurrentIndex", cb.currentIndexProperty)
+		cb.CurrentIndexChanged()))
 
 	return cb, nil
 }

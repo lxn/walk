@@ -13,7 +13,7 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-type CloseReason int
+type CloseReason byte
 
 const (
 	CloseReasonUnknown CloseReason = iota
@@ -55,27 +55,24 @@ type TopLevelWindow struct {
 	ContainerBase
 	owner                 RootWidget
 	closingPublisher      CloseEventPublisher
-	closeReason           CloseReason
-	prevFocusHWnd         HWND
-	isInRestoreState      bool
 	startingPublisher     EventPublisher
+	titleChangedPublisher EventPublisher
 	progressIndicator     *ProgressIndicator
 	icon                  *Icon
-	titleProperty         Property
-	titleChangedPublisher EventPublisher
+	prevFocusHWnd         HWND
+	isInRestoreState      bool
+	closeReason           CloseReason
 }
 
 func (tlw *TopLevelWindow) init() {
-	tlw.titleProperty = NewProperty(
+	tlw.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
 			return tlw.Title()
 		},
 		func(v interface{}) error {
 			return tlw.SetTitle(v.(string))
 		},
-		tlw.titleChangedPublisher.Event())
-
-	tlw.MustRegisterProperty("Title", tlw.titleProperty)
+		tlw.titleChangedPublisher.Event()))
 }
 
 func (tlw *TopLevelWindow) LayoutFlags() LayoutFlags {

@@ -22,7 +22,6 @@ type WebView struct {
 	WidgetBase
 	clientSite          webViewIOleClientSite // IMPORTANT: Must remain first member after WidgetBase
 	browserObject       *IOleObject
-	urlProperty         Property
 	urlChangedPublisher EventPublisher
 }
 
@@ -132,7 +131,7 @@ func NewWebView(parent Container) (*WebView, error) {
 
 	wv.onResize()
 
-	wv.urlProperty = NewProperty(
+	wv.MustRegisterProperty("URL", NewProperty(
 		func() interface{} {
 			url, _ := wv.URL()
 			return url
@@ -140,9 +139,7 @@ func NewWebView(parent Container) (*WebView, error) {
 		func(v interface{}) error {
 			return wv.SetURL(v.(string))
 		},
-		wv.urlChangedPublisher.Event())
-
-	wv.MustRegisterProperty("URL", wv.urlProperty)
+		wv.urlChangedPublisher.Event()))
 
 	succeeded = true
 

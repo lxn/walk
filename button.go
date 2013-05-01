@@ -12,14 +12,12 @@ type clickable interface {
 
 type Button struct {
 	WidgetBase
-	checkedProperty      Property
 	clickedPublisher     EventPublisher
-	textProperty         Property
 	textChangedPublisher EventPublisher
 }
 
 func (b *Button) init() {
-	b.checkedProperty = NewBoolProperty(
+	b.MustRegisterProperty("Checked", NewBoolProperty(
 		func() bool {
 			return b.Checked()
 		},
@@ -27,19 +25,16 @@ func (b *Button) init() {
 			b.SetChecked(v)
 			return nil
 		},
-		b.Clicked())
+		b.Clicked()))
 
-	b.textProperty = NewProperty(
+	b.MustRegisterProperty("Text", NewProperty(
 		func() interface{} {
 			return b.Text()
 		},
 		func(v interface{}) error {
 			return b.SetText(v.(string))
 		},
-		b.textChangedPublisher.Event())
-
-	b.MustRegisterProperty("Checked", b.checkedProperty)
-	b.MustRegisterProperty("Text", b.textProperty)
+		b.textChangedPublisher.Event()))
 }
 
 func (b *Button) Text() string {

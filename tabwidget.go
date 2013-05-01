@@ -24,7 +24,6 @@ type TabWidget struct {
 	pages                        *TabPageList
 	currentIndex                 int
 	currentIndexChangedPublisher EventPublisher
-	hasCurrentPageProperty       Property
 	persistent                   bool
 }
 
@@ -59,11 +58,11 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 	}
 	SendMessage(tw.hWndTab, WM_SETFONT, uintptr(defaultFont.handleForDPI(0)), 1)
 
-	tw.hasCurrentPageProperty = NewReadOnlyBoolProperty(func() bool {
-		return tw.CurrentIndex() != -1
-	}, tw.CurrentIndexChanged())
-
-	tw.MustRegisterProperty("HasCurrentPage", tw.hasCurrentPageProperty)
+	tw.MustRegisterProperty("HasCurrentPage", NewReadOnlyBoolProperty(
+		func() bool {
+			return tw.CurrentIndex() != -1
+		},
+		tw.CurrentIndexChanged()))
 
 	succeeded = true
 
