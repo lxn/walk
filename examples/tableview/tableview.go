@@ -175,7 +175,7 @@ func main() {
 			TableView{
 				AlternatingRowBGColor: walk.RGB(255, 255, 224),
 				CheckBoxes:            true,
-				ReorderColumnsEnabled: true,
+				ColumnsOrderable:      true,
 				Columns: []TableViewColumn{
 					{Title: "#"},
 					{Title: "Bar"},
