@@ -60,15 +60,31 @@ func (b *Builder) Defer(f func() error) {
 	b.deferredFuncs = append(b.deferredFuncs, f)
 }
 
+func (b *Builder) deferBuildMenuActions(menu *walk.Menu, items []MenuItem) {
+	if len(items) > 0 {
+		b.Defer(func() error {
+			for _, item := range items {
+				if _, err := item.createAction(b, menu); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+}
+
 func (b *Builder) deferBuildActions(actionList *walk.ActionList, items []MenuItem) {
 	if len(items) > 0 {
 		b.Defer(func() error {
-			actions, err := createActions(b, items...)
-			if err != nil {
-				return err
-			}
-			if err := addToActionList(actionList, actions); err != nil {
-				return err
+			for _, item := range items {
+				action, err := item.createAction(b, nil)
+				if err != nil {
+					return err
+				}
+				if err := actionList.Add(action); err != nil {
+					return err
+				}
 			}
 
 			return nil
@@ -116,7 +132,8 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 			return err
 		}
 
-		b.deferBuildActions(cm.Actions(), contextMenuItems)
+		b.deferBuildMenuActions(cm, contextMenuItems)
+
 		w.SetContextMenu(cm)
 	}
 

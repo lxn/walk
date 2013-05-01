@@ -99,13 +99,6 @@ type Menu struct {
 }
 
 func (m Menu) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, error) {
-	if menu == nil {
-		var err error
-		if menu, err = walk.NewMenu(); err != nil {
-			return nil, err
-		}
-	}
-
 	subMenu, err := walk.NewMenu()
 	if err != nil {
 		return nil, err
@@ -188,23 +181,4 @@ func setActionImage(action *walk.Action, image interface{}) (err error) {
 	}
 
 	return action.SetImage(img)
-}
-
-func CreateActions(items ...MenuItem) ([]*walk.Action, error) {
-	return createActions(NewBuilder(nil), items...)
-}
-
-func createActions(builder *Builder, items ...MenuItem) ([]*walk.Action, error) {
-	var actions []*walk.Action
-
-	for _, item := range items {
-		action, err := item.createAction(builder, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		actions = append(actions, action)
-	}
-
-	return actions, nil
 }

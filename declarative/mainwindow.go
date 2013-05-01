@@ -75,7 +75,7 @@ func (mw MainWindow) Create() error {
 			*mw.AssignTo = w
 		}
 
-		builder.deferBuildActions(w.Menu().Actions(), mw.MenuItems)
+		builder.deferBuildMenuActions(w.Menu(), mw.MenuItems)
 		builder.deferBuildActions(w.ToolBar().Actions(), mw.ToolBarItems)
 
 		builder.Defer(func() error {
