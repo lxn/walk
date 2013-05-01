@@ -16,6 +16,10 @@ type ActionList struct {
 }
 
 func newActionList(observer actionListObserver) *ActionList {
+	if observer == nil {
+		panic("observer == nil")
+	}
+
 	return &ActionList{observer: observer}
 }
 
@@ -32,11 +36,12 @@ func (l *ActionList) At(index int) *Action {
 }
 
 func (l *ActionList) Clear() error {
-	observer := l.observer
-	if observer != nil {
-		if err := observer.onClearingActions(); err != nil {
-			return err
-		}
+	if err := l.observer.onClearingActions(); err != nil {
+		return err
+	}
+
+	for _, a := range l.actions {
+		a.release()
 	}
 
 	l.actions = l.actions[:0]
@@ -78,14 +83,13 @@ func (l *ActionList) Insert(index int, action *Action) error {
 	copy(l.actions[index+1:], l.actions[index:])
 	l.actions[index] = action
 
-	observer := l.observer
-	if observer != nil {
-		if err := observer.onInsertedAction(action); err != nil {
-			l.actions = append(l.actions[:index], l.actions[index+1:]...)
+	if err := l.observer.onInsertedAction(action); err != nil {
+		l.actions = append(l.actions[:index], l.actions[index+1:]...)
 
-			return err
-		}
+		return err
 	}
+
+	action.addRef()
 
 	return nil
 }
@@ -115,15 +119,14 @@ func (l *ActionList) Remove(action *Action) error {
 }
 
 func (l *ActionList) RemoveAt(index int) error {
-	observer := l.observer
-	if observer != nil {
-		action := l.actions[index]
-		if action.Visible() {
-			if err := observer.onRemovingAction(action); err != nil {
-				return err
-			}
+	action := l.actions[index]
+	if action.Visible() {
+		if err := l.observer.onRemovingAction(action); err != nil {
+			return err
 		}
 	}
+
+	action.release()
 
 	l.actions = append(l.actions[:index], l.actions[index+1:]...)
 

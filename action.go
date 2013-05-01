@@ -28,6 +28,7 @@ type Action struct {
 	enabledConditionChangedHandle int
 	visibleCondition              Condition
 	visibleConditionChangedHandle int
+	refCount                      int
 	enabled                       bool
 	visible                       bool
 	checkable                     bool
@@ -48,6 +49,23 @@ func NewAction() *Action {
 	nextActionId++
 
 	return a
+}
+
+func (a *Action) addRef() {
+	a.refCount++
+}
+
+func (a *Action) release() {
+	a.refCount--
+
+	if a.refCount == 0 {
+		a.SetEnabledCondition(nil)
+		a.SetVisibleCondition(nil)
+
+		if a.menu != nil {
+			a.menu.actions.Clear()
+		}
+	}
 }
 
 func (a *Action) Checkable() bool {
