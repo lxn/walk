@@ -144,9 +144,9 @@ func (tv *TableView) Dispose() {
 		if !KillTimer(tv.hWnd, tableViewSelectedIndexesChangedTimerId) {
 			lastError("KillTimer")
 		}
-
-		tv.WidgetBase.Dispose()
 	}
+
+	tv.WidgetBase.Dispose()
 }
 
 // LayoutFlags returns a combination of LayoutFlags that specify how the
