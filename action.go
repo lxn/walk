@@ -127,8 +127,14 @@ func (a *Action) SetEnabledCondition(c Condition) {
 	a.enabledCondition = c
 
 	if c != nil {
+		a.enabled = c.Satisfied()
+
 		a.enabledConditionChangedHandle = c.Changed().Attach(func() {
-			a.raiseChanged()
+			if a.enabled != c.Satisfied() {
+				a.enabled = !a.enabled
+
+				a.raiseChanged()
+			}
 		})
 	}
 }
@@ -248,8 +254,14 @@ func (a *Action) SetVisibleCondition(c Condition) {
 	a.visibleCondition = c
 
 	if c != nil {
+		a.visible = c.Satisfied()
+
 		a.visibleConditionChangedHandle = c.Changed().Attach(func() {
-			a.raiseVisibleChanged()
+			if a.visible != c.Satisfied() {
+				a.visible = !a.visible
+
+				a.raiseVisibleChanged()
+			}
 		})
 	}
 }
