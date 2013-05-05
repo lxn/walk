@@ -28,6 +28,7 @@ type ComboBox struct {
 	OnMouseMove           walk.MouseEventHandler
 	OnMouseUp             walk.MouseEventHandler
 	OnSizeChanged         walk.EventHandler
+	Editable              bool
 	Format                string
 	Precision             int
 	BindingMember         string
@@ -39,7 +40,13 @@ type ComboBox struct {
 }
 
 func (cb ComboBox) Create(builder *Builder) error {
-	w, err := walk.NewComboBox(builder.Parent())
+	var w *walk.ComboBox
+	var err error
+	if cb.Editable {
+		w, err = walk.NewComboBox(builder.Parent())
+	} else {
+		w, err = walk.NewDropDownBox(builder.Parent())
+	}
 	if err != nil {
 		return err
 	}

@@ -32,13 +32,21 @@ type ComboBox struct {
 }
 
 func NewComboBox(parent Container) (*ComboBox, error) {
+	return newComboBoxWithStyle(parent, CBS_DROPDOWN)
+}
+
+func NewDropDownBox(parent Container) (*ComboBox, error) {
+	return newComboBoxWithStyle(parent, CBS_DROPDOWNLIST)
+}
+
+func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 	cb := &ComboBox{prevCurIndex: -1, selChangeIndex: -1, precision: 2}
 
 	if err := InitChildWidget(
 		cb,
 		parent,
 		"COMBOBOX",
-		WS_TABSTOP|WS_VISIBLE|WS_VSCROLL|CBS_DROPDOWNLIST,
+		WS_TABSTOP|WS_VISIBLE|WS_VSCROLL|style,
 		0); err != nil {
 		return nil, err
 	}
@@ -54,6 +62,10 @@ func NewComboBox(parent Container) (*ComboBox, error) {
 
 	cb.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
+			if cb.Editable() {
+				return cb.Text()
+			}
+
 			index := cb.CurrentIndex()
 
 			if cb.bindingValueProvider == nil || index == -1 {
@@ -63,6 +75,10 @@ func NewComboBox(parent Container) (*ComboBox, error) {
 			return cb.bindingValueProvider.BindingValue(index)
 		},
 		func(v interface{}) error {
+			if cb.Editable() {
+				return cb.SetText(v.(string))
+			}
+
 			if cb.bindingValueProvider == nil {
 				return newError("Data binding is only supported using a model that implements BindingValueProvider.")
 			}
@@ -104,6 +120,10 @@ func (cb *ComboBox) MinSizeHint() Size {
 
 func (cb *ComboBox) SizeHint() Size {
 	return cb.MinSizeHint()
+}
+
+func (cb *ComboBox) Editable() bool {
+	return !cb.hasStyleBits(CBS_DROPDOWNLIST)
 }
 
 func (cb *ComboBox) itemString(index int) string {
@@ -203,7 +223,13 @@ func (cb *ComboBox) SetModel(mdl interface{}) error {
 		}
 
 		if badms, ok := model.(bindingAndDisplayMemberSetter); ok {
-			badms.setBindingMember(cb.bindingMember)
+			var bindingMember string
+			if cb.Editable() {
+				bindingMember = cb.displayMember
+			} else {
+				bindingMember = cb.bindingMember
+			}
+			badms.setBindingMember(bindingMember)
 			badms.setDisplayMember(cb.displayMember)
 		}
 	}
