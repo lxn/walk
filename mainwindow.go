@@ -99,6 +99,22 @@ func (mw *MainWindow) SetLayout(value Layout) error {
 	return mw.clientComposite.SetLayout(value)
 }
 
+func (mw *MainWindow) SaveState() error {
+	if err := mw.clientComposite.SaveState(); err != nil {
+		return err
+	}
+
+	return mw.TopLevelWindow.SaveState()
+}
+
+func (mw *MainWindow) RestoreState() error {
+	if err := mw.clientComposite.RestoreState(); err != nil {
+		return err
+	}
+
+	return mw.TopLevelWindow.RestoreState()
+}
+
 func (mw *MainWindow) Menu() *Menu {
 	return mw.menu
 }
