@@ -438,6 +438,12 @@ func itemsFromReflectModelDataSource(dataSource interface{}, requiredInterfaceNa
 		items = dataSource
 	}
 
+	if requiredInterfaceName == "ReflectListModel" {
+		if _, ok := dataSource.([]string); ok {
+			return items, nil
+		}
+	}
+
 	if t := reflect.TypeOf(items); t == nil ||
 		t.Kind() != reflect.Slice ||
 		t.Elem().Kind() != reflect.Ptr ||
@@ -450,7 +456,11 @@ func itemsFromReflectModelDataSource(dataSource interface{}, requiredInterfaceNa
 }
 
 func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member string, path []string, index int) interface{} {
-	if len(path) == 0 {
+	if member == "" {
+		if strs, ok := dataSource.([]string); ok {
+			return strs[index]
+		}
+
 		return ""
 	}
 

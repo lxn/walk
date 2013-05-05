@@ -5,6 +5,10 @@
 package declarative
 
 import (
+	"errors"
+)
+
+import (
 	"github.com/lxn/walk"
 )
 
@@ -37,6 +41,10 @@ type ListBox struct {
 }
 
 func (lb ListBox) Create(builder *Builder) error {
+	if _, ok := lb.Model.([]string); ok && lb.DataMember != "" {
+		return errors.New("ListBox.Create: DataMember must be empty for []string models.")
+	}
+
 	w, err := walk.NewListBox(builder.Parent())
 	if err != nil {
 		return err
@@ -46,7 +54,9 @@ func (lb ListBox) Create(builder *Builder) error {
 		w.SetFormat(lb.Format)
 		w.SetPrecision(lb.Precision)
 
-		w.SetDataMember(lb.DataMember)
+		if err := w.SetDataMember(lb.DataMember); err != nil {
+			return err
+		}
 
 		if err := w.SetModel(lb.Model); err != nil {
 			return err

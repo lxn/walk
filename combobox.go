@@ -213,7 +213,7 @@ func (cb *ComboBox) Model() interface{} {
 // SetModel sets the model of the ComboBox.
 //
 // It is required that mdl either implements walk.ListModel or
-// walk.ReflectListModel or be a slice of pointers to struct.
+// walk.ReflectListModel or be a slice of pointers to struct or a []string.
 func (cb *ComboBox) SetModel(mdl interface{}) error {
 	model, ok := mdl.(ListModel)
 	if !ok && mdl != nil {
@@ -222,15 +222,17 @@ func (cb *ComboBox) SetModel(mdl interface{}) error {
 			return err
 		}
 
-		if badms, ok := model.(bindingAndDisplayMemberSetter); ok {
-			var bindingMember string
-			if cb.Editable() {
-				bindingMember = cb.displayMember
-			} else {
-				bindingMember = cb.bindingMember
+		if _, ok := mdl.([]string); !ok {
+			if badms, ok := model.(bindingAndDisplayMemberSetter); ok {
+				var bindingMember string
+				if cb.Editable() {
+					bindingMember = cb.displayMember
+				} else {
+					bindingMember = cb.bindingMember
+				}
+				badms.setBindingMember(bindingMember)
+				badms.setDisplayMember(cb.displayMember)
 			}
-			badms.setBindingMember(bindingMember)
-			badms.setDisplayMember(cb.displayMember)
 		}
 	}
 	cb.providedModel = mdl
@@ -282,12 +284,20 @@ func (cb *ComboBox) BindingMember() string {
 // If bindingMember is not a simple member name like "Foo", but a path to a
 // member like "A.B.Foo", members "A" and "B" both must be one of the options
 // mentioned above, but with T having type pointer to struct.
-func (cb *ComboBox) SetBindingMember(bindingMember string) {
+func (cb *ComboBox) SetBindingMember(bindingMember string) error {
+	if bindingMember != "" {
+		if _, ok := cb.providedModel.([]string); ok {
+			return newError("invalid for []string model")
+		}
+	}
+
 	cb.bindingMember = bindingMember
 
 	if badms, ok := cb.model.(bindingAndDisplayMemberSetter); ok {
 		badms.setBindingMember(bindingMember)
 	}
+
+	return nil
 }
 
 // DisplayMember returns the member from the model of the ComboBox that is
@@ -315,12 +325,20 @@ func (cb *ComboBox) DisplayMember() string {
 // If displayMember is not a simple member name like "Foo", but a path to a
 // member like "A.B.Foo", members "A" and "B" both must be one of the options
 // mentioned above, but with T having type pointer to struct.
-func (cb *ComboBox) SetDisplayMember(displayMember string) {
+func (cb *ComboBox) SetDisplayMember(displayMember string) error {
+	if displayMember != "" {
+		if _, ok := cb.providedModel.([]string); ok {
+			return newError("invalid for []string model")
+		}
+	}
+
 	cb.displayMember = displayMember
 
 	if badms, ok := cb.model.(bindingAndDisplayMemberSetter); ok {
 		badms.setDisplayMember(displayMember)
 	}
+
+	return nil
 }
 
 func (cb *ComboBox) Format() string {

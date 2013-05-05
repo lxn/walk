@@ -5,6 +5,10 @@
 package declarative
 
 import (
+	"errors"
+)
+
+import (
 	"github.com/lxn/walk"
 )
 
@@ -40,6 +44,12 @@ type ComboBox struct {
 }
 
 func (cb ComboBox) Create(builder *Builder) error {
+	if _, ok := cb.Model.([]string); ok &&
+		(cb.BindingMember != "" || cb.DisplayMember != "") {
+
+		return errors.New("ComboBox.Create: BindingMember and DisplayMember must be empty for []string models.")
+	}
+
 	var w *walk.ComboBox
 	var err error
 	if cb.Editable {
@@ -55,8 +65,12 @@ func (cb ComboBox) Create(builder *Builder) error {
 		w.SetFormat(cb.Format)
 		w.SetPrecision(cb.Precision)
 
-		w.SetBindingMember(cb.BindingMember)
-		w.SetDisplayMember(cb.DisplayMember)
+		if err := w.SetBindingMember(cb.BindingMember); err != nil {
+			return err
+		}
+		if err := w.SetDisplayMember(cb.DisplayMember); err != nil {
+			return err
+		}
 
 		if err := w.SetModel(cb.Model); err != nil {
 			return err

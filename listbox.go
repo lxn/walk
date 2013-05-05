@@ -133,7 +133,7 @@ func (lb *ListBox) Model() interface{} {
 // SetModel sets the model of the ListBox.
 //
 // It is required that mdl either implements walk.ListModel or
-// walk.ReflectListModel or be a slice of pointers to struct.
+// walk.ReflectListModel or be a slice of pointers to struct or a []string.
 func (lb *ListBox) SetModel(mdl interface{}) error {
 	model, ok := mdl.(ListModel)
 	if !ok && mdl != nil {
@@ -142,8 +142,10 @@ func (lb *ListBox) SetModel(mdl interface{}) error {
 			return err
 		}
 
-		if badms, ok := model.(bindingAndDisplayMemberSetter); ok {
-			badms.setDisplayMember(lb.dataMember)
+		if _, ok := mdl.([]string); !ok {
+			if badms, ok := model.(bindingAndDisplayMemberSetter); ok {
+				badms.setDisplayMember(lb.dataMember)
+			}
 		}
 	}
 	lb.providedModel = mdl
@@ -179,21 +181,29 @@ func (lb *ListBox) DataMember() string {
 // pointers to struct.
 //
 // For a model consisting of items of type S, the type of the specified member T
-// and displayMember "Foo", this can be one of the following:
+// and dataMember "Foo", this can be one of the following:
 //
 //	A field		Foo T
 //	A method	func (s S) Foo() T
 //	A method	func (s S) Foo() (T, error)
 //
-// If displayMember is not a simple member name like "Foo", but a path to a
+// If dataMember is not a simple member name like "Foo", but a path to a
 // member like "A.B.Foo", members "A" and "B" both must be one of the options
 // mentioned above, but with T having type pointer to struct.
-func (lb *ListBox) SetDataMember(dataMember string) {
+func (lb *ListBox) SetDataMember(dataMember string) error {
+	if dataMember != "" {
+		if _, ok := lb.providedModel.([]string); ok {
+			return newError("invalid for []string model")
+		}
+	}
+
 	lb.dataMember = dataMember
 
 	if badms, ok := lb.model.(bindingAndDisplayMemberSetter); ok {
 		badms.setDisplayMember(dataMember)
 	}
+
+	return nil
 }
 
 func (lb *ListBox) Format() string {
