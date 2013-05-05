@@ -167,53 +167,64 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 
 		Label{
 			Row: 4, Column: 0,
+			Text: "String:",
+		},
+		ComboBox{
+			Row: 4, Column: 1,
+			Editable: true,
+			Model:    []string{"One", "Two", "Three"},
+			Value:    Bind("String"),
+		},
+
+		Label{
+			Row: 5, Column: 0,
 			Text: "Float64:",
 		},
 		NumberEdit{
-			Row: 4, Column: 1,
+			Row: 5, Column: 1,
 			Value:    Bind("Float64", Range{0.01, 999.99}),
 			Decimals: 2,
 		},
 
 		Label{
-			Row: 5, Column: 0,
+			Row: 6, Column: 0,
 			Text: "Int:",
 		},
 		NumberEdit{
-			Row: 5, Column: 1,
+			Row: 6, Column: 1,
 			Value: Bind("Int"),
 		},
 
 		Label{
-			Row: 6, Column: 0,
+			Row: 7, Column: 0,
 			Text: "Date:",
 		},
 		DateEdit{
-			Row: 6, Column: 1,
+			Row: 7, Column: 1,
 			Date: Bind("Date"),
 		},
 
 		Label{
-			Row: 7, Column: 0,
+			Row: 8, Column: 0,
 			Text: "Enabled:",
 		},
 		CheckBox{
-			Row: 7, Column: 1,
+			Row: 8, Column: 1,
 			Name:    "enabledCB",
 			Checked: Bind("Enabled"),
 		},
 
 		VSpacer{
-			Row: 8, Column: 0,
+			Row: 9, Column: 0,
 			Size: 10,
 		},
 
 		Label{
-			Row: 9, Column: 0, ColumnSpan: 2,
+			Row: 10, Column: 0, ColumnSpan: 2,
 			Text: "Memo:",
 		},
 		TextEdit{
-			Row: 10, Column: 0, ColumnSpan: 2,
+			Row: 11, Column: 0, ColumnSpan: 2,
 			Text: Bind("Memo"),
 		},
 	}
@@ -223,6 +234,7 @@ func (mw *MyMainWindow) showDialogAction_Triggered() {
 		No      string
 		FooId   int
 		BarKey  string
+		String  string
 		Float64 float64
 		Int     int
 		Date    time.Time
