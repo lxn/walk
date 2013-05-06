@@ -29,10 +29,34 @@ type ComboBox struct {
 	prevCurIndex                 int
 	selChangeIndex               int
 	currentIndexChangedPublisher EventPublisher
+	editOrigWndProcPtr           uintptr
+}
+
+var comboBoxEditWndProcPtr = syscall.NewCallback(comboBoxEditWndProc)
+
+func comboBoxEditWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	cb := (*ComboBox)(unsafe.Pointer(GetWindowLongPtr(hwnd, GWLP_USERDATA)))
+
+	switch msg {
+	case WM_KEYDOWN:
+		cb.keyDownPublisher.Publish(int(wParam))
+	}
+
+	return CallWindowProc(cb.editOrigWndProcPtr, hwnd, msg, wParam, lParam)
 }
 
 func NewComboBox(parent Container) (*ComboBox, error) {
-	return newComboBoxWithStyle(parent, CBS_DROPDOWN)
+	cb, err := newComboBoxWithStyle(parent, CBS_DROPDOWN)
+	if err != nil {
+		return nil, err
+	}
+
+	editHwnd := GetWindow(cb.hWnd, GW_CHILD)
+
+	SetWindowLongPtr(editHwnd, GWLP_USERDATA, uintptr(unsafe.Pointer(cb)))
+	cb.editOrigWndProcPtr = SetWindowLongPtr(editHwnd, GWLP_WNDPROC, comboBoxEditWndProcPtr)
+
+	return cb, nil
 }
 
 func NewDropDownBox(parent Container) (*ComboBox, error) {
