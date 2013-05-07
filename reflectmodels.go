@@ -480,11 +480,11 @@ func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member str
 
 	s := p.Elem()
 
-	var f reflect.Value
+	var v reflect.Value
 	for i, name := range path {
 		// Try as field first.
-		f = s.FieldByName(name)
-		if !f.IsValid() {
+		v = s.FieldByName(name)
+		if !v.IsValid() {
 			// We support methods on pointer receivers only for now.
 			method := p.MethodByName(name)
 			if !method.IsValid() {
@@ -496,7 +496,7 @@ func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member str
 			rvs := method.Call(nil)
 			switch len(rvs) {
 			case 1:
-				f = rvs[0]
+				v = rvs[0]
 
 			case 2:
 				rv2 := rvs[1].Interface()
@@ -506,7 +506,7 @@ func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member str
 					return fmt.Errorf("Second method return value must implement error.")
 				}
 
-				f = rvs[0]
+				v = rvs[0]
 
 			default:
 				return fmt.Errorf("Method must return a value plus optionally an error: %s", name)
@@ -514,8 +514,8 @@ func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member str
 		}
 
 		if i < len(path)-1 {
-			// Here f must be a pointer.
-			p = f
+			// Here v must be a pointer.
+			p = v
 			if p.IsNil() {
 				return nil
 			}
@@ -523,5 +523,5 @@ func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member str
 		}
 	}
 
-	return f.Interface()
+	return v.Interface()
 }
