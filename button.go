@@ -63,6 +63,10 @@ func (b *Button) SetChecked(checked bool) {
 		return
 	}
 
+	b.setChecked(checked)
+}
+
+func (b *Button) setChecked(checked bool) {
 	var chk uintptr
 
 	if checked {
