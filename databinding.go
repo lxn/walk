@@ -28,18 +28,41 @@ type DataBinder struct {
 	widget2Property2Error     map[Widget]map[Property]error
 	errorPresenter            ErrorPresenter
 	canSubmitChangedPublisher EventPublisher
+	submittedPublisher        EventPublisher
+	autoSubmit                bool
 }
 
 func NewDataBinder() *DataBinder {
 	return new(DataBinder)
 }
 
+func (db *DataBinder) AutoSubmit() bool {
+	return db.autoSubmit
+}
+
+func (db *DataBinder) SetAutoSubmit(autoSubmit bool) {
+	db.autoSubmit = autoSubmit
+}
+
+func (db *DataBinder) Submitted() *Event {
+	return db.submittedPublisher.Event()
+}
+
 func (db *DataBinder) DataSource() interface{} {
 	return db.dataSource
 }
 
-func (db *DataBinder) SetDataSource(dataSource interface{}) {
+func (db *DataBinder) SetDataSource(dataSource interface{}) error {
+	if t := reflect.TypeOf(dataSource); t == nil ||
+		t.Kind() != reflect.Ptr ||
+		t.Elem().Kind() != reflect.Struct {
+
+		return newError("dataSource must be pointer to struct")
+	}
+
 	db.dataSource = dataSource
+
+	return nil
 }
 
 func (db *DataBinder) BoundWidgets() []Widget {
@@ -70,7 +93,21 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 			db.property2Widget[prop] = widget
 
 			db.property2ChangedHandle[prop] = prop.Changed().Attach(func() {
-				db.validateProperty(prop, widget)
+				if db.autoSubmit {
+					p, s := db.reflectValuesFromDataSource()
+					field := db.fieldBoundToProperty(p, s, prop)
+					if !field.IsValid() {
+						return
+					}
+
+					if err := db.submitProperty(prop, field); err != nil {
+						return
+					}
+
+					db.submittedPublisher.Publish()
+				} else {
+					db.validateProperty(prop, widget)
+				}
 			})
 		}
 	}
@@ -199,92 +236,96 @@ func (db *DataBinder) Submit() error {
 		return errValidationFailed
 	}
 
-	return db.forEach(func(prop Property, field reflect.Value) error {
-		value := prop.Get()
-		if value == nil {
-			// This happens e.g. if CurrentIndex() of a ComboBox returns -1.
-			// FIXME: Should we handle this differently?
-			return nil
+	if err := db.forEach(func(prop Property, field reflect.Value) error {
+		return db.submitProperty(prop, field)
+	}); err != nil {
+		return err
+	}
+
+	db.submittedPublisher.Publish()
+
+	return nil
+}
+
+func (db *DataBinder) submitProperty(prop Property, field reflect.Value) error {
+	value := prop.Get()
+	if value == nil {
+		// This happens e.g. if CurrentIndex() of a ComboBox returns -1.
+		// FIXME: Should we handle this differently?
+		return nil
+	}
+	if err, ok := value.(error); ok {
+		return err
+	}
+
+	if f64, ok := value.(float64); ok {
+		switch field.Kind() {
+		case reflect.Float32, reflect.Float64:
+			field.SetFloat(f64)
+
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			field.SetInt(int64(f64))
+
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			field.SetUint(uint64(f64))
+
+		default:
+			return newError(fmt.Sprintf("Field '%s': Can't convert float64 to %s.", prop.Source().(string), field.Type().Name()))
 		}
-		if err, ok := value.(error); ok {
-			return err
-		}
-
-		if f64, ok := value.(float64); ok {
-			switch field.Kind() {
-			case reflect.Float32, reflect.Float64:
-				field.SetFloat(f64)
-
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-				field.SetInt(int64(f64))
-
-			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-				field.SetUint(uint64(f64))
-
-			default:
-				return newError(fmt.Sprintf("Field '%s': Can't convert float64 to %s.", prop.Source().(string), field.Type().Name()))
-			}
-
-			return nil
-		}
-
-		field.Set(reflect.ValueOf(value))
 
 		return nil
-	})
+	}
+
+	field.Set(reflect.ValueOf(value))
+
+	return nil
 }
 
 func (db *DataBinder) forEach(f func(prop Property, field reflect.Value) error) error {
-	p := reflect.ValueOf(db.dataSource)
-	if p.Type().Kind() != reflect.Ptr {
-		return newError("DataSource must be a pointer to a struct.")
-	}
-
+	p, s := db.reflectValuesFromDataSource()
 	if p.IsNil() {
 		return nil
 	}
 
-	s := reflect.Indirect(p)
-	if s.Type().Kind() != reflect.Struct {
-		return newError("DataSource must be a pointer to a struct.")
-	}
-
 	for _, prop := range db.properties {
-		path := prop.Source().(string)
-		names := strings.Split(path, ".")
+		field := db.fieldBoundToProperty(p, s, prop)
 
-		p := p
-		s := s
-
-		for i, name := range names {
-			field := s.FieldByName(name)
-			if !field.IsValid() {
-				return newError(fmt.Sprintf("Struct '%s' has no field '%s'.",
-					s.Type().Name(), name))
-			}
-
-			if i == len(names)-1 {
-				if err := f(prop, field); err != nil {
-					return err
-				}
-			} else if p.Type().Kind() == reflect.Ptr {
-				p = field
-			} else {
-				return newError("Field must be a pointer to a struct.")
-			}
-
-			if p.IsNil() {
-				return newError("Pointer must not be nil.")
-			}
-
-			s = reflect.Indirect(p)
-			if s.Type().Kind() != reflect.Struct {
-				return newError("Pointer must point to a struct.")
-			}
+		if err := f(prop, field); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func (db *DataBinder) reflectValuesFromDataSource() (p, s reflect.Value) {
+	p = reflect.ValueOf(db.dataSource)
+	if p.IsNil() {
+		return
+	}
+
+	s = p.Elem()
+
+	return
+}
+
+func (db *DataBinder) fieldBoundToProperty(p, s reflect.Value, prop Property) reflect.Value {
+	var v reflect.Value
+	source := prop.Source().(string)
+	path := strings.Split(source, ".")
+
+	for i, name := range path {
+		v = s.FieldByName(name)
+		if i < len(path)-1 {
+			p = v
+			if p.IsNil() {
+				return reflect.Value{}
+			}
+			s = p.Elem()
+		}
+	}
+
+	return v
 }
 
 func validateBindingMemberSyntax(member string) error {

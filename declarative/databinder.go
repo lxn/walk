@@ -12,6 +12,8 @@ type DataBinder struct {
 	AssignTo       **walk.DataBinder
 	DataSource     interface{}
 	ErrorPresenter ErrorPresenter
+	AutoSubmit     bool
+	OnSubmitted    walk.EventHandler
 }
 
 func (db DataBinder) create() (*walk.DataBinder, error) {
@@ -30,6 +32,12 @@ func (db DataBinder) create() (*walk.DataBinder, error) {
 	}
 
 	b.SetDataSource(db.DataSource)
+
+	b.SetAutoSubmit(db.AutoSubmit)
+
+	if db.OnSubmitted != nil {
+		b.Submitted().Attach(db.OnSubmitted)
+	}
 
 	if db.AssignTo != nil {
 		*db.AssignTo = b
