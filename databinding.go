@@ -94,6 +94,10 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 
 			db.property2ChangedHandle[prop] = prop.Changed().Attach(func() {
 				if db.autoSubmit {
+					if prop.Get() == nil {
+						return
+					}
+
 					p, s := db.reflectValuesFromDataSource()
 					field := db.fieldBoundToProperty(p, s, prop)
 					if !field.IsValid() {
