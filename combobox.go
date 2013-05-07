@@ -38,8 +38,15 @@ func comboBoxEditWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr 
 	cb := (*ComboBox)(unsafe.Pointer(GetWindowLongPtr(hwnd, GWLP_USERDATA)))
 
 	switch msg {
+	case WM_GETDLGCODE:
+		if wParam == VK_RETURN {
+			return DLGC_WANTALLKEYS
+		}
+
 	case WM_KEYDOWN:
-		cb.keyDownPublisher.Publish(int(wParam))
+		if wParam != VK_RETURN || 0 == cb.SendMessage(CB_GETDROPPEDSTATE, 0, 0) {
+			cb.keyDownPublisher.Publish(int(wParam))
+		}
 	}
 
 	return CallWindowProc(cb.editOrigWndProcPtr, hwnd, msg, wParam, lParam)
