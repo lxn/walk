@@ -62,7 +62,7 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 
 			return nil
 		},
-		rb.clickedPublisher.Event()))
+		rb.CheckedChanged()))
 
 	return rb, nil
 }
