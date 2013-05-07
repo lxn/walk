@@ -250,12 +250,12 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 	if db != nil {
 		if _, ok := d.(Container); ok {
 			if wc, ok := w.(walk.Container); ok {
-				// FIXME: Currently SetDataBinder must be called after initProperties.
-				wc.SetDataBinder(db)
+				b.Defer(func() error {
+					// FIXME: Currently SetDataBinder must be called after initProperties.
+					wc.SetDataBinder(db)
 
-				if err := db.Reset(); err != nil {
-					return err
-				}
+					return db.Reset()
+				})
 			}
 		}
 	}
