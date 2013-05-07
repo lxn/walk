@@ -339,7 +339,7 @@ func (b *Builder) initProperties() error {
 				v := prop.Get()
 				valt, vt := reflect.TypeOf(val), reflect.TypeOf(v)
 
-				if valt != vt {
+				if v != nil && valt != vt {
 					panic(fmt.Sprintf("cannot assign value %v of type %T to property %s of type %T", val, val, sf.Name, v))
 				}
 				if err := prop.Set(val); err != nil {
