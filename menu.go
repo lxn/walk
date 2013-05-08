@@ -117,19 +117,21 @@ func (m *Menu) onActionChanged(action *Action) error {
 
 func (m *Menu) onActionVisibleChanged(action *Action) error {
 	if action.Visible() {
-		return m.onInsertedAction(action)
+		return m.insertAction(action, true)
 	}
 
-	return m.onRemovingAction(action)
+	return m.removeAction(action, true)
 }
 
-func (m *Menu) onInsertedAction(action *Action) (err error) {
-	action.addChangedHandler(m)
-	defer func() {
-		if err != nil {
-			action.removeChangedHandler(m)
-		}
-	}()
+func (m *Menu) insertAction(action *Action, visibleChanged bool) (err error) {
+	if !visibleChanged {
+		action.addChangedHandler(m)
+		defer func() {
+			if err != nil {
+				action.removeChangedHandler(m)
+			}
+		}()
+	}
 
 	if !action.Visible() {
 		return
@@ -157,20 +159,30 @@ func (m *Menu) onInsertedAction(action *Action) (err error) {
 	return
 }
 
-func (m *Menu) onRemovingAction(action *Action) error {
+func (m *Menu) removeAction(action *Action, visibleChanged bool) error {
 	index := m.actions.indexInObserver(action)
 
 	if !RemoveMenu(m.hMenu, uint32(index), MF_BYPOSITION) {
 		return lastError("RemoveMenu")
 	}
 
-	action.removeChangedHandler(m)
+	if !visibleChanged {
+		action.removeChangedHandler(m)
+	}
 
 	if m.hWnd != 0 {
 		DrawMenuBar(m.hWnd)
 	}
 
 	return nil
+}
+
+func (m *Menu) onInsertedAction(action *Action) error {
+	return m.insertAction(action, false)
+}
+
+func (m *Menu) onRemovingAction(action *Action) error {
+	return m.removeAction(action, false)
 }
 
 func (m *Menu) onClearingActions() error {

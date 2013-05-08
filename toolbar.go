@@ -271,19 +271,21 @@ func (tb *ToolBar) onActionChanged(action *Action) error {
 
 func (tb *ToolBar) onActionVisibleChanged(action *Action) error {
 	if action.Visible() {
-		return tb.onInsertedAction(action)
+		return tb.insertAction(action, true)
 	}
 
-	return tb.onRemovingAction(action)
+	return tb.removeAction(action, true)
 }
 
-func (tb *ToolBar) onInsertedAction(action *Action) (err error) {
-	action.addChangedHandler(tb)
-	defer func() {
-		if err != nil {
-			action.removeChangedHandler(tb)
-		}
-	}()
+func (tb *ToolBar) insertAction(action *Action, visibleChanged bool) (err error) {
+	if !visibleChanged {
+		action.addChangedHandler(tb)
+		defer func() {
+			if err != nil {
+				action.removeChangedHandler(tb)
+			}
+		}()
+	}
 
 	if !action.Visible() {
 		return
@@ -322,16 +324,26 @@ func (tb *ToolBar) onInsertedAction(action *Action) (err error) {
 	return
 }
 
-func (tb *ToolBar) onRemovingAction(action *Action) error {
+func (tb *ToolBar) removeAction(action *Action, visibleChanged bool) error {
 	index := tb.actions.indexInObserver(action)
 
-	action.removeChangedHandler(tb)
+	if !visibleChanged {
+		action.removeChangedHandler(tb)
+	}
 
 	if 0 == tb.SendMessage(TB_DELETEBUTTON, uintptr(index), 0) {
 		return newError("SendMessage(TB_DELETEBUTTON) failed")
 	}
 
 	return nil
+}
+
+func (tb *ToolBar) onInsertedAction(action *Action) error {
+	return tb.insertAction(action, false)
+}
+
+func (tb *ToolBar) onRemovingAction(action *Action) error {
+	return tb.removeAction(action, false)
 }
 
 func (tb *ToolBar) onClearingActions() error {
