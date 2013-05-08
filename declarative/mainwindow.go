@@ -56,6 +56,9 @@ func (mw MainWindow) Create() error {
 
 	builder := NewBuilder(nil)
 
+	builder.deferBuildMenuActions(w.Menu(), mw.MenuItems)
+	builder.deferBuildActions(w.ToolBar().Actions(), mw.ToolBarItems)
+
 	return builder.InitWidget(tlwi, w, func() error {
 		if err := w.SetTitle(mw.Title); err != nil {
 			return err
@@ -74,9 +77,6 @@ func (mw MainWindow) Create() error {
 		if mw.AssignTo != nil {
 			*mw.AssignTo = w
 		}
-
-		builder.deferBuildMenuActions(w.Menu(), mw.MenuItems)
-		builder.deferBuildActions(w.ToolBar().Actions(), mw.ToolBarItems)
 
 		builder.Defer(func() error {
 			w.Show()
