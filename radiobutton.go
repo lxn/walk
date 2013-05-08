@@ -25,25 +25,27 @@ type radioButtonish interface {
 func NewRadioButton(parent Container) (*RadioButton, error) {
 	rb := new(RadioButton)
 
+	if count := parent.Children().Len(); count > 0 {
+		if prevRB, ok := parent.Children().At(count - 1).(radioButtonish); ok {
+			rb.group = prevRB.radioButton().group
+		}
+	}
+	var groupBit uint32
+	if rb.group == nil {
+		groupBit = WS_GROUP
+		rb.group = new(radioButtonGroup)
+	}
+
 	if err := InitChildWidget(
 		rb,
 		parent,
 		"BUTTON",
-		WS_TABSTOP|WS_VISIBLE|BS_AUTORADIOBUTTON,
+		groupBit|WS_TABSTOP|WS_VISIBLE|BS_AUTORADIOBUTTON,
 		0); err != nil {
 		return nil, err
 	}
 
 	rb.Button.init()
-
-	if count := parent.Children().Len(); count > 1 {
-		if prevRB, ok := parent.Children().At(count - 2).(radioButtonish); ok {
-			rb.group = prevRB.radioButton().group
-		}
-	}
-	if rb.group == nil {
-		rb.group = new(radioButtonGroup)
-	}
 
 	rb.MustRegisterProperty("CheckedValue", NewProperty(
 		func() interface{} {
