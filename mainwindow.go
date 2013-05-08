@@ -99,6 +99,14 @@ func (mw *MainWindow) SetLayout(value Layout) error {
 	return mw.clientComposite.SetLayout(value)
 }
 
+func (mw *MainWindow) ContextMenu() *Menu {
+	return mw.clientComposite.ContextMenu()
+}
+
+func (mw *MainWindow) SetContextMenu(contextMenu *Menu) {
+	mw.clientComposite.SetContextMenu(contextMenu)
+}
+
 func (mw *MainWindow) SaveState() error {
 	if err := mw.clientComposite.SaveState(); err != nil {
 		return err
