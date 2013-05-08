@@ -18,6 +18,7 @@ type Dialog struct {
 	MaxSize          Size
 	ContextMenuItems []MenuItem
 	OnKeyDown        walk.KeyEventHandler
+	OnKeyUp          walk.KeyEventHandler
 	OnMouseDown      walk.MouseEventHandler
 	OnMouseMove      walk.MouseEventHandler
 	OnMouseUp        walk.MouseEventHandler
@@ -48,6 +49,7 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 		Layout:           d.Layout,
 		Children:         d.Children,
 		OnKeyDown:        d.OnKeyDown,
+		OnKeyUp:          d.OnKeyUp,
 		OnMouseDown:      d.OnMouseDown,
 		OnMouseMove:      d.OnMouseMove,
 		OnMouseUp:        d.OnMouseUp,

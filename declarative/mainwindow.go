@@ -18,6 +18,7 @@ type MainWindow struct {
 	MaxSize          Size
 	ContextMenuItems []MenuItem
 	OnKeyDown        walk.KeyEventHandler
+	OnKeyUp          walk.KeyEventHandler
 	OnMouseDown      walk.MouseEventHandler
 	OnMouseMove      walk.MouseEventHandler
 	OnMouseUp        walk.MouseEventHandler
@@ -45,6 +46,7 @@ func (mw MainWindow) Create() error {
 		MaxSize:          mw.MaxSize,
 		ContextMenuItems: mw.ContextMenuItems,
 		OnKeyDown:        mw.OnKeyDown,
+		OnKeyUp:          mw.OnKeyUp,
 		OnMouseDown:      mw.OnMouseDown,
 		OnMouseMove:      mw.OnMouseMove,
 		OnMouseUp:        mw.OnMouseUp,
