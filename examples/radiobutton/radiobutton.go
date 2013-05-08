@@ -14,10 +14,11 @@ import (
 
 type Foo struct {
 	Bar string
+	Baz int
 }
 
 func main() {
-	foo := &Foo{"B"}
+	foo := &Foo{"B", 0}
 
 	MainWindow{
 		Title:   "Walk RadioButton Example",
@@ -27,7 +28,7 @@ func main() {
 			DataSource: foo,
 			AutoSubmit: true,
 			OnSubmitted: func() {
-				fmt.Println(foo.Bar)
+				fmt.Println(foo)
 			},
 		},
 		Children: []Widget{
@@ -60,6 +61,38 @@ func main() {
 			Label{
 				Text:    "C",
 				Enabled: Bind("cRB.Checked"),
+			},
+			// These will become their own group, because they are separated
+			// from the other radio buttons by the labels.
+			RadioButton{
+				Name:                 "oneRB",
+				Text:                 "1",
+				CheckedValue:         Bind("Baz"),
+				CheckedDiscriminator: 1,
+			},
+			RadioButton{
+				Name:                 "twoRB",
+				Text:                 "2",
+				CheckedValue:         Bind("Baz"),
+				CheckedDiscriminator: 2,
+			},
+			RadioButton{
+				Name:                 "threeRB",
+				Text:                 "3",
+				CheckedValue:         Bind("Baz"),
+				CheckedDiscriminator: 3,
+			},
+			Label{
+				Text:    "1",
+				Enabled: Bind("oneRB.Checked"),
+			},
+			Label{
+				Text:    "2",
+				Enabled: Bind("twoRB.Checked"),
+			},
+			Label{
+				Text:    "3",
+				Enabled: Bind("threeRB.Checked"),
 			},
 		},
 	}.Run()
