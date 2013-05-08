@@ -45,3 +45,15 @@ func (cb *CheckBox) MinSizeHint() Size {
 func (cb *CheckBox) SizeHint() Size {
 	return cb.MinSizeHint()
 }
+
+func (cb *CheckBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	switch msg {
+	case WM_COMMAND:
+		switch HIWORD(uint32(wParam)) {
+		case BN_CLICKED:
+			cb.checkedChangedPublisher.Publish()
+		}
+	}
+
+	return cb.Button.WndProc(hwnd, msg, wParam, lParam)
+}
