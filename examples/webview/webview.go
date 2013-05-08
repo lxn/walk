@@ -21,8 +21,10 @@ func main() {
 			LineEdit{
 				AssignTo: &le,
 				Text:     Bind("wv.URL"),
-				OnReturnPressed: func() {
-					wv.SetURL(le.Text())
+				OnKeyDown: func(key int) {
+					if key == walk.KeyReturn {
+						wv.SetURL(le.Text())
+					}
 				},
 			},
 			WebView{

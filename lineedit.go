@@ -20,7 +20,6 @@ type LineEdit struct {
 	WidgetBase
 	editingFinishedPublisher EventPublisher
 	readOnlyChangedPublisher EventPublisher
-	returnPressedPublisher   EventPublisher
 	textChangedPublisher     EventPublisher
 	charWidthFont            *Font
 	charWidth                int
@@ -215,10 +214,6 @@ func (le *LineEdit) EditingFinished() *Event {
 	return le.editingFinishedPublisher.Event()
 }
 
-func (le *LineEdit) ReturnPressed() *Event {
-	return le.returnPressedPublisher.Event()
-}
-
 func (le *LineEdit) TextChanged() *Event {
 	return le.textChangedPublisher.Event()
 }
@@ -260,7 +255,6 @@ func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 
 	case WM_KEYDOWN:
 		if wParam == VK_RETURN {
-			le.returnPressedPublisher.Publish()
 			le.editingFinishedPublisher.Publish()
 		}
 

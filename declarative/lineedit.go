@@ -34,7 +34,6 @@ type LineEdit struct {
 	MaxLength         int
 	PasswordMode      bool
 	OnEditingFinished walk.EventHandler
-	OnReturnPressed   walk.EventHandler
 	OnTextChanged     walk.EventHandler
 }
 
@@ -53,9 +52,6 @@ func (le LineEdit) Create(builder *Builder) error {
 
 		if le.OnEditingFinished != nil {
 			w.EditingFinished().Attach(le.OnEditingFinished)
-		}
-		if le.OnReturnPressed != nil {
-			w.ReturnPressed().Attach(le.OnReturnPressed)
 		}
 		if le.OnTextChanged != nil {
 			w.TextChanged().Attach(le.OnTextChanged)
