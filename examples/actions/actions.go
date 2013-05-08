@@ -13,15 +13,20 @@ import (
 	. "github.com/lxn/walk/declarative"
 )
 
+var isSpecialMode = walk.NewMutableCondition()
+
 type MyMainWindow struct {
 	*walk.MainWindow
 }
 
 func main() {
+	MustRegisterCondition("isSpecialMode", isSpecialMode)
+
 	mw := new(MyMainWindow)
 
 	var openAction, showAboutBoxAction *walk.Action
 	var recentMenu *walk.Menu
+	var toggleSpecialModePB *walk.PushButton
 
 	if err := (MainWindow{
 		AssignTo: &mw.MainWindow,
@@ -34,7 +39,7 @@ func main() {
 						AssignTo:    &openAction,
 						Text:        "&Open",
 						Image:       "../img/open.png",
-						Enabled:     Bind("openEnabledCB.Checked"),
+						Enabled:     Bind("enabledCB.Checked"),
 						Visible:     Bind("openVisibleCB.Checked"),
 						OnTriggered: func() { mw.openAction_Triggered() },
 					},
@@ -64,6 +69,11 @@ func main() {
 			ActionRef{&openAction},
 			Separator{},
 			ActionRef{&showAboutBoxAction},
+			Action{
+				Text:        "Special",
+				Enabled:     Bind("isSpecialMode && enabledCB.Checked"),
+				OnTriggered: func() { mw.specialAction_Triggered() },
+			},
 		},
 		ContextMenuItems: []MenuItem{
 			ActionRef{&showAboutBoxAction},
@@ -72,8 +82,8 @@ func main() {
 		Layout:  VBox{},
 		Children: []Widget{
 			CheckBox{
-				Name:    "openEnabledCB",
-				Text:    "Open Enabled",
+				Name:    "enabledCB",
+				Text:    "Open / Special Enabled",
 				Checked: true,
 			},
 			CheckBox{
@@ -81,22 +91,34 @@ func main() {
 				Text:    "Open Visible",
 				Checked: true,
 			},
+			PushButton{
+				AssignTo: &toggleSpecialModePB,
+				Text:     "Enable Special Mode",
+				OnClicked: func() {
+					isSpecialMode.SetSatisfied(!isSpecialMode.Satisfied())
+
+					if isSpecialMode.Satisfied() {
+						toggleSpecialModePB.SetText("Disable Special Mode")
+					} else {
+						toggleSpecialModePB.SetText("Enable Special Mode")
+					}
+				},
+			},
 		},
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
 
-	openRecent1Action := walk.NewAction()
-	openRecent1Action.SetText("Blah")
-	recentMenu.Actions().Add(openRecent1Action)
+	addRecentFileActions := func(texts ...string) {
+		for _, text := range texts {
+			a := walk.NewAction()
+			a.SetText(text)
+			a.Triggered().Attach(func() { mw.openAction_Triggered() })
+			recentMenu.Actions().Add(a)
+		}
+	}
 
-	openRecent2Action := walk.NewAction()
-	openRecent2Action.SetText("Yadda")
-	recentMenu.Actions().Add(openRecent2Action)
-
-	openRecent3Action := walk.NewAction()
-	openRecent3Action.SetText("Oink")
-	recentMenu.Actions().Add(openRecent3Action)
+	addRecentFileActions("Foo", "Bar", "Baz")
 
 	mw.Run()
 }
@@ -107,4 +129,8 @@ func (mw *MyMainWindow) openAction_Triggered() {
 
 func (mw *MyMainWindow) showAboutBoxAction_Triggered() {
 	walk.MsgBox(mw, "About", "Walk Actions Example", walk.MsgBoxIconInformation)
+}
+
+func (mw *MyMainWindow) specialAction_Triggered() {
+	walk.MsgBox(mw, "Special", "Nothing to see here.", walk.MsgBoxIconInformation)
 }
