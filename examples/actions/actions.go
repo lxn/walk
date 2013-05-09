@@ -41,6 +41,7 @@ func main() {
 						Image:       "../img/open.png",
 						Enabled:     Bind("enabledCB.Checked"),
 						Visible:     Bind("openVisibleCB.Checked"),
+						Shortcut:    Shortcut{walk.ModControl, walk.KeyO},
 						OnTriggered: func() { mw.openAction_Triggered() },
 					},
 					Menu{
