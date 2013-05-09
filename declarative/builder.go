@@ -108,7 +108,7 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 	b.declWidgets = append(b.declWidgets, declWidget{d, w})
 
 	// Widget
-	name, _, _, font, toolTipText, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuItems, onKeyDown, onKeyUp, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
+	name, _, _, font, toolTipText, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuItems, onKeyDown, onKeyPress, onKeyUp, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
 
 	w.SetName(name)
 
@@ -139,6 +139,10 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 
 	if onKeyDown != nil {
 		w.KeyDown().Attach(onKeyDown)
+	}
+
+	if onKeyPress != nil {
+		w.KeyPress().Attach(onKeyPress)
 	}
 
 	if onKeyUp != nil {

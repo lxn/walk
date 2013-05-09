@@ -126,6 +126,10 @@ type Widget interface {
 	// events for the Widget.
 	KeyDown() *KeyEvent
 
+	// KeyPress returns a *KeyEvent that you can attach to for handling key
+	// press events for the Widget.
+	KeyPress() *KeyEvent
+
 	// KeyUp returns a *KeyEvent that you can attach to for handling key up
 	// events for the Widget.
 	KeyUp() *KeyEvent
@@ -313,6 +317,7 @@ type WidgetBase struct {
 	font                        *Font
 	contextMenu                 *Menu
 	keyDownPublisher            KeyEventPublisher
+	keyPressPublisher           KeyEventPublisher
 	keyUpPublisher              KeyEventPublisher
 	mouseDownPublisher          MouseEventPublisher
 	mouseUpPublisher            MouseEventPublisher
@@ -1308,6 +1313,12 @@ func (wb *WidgetBase) KeyDown() *KeyEvent {
 	return wb.keyDownPublisher.Event()
 }
 
+// KeyPress returns a *KeyEvent that you can attach to for handling key press
+// events for the *WidgetBase.
+func (wb *WidgetBase) KeyPress() *KeyEvent {
+	return wb.keyPressPublisher.Event()
+}
+
 // KeyUp returns a *KeyEvent that you can attach to for handling key up
 // events for the *WidgetBase.
 func (wb *WidgetBase) KeyUp() *KeyEvent {
@@ -1513,7 +1524,11 @@ func (wb *WidgetBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		}
 
 	case WM_KEYDOWN:
-		wb.keyDownPublisher.Publish(Key(wParam))
+		if uint32(lParam)>>30 == 0 {
+			wb.keyDownPublisher.Publish(Key(wParam))
+		} else {
+			wb.keyPressPublisher.Publish(Key(wParam))
+		}
 
 	case WM_KEYUP:
 		wb.keyUpPublisher.Publish(Key(wParam))
