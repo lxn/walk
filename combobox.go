@@ -45,7 +45,24 @@ func comboBoxEditWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr 
 
 	case WM_KEYDOWN:
 		if wParam != VK_RETURN || 0 == cb.SendMessage(CB_GETDROPPEDSTATE, 0, 0) {
-			cb.keyDownPublisher.Publish(Key(wParam))
+			key := Key(wParam)
+
+			if uint32(lParam)>>30 == 0 {
+				cb.keyDownPublisher.Publish(key)
+			}
+
+			switch key {
+			case KeyAlt, KeyControl, KeyShift:
+				// nop
+
+			default:
+				cb.keyPressPublisher.Publish(key)
+			}
+		}
+
+	case WM_KEYUP:
+		if wParam != VK_RETURN || 0 == cb.SendMessage(CB_GETDROPPEDSTATE, 0, 0) {
+			cb.keyUpPublisher.Publish(Key(wParam))
 		}
 	}
 
