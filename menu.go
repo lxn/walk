@@ -5,6 +5,7 @@
 package walk
 
 import (
+	"fmt"
 	"syscall"
 	"unsafe"
 )
@@ -81,7 +82,13 @@ func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 		mii.FType = MFT_SEPARATOR
 	} else {
 		mii.FType = MFT_STRING
-		mii.DwTypeData = syscall.StringToUTF16Ptr(action.text)
+		var text string
+		if s := action.shortcut; s.Key != 0 {
+			text = fmt.Sprintf("%s\t%s", action.text, s.String())
+		} else {
+			text = action.text
+		}
+		mii.DwTypeData = syscall.StringToUTF16Ptr(text)
 		mii.Cch = uint32(len([]rune(action.text)))
 	}
 	mii.WID = uint32(action.id)
