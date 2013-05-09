@@ -1451,6 +1451,35 @@ func widgetWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) (result uintpt
 	return
 }
 
+func (wb *WidgetBase) handleKeyDown(wParam, lParam uintptr) {
+	key := Key(wParam)
+
+	if uint32(lParam)>>30 == 0 {
+		wb.keyDownPublisher.Publish(key)
+
+		// Using TranslateAccelerators refused to work, so we handle them
+		// ourselves, at least for now.
+		shortcut := Shortcut{ModifiersDown(), key}
+		if action, ok := shortcut2Action[shortcut]; ok {
+			if action.Visible() && action.Enabled() {
+				action.raiseTriggered()
+			}
+		}
+	}
+
+	switch key {
+	case KeyAlt, KeyControl, KeyShift:
+		// nop
+
+	default:
+		wb.keyPressPublisher.Publish(key)
+	}
+}
+
+func (wb *WidgetBase) handleKeyUp(wParam, lParam uintptr) {
+	wb.keyUpPublisher.Publish(Key(wParam))
+}
+
 // WndProc is the window procedure of the widget.
 //
 // When implementing your own WndProc to add or modify behavior, call the
@@ -1524,31 +1553,10 @@ func (wb *WidgetBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		}
 
 	case WM_KEYDOWN:
-		key := Key(wParam)
-
-		if uint32(lParam)>>30 == 0 {
-			wb.keyDownPublisher.Publish(key)
-
-			// Using TranslateAccelerators refused to work, so we handle them
-			// ourselves, at least for now.
-			shortcut := Shortcut{ModifiersDown(), key}
-			if action, ok := shortcut2Action[shortcut]; ok {
-				if action.Visible() && action.Enabled() {
-					action.raiseTriggered()
-				}
-			}
-		}
-
-		switch key {
-		case KeyAlt, KeyControl, KeyShift:
-			// nop
-
-		default:
-			wb.keyPressPublisher.Publish(key)
-		}
+		wb.handleKeyDown(wParam, lParam)
 
 	case WM_KEYUP:
-		wb.keyUpPublisher.Publish(Key(wParam))
+		wb.handleKeyUp(wParam, lParam)
 
 	case WM_SIZE, WM_SIZING:
 		wb.sizeChangedPublisher.Publish()
