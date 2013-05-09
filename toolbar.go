@@ -5,6 +5,7 @@
 package walk
 
 import (
+	"fmt"
 	"syscall"
 	"unsafe"
 )
@@ -236,7 +237,14 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 		return
 	}
 
-	*text = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(action.Text())))
+	var actionText string
+	if s := action.shortcut; s.Key != 0 {
+		actionText = fmt.Sprintf("%s (%s)", action.Text(), s.String())
+	} else {
+		actionText = action.Text()
+	}
+
+	*text = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(actionText)))
 
 	return
 }
