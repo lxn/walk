@@ -361,3 +361,15 @@ var key2string = map[Key]string{
 func (k Key) String() string {
 	return key2string[k]
 }
+
+func AltDown() bool {
+	return GetKeyState(KeyMenu)>>15 != 0
+}
+
+func ControlDown() bool {
+	return GetKeyState(KeyControl)>>15 != 0
+}
+
+func ShiftDown() bool {
+	return GetKeyState(KeyShift)>>15 != 0
+}
