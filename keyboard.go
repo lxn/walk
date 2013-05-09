@@ -5,10 +5,18 @@
 package walk
 
 import (
+	"bytes"
+)
+
+import (
 	. "github.com/lxn/go-winapi"
 )
 
 type Key uint16
+
+func (k Key) String() string {
+	return key2string[k]
+}
 
 const (
 	KeyLButton           Key = VK_LBUTTON
@@ -140,7 +148,9 @@ const (
 	KeyRShift                = VK_RSHIFT
 	KeyLControl              = VK_LCONTROL
 	KeyRControl              = VK_RCONTROL
+	KeyLAlt                  = VK_LMENU
 	KeyLMenu                 = VK_LMENU
+	KeyRAlt                  = VK_RMENU
 	KeyRMenu                 = VK_RMENU
 	KeyBrowserBack           = VK_BROWSER_BACK
 	KeyBrowserForward        = VK_BROWSER_FORWARD
@@ -359,8 +369,61 @@ var key2string = map[Key]string{
 	KeyOEMClear:          "OEMClear",
 }
 
-func (k Key) String() string {
-	return key2string[k]
+type Modifiers byte
+
+func (m Modifiers) String() string {
+	return modifiers2string[m]
+}
+
+var modifiers2string = map[Modifiers]string{
+	ModShift:                       "Shift",
+	ModControl:                     "Ctrl",
+	ModControl | ModShift:          "Ctrl+Shift",
+	ModAlt:                         "Alt",
+	ModAlt | ModShift:              "Alt+Shift",
+	ModAlt | ModControl | ModShift: "Alt+Ctrl+Shift",
+}
+
+const (
+	ModShift   Modifiers = 0x01
+	ModControl           = 0x02
+	ModAlt               = 0x04
+)
+
+func ModifiersDown() Modifiers {
+	var m Modifiers
+
+	if ShiftDown() {
+		m |= ModShift
+	}
+	if ControlDown() {
+		m |= ModControl
+	}
+	if AltDown() {
+		m |= ModAlt
+	}
+
+	return m
+}
+
+type Shortcut struct {
+	Modifiers Modifiers
+	Key       Key
+}
+
+func (s Shortcut) String() string {
+	m := s.Modifiers.String()
+	if m == "" {
+		return s.Key.String()
+	}
+
+	b := new(bytes.Buffer)
+
+	b.WriteString(m)
+	b.WriteRune('+')
+	b.WriteString(s.Key.String())
+
+	return b.String()
 }
 
 func AltDown() bool {
