@@ -1524,10 +1524,18 @@ func (wb *WidgetBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		}
 
 	case WM_KEYDOWN:
+		key := Key(wParam)
+
 		if uint32(lParam)>>30 == 0 {
-			wb.keyDownPublisher.Publish(Key(wParam))
-		} else {
-			wb.keyPressPublisher.Publish(Key(wParam))
+			wb.keyDownPublisher.Publish(key)
+		}
+
+		switch key {
+		case KeyAlt, KeyControl, KeyShift:
+			// nop
+
+		default:
+			wb.keyPressPublisher.Publish(key)
 		}
 
 	case WM_KEYUP:
