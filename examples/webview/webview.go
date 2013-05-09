@@ -21,7 +21,7 @@ func main() {
 			LineEdit{
 				AssignTo: &le,
 				Text:     Bind("wv.URL"),
-				OnKeyDown: func(key int) {
+				OnKeyDown: func(key walk.Key) {
 					if key == walk.KeyReturn {
 						wv.SetURL(le.Text())
 					}

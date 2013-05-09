@@ -1513,10 +1513,10 @@ func (wb *WidgetBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		}
 
 	case WM_KEYDOWN:
-		wb.keyDownPublisher.Publish(int(wParam))
+		wb.keyDownPublisher.Publish(Key(wParam))
 
 	case WM_KEYUP:
-		wb.keyUpPublisher.Publish(int(wParam))
+		wb.keyUpPublisher.Publish(Key(wParam))
 
 	case WM_SIZE, WM_SIZING:
 		wb.sizeChangedPublisher.Publish()

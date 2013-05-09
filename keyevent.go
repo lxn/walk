@@ -4,7 +4,7 @@
 
 package walk
 
-type KeyEventHandler func(key int)
+type KeyEventHandler func(key Key)
 
 type KeyEvent struct {
 	handlers []KeyEventHandler
@@ -34,7 +34,7 @@ func (p *KeyEventPublisher) Event() *KeyEvent {
 	return &p.event
 }
 
-func (p *KeyEventPublisher) Publish(key int) {
+func (p *KeyEventPublisher) Publish(key Key) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
 			handler(key)
