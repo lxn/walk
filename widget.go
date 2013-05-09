@@ -1528,6 +1528,15 @@ func (wb *WidgetBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 
 		if uint32(lParam)>>30 == 0 {
 			wb.keyDownPublisher.Publish(key)
+
+			// Using TranslateAccelerators refused to work, so we handle them
+			// ourselves, at least for now.
+			shortcut := Shortcut{ModifiersDown(), key}
+			if action, ok := shortcut2Action[shortcut]; ok {
+				if action.Visible() && action.Enabled() {
+					action.raiseTriggered()
+				}
+			}
 		}
 
 		switch key {

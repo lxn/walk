@@ -13,12 +13,18 @@ import (
 	"github.com/lxn/walk"
 )
 
+type Shortcut struct {
+	Modifiers walk.Modifiers
+	Key       walk.Key
+}
+
 type Action struct {
 	AssignTo    **walk.Action
 	Text        string
 	Image       interface{}
 	Enabled     Property
 	Visible     Property
+	Shortcut    Shortcut
 	OnTriggered walk.EventHandler
 }
 
@@ -57,6 +63,11 @@ func (a Action) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, e
 				return nil, fmt.Errorf("value of invalid type bound to Action.Visible: %T", s)
 			}
 		}
+	}
+
+	s := a.Shortcut
+	if err := action.SetShortcut(walk.Shortcut{s.Modifiers, s.Key}); err != nil {
+		return nil, err
 	}
 
 	if a.OnTriggered != nil {

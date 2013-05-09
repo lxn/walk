@@ -13,8 +13,9 @@ var (
 	// ISSUE: When pressing enter resp. escape,
 	// WM_COMMAND with wParam=1 resp. 2 is sent.
 	// Maybe there is more to consider.
-	nextActionId uint16             = 3
-	actionsById  map[uint16]*Action = make(map[uint16]*Action)
+	nextActionId    uint16 = 3
+	actionsById            = make(map[uint16]*Action)
+	shortcut2Action        = make(map[Shortcut]*Action)
 )
 
 type Action struct {
@@ -29,6 +30,7 @@ type Action struct {
 	visibleCondition              Condition
 	visibleConditionChangedHandle int
 	refCount                      int
+	shortcut                      Shortcut
 	enabled                       bool
 	visible                       bool
 	checkable                     bool
@@ -65,6 +67,9 @@ func (a *Action) release() {
 		if a.menu != nil {
 			a.menu.actions.Clear()
 		}
+
+		delete(actionsById, a.id)
+		delete(shortcut2Action, a.shortcut)
 	}
 }
 
@@ -189,6 +194,36 @@ func (a *Action) SetImage(value *Bitmap) (err error) {
 		if err = a.raiseChanged(); err != nil {
 			a.image = old
 			a.raiseChanged()
+		}
+	}
+
+	return
+}
+
+func (a *Action) Shortcut() Shortcut {
+	return a.shortcut
+}
+
+func (a *Action) SetShortcut(shortcut Shortcut) (err error) {
+	if shortcut != a.shortcut {
+		old := a.shortcut
+
+		a.shortcut = shortcut
+		defer func() {
+			if err != nil {
+				a.shortcut = old
+			}
+		}()
+
+		if err = a.raiseChanged(); err != nil {
+			a.shortcut = old
+			a.raiseChanged()
+		} else {
+			if shortcut.Key == 0 {
+				delete(shortcut2Action, old)
+			} else {
+				shortcut2Action[shortcut] = a
+			}
 		}
 	}
 
