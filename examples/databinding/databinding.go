@@ -174,12 +174,12 @@ func RunFooDialog(owner walk.RootWidget, foo *Foo) (int, error) {
 						MinSize:    Size{100, 50},
 						Text:       Bind("Memo"),
 					},
-				},
-			},
-			Composite{
-				Layout: VBox{Margins: Margins{9, 0, 9, 0}},
-				Children: []Widget{
-					LineErrorPresenter{AssignTo: &ep},
+					LineErrorPresenter{
+						AssignTo:   &ep,
+						Row:        8,
+						Column:     0,
+						ColumnSpan: 2,
+					},
 				},
 			},
 			Composite{
