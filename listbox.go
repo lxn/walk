@@ -158,11 +158,9 @@ func (lb *ListBox) SetModel(mdl interface{}) error {
 
 	if model != nil {
 		lb.attachModel()
-
-		return lb.resetItems()
 	}
 
-	return nil
+	return lb.resetItems()
 }
 
 // DataMember returns the member from the model of the ListBox that is displayed
