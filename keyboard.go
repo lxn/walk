@@ -23,6 +23,7 @@ const (
 	KeyReturn                = VK_RETURN
 	KeyShift                 = VK_SHIFT
 	KeyControl               = VK_CONTROL
+	KeyAlt                   = VK_MENU
 	KeyMenu                  = VK_MENU
 	KeyPause                 = VK_PAUSE
 	KeyCapital               = VK_CAPITAL
@@ -198,7 +199,7 @@ var key2string = map[Key]string{
 	KeyReturn:            "Return",
 	KeyShift:             "Shift",
 	KeyControl:           "Control",
-	KeyMenu:              "Menu",
+	KeyAlt:               "Alt / Menu",
 	KeyPause:             "Pause",
 	KeyCapital:           "Capital",
 	KeyKana:              "Kana / Hangul",
@@ -363,7 +364,7 @@ func (k Key) String() string {
 }
 
 func AltDown() bool {
-	return GetKeyState(KeyMenu)>>15 != 0
+	return GetKeyState(KeyAlt)>>15 != 0
 }
 
 func ControlDown() bool {
