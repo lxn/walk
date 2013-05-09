@@ -292,7 +292,7 @@ func (cb *ComboBox) SetModel(mdl interface{}) error {
 		cb.SetCurrentIndex(0)
 	}
 
-	return nil
+	return cb.Invalidate()
 }
 
 // BindingMember returns the member from the model of the ComboBox that is bound
