@@ -9,33 +9,34 @@ import (
 )
 
 type NumberEdit struct {
-	AssignTo         **walk.NumberEdit
-	Name             string
-	Enabled          Property
-	Visible          Property
-	Font             Font
-	ToolTipText      Property
-	MinSize          Size
-	MaxSize          Size
-	StretchFactor    int
-	Row              int
-	RowSpan          int
-	Column           int
-	ColumnSpan       int
-	ContextMenuItems []MenuItem
-	OnKeyDown        walk.KeyEventHandler
-	OnKeyPress       walk.KeyEventHandler
-	OnKeyUp          walk.KeyEventHandler
-	OnMouseDown      walk.MouseEventHandler
-	OnMouseMove      walk.MouseEventHandler
-	OnMouseUp        walk.MouseEventHandler
-	OnSizeChanged    walk.EventHandler
-	Decimals         int
-	Increment        float64
-	MinValue         float64
-	MaxValue         float64
-	Value            Property
-	OnValueChanged   walk.EventHandler
+	AssignTo           **walk.NumberEdit
+	Name               string
+	Enabled            Property
+	Visible            Property
+	Font               Font
+	ToolTipText        Property
+	MinSize            Size
+	MaxSize            Size
+	StretchFactor      int
+	Row                int
+	RowSpan            int
+	Column             int
+	ColumnSpan         int
+	ContextMenuItems   []MenuItem
+	OnKeyDown          walk.KeyEventHandler
+	OnKeyPress         walk.KeyEventHandler
+	OnKeyUp            walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
+	Decimals           int
+	Increment          float64
+	MinValue           float64
+	MaxValue           float64
+	Value              Property
+	OnValueChanged     walk.EventHandler
+	SpinButtonsVisible bool
 }
 
 func (ne NumberEdit) Create(builder *Builder) error {
@@ -62,6 +63,10 @@ func (ne NumberEdit) Create(builder *Builder) error {
 			if err := w.SetRange(ne.MinValue, ne.MaxValue); err != nil {
 				return err
 			}
+		}
+
+		if err := w.SetSpinButtonsVisible(ne.SpinButtonsVisible); err != nil {
+			return err
 		}
 
 		if ne.OnValueChanged != nil {

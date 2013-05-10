@@ -59,16 +59,6 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 		return nil, err
 	}
 
-	ne.hWndUpDown = CreateWindowEx(
-		0, syscall.StringToUTF16Ptr("msctls_updown32"), nil,
-		WS_CHILD|WS_VISIBLE|UDS_ALIGNRIGHT|UDS_ARROWKEYS|UDS_HOTTRACK,
-		0, 0, 16, 20, ne.hWnd, 0, 0, nil)
-	if ne.hWndUpDown == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
-	SendMessage(ne.hWndUpDown, UDM_SETBUDDY, uintptr(ne.edit.hWnd), 0)
-
 	if err = ne.SetValue(0); err != nil {
 		return nil, err
 	}
@@ -126,6 +116,36 @@ func (ne *NumberEdit) MinSizeHint() Size {
 func (ne *NumberEdit) SizeHint() Size {
 	s := ne.dialogBaseUnitsToPixels(Size{50, 12})
 	return Size{s.Width, maxi(s.Height, 22)}
+}
+
+func (ne *NumberEdit) SpinButtonsVisible() bool {
+	return ne.hWndUpDown != 0
+}
+
+func (ne *NumberEdit) SetSpinButtonsVisible(visible bool) error {
+	if visible == ne.SpinButtonsVisible() {
+		return nil
+	}
+
+	if visible {
+		ne.hWndUpDown = CreateWindowEx(
+			0, syscall.StringToUTF16Ptr("msctls_updown32"), nil,
+			WS_CHILD|WS_VISIBLE|UDS_ALIGNRIGHT|UDS_ARROWKEYS|UDS_HOTTRACK,
+			0, 0, 16, 20, ne.hWnd, 0, 0, nil)
+		if ne.hWndUpDown == 0 {
+			return lastError("CreateWindowEx")
+		}
+
+		SendMessage(ne.hWndUpDown, UDM_SETBUDDY, uintptr(ne.edit.hWnd), 0)
+	} else {
+		if !DestroyWindow(ne.hWndUpDown) {
+			return lastError("DestroyWindow")
+		}
+
+		ne.hWndUpDown = 0
+	}
+
+	return nil
 }
 
 func (ne *NumberEdit) Decimals() int {
@@ -216,35 +236,36 @@ func (ne *NumberEdit) SetTextSelection(start, end int) {
 }
 
 func (ne *NumberEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
-	if ne.hWndUpDown != 0 {
-		switch msg {
-		case WM_COMMAND:
-			switch HIWORD(uint32(wParam)) {
-			case EN_CHANGE:
-				value := ne.Value()
-				if math.Abs(value-ne.oldValue) < math.SmallestNonzeroFloat64 {
-					break
-				}
-
-				ne.oldValue = value
-
-				ne.valueChangedPublisher.Publish()
-			}
-
-		case WM_NOTIFY:
-			switch ((*NMHDR)(unsafe.Pointer(lParam))).Code {
-			case UDN_DELTAPOS:
-				nmud := (*NMUPDOWN)(unsafe.Pointer(lParam))
-				val := ne.Value()
-				val -= float64(nmud.IDelta) * ne.increment
-				ne.SetValue(val)
-			}
-
-		case WM_SIZE, WM_SIZING:
-			cb := ne.ClientBounds()
-			if err := ne.edit.SetBounds(cb); err != nil {
+	switch msg {
+	case WM_COMMAND:
+		switch HIWORD(uint32(wParam)) {
+		case EN_CHANGE:
+			value := ne.Value()
+			if math.Abs(value-ne.oldValue) < math.SmallestNonzeroFloat64 {
 				break
 			}
+
+			ne.oldValue = value
+
+			ne.valueChangedPublisher.Publish()
+		}
+
+	case WM_NOTIFY:
+		switch ((*NMHDR)(unsafe.Pointer(lParam))).Code {
+		case UDN_DELTAPOS:
+			nmud := (*NMUPDOWN)(unsafe.Pointer(lParam))
+			val := ne.Value()
+			val -= float64(nmud.IDelta) * ne.increment
+			ne.SetValue(val)
+		}
+
+	case WM_SIZE, WM_SIZING:
+		cb := ne.ClientBounds()
+		if err := ne.edit.SetBounds(cb); err != nil {
+			break
+		}
+
+		if ne.hWndUpDown != 0 {
 			SendMessage(ne.hWndUpDown, UDM_SETBUDDY, uintptr(ne.edit.hWnd), 0)
 		}
 	}
