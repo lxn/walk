@@ -220,18 +220,6 @@ func (le *LineEdit) TextChanged() *Event {
 
 func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	/*	case WM_CHAR:
-		if le.validator == nil {
-			break
-		}
-
-		s := []uint16{uint16(wParam), 0}
-		str := le.Text() + UTF16PtrToString(&s[0])
-
-		if le.validator.Validate(str) == Invalid {
-			return 0
-		}*/
-
 	case WM_COMMAND:
 		switch HIWORD(uint32(wParam)) {
 		case EN_CHANGE:
