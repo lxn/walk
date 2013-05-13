@@ -5,6 +5,7 @@
 package walk
 
 import (
+	"bytes"
 	"math/big"
 	"strconv"
 	"strings"
@@ -14,6 +15,41 @@ import (
 import (
 	. "github.com/lxn/go-winapi"
 )
+
+var (
+	decimalSepB      byte
+	decimalSepUint16 uint16
+	decimalSepS      string
+	groupSepB        byte
+	groupSepUint16   uint16
+	groupSepS        string
+)
+
+func init() {
+	sPtr := syscall.StringToUTF16Ptr("1000.00")
+
+	var buf [9]uint16
+
+	if 0 == GetNumberFormat(
+		LOCALE_USER_DEFAULT,
+		0,
+		sPtr,
+		nil,
+		&buf[0],
+		int32(len(buf))) {
+
+		panic("GetNumberFormat")
+	}
+
+	s := syscall.UTF16ToString(buf[:])
+
+	decimalSepB = s[5]
+	decimalSepUint16 = buf[5]
+	decimalSepS = s[5:6]
+	groupSepB = s[1]
+	groupSepUint16 = buf[1]
+	groupSepS = s[1:2]
+}
 
 func maxi(a, b int) int {
 	if a > b {
@@ -39,10 +75,53 @@ func boolToInt(value bool) int {
 	return 0
 }
 
+func uint16IndexUint16(s []uint16, v uint16) int {
+	for i, u := range s {
+		if u == v {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func uint16ContainsUint16(s []uint16, v uint16) bool {
+	return uint16IndexUint16(s, v) != -1
+}
+
+func uint16CountUint16(s []uint16, v uint16) int {
+	var count int
+
+	for _, u := range s {
+		if u == v {
+			count++
+		}
+	}
+
+	return count
+}
+
+func uint16RemoveUint16(s []uint16, v uint16) []uint16 {
+	count := uint16CountUint16(s, v)
+	if count == 0 {
+		return s
+	}
+
+	ret := make([]uint16, 0, len(s)-count)
+
+	for _, u := range s {
+		if u != v {
+			ret = append(ret, u)
+		}
+	}
+
+	return ret
+}
+
 func ParseFloat(s string) (float64, error) {
 	s = strings.TrimSpace(s)
 
-	t, _ := FormatFloat(1000, 2)
+	t := FormatFloatGrouped(1000, 2)
 
 	replaceSep := func(new string, index func(string, func(rune) bool) int) {
 		i := index(t, func(r rune) bool {
@@ -64,50 +143,58 @@ func ParseFloat(s string) (float64, error) {
 	return strconv.ParseFloat(s, 64)
 }
 
-func FormatFloat(f float64, prec int) (string, error) {
-	return formatFloatString(strconv.FormatFloat(f, 'f', prec, 64), prec)
+func FormatFloat(f float64, prec int) string {
+	return formatFloatString(strconv.FormatFloat(f, 'f', prec, 64), prec, false)
 }
 
-func formatRat(r *big.Rat, prec int) (string, error) {
-	return formatFloatString(r.FloatString(prec), prec)
+func FormatFloatGrouped(f float64, prec int) string {
+	return formatFloatString(strconv.FormatFloat(f, 'f', prec, 64), prec, true)
 }
 
-func formatFloatString(s string, prec int) (string, error) {
-	// FIXME: Currently precision is ignored, because passing a *NUMBERFMT
-	// with only NumDigits initialized causes GetNumberFormat to fail.
-	sPtr := syscall.StringToUTF16Ptr(s)
+func formatBigRat(r *big.Rat, prec int) string {
+	return formatFloatString(r.FloatString(prec), prec, false)
+}
 
-	bufSize := GetNumberFormat(
-		LOCALE_USER_DEFAULT,
-		0,
-		sPtr,
-		nil,
-		nil,
-		0)
+func formatBigRatGrouped(r *big.Rat, prec int) string {
+	return formatFloatString(r.FloatString(prec), prec, true)
+}
 
-	if bufSize == 0 {
-		switch s {
-		case "NaN", "-Inf", "+Inf":
-			return s, nil
+func formatFloatString(s string, prec int, grouped bool) string {
+	switch s {
+	case "NaN", "-Inf", "+Inf":
+		return s
+	}
+
+	s = strings.Replace(s, ".", decimalSepS, 1)
+	if !grouped {
+		return s
+	}
+
+	b := new(bytes.Buffer)
+
+	var firstDigit int
+	if len(s) > 0 && s[0] == '-' {
+		firstDigit = 1
+		b.WriteByte('-')
+		s = s[1:]
+	}
+
+	intLen := len(s) - prec - 1
+
+	n := intLen % 3
+	if n != 0 {
+		b.WriteString(s[:n])
+	}
+	for i := n; i < intLen; i += 3 {
+		if b.Len() > firstDigit {
+			b.WriteByte(groupSepB)
 		}
-
-		return "", lastError("GetNumberFormat")
+		b.WriteString(s[i : i+3])
 	}
 
-	buf := make([]uint16, bufSize)
+	b.WriteString(s[intLen:])
 
-	if 0 == GetNumberFormat(
-		LOCALE_USER_DEFAULT,
-		0,
-		sPtr,
-		nil,
-		&buf[0],
-		bufSize) {
-
-		return "", lastError("GetNumberFormat")
-	}
-
-	return UTF16PtrToString(&buf[0]), nil
+	return b.String()
 }
 
 func setDescendantsEnabled(widget Widget, enabled bool) {

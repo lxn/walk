@@ -992,14 +992,14 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 					if prec == 0 {
 						prec = 2
 					}
-					text, _ = FormatFloat(float64(val), prec)
+					text = FormatFloatGrouped(float64(val), prec)
 
 				case float64:
 					prec := tv.columns.items[col].precision
 					if prec == 0 {
 						prec = 2
 					}
-					text, _ = FormatFloat(val, prec)
+					text = FormatFloatGrouped(val, prec)
 
 				case time.Time:
 					text = val.Format(tv.columns.items[col].format)
@@ -1009,7 +1009,7 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 					if prec == 0 {
 						prec = 2
 					}
-					text, _ = formatRat(val, prec)
+					text = formatBigRatGrouped(val, prec)
 
 				default:
 					text = fmt.Sprintf(tv.columns.items[col].format, val)

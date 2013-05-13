@@ -56,6 +56,7 @@ func main() {
 type Foo struct {
 	Name     string
 	AnimalId int
+	Weight   float64
 	Fruit    string
 	Eaten    bool
 	Date     time.Time
@@ -97,7 +98,8 @@ func RunFooDialog(owner walk.RootWidget, foo *Foo) (int, error) {
 			DataSource:     foo,
 			ErrorPresenter: ErrorPresenterRef{&ep},
 		},
-		Layout: VBox{},
+		MinSize: Size{300, 300},
+		Layout:  VBox{},
 		Children: []Widget{
 			Composite{
 				Layout: Grid{},
@@ -128,47 +130,59 @@ func RunFooDialog(owner walk.RootWidget, foo *Foo) (int, error) {
 					Label{
 						Row:    2,
 						Column: 0,
+						Text:   "Weight:",
+					},
+					NumberEdit{
+						Row:      2,
+						Column:   1,
+						Value:    Bind("Weight", Range{0.01, 9999.99}),
+						Suffix:   " kg",
+						Decimals: 2,
+					},
+					Label{
+						Row:    3,
+						Column: 0,
 						Text:   "Fruit:",
 					},
 					ComboBox{
-						Row:      2,
+						Row:      3,
 						Column:   1,
 						Editable: true,
 						Value:    Bind("Fruit"),
 						Model:    []string{"Banana", "Orange", "Cherry"},
 					},
 					Label{
-						Row:    3,
+						Row:    4,
 						Column: 0,
 						Text:   "Eaten:",
 					},
 					CheckBox{
-						Row:     3,
+						Row:     4,
 						Column:  1,
 						Checked: Bind("Eaten"),
 					},
 					Label{
-						Row:    4,
+						Row:    5,
 						Column: 0,
 						Text:   "Date:",
 					},
 					DateEdit{
-						Row:    4,
+						Row:    5,
 						Column: 1,
 						Date:   Bind("Date"),
 					},
 					VSpacer{
-						Row:    5,
+						Row:    6,
 						Column: 0,
 						Size:   8,
 					},
 					Label{
-						Row:    6,
+						Row:    7,
 						Column: 0,
 						Text:   "Memo:",
 					},
 					TextEdit{
-						Row:        7,
+						Row:        8,
 						Column:     0,
 						ColumnSpan: 2,
 						MinSize:    Size{100, 50},
@@ -176,7 +190,7 @@ func RunFooDialog(owner walk.RootWidget, foo *Foo) (int, error) {
 					},
 					LineErrorPresenter{
 						AssignTo:   &ep,
-						Row:        8,
+						Row:        9,
 						Column:     0,
 						ColumnSpan: 2,
 					},
