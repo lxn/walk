@@ -51,7 +51,17 @@ as illustrated in this small example:
 		}.Run()
 	}
 
-There are some [examples](walk/tree/master/examples) that should get you started.
+There are some [examples](examples) that should get you started.
 
-Some features of Walk require an application manifest file alongside your
-executable to use Common Controls 6. See the examples directory for such a file.
+Application Manifest Files
+==========================
+Walk requires Common Controls 6. This means that you must put an appropriate
+application manifest file either next to your executable or embedded as a
+resource.
+
+You can copy one of the application manifest files that come with the examples.
+
+IMPORTANT: Do not launch your executable before the manifest file is in place.
+If you do anyway, the program will not run properly. And worse, Windows will not
+recognize a manifest file, you later drop next to the executable. To fix this,
+rebuild your executable and only launch it with a manifest file in place.
