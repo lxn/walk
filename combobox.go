@@ -39,6 +39,16 @@ func comboBoxEditWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr 
 
 	switch msg {
 	case WM_GETDLGCODE:
+		if root := rootWidget(cb); root != nil {
+			if dlg, ok := root.(dialogish); ok {
+				if dlg.DefaultButton() != nil {
+					// If the ComboBox lives in a Dialog that has a
+					// DefaultButton, we won't swallow the return key.
+					break
+				}
+			}
+		}
+
 		if wParam == VK_RETURN {
 			return DLGC_WANTALLKEYS
 		}
