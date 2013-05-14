@@ -8,6 +8,14 @@ import (
 	"github.com/lxn/walk"
 )
 
+func tr(source string, context ...string) string {
+	if translation := walk.TranslationFunc(); translation != nil {
+		return translation(source, context...)
+	}
+
+	return source
+}
+
 type Property interface{}
 
 type bindData struct {

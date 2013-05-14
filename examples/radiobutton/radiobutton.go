@@ -18,7 +18,7 @@ type Foo struct {
 }
 
 func main() {
-	foo := &Foo{"B", 0}
+	foo := &Foo{"b", 0}
 
 	MainWindow{
 		Title:   "Walk RadioButton Example",
@@ -32,23 +32,26 @@ func main() {
 			},
 		},
 		Children: []Widget{
-			RadioButton{
-				Name:                 "aRB",
-				Text:                 "A",
-				CheckedValue:         Bind("Bar"),
-				CheckedDiscriminator: "A",
-			},
-			RadioButton{
-				Name:                 "bRB",
-				Text:                 "B",
-				CheckedValue:         Bind("Bar"),
-				CheckedDiscriminator: "B",
-			},
-			RadioButton{
-				Name:                 "cRB",
-				Text:                 "C",
-				CheckedValue:         Bind("Bar"),
-				CheckedDiscriminator: "C",
+			// RadioButtonGroup is needed for data binding only.
+			RadioButtonGroup{
+				DataMember: "Bar",
+				Buttons: []RadioButton{
+					RadioButton{
+						Name:  "aRB",
+						Text:  "A",
+						Value: "a",
+					},
+					RadioButton{
+						Name:  "bRB",
+						Text:  "B",
+						Value: "b",
+					},
+					RadioButton{
+						Name:  "cRB",
+						Text:  "C",
+						Value: "c",
+					},
+				},
 			},
 			Label{
 				Text:    "A",
@@ -62,25 +65,25 @@ func main() {
 				Text:    "C",
 				Enabled: Bind("cRB.Checked"),
 			},
-			// These will become their own group, because they are separated
-			// from the other radio buttons by the labels.
-			RadioButton{
-				Name:                 "oneRB",
-				Text:                 "1",
-				CheckedValue:         Bind("Baz"),
-				CheckedDiscriminator: 1,
-			},
-			RadioButton{
-				Name:                 "twoRB",
-				Text:                 "2",
-				CheckedValue:         Bind("Baz"),
-				CheckedDiscriminator: 2,
-			},
-			RadioButton{
-				Name:                 "threeRB",
-				Text:                 "3",
-				CheckedValue:         Bind("Baz"),
-				CheckedDiscriminator: 3,
+			RadioButtonGroup{
+				DataMember: "Baz",
+				Buttons: []RadioButton{
+					RadioButton{
+						Name:  "oneRB",
+						Text:  "1",
+						Value: 1,
+					},
+					RadioButton{
+						Name:  "twoRB",
+						Text:  "2",
+						Value: 2,
+					},
+					RadioButton{
+						Name:  "threeRB",
+						Text:  "3",
+						Value: 3,
+					},
+				},
 			},
 			Label{
 				Text:    "1",

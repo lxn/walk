@@ -9,31 +9,30 @@ import (
 )
 
 type RadioButton struct {
-	AssignTo             **walk.RadioButton
-	Name                 string
-	Enabled              Property
-	Visible              Property
-	Font                 Font
-	ToolTipText          Property
-	MinSize              Size
-	MaxSize              Size
-	StretchFactor        int
-	Row                  int
-	RowSpan              int
-	Column               int
-	ColumnSpan           int
-	ContextMenuItems     []MenuItem
-	OnKeyDown            walk.KeyEventHandler
-	OnKeyPress           walk.KeyEventHandler
-	OnKeyUp              walk.KeyEventHandler
-	OnMouseDown          walk.MouseEventHandler
-	OnMouseMove          walk.MouseEventHandler
-	OnMouseUp            walk.MouseEventHandler
-	OnSizeChanged        walk.EventHandler
-	Text                 Property
-	CheckedValue         Property
-	CheckedDiscriminator interface{}
-	OnClicked            walk.EventHandler
+	AssignTo         **walk.RadioButton
+	Name             string
+	Enabled          Property
+	Visible          Property
+	Font             Font
+	ToolTipText      Property
+	MinSize          Size
+	MaxSize          Size
+	StretchFactor    int
+	Row              int
+	RowSpan          int
+	Column           int
+	ColumnSpan       int
+	ContextMenuItems []MenuItem
+	OnKeyDown        walk.KeyEventHandler
+	OnKeyPress       walk.KeyEventHandler
+	OnKeyUp          walk.KeyEventHandler
+	OnMouseDown      walk.MouseEventHandler
+	OnMouseMove      walk.MouseEventHandler
+	OnMouseUp        walk.MouseEventHandler
+	OnSizeChanged    walk.EventHandler
+	Text             Property
+	Value            interface{}
+	OnClicked        walk.EventHandler
 }
 
 func (rb RadioButton) Create(builder *Builder) error {
@@ -43,7 +42,7 @@ func (rb RadioButton) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(rb, w, func() error {
-		w.SetCheckedDiscriminator(rb.CheckedDiscriminator)
+		w.SetValue(rb.Value)
 
 		if rb.OnClicked != nil {
 			w.Clicked().Attach(rb.OnClicked)

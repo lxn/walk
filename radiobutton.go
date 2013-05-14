@@ -8,18 +8,29 @@ import (
 	. "github.com/lxn/go-winapi"
 )
 
-type RadioButton struct {
-	Button
-	group                *radioButtonGroup
-	checkedDiscriminator interface{}
+type RadioButtonGroup struct {
+	buttons       []*RadioButton
+	checkedButton *RadioButton
 }
 
-type radioButtonGroup struct {
-	checkedButton *RadioButton
+func (rbg *RadioButtonGroup) Buttons() []*RadioButton {
+	buttons := make([]*RadioButton, len(rbg.buttons))
+	copy(buttons, rbg.buttons)
+	return buttons
+}
+
+func (rbg *RadioButtonGroup) CheckedButton() *RadioButton {
+	return rbg.checkedButton
 }
 
 type radioButtonish interface {
 	radioButton() *RadioButton
+}
+
+type RadioButton struct {
+	Button
+	group *RadioButtonGroup
+	value interface{}
 }
 
 func NewRadioButton(parent Container) (*RadioButton, error) {
@@ -33,7 +44,7 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 	var groupBit uint32
 	if rb.group == nil {
 		groupBit = WS_GROUP
-		rb.group = new(radioButtonGroup)
+		rb.group = new(RadioButtonGroup)
 	}
 
 	if err := InitChildWidget(
@@ -50,13 +61,13 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 	rb.MustRegisterProperty("CheckedValue", NewProperty(
 		func() interface{} {
 			if rb.Checked() {
-				return rb.checkedDiscriminator
+				return rb.value
 			}
 
 			return nil
 		},
 		func(v interface{}) error {
-			checked := v == rb.checkedDiscriminator
+			checked := v == rb.value
 			if checked {
 				rb.group.checkedButton = rb
 			}
@@ -65,6 +76,8 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 			return nil
 		},
 		rb.CheckedChanged()))
+
+	rb.group.buttons = append(rb.group.buttons, rb)
 
 	return rb, nil
 }
@@ -92,12 +105,16 @@ func (rb *RadioButton) SizeHint() Size {
 	return rb.MinSizeHint()
 }
 
-func (rb *RadioButton) CheckedDiscriminator() interface{} {
-	return rb.checkedDiscriminator
+func (rb *RadioButton) Group() *RadioButtonGroup {
+	return rb.group
 }
 
-func (rb *RadioButton) SetCheckedDiscriminator(checkedDiscriminator interface{}) {
-	rb.checkedDiscriminator = checkedDiscriminator
+func (rb *RadioButton) Value() interface{} {
+	return rb.value
+}
+
+func (rb *RadioButton) SetValue(value interface{}) {
+	rb.value = value
 }
 
 func (rb *RadioButton) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {

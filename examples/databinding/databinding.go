@@ -20,7 +20,7 @@ func main() {
 
 	var outTE *walk.TextEdit
 
-	foo := new(Foo)
+	animal := new(Animal)
 
 	if _, err := (MainWindow{
 		AssignTo: &mw.MainWindow,
@@ -29,23 +29,23 @@ func main() {
 		Layout:   VBox{},
 		Children: []Widget{
 			PushButton{
-				Text: "Edit Foo",
+				Text: "Edit Animal",
 				OnClicked: func() {
-					res, err := RunFooDialog(mw, foo)
+					res, err := RunAnimalDialog(mw, animal)
 					if err != nil {
 						log.Print(err)
 					} else if res == walk.DlgCmdOK {
-						outTE.SetText(fmt.Sprintf("%+v", foo))
+						outTE.SetText(fmt.Sprintf("%+v", animal))
 					}
 				},
 			},
 			Label{
-				Text: "foo:",
+				Text: "animal:",
 			},
 			TextEdit{
 				AssignTo: &outTE,
 				ReadOnly: true,
-				Text:     fmt.Sprintf("%+v", foo),
+				Text:     fmt.Sprintf("%+v", animal),
 			},
 		},
 	}.Run()); err != nil {
@@ -53,23 +53,24 @@ func main() {
 	}
 }
 
-type Foo struct {
-	Name     string
-	AnimalId int
-	Weight   float64
-	Fruit    string
-	Eaten    bool
-	Date     time.Time
-	Memo     string
+type Animal struct {
+	Name          string
+	ArrivalDate   time.Time
+	SpeciesId     int
+	Sex           Sex
+	Weight        float64
+	PreferredFood string
+	Domesticated  bool
+	Remarks       string
 }
 
-type Animal struct {
+type Species struct {
 	Id   int
 	Name string
 }
 
-func Animals() []*Animal {
-	return []*Animal{
+func KnownSpecies() []*Species {
+	return []*Species{
 		{1, "Dog"},
 		{2, "Cat"},
 		{3, "Bird"},
@@ -78,11 +79,19 @@ func Animals() []*Animal {
 	}
 }
 
+type Sex byte
+
+const (
+	SexMale Sex = 1 + iota
+	SexFemale
+	SexHermaphrodite
+)
+
 type MyMainWindow struct {
 	*walk.MainWindow
 }
 
-func RunFooDialog(owner walk.RootWidget, foo *Foo) (int, error) {
+func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
 	var dlg *walk.Dialog
 	var db *walk.DataBinder
 	var ep walk.ErrorPresenter
@@ -90,12 +99,12 @@ func RunFooDialog(owner walk.RootWidget, foo *Foo) (int, error) {
 
 	return Dialog{
 		AssignTo:      &dlg,
-		Title:         "Foo Details",
+		Title:         "Animal Details",
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		DataBinder: DataBinder{
 			AssignTo:       &db,
-			DataSource:     foo,
+			DataSource:     animal,
 			ErrorPresenter: ErrorPresenterRef{&ep},
 		},
 		MinSize: Size{300, 300},
@@ -117,80 +126,102 @@ func RunFooDialog(owner walk.RootWidget, foo *Foo) (int, error) {
 					Label{
 						Row:    1,
 						Column: 0,
-						Text:   "Animal:",
+						Text:   "Arrival Date:",
 					},
-					ComboBox{
-						Row:           1,
-						Column:        1,
-						Value:         Bind("AnimalId", SelRequired{}),
-						BindingMember: "Id",
-						DisplayMember: "Name",
-						Model:         Animals(),
+					DateEdit{
+						Row:    1,
+						Column: 1,
+						Date:   Bind("ArrivalDate"),
 					},
 					Label{
 						Row:    2,
 						Column: 0,
+						Text:   "Species:",
+					},
+					ComboBox{
+						Row:           2,
+						Column:        1,
+						Value:         Bind("SpeciesId", SelRequired{}),
+						BindingMember: "Id",
+						DisplayMember: "Name",
+						Model:         KnownSpecies(),
+					},
+					RadioButtonGroupBox{
+						Row:        3,
+						Column:     0,
+						ColumnSpan: 2,
+						Title:      "Sex",
+						Layout:     HBox{},
+						DataMember: "Sex",
+						Buttons: []RadioButton{
+							RadioButton{
+								Text:  "Male",
+								Value: SexMale,
+							},
+							RadioButton{
+								Text:  "Female",
+								Value: SexFemale,
+							},
+							RadioButton{
+								Text:  "Hermaphrodite",
+								Value: SexHermaphrodite,
+							},
+						},
+					},
+					Label{
+						Row:    4,
+						Column: 0,
 						Text:   "Weight:",
 					},
 					NumberEdit{
-						Row:      2,
+						Row:      4,
 						Column:   1,
 						Value:    Bind("Weight", Range{0.01, 9999.99}),
 						Suffix:   " kg",
 						Decimals: 2,
 					},
 					Label{
-						Row:    3,
+						Row:    5,
 						Column: 0,
-						Text:   "Fruit:",
+						Text:   "Preferred Food:",
 					},
 					ComboBox{
-						Row:      3,
+						Row:      5,
 						Column:   1,
 						Editable: true,
-						Value:    Bind("Fruit"),
-						Model:    []string{"Banana", "Orange", "Cherry"},
+						Value:    Bind("PreferredFood"),
+						Model:    []string{"Fruits", "Gras", "Fish", "Meat"},
 					},
 					Label{
-						Row:    4,
+						Row:    6,
 						Column: 0,
-						Text:   "Eaten:",
+						Text:   "Domesticated:",
 					},
 					CheckBox{
-						Row:     4,
+						Row:     6,
 						Column:  1,
-						Checked: Bind("Eaten"),
-					},
-					Label{
-						Row:    5,
-						Column: 0,
-						Text:   "Date:",
-					},
-					DateEdit{
-						Row:    5,
-						Column: 1,
-						Date:   Bind("Date"),
+						Checked: Bind("Domesticated"),
 					},
 					VSpacer{
-						Row:    6,
+						Row:    7,
 						Column: 0,
 						Size:   8,
 					},
 					Label{
-						Row:    7,
+						Row:    8,
 						Column: 0,
-						Text:   "Memo:",
+						Text:   "Remarks:",
 					},
 					TextEdit{
-						Row:        8,
+						Row:        9,
 						Column:     0,
 						ColumnSpan: 2,
 						MinSize:    Size{100, 50},
-						Text:       Bind("Memo"),
+						Text:       Bind("Remarks"),
 					},
 					LineErrorPresenter{
 						AssignTo:   &ep,
-						Row:        9,
+						Row:        10,
 						Column:     0,
 						ColumnSpan: 2,
 					},
