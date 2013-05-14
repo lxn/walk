@@ -25,11 +25,12 @@ type DataBinder struct {
 	properties                []Property
 	property2Widget           map[Property]Widget
 	property2ChangedHandle    map[Property]int
-	widget2Property2Error     map[Widget]map[Property]error
 	errorPresenter            ErrorPresenter
 	canSubmitChangedPublisher EventPublisher
 	submittedPublisher        EventPublisher
 	autoSubmit                bool
+	canSubmit                 bool
+	inReset                   bool
 }
 
 func NewDataBinder() *DataBinder {
@@ -78,7 +79,6 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 
 	db.property2Widget = make(map[Property]Widget)
 	db.property2ChangedHandle = make(map[Property]int)
-	db.widget2Property2Error = make(map[Widget]map[Property]error)
 
 	for _, widget := range boundWidgets {
 		widget := widget
@@ -110,50 +110,38 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 
 					db.submittedPublisher.Publish()
 				} else {
-					db.validateProperty(prop, widget)
+					if !db.inReset {
+						db.validateProperties()
+					}
 				}
 			})
 		}
 	}
 }
 
-func (db *DataBinder) validateProperty(prop Property, widget Widget) {
-	validator := prop.Validator()
-	if validator == nil {
-		return
-	}
+func (db *DataBinder) validateProperties() {
+	var hasError bool
 
-	var changed bool
-	prop2Err := db.widget2Property2Error[widget]
-
-	err := validator.Validate(prop.Get())
-	if err != nil {
-		changed = len(db.widget2Property2Error) == 0
-
-		if prop2Err == nil {
-			prop2Err = make(map[Property]error)
-			db.widget2Property2Error[widget] = prop2Err
-		}
-		prop2Err[prop] = err
-	} else {
-		if prop2Err == nil {
-			return
+	for _, prop := range db.properties {
+		validator := prop.Validator()
+		if validator == nil {
+			continue
 		}
 
-		delete(prop2Err, prop)
+		err := validator.Validate(prop.Get())
+		if err != nil {
+			hasError = true
+		}
 
-		if len(prop2Err) == 0 {
-			delete(db.widget2Property2Error, widget)
+		if db.errorPresenter != nil {
+			widget := db.property2Widget[prop]
 
-			changed = len(db.widget2Property2Error) == 0
+			db.errorPresenter.PresentError(err, widget)
 		}
 	}
 
-	if db.errorPresenter != nil {
-		db.errorPresenter.PresentError(err, widget)
-	}
-
-	if changed {
+	if hasError == db.canSubmit {
+		db.canSubmit = !hasError
 		db.canSubmitChangedPublisher.Publish()
 	}
 }
@@ -167,7 +155,7 @@ func (db *DataBinder) SetErrorPresenter(ep ErrorPresenter) {
 }
 
 func (db *DataBinder) CanSubmit() bool {
-	return len(db.widget2Property2Error) == 0
+	return db.canSubmit
 }
 
 func (db *DataBinder) CanSubmitChanged() *Event {
@@ -175,6 +163,11 @@ func (db *DataBinder) CanSubmitChanged() *Event {
 }
 
 func (db *DataBinder) Reset() error {
+	db.inReset = true
+	defer func() {
+		db.inReset = false
+	}()
+
 	return db.forEach(func(prop Property, field reflect.Value) error {
 		if f64, ok := prop.Get().(float64); ok {
 			switch v := field.Interface().(type) {
@@ -230,7 +223,8 @@ func (db *DataBinder) Reset() error {
 			}
 		}
 
-		db.validateProperty(prop, db.property2Widget[prop])
+		db.validateProperties()
+
 		return nil
 	})
 }
