@@ -82,7 +82,7 @@ func (gb *GroupBox) LayoutFlags() LayoutFlags {
 
 func (gb *GroupBox) MinSizeHint() Size {
 	if gb.composite == nil {
-		return gb.SizeHint()
+		return Size{100, 100}
 	}
 
 	cmsh := gb.composite.MinSizeHint()
@@ -91,7 +91,7 @@ func (gb *GroupBox) MinSizeHint() Size {
 }
 
 func (gb *GroupBox) SizeHint() Size {
-	return Size{100, 100}
+	return gb.MinSizeHint()
 }
 
 func (gb *GroupBox) ClientBounds() Rectangle {
