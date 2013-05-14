@@ -164,7 +164,7 @@ func (lep *LineErrorPresenter) PresentError(err error, widget Widget) {
 
 		buf := new(bytes.Buffer)
 		buf.WriteString(labelText)
-		if !strings.HasSuffix(labelText, ":") {
+		if labelText != "" && !strings.HasSuffix(labelText, ":") {
 			buf.WriteString(":")
 		}
 		if labelText != "" {
