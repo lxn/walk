@@ -4,11 +4,22 @@
 
 package walk
 
-import . "github.com/lxn/go-winapi"
+import (
+	"time"
+)
+
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 type Settings interface {
 	Get(key string) (string, bool)
+	Timestamp(key string) (time.Time, bool)
 	Put(key, value string) error
+	PutExpiring(key, value string) error
+	Remove(key string) error
+	ExpireDuration() time.Duration
+	SetExpireDuration(expireDuration time.Duration)
 	Load() error
 	Save() error
 }

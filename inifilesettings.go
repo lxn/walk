@@ -6,57 +6,103 @@ package walk
 
 import (
 	"bufio"
-	"fmt"
-	"io"
 	"os"
-	"path"
+	"path/filepath"
+	"sort"
 	"strings"
+	"time"
 )
 
+const iniFileTimeStampFormat = "2006-01-02"
+
 type IniFileSettings struct {
-	data map[string]string
+	fileName       string
+	key2Record     map[string]iniFileRecord
+	expireDuration time.Duration
 }
 
-func NewIniFileSettings() *IniFileSettings {
-	return &IniFileSettings{data: make(map[string]string)}
+type iniFileRecord struct {
+	value     string
+	timestamp time.Time
+}
+
+func NewIniFileSettings(fileName string) *IniFileSettings {
+	return &IniFileSettings{
+		fileName:   fileName,
+		key2Record: make(map[string]iniFileRecord),
+	}
 }
 
 func (ifs *IniFileSettings) Get(key string) (string, bool) {
-	val, ok := ifs.data[key]
-	return val, ok
+	record, ok := ifs.key2Record[key]
+	return record.value, ok
+}
+
+func (ifs *IniFileSettings) Timestamp(key string) (time.Time, bool) {
+	record, ok := ifs.key2Record[key]
+	return record.timestamp, ok
 }
 
 func (ifs *IniFileSettings) Put(key, value string) error {
-	if strings.IndexAny(key, "=\r\n") > -1 || strings.IndexAny(value, "\r\n") > -1 {
-		return newError("either key or value contains at least one of the invalid characters '=\\r\\n'")
+	return ifs.put(key, value, false)
+}
+
+func (ifs *IniFileSettings) PutExpiring(key, value string) error {
+	return ifs.put(key, value, true)
+}
+
+func (ifs *IniFileSettings) put(key, value string, expiring bool) error {
+	if key == "" {
+		return newError("key must not be empty")
+	}
+	if strings.IndexAny(key, "|=\r\n") > -1 {
+		return newError("key contains at least one of the invalid characters '|=\\r\\n'")
+	}
+	if strings.IndexAny(value, "\r\n") > -1 {
+		return newError("value contains at least one of the invalid characters '\\r\\n'")
 	}
 
-	ifs.data[key] = value
+	var timestamp time.Time
+	if expiring {
+		timestamp = time.Now()
+	}
+
+	ifs.key2Record[key] = iniFileRecord{value, timestamp}
 
 	return nil
 }
 
-func (ifs *IniFileSettings) filePath() (string, error) {
+func (ifs *IniFileSettings) Remove(key string) error {
+	delete(ifs.key2Record, key)
+
+	return nil
+}
+
+func (ifs *IniFileSettings) ExpireDuration() time.Duration {
+	return ifs.expireDuration
+}
+
+func (ifs *IniFileSettings) SetExpireDuration(expireDuration time.Duration) {
+	ifs.expireDuration = expireDuration
+}
+
+func (ifs *IniFileSettings) FilePath() string {
 	appDataPath, err := AppDataPath()
 	if err != nil {
-		return "", err
+		return ""
 	}
 
-	return path.Join(
+	return filepath.Join(
 		appDataPath,
 		appSingleton.OrganizationName(),
 		appSingleton.ProductName(),
-		"settings.ini"), nil
+		ifs.fileName)
 }
 
 func (ifs *IniFileSettings) fileExists() (bool, error) {
-	filePath, err := ifs.filePath()
-	if err != nil {
-		return false, err
-	}
+	filePath := ifs.FilePath()
 
-	_, err = os.Stat(filePath)
-	if err != nil {
+	if _, err := os.Stat(filePath); err != nil {
 		// FIXME: Not necessarily a file does not exist error.
 		return false, nil
 	}
@@ -65,9 +111,9 @@ func (ifs *IniFileSettings) fileExists() (bool, error) {
 }
 
 func (ifs *IniFileSettings) withFile(flags int, f func(file *os.File) error) error {
-	filePath, err := ifs.filePath()
+	filePath := ifs.FilePath()
 
-	dirPath, _ := path.Split(filePath)
+	dirPath, _ := filepath.Split(filePath)
 	if err := os.MkdirAll(dirPath, 0644); err != nil {
 		return wrapError(err)
 	}
@@ -92,41 +138,32 @@ func (ifs *IniFileSettings) Load() error {
 	}
 
 	return ifs.withFile(os.O_RDONLY, func(file *os.File) error {
-		lineBytes := make([]byte, 0, 4096)
-		reader := bufio.NewReader(file)
+		scanner := bufio.NewScanner(file)
 
-		for {
-			lineBytes = lineBytes[:0]
+		for scanner.Scan() {
+			line := scanner.Text()
 
-			for {
-				ln, isPrefix, err := reader.ReadLine()
-				if err != nil {
-					if err == io.EOF {
-						return nil
-					}
-					return wrapError(err)
-				}
-
-				lineBytes = append(lineBytes, ln...)
-
-				if !isPrefix {
-					break
-				}
-			}
-
-			lineStr := string(lineBytes)
-			assignIndex := strings.Index(lineStr, "=")
+			assignIndex := strings.Index(line, "=")
 			if assignIndex == -1 {
 				return newError("bad line format: missing '='")
 			}
 
-			key := strings.TrimSpace(lineStr[:assignIndex])
-			val := strings.TrimSpace(lineStr[assignIndex+1:])
+			key := strings.TrimSpace(line[:assignIndex])
 
-			ifs.data[key] = val
+			var ts time.Time
+			if parts := strings.Split(key, "|"); len(parts) > 1 {
+				key = parts[0]
+				if ts, _ = time.Parse(iniFileTimeStampFormat, parts[1]); ts.IsZero() {
+					ts = time.Now()
+				}
+			}
+
+			value := strings.TrimSpace(line[assignIndex+1:])
+
+			ifs.key2Record[key] = iniFileRecord{value, ts}
 		}
 
-		return nil
+		return scanner.Err()
 	})
 }
 
@@ -134,10 +171,37 @@ func (ifs *IniFileSettings) Save() error {
 	return ifs.withFile(os.O_CREATE|os.O_TRUNC|os.O_WRONLY, func(file *os.File) error {
 		bufWriter := bufio.NewWriter(file)
 
-		for key, val := range ifs.data {
-			line := fmt.Sprintf("%s=%s\n", key, val)
+		keys := make([]string, 0, len(ifs.key2Record))
 
-			if _, err := bufWriter.WriteString(line); err != nil {
+		for key, record := range ifs.key2Record {
+			if ifs.expireDuration <= 0 || record.timestamp.IsZero() || time.Since(record.timestamp) < ifs.expireDuration {
+				keys = append(keys, key)
+			}
+		}
+
+		sort.Strings(keys)
+
+		for _, key := range keys {
+			record := ifs.key2Record[key]
+
+			if _, err := bufWriter.WriteString(key); err != nil {
+				return wrapError(err)
+			}
+			if !record.timestamp.IsZero() {
+				if _, err := bufWriter.WriteString("|"); err != nil {
+					return wrapError(err)
+				}
+				if _, err := bufWriter.WriteString(record.timestamp.Format(iniFileTimeStampFormat)); err != nil {
+					return wrapError(err)
+				}
+			}
+			if _, err := bufWriter.WriteString("="); err != nil {
+				return wrapError(err)
+			}
+			if _, err := bufWriter.WriteString(record.value); err != nil {
+				return wrapError(err)
+			}
+			if _, err := bufWriter.WriteString("\r\n"); err != nil {
 				return wrapError(err)
 			}
 		}

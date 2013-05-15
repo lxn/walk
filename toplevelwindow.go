@@ -181,10 +181,14 @@ func (tlw *TopLevelWindow) Hide() {
 }
 
 func (tlw *TopLevelWindow) Show() {
+	tlw.RestoreState()
+
 	tlw.widget.SetVisible(true)
 }
 
 func (tlw *TopLevelWindow) close() error {
+	tlw.SaveState()
+
 	tlw.widget.Dispose()
 
 	return nil

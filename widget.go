@@ -1376,20 +1376,6 @@ func (wb *WidgetBase) Synchronize(f func()) {
 	PostMessage(wb.hWnd, syncMsgId, 0, 0)
 }
 
-func (wb *WidgetBase) persistState(restore bool) {
-	settings := appSingleton.settings
-	if settings != nil {
-		widget := widgetFromHWND(wb.hWnd)
-		if persistable, ok := widget.(Persistable); ok && persistable.Persistent() {
-			if restore {
-				persistable.RestoreState()
-			} else {
-				persistable.SaveState()
-			}
-		}
-	}
-}
-
 func (wb *WidgetBase) getState() (string, error) {
 	settings := appSingleton.settings
 	if settings == nil {
@@ -1406,7 +1392,7 @@ func (wb *WidgetBase) putState(state string) error {
 		return newError("App().Settings() must not be nil")
 	}
 
-	return settings.Put(wb.path(), state)
+	return settings.PutExpiring(wb.path(), state)
 }
 
 func widgetFromHWND(hwnd HWND) Widget {
@@ -1561,11 +1547,7 @@ func (wb *WidgetBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 	case WM_SIZE, WM_SIZING:
 		wb.sizeChangedPublisher.Publish()
 
-	case WM_SHOWWINDOW:
-		wb.persistState(wParam != 0)
-
 	case WM_DESTROY:
-		wb.persistState(false)
 		if _, ok := wb.widget.(*ToolTip); !ok && wb.hWnd != 0 {
 			globalToolTip.RemoveTool(wb.widget)
 		}
