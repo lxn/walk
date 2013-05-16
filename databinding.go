@@ -168,7 +168,7 @@ func (db *DataBinder) Reset() error {
 		db.inReset = false
 	}()
 
-	return db.forEach(func(prop Property, field reflect.Value) error {
+	if err := db.forEach(func(prop Property, field reflect.Value) error {
 		if f64, ok := prop.Get().(float64); ok {
 			switch v := field.Interface().(type) {
 			case float32:
@@ -223,10 +223,14 @@ func (db *DataBinder) Reset() error {
 			}
 		}
 
-		db.validateProperties()
-
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	db.validateProperties()
+
+	return nil
 }
 
 func (db *DataBinder) Submit() error {
