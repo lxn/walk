@@ -131,6 +131,11 @@ func (te *TextEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		}
 
 		return DLGC_HASSETSEL | DLGC_WANTARROWS | DLGC_WANTCHARS
+
+	case WM_KEYDOWN:
+		if Key(wParam) == KeyA && ControlDown() {
+			te.SetTextSelection(0, -1)
+		}
 	}
 
 	return te.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
