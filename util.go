@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 )
 
 import (
@@ -258,4 +259,109 @@ func walkDescendants(widget Widget, f func(w Widget) bool) {
 	for _, w := range children {
 		walkDescendants(w, f)
 	}
+}
+
+func less(a, b interface{}, order SortOrder) bool {
+	c := func(ls bool) bool {
+		if order == SortAscending {
+			return ls
+		}
+
+		return !ls
+	}
+
+	if _, ok := a.(error); ok {
+		_, bIsErr := b.(error)
+
+		return c(!bIsErr)
+	}
+	if _, ok := b.(error); ok {
+		return c(false)
+	}
+
+	if a == nil {
+		return c(b != nil)
+	}
+	if b == nil {
+		return c(false)
+	}
+
+	switch av := a.(type) {
+	case string:
+		if bv, ok := b.(string); ok {
+			return c(av < bv)
+		}
+
+	case int:
+		if bv, ok := b.(int); ok {
+			return c(av < bv)
+		}
+
+	case float64:
+		if bv, ok := b.(float64); ok {
+			return c(av < bv)
+		}
+
+	case float32:
+		if bv, ok := b.(float32); ok {
+			return c(av < bv)
+		}
+
+	case int64:
+		if bv, ok := b.(int64); ok {
+			return c(av < bv)
+		}
+
+	case int32:
+		if bv, ok := b.(int32); ok {
+			return c(av < bv)
+		}
+
+	case int16:
+		if bv, ok := b.(int16); ok {
+			return c(av < bv)
+		}
+
+	case int8:
+		if bv, ok := b.(int8); ok {
+			return c(av < bv)
+		}
+
+	case uint:
+		if bv, ok := b.(uint); ok {
+			return c(av < bv)
+		}
+
+	case uint64:
+		if bv, ok := b.(uint64); ok {
+			return c(av < bv)
+		}
+
+	case uint32:
+		if bv, ok := b.(uint32); ok {
+			return c(av < bv)
+		}
+
+	case uint16:
+		if bv, ok := b.(uint16); ok {
+			return c(av < bv)
+		}
+
+	case uint8:
+		if bv, ok := b.(uint8); ok {
+			return c(av < bv)
+		}
+
+	case time.Time:
+		if bv, ok := b.(time.Time); ok {
+			return c(av.Before(bv))
+		}
+
+	case bool:
+		if bv, ok := b.(bool); ok {
+			return c(!av && bv)
+		}
+	}
+
+	return false
 }
