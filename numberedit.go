@@ -284,6 +284,10 @@ func (ne *NumberEdit) SetTextSelection(start, end int) {
 func (ne *NumberEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_SIZE, WM_SIZING:
+		if ne.edit == nil {
+			break
+		}
+
 		cb := ne.ClientBounds()
 		if err := ne.edit.SetBounds(cb); err != nil {
 			break
