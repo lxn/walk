@@ -242,7 +242,13 @@ func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		}
 
 	case WM_KEYDOWN:
-		if wParam == VK_RETURN {
+		switch Key(wParam) {
+		case KeyA:
+			if ControlDown() {
+				le.SetTextSelection(0, -1)
+			}
+
+		case KeyReturn:
 			le.editingFinishedPublisher.Publish()
 		}
 
