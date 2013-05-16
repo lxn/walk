@@ -36,7 +36,7 @@ func (m *mapTableModel) RowCount() int {
 func (m *mapTableModel) Value(row, col int) interface{} {
 	if m.items[row] == nil {
 		if populator, ok := m.dataSource.(Populator); ok {
-			if err := populator.Populate(index); err != nil {
+			if err := populator.Populate(row); err != nil {
 				return err
 			}
 		}
