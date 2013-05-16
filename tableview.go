@@ -317,18 +317,21 @@ func (tv *TableView) Model() interface{} {
 // SetModel sets the model of the TableView.
 //
 // It is required that mdl either implements walk.TableModel,
-// walk.ReflectTableModel or be a slice of pointers to struct. A walk.TableModel
-// implementation must also implement walk.Sorter to support sorting, both other
-// options get sorting for free. To support item check boxes and icons, mdl must
-// implement walk.ItemChecker and walk.ImageProvider, respectively. On-demand
-// model population for a walk.ReflectTableModel or slice requires mdl to
-// implement walk.Populator.
+// walk.ReflectTableModel or be a slice of pointers to struct or a
+// []map[string]interface{}. A walk.TableModel implementation must also
+// implement walk.Sorter to support sorting, all other options get sorting for
+// free. To support item check boxes and icons, mdl must implement
+// walk.ItemChecker and walk.ImageProvider, respectively. On-demand model
+// population for a walk.ReflectTableModel or slice requires mdl to implement
+// walk.Populator.
 func (tv *TableView) SetModel(mdl interface{}) error {
 	model, ok := mdl.(TableModel)
 	if !ok && mdl != nil {
 		var err error
 		if model, err = newReflectTableModel(mdl); err != nil {
-			return err
+			if model, err = newMapTableModel(mdl); err != nil {
+				return err
+			}
 		}
 	}
 	tv.providedModel = mdl
