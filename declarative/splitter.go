@@ -92,7 +92,7 @@ type VSplitter struct {
 }
 
 func (s VSplitter) Create(builder *Builder) error {
-	w, err := walk.NewHSplitter(builder.Parent())
+	w, err := walk.NewVSplitter(builder.Parent())
 	if err != nil {
 		return err
 	}
