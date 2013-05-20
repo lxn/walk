@@ -236,7 +236,7 @@ func main() {
 		Size:     Size{800, 600},
 		Layout:   HBox{},
 		Children: []Widget{
-			Splitter{
+			HSplitter{
 				Children: []Widget{
 					TreeView{
 						AssignTo: &treeView,

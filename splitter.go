@@ -30,7 +30,7 @@ type Splitter struct {
 	persistent    bool
 }
 
-func NewSplitter(parent Container) (*Splitter, error) {
+func newSplitter(parent Container, orientation Orientation) (*Splitter, error) {
 	layout := newSplitterLayout(Horizontal)
 	s := &Splitter{
 		ContainerBase: ContainerBase{
@@ -50,9 +50,30 @@ func NewSplitter(parent Container) (*Splitter, error) {
 		return nil, err
 	}
 
+	var succeeded bool
+	defer func() {
+		if !succeeded {
+			s.Dispose()
+		}
+	}()
+
+	if err := s.setOrientation(orientation); err != nil {
+		return nil, err
+	}
+
 	s.SetPersistent(true)
 
+	succeeded = true
+
 	return s, nil
+}
+
+func NewHSplitter(parent Container) (*Splitter, error) {
+	return newSplitter(parent, Horizontal)
+}
+
+func NewVSplitter(parent Container) (*Splitter, error) {
+	return newSplitter(parent, Vertical)
 }
 
 func (s *Splitter) LayoutFlags() LayoutFlags {
@@ -90,7 +111,7 @@ func (s *Splitter) Orientation() Orientation {
 	return layout.Orientation()
 }
 
-func (s *Splitter) SetOrientation(value Orientation) error {
+func (s *Splitter) setOrientation(value Orientation) error {
 	var cursor Cursor
 	if value == Horizontal {
 		cursor = CursorSizeWE()

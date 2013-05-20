@@ -35,7 +35,7 @@ as illustrated in this small example:
 			MinSize: Size{600, 400},
 			Layout:  VBox{},
 			Children: []Widget{
-				Splitter{
+				HSplitter{
 					Children: []Widget{
 						TextEdit{AssignTo: &inTE},
 						TextEdit{AssignTo: &outTE, ReadOnly: true},
