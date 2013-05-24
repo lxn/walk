@@ -46,8 +46,10 @@ func (le LineEdit) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(le, w, func() error {
-		if err := w.SetCueBanner(le.CueBanner); err != nil {
-			return err
+		if le.CueBanner != "" {
+			if err := w.SetCueBanner(le.CueBanner); err != nil {
+				return err
+			}
 		}
 		w.SetMaxLength(le.MaxLength)
 		w.SetPasswordMode(le.PasswordMode)
