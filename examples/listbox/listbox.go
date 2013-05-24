@@ -46,8 +46,7 @@ func main() {
 	myWindow.SetLayout(walk.NewVBoxLayout())
 	myWindow.SetTitle("Listbox example")
 
-	splitter, _ := walk.NewSplitter(myWindow)
-	splitter.SetOrientation(walk.Vertical)
+	splitter, _ := walk.NewVSplitter(myWindow)
 
 	lb, _ := walk.NewListBox(splitter)
 
