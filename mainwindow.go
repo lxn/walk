@@ -52,7 +52,9 @@ func NewMainWindow() (*MainWindow, error) {
 	if mw.menu, err = newMenuBar(); err != nil {
 		return nil, err
 	}
-	SetMenu(mw.hWnd, mw.menu.hMenu)
+	if !SetMenu(mw.hWnd, mw.menu.hMenu) {
+		return nil, lastError("SetMenu")
+	}
 
 	if mw.toolBar, err = NewToolBar(mw); err != nil {
 		return nil, err
