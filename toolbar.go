@@ -197,7 +197,7 @@ func (tb *ToolBar) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 		switch int32(nmm.Hdr.Code) {
 		case NM_CLICK:
 			actionId := uint16(nmm.DwItemSpec)
-			if action := actionsById[actionId]; action != nil {
+			if action := actionsById[actionId]; action != nil && action.Enabled() {
 				action.raiseTriggered()
 			}
 		}
