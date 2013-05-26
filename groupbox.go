@@ -40,18 +40,18 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 		}
 	}()
 
+	var err error
+	gb.composite, err = NewComposite(gb)
+	if err != nil {
+		return nil, err
+	}
+
 	gb.hWndGroupBox = CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
 		WS_CHILD|WS_VISIBLE|BS_GROUPBOX,
 		0, 0, 80, 24, gb.hWnd, 0, 0, nil)
 	if gb.hWndGroupBox == 0 {
 		return nil, lastError("CreateWindowEx(BUTTON)")
-	}
-
-	var err error
-	gb.composite, err = NewComposite(gb)
-	if err != nil {
-		return nil, err
 	}
 
 	// Set font to nil first to outsmart SetFont.
