@@ -5,18 +5,104 @@
 package main
 
 import (
-	"github.com/lxn/walk"
+	"log"
 )
 
-type MainWindow struct {
+import (
+	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
+)
+
+func main() {
+	mw := new(MyMainWindow)
+
+	if _, err := (MainWindow{
+		AssignTo: &mw.MainWindow,
+		Title:    "Walk Drawing Example",
+		MinSize:  Size{320, 240},
+		Size:     Size{800, 600},
+		Layout:   VBox{MarginsZero: true},
+		Children: []Widget{
+			CustomWidget{
+				AssignTo:            &mw.paintWidget,
+				ClearsBackground:    true,
+				InvalidatesOnResize: true,
+				Paint:               mw.drawStuff,
+			},
+		},
+	}).Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+type MyMainWindow struct {
 	*walk.MainWindow
 	paintWidget *walk.CustomWidget
 }
 
-func createBitmap() *walk.Bitmap {
+func (mw *MyMainWindow) drawStuff(canvas *walk.Canvas, updateBounds walk.Rectangle) error {
+	bmp, err := createBitmap()
+	if err != nil {
+		return err
+	}
+	defer bmp.Dispose()
+
+	bounds := mw.paintWidget.ClientBounds()
+
+	rectPen, err := walk.NewCosmeticPen(walk.PenSolid, walk.RGB(255, 0, 0))
+	if err != nil {
+		return err
+	}
+	defer rectPen.Dispose()
+
+	if err := canvas.DrawRectangle(rectPen, bounds); err != nil {
+		return err
+	}
+
+	ellipseBrush, err := walk.NewHatchBrush(walk.RGB(0, 255, 0), walk.HatchCross)
+	if err != nil {
+		return err
+	}
+	defer ellipseBrush.Dispose()
+
+	if err := canvas.FillEllipse(ellipseBrush, bounds); err != nil {
+		return err
+	}
+
+	linesBrush, err := walk.NewSolidColorBrush(walk.RGB(0, 0, 255))
+	if err != nil {
+		return err
+	}
+	defer linesBrush.Dispose()
+
+	linesPen, err := walk.NewGeometricPen(walk.PenDash, 8, linesBrush)
+	if err != nil {
+		return err
+	}
+	defer linesPen.Dispose()
+
+	if err := canvas.DrawLine(linesPen, walk.Point{bounds.X, bounds.Y}, walk.Point{bounds.Width, bounds.Height}); err != nil {
+		return err
+	}
+	if err := canvas.DrawLine(linesPen, walk.Point{bounds.X, bounds.Height}, walk.Point{bounds.Width, bounds.Y}); err != nil {
+		return err
+	}
+
+	bmpSize := bmp.Size()
+	if err := canvas.DrawImage(bmp, walk.Point{(bounds.Width - bmpSize.Width) / 2, (bounds.Height - bmpSize.Height) / 2}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createBitmap() (*walk.Bitmap, error) {
 	bounds := walk.Rectangle{Width: 200, Height: 200}
 
-	bmp, _ := walk.NewBitmap(bounds.Size())
+	bmp, err := walk.NewBitmap(bounds.Size())
+	if err != nil {
+		return nil, err
+	}
 
 	succeeded := false
 	defer func() {
@@ -25,76 +111,39 @@ func createBitmap() *walk.Bitmap {
 		}
 	}()
 
-	canvas, _ := walk.NewCanvasFromImage(bmp)
+	canvas, err := walk.NewCanvasFromImage(bmp)
+	if err != nil {
+		return nil, err
+	}
 	defer canvas.Dispose()
 
-	brushBmp, _ := walk.NewBitmapFromFile("../img/plus.png")
+	brushBmp, err := walk.NewBitmapFromFile("../img/plus.png")
+	if err != nil {
+		return nil, err
+	}
 	defer brushBmp.Dispose()
 
-	brush, _ := walk.NewBitmapBrush(brushBmp)
+	brush, err := walk.NewBitmapBrush(brushBmp)
+	if err != nil {
+		return nil, err
+	}
 	defer brush.Dispose()
 
-	canvas.FillRectangle(brush, bounds)
+	if err := canvas.FillRectangle(brush, bounds); err != nil {
+		return nil, err
+	}
 
-	font, _ := walk.NewFont("Times New Roman", 40, walk.FontBold|walk.FontItalic)
+	font, err := walk.NewFont("Times New Roman", 40, walk.FontBold|walk.FontItalic)
+	if err != nil {
+		return nil, err
+	}
 	defer font.Dispose()
 
-	canvas.DrawText("Walk Drawing Example", font, walk.RGB(0, 0, 0), bounds, walk.TextWordbreak)
+	if err := canvas.DrawText("Walk Drawing Example", font, walk.RGB(0, 0, 0), bounds, walk.TextWordbreak); err != nil {
+		return nil, err
+	}
 
 	succeeded = true
-	return bmp
-}
 
-func (mw *MainWindow) drawStuff(canvas *walk.Canvas, updateBounds walk.Rectangle) error {
-	bmp := createBitmap()
-	defer bmp.Dispose()
-
-	bounds := mw.paintWidget.ClientBounds()
-
-	rectPen, _ := walk.NewCosmeticPen(walk.PenSolid, walk.RGB(255, 0, 0))
-	defer rectPen.Dispose()
-
-	canvas.DrawRectangle(rectPen, bounds)
-
-	ellipseBrush, _ := walk.NewHatchBrush(walk.RGB(0, 255, 0), walk.HatchCross)
-	defer ellipseBrush.Dispose()
-
-	canvas.FillEllipse(ellipseBrush, bounds)
-
-	linesBrush, _ := walk.NewSolidColorBrush(walk.RGB(0, 0, 255))
-	defer linesBrush.Dispose()
-
-	linesPen, _ := walk.NewGeometricPen(walk.PenDash, 8, linesBrush)
-	defer linesPen.Dispose()
-
-	canvas.DrawLine(linesPen, walk.Point{bounds.X, bounds.Y}, walk.Point{bounds.Width, bounds.Height})
-	canvas.DrawLine(linesPen, walk.Point{bounds.X, bounds.Height}, walk.Point{bounds.Width, bounds.Y})
-
-	bmpSize := bmp.Size()
-	canvas.DrawImage(bmp, walk.Point{(bounds.Width - bmpSize.Width) / 2, (bounds.Height - bmpSize.Height) / 2})
-
-	return nil
-}
-
-func main() {
-	walk.SetPanicOnError(true)
-
-	mainWnd, _ := walk.NewMainWindow()
-
-	mw := &MainWindow{MainWindow: mainWnd}
-	mw.SetTitle("Walk Drawing Example")
-
-	mw.SetLayout(walk.NewVBoxLayout())
-
-	mw.paintWidget, _ = walk.NewCustomWidget(mw, 0, func(canvas *walk.Canvas, updateBounds walk.Rectangle) error {
-		return mw.drawStuff(canvas, updateBounds)
-	})
-	mw.paintWidget.SetClearsBackground(true)
-	mw.paintWidget.SetInvalidatesOnResize(true)
-
-	mw.SetMinMaxSize(walk.Size{320, 240}, walk.Size{})
-	mw.SetSize(walk.Size{800, 600})
-	mw.Show()
-
-	mw.Run()
+	return bmp, nil
 }

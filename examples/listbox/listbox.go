@@ -6,87 +6,103 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 )
 
-import "github.com/lxn/walk"
+import (
+	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
+)
+
+func main() {
+	mw := &MyMainWindow{model: NewEnvModel()}
+
+	if _, err := (MainWindow{
+		AssignTo: &mw.MainWindow,
+		Title:    "Walk ListBox Example",
+		MinSize:  Size{240, 320},
+		Size:     Size{300, 400},
+		Layout:   VBox{MarginsZero: true},
+		Children: []Widget{
+			VSplitter{
+				Children: []Widget{
+					ListBox{
+						AssignTo: &mw.lb,
+						Model:    mw.model,
+						OnCurrentIndexChanged: mw.lb_CurrentIndexChanged,
+						OnItemActivated:       mw.lb_ItemActivated,
+					},
+					TextEdit{
+						AssignTo: &mw.te,
+						ReadOnly: true,
+					},
+				},
+			},
+		},
+	}.Run()); err != nil {
+		log.Fatal(err)
+	}
+}
+
+type MyMainWindow struct {
+	*walk.MainWindow
+	model *EnvModel
+	lb    *walk.ListBox
+	te    *walk.TextEdit
+}
+
+func (mw *MyMainWindow) lb_CurrentIndexChanged() {
+	i := mw.lb.CurrentIndex()
+	item := &mw.model.items[i]
+
+	mw.te.SetText(item.value)
+
+	fmt.Println("CurrentIndex: ", i)
+	fmt.Println("CurrentEnvVarName: ", item.name)
+}
+
+func (mw *MyMainWindow) lb_ItemActivated() {
+	value := mw.model.items[mw.lb.CurrentIndex()].value
+
+	walk.MsgBox(mw, "Value", value, walk.MsgBoxIconInformation)
+}
 
 type EnvItem struct {
-	varName string
-	value   string
+	name  string
+	value string
 }
 
 type EnvModel struct {
 	walk.ListModelBase
-	envItems             []EnvItem
-	itemsResetPublisher  walk.EventPublisher
-	itemChangedPublisher walk.IntEventPublisher
+	items []EnvItem
 }
 
 func NewEnvModel() *EnvModel {
-	em := &EnvModel{}
-	em.envItems = make([]EnvItem, 0)
-	return em
-}
+	env := os.Environ()
 
-func (em *EnvModel) ItemCount() int {
-	return len(em.envItems)
-}
+	m := &EnvModel{items: make([]EnvItem, len(env))}
 
-func (em *EnvModel) Value(index int) interface{} {
-	return em.envItems[index].varName
-}
-
-func main() {
-	walk.SetPanicOnError(true)
-
-	myWindow, _ := walk.NewMainWindow()
-
-	myWindow.SetLayout(walk.NewVBoxLayout())
-	myWindow.SetTitle("Listbox example")
-
-	splitter, _ := walk.NewVSplitter(myWindow)
-
-	lb, _ := walk.NewListBox(splitter)
-
-	valueEdit, _ := walk.NewTextEdit(splitter)
-	valueEdit.SetReadOnly(true)
-
-	//env model
-	em := NewEnvModel()
-
-	for _, env := range os.Environ() {
-		i := strings.Index(env, "=")
-		if i == 0 {
+	for i, e := range env {
+		j := strings.Index(e, "=")
+		if j == 0 {
 			continue
 		}
-		varName := env[0:i]
-		value := env[i+1:]
-		envItem := EnvItem{varName, value}
 
-		em.envItems = append(em.envItems, envItem)
+		name := e[0:j]
+		value := strings.Replace(e[j+1:], ";", "\r\n", -1)
+
+		m.items[i] = EnvItem{name, value}
 	}
 
-	fmt.Println("The len of Model", em.ItemCount())
-	lb.SetModel(em)
-	lb.CurrentIndexChanged().Attach(func() {
-		if curVar, ok := em.Value(lb.CurrentIndex()).(string); ok {
-			value := em.envItems[lb.CurrentIndex()].value
-			value = strings.Replace(value, ";", "\r\n", -1)
-			valueEdit.SetText(value)
-			fmt.Println("CurrentIndex:", lb.CurrentIndex())
-			fmt.Println("CurrentEnvVarName:", curVar)
-		}
-	})
-	lb.DblClicked().Attach(func() {
-		value := em.envItems[lb.CurrentIndex()].value
-		value = strings.Replace(value, ";", "\r\n", -1)
-		valueEdit.SetText(value)
-		walk.MsgBox(myWindow, "About", value, walk.MsgBoxOK|walk.MsgBoxIconInformation)
-	})
-	myWindow.Show()
-	myWindow.SetMinMaxSize(walk.Size{320, 240}, walk.Size{})
-	myWindow.SetSize(walk.Size{400, 500})
-	myWindow.Run()
+	return m
+}
+
+func (m *EnvModel) ItemCount() int {
+	return len(m.items)
+}
+
+func (m *EnvModel) Value(index int) interface{} {
+	return m.items[index].name
 }

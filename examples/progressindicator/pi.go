@@ -6,14 +6,29 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
-import "github.com/lxn/walk"
+import (
+	"github.com/lxn/walk"
+)
+
+func main() {
+	if _, err := RunMyDialog(nil); err != nil {
+		log.Fatal(err)
+	}
+}
 
 type MyDialog struct {
 	*walk.Dialog
 	ui myDialogUI
+}
+
+func (dlg *MyDialog) setState(state walk.PIState) {
+	if err := dlg.ProgressIndicator().SetState(state); err != nil {
+		log.Print(err)
+	}
 }
 
 func RunMyDialog(owner walk.RootWidget) (int, error) {
@@ -24,26 +39,26 @@ func RunMyDialog(owner walk.RootWidget) (int, error) {
 
 	dlg.ui.indeterminateBtn.Clicked().Attach(func() {
 		fmt.Println("SetState indeterminate")
-		dlg.ProgressIndicator().SetState(walk.PIIndeterminate)
+		dlg.setState(walk.PIIndeterminate)
 	})
 	dlg.ui.noProgressBtn.Clicked().Attach(func() {
 		fmt.Println("SetState noprogress")
-		dlg.ProgressIndicator().SetState(walk.PINoProgress)
+		dlg.setState(walk.PINoProgress)
 	})
 
 	dlg.ui.normalBtn.Clicked().Attach(func() {
 		fmt.Println("SetState normal")
-		dlg.ProgressIndicator().SetState(walk.PINormal)
+		dlg.setState(walk.PINormal)
 	})
 
 	dlg.ui.errBtn.Clicked().Attach(func() {
 		fmt.Println("SetState error")
-		dlg.ProgressIndicator().SetState(walk.PIError)
+		dlg.setState(walk.PIError)
 	})
 
 	dlg.ui.pausedBtn.Clicked().Attach(func() {
 		fmt.Println("SetState paused")
-		dlg.ProgressIndicator().SetState(walk.PIPaused)
+		dlg.setState(walk.PIPaused)
 	})
 
 	dlg.ui.startBtn.Clicked().Attach(func() {
@@ -54,16 +69,11 @@ func RunMyDialog(owner walk.RootWidget) (int, error) {
 				fmt.Println("SetProgress", i)
 				time.Sleep(100 * time.Millisecond)
 				if err := dlg.ProgressIndicator().SetCompleted(i); err != nil {
-					fmt.Println(err)
+					log.Print(err)
 				}
 			}
 		}()
 	})
 
 	return dlg.Run(), nil
-}
-func main() {
-	walk.SetPanicOnError(true)
-
-	RunMyDialog(nil)
 }

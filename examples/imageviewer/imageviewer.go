@@ -5,34 +5,97 @@
 package main
 
 import (
+	"log"
 	"path"
 	"strings"
 )
 
 import (
 	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 )
 
-type MainWindow struct {
+func main() {
+	mw := new(MyMainWindow)
+	var openAction *walk.Action
+
+	if _, err := (MainWindow{
+		AssignTo: &mw.MainWindow,
+		Title:    "Walk Image Viewer Example",
+		MenuItems: []MenuItem{
+			Menu{
+				Text: "&File",
+				Items: []MenuItem{
+					Action{
+						AssignTo:    &openAction,
+						Text:        "&Open",
+						Image:       "../img/open.png",
+						OnTriggered: mw.openAction_Triggered,
+					},
+					Separator{},
+					Action{
+						Text:        "Exit",
+						OnTriggered: func() { mw.Close() },
+					},
+				},
+			},
+			Menu{
+				Text: "&Help",
+				Items: []MenuItem{
+					Action{
+						Text:        "About",
+						OnTriggered: mw.aboutAction_Triggered,
+					},
+				},
+			},
+		},
+		ToolBarItems: []MenuItem{
+			ActionRef{&openAction},
+		},
+		MinSize: Size{320, 240},
+		Size:    Size{800, 600},
+		Layout:  VBox{MarginsZero: true},
+		Children: []Widget{
+			TabWidget{
+				AssignTo: &mw.tabWidget,
+			},
+		},
+	}.Run()); err != nil {
+		log.Fatal(err)
+	}
+}
+
+type MyMainWindow struct {
 	*walk.MainWindow
 	tabWidget    *walk.TabWidget
 	prevFilePath string
 }
 
-func (mw *MainWindow) openImage() {
-	dlg := &walk.FileDialog{}
+func (mw *MyMainWindow) openAction_Triggered() {
+	if err := mw.openImage(); err != nil {
+		log.Print(err)
+	}
+}
+
+func (mw *MyMainWindow) openImage() error {
+	dlg := new(walk.FileDialog)
 
 	dlg.FilePath = mw.prevFilePath
 	dlg.Filter = "Image Files (*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff)|*.emf;*.bmp;*.exif;*.gif;*.jpeg;*.jpg;*.png;*.tiff"
 	dlg.Title = "Select an Image"
 
-	if ok, _ := dlg.ShowOpen(mw); !ok {
-		return
+	if ok, err := dlg.ShowOpen(mw); err != nil {
+		return err
+	} else if !ok {
+		return nil
 	}
 
 	mw.prevFilePath = dlg.FilePath
 
-	img, _ := walk.NewImageFromFile(dlg.FilePath)
+	img, err := walk.NewImageFromFile(dlg.FilePath)
+	if err != nil {
+		return err
+	}
 
 	var succeeded bool
 	defer func() {
@@ -41,8 +104,14 @@ func (mw *MainWindow) openImage() {
 		}
 	}()
 
-	page, _ := walk.NewTabPage()
-	page.SetTitle(path.Base(strings.Replace(dlg.FilePath, "\\", "/", -1)))
+	page, err := walk.NewTabPage()
+	if err != nil {
+		return err
+	}
+
+	if page.SetTitle(path.Base(strings.Replace(dlg.FilePath, "\\", "/", -1))); err != nil {
+		return err
+	}
 	page.SetLayout(walk.NewHBoxLayout())
 
 	defer func() {
@@ -51,7 +120,10 @@ func (mw *MainWindow) openImage() {
 		}
 	}()
 
-	imageView, _ := walk.NewImageView(page)
+	imageView, err := walk.NewImageView(page)
+	if err != nil {
+		return err
+	}
 
 	defer func() {
 		if !succeeded {
@@ -59,59 +131,23 @@ func (mw *MainWindow) openImage() {
 		}
 	}()
 
-	imageView.SetImage(img)
-	mw.tabWidget.Pages().Add(page)
-	mw.tabWidget.SetCurrentIndex(mw.tabWidget.Pages().Len() - 1)
+	if err := imageView.SetImage(img); err != nil {
+		return err
+	}
+
+	if err := mw.tabWidget.Pages().Add(page); err != nil {
+		return err
+	}
+
+	if err := mw.tabWidget.SetCurrentIndex(mw.tabWidget.Pages().Len() - 1); err != nil {
+		return err
+	}
 
 	succeeded = true
+
+	return nil
 }
 
-func main() {
-	walk.SetPanicOnError(true)
-
-	mainWnd, _ := walk.NewMainWindow()
-
-	mw := &MainWindow{MainWindow: mainWnd}
-	mw.SetLayout(walk.NewVBoxLayout())
-	mw.SetTitle("Walk Image Viewer Example")
-
-	mw.tabWidget, _ = walk.NewTabWidget(mw)
-
-	imageList, _ := walk.NewImageList(walk.Size{16, 16}, 0)
-	mw.ToolBar().SetImageList(imageList)
-
-	fileMenu, _ := walk.NewMenu()
-	fileMenuAction, _ := mw.Menu().Actions().AddMenu(fileMenu)
-	fileMenuAction.SetText("&File")
-
-	openBmp, _ := walk.NewBitmapFromFile("../img/open.png")
-
-	openAction := walk.NewAction()
-	openAction.SetImage(openBmp)
-	openAction.SetText("&Open")
-	openAction.Triggered().Attach(func() { mw.openImage() })
-	fileMenu.Actions().Add(openAction)
-	mw.ToolBar().Actions().Add(openAction)
-
-	exitAction := walk.NewAction()
-	exitAction.SetText("E&xit")
-	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
-	fileMenu.Actions().Add(exitAction)
-
-	helpMenu, _ := walk.NewMenu()
-	helpMenuAction, _ := mw.Menu().Actions().AddMenu(helpMenu)
-	helpMenuAction.SetText("&Help")
-
-	aboutAction := walk.NewAction()
-	aboutAction.SetText("&About")
-	aboutAction.Triggered().Attach(func() {
-		walk.MsgBox(mw, "About", "Walk Image Viewer Example", walk.MsgBoxOK|walk.MsgBoxIconInformation)
-	})
-	helpMenu.Actions().Add(aboutAction)
-
-	mw.SetMinMaxSize(walk.Size{320, 240}, walk.Size{})
-	mw.SetSize(walk.Size{800, 600})
-	mw.Show()
-
-	mw.Run()
+func (mw *MyMainWindow) aboutAction_Triggered() {
+	walk.MsgBox(mw, "About", "Walk Image Viewer Example", walk.MsgBoxIconInformation)
 }

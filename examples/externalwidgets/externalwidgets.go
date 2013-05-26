@@ -11,12 +11,42 @@ import (
 import (
 	"github.com/lxn/go-winapi"
 	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 )
 
 const myWidgetWindowClass = "MyWidget Class"
 
 func init() {
 	walk.MustRegisterWindowClass(myWidgetWindowClass)
+}
+
+func main() {
+	var mw *walk.MainWindow
+
+	if err := (MainWindow{
+		AssignTo: &mw,
+		Title:    "Walk External Widgets Example",
+		Size:     Size{400, 300},
+		Layout:   HBox{},
+	}).Create(); err != nil {
+		log.Fatal(err)
+	}
+
+	for _, name := range []string{"a", "b", "c"} {
+		if w, err := NewMyWidget(mw); err != nil {
+			log.Fatal(err)
+		} else {
+			w.SetName(name)
+		}
+	}
+
+	mpb, err := NewMyPushButton(mw)
+	if err != nil {
+		log.Fatal(err)
+	}
+	mpb.SetText("MyPushButton")
+
+	mw.Run()
 }
 
 type MyWidget struct {
@@ -84,30 +114,4 @@ func (mpb *MyPushButton) WndProc(hwnd winapi.HWND, msg uint32, wParam, lParam ui
 	}
 
 	return mpb.PushButton.WndProc(hwnd, msg, wParam, lParam)
-}
-
-func main() {
-	walk.SetPanicOnError(true)
-
-	mw, _ := walk.NewMainWindow()
-
-	mw.SetTitle("Walk External Widgets Example")
-	mw.SetLayout(walk.NewHBoxLayout())
-
-	a, _ := NewMyWidget(mw)
-	a.SetName("a")
-
-	b, _ := NewMyWidget(mw)
-	b.SetName("b")
-
-	c, _ := NewMyWidget(mw)
-	c.SetName("c")
-
-	mpb, _ := NewMyPushButton(mw)
-	mpb.SetText("MyPushButton")
-
-	mw.SetSize(walk.Size{400, 300})
-	mw.Show()
-
-	mw.Run()
 }

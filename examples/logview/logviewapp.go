@@ -9,19 +9,31 @@ import (
 	"time"
 )
 
-import "github.com/lxn/walk"
+import (
+	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
+)
 
 func main() {
-	walk.SetPanicOnError(true)
+	var mw *walk.MainWindow
 
-	myWindow, _ := walk.NewMainWindow()
+	if err := (MainWindow{
+		AssignTo: &mw,
+		Title:    "Walk LogView Example",
+		MinSize:  Size{320, 240},
+		Size:     Size{400, 600},
+		Layout:   VBox{MarginsZero: true},
+	}.Create()); err != nil {
+		log.Fatal(err)
+	}
 
-	myWindow.SetLayout(walk.NewVBoxLayout())
-	myWindow.SetTitle("LogView example")
+	lv, err := NewLogView(mw)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	logView, _ := NewLogView(myWindow)
-	logView.PostAppendText("XXX")
-	log.SetOutput(logView)
+	lv.PostAppendText("XXX")
+	log.SetOutput(lv)
 
 	go func() {
 		for i := 0; i < 10000; i++ {
@@ -30,8 +42,5 @@ func main() {
 		}
 	}()
 
-	myWindow.Show()
-	myWindow.SetMinMaxSize(walk.Size{320, 240}, walk.Size{})
-	myWindow.SetSize(walk.Size{400, 500})
-	myWindow.Run()
+	mw.Run()
 }

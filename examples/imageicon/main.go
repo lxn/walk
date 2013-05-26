@@ -5,20 +5,25 @@
 package main
 
 import (
-	"github.com/lxn/walk"
-	. "github.com/lxn/walk/declarative"
 	"image"
 	"image/color"
 	"image/draw"
+	"log"
+)
+
+import (
+	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 )
 
 func main() {
+	var mw *walk.MainWindow
 	var windowIcon *walk.Icon
 	counter := 0
-	var mw *walk.MainWindow
-	if err := (MainWindow{
+
+	if _, err := (MainWindow{
 		AssignTo: &mw,
-		Title:    "Icon Test",
+		Title:    "Walk Image Icon Example",
 		Layout:   HBox{},
 		Children: []Widget{
 			HSpacer{},
@@ -39,11 +44,9 @@ func main() {
 			},
 			HSpacer{},
 		},
-	}.Create()); err != nil {
-		panic(err)
+	}.Run()); err != nil {
+		log.Fatal(err)
 	}
-
-	mw.Run()
 }
 
 //  A
