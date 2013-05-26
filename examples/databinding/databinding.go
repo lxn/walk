@@ -31,10 +31,10 @@ func main() {
 			PushButton{
 				Text: "Edit Animal",
 				OnClicked: func() {
-					res, err := RunAnimalDialog(mw, animal)
+					cmd, err := RunAnimalDialog(mw, animal)
 					if err != nil {
 						log.Print(err)
-					} else if res == walk.DlgCmdOK {
+					} else if cmd == walk.DlgCmdOK {
 						outTE.SetText(fmt.Sprintf("%+v", animal))
 					}
 				},
@@ -190,7 +190,7 @@ func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
 						Column:   1,
 						Editable: true,
 						Value:    Bind("PreferredFood"),
-						Model:    []string{"Fruits", "Gras", "Fish", "Meat"},
+						Model:    []string{"Fruit", "Grass", "Fish", "Meat"},
 					},
 					Label{
 						Row:    6,
