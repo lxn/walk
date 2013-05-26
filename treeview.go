@@ -41,7 +41,7 @@ func NewTreeView(parent Container) (*TreeView, error) {
 		tv,
 		parent,
 		"SysTreeView32",
-		WS_TABSTOP|WS_VISIBLE|TVS_FULLROWSELECT|TVS_HASBUTTONS|TVS_LINESATROOT|TVS_SHOWSELALWAYS|TVS_TRACKSELECT,
+		WS_TABSTOP|WS_VISIBLE|TVS_HASBUTTONS|TVS_LINESATROOT|TVS_SHOWSELALWAYS|TVS_TRACKSELECT,
 		WS_EX_CLIENTEDGE); err != nil {
 		return nil, err
 	}
@@ -230,7 +230,7 @@ func (tv *TreeView) setTVITEMImageInfo(tvi *TVITEM, item TreeItem) {
 			tv.applyImageListForImage(imager.Image())
 		}
 
-		// FIXME: If not setting TVIF_SELECTEDIMAGE and tvi.ISelectedImage, 
+		// FIXME: If not setting TVIF_SELECTEDIMAGE and tvi.ISelectedImage,
 		// some default icon will show up, even though we have not asked for it.
 
 		tvi.Mask |= TVIF_IMAGE | TVIF_SELECTEDIMAGE
