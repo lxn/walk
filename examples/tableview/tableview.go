@@ -167,10 +167,8 @@ func main() {
 		Layout: VBox{},
 		Children: []Widget{
 			PushButton{
-				Text: "Reset Rows",
-				OnClicked: func() {
-					model.ResetRows()
-				},
+				Text:      "Reset Rows",
+				OnClicked: model.ResetRows,
 			},
 			TableView{
 				AlternatingRowBGColor: walk.RGB(255, 255, 224),

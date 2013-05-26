@@ -42,7 +42,7 @@ func main() {
 						Enabled:     Bind("enabledCB.Checked"),
 						Visible:     Bind("openVisibleCB.Checked"),
 						Shortcut:    Shortcut{walk.ModControl, walk.KeyO},
-						OnTriggered: func() { mw.openAction_Triggered() },
+						OnTriggered: mw.openAction_Triggered,
 					},
 					Menu{
 						AssignTo: &recentMenu,
@@ -61,7 +61,7 @@ func main() {
 					Action{
 						AssignTo:    &showAboutBoxAction,
 						Text:        "About",
-						OnTriggered: func() { mw.showAboutBoxAction_Triggered() },
+						OnTriggered: mw.showAboutBoxAction_Triggered,
 					},
 				},
 			},
@@ -73,7 +73,7 @@ func main() {
 			Action{
 				Text:        "Special",
 				Enabled:     Bind("isSpecialMode && enabledCB.Checked"),
-				OnTriggered: func() { mw.specialAction_Triggered() },
+				OnTriggered: mw.specialAction_Triggered,
 			},
 		},
 		ContextMenuItems: []MenuItem{
@@ -114,7 +114,7 @@ func main() {
 		for _, text := range texts {
 			a := walk.NewAction()
 			a.SetText(text)
-			a.Triggered().Attach(func() { mw.openAction_Triggered() })
+			a.Triggered().Attach(mw.openAction_Triggered)
 			recentMenu.Actions().Add(a)
 		}
 	}
