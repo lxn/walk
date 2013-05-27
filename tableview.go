@@ -809,6 +809,14 @@ func (tv *TableView) RestoreState() error {
 	tv.SetSuspended(true)
 	defer tv.SetSuspended(false)
 
+	widthStrs := strings.Split(parts[0], " ")
+
+	// FIXME: Solve this in a better way.
+	if len(widthStrs) != tv.columns.Len() {
+		log.Print("*TableView.RestoreState: failed due to unexpected column count (FIXME!)")
+		return nil
+	}
+
 	// Do visibility stuff first.
 	if len(parts) > 3 {
 		visible := strings.Split(parts[3], " ")
@@ -820,13 +828,6 @@ func (tv *TableView) RestoreState() error {
 		}
 	}
 
-	widthStrs := strings.Split(parts[0], " ")
-
-	// FIXME: Solve this in a better way.
-	if len(widthStrs) != tv.columns.Len() {
-		log.Print("*TableView.RestoreState: failed due to unexpected column count (FIXME!)")
-		return nil
-	}
 	for i, str := range widthStrs {
 		width, err := strconv.Atoi(str)
 		if err != nil {
