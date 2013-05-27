@@ -80,6 +80,8 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 			}
 
 			if db := *d.DataBinder.AssignTo; db != nil {
+				(*d.DefaultButton).SetEnabled(db.CanSubmit())
+
 				db.CanSubmitChanged().Attach(func() {
 					(*d.DefaultButton).SetEnabled(db.CanSubmit())
 				})
