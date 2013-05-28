@@ -147,11 +147,7 @@ type Separator struct {
 }
 
 func (s Separator) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, error) {
-	action := walk.NewAction()
-
-	if err := action.SetText("-"); err != nil {
-		return nil, err
-	}
+	action := walk.NewSeparatorAction()
 
 	if menu != nil {
 		if err := menu.Actions().Add(action); err != nil {

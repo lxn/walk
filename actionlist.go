@@ -91,6 +91,10 @@ func (l *ActionList) Insert(index int, action *Action) error {
 
 	action.addRef()
 
+	if action.Visible() {
+		return l.updateSeparatorVisibility()
+	}
+
 	return nil
 }
 
@@ -129,6 +133,44 @@ func (l *ActionList) RemoveAt(index int) error {
 	action.release()
 
 	l.actions = append(l.actions[:index], l.actions[index+1:]...)
+
+	if action.Visible() {
+		return l.updateSeparatorVisibility()
+	}
+
+	return nil
+}
+
+func (l *ActionList) updateSeparatorVisibility() error {
+	var hasCurVisAct bool
+	var curVisSep *Action
+
+	for _, a := range l.actions {
+		if visible := a.Visible(); a.IsSeparator() {
+			toggle := visible != hasCurVisAct
+
+			if toggle {
+				visible = !visible
+				if err := a.SetVisible(visible); err != nil {
+					return err
+				}
+			}
+
+			if visible {
+				curVisSep = a
+			}
+
+			hasCurVisAct = false
+		} else {
+			if visible {
+				hasCurVisAct = true
+			}
+		}
+	}
+
+	if !hasCurVisAct && curVisSep != nil {
+		return curVisSep.SetVisible(false)
+	}
 
 	return nil
 }

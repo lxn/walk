@@ -229,7 +229,7 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 		*style |= BTNS_GROUP
 	}
 
-	if action.text == "-" {
+	if action.IsSeparator() {
 		*style = BTNS_SEP
 	}
 
@@ -278,6 +278,10 @@ func (tb *ToolBar) onActionChanged(action *Action) error {
 }
 
 func (tb *ToolBar) onActionVisibleChanged(action *Action) error {
+	if !action.IsSeparator() {
+		defer tb.actions.updateSeparatorVisibility()
+	}
+
 	if action.Visible() {
 		return tb.insertAction(action, true)
 	}

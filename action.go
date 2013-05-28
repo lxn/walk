@@ -53,6 +53,13 @@ func NewAction() *Action {
 	return a
 }
 
+func NewSeparatorAction() *Action {
+	return &Action{
+		enabled: true,
+		visible: true,
+	}
+}
+
 func (a *Action) addRef() {
 	a.refCount++
 }
@@ -247,6 +254,10 @@ func (a *Action) SetText(value string) (err error) {
 	}
 
 	return
+}
+
+func (a *Action) IsSeparator() bool {
+	return a.id == 0 || a.text == "-"
 }
 
 func (a *Action) ToolTip() string {

@@ -78,7 +78,7 @@ func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 		mii.FMask |= MIIM_BITMAP
 		mii.HbmpItem = action.image.handle()
 	}
-	if action.text == "-" {
+	if action.IsSeparator() {
 		mii.FType = MFT_SEPARATOR
 	} else {
 		mii.FType = MFT_STRING
@@ -123,6 +123,10 @@ func (m *Menu) onActionChanged(action *Action) error {
 }
 
 func (m *Menu) onActionVisibleChanged(action *Action) error {
+	if !action.IsSeparator() {
+		defer m.actions.updateSeparatorVisibility()
+	}
+
 	if action.Visible() {
 		return m.insertAction(action, true)
 	}
