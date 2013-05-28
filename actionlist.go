@@ -161,10 +161,8 @@ func (l *ActionList) updateSeparatorVisibility() error {
 			}
 
 			hasCurVisAct = false
-		} else {
-			if visible {
-				hasCurVisAct = true
-			}
+		} else if visible {
+			hasCurVisAct = true
 		}
 	}
 
