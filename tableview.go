@@ -382,7 +382,7 @@ func (tv *TableView) setItemCount() error {
 		count = tv.model.RowCount()
 	}
 
-	if 0 == tv.SendMessage(LVM_SETITEMCOUNT, uintptr(count), 0) {
+	if 0 == tv.SendMessage(LVM_SETITEMCOUNT, uintptr(count), LVSICF_NOSCROLL) {
 		return newError("SendMessage(LVM_SETITEMCOUNT)")
 	}
 
