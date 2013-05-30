@@ -51,7 +51,7 @@ func main() {
 					Separator{},
 					Action{
 						Text:        "E&xit",
-						OnTriggered: func() { walk.App().Exit(0) },
+						OnTriggered: func() { mw.Close() },
 					},
 				},
 			},
@@ -68,10 +68,48 @@ func main() {
 		},
 		ToolBarItems: []MenuItem{
 			ActionRef{&openAction},
+			Menu{
+				Text:  "New A",
+				Image: "../img/document-new.png",
+				Items: []MenuItem{
+					Action{
+						Text:        "A",
+						OnTriggered: mw.newAction_Triggered,
+					},
+					Action{
+						Text:        "B",
+						OnTriggered: mw.newAction_Triggered,
+					},
+					Action{
+						Text:        "C",
+						OnTriggered: mw.newAction_Triggered,
+					},
+				},
+				OnTriggered: mw.newAction_Triggered,
+			},
 			Separator{},
-			ActionRef{&showAboutBoxAction},
+			Menu{
+				Text:  "View",
+				Image: "../img/document-properties.png",
+				Items: []MenuItem{
+					Action{
+						Text:        "X",
+						OnTriggered: mw.changeViewAction_Triggered,
+					},
+					Action{
+						Text:        "Y",
+						OnTriggered: mw.changeViewAction_Triggered,
+					},
+					Action{
+						Text:        "Z",
+						OnTriggered: mw.changeViewAction_Triggered,
+					},
+				},
+			},
+			Separator{},
 			Action{
 				Text:        "Special",
+				Image:       "../img/system-shutdown.png",
 				Enabled:     Bind("isSpecialMode && enabledCB.Checked"),
 				OnTriggered: mw.specialAction_Triggered,
 			},
@@ -126,6 +164,14 @@ func main() {
 
 func (mw *MyMainWindow) openAction_Triggered() {
 	walk.MsgBox(mw, "Open", "Pretend to open a file...", walk.MsgBoxIconInformation)
+}
+
+func (mw *MyMainWindow) newAction_Triggered() {
+	walk.MsgBox(mw, "New", "Newing something up... or not.", walk.MsgBoxIconInformation)
+}
+
+func (mw *MyMainWindow) changeViewAction_Triggered() {
+	walk.MsgBox(mw, "Change View", "By now you may have guessed it. Nothing changed.", walk.MsgBoxIconInformation)
 }
 
 func (mw *MyMainWindow) showAboutBoxAction_Triggered() {

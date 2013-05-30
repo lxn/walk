@@ -107,6 +107,7 @@ type Menu struct {
 	Text           string
 	Image          interface{}
 	Items          []MenuItem
+	OnTriggered    walk.EventHandler
 }
 
 func (m Menu) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, error) {
@@ -115,8 +116,10 @@ func (m Menu) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, err
 		return nil, err
 	}
 
-	action, err := menu.Actions().AddMenu(subMenu)
-	if err != nil {
+	var action *walk.Action
+	if menu == nil {
+		action = walk.NewMenuAction(subMenu)
+	} else if action, err = menu.Actions().AddMenu(subMenu); err != nil {
 		return nil, err
 	}
 
@@ -131,6 +134,10 @@ func (m Menu) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, err
 		if _, err := item.createAction(builder, subMenu); err != nil {
 			return nil, err
 		}
+	}
+
+	if m.OnTriggered != nil {
+		action.Triggered().Attach(m.OnTriggered)
 	}
 
 	if m.AssignActionTo != nil {

@@ -53,6 +53,13 @@ func NewAction() *Action {
 	return a
 }
 
+func NewMenuAction(menu *Menu) *Action {
+	a := NewAction()
+	a.menu = menu
+
+	return a
+}
+
 func NewSeparatorAction() *Action {
 	return &Action{
 		enabled: true,

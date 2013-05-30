@@ -21,23 +21,27 @@ type ToolBar struct {
 }
 
 func newToolBar(parent Container, style uint32) (*ToolBar, error) {
-	tb := &ToolBar{}
+	tb := new(ToolBar)
 	tb.actions = newActionList(tb)
 
 	if err := InitChildWidget(
 		tb,
 		parent,
 		"ToolbarWindow32",
-		CCS_NODIVIDER|style,
+		CCS_NODIVIDER|TBSTYLE_FLAT|TBSTYLE_TOOLTIPS|style,
 		0); err != nil {
 		return nil, err
 	}
+
+	exStyle := tb.SendMessage(TB_GETEXTENDEDSTYLE, 0, 0)
+	exStyle |= TBSTYLE_EX_DRAWDDARROWS | TBSTYLE_EX_MIXEDBUTTONS
+	tb.SendMessage(TB_SETEXTENDEDSTYLE, 0, exStyle)
 
 	return tb, nil
 }
 
 func NewToolBar(parent Container) (*ToolBar, error) {
-	return newToolBar(parent, TBSTYLE_WRAPABLE)
+	return newToolBar(parent, TBSTYLE_LIST|TBSTYLE_WRAPABLE)
 }
 
 func NewVerticalToolBar(parent Container) (*ToolBar, error) {
@@ -191,14 +195,44 @@ func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
 
 func (tb *ToolBar) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_NOTIFY:
-		nmm := (*NMMOUSE)(unsafe.Pointer(lParam))
-
-		switch int32(nmm.Hdr.Code) {
-		case NM_CLICK:
-			actionId := uint16(nmm.DwItemSpec)
-			if action := actionsById[actionId]; action != nil && action.Enabled() {
+	case WM_COMMAND:
+		switch HIWORD(uint32(wParam)) {
+		case BN_CLICKED:
+			actionId := uint16(LOWORD(uint32(wParam)))
+			if action, ok := actionsById[actionId]; ok {
 				action.raiseTriggered()
+				return 0
+			}
+		}
+
+	case WM_NOTIFY:
+		nmhdr := (*NMHDR)(unsafe.Pointer(lParam))
+
+		switch int32(nmhdr.Code) {
+		case TBN_DROPDOWN:
+			nmtb := (*NMTOOLBAR)(unsafe.Pointer(lParam))
+			actionId := uint16(nmtb.IItem)
+			if action := actionsById[actionId]; action != nil {
+				var r RECT
+				if 0 == tb.SendMessage(TB_GETRECT, uintptr(actionId), uintptr(unsafe.Pointer(&r))) {
+					break
+				}
+
+				p := POINT{r.Left, r.Bottom}
+
+				if !ClientToScreen(tb.hWnd, &p) {
+					break
+				}
+
+				TrackPopupMenuEx(
+					action.menu.hMenu,
+					TPM_NOANIMATION,
+					p.X,
+					p.Y,
+					tb.hWnd,
+					nil)
+
+				return TBDDRET_DEFAULT
 			}
 		}
 	}
@@ -227,6 +261,18 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 
 	if action.exclusive {
 		*style |= BTNS_GROUP
+	}
+
+	if action.image == nil {
+		*style |= BTNS_SHOWTEXT
+	}
+
+	if action.menu != nil {
+		if len(action.Triggered().handlers) > 0 {
+			*style |= BTNS_DROPDOWN
+		} else {
+			*style |= BTNS_WHOLEDROPDOWN
+		}
 	}
 
 	if action.IsSeparator() {
