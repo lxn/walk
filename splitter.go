@@ -6,6 +6,7 @@ package walk
 
 import (
 	"bytes"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -165,6 +166,11 @@ func (s *Splitter) SaveState() error {
 }
 
 func (s *Splitter) RestoreState() error {
+	childCount := s.children.Len()/2 + 1
+	if childCount == 0 {
+		return nil
+	}
+
 	state, err := s.getState()
 	if err != nil {
 		return err
@@ -174,6 +180,12 @@ func (s *Splitter) RestoreState() error {
 	}
 
 	fractionStrs := strings.Split(state, " ")
+
+	// FIXME: Solve this in a better way.
+	if len(fractionStrs) != childCount {
+		log.Print("*Splitter.RestoreState: failed due to unexpected child count (FIXME!)")
+		return nil
+	}
 
 	layout := s.layout.(*splitterLayout)
 
