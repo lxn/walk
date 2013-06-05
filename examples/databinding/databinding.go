@@ -16,14 +16,13 @@ import (
 )
 
 func main() {
-	mw := new(MyMainWindow)
-
+	var mw *walk.MainWindow
 	var outTE *walk.TextEdit
 
 	animal := new(Animal)
 
 	if _, err := (MainWindow{
-		AssignTo: &mw.MainWindow,
+		AssignTo: &mw,
 		Title:    "Walk Data Binding Example",
 		MinSize:  Size{300, 200},
 		Layout:   VBox{},
@@ -31,8 +30,7 @@ func main() {
 			PushButton{
 				Text: "Edit Animal",
 				OnClicked: func() {
-					cmd, err := RunAnimalDialog(mw, animal)
-					if err != nil {
+					if cmd, err := RunAnimalDialog(mw, animal); err != nil {
 						log.Print(err)
 					} else if cmd == walk.DlgCmdOK {
 						outTE.SetText(fmt.Sprintf("%+v", animal))
@@ -87,10 +85,6 @@ const (
 	SexHermaphrodite
 )
 
-type MyMainWindow struct {
-	*walk.MainWindow
-}
-
 func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
 	var dlg *walk.Dialog
 	var db *walk.DataBinder
@@ -123,6 +117,7 @@ func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
 						Column: 1,
 						Text:   Bind("Name"),
 					},
+
 					Label{
 						Row:    1,
 						Column: 0,
@@ -133,6 +128,7 @@ func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
 						Column: 1,
 						Date:   Bind("ArrivalDate"),
 					},
+
 					Label{
 						Row:    2,
 						Column: 0,
@@ -146,6 +142,7 @@ func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
 						DisplayMember: "Name",
 						Model:         KnownSpecies(),
 					},
+
 					RadioButtonGroupBox{
 						Row:        3,
 						Column:     0,
@@ -154,20 +151,12 @@ func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
 						Layout:     HBox{},
 						DataMember: "Sex",
 						Buttons: []RadioButton{
-							RadioButton{
-								Text:  "Male",
-								Value: SexMale,
-							},
-							RadioButton{
-								Text:  "Female",
-								Value: SexFemale,
-							},
-							RadioButton{
-								Text:  "Hermaphrodite",
-								Value: SexHermaphrodite,
-							},
+							{Text: "Male", Value: SexMale},
+							{Text: "Female", Value: SexFemale},
+							{Text: "Hermaphrodite", Value: SexHermaphrodite},
 						},
 					},
+
 					Label{
 						Row:    4,
 						Column: 0,
@@ -180,6 +169,7 @@ func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
 						Suffix:   " kg",
 						Decimals: 2,
 					},
+
 					Label{
 						Row:    5,
 						Column: 0,
@@ -192,6 +182,7 @@ func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
 						Value:    Bind("PreferredFood"),
 						Model:    []string{"Fruit", "Grass", "Fish", "Meat"},
 					},
+
 					Label{
 						Row:    6,
 						Column: 0,
@@ -202,11 +193,9 @@ func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
 						Column:  1,
 						Checked: Bind("Domesticated"),
 					},
-					VSpacer{
-						Row:    7,
-						Column: 0,
-						Size:   8,
-					},
+
+					VSpacer{Row: 7, Size: 8},
+
 					Label{
 						Row:    8,
 						Column: 0,
@@ -219,6 +208,7 @@ func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
 						MinSize:    Size{100, 50},
 						Text:       Bind("Remarks"),
 					},
+
 					LineErrorPresenter{
 						AssignTo:   &ep,
 						Row:        10,
