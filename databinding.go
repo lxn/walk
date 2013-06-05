@@ -318,6 +318,9 @@ func (db *DataBinder) fieldBoundToProperty(p, s reflect.Value, prop Property) re
 
 	for i, name := range path {
 		v = s.FieldByName(name)
+		if !v.IsValid() {
+			panic(fmt.Sprintf("invalid element '%s' in source '%s'", name, source))
+		}
 		if i < len(path)-1 {
 			p = v
 			if p.IsNil() {
