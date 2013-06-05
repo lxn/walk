@@ -106,6 +106,15 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		},
 		cb.CurrentIndexChanged()))
 
+	cb.MustRegisterProperty("Text", NewProperty(
+		func() interface{} {
+			return cb.Text()
+		},
+		func(v interface{}) error {
+			return cb.SetText(v.(string))
+		},
+		cb.CurrentIndexChanged()))
+
 	cb.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
 			if cb.Editable() {
