@@ -185,9 +185,9 @@ func (sbi *StatusBarItem) SetWidth(width int) error {
 	sbi.width = width
 
 	if sbi.sb != nil {
-		succedded := false
+		succeeded := false
 		defer func() {
-			if !succedded {
+			if !succeeded {
 				sbi.width = old
 			}
 		}()
@@ -196,7 +196,7 @@ func (sbi *StatusBarItem) SetWidth(width int) error {
 			return err
 		}
 
-		succedded = true
+		succeeded = true
 	}
 
 	return nil
@@ -204,9 +204,9 @@ func (sbi *StatusBarItem) SetWidth(width int) error {
 
 func (sbi *StatusBarItem) maybeTry(f func(index int) error, rollback func()) error {
 	if sbi.sb != nil {
-		succedded := false
+		succeeded := false
 		defer func() {
-			if !succedded {
+			if !succeeded {
 				rollback()
 			}
 		}()
@@ -215,7 +215,7 @@ func (sbi *StatusBarItem) maybeTry(f func(index int) error, rollback func()) err
 			return err
 		}
 
-		succedded = true
+		succeeded = true
 	}
 
 	return nil
@@ -347,9 +347,9 @@ func (l *StatusBarItemList) Insert(index int, item *StatusBarItem) error {
 
 	item.sb = l.sb
 
-	succedded := false
+	succeeded := false
 	defer func() {
-		if !succedded {
+		if !succeeded {
 			item.sb = nil
 			l.items = append(l.items[:index], l.items[index+1:]...)
 
@@ -361,7 +361,7 @@ func (l *StatusBarItemList) Insert(index int, item *StatusBarItem) error {
 		return err
 	}
 
-	succedded = true
+	succeeded = true
 
 	return nil
 }
@@ -385,9 +385,9 @@ func (l *StatusBarItemList) RemoveAt(index int) error {
 
 	l.items = append(l.items[:index], l.items[index+1:]...)
 
-	succedded := false
+	succeeded := false
 	defer func() {
-		if !succedded {
+		if !succeeded {
 			l.items = append(l.items, nil)
 			copy(l.items[index+1:], l.items[index:])
 			l.items[index] = item
@@ -402,7 +402,7 @@ func (l *StatusBarItemList) RemoveAt(index int) error {
 		return err
 	}
 
-	succedded = true
+	succeeded = true
 
 	return nil
 }
