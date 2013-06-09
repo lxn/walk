@@ -24,10 +24,11 @@ type MainWindow struct {
 	menu            *Menu
 	toolBar         *ToolBar
 	clientComposite *Composite
+	statusBar       *StatusBar
 }
 
 func NewMainWindow() (*MainWindow, error) {
-	mw := &MainWindow{}
+	mw := new(MainWindow)
 
 	if err := InitWidget(
 		mw,
@@ -57,6 +58,10 @@ func NewMainWindow() (*MainWindow, error) {
 	}
 
 	if mw.toolBar, err = NewToolBar(mw); err != nil {
+		return nil, err
+	}
+
+	if mw.statusBar, err = NewStatusBar(mw); err != nil {
 		return nil, err
 	}
 
@@ -133,6 +138,10 @@ func (mw *MainWindow) ToolBar() *ToolBar {
 	return mw.toolBar
 }
 
+func (mw *MainWindow) StatusBar() *StatusBar {
+	return mw.statusBar
+}
+
 func (mw *MainWindow) ClientBounds() Rectangle {
 	bounds := mw.WidgetBase.ClientBounds()
 
@@ -141,6 +150,10 @@ func (mw *MainWindow) ClientBounds() Rectangle {
 
 		bounds.Y += tlbBounds.Height
 		bounds.Height -= tlbBounds.Height
+	}
+
+	if mw.statusBar.Visible() {
+		bounds.Height -= mw.statusBar.Height()
 	}
 
 	return bounds
@@ -253,7 +266,16 @@ func (mw *MainWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 	case WM_SIZE, WM_SIZING:
 		mw.toolBar.SendMessage(TB_AUTOSIZE, 0, 0)
 
-		mw.clientComposite.SetBounds(mw.ClientBounds())
+		cb := mw.ClientBounds()
+
+		mw.clientComposite.SetBounds(cb)
+
+		if mw.statusBar.Visible() {
+			cb.Y += cb.Height
+			cb.Height = mw.statusBar.Height()
+
+			mw.statusBar.SetBounds(cb)
+		}
 	}
 
 	return mw.TopLevelWindow.WndProc(hwnd, msg, wParam, lParam)
