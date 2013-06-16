@@ -532,7 +532,7 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 				}
 			}
 
-			nle.processChar(text, start, end, Key(wParam), char)
+			nle.processChar(text, start, end, 0, char)
 			return 0
 
 		case uint16('-'):
@@ -544,7 +544,7 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 				return 0
 			}
 
-			nle.processChar(text, start, end, Key(wParam), char)
+			nle.processChar(text, start, end, 0, char)
 			return 0
 
 		case decimalSepUint16:
@@ -564,7 +564,7 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 				return 0
 			}
 
-			nle.processChar(text, start, end, Key(wParam), char)
+			nle.processChar(text, start, end, 0, char)
 			return 0
 
 		default:
