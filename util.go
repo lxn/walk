@@ -27,29 +27,17 @@ var (
 )
 
 func init() {
-	sPtr := syscall.StringToUTF16Ptr("1000.00")
+	var buf [4]uint16
 
-	var buf [9]uint16
+	GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_SDECIMAL, &buf[0], int32(len(buf)))
+	decimalSepB = byte(buf[0])
+	decimalSepS = syscall.UTF16ToString(buf[0:1])
+	decimalSepUint16 = buf[0]
 
-	if 0 == GetNumberFormat(
-		LOCALE_USER_DEFAULT,
-		0,
-		sPtr,
-		nil,
-		&buf[0],
-		int32(len(buf))) {
-
-		panic("GetNumberFormat")
-	}
-
-	s := syscall.UTF16ToString(buf[:])
-
-	decimalSepB = s[5]
-	decimalSepUint16 = buf[5]
-	decimalSepS = s[5:6]
-	groupSepB = s[1]
-	groupSepUint16 = buf[1]
-	groupSepS = s[1:2]
+	GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_STHOUSAND, &buf[0], int32(len(buf)))
+	groupSepB = byte(buf[0])
+	groupSepS = syscall.UTF16ToString(buf[0:1])
+	groupSepUint16 = buf[0]
 }
 
 func maxi(a, b int) int {
