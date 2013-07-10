@@ -401,8 +401,10 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 	if parent != nil {
 		hwndParent = parent.Handle()
 
-		if container, ok := parent.(Container); ok {
-			wb.parent = container
+		if _, ok := widget.(RootWidget); !ok {
+			if container, ok := parent.(Container); ok {
+				wb.parent = container
+			}
 		}
 	}
 
