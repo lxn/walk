@@ -181,16 +181,16 @@ func (tlw *TopLevelWindow) Hide() {
 }
 
 func (tlw *TopLevelWindow) Show() {
-	if appSingleton.settings != nil {
-		tlw.RestoreState()
+	if p, ok := tlw.widget.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
+		p.RestoreState()
 	}
 
 	tlw.widget.SetVisible(true)
 }
 
 func (tlw *TopLevelWindow) close() error {
-	if appSingleton.settings != nil {
-		tlw.SaveState()
+	if p, ok := tlw.widget.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
+		p.SaveState()
 	}
 
 	tlw.widget.Dispose()
