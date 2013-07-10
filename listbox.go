@@ -26,16 +26,16 @@ type ListBox struct {
 	itemChangedHandlerHandle     int
 	maxItemTextWidth             int
 	currentIndexChangedPublisher EventPublisher
-	dblClickedPublisher          EventPublisher
+	itemActivatedPublisher       EventPublisher
 }
 
 func NewListBox(parent Container) (*ListBox, error) {
-	lb := &ListBox{}
+	lb := new(ListBox)
 	err := InitChildWidget(
 		lb,
 		parent,
 		"LISTBOX",
-		WS_TABSTOP|WS_VISIBLE|LBS_NOINTEGRALHEIGHT|LBS_STANDARD,
+		WS_BORDER|WS_TABSTOP|WS_VISIBLE|WS_VSCROLL|LBS_NOINTEGRALHEIGHT|LBS_NOTIFY,
 		0)
 	if err != nil {
 		return nil, err
@@ -293,8 +293,8 @@ func (lb *ListBox) CurrentIndexChanged() *Event {
 	return lb.currentIndexChangedPublisher.Event()
 }
 
-func (lb *ListBox) DblClicked() *Event {
-	return lb.dblClickedPublisher.Event()
+func (lb *ListBox) ItemActivated() *Event {
+	return lb.itemActivatedPublisher.Event()
 }
 
 func (lb *ListBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -306,7 +306,27 @@ func (lb *ListBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 			lb.currentIndexChangedPublisher.Publish()
 
 		case LBN_DBLCLK:
-			lb.dblClickedPublisher.Publish()
+			lb.itemActivatedPublisher.Publish()
+		}
+
+	case WM_GETDLGCODE:
+		if root := rootWidget(lb); root != nil {
+			if dlg, ok := root.(dialogish); ok {
+				if dlg.DefaultButton() != nil {
+					// If the ListBox lives in a Dialog that has a DefaultButton,
+					// we won't swallow the return key.
+					break
+				}
+			}
+		}
+
+		if wParam == VK_RETURN {
+			return DLGC_WANTALLKEYS
+		}
+
+	case WM_KEYDOWN:
+		if uint32(lParam)>>30 == 0 && Key(wParam) == KeyReturn && lb.CurrentIndex() > -1 {
+			lb.itemActivatedPublisher.Publish()
 		}
 	}
 

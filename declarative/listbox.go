@@ -68,7 +68,7 @@ func (lb ListBox) Create(builder *Builder) error {
 			w.CurrentIndexChanged().Attach(lb.OnCurrentIndexChanged)
 		}
 		if lb.OnItemActivated != nil {
-			w.DblClicked().Attach(lb.OnItemActivated)
+			w.ItemActivated().Attach(lb.OnItemActivated)
 		}
 
 		if lb.AssignTo != nil {
