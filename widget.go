@@ -1394,7 +1394,15 @@ func (wb *WidgetBase) putState(state string) error {
 		return newError("App().Settings() must not be nil")
 	}
 
-	return settings.PutExpiring(wb.path(), state)
+	p := wb.path()
+	if strings.HasPrefix(p, "/") ||
+		strings.HasSuffix(p, "/") ||
+		strings.Contains(p, "//") {
+
+		return nil
+	}
+
+	return settings.PutExpiring(p, state)
 }
 
 func widgetFromHWND(hwnd HWND) Widget {
