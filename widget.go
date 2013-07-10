@@ -399,7 +399,7 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 
 	var hwndParent HWND
 	if parent != nil {
-		hwndParent = parent.BaseWidget().hWnd
+		hwndParent = parent.Handle()
 
 		if container, ok := parent.(Container); ok {
 			wb.parent = container

@@ -145,7 +145,7 @@ func (tlw *TopLevelWindow) SetOwner(value RootWidget) error {
 
 	var ownerHWnd HWND
 	if value != nil {
-		ownerHWnd = value.BaseWidget().hWnd
+		ownerHWnd = value.Handle()
 	}
 
 	SetLastError(0)
@@ -297,7 +297,7 @@ func (tlw *TopLevelWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 		if !canceled {
 			if tlw.owner != nil {
 				tlw.owner.SetEnabled(true)
-				if !SetWindowPos(tlw.owner.BaseWidget().hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_SHOWWINDOW) {
+				if !SetWindowPos(tlw.owner.Handle(), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_SHOWWINDOW) {
 					lastError("SetWindowPos")
 				}
 			}
