@@ -29,8 +29,7 @@ type TreeView struct {
 	usingSysIml                   bool
 	imageUintptr2Index            map[uintptr]int32
 	filePath2IconIndex            map[string]int32
-	itemCollapsedPublisher        TreeItemEventPublisher
-	itemExpandedPublisher         TreeItemEventPublisher
+	expandedChangedPublisher      TreeItemEventPublisher
 	currentItemChangedPublisher   EventPublisher
 }
 
@@ -365,12 +364,37 @@ func (tv *TreeView) removeDescendants(parent TreeItem) error {
 	return nil
 }
 
-func (tv *TreeView) ItemCollapsed() *TreeItemEvent {
-	return tv.itemCollapsedPublisher.Event()
+func (tv *TreeView) Expanded(item TreeItem) bool {
+	tvi := &TVITEM{
+		HItem:     tv.item2Info[item].handle,
+		Mask:      TVIF_STATE,
+		StateMask: TVIS_EXPANDED,
+	}
+
+	if 0 == tv.SendMessage(TVM_GETITEM, 0, uintptr(unsafe.Pointer(tvi))) {
+		newError("SendMessage(TVM_GETITEM) failed")
+	}
+
+	return tvi.State&TVIS_EXPANDED != 0
 }
 
-func (tv *TreeView) ItemExpanded() *TreeItemEvent {
-	return tv.itemExpandedPublisher.Event()
+func (tv *TreeView) SetExpanded(item TreeItem, expanded bool) error {
+	var action uintptr
+	if expanded {
+		action = TVE_EXPAND
+	} else {
+		action = TVE_COLLAPSE
+	}
+
+	if 0 == tv.SendMessage(TVM_EXPAND, action, uintptr(tv.item2Info[item].handle)) {
+		return newError("SendMessage(TVM_EXPAND) failed")
+	}
+
+	return nil
+}
+
+func (tv *TreeView) ExpandedChanged() *TreeItemEvent {
+	return tv.expandedChangedPublisher.Event()
 }
 
 func (tv *TreeView) CurrentItemChanged() *Event {
@@ -411,12 +435,12 @@ func (tv *TreeView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 
 			switch nmtv.Action {
 			case TVE_COLLAPSE:
-				tv.itemCollapsedPublisher.Publish(item)
+				tv.expandedChangedPublisher.Publish(item)
 
 			case TVE_COLLAPSERESET:
 
 			case TVE_EXPAND:
-				tv.itemExpandedPublisher.Publish(item)
+				tv.expandedChangedPublisher.Publish(item)
 
 			case TVE_EXPANDPARTIAL:
 
