@@ -123,11 +123,11 @@ func (mw *MainWindow) SaveState() error {
 }
 
 func (mw *MainWindow) RestoreState() error {
-	if err := mw.clientComposite.RestoreState(); err != nil {
+	if err := mw.TopLevelWindow.RestoreState(); err != nil {
 		return err
 	}
 
-	return mw.TopLevelWindow.RestoreState()
+	return mw.clientComposite.RestoreState()
 }
 
 func (mw *MainWindow) Menu() *Menu {
