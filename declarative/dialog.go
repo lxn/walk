@@ -33,7 +33,7 @@ type Dialog struct {
 	CancelButton     **walk.PushButton
 }
 
-func (d Dialog) Create(owner walk.RootWidget) error {
+func (d Dialog) Create(owner walk.Form) error {
 	w, err := walk.NewDialog(owner)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func (d Dialog) Create(owner walk.RootWidget) error {
 	})
 }
 
-func (d Dialog) Run(owner walk.RootWidget) (int, error) {
+func (d Dialog) Run(owner walk.Form) (int, error) {
 	var w *walk.Dialog
 
 	if d.AssignTo == nil {

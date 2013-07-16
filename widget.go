@@ -61,7 +61,7 @@ type Widget interface {
 	// Bounds returns the outer bounding box Rectangle of the Widget, including
 	// decorations.
 	//
-	// For a RootWidget, like *MainWindow or *Dialog, the Rectangle is in screen
+	// For a Form, like *MainWindow or *Dialog, the Rectangle is in screen
 	// coordinates, for a child Widget the coordinates are relative to its
 	// parent.
 	Bounds() Rectangle
@@ -109,6 +109,10 @@ type Widget interface {
 	//
 	// By default this is a MS Shell Dlg 2, 8 point font.
 	Font() *Font
+
+	// Form returns the root of the UI hierarchy of the Widget, which is
+	// usually a *MainWindow or *Dialog.
+	Form() Form
 
 	// Handle returns the window handle of the Widget.
 	Handle() HWND
@@ -176,10 +180,6 @@ type Widget interface {
 	// For RootWidgets, like *MainWindow and *Dialog, this is always nil.
 	Parent() Container
 
-	// RootWidget returns the root of the UI hierarchy of the Widget, which is
-	// usually a *MainWindow or *Dialog.
-	RootWidget() RootWidget
-
 	// SendMessage sends a message to the window and returns the result.
 	SendMessage(msg uint32, wParam, lParam uintptr) uintptr
 
@@ -189,7 +189,7 @@ type Widget interface {
 	// SetBounds sets the outer bounding box Rectangle of the Widget, including
 	// decorations.
 	//
-	// For a RootWidget, like *MainWindow or *Dialog, the Rectangle is in screen
+	// For a Form, like *MainWindow or *Dialog, the Rectangle is in screen
 	// coordinates, for a child Widget the coordinates are relative to its
 	// parent.
 	SetBounds(value Rectangle) error
@@ -401,7 +401,7 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 	if parent != nil {
 		hwndParent = parent.Handle()
 
-		if _, ok := widget.(RootWidget); !ok {
+		if _, ok := widget.(Form); !ok {
 			if container, ok := parent.(Container); ok {
 				wb.parent = container
 			}
@@ -446,7 +446,7 @@ func InitWidget(widget, parent Widget, className string, style, exStyle uint32) 
 
 	switch widget.(type) {
 	case *ToolTip:
-	case RootWidget:
+	case Form:
 	default:
 		if err := globalToolTip.AddTool(widget); err != nil {
 			return err
@@ -542,14 +542,14 @@ func InitWrapperWidget(widget Widget) error {
 	return nil
 }
 
-func rootWidget(w Widget) RootWidget {
+func rootWidget(w Widget) Form {
 	if w == nil {
 		return nil
 	}
 
 	hWndRoot := GetAncestor(w.BaseWidget().hWnd, GA_ROOT)
 
-	rw, _ := widgetFromHWND(hWndRoot).(RootWidget)
+	rw, _ := widgetFromHWND(hWndRoot).(Form)
 	return rw
 }
 
@@ -693,9 +693,9 @@ func (wb *WidgetBase) IsDisposed() bool {
 	return wb.hWnd == 0
 }
 
-// RootWidget returns the root of the UI hierarchy of the *WidgetBase, which is
+// Form returns the root of the UI hierarchy of the *WidgetBase, which is
 // usually a *MainWindow or *Dialog.
-func (wb *WidgetBase) RootWidget() RootWidget {
+func (wb *WidgetBase) Form() Form {
 	return rootWidget(wb)
 }
 
@@ -959,7 +959,7 @@ func (wb *WidgetBase) BringToTop() error {
 // Bounds returns the outer bounding box Rectangle of the *WidgetBase, including
 // decorations.
 //
-// For a RootWidget, like *MainWindow or *Dialog, the Rectangle is in screen
+// For a Form, like *MainWindow or *Dialog, the Rectangle is in screen
 // coordinates, for a child Widget the coordinates are relative to its parent.
 func (wb *WidgetBase) Bounds() Rectangle {
 	var r RECT
@@ -976,7 +976,7 @@ func (wb *WidgetBase) Bounds() Rectangle {
 		int(r.Bottom - r.Top),
 	}
 
-	if _, ok := wb.widget.(RootWidget); !ok && wb.parent != nil {
+	if _, ok := wb.widget.(Form); !ok && wb.parent != nil {
 		p := POINT{int32(b.X), int32(b.Y)}
 		if !ScreenToClient(wb.parent.BaseWidget().hWnd, &p) {
 			newError("ScreenToClient failed")
@@ -992,7 +992,7 @@ func (wb *WidgetBase) Bounds() Rectangle {
 // SetBounds returns the outer bounding box Rectangle of the *WidgetBase,
 // including decorations.
 //
-// For a RootWidget, like *MainWindow or *Dialog, the Rectangle is in screen
+// For a Form, like *MainWindow or *Dialog, the Rectangle is in screen
 // coordinates, for a child Widget the coordinates are relative to its parent.
 func (wb *WidgetBase) SetBounds(bounds Rectangle) error {
 	if !MoveWindow(
@@ -1270,7 +1270,7 @@ func (wb *WidgetBase) SetFocus() error {
 
 // ToolTipText returns the tool tip text of the *WidgetBase.
 func (wb *WidgetBase) ToolTipText() string {
-	if _, ok := wb.widget.(RootWidget); ok {
+	if _, ok := wb.widget.(Form); ok {
 		return ""
 	}
 
@@ -1279,8 +1279,8 @@ func (wb *WidgetBase) ToolTipText() string {
 
 // SetToolTipText sets the tool tip text of the *WidgetBase.
 func (wb *WidgetBase) SetToolTipText(s string) error {
-	if _, ok := wb.widget.(RootWidget); ok {
-		return newError("not supported for a RootWidget")
+	if _, ok := wb.widget.(Form); ok {
+		return newError("not supported for a Form")
 	}
 
 	if err := globalToolTip.SetText(wb.widget, s); err != nil {

@@ -85,7 +85,7 @@ const (
 	SexHermaphrodite
 )
 
-func RunAnimalDialog(owner walk.RootWidget, animal *Animal) (int, error) {
+func RunAnimalDialog(owner walk.Form, animal *Animal) (int, error) {
 	var dlg *walk.Dialog
 	var db *walk.DataBinder
 	var ep walk.ErrorPresenter

@@ -15,7 +15,7 @@ type myDialogUI struct {
 	startBtn         *walk.PushButton
 }
 
-func (w *MyDialog) init(owner walk.RootWidget) (err error) {
+func (w *MyDialog) init(owner walk.Form) (err error) {
 	if w.Dialog, err = walk.NewDialog(owner); err != nil {
 		return err
 	}

@@ -51,9 +51,14 @@ func runSynchronized() {
 	}
 }
 
+type Form interface {
+	Container
+	Run() int
+}
+
 type FormBase struct {
 	ContainerBase
-	owner                 RootWidget
+	owner                 Form
 	closingPublisher      CloseEventPublisher
 	startingPublisher     EventPublisher
 	titleChangedPublisher EventPublisher
@@ -136,11 +141,11 @@ func (fb *FormBase) Starting() *Event {
 	return fb.startingPublisher.Event()
 }
 
-func (fb *FormBase) Owner() RootWidget {
+func (fb *FormBase) Owner() Form {
 	return fb.owner
 }
 
-func (fb *FormBase) SetOwner(value RootWidget) error {
+func (fb *FormBase) SetOwner(value Form) error {
 	fb.owner = value
 
 	var ownerHWnd HWND

@@ -963,7 +963,7 @@ func generateUICode(buf *bytes.Buffer, ui *UI) error {
 
 	case "Dialog":
 		buf.WriteString(fmt.Sprintf(
-			`func (w *%s) init(owner walk.RootWidget) (err error) {
+			`func (w *%s) init(owner walk.Form) (err error) {
 			if w.Dialog, err = walk.NewDialog(owner)`,
 			ui.Widget.Name))
 
@@ -1126,7 +1126,7 @@ func generateLogicCode(buf *bytes.Buffer, ui *UI) error {
 	case "Dialog":
 		buf.WriteString("func run")
 		buf.WriteString(ui.Widget.Name)
-		buf.WriteString(`(owner walk.RootWidget) (int, error) {
+		buf.WriteString(`(owner walk.Form) (int, error) {
 		dlg := new(`)
 		buf.WriteString(ui.Widget.Name)
 		buf.WriteString(`)

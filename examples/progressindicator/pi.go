@@ -31,7 +31,7 @@ func (dlg *MyDialog) setState(state walk.PIState) {
 	}
 }
 
-func RunMyDialog(owner walk.RootWidget) (int, error) {
+func RunMyDialog(owner walk.Form) (int, error) {
 	dlg := new(MyDialog)
 	if err := dlg.init(owner); err != nil {
 		return 0, err

@@ -20,7 +20,7 @@ type FileDialog struct {
 	FilterIndex    int
 }
 
-func (dlg *FileDialog) show(owner RootWidget, fun func(ofn *OPENFILENAME) bool) (accepted bool, err error) {
+func (dlg *FileDialog) show(owner Form, fun func(ofn *OPENFILENAME) bool) (accepted bool, err error) {
 	ofn := new(OPENFILENAME)
 
 	ofn.LStructSize = uint32(unsafe.Sizeof(*ofn))
@@ -63,15 +63,15 @@ func (dlg *FileDialog) show(owner RootWidget, fun func(ofn *OPENFILENAME) bool) 
 	return
 }
 
-func (dlg *FileDialog) ShowOpen(owner RootWidget) (accepted bool, err error) {
+func (dlg *FileDialog) ShowOpen(owner Form) (accepted bool, err error) {
 	return dlg.show(owner, GetOpenFileName)
 }
 
-func (dlg *FileDialog) ShowSave(owner RootWidget) (accepted bool, err error) {
+func (dlg *FileDialog) ShowSave(owner Form) (accepted bool, err error) {
 	return dlg.show(owner, GetSaveFileName)
 }
 
-func (dlg *FileDialog) ShowBrowseFolder(owner RootWidget) (accepted bool, err error) {
+func (dlg *FileDialog) ShowBrowseFolder(owner Form) (accepted bool, err error) {
 	// Calling OleInitialize (or similar) is required for BIF_NEWDIALOGSTYLE.
 	if hr := OleInitialize(); hr != S_OK && hr != S_FALSE {
 		return false, newError(fmt.Sprint("OleInitialize Error: ", hr))

@@ -35,7 +35,7 @@ const (
 	MsgBoxDefButton4        MsgBoxStyle = MB_DEFBUTTON4
 )
 
-func MsgBox(owner RootWidget, title, message string, style MsgBoxStyle) int {
+func MsgBox(owner Form, title, message string, style MsgBoxStyle) int {
 	var ownerHWnd HWND
 
 	if owner != nil {

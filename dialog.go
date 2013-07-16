@@ -46,7 +46,7 @@ type Dialog struct {
 	centerInOwnerWhenRun bool
 }
 
-func NewDialog(owner RootWidget) (*Dialog, error) {
+func NewDialog(owner Form) (*Dialog, error) {
 	dlg := &Dialog{
 		FormBase: FormBase{
 			owner: owner,

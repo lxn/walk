@@ -43,11 +43,6 @@ type Container interface {
 	SetDataBinder(dbm *DataBinder)
 }
 
-type RootWidget interface {
-	Container
-	Run() int
-}
-
 type ContainerBase struct {
 	WidgetBase
 	layout     Layout
