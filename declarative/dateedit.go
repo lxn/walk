@@ -60,7 +60,7 @@ func (de DateEdit) Create(builder *Builder) error {
 		}
 
 		if de.OnDateChanged != nil {
-			w.ValueChanged().Attach(de.OnDateChanged)
+			w.DateChanged().Attach(de.OnDateChanged)
 		}
 
 		if de.AssignTo != nil {

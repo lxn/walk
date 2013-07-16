@@ -13,7 +13,7 @@ import . "github.com/lxn/go-winapi"
 
 type DateEdit struct {
 	WidgetBase
-	valueChangedPublisher EventPublisher
+	dateChangedPublisher EventPublisher
 }
 
 func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
@@ -30,12 +30,12 @@ func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
 
 	de.MustRegisterProperty("Date", NewProperty(
 		func() interface{} {
-			return de.Value()
+			return de.Date()
 		},
 		func(v interface{}) error {
-			return de.SetValue(v.(time.Time))
+			return de.SetDate(v.(time.Time))
 		},
-		de.valueChangedPublisher.Event()))
+		de.dateChangedPublisher.Event()))
 
 	return de, nil
 }
@@ -115,7 +115,7 @@ func (de *DateEdit) setSystemTime(st *SYSTEMTIME) error {
 		return newError("SendMessage(DTM_SETSYSTEMTIME)")
 	}
 
-	de.valueChangedPublisher.Publish()
+	de.dateChangedPublisher.Publish()
 
 	return nil
 }
@@ -165,7 +165,7 @@ func (de *DateEdit) SetRange(min, max time.Time) error {
 	return nil
 }
 
-func (de *DateEdit) Value() time.Time {
+func (de *DateEdit) Date() time.Time {
 	st, err := de.systemTime()
 	if err != nil {
 		return time.Time{}
@@ -178,12 +178,12 @@ func (de *DateEdit) Value() time.Time {
 	return time.Unix(de.systemTimeToTime(st).Unix(), 0)
 }
 
-func (de *DateEdit) SetValue(value time.Time) error {
-	return de.setSystemTime(de.timeToSystemTime(value))
+func (de *DateEdit) SetDate(date time.Time) error {
+	return de.setSystemTime(de.timeToSystemTime(date))
 }
 
-func (de *DateEdit) ValueChanged() *Event {
-	return de.valueChangedPublisher.Event()
+func (de *DateEdit) DateChanged() *Event {
+	return de.dateChangedPublisher.Event()
 }
 
 func (de *DateEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -191,7 +191,7 @@ func (de *DateEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 	case WM_NOTIFY:
 		switch uint32(((*NMHDR)(unsafe.Pointer(lParam))).Code) {
 		case DTN_DATETIMECHANGE:
-			de.valueChangedPublisher.Publish()
+			de.dateChangedPublisher.Publish()
 		}
 	}
 
