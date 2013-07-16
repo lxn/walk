@@ -51,7 +51,7 @@ func runSynchronized() {
 	}
 }
 
-type TopLevelWindow struct {
+type FormBase struct {
 	ContainerBase
 	owner                 RootWidget
 	closingPublisher      CloseEventPublisher
@@ -64,55 +64,55 @@ type TopLevelWindow struct {
 	closeReason           CloseReason
 }
 
-func (tlw *TopLevelWindow) init() {
-	tlw.MustRegisterProperty("Title", NewProperty(
+func (fb *FormBase) init() {
+	fb.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
-			return tlw.Title()
+			return fb.Title()
 		},
 		func(v interface{}) error {
-			return tlw.SetTitle(v.(string))
+			return fb.SetTitle(v.(string))
 		},
-		tlw.titleChangedPublisher.Event()))
+		fb.titleChangedPublisher.Event()))
 }
 
-func (tlw *TopLevelWindow) LayoutFlags() LayoutFlags {
+func (fb *FormBase) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
-func (tlw *TopLevelWindow) SizeHint() Size {
-	return tlw.dialogBaseUnitsToPixels(Size{252, 218})
+func (fb *FormBase) SizeHint() Size {
+	return fb.dialogBaseUnitsToPixels(Size{252, 218})
 }
 
-func (tlw *TopLevelWindow) Enabled() bool {
-	return tlw.enabled
+func (fb *FormBase) Enabled() bool {
+	return fb.enabled
 }
 
-func (tlw *TopLevelWindow) SetEnabled(enabled bool) {
-	tlw.WidgetBase.SetEnabled(enabled)
+func (fb *FormBase) SetEnabled(enabled bool) {
+	fb.WidgetBase.SetEnabled(enabled)
 }
 
-func (tlw *TopLevelWindow) Font() *Font {
-	if tlw.font != nil {
-		return tlw.font
+func (fb *FormBase) Font() *Font {
+	if fb.font != nil {
+		return fb.font
 	}
 
 	return defaultFont
 }
 
-func (tlw *TopLevelWindow) Title() string {
-	return widgetText(tlw.hWnd)
+func (fb *FormBase) Title() string {
+	return widgetText(fb.hWnd)
 }
 
-func (tlw *TopLevelWindow) SetTitle(value string) error {
-	return setWidgetText(tlw.hWnd, value)
+func (fb *FormBase) SetTitle(value string) error {
+	return setWidgetText(fb.hWnd, value)
 }
 
-func (tlw *TopLevelWindow) Run() int {
-	tlw.startingPublisher.Publish()
+func (fb *FormBase) Run() int {
+	fb.startingPublisher.Publish()
 
 	var msg MSG
 
-	for tlw.hWnd != 0 {
+	for fb.hWnd != 0 {
 		switch GetMessage(&msg, 0, 0, 0) {
 		case 0:
 			return int(msg.WParam)
@@ -121,7 +121,7 @@ func (tlw *TopLevelWindow) Run() int {
 			return -1
 		}
 
-		if !IsDialogMessage(tlw.hWnd, &msg) {
+		if !IsDialogMessage(fb.hWnd, &msg) {
 			TranslateMessage(&msg)
 			DispatchMessage(&msg)
 		}
@@ -132,16 +132,16 @@ func (tlw *TopLevelWindow) Run() int {
 	return 0
 }
 
-func (tlw *TopLevelWindow) Starting() *Event {
-	return tlw.startingPublisher.Event()
+func (fb *FormBase) Starting() *Event {
+	return fb.startingPublisher.Event()
 }
 
-func (tlw *TopLevelWindow) Owner() RootWidget {
-	return tlw.owner
+func (fb *FormBase) Owner() RootWidget {
+	return fb.owner
 }
 
-func (tlw *TopLevelWindow) SetOwner(value RootWidget) error {
-	tlw.owner = value
+func (fb *FormBase) SetOwner(value RootWidget) error {
+	fb.owner = value
 
 	var ownerHWnd HWND
 	if value != nil {
@@ -150,7 +150,7 @@ func (tlw *TopLevelWindow) SetOwner(value RootWidget) error {
 
 	SetLastError(0)
 	if 0 == SetWindowLong(
-		tlw.hWnd,
+		fb.hWnd,
 		GWL_HWNDPARENT,
 		int32(ownerHWnd)) && GetLastError() != 0 {
 
@@ -160,56 +160,56 @@ func (tlw *TopLevelWindow) SetOwner(value RootWidget) error {
 	return nil
 }
 
-func (tlw *TopLevelWindow) Icon() *Icon {
-	return tlw.icon
+func (fb *FormBase) Icon() *Icon {
+	return fb.icon
 }
 
-func (tlw *TopLevelWindow) SetIcon(icon *Icon) {
-	tlw.icon = icon
+func (fb *FormBase) SetIcon(icon *Icon) {
+	fb.icon = icon
 
 	var hIcon uintptr
 	if icon != nil {
 		hIcon = uintptr(icon.hIcon)
 	}
 
-	tlw.SendMessage(WM_SETICON, 0, hIcon)
-	tlw.SendMessage(WM_SETICON, 1, hIcon)
+	fb.SendMessage(WM_SETICON, 0, hIcon)
+	fb.SendMessage(WM_SETICON, 1, hIcon)
 }
 
-func (tlw *TopLevelWindow) Hide() {
-	tlw.widget.SetVisible(false)
+func (fb *FormBase) Hide() {
+	fb.widget.SetVisible(false)
 }
 
-func (tlw *TopLevelWindow) Show() {
-	if p, ok := tlw.widget.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
+func (fb *FormBase) Show() {
+	if p, ok := fb.widget.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
 		p.RestoreState()
 	}
 
-	tlw.widget.SetVisible(true)
+	fb.widget.SetVisible(true)
 }
 
-func (tlw *TopLevelWindow) close() error {
-	if p, ok := tlw.widget.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
+func (fb *FormBase) close() error {
+	if p, ok := fb.widget.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
 		p.SaveState()
 	}
 
-	tlw.widget.Dispose()
+	fb.widget.Dispose()
 
 	return nil
 }
 
-func (tlw *TopLevelWindow) Close() error {
-	tlw.SendMessage(WM_CLOSE, 0, 0)
+func (fb *FormBase) Close() error {
+	fb.SendMessage(WM_CLOSE, 0, 0)
 
 	return nil
 }
 
-func (tlw *TopLevelWindow) SaveState() error {
+func (fb *FormBase) SaveState() error {
 	var wp WINDOWPLACEMENT
 
 	wp.Length = uint32(unsafe.Sizeof(wp))
 
-	if !GetWindowPlacement(tlw.hWnd, &wp) {
+	if !GetWindowPlacement(fb.hWnd, &wp) {
 		return lastError("GetWindowPlacement")
 	}
 
@@ -220,23 +220,23 @@ func (tlw *TopLevelWindow) SaveState() error {
 		wp.RcNormalPosition.Left, wp.RcNormalPosition.Top,
 		wp.RcNormalPosition.Right, wp.RcNormalPosition.Bottom)
 
-	if err := tlw.putState(state); err != nil {
+	if err := fb.putState(state); err != nil {
 		return err
 	}
 
-	return tlw.ContainerBase.SaveState()
+	return fb.ContainerBase.SaveState()
 }
 
-func (tlw *TopLevelWindow) RestoreState() error {
-	if tlw.isInRestoreState {
+func (fb *FormBase) RestoreState() error {
+	if fb.isInRestoreState {
 		return nil
 	}
-	tlw.isInRestoreState = true
+	fb.isInRestoreState = true
 	defer func() {
-		tlw.isInRestoreState = false
+		fb.isInRestoreState = false
 	}()
 
-	state, err := tlw.getState()
+	state, err := fb.getState()
 	if err != nil {
 		return err
 	}
@@ -257,52 +257,52 @@ func (tlw *TopLevelWindow) RestoreState() error {
 
 	wp.Length = uint32(unsafe.Sizeof(wp))
 
-	if !SetWindowPlacement(tlw.hWnd, &wp) {
+	if !SetWindowPlacement(fb.hWnd, &wp) {
 		return lastError("SetWindowPlacement")
 	}
 
-	if err := tlw.ContainerBase.RestoreState(); err != nil {
+	if err := fb.ContainerBase.RestoreState(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (tlw *TopLevelWindow) Closing() *CloseEvent {
-	return tlw.closingPublisher.Event()
+func (fb *FormBase) Closing() *CloseEvent {
+	return fb.closingPublisher.Event()
 }
 
-func (tlw *TopLevelWindow) ProgressIndicator() *ProgressIndicator {
-	return tlw.progressIndicator
+func (fb *FormBase) ProgressIndicator() *ProgressIndicator {
+	return fb.progressIndicator
 }
 
-func (tlw *TopLevelWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (fb *FormBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case WM_ACTIVATE:
 		switch LOWORD(uint32(wParam)) {
 		case WA_ACTIVE, WA_CLICKACTIVE:
-			if tlw.prevFocusHWnd != 0 {
-				SetFocus(tlw.prevFocusHWnd)
+			if fb.prevFocusHWnd != 0 {
+				SetFocus(fb.prevFocusHWnd)
 			}
 
 		case WA_INACTIVE:
-			tlw.prevFocusHWnd = GetFocus()
+			fb.prevFocusHWnd = GetFocus()
 		}
 		return 0
 
 	case WM_CLOSE:
-		tlw.closeReason = CloseReasonUnknown
+		fb.closeReason = CloseReasonUnknown
 		var canceled bool
-		tlw.closingPublisher.Publish(&canceled, tlw.closeReason)
+		fb.closingPublisher.Publish(&canceled, fb.closeReason)
 		if !canceled {
-			if tlw.owner != nil {
-				tlw.owner.SetEnabled(true)
-				if !SetWindowPos(tlw.owner.Handle(), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_SHOWWINDOW) {
+			if fb.owner != nil {
+				fb.owner.SetEnabled(true)
+				if !SetWindowPos(fb.owner.Handle(), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_SHOWWINDOW) {
 					lastError("SetWindowPos")
 				}
 			}
 
-			tlw.close()
+			fb.close()
 		}
 		return 0
 
@@ -310,27 +310,27 @@ func (tlw *TopLevelWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))
 
 		var layout Layout
-		if container, ok := tlw.widget.(Container); ok {
+		if container, ok := fb.widget.(Container); ok {
 			layout = container.Layout()
 		}
 
 		var min Size
 		if layout != nil {
-			min = tlw.sizeFromClientSize(layout.MinSize())
+			min = fb.sizeFromClientSize(layout.MinSize())
 		}
 
 		mmi.PtMinTrackSize = POINT{
-			int32(maxi(min.Width, tlw.minSize.Width)),
-			int32(maxi(min.Height, tlw.minSize.Height)),
+			int32(maxi(min.Width, fb.minSize.Width)),
+			int32(maxi(min.Height, fb.minSize.Height)),
 		}
 		return 0
 
 	case WM_SETTEXT:
-		tlw.titleChangedPublisher.Publish()
+		fb.titleChangedPublisher.Publish()
 
 	case WM_SYSCOMMAND:
 		if wParam == SC_CLOSE {
-			tlw.closeReason = CloseReasonUser
+			fb.closeReason = CloseReasonUser
 		}
 
 	case taskbarButtonCreatedMsgId:
@@ -339,9 +339,9 @@ func (tlw *TopLevelWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 		minor := version & 0xFF00 >> 8
 		// Check that the OS is Win 7 or later (Win 7 is v6.1).
 		if major > 6 || (major == 6 && minor > 0) {
-			tlw.progressIndicator, _ = newTaskbarList3(tlw.hWnd)
+			fb.progressIndicator, _ = newTaskbarList3(fb.hWnd)
 		}
 	}
 
-	return tlw.ContainerBase.WndProc(hwnd, msg, wParam, lParam)
+	return fb.ContainerBase.WndProc(hwnd, msg, wParam, lParam)
 }

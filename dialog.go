@@ -39,7 +39,7 @@ type dialogish interface {
 }
 
 type Dialog struct {
-	TopLevelWindow
+	FormBase
 	result               int
 	defaultButton        *PushButton
 	cancelButton         *PushButton
@@ -48,7 +48,7 @@ type Dialog struct {
 
 func NewDialog(owner RootWidget) (*Dialog, error) {
 	dlg := &Dialog{
-		TopLevelWindow: TopLevelWindow{
+		FormBase: FormBase{
 			owner: owner,
 		},
 	}
@@ -137,7 +137,7 @@ func (dlg *Dialog) Cancel() {
 func (dlg *Dialog) Close(result int) {
 	dlg.result = result
 
-	dlg.TopLevelWindow.Close()
+	dlg.FormBase.Close()
 }
 
 func firstFocusableDescendantCallback(hwnd HWND, lParam uintptr) uintptr {
@@ -214,7 +214,7 @@ func (dlg *Dialog) Show() {
 		dlg.SetBounds(dlg.Bounds())
 	}
 
-	dlg.TopLevelWindow.Show()
+	dlg.FormBase.Show()
 
 	dlg.focusFirstCandidateDescendant()
 }
@@ -226,7 +226,7 @@ func (dlg *Dialog) Run() int {
 		dlg.owner.SetEnabled(false)
 	}
 
-	dlg.TopLevelWindow.Run()
+	dlg.FormBase.Run()
 
 	return dlg.result
 }

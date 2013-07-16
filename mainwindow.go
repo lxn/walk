@@ -19,7 +19,7 @@ func init() {
 }
 
 type MainWindow struct {
-	TopLevelWindow
+	FormBase
 	windowPlacement *WINDOWPLACEMENT
 	menu            *Menu
 	toolBar         *ToolBar
@@ -75,7 +75,7 @@ func NewMainWindow() (*MainWindow, error) {
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	mw.SendMessage(WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
-	mw.TopLevelWindow.init()
+	mw.FormBase.init()
 
 	succeeded = true
 
@@ -119,11 +119,11 @@ func (mw *MainWindow) SaveState() error {
 		return err
 	}
 
-	return mw.TopLevelWindow.SaveState()
+	return mw.FormBase.SaveState()
 }
 
 func (mw *MainWindow) RestoreState() error {
-	if err := mw.TopLevelWindow.RestoreState(); err != nil {
+	if err := mw.FormBase.RestoreState(); err != nil {
 		return err
 	}
 
@@ -168,7 +168,7 @@ func (mw *MainWindow) SetVisible(visible bool) {
 		}
 	}
 
-	mw.TopLevelWindow.SetVisible(visible)
+	mw.FormBase.SetVisible(visible)
 }
 
 func (mw *MainWindow) Fullscreen() bool {
@@ -278,5 +278,5 @@ func (mw *MainWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 		}
 	}
 
-	return mw.TopLevelWindow.WndProc(hwnd, msg, wParam, lParam)
+	return mw.FormBase.WndProc(hwnd, msg, wParam, lParam)
 }
