@@ -12,10 +12,39 @@ import (
 
 import . "github.com/lxn/go-winapi"
 
-// Icon is a bitmap that supports transparency and combining multiple 
+// Icon is a bitmap that supports transparency and combining multiple
 // variants of an image in different resolutions.
 type Icon struct {
-	hIcon HICON
+	hIcon   HICON
+	isStock bool
+}
+
+func IconApplication() *Icon {
+	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_APPLICATION)), true}
+}
+
+func IconError() *Icon {
+	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_ERROR)), true}
+}
+
+func IconQuestion() *Icon {
+	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_QUESTION)), true}
+}
+
+func IconWarning() *Icon {
+	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_WARNING)), true}
+}
+
+func IconInformation() *Icon {
+	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_INFORMATION)), true}
+}
+
+func IconWinLogo() *Icon {
+	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_WINLOGO)), true}
+}
+
+func IconShield() *Icon {
+	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_SHIELD)), true}
 }
 
 // NewIconFromFile returns a new Icon, using the specified icon image file.
@@ -59,12 +88,12 @@ func NewIconFromImage(im image.Image) (ic *Icon, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Icon{hIcon}, nil
+	return &Icon{hIcon: hIcon}, nil
 }
 
 // Dispose releases the operating system resources associated with the Icon.
 func (i *Icon) Dispose() error {
-	if i.hIcon == 0 {
+	if i.isStock || i.hIcon == 0 {
 		return nil
 	}
 
