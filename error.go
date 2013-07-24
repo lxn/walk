@@ -10,7 +10,9 @@ import (
 	"runtime/debug"
 )
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 var (
 	logErrors    bool

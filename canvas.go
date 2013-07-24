@@ -9,7 +9,9 @@ import (
 	"unsafe"
 )
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 // DrawText format flags
 type DrawTextFormat uint

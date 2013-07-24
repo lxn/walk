@@ -4,9 +4,13 @@
 
 package walk
 
-import "syscall"
+import (
+	"syscall"
+)
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 const groupBoxWindowClass = `\o/ Walk_GroupBox_Class \o/`
 

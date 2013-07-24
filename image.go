@@ -4,9 +4,13 @@
 
 package walk
 
-import "strings"
+import (
+	"strings"
+)
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 type Image interface {
 	draw(hdc HDC, location Point) error

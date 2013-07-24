@@ -4,9 +4,13 @@
 
 package walk
 
-import "unsafe"
+import (
+	"unsafe"
+)
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 type Margins struct {
 	HNear, VNear, HFar, VFar int

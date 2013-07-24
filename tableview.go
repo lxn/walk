@@ -16,7 +16,9 @@ import (
 	"unsafe"
 )
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 var defaultTVRowBGColor Color = Color(GetSysColor(COLOR_WINDOW))
 

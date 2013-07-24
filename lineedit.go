@@ -9,7 +9,9 @@ import (
 	"unsafe"
 )
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 const (
 	lineEditMinChars    = 10 // number of characters needed to make a LineEdit usable

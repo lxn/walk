@@ -4,9 +4,13 @@
 
 package walk
 
-import "syscall"
+import (
+	"syscall"
+)
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 func knownFolderPath(id CSIDL) (string, error) {
 	var buf [MAX_PATH]uint16

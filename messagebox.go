@@ -8,7 +8,9 @@ import (
 	"syscall"
 )
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 type MsgBoxStyle uint
 

@@ -9,7 +9,9 @@ import (
 	"unsafe"
 )
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 const notifyIconWindowClass = `\o/ Walk_NotifyIcon_Class \o/`
 
@@ -151,7 +153,7 @@ func (ni *NotifyIcon) notifyIconData() *NOTIFYICONDATA {
 	return nid
 }
 
-// Dispose releases the operating system resources associated with the 
+// Dispose releases the operating system resources associated with the
 // NotifyIcon.
 //
 // The associated Icon is not disposed of.

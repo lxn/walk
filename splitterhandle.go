@@ -4,7 +4,9 @@
 
 package walk
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 const splitterHandleWindowClass = `\o/ Walk_SplitterHandle_Class \o/`
 

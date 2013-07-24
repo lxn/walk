@@ -4,7 +4,9 @@
 
 package walk
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 const compositeWindowClass = `\o/ Walk_Composite_Class \o/`
 

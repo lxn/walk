@@ -4,8 +4,13 @@
 
 package walk
 
-import . "github.com/lxn/go-winapi"
-import "image"
+import (
+	"image"
+)
+
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 type Cursor interface {
 	Dispose()

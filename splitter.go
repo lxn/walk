@@ -11,7 +11,9 @@ import (
 	"strings"
 )
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 const splitterWindowClass = `\o/ Walk_Splitter_Class \o/`
 

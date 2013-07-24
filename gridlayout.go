@@ -4,9 +4,13 @@
 
 package walk
 
-import "sort"
+import (
+	"sort"
+)
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 type gridLayoutCell struct {
 	row    int

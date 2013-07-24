@@ -11,7 +11,9 @@ import (
 	"unsafe"
 )
 
-import . "github.com/lxn/go-winapi"
+import (
+	. "github.com/lxn/go-winapi"
+)
 
 func withCompatibleDC(f func(hdc HDC) error) error {
 	hdc := CreateCompatibleDC(0)
