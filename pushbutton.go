@@ -17,7 +17,7 @@ type PushButton struct {
 }
 
 func NewPushButton(parent Container) (*PushButton, error) {
-	pb := &PushButton{}
+	pb := new(PushButton)
 
 	if err := InitWidget(
 		pb,

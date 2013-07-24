@@ -13,7 +13,7 @@ type CheckBox struct {
 }
 
 func NewCheckBox(parent Container) (*CheckBox, error) {
-	cb := &CheckBox{}
+	cb := new(CheckBox)
 
 	if err := InitWidget(
 		cb,

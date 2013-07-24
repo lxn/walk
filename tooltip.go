@@ -27,7 +27,7 @@ type ToolTip struct {
 var globalToolTip *ToolTip
 
 func NewToolTip() (*ToolTip, error) {
-	tt := &ToolTip{}
+	tt := new(ToolTip)
 
 	if err := InitWindow(
 		tt,

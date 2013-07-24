@@ -23,7 +23,7 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, error) {
 		return nil, newError("splitter cannot be nil")
 	}
 
-	sh := &splitterHandle{}
+	sh := new(splitterHandle)
 	sh.parent = splitter
 
 	if err := InitWindow(

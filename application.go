@@ -40,7 +40,7 @@ type Application struct {
 	panickingPublisher ErrorEventPublisher
 }
 
-var appSingleton *Application = &Application{}
+var appSingleton *Application = new(Application)
 
 func App() *Application {
 	return appSingleton

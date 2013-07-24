@@ -13,7 +13,7 @@ type ToolButton struct {
 }
 
 func NewToolButton(parent Container) (*ToolButton, error) {
-	tb := &ToolButton{}
+	tb := new(ToolButton)
 
 	if err := InitWidget(
 		tb,

@@ -13,7 +13,7 @@ type ProgressBar struct {
 }
 
 func NewProgressBar(parent Container) (*ProgressBar, error) {
-	pb := &ProgressBar{}
+	pb := new(ProgressBar)
 
 	if err := InitWidget(
 		pb,

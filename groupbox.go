@@ -26,7 +26,7 @@ type GroupBox struct {
 }
 
 func NewGroupBox(parent Container) (*GroupBox, error) {
-	gb := &GroupBox{}
+	gb := new(GroupBox)
 
 	if err := InitWidget(
 		gb,

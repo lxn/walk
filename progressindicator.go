@@ -32,7 +32,6 @@ const (
 
 //newTaskbarList3 precondition: Windows version is at least 6.1 (yes, Win 7 is version 6.1).
 func newTaskbarList3(hwnd HWND) (*ProgressIndicator, error) {
-
 	var classFactoryPtr unsafe.Pointer
 	if hr := CoGetClassObject(&CLSID_TaskbarList, CLSCTX_ALL, nil, &IID_IClassFactory, &classFactoryPtr); FAILED(hr) {
 		return nil, errorFromHRESULT("CoGetClassObject", hr)

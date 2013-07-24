@@ -19,7 +19,7 @@ type DateEdit struct {
 }
 
 func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
-	de := &DateEdit{}
+	de := new(DateEdit)
 
 	if err := InitWidget(
 		de,

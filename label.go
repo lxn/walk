@@ -14,7 +14,7 @@ type Label struct {
 }
 
 func NewLabel(parent Container) (*Label, error) {
-	l := &Label{}
+	l := new(Label)
 
 	if err := InitWidget(
 		l,

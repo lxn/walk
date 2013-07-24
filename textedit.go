@@ -20,7 +20,7 @@ type TextEdit struct {
 }
 
 func NewTextEdit(parent Container) (*TextEdit, error) {
-	te := &TextEdit{}
+	te := new(TextEdit)
 
 	if err := InitWidget(
 		te,

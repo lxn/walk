@@ -30,7 +30,7 @@ type TabPage struct {
 }
 
 func NewTabPage() (*TabPage, error) {
-	tp := &TabPage{}
+	tp := new(TabPage)
 
 	if err := InitWindow(
 		tp,

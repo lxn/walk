@@ -111,7 +111,6 @@ func (i *Icon) Dispose() error {
 // create an Alpha Icon or Cursor from an Image
 // http://support.microsoft.com/kb/318876
 func createAlphaCursorOrIconFromImage(im image.Image, hotspot image.Point, fIcon bool) (HICON, error) {
-
 	hBitmap, err := hBitmapFromImage(im)
 	if err != nil {
 		return 0, err
