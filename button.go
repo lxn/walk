@@ -39,7 +39,7 @@ func (b *Button) init() {
 }
 
 func (b *Button) Text() string {
-	return widgetText(b.hWnd)
+	return windowText(b.hWnd)
 }
 
 func (b *Button) SetText(value string) error {
@@ -47,7 +47,7 @@ func (b *Button) SetText(value string) error {
 		return nil
 	}
 
-	if err := setWidgetText(b.hWnd, value); err != nil {
+	if err := setWindowText(b.hWnd, value); err != nil {
 		return err
 	}
 

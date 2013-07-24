@@ -32,14 +32,14 @@ func MustRegisterCondition(name string, condition walk.Condition) {
 
 type declWidget struct {
 	d Widget
-	w walk.Widget
+	w walk.Window
 }
 
 type Builder struct {
 	level                    int
 	parent                   walk.Container
 	declWidgets              []declWidget
-	name2Widget              map[string]walk.Widget
+	name2Window              map[string]walk.Window
 	deferredFuncs            []func() error
 	knownCompositeConditions map[string]walk.Condition
 }
@@ -47,7 +47,7 @@ type Builder struct {
 func NewBuilder(parent walk.Container) *Builder {
 	return &Builder{
 		parent:                   parent,
-		name2Widget:              make(map[string]walk.Widget),
+		name2Window:              make(map[string]walk.Window),
 		knownCompositeConditions: make(map[string]walk.Condition),
 	}
 }
@@ -92,7 +92,7 @@ func (b *Builder) deferBuildActions(actionList *walk.ActionList, items []MenuIte
 	}
 }
 
-func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) error {
+func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) error {
 	b.level++
 	defer func() {
 		b.level--
@@ -113,12 +113,14 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 	w.SetName(name)
 
 	if name != "" {
-		b.name2Widget[name] = w
+		b.name2Window[name] = w
 	}
 
 	if toolTipText != "" {
-		if err := w.SetToolTipText(toolTipText); err != nil {
-			return err
+		if widget, ok := w.(walk.Widget); ok {
+			if err := widget.SetToolTipText(toolTipText); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -165,29 +167,31 @@ func (b *Builder) InitWidget(d Widget, w walk.Widget, customInit func() error) e
 		w.SizeChanged().Attach(onSizeChanged)
 	}
 
-	if p := w.Parent(); p != nil {
-		switch l := p.Layout().(type) {
-		case *walk.BoxLayout:
-			if stretchFactor < 1 {
-				stretchFactor = 1
-			}
-			if err := l.SetStretchFactor(w, stretchFactor); err != nil {
-				return err
-			}
+	if widget, ok := w.(walk.Widget); ok {
+		if p := widget.Parent(); p != nil {
+			switch l := p.Layout().(type) {
+			case *walk.BoxLayout:
+				if stretchFactor < 1 {
+					stretchFactor = 1
+				}
+				if err := l.SetStretchFactor(widget, stretchFactor); err != nil {
+					return err
+				}
 
-		case *walk.GridLayout:
-			cs := columnSpan
-			if cs < 1 {
-				cs = 1
-			}
-			rs := rowSpan
-			if rs < 1 {
-				rs = 1
-			}
-			r := walk.Rectangle{column, row, cs, rs}
+			case *walk.GridLayout:
+				cs := columnSpan
+				if cs < 1 {
+					cs = 1
+				}
+				rs := rowSpan
+				if rs < 1 {
+					rs = 1
+				}
+				r := walk.Rectangle{column, row, cs, rs}
 
-			if err := l.SetRange(w, r); err != nil {
-				return err
+				if err := l.SetRange(widget, r); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -291,7 +295,7 @@ func (b *Builder) initProperties() error {
 			panic("d must be a struct value")
 		}
 
-		wb := w.BaseWidget()
+		wb := w.AsWindowBase()
 
 		fieldCount := st.NumField()
 		for i := 0; i < fieldCount; i++ {
@@ -409,8 +413,8 @@ func (b *Builder) conditionOrProperty(data Property) interface{} {
 
 func (b *Builder) property(expression string) walk.Property {
 	if parts := strings.Split(expression, "."); len(parts) == 2 {
-		if sw, ok := b.name2Widget[parts[0]]; ok {
-			return sw.BaseWidget().Property(parts[1])
+		if sw, ok := b.name2Window[parts[0]]; ok {
+			return sw.AsWindowBase().Property(parts[1])
 		}
 	}
 

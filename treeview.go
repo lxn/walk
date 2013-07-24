@@ -36,7 +36,7 @@ type TreeView struct {
 func NewTreeView(parent Container) (*TreeView, error) {
 	tv := new(TreeView)
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		tv,
 		parent,
 		"SysTreeView32",

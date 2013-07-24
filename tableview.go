@@ -70,7 +70,7 @@ func NewTableView(parent Container) (*TableView, error) {
 
 	tv.columns = newTableViewColumnList(tv)
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		tv,
 		parent,
 		"SysListView32",

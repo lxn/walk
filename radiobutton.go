@@ -47,7 +47,7 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 		rb.group = new(RadioButtonGroup)
 	}
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		rb,
 		parent,
 		"BUTTON",
@@ -92,7 +92,7 @@ func (*RadioButton) LayoutFlags() LayoutFlags {
 
 func (rb *RadioButton) MinSizeHint() Size {
 	defaultSize := rb.dialogBaseUnitsToPixels(Size{50, 10})
-	textSize := rb.calculateTextSizeImpl("n" + widgetText(rb.hWnd))
+	textSize := rb.calculateTextSizeImpl("n" + windowText(rb.hWnd))
 
 	// FIXME: Use GetThemePartSize instead of GetSystemMetrics?
 	w := textSize.Width + int(GetSystemMetrics(SM_CXMENUCHECK))

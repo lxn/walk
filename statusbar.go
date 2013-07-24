@@ -23,7 +23,7 @@ type StatusBar struct {
 func NewStatusBar(parent Container) (*StatusBar, error) {
 	sb := new(StatusBar)
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		sb,
 		parent,
 		"msctls_statusbar32",

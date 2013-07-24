@@ -34,7 +34,7 @@ type LineErrorPresenter struct {
 func NewLineErrorPresenter(parent Container) (*LineErrorPresenter, error) {
 	lep := &LineErrorPresenter{widget2error: make(map[Widget]error)}
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		lep,
 		parent,
 		lineErrorPresenterWindowClass,
@@ -121,7 +121,7 @@ func (lep *LineErrorPresenter) PresentError(err error, widget Widget) {
 	}
 
 	var found bool
-	walkDescendants(rootWidget(widget), func(w Widget) bool {
+	walkDescendants(ancestor(widget).AsFormBase().clientComposite, func(w Widget) bool {
 		if found {
 			return false
 		}
@@ -178,8 +178,8 @@ func (lep *LineErrorPresenter) PresentError(err error, widget Widget) {
 	lep.SetBackground(background)
 	lep.label.SetText(msg)
 
-	if root := rootWidget(lep); root != nil && root.Handle() != lep.hWnd {
-		root.SetBounds(root.Bounds())
+	if form := ancestor(lep); form != nil && form.Handle() != lep.hWnd {
+		form.SetBounds(form.Bounds())
 	}
 }
 

@@ -23,14 +23,13 @@ type MainWindow struct {
 	windowPlacement *WINDOWPLACEMENT
 	menu            *Menu
 	toolBar         *ToolBar
-	clientComposite *Composite
 	statusBar       *StatusBar
 }
 
 func NewMainWindow() (*MainWindow, error) {
 	mw := new(MainWindow)
 
-	if err := InitWidget(
+	if err := InitWindow(
 		mw,
 		nil,
 		mainWindowWindowClass,
@@ -65,69 +64,12 @@ func NewMainWindow() (*MainWindow, error) {
 		return nil, err
 	}
 
-	if mw.clientComposite, err = NewComposite(mw); err != nil {
-		return nil, err
-	}
-	mw.clientComposite.SetName("clientComposite")
-
-	mw.clientComposite.children.observer = mw
-
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	mw.SendMessage(WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
-
-	mw.FormBase.init()
 
 	succeeded = true
 
 	return mw, nil
-}
-
-func (mw *MainWindow) Children() *WidgetList {
-	if mw.clientComposite == nil {
-		return nil
-	}
-
-	return mw.clientComposite.Children()
-}
-
-func (mw *MainWindow) Layout() Layout {
-	if mw.clientComposite == nil {
-		return nil
-	}
-
-	return mw.clientComposite.Layout()
-}
-
-func (mw *MainWindow) SetLayout(value Layout) error {
-	if mw.clientComposite == nil {
-		return newError("clientComposite not initialized")
-	}
-
-	return mw.clientComposite.SetLayout(value)
-}
-
-func (mw *MainWindow) ContextMenu() *Menu {
-	return mw.clientComposite.ContextMenu()
-}
-
-func (mw *MainWindow) SetContextMenu(contextMenu *Menu) {
-	mw.clientComposite.SetContextMenu(contextMenu)
-}
-
-func (mw *MainWindow) SaveState() error {
-	if err := mw.clientComposite.SaveState(); err != nil {
-		return err
-	}
-
-	return mw.FormBase.SaveState()
-}
-
-func (mw *MainWindow) RestoreState() error {
-	if err := mw.FormBase.RestoreState(); err != nil {
-		return err
-	}
-
-	return mw.clientComposite.RestoreState()
 }
 
 func (mw *MainWindow) Menu() *Menu {
@@ -143,7 +85,7 @@ func (mw *MainWindow) StatusBar() *StatusBar {
 }
 
 func (mw *MainWindow) ClientBounds() Rectangle {
-	bounds := mw.WidgetBase.ClientBounds()
+	bounds := mw.FormBase.ClientBounds()
 
 	if mw.toolBar.Actions().Len() > 0 {
 		tlbBounds := mw.toolBar.Bounds()
@@ -225,58 +167,4 @@ func (mw *MainWindow) SetFullscreen(fullscreen bool) error {
 	}
 
 	return nil
-}
-
-func (mw *MainWindow) onInsertingWidget(index int, widget Widget) error {
-	return mw.clientComposite.onInsertingWidget(index, widget)
-}
-
-func (mw *MainWindow) onInsertedWidget(index int, widget Widget) error {
-	err := mw.clientComposite.onInsertedWidget(index, widget)
-	if err == nil {
-		minClientSize := mw.Layout().MinSize()
-		clientSize := mw.clientComposite.Size()
-
-		if clientSize.Width < minClientSize.Width || clientSize.Height < minClientSize.Height {
-			mw.SetClientSize(minClientSize)
-		}
-	}
-
-	return err
-}
-
-func (mw *MainWindow) onRemovingWidget(index int, widget Widget) error {
-	return mw.clientComposite.onRemovingWidget(index, widget)
-}
-
-func (mw *MainWindow) onRemovedWidget(index int, widget Widget) error {
-	return mw.clientComposite.onRemovedWidget(index, widget)
-}
-
-func (mw *MainWindow) onClearingWidgets() error {
-	return mw.clientComposite.onClearingWidgets()
-}
-
-func (mw *MainWindow) onClearedWidgets() error {
-	return mw.clientComposite.onClearedWidgets()
-}
-
-func (mw *MainWindow) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
-	switch msg {
-	case WM_SIZE, WM_SIZING:
-		mw.toolBar.SendMessage(TB_AUTOSIZE, 0, 0)
-
-		cb := mw.ClientBounds()
-
-		mw.clientComposite.SetBounds(cb)
-
-		if mw.statusBar.Visible() {
-			cb.Y += cb.Height
-			cb.Height = mw.statusBar.Height()
-
-			mw.statusBar.SetBounds(cb)
-		}
-	}
-
-	return mw.FormBase.WndProc(hwnd, msg, wParam, lParam)
 }

@@ -31,11 +31,31 @@ func shouldLayoutWidget(widget Widget) bool {
 
 	_, isSpacer := widget.(*Spacer)
 
-	return isSpacer || widget.BaseWidget().visible
+	return isSpacer || widget.AsWindowBase().visible
+}
+
+func DescendantByName(container Container, name string) Widget {
+	var widget Widget
+
+	walkDescendants(container.AsContainerBase(), func(w Widget) bool {
+		if w.Name() == name {
+			widget = w
+			return false
+		}
+
+		return true
+	})
+
+	if widget == nil {
+		return nil
+	}
+
+	return widget
 }
 
 type Container interface {
-	Widget
+	Window
+	AsContainerBase() *ContainerBase
 	Children() *WidgetList
 	Layout() Layout
 	SetLayout(value Layout) error
@@ -45,10 +65,25 @@ type Container interface {
 
 type ContainerBase struct {
 	WidgetBase
+	container  Container
 	layout     Layout
 	children   *WidgetList
 	dataBinder *DataBinder
 	persistent bool
+}
+
+func (cb *ContainerBase) init(container Container) error {
+	cb.container = container
+
+	return nil
+}
+
+func (cb *ContainerBase) AsWidgetBase() *WidgetBase {
+	return &cb.WidgetBase
+}
+
+func (cb *ContainerBase) AsContainerBase() *ContainerBase {
+	return cb
 }
 
 func (cb *ContainerBase) LayoutFlags() LayoutFlags {
@@ -126,7 +161,7 @@ func (cb *ContainerBase) SetDataBinder(db *DataBinder) {
 		var boundWidgets []Widget
 
 		walkDescendants(cb.widget, func(w Widget) bool {
-			if w.BaseWidget().Handle() == cb.hWnd {
+			if w.Handle() == cb.hWnd {
 				return true
 			}
 
@@ -134,7 +169,7 @@ func (cb *ContainerBase) SetDataBinder(db *DataBinder) {
 				return false
 			}
 
-			for _, prop := range w.BaseWidget().name2Property {
+			for _, prop := range w.AsWindowBase().name2Property {
 				if _, ok := prop.Source().(string); ok {
 					boundWidgets = append(boundWidgets, w)
 					break
@@ -203,12 +238,12 @@ func (cb *ContainerBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) 
 				cmdId := LOWORD(uint32(wParam))
 				switch cmdId {
 				case IDOK, IDCANCEL:
-					root := rootWidget(cb)
-					if root == nil {
+					form := ancestor(cb)
+					if form == nil {
 						break
 					}
 
-					dlg, ok := root.(dialogish)
+					dlg, ok := form.(dialogish)
 					if !ok {
 						break
 					}
@@ -238,19 +273,19 @@ func (cb *ContainerBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) 
 				// Accelerator
 			}
 		} else {
-			// The widget that sent the notification shall handle it itself.
+			// The window that sent the notification shall handle it itself.
 			hWnd := HWND(lParam)
-			if widget := widgetFromHWND(hWnd); widget != nil {
-				widget.WndProc(hwnd, msg, wParam, lParam)
+			if window := windowFromHandle(hWnd); window != nil {
+				window.WndProc(hwnd, msg, wParam, lParam)
 				return 0
 			}
 		}
 
 	case WM_NOTIFY:
 		nmh := (*NMHDR)(unsafe.Pointer(lParam))
-		if widget := widgetFromHWND(nmh.HwndFrom); widget != nil {
-			// The widget that sent the notification shall handle it itself.
-			return widget.WndProc(hwnd, msg, wParam, lParam)
+		if window := windowFromHandle(nmh.HwndFrom); window != nil {
+			// The window that sent the notification shall handle it itself.
+			return window.WndProc(hwnd, msg, wParam, lParam)
 		}
 
 	case WM_SIZE, WM_SIZING:
@@ -267,8 +302,8 @@ func (cb *ContainerBase) onInsertingWidget(index int, widget Widget) (err error)
 }
 
 func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err error) {
-	if parent := widget.Parent(); parent == nil || parent.BaseWidget().hWnd != cb.hWnd {
-		err = widget.SetParent(cb.widget.(Container))
+	if parent := widget.Parent(); parent == nil || parent.Handle() != cb.hWnd {
+		err = widget.SetParent(cb.container)
 		if err != nil {
 			return
 		}
@@ -286,7 +321,7 @@ func (cb *ContainerBase) onRemovingWidget(index int, widget Widget) (err error) 
 		return
 	}
 
-	if widget.Parent().BaseWidget().hWnd == cb.hWnd {
+	if widget.Parent().Handle() == cb.hWnd {
 		err = widget.SetParent(nil)
 	}
 
@@ -303,7 +338,7 @@ func (cb *ContainerBase) onRemovedWidget(index int, widget Widget) (err error) {
 
 func (cb *ContainerBase) onClearingWidgets() (err error) {
 	for _, widget := range cb.children.items {
-		if widget.Parent().BaseWidget().hWnd == cb.hWnd {
+		if widget.Parent().Handle() == cb.hWnd {
 			if err = widget.SetParent(nil); err != nil {
 				return
 			}

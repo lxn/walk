@@ -24,7 +24,7 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, error) {
 	sh := &splitterHandle{}
 	sh.parent = splitter
 
-	if err := InitWidget(
+	if err := InitWindow(
 		sh,
 		splitter,
 		splitterHandleWindowClass,

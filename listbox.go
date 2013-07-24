@@ -31,7 +31,8 @@ type ListBox struct {
 
 func NewListBox(parent Container) (*ListBox, error) {
 	lb := new(ListBox)
-	err := InitChildWidget(
+
+	err := InitWidget(
 		lb,
 		parent,
 		"LISTBOX",
@@ -40,6 +41,7 @@ func NewListBox(parent Container) (*ListBox, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return lb, nil
 }
 
@@ -310,8 +312,8 @@ func (lb *ListBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 		}
 
 	case WM_GETDLGCODE:
-		if root := rootWidget(lb); root != nil {
-			if dlg, ok := root.(dialogish); ok {
+		if form := ancestor(lb); form != nil {
+			if dlg, ok := form.(dialogish); ok {
 				if dlg.DefaultButton() != nil {
 					// If the ListBox lives in a Dialog that has a DefaultButton,
 					// we won't swallow the return key.

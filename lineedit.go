@@ -25,10 +25,10 @@ type LineEdit struct {
 	charWidth                int
 }
 
-func newLineEdit(parent Widget) (*LineEdit, error) {
+func newLineEdit(parent Window) (*LineEdit, error) {
 	le := new(LineEdit)
 
-	if err := InitWidget(
+	if err := InitWindow(
 		le,
 		parent,
 		"EDIT",
@@ -112,11 +112,11 @@ func (le *LineEdit) SetMaxLength(value int) {
 }
 
 func (le *LineEdit) Text() string {
-	return widgetText(le.hWnd)
+	return windowText(le.hWnd)
 }
 
 func (le *LineEdit) SetText(value string) error {
-	return setWidgetText(le.hWnd, value)
+	return setWindowText(le.hWnd, value)
 }
 
 func (le *LineEdit) TextSelection() (start, end int) {
@@ -227,8 +227,8 @@ func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		}
 
 	case WM_GETDLGCODE:
-		if root := rootWidget(le); root != nil {
-			if dlg, ok := root.(dialogish); ok {
+		if form := ancestor(le); form != nil {
+			if dlg, ok := form.(dialogish); ok {
 				if dlg.DefaultButton() != nil {
 					// If the LineEdit lives in a Dialog that has a DefaultButton,
 					// we won't swallow the return key.

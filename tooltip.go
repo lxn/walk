@@ -27,7 +27,7 @@ var globalToolTip *ToolTip
 func NewToolTip() (*ToolTip, error) {
 	tt := &ToolTip{}
 
-	if err := InitWidget(
+	if err := InitWindow(
 		tt,
 		nil,
 		"tooltips_class32",

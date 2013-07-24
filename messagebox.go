@@ -39,7 +39,7 @@ func MsgBox(owner Form, title, message string, style MsgBoxStyle) int {
 	var ownerHWnd HWND
 
 	if owner != nil {
-		ownerHWnd = owner.BaseWidget().hWnd
+		ownerHWnd = owner.Handle()
 	}
 
 	return int(MessageBox(

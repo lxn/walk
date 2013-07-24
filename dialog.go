@@ -53,7 +53,7 @@ func NewDialog(owner Form) (*Dialog, error) {
 		},
 	}
 
-	if err := InitWidget(
+	if err := InitWindow(
 		dlg,
 		owner,
 		dialogWindowClass,
@@ -62,14 +62,21 @@ func NewDialog(owner Form) (*Dialog, error) {
 		return nil, err
 	}
 
-	dlg.centerInOwnerWhenRun = owner != nil
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			dlg.Dispose()
+		}
+	}()
 
-	dlg.children = newWidgetList(dlg)
+	dlg.centerInOwnerWhenRun = owner != nil
 
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	dlg.SendMessage(WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
 
 	dlg.result = DlgCmdNone
+
+	succeeded = true
 
 	return dlg, nil
 }
@@ -141,7 +148,7 @@ func (dlg *Dialog) Close(result int) {
 }
 
 func firstFocusableDescendantCallback(hwnd HWND, lParam uintptr) uintptr {
-	widget := widgetFromHWND(hwnd)
+	widget := windowFromHandle(hwnd)
 
 	if widget == nil || !widget.Visible() || !widget.Enabled() {
 		return 1
@@ -164,9 +171,9 @@ var firstFocusableDescendantCallbackPtr = syscall.NewCallback(firstFocusableDesc
 func firstFocusableDescendant(container Container) Widget {
 	var hwnd HWND
 
-	EnumChildWindows(container.BaseWidget().hWnd, firstFocusableDescendantCallbackPtr, uintptr(unsafe.Pointer(&hwnd)))
+	EnumChildWindows(container.Handle(), firstFocusableDescendantCallbackPtr, uintptr(unsafe.Pointer(&hwnd)))
 
-	return widgetFromHWND(hwnd)
+	return windowFromHandle(hwnd).(Widget)
 }
 
 type textSelectable interface {

@@ -24,7 +24,7 @@ type CustomWidget struct {
 func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidget, error) {
 	cw := &CustomWidget{paint: paint}
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		cw,
 		parent,
 		customWidgetWindowClass,

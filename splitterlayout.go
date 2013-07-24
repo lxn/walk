@@ -94,7 +94,7 @@ func (l *splitterLayout) MinSize() Size {
 	var s Size
 
 	for _, widget := range l.container.Children().items {
-		cur := widget.BaseWidget().minSizeEffective()
+		cur := minSizeEffective(widget)
 
 		if l.orientation == Horizontal {
 			s.Width += cur.Width
@@ -211,7 +211,7 @@ func (l *splitterLayout) Update(reset bool) error {
 
 		if hdwp = DeferWindowPos(
 			hdwp,
-			widget.BaseWidget().hWnd,
+			widget.Handle(),
 			0,
 			int32(x),
 			int32(y),

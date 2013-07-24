@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	ErrPropertyReadOnly       error = errors.New("read-only property")
-	ErrPropertyNotValidatable       = errors.New("property not validatable")
+	ErrPropertyReadOnly       = errors.New("read-only property")
+	ErrPropertyNotValidatable = errors.New("property not validatable")
 )
 
 type Property interface {

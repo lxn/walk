@@ -14,7 +14,7 @@ type Label struct {
 func NewLabel(parent Container) (*Label, error) {
 	l := &Label{}
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		l,
 		parent,
 		"STATIC",
@@ -48,7 +48,7 @@ func (l *Label) SizeHint() Size {
 }
 
 func (l *Label) Text() string {
-	return widgetText(l.hWnd)
+	return windowText(l.hWnd)
 }
 
 func (l *Label) SetText(value string) error {
@@ -56,7 +56,7 @@ func (l *Label) SetText(value string) error {
 		return nil
 	}
 
-	if err := setWidgetText(l.hWnd, value); err != nil {
+	if err := setWindowText(l.hWnd, value); err != nil {
 		return err
 	}
 

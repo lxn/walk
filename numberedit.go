@@ -32,7 +32,7 @@ type NumberEdit struct {
 func NewNumberEdit(parent Container) (*NumberEdit, error) {
 	ne := new(NumberEdit)
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		ne,
 		parent,
 		numberEditWindowClass,
@@ -333,7 +333,7 @@ func newNumberLineEdit(parent Widget) (*numberLineEdit, error) {
 		return nil, err
 	}
 
-	if err := InitWrapperWidget(nle); err != nil {
+	if err := InitWrapperWindow(nle); err != nil {
 		return nil, err
 	}
 
@@ -653,8 +653,8 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 
 	case WM_GETDLGCODE:
 		if !nle.inEditMode {
-			if root := rootWidget(nle); root != nil {
-				if dlg, ok := root.(dialogish); ok {
+			if form := ancestor(nle); form != nil {
+				if dlg, ok := form.(dialogish); ok {
 					if dlg.DefaultButton() != nil {
 						// If the NumberEdit lives in a Dialog that has a
 						// DefaultButton, we won't swallow the return key.

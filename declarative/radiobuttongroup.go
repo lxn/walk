@@ -50,7 +50,7 @@ func (rbg RadioButtonGroup) Create(builder *Builder) error {
 		validator := newRadioButtonGroupValidator(group, parent)
 
 		for _, rb := range group.Buttons() {
-			prop := rb.BaseWidget().Property("CheckedValue")
+			prop := rb.AsWindowBase().Property("CheckedValue")
 
 			if err := prop.SetSource(rbg.DataMember); err != nil {
 				return err

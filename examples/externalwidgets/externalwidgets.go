@@ -56,7 +56,7 @@ type MyWidget struct {
 func NewMyWidget(parent walk.Container) (*MyWidget, error) {
 	w := new(MyWidget)
 
-	if err := walk.InitChildWidget(
+	if err := walk.InitWidget(
 		w,
 		parent,
 		myWidgetWindowClass,
@@ -100,7 +100,7 @@ func NewMyPushButton(parent walk.Container) (*MyPushButton, error) {
 
 	mpb := &MyPushButton{pb}
 
-	if err := walk.InitWrapperWidget(mpb); err != nil {
+	if err := walk.InitWrapperWindow(mpb); err != nil {
 		return nil, err
 	}
 

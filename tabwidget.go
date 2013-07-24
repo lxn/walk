@@ -31,7 +31,7 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 	tw := &TabWidget{currentIndex: -1}
 	tw.pages = newTabPageList(tw)
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		tw,
 		parent,
 		tabWidgetWindowClass,

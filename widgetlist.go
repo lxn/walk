@@ -69,7 +69,7 @@ func (l *WidgetList) Contains(item Widget) bool {
 
 func (l *WidgetList) indexHandle(handle HWND) int {
 	for i, widget := range l.items {
-		if widget.BaseWidget().hWnd == handle {
+		if widget.Handle() == handle {
 			return i
 		}
 	}

@@ -13,7 +13,7 @@ type CheckBox struct {
 func NewCheckBox(parent Container) (*CheckBox, error) {
 	cb := &CheckBox{}
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		cb,
 		parent,
 		"BUTTON",
@@ -33,7 +33,7 @@ func (*CheckBox) LayoutFlags() LayoutFlags {
 
 func (cb *CheckBox) MinSizeHint() Size {
 	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 10})
-	textSize := cb.calculateTextSizeImpl("n" + widgetText(cb.hWnd))
+	textSize := cb.calculateTextSizeImpl("n" + windowText(cb.hWnd))
 
 	// FIXME: Use GetThemePartSize instead of GetSystemMetrics?
 	w := textSize.Width + int(GetSystemMetrics(SM_CXMENUCHECK))

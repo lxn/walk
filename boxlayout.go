@@ -16,18 +16,18 @@ const (
 )
 
 type BoxLayout struct {
-	container            Container
-	margins              Margins
-	spacing              int
-	orientation          Orientation
-	widget2StretchFactor map[*WidgetBase]int
-	resetNeeded          bool
+	container          Container
+	margins            Margins
+	spacing            int
+	orientation        Orientation
+	hwnd2StretchFactor map[HWND]int
+	resetNeeded        bool
 }
 
 func newBoxLayout(orientation Orientation) *BoxLayout {
 	return &BoxLayout{
-		orientation:          orientation,
-		widget2StretchFactor: make(map[*WidgetBase]int),
+		orientation:        orientation,
+		hwnd2StretchFactor: make(map[HWND]int),
 	}
 }
 
@@ -115,7 +115,7 @@ func (l *BoxLayout) SetSpacing(value int) error {
 }
 
 func (l *BoxLayout) StretchFactor(widget Widget) int {
-	if factor, ok := l.widget2StretchFactor[widget.BaseWidget()]; ok {
+	if factor, ok := l.hwnd2StretchFactor[widget.Handle()]; ok {
 		return factor
 	}
 
@@ -127,14 +127,17 @@ func (l *BoxLayout) SetStretchFactor(widget Widget, factor int) error {
 		if l.container == nil {
 			return newError("container required")
 		}
-		if !l.container.Children().containsHandle(widget.BaseWidget().hWnd) {
+
+		handle := widget.Handle()
+
+		if !l.container.Children().containsHandle(handle) {
 			return newError("unknown widget")
 		}
 		if factor < 1 {
 			return newError("factor must be >= 1")
 		}
 
-		l.widget2StretchFactor[widget.BaseWidget()] = factor
+		l.hwnd2StretchFactor[handle] = factor
 
 		l.Update(false)
 	}
@@ -145,9 +148,9 @@ func (l *BoxLayout) SetStretchFactor(widget Widget, factor int) error {
 func (l *BoxLayout) cleanupStretchFactors() {
 	widgets := l.container.Children()
 
-	for widget, _ := range l.widget2StretchFactor {
-		if !widgets.containsHandle(widget.BaseWidget().hWnd) {
-			delete(l.widget2StretchFactor, widget.BaseWidget())
+	for handle, _ := range l.hwnd2StretchFactor {
+		if !widgets.containsHandle(handle) {
+			delete(l.hwnd2StretchFactor, handle)
 		}
 	}
 }
@@ -272,7 +275,7 @@ func (l *BoxLayout) MinSize() Size {
 	var s Size
 
 	for _, widget := range widgets {
-		min := widget.BaseWidget().minSizeEffective()
+		min := minSizeEffective(widget)
 
 		if l.orientation == Horizontal {
 			s.Width += min.Width
@@ -333,7 +336,7 @@ func (l *BoxLayout) Update(reset bool) error {
 	sortedWidgetInfo := widgetInfoList(make([]widgetInfo, len(widgets)))
 
 	for i, widget := range widgets {
-		sf := l.widget2StretchFactor[widget.BaseWidget()]
+		sf := l.hwnd2StretchFactor[widget.Handle()]
 		if sf == 0 {
 			sf = 1
 		}
@@ -485,7 +488,7 @@ func (l *BoxLayout) Update(reset bool) error {
 
 		if hdwp = DeferWindowPos(
 			hdwp,
-			widget.BaseWidget().hWnd,
+			widget.Handle(),
 			0,
 			int32(x),
 			int32(y),

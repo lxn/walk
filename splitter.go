@@ -42,7 +42,7 @@ func newSplitter(parent Container, orientation Orientation) (*Splitter, error) {
 	s.children = newWidgetList(s)
 	layout.container = s
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		s,
 		parent,
 		splitterWindowClass,
@@ -272,11 +272,11 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 
 					prev := s.children.At(handleIndex - 1)
 					bp := prev.Bounds()
-					msep := prev.BaseWidget().minSizeEffective()
+					msep := minSizeEffective(prev)
 
 					next := s.children.At(handleIndex + 1)
 					bn := next.Bounds()
-					msen := next.BaseWidget().minSizeEffective()
+					msen := minSizeEffective(next)
 
 					if s.Orientation() == Horizontal {
 						xh := s.draggedHandle.X()

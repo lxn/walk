@@ -69,7 +69,7 @@ func (l *TabPageList) Contains(item *TabPage) bool {
 
 func (l *TabPageList) indexHandle(handle HWND) int {
 	for i, page := range l.items {
-		if page.BaseWidget().hWnd == handle {
+		if page.Handle() == handle {
 			return i
 		}
 	}

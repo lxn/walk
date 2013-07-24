@@ -39,8 +39,8 @@ func comboBoxEditWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr 
 
 	switch msg {
 	case WM_GETDLGCODE:
-		if root := rootWidget(cb); root != nil {
-			if dlg, ok := root.(dialogish); ok {
+		if form := ancestor(cb); form != nil {
+			if dlg, ok := form.(dialogish); ok {
 				if dlg.DefaultButton() != nil {
 					// If the ComboBox lives in a Dialog that has a
 					// DefaultButton, we won't swallow the return key.
@@ -88,7 +88,7 @@ func NewDropDownBox(parent Container) (*ComboBox, error) {
 func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 	cb := &ComboBox{prevCurIndex: -1, selChangeIndex: -1, precision: 2}
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		cb,
 		parent,
 		"COMBOBOX",
@@ -465,11 +465,11 @@ func (cb *ComboBox) CurrentIndexChanged() *Event {
 }
 
 func (cb *ComboBox) Text() string {
-	return widgetText(cb.hWnd)
+	return windowText(cb.hWnd)
 }
 
 func (cb *ComboBox) SetText(value string) error {
-	return setWidgetText(cb.hWnd, value)
+	return setWindowText(cb.hWnd, value)
 }
 
 func (cb *ComboBox) TextSelection() (start, end int) {

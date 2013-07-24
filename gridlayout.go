@@ -247,7 +247,7 @@ func (l *GridLayout) Range(widget Widget) (r Rectangle, ok bool) {
 
 	if info == nil ||
 		l.container == nil ||
-		!l.container.Children().containsHandle(widget.BaseWidget().hWnd) {
+		!l.container.Children().containsHandle(widget.Handle()) {
 		return Rectangle{}, false
 	}
 
@@ -261,7 +261,7 @@ func (l *GridLayout) SetRange(widget Widget, r Rectangle) error {
 	if l.container == nil {
 		return newError("container required")
 	}
-	if !l.container.Children().containsHandle(widget.BaseWidget().hWnd) {
+	if !l.container.Children().containsHandle(widget.Handle()) {
 		return newError("widget must be child of container")
 	}
 	if r.X < 0 || r.Y < 0 {
@@ -302,7 +302,7 @@ func (l *GridLayout) cleanup() {
 	// Make sure only children of our container occupy the precious cells.
 	children := l.container.Children()
 	for widget, info := range l.widget2Info {
-		if !children.containsHandle(widget.BaseWidget().hWnd) {
+		if !children.containsHandle(widget.Handle()) {
 			l.setWidgetOnCells(nil, rangeFromGridLayoutWidgetInfo(info))
 			delete(l.widget2Info, widget)
 		}
@@ -358,7 +358,7 @@ func (l *GridLayout) MinSize() Size {
 			continue
 		}
 
-		widget2MinSize[widget] = widget.BaseWidget().minSizeEffective()
+		widget2MinSize[widget] = minSizeEffective(widget)
 	}
 
 	for row := 0; row < len(heights); row++ {
@@ -498,7 +498,7 @@ func (l *GridLayout) Update(reset bool) error {
 
 		if hdwp = DeferWindowPos(
 			hdwp,
-			widget.BaseWidget().hWnd,
+			widget.Handle(),
 			0,
 			int32(x),
 			int32(y),

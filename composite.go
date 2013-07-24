@@ -16,12 +16,13 @@ type Composite struct {
 	ContainerBase
 }
 
-func newCompositeWithStyle(parent Widget, style uint32) (*Composite, error) {
-	c := &Composite{}
+func newCompositeWithStyle(parent Window, style uint32) (*Composite, error) {
+	c := new(Composite)
+	c.container = c
 	c.children = newWidgetList(c)
 	c.SetPersistent(true)
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		c,
 		parent,
 		compositeWindowClass,

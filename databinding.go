@@ -83,7 +83,7 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 	for _, widget := range boundWidgets {
 		widget := widget
 
-		for _, prop := range widget.BaseWidget().name2Property {
+		for _, prop := range widget.AsWindowBase().name2Property {
 			prop := prop
 			if _, ok := prop.Source().(string); !ok {
 				continue

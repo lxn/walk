@@ -53,11 +53,14 @@ func runSynchronized() {
 
 type Form interface {
 	Container
+	AsFormBase() *FormBase
 	Run() int
 }
 
 type FormBase struct {
-	ContainerBase
+	WindowBase
+	form                  Form
+	clientComposite       *Composite
 	owner                 Form
 	closingPublisher      CloseEventPublisher
 	startingPublisher     EventPublisher
@@ -69,7 +72,17 @@ type FormBase struct {
 	closeReason           CloseReason
 }
 
-func (fb *FormBase) init() {
+func (fb *FormBase) init(form Form) error {
+	fb.form = form
+
+	var err error
+	if fb.clientComposite, err = NewComposite(form); err != nil {
+		return err
+	}
+	fb.clientComposite.SetName("clientComposite")
+
+	fb.clientComposite.children.observer = form.AsFormBase()
+
 	fb.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
 			return fb.Title()
@@ -78,6 +91,16 @@ func (fb *FormBase) init() {
 			return fb.SetTitle(v.(string))
 		},
 		fb.titleChangedPublisher.Event()))
+
+	return nil
+}
+
+func (fb *FormBase) AsContainerBase() *ContainerBase {
+	return fb.clientComposite.AsContainerBase()
+}
+
+func (fb *FormBase) AsFormBase() *FormBase {
+	return fb
 }
 
 func (fb *FormBase) LayoutFlags() LayoutFlags {
@@ -88,12 +111,88 @@ func (fb *FormBase) SizeHint() Size {
 	return fb.dialogBaseUnitsToPixels(Size{252, 218})
 }
 
+func (fb *FormBase) Children() *WidgetList {
+	if fb.clientComposite == nil {
+		return nil
+	}
+
+	return fb.clientComposite.Children()
+}
+
+func (fb *FormBase) Layout() Layout {
+	if fb.clientComposite == nil {
+		return nil
+	}
+
+	return fb.clientComposite.Layout()
+}
+
+func (fb *FormBase) SetLayout(value Layout) error {
+	if fb.clientComposite == nil {
+		return newError("clientComposite not initialized")
+	}
+
+	return fb.clientComposite.SetLayout(value)
+}
+
+func (fb *FormBase) DataBinder() *DataBinder {
+	return fb.clientComposite.DataBinder()
+}
+
+func (fb *FormBase) SetDataBinder(db *DataBinder) {
+	fb.clientComposite.SetDataBinder(db)
+}
+
+func (fb *FormBase) onInsertingWidget(index int, widget Widget) error {
+	return fb.clientComposite.onInsertingWidget(index, widget)
+}
+
+func (fb *FormBase) onInsertedWidget(index int, widget Widget) error {
+	err := fb.clientComposite.onInsertedWidget(index, widget)
+	if err == nil {
+		if layout := fb.Layout(); layout != nil {
+			minClientSize := fb.Layout().MinSize()
+			clientSize := fb.clientComposite.Size()
+
+			if clientSize.Width < minClientSize.Width || clientSize.Height < minClientSize.Height {
+				fb.SetClientSize(minClientSize)
+			}
+		}
+	}
+
+	return err
+}
+
+func (fb *FormBase) onRemovingWidget(index int, widget Widget) error {
+	return fb.clientComposite.onRemovingWidget(index, widget)
+}
+
+func (fb *FormBase) onRemovedWidget(index int, widget Widget) error {
+	return fb.clientComposite.onRemovedWidget(index, widget)
+}
+
+func (fb *FormBase) onClearingWidgets() error {
+	return fb.clientComposite.onClearingWidgets()
+}
+
+func (fb *FormBase) onClearedWidgets() error {
+	return fb.clientComposite.onClearedWidgets()
+}
+
+func (fb *FormBase) ContextMenu() *Menu {
+	return fb.clientComposite.ContextMenu()
+}
+
+func (fb *FormBase) SetContextMenu(contextMenu *Menu) {
+	fb.clientComposite.SetContextMenu(contextMenu)
+}
+
 func (fb *FormBase) Enabled() bool {
 	return fb.enabled
 }
 
 func (fb *FormBase) SetEnabled(enabled bool) {
-	fb.WidgetBase.SetEnabled(enabled)
+	fb.WindowBase.SetEnabled(enabled)
 }
 
 func (fb *FormBase) Font() *Font {
@@ -105,11 +204,11 @@ func (fb *FormBase) Font() *Font {
 }
 
 func (fb *FormBase) Title() string {
-	return widgetText(fb.hWnd)
+	return windowText(fb.hWnd)
 }
 
 func (fb *FormBase) SetTitle(value string) error {
-	return setWidgetText(fb.hWnd, value)
+	return setWindowText(fb.hWnd, value)
 }
 
 func (fb *FormBase) Run() int {
@@ -182,23 +281,23 @@ func (fb *FormBase) SetIcon(icon *Icon) {
 }
 
 func (fb *FormBase) Hide() {
-	fb.widget.SetVisible(false)
+	fb.window.SetVisible(false)
 }
 
 func (fb *FormBase) Show() {
-	if p, ok := fb.widget.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
+	if p, ok := fb.window.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
 		p.RestoreState()
 	}
 
-	fb.widget.SetVisible(true)
+	fb.window.SetVisible(true)
 }
 
 func (fb *FormBase) close() error {
-	if p, ok := fb.widget.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
+	if p, ok := fb.window.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
 		p.SaveState()
 	}
 
-	fb.widget.Dispose()
+	fb.window.Dispose()
 
 	return nil
 }
@@ -209,7 +308,19 @@ func (fb *FormBase) Close() error {
 	return nil
 }
 
+func (fb *FormBase) Persistent() bool {
+	return fb.clientComposite.persistent
+}
+
+func (fb *FormBase) SetPersistent(value bool) {
+	fb.clientComposite.persistent = value
+}
+
 func (fb *FormBase) SaveState() error {
+	if err := fb.clientComposite.SaveState(); err != nil {
+		return err
+	}
+
 	var wp WINDOWPLACEMENT
 
 	wp.Length = uint32(unsafe.Sizeof(wp))
@@ -229,7 +340,7 @@ func (fb *FormBase) SaveState() error {
 		return err
 	}
 
-	return fb.ContainerBase.SaveState()
+	return nil
 }
 
 func (fb *FormBase) RestoreState() error {
@@ -266,11 +377,7 @@ func (fb *FormBase) RestoreState() error {
 		return lastError("SetWindowPlacement")
 	}
 
-	if err := fb.ContainerBase.RestoreState(); err != nil {
-		return err
-	}
-
-	return nil
+	return fb.clientComposite.RestoreState()
 }
 
 func (fb *FormBase) Closing() *CloseEvent {
@@ -311,13 +418,13 @@ func (fb *FormBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		}
 		return 0
 
+	case WM_COMMAND:
+		return fb.clientComposite.WndProc(hwnd, msg, wParam, lParam)
+
 	case WM_GETMINMAXINFO:
 		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))
 
-		var layout Layout
-		if container, ok := fb.widget.(Container); ok {
-			layout = container.Layout()
-		}
+		layout := fb.clientComposite.Layout()
 
 		var min Size
 		if layout != nil {
@@ -330,8 +437,14 @@ func (fb *FormBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		}
 		return 0
 
+	case WM_NOTIFY:
+		return fb.clientComposite.WndProc(hwnd, msg, wParam, lParam)
+
 	case WM_SETTEXT:
 		fb.titleChangedPublisher.Publish()
+
+	case WM_SIZE, WM_SIZING:
+		fb.clientComposite.SetBounds(fb.ClientBounds())
 
 	case WM_SYSCOMMAND:
 		if wParam == SC_CLOSE {
@@ -348,5 +461,5 @@ func (fb *FormBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		}
 	}
 
-	return fb.ContainerBase.WndProc(hwnd, msg, wParam, lParam)
+	return fb.WindowBase.WndProc(hwnd, msg, wParam, lParam)
 }

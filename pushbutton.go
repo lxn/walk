@@ -15,7 +15,7 @@ type PushButton struct {
 func NewPushButton(parent Container) (*PushButton, error) {
 	pb := &PushButton{}
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		pb,
 		parent,
 		"BUTTON",
@@ -46,7 +46,7 @@ func (pb *PushButton) SizeHint() Size {
 }
 
 func (pb *PushButton) ensureProperDialogDefaultButton(hwndFocus HWND) {
-	widget := widgetFromHWND(hwndFocus)
+	widget := windowFromHandle(hwndFocus)
 	if widget == nil {
 		return
 	}
@@ -55,12 +55,12 @@ func (pb *PushButton) ensureProperDialogDefaultButton(hwndFocus HWND) {
 		return
 	}
 
-	root := rootWidget(pb)
-	if root == nil {
+	form := ancestor(pb)
+	if form == nil {
 		return
 	}
 
-	dlg, ok := root.(dialogish)
+	dlg, ok := form.(dialogish)
 	if !ok {
 		return
 	}
@@ -84,12 +84,12 @@ func (pb *PushButton) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uin
 	case WM_GETDLGCODE:
 		hwndFocus := GetFocus()
 		if hwndFocus == pb.hWnd {
-			root := rootWidget(pb)
-			if root == nil {
+			form := ancestor(pb)
+			if form == nil {
 				break
 			}
 
-			dlg, ok := root.(dialogish)
+			dlg, ok := form.(dialogish)
 			if !ok {
 				break
 			}

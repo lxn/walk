@@ -24,7 +24,7 @@ type GroupBox struct {
 func NewGroupBox(parent Container) (*GroupBox, error) {
 	gb := &GroupBox{}
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		gb,
 		parent,
 		groupBoxWindowClass,
@@ -72,6 +72,10 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	return gb, nil
 }
 
+func (gb *GroupBox) AsContainerBase() *ContainerBase {
+	return gb.composite.AsContainerBase()
+}
+
 func (gb *GroupBox) LayoutFlags() LayoutFlags {
 	if gb.composite == nil {
 		return 0
@@ -95,7 +99,7 @@ func (gb *GroupBox) SizeHint() Size {
 }
 
 func (gb *GroupBox) ClientBounds() Rectangle {
-	cb := widgetClientBounds(gb.hWndGroupBox)
+	cb := windowClientBounds(gb.hWndGroupBox)
 
 	if gb.Layout() == nil {
 		return cb
@@ -107,7 +111,7 @@ func (gb *GroupBox) ClientBounds() Rectangle {
 
 func (gb *GroupBox) SetFont(value *Font) {
 	if value != gb.font {
-		setWidgetFont(gb.hWndGroupBox, value)
+		setWindowFont(gb.hWndGroupBox, value)
 
 		gb.font = value
 	}
@@ -128,11 +132,11 @@ func (gb *GroupBox) SetDataBinder(dataBinder *DataBinder) {
 }
 
 func (gb *GroupBox) Title() string {
-	return widgetText(gb.hWndGroupBox)
+	return windowText(gb.hWndGroupBox)
 }
 
 func (gb *GroupBox) SetTitle(value string) error {
-	return setWidgetText(gb.hWndGroupBox, value)
+	return setWindowText(gb.hWndGroupBox, value)
 }
 
 func (gb *GroupBox) Children() *WidgetList {

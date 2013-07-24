@@ -187,7 +187,7 @@ func formatFloatString(s string, prec int, grouped bool) string {
 }
 
 func setDescendantsEnabled(widget Widget, enabled bool) {
-	wb := widget.BaseWidget()
+	wb := widget.AsWindowBase()
 	wb.SetEnabled(enabled)
 
 	walkDescendants(widget, func(w Widget) bool {
@@ -195,14 +195,14 @@ func setDescendantsEnabled(widget Widget, enabled bool) {
 			return true
 		}
 
-		EnableWindow(w.Handle(), enabled && w.BaseWidget().enabled)
+		EnableWindow(w.Handle(), enabled && w.AsWindowBase().enabled)
 
 		return true
 	})
 }
 
 func setDescendantsFont(widget Widget, f *Font) {
-	wb := widget.BaseWidget()
+	wb := widget.AsWindowBase()
 	wb.SetFont(f)
 
 	walkDescendants(widget, func(w Widget) bool {
@@ -210,11 +210,11 @@ func setDescendantsFont(widget Widget, f *Font) {
 			return true
 		}
 
-		if w.BaseWidget().font != nil {
+		if w.AsWindowBase().font != nil {
 			return false
 		}
 
-		setWidgetFont(w.Handle(), f)
+		setWindowFont(w.Handle(), f)
 
 		return true
 	})

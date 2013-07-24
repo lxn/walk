@@ -22,7 +22,7 @@ type TextEdit struct {
 func NewTextEdit(parent Container) (*TextEdit, error) {
 	te := &TextEdit{}
 
-	if err := InitChildWidget(
+	if err := InitWidget(
 		te,
 		parent,
 		"EDIT",
@@ -65,7 +65,7 @@ func (te *TextEdit) SizeHint() Size {
 }
 
 func (te *TextEdit) Text() string {
-	return widgetText(te.hWnd)
+	return windowText(te.hWnd)
 }
 
 func (te *TextEdit) TextLength() int {
@@ -73,7 +73,7 @@ func (te *TextEdit) TextLength() int {
 }
 
 func (te *TextEdit) SetText(value string) error {
-	return setWidgetText(te.hWnd, value)
+	return setWindowText(te.hWnd, value)
 }
 
 func (te *TextEdit) TextSelection() (start, end int) {

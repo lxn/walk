@@ -27,7 +27,7 @@ func NewLogView(parent walk.Container) (*LogView, error) {
 	lc := make(chan string, 1024)
 	lv := &LogView{logChan: lc}
 
-	if err := walk.InitChildWidget(
+	if err := walk.InitWidget(
 		lv,
 		parent,
 		"EDIT",
