@@ -10,19 +10,19 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type ImageList struct {
-	hIml      HIMAGELIST
+	hIml      win.HIMAGELIST
 	maskColor Color
 }
 
 func NewImageList(imageSize Size, maskColor Color) (*ImageList, error) {
-	hIml := ImageList_Create(
+	hIml := win.ImageList_Create(
 		int32(imageSize.Width),
 		int32(imageSize.Height),
-		ILC_MASK|ILC_COLOR24,
+		win.ILC_MASK|win.ILC_COLOR24,
 		8,
 		8)
 	if hIml == 0 {
@@ -37,12 +37,12 @@ func (il *ImageList) Add(bitmap, maskBitmap *Bitmap) (int, error) {
 		return 0, newError("bitmap cannot be nil")
 	}
 
-	var maskHandle HBITMAP
+	var maskHandle win.HBITMAP
 	if maskBitmap != nil {
 		maskHandle = maskBitmap.handle()
 	}
 
-	index := int(ImageList_Add(il.hIml, bitmap.handle(), maskHandle))
+	index := int(win.ImageList_Add(il.hIml, bitmap.handle(), maskHandle))
 	if index == -1 {
 		return 0, newError("ImageList_Add failed")
 	}
@@ -55,10 +55,10 @@ func (il *ImageList) AddMasked(bitmap *Bitmap) (int32, error) {
 		return 0, newError("bitmap cannot be nil")
 	}
 
-	index := ImageList_AddMasked(
+	index := win.ImageList_AddMasked(
 		il.hIml,
 		bitmap.handle(),
-		COLORREF(il.maskColor))
+		win.COLORREF(il.maskColor))
 	if index == -1 {
 		return 0, newError("ImageList_AddMasked failed")
 	}
@@ -68,7 +68,7 @@ func (il *ImageList) AddMasked(bitmap *Bitmap) (int32, error) {
 
 func (il *ImageList) Dispose() {
 	if il.hIml != 0 {
-		ImageList_Destroy(il.hIml)
+		win.ImageList_Destroy(il.hIml)
 		il.hIml = 0
 	}
 }
@@ -77,14 +77,14 @@ func (il *ImageList) MaskColor() Color {
 	return il.maskColor
 }
 
-func imageListForImage(image interface{}) (hIml HIMAGELIST, isSysIml bool, err error) {
+func imageListForImage(image interface{}) (hIml win.HIMAGELIST, isSysIml bool, err error) {
 	if filePath, ok := image.(string); ok {
 		_, hIml = iconIndexAndHImlForFilePath(filePath)
 		isSysIml = hIml != 0
 	} else {
-		w, h := GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)
+		w, h := win.GetSystemMetrics(win.SM_CXSMICON), win.GetSystemMetrics(win.SM_CYSMICON)
 
-		hIml = ImageList_Create(w, h, ILC_MASK|ILC_COLOR24, 8, 8)
+		hIml = win.ImageList_Create(w, h, win.ILC_MASK|win.ILC_COLOR24, 8, 8)
 		if hIml == 0 {
 			return 0, false, newError("ImageList_Create failed")
 		}
@@ -93,15 +93,15 @@ func imageListForImage(image interface{}) (hIml HIMAGELIST, isSysIml bool, err e
 	return
 }
 
-func iconIndexAndHImlForFilePath(filePath string) (int32, HIMAGELIST) {
-	var shfi SHFILEINFO
+func iconIndexAndHImlForFilePath(filePath string) (int32, win.HIMAGELIST) {
+	var shfi win.SHFILEINFO
 
-	if hIml := HIMAGELIST(SHGetFileInfo(
+	if hIml := win.HIMAGELIST(win.SHGetFileInfo(
 		syscall.StringToUTF16Ptr(filePath),
 		0,
 		&shfi,
 		uint32(unsafe.Sizeof(shfi)),
-		SHGFI_SYSICONINDEX|SHGFI_SMALLICON)); hIml != 0 {
+		win.SHGFI_SYSICONINDEX|win.SHGFI_SMALLICON)); hIml != 0 {
 
 		return shfi.IIcon, hIml
 	}
@@ -109,7 +109,7 @@ func iconIndexAndHImlForFilePath(filePath string) (int32, HIMAGELIST) {
 	return -1, 0
 }
 
-func imageIndexMaybeAdd(image interface{}, hIml HIMAGELIST, isSysIml bool, imageUintptr2Index map[uintptr]int32, filePath2IconIndex map[string]int32) int32 {
+func imageIndexMaybeAdd(image interface{}, hIml win.HIMAGELIST, isSysIml bool, imageUintptr2Index map[uintptr]int32, filePath2IconIndex map[string]int32) int32 {
 	if !isSysIml {
 		return imageIndexAddIfNotExists(image, hIml, imageUintptr2Index)
 	} else if filePath, ok := image.(string); ok {
@@ -126,7 +126,7 @@ func imageIndexMaybeAdd(image interface{}, hIml HIMAGELIST, isSysIml bool, image
 	return -1
 }
 
-func imageIndexAddIfNotExists(image interface{}, hIml HIMAGELIST, imageUintptr2Index map[uintptr]int32) int32 {
+func imageIndexAddIfNotExists(image interface{}, hIml win.HIMAGELIST, imageUintptr2Index map[uintptr]int32) int32 {
 	imageIndex := int32(-1)
 
 	if image != nil {
@@ -149,10 +149,10 @@ func imageIndexAddIfNotExists(image interface{}, hIml HIMAGELIST, imageUintptr2I
 
 		switch img := image.(type) {
 		case *Bitmap:
-			imageIndex = ImageList_AddMasked(hIml, img.hBmp, 0)
+			imageIndex = win.ImageList_AddMasked(hIml, img.hBmp, 0)
 
 		case *Icon:
-			imageIndex = ImageList_ReplaceIcon(hIml, -1, img.hIcon)
+			imageIndex = win.ImageList_ReplaceIcon(hIml, -1, img.hIcon)
 		}
 
 		if imageIndex > -1 {

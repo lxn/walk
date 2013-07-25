@@ -10,23 +10,23 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const (
 	DlgCmdNone     = 0
-	DlgCmdOK       = IDOK
-	DlgCmdCancel   = IDCANCEL
-	DlgCmdAbort    = IDABORT
-	DlgCmdRetry    = IDRETRY
-	DlgCmdIgnore   = IDIGNORE
-	DlgCmdYes      = IDYES
-	DlgCmdNo       = IDNO
-	DlgCmdClose    = IDCLOSE
-	DlgCmdHelp     = IDHELP
-	DlgCmdTryAgain = IDTRYAGAIN
-	DlgCmdContinue = IDCONTINUE
-	DlgCmdTimeout  = IDTIMEOUT
+	DlgCmdOK       = win.IDOK
+	DlgCmdCancel   = win.IDCANCEL
+	DlgCmdAbort    = win.IDABORT
+	DlgCmdRetry    = win.IDRETRY
+	DlgCmdIgnore   = win.IDIGNORE
+	DlgCmdYes      = win.IDYES
+	DlgCmdNo       = win.IDNO
+	DlgCmdClose    = win.IDCLOSE
+	DlgCmdHelp     = win.IDHELP
+	DlgCmdTryAgain = win.IDTRYAGAIN
+	DlgCmdContinue = win.IDCONTINUE
+	DlgCmdTimeout  = win.IDTIMEOUT
 )
 
 const dialogWindowClass = `\o/ Walk_Dialog_Class \o/`
@@ -59,8 +59,8 @@ func NewDialog(owner Form) (*Dialog, error) {
 		dlg,
 		owner,
 		dialogWindowClass,
-		WS_CAPTION|WS_SYSMENU|WS_THICKFRAME,
-		WS_EX_DLGMODALFRAME); err != nil {
+		win.WS_CAPTION|win.WS_SYSMENU|win.WS_THICKFRAME,
+		win.WS_EX_DLGMODALFRAME); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +74,7 @@ func NewDialog(owner Form) (*Dialog, error) {
 	dlg.centerInOwnerWhenRun = owner != nil
 
 	// This forces display of focus rectangles, as soon as the user starts to type.
-	dlg.SendMessage(WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
+	dlg.SendMessage(win.WM_CHANGEUISTATE, win.UIS_INITIALIZE, 0)
 
 	dlg.result = DlgCmdNone
 
@@ -88,24 +88,24 @@ func (dlg *Dialog) DefaultButton() *PushButton {
 }
 
 func (dlg *Dialog) SetDefaultButton(button *PushButton) error {
-	if button != nil && !IsChild(dlg.hWnd, button.hWnd) {
+	if button != nil && !win.IsChild(dlg.hWnd, button.hWnd) {
 		return newError("not a descendant of the dialog")
 	}
 
 	succeeded := false
 	if dlg.defaultButton != nil {
-		if err := dlg.defaultButton.setAndClearStyleBits(BS_PUSHBUTTON, BS_DEFPUSHBUTTON); err != nil {
+		if err := dlg.defaultButton.setAndClearStyleBits(win.BS_PUSHBUTTON, win.BS_DEFPUSHBUTTON); err != nil {
 			return err
 		}
 		defer func() {
 			if !succeeded {
-				dlg.defaultButton.setAndClearStyleBits(BS_DEFPUSHBUTTON, BS_PUSHBUTTON)
+				dlg.defaultButton.setAndClearStyleBits(win.BS_DEFPUSHBUTTON, win.BS_PUSHBUTTON)
 			}
 		}()
 	}
 
 	if button != nil {
-		if err := button.setAndClearStyleBits(BS_DEFPUSHBUTTON, BS_PUSHBUTTON); err != nil {
+		if err := button.setAndClearStyleBits(win.BS_DEFPUSHBUTTON, win.BS_PUSHBUTTON); err != nil {
 			return err
 		}
 	}
@@ -122,7 +122,7 @@ func (dlg *Dialog) CancelButton() *PushButton {
 }
 
 func (dlg *Dialog) SetCancelButton(button *PushButton) error {
-	if button != nil && !IsChild(dlg.hWnd, button.hWnd) {
+	if button != nil && !win.IsChild(dlg.hWnd, button.hWnd) {
 		return newError("not a descendant of the dialog")
 	}
 
@@ -149,18 +149,18 @@ func (dlg *Dialog) Close(result int) {
 	dlg.FormBase.Close()
 }
 
-func firstFocusableDescendantCallback(hwnd HWND, lParam uintptr) uintptr {
+func firstFocusableDescendantCallback(hwnd win.HWND, lParam uintptr) uintptr {
 	widget := windowFromHandle(hwnd)
 
 	if widget == nil || !widget.Visible() || !widget.Enabled() {
 		return 1
 	}
 
-	style := uint(GetWindowLong(hwnd, GWL_STYLE))
+	style := uint(win.GetWindowLong(hwnd, win.GWL_STYLE))
 	// FIXME: Ugly workaround for NumberEdit
 	_, isTextSelectable := widget.(textSelectable)
-	if style&WS_TABSTOP > 0 || isTextSelectable {
-		hwndPtr := (*HWND)(unsafe.Pointer(lParam))
+	if style&win.WS_TABSTOP > 0 || isTextSelectable {
+		hwndPtr := (*win.HWND)(unsafe.Pointer(lParam))
 		*hwndPtr = hwnd
 		return 0
 	}
@@ -171,9 +171,9 @@ func firstFocusableDescendantCallback(hwnd HWND, lParam uintptr) uintptr {
 var firstFocusableDescendantCallbackPtr = syscall.NewCallback(firstFocusableDescendantCallback)
 
 func firstFocusableDescendant(container Container) Widget {
-	var hwnd HWND
+	var hwnd win.HWND
 
-	EnumChildWindows(container.Handle(), firstFocusableDescendantCallbackPtr, uintptr(unsafe.Pointer(&hwnd)))
+	win.EnumChildWindows(container.Handle(), firstFocusableDescendantCallbackPtr, uintptr(unsafe.Pointer(&hwnd)))
 
 	return windowFromHandle(hwnd).(Widget)
 }

@@ -10,7 +10,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 func init() {
@@ -33,8 +33,8 @@ func NewToolTip() (*ToolTip, error) {
 		tt,
 		nil,
 		"tooltips_class32",
-		WS_POPUP|TTS_ALWAYSTIP,
-		WS_EX_TOPMOST); err != nil {
+		win.WS_POPUP|win.TTS_ALWAYSTIP,
+		win.WS_EX_TOPMOST); err != nil {
 		return nil, err
 	}
 
@@ -45,7 +45,7 @@ func NewToolTip() (*ToolTip, error) {
 		}
 	}()
 
-	SetWindowPos(tt.hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)
+	win.SetWindowPos(tt.hWnd, win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE|win.SWP_NOACTIVATE)
 
 	succeeded = true
 
@@ -61,7 +61,7 @@ func (tt *ToolTip) SizeHint() Size {
 }
 
 func (tt *ToolTip) Title() string {
-	var gt TTGETTITLE
+	var gt win.TTGETTITLE
 
 	buf := make([]uint16, 100)
 
@@ -69,25 +69,25 @@ func (tt *ToolTip) Title() string {
 	gt.Cch = uint32(len(buf))
 	gt.PszTitle = &buf[0]
 
-	tt.SendMessage(TTM_GETTITLE, 0, uintptr(unsafe.Pointer(&gt)))
+	tt.SendMessage(win.TTM_GETTITLE, 0, uintptr(unsafe.Pointer(&gt)))
 
 	return syscall.UTF16ToString(buf)
 }
 
 func (tt *ToolTip) SetTitle(title string) error {
-	return tt.setTitle(title, TTI_NONE)
+	return tt.setTitle(title, win.TTI_NONE)
 }
 
 func (tt *ToolTip) SetInfoTitle(title string) error {
-	return tt.setTitle(title, TTI_INFO)
+	return tt.setTitle(title, win.TTI_INFO)
 }
 
 func (tt *ToolTip) SetWarningTitle(title string) error {
-	return tt.setTitle(title, TTI_WARNING)
+	return tt.setTitle(title, win.TTI_WARNING)
 }
 
 func (tt *ToolTip) SetErrorTitle(title string) error {
-	return tt.setTitle(title, TTI_ERROR)
+	return tt.setTitle(title, win.TTI_ERROR)
 }
 
 func (tt *ToolTip) setTitle(title string, icon uintptr) error {
@@ -95,7 +95,7 @@ func (tt *ToolTip) setTitle(title string, icon uintptr) error {
 		title = title[:99]
 	}
 
-	if FALSE == tt.SendMessage(TTM_SETTITLE, icon, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(title)))) {
+	if win.FALSE == tt.SendMessage(win.TTM_SETTITLE, icon, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(title)))) {
 		return newError("TTM_SETTITLE failed")
 	}
 
@@ -105,13 +105,13 @@ func (tt *ToolTip) setTitle(title string, icon uintptr) error {
 func (tt *ToolTip) AddTool(tool Widget) error {
 	hwnd := tool.Handle()
 
-	var ti TOOLINFO
+	var ti win.TOOLINFO
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
 	ti.Hwnd = hwnd
-	ti.UFlags = TTF_IDISHWND | TTF_SUBCLASS
+	ti.UFlags = win.TTF_IDISHWND | win.TTF_SUBCLASS
 	ti.UId = uintptr(hwnd)
 
-	if FALSE == tt.SendMessage(TTM_ADDTOOL, 0, uintptr(unsafe.Pointer(&ti))) {
+	if win.FALSE == tt.SendMessage(win.TTM_ADDTOOL, 0, uintptr(unsafe.Pointer(&ti))) {
 		return newError("TTM_ADDTOOL failed")
 	}
 
@@ -121,12 +121,12 @@ func (tt *ToolTip) AddTool(tool Widget) error {
 func (tt *ToolTip) RemoveTool(tool Widget) error {
 	hwnd := tool.Handle()
 
-	var ti TOOLINFO
+	var ti win.TOOLINFO
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
 	ti.Hwnd = hwnd
 	ti.UId = uintptr(hwnd)
 
-	tt.SendMessage(TTM_DELTOOL, 0, uintptr(unsafe.Pointer(&ti)))
+	tt.SendMessage(win.TTM_DELTOOL, 0, uintptr(unsafe.Pointer(&ti)))
 
 	return nil
 }
@@ -137,7 +137,7 @@ func (tt *ToolTip) Text(tool Widget) string {
 		return ""
 	}
 
-	return UTF16PtrToString(ti.LpszText)
+	return win.UTF16PtrToString(ti.LpszText)
 }
 
 func (tt *ToolTip) SetText(tool Widget, text string) error {
@@ -152,13 +152,13 @@ func (tt *ToolTip) SetText(tool Widget, text string) error {
 
 	ti.LpszText = syscall.StringToUTF16Ptr(text)
 
-	tt.SendMessage(TTM_SETTOOLINFO, 0, uintptr(unsafe.Pointer(ti)))
+	tt.SendMessage(win.TTM_SETTOOLINFO, 0, uintptr(unsafe.Pointer(ti)))
 
 	return nil
 }
 
-func (tt *ToolTip) toolInfo(tool Widget) *TOOLINFO {
-	var ti TOOLINFO
+func (tt *ToolTip) toolInfo(tool Widget) *win.TOOLINFO {
+	var ti win.TOOLINFO
 	var buf [80]uint16
 
 	hwnd := tool.Handle()
@@ -168,7 +168,7 @@ func (tt *ToolTip) toolInfo(tool Widget) *TOOLINFO {
 	ti.UId = uintptr(hwnd)
 	ti.LpszText = &buf[0]
 
-	if FALSE == tt.SendMessage(TTM_GETTOOLINFO, 0, uintptr(unsafe.Pointer(&ti))) {
+	if win.FALSE == tt.SendMessage(win.TTM_GETTOOLINFO, 0, uintptr(unsafe.Pointer(&ti))) {
 		return nil
 	}
 

@@ -9,12 +9,14 @@ import (
 	"unsafe"
 )
 
-import . "github.com/lxn/go-winapi"
+import (
+	"github.com/lxn/win"
+)
 
-var webViewIOleClientSiteVtbl *IOleClientSiteVtbl
+var webViewIOleClientSiteVtbl *win.IOleClientSiteVtbl
 
 func init() {
-	webViewIOleClientSiteVtbl = &IOleClientSiteVtbl{
+	webViewIOleClientSiteVtbl = &win.IOleClientSiteVtbl{
 		syscall.NewCallback(webView_IOleClientSite_QueryInterface),
 		syscall.NewCallback(webView_IOleClientSite_AddRef),
 		syscall.NewCallback(webView_IOleClientSite_Release),
@@ -28,29 +30,29 @@ func init() {
 }
 
 type webViewIOleClientSite struct {
-	IOleClientSite
+	win.IOleClientSite
 	inPlaceSite       webViewIOleInPlaceSite
 	docHostUIHandler  webViewIDocHostUIHandler
 	webBrowserEvents2 webViewDWebBrowserEvents2
 }
 
-func webView_IOleClientSite_QueryInterface(clientSite *webViewIOleClientSite, riid REFIID, ppvObject *unsafe.Pointer) uintptr {
-	if EqualREFIID(riid, &IID_IUnknown) {
+func webView_IOleClientSite_QueryInterface(clientSite *webViewIOleClientSite, riid win.REFIID, ppvObject *unsafe.Pointer) uintptr {
+	if win.EqualREFIID(riid, &win.IID_IUnknown) {
 		*ppvObject = unsafe.Pointer(clientSite)
-	} else if EqualREFIID(riid, &IID_IOleClientSite) {
+	} else if win.EqualREFIID(riid, &win.IID_IOleClientSite) {
 		*ppvObject = unsafe.Pointer(clientSite)
-	} else if EqualREFIID(riid, &IID_IOleInPlaceSite) {
+	} else if win.EqualREFIID(riid, &win.IID_IOleInPlaceSite) {
 		*ppvObject = unsafe.Pointer(&clientSite.inPlaceSite)
-	} else if EqualREFIID(riid, &IID_IDocHostUIHandler) {
+	} else if win.EqualREFIID(riid, &win.IID_IDocHostUIHandler) {
 		*ppvObject = unsafe.Pointer(&clientSite.docHostUIHandler)
-	} else if EqualREFIID(riid, &DIID_DWebBrowserEvents2) {
+	} else if win.EqualREFIID(riid, &win.DIID_DWebBrowserEvents2) {
 		*ppvObject = unsafe.Pointer(&clientSite.webBrowserEvents2)
 	} else {
 		*ppvObject = nil
-		return E_NOINTERFACE
+		return win.E_NOINTERFACE
 	}
 
-	return S_OK
+	return win.S_OK
 }
 
 func webView_IOleClientSite_AddRef(clientSite *webViewIOleClientSite) uintptr {
@@ -62,27 +64,27 @@ func webView_IOleClientSite_Release(clientSite *webViewIOleClientSite) uintptr {
 }
 
 func webView_IOleClientSite_SaveObject(clientSite *webViewIOleClientSite) uintptr {
-	return E_NOTIMPL
+	return win.E_NOTIMPL
 }
 
 func webView_IOleClientSite_GetMoniker(clientSite *webViewIOleClientSite, dwAssign, dwWhichMoniker uint32, ppmk *unsafe.Pointer) uintptr {
-	return E_NOTIMPL
+	return win.E_NOTIMPL
 }
 
 func webView_IOleClientSite_GetContainer(clientSite *webViewIOleClientSite, ppContainer *unsafe.Pointer) uintptr {
 	*ppContainer = nil
 
-	return E_NOINTERFACE
+	return win.E_NOINTERFACE
 }
 
 func webView_IOleClientSite_ShowObject(clientSite *webViewIOleClientSite) uintptr {
-	return S_OK
+	return win.S_OK
 }
 
-func webView_IOleClientSite_OnShowWindow(clientSite *webViewIOleClientSite, fShow BOOL) uintptr {
-	return E_NOTIMPL
+func webView_IOleClientSite_OnShowWindow(clientSite *webViewIOleClientSite, fShow win.BOOL) uintptr {
+	return win.E_NOTIMPL
 }
 
 func webView_IOleClientSite_RequestNewObjectLayout(clientSite *webViewIOleClientSite) uintptr {
-	return E_NOTIMPL
+	return win.E_NOTIMPL
 }

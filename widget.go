@@ -5,7 +5,7 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 // LayoutFlags specify how a Widget wants to be treated when used with a Layout.
@@ -83,14 +83,14 @@ func InitWidget(widget Widget, parent Window, className string, style, exStyle u
 		return newError("parent cannot be nil")
 	}
 
-	if err := InitWindow(widget, parent, className, style|WS_CHILD, exStyle); err != nil {
+	if err := InitWindow(widget, parent, className, style|win.WS_CHILD, exStyle); err != nil {
 		return err
 	}
 
 	if container, ok := parent.(Container); ok {
 		if container.Children() == nil {
 			// Required by parents like MainWindow and GroupBox.
-			if SetParent(widget.Handle(), container.Handle()) == 0 {
+			if win.SetParent(widget.Handle(), container.Handle()) == 0 {
 				return lastError("SetParent")
 			}
 		} else {
@@ -140,8 +140,8 @@ func (wb *WidgetBase) Bounds() Rectangle {
 	b := wb.WindowBase.Bounds()
 
 	if wb.parent != nil {
-		p := POINT{int32(b.X), int32(b.Y)}
-		if !ScreenToClient(wb.parent.Handle(), &p) {
+		p := win.POINT{int32(b.X), int32(b.Y)}
+		if !win.ScreenToClient(wb.parent.Handle(), &p) {
 			newError("ScreenToClient failed")
 			return Rectangle{}
 		}
@@ -214,45 +214,45 @@ func (wb *WidgetBase) SetParent(parent Container) (err error) {
 		return nil
 	}
 
-	style := uint32(GetWindowLong(wb.hWnd, GWL_STYLE))
+	style := uint32(win.GetWindowLong(wb.hWnd, win.GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
 
 	if parent == nil {
-		style &^= WS_CHILD
-		style |= WS_POPUP
+		style &^= win.WS_CHILD
+		style |= win.WS_POPUP
 
-		if SetParent(wb.hWnd, 0) == 0 {
+		if win.SetParent(wb.hWnd, 0) == 0 {
 			return lastError("SetParent")
 		}
-		SetLastError(0)
-		if SetWindowLong(wb.hWnd, GWL_STYLE, int32(style)) == 0 {
+		win.SetLastError(0)
+		if win.SetWindowLong(wb.hWnd, win.GWL_STYLE, int32(style)) == 0 {
 			return lastError("SetWindowLong")
 		}
 	} else {
-		style |= WS_CHILD
-		style &^= WS_POPUP
+		style |= win.WS_CHILD
+		style &^= win.WS_POPUP
 
-		SetLastError(0)
-		if SetWindowLong(wb.hWnd, GWL_STYLE, int32(style)) == 0 {
+		win.SetLastError(0)
+		if win.SetWindowLong(wb.hWnd, win.GWL_STYLE, int32(style)) == 0 {
 			return lastError("SetWindowLong")
 		}
-		if SetParent(wb.hWnd, parent.Handle()) == 0 {
+		if win.SetParent(wb.hWnd, parent.Handle()) == 0 {
 			return lastError("SetParent")
 		}
 	}
 
 	b := wb.Bounds()
 
-	if !SetWindowPos(
+	if !win.SetWindowPos(
 		wb.hWnd,
-		HWND_BOTTOM,
+		win.HWND_BOTTOM,
 		int32(b.X),
 		int32(b.Y),
 		int32(b.Width),
 		int32(b.Height),
-		SWP_FRAMECHANGED) {
+		win.SWP_FRAMECHANGED) {
 
 		return lastError("SetWindowPos")
 	}
@@ -319,7 +319,7 @@ func ancestor(w Widget) Form {
 		return nil
 	}
 
-	hWndRoot := GetAncestor(w.Handle(), GA_ROOT)
+	hWndRoot := win.GetAncestor(w.Handle(), win.GA_ROOT)
 
 	rw, _ := windowFromHandle(hWndRoot).(Form)
 	return rw

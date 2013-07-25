@@ -12,7 +12,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type CloseReason byte
@@ -31,8 +31,8 @@ var syncMsgId uint32
 var taskbarButtonCreatedMsgId uint32
 
 func init() {
-	syncMsgId = RegisterWindowMessage(syscall.StringToUTF16Ptr("WalkSync"))
-	taskbarButtonCreatedMsgId = RegisterWindowMessage(syscall.StringToUTF16Ptr("TaskbarButtonCreated"))
+	syncMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("WalkSync"))
+	taskbarButtonCreatedMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("TaskbarButtonCreated"))
 }
 
 func synchronize(f func()) {
@@ -69,7 +69,7 @@ type FormBase struct {
 	titleChangedPublisher EventPublisher
 	progressIndicator     *ProgressIndicator
 	icon                  *Icon
-	prevFocusHWnd         HWND
+	prevFocusHWnd         win.HWND
 	isInRestoreState      bool
 	closeReason           CloseReason
 }
@@ -216,10 +216,10 @@ func (fb *FormBase) SetTitle(value string) error {
 func (fb *FormBase) Run() int {
 	fb.startingPublisher.Publish()
 
-	var msg MSG
+	var msg win.MSG
 
 	for fb.hWnd != 0 {
-		switch GetMessage(&msg, 0, 0, 0) {
+		switch win.GetMessage(&msg, 0, 0, 0) {
 		case 0:
 			return int(msg.WParam)
 
@@ -227,9 +227,9 @@ func (fb *FormBase) Run() int {
 			return -1
 		}
 
-		if !IsDialogMessage(fb.hWnd, &msg) {
-			TranslateMessage(&msg)
-			DispatchMessage(&msg)
+		if !win.IsDialogMessage(fb.hWnd, &msg) {
+			win.TranslateMessage(&msg)
+			win.DispatchMessage(&msg)
 		}
 
 		runSynchronized()
@@ -249,16 +249,16 @@ func (fb *FormBase) Owner() Form {
 func (fb *FormBase) SetOwner(value Form) error {
 	fb.owner = value
 
-	var ownerHWnd HWND
+	var ownerHWnd win.HWND
 	if value != nil {
 		ownerHWnd = value.Handle()
 	}
 
-	SetLastError(0)
-	if 0 == SetWindowLong(
+	win.SetLastError(0)
+	if 0 == win.SetWindowLong(
 		fb.hWnd,
-		GWL_HWNDPARENT,
-		int32(ownerHWnd)) && GetLastError() != 0 {
+		win.GWL_HWNDPARENT,
+		int32(ownerHWnd)) && win.GetLastError() != 0 {
 
 		return lastError("SetWindowLong")
 	}
@@ -278,8 +278,8 @@ func (fb *FormBase) SetIcon(icon *Icon) {
 		hIcon = uintptr(icon.hIcon)
 	}
 
-	fb.SendMessage(WM_SETICON, 0, hIcon)
-	fb.SendMessage(WM_SETICON, 1, hIcon)
+	fb.SendMessage(win.WM_SETICON, 0, hIcon)
+	fb.SendMessage(win.WM_SETICON, 1, hIcon)
 }
 
 func (fb *FormBase) Hide() {
@@ -305,7 +305,7 @@ func (fb *FormBase) close() error {
 }
 
 func (fb *FormBase) Close() error {
-	fb.SendMessage(WM_CLOSE, 0, 0)
+	fb.SendMessage(win.WM_CLOSE, 0, 0)
 
 	return nil
 }
@@ -323,11 +323,11 @@ func (fb *FormBase) SaveState() error {
 		return err
 	}
 
-	var wp WINDOWPLACEMENT
+	var wp win.WINDOWPLACEMENT
 
 	wp.Length = uint32(unsafe.Sizeof(wp))
 
-	if !GetWindowPlacement(fb.hWnd, &wp) {
+	if !win.GetWindowPlacement(fb.hWnd, &wp) {
 		return lastError("GetWindowPlacement")
 	}
 
@@ -362,7 +362,7 @@ func (fb *FormBase) RestoreState() error {
 		return nil
 	}
 
-	var wp WINDOWPLACEMENT
+	var wp win.WINDOWPLACEMENT
 
 	if _, err := fmt.Sscan(state,
 		&wp.Flags, &wp.ShowCmd,
@@ -375,7 +375,7 @@ func (fb *FormBase) RestoreState() error {
 
 	wp.Length = uint32(unsafe.Sizeof(wp))
 
-	if !SetWindowPlacement(fb.hWnd, &wp) {
+	if !win.SetWindowPlacement(fb.hWnd, &wp) {
 		return lastError("SetWindowPlacement")
 	}
 
@@ -390,28 +390,28 @@ func (fb *FormBase) ProgressIndicator() *ProgressIndicator {
 	return fb.progressIndicator
 }
 
-func (fb *FormBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_ACTIVATE:
-		switch LOWORD(uint32(wParam)) {
-		case WA_ACTIVE, WA_CLICKACTIVE:
+	case win.WM_ACTIVATE:
+		switch win.LOWORD(uint32(wParam)) {
+		case win.WA_ACTIVE, win.WA_CLICKACTIVE:
 			if fb.prevFocusHWnd != 0 {
-				SetFocus(fb.prevFocusHWnd)
+				win.SetFocus(fb.prevFocusHWnd)
 			}
 
-		case WA_INACTIVE:
-			fb.prevFocusHWnd = GetFocus()
+		case win.WA_INACTIVE:
+			fb.prevFocusHWnd = win.GetFocus()
 		}
 		return 0
 
-	case WM_CLOSE:
+	case win.WM_CLOSE:
 		fb.closeReason = CloseReasonUnknown
 		var canceled bool
 		fb.closingPublisher.Publish(&canceled, fb.closeReason)
 		if !canceled {
 			if fb.owner != nil {
 				fb.owner.SetEnabled(true)
-				if !SetWindowPos(fb.owner.Handle(), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_SHOWWINDOW) {
+				if !win.SetWindowPos(fb.owner.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE|win.SWP_SHOWWINDOW) {
 					lastError("SetWindowPos")
 				}
 			}
@@ -420,11 +420,11 @@ func (fb *FormBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 		}
 		return 0
 
-	case WM_COMMAND:
+	case win.WM_COMMAND:
 		return fb.clientComposite.WndProc(hwnd, msg, wParam, lParam)
 
-	case WM_GETMINMAXINFO:
-		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))
+	case win.WM_GETMINMAXINFO:
+		mmi := (*win.MINMAXINFO)(unsafe.Pointer(lParam))
 
 		layout := fb.clientComposite.Layout()
 
@@ -433,28 +433,28 @@ func (fb *FormBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 			min = fb.sizeFromClientSize(layout.MinSize())
 		}
 
-		mmi.PtMinTrackSize = POINT{
+		mmi.PtMinTrackSize = win.POINT{
 			int32(maxi(min.Width, fb.minSize.Width)),
 			int32(maxi(min.Height, fb.minSize.Height)),
 		}
 		return 0
 
-	case WM_NOTIFY:
+	case win.WM_NOTIFY:
 		return fb.clientComposite.WndProc(hwnd, msg, wParam, lParam)
 
-	case WM_SETTEXT:
+	case win.WM_SETTEXT:
 		fb.titleChangedPublisher.Publish()
 
-	case WM_SIZE, WM_SIZING:
+	case win.WM_SIZE, win.WM_SIZING:
 		fb.clientComposite.SetBounds(fb.ClientBounds())
 
-	case WM_SYSCOMMAND:
-		if wParam == SC_CLOSE {
+	case win.WM_SYSCOMMAND:
+		if wParam == win.SC_CLOSE {
 			fb.closeReason = CloseReasonUser
 		}
 
 	case taskbarButtonCreatedMsgId:
-		version := GetVersion()
+		version := win.GetVersion()
 		major := version & 0xFF
 		minor := version & 0xFF00 >> 8
 		// Check that the OS is Win 7 or later (Win 7 is v6.1).

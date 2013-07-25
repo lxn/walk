@@ -17,10 +17,10 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
-var defaultTVRowBGColor Color = Color(GetSysColor(COLOR_WINDOW))
+var defaultTVRowBGColor Color = Color(win.GetSysColor(win.COLOR_WINDOW))
 
 const (
 	tableViewCurrentIndexChangedTimerId = 1 + iota
@@ -38,7 +38,7 @@ type TableView struct {
 	providedModel                    interface{}
 	itemChecker                      ItemChecker
 	imageProvider                    ImageProvider
-	hIml                             HIMAGELIST
+	hIml                             win.HIMAGELIST
 	usingSysIml                      bool
 	imageUintptr2Index               map[uintptr]int32
 	filePath2IconIndex               map[string]int32
@@ -76,8 +76,8 @@ func NewTableView(parent Container) (*TableView, error) {
 		tv,
 		parent,
 		"SysListView32",
-		WS_TABSTOP|WS_VISIBLE|LVS_OWNERDATA|LVS_SHOWSELALWAYS|LVS_REPORT,
-		WS_EX_CLIENTEDGE); err != nil {
+		win.WS_TABSTOP|win.WS_VISIBLE|win.LVS_OWNERDATA|win.LVS_SHOWSELALWAYS|win.LVS_REPORT,
+		win.WS_EX_CLIENTEDGE); err != nil {
 		return nil, err
 	}
 
@@ -90,9 +90,9 @@ func NewTableView(parent Container) (*TableView, error) {
 
 	tv.SetPersistent(true)
 
-	exStyle := tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
-	exStyle |= LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT
-	tv.SendMessage(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	exStyle := tv.SendMessage(win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	exStyle |= win.LVS_EX_DOUBLEBUFFER | win.LVS_EX_FULLROWSELECT
+	tv.SendMessage(win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 
 	if err := tv.setTheme("Explorer"); err != nil {
 		return nil, err
@@ -140,10 +140,10 @@ func (tv *TableView) Dispose() {
 	}
 
 	if tv.hWnd != 0 {
-		if !KillTimer(tv.hWnd, tableViewCurrentIndexChangedTimerId) {
+		if !win.KillTimer(tv.hWnd, tableViewCurrentIndexChangedTimerId) {
 			lastError("KillTimer")
 		}
-		if !KillTimer(tv.hWnd, tableViewSelectedIndexesChangedTimerId) {
+		if !win.KillTimer(tv.hWnd, tableViewSelectedIndexesChangedTimerId) {
 			lastError("KillTimer")
 		}
 	}
@@ -171,20 +171,20 @@ func (tv *TableView) SizeHint() Size {
 // ColumnsOrderable returns if the user can reorder columns by dragging and
 // dropping column headers.
 func (tv *TableView) ColumnsOrderable() bool {
-	exStyle := tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
-	return exStyle&LVS_EX_HEADERDRAGDROP > 0
+	exStyle := tv.SendMessage(win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	return exStyle&win.LVS_EX_HEADERDRAGDROP > 0
 }
 
 // SetColumnsOrderable sets if the user can reorder columns by dragging and
 // dropping column headers.
 func (tv *TableView) SetColumnsOrderable(enabled bool) {
-	exStyle := tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	exStyle := tv.SendMessage(win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	if enabled {
-		exStyle |= LVS_EX_HEADERDRAGDROP
+		exStyle |= win.LVS_EX_HEADERDRAGDROP
 	} else {
-		exStyle &^= LVS_EX_HEADERDRAGDROP
+		exStyle &^= win.LVS_EX_HEADERDRAGDROP
 	}
-	tv.SendMessage(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	tv.SendMessage(win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 
 	tv.columnsOrderableChangedPublisher.Publish()
 }
@@ -192,27 +192,27 @@ func (tv *TableView) SetColumnsOrderable(enabled bool) {
 // ColumnsSizable returns if the user can change column widths by dragging
 // dividers in the header.
 func (tv *TableView) ColumnsSizable() bool {
-	headerHWnd := HWND(tv.SendMessage(LVM_GETHEADER, 0, 0))
+	headerHWnd := win.HWND(tv.SendMessage(win.LVM_GETHEADER, 0, 0))
 
-	style := GetWindowLong(headerHWnd, GWL_STYLE)
+	style := win.GetWindowLong(headerHWnd, win.GWL_STYLE)
 
-	return style&HDS_NOSIZING == 0
+	return style&win.HDS_NOSIZING == 0
 }
 
 // SetColumnsSizable sets if the user can change column widths by dragging
 // dividers in the header.
 func (tv *TableView) SetColumnsSizable(b bool) error {
-	headerHWnd := HWND(tv.SendMessage(LVM_GETHEADER, 0, 0))
+	headerHWnd := win.HWND(tv.SendMessage(win.LVM_GETHEADER, 0, 0))
 
-	style := GetWindowLong(headerHWnd, GWL_STYLE)
+	style := win.GetWindowLong(headerHWnd, win.GWL_STYLE)
 
 	if b {
-		style &^= HDS_NOSIZING
+		style &^= win.HDS_NOSIZING
 	} else {
-		style |= HDS_NOSIZING
+		style |= win.HDS_NOSIZING
 	}
 
-	if 0 == SetWindowLong(headerHWnd, GWL_STYLE, style) {
+	if 0 == win.SetWindowLong(headerHWnd, win.GWL_STYLE, style) {
 		return lastError("SetWindowLong(GWL_STYLE)")
 	}
 
@@ -244,7 +244,7 @@ func (tv *TableView) VisibleColumnsInDisplayOrder() []*TableViewColumn {
 	visibleCols := tv.visibleColumns()
 	indices := make([]int32, len(visibleCols))
 
-	if FALSE == tv.SendMessage(LVM_GETCOLUMNORDERARRAY, uintptr(len(indices)), uintptr(unsafe.Pointer(&indices[0]))) {
+	if win.FALSE == tv.SendMessage(win.LVM_GETCOLUMNORDERARRAY, uintptr(len(indices)), uintptr(unsafe.Pointer(&indices[0]))) {
 		newError("LVM_GETCOLUMNORDERARRAY")
 		return nil
 	}
@@ -260,7 +260,7 @@ func (tv *TableView) VisibleColumnsInDisplayOrder() []*TableViewColumn {
 
 // RowsPerPage returns the number of fully visible rows.
 func (tv *TableView) RowsPerPage() int {
-	return int(tv.SendMessage(LVM_GETCOUNTPERPAGE, 0, 0))
+	return int(tv.SendMessage(win.LVM_GETCOUNTPERPAGE, 0, 0))
 }
 
 // UpdateItem ensures the item at index will be redrawn.
@@ -274,7 +274,7 @@ func (tv *TableView) UpdateItem(index int) error {
 
 		return tv.Invalidate()
 	} else {
-		if FALSE == tv.SendMessage(LVM_UPDATE, uintptr(index), 0) {
+		if win.FALSE == tv.SendMessage(win.LVM_UPDATE, uintptr(index), 0) {
 			return newError("LVM_UPDATE")
 		}
 	}
@@ -384,7 +384,7 @@ func (tv *TableView) setItemCount() error {
 		count = tv.model.RowCount()
 	}
 
-	if 0 == tv.SendMessage(LVM_SETITEMCOUNT, uintptr(count), LVSICF_NOSCROLL) {
+	if 0 == tv.SendMessage(win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOSCROLL) {
 		return newError("SendMessage(LVM_SETITEMCOUNT)")
 	}
 
@@ -393,31 +393,31 @@ func (tv *TableView) setItemCount() error {
 
 // CheckBoxes returns if the *TableView has check boxes.
 func (tv *TableView) CheckBoxes() bool {
-	return tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)&LVS_EX_CHECKBOXES > 0
+	return tv.SendMessage(win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)&win.LVS_EX_CHECKBOXES > 0
 }
 
 // SetCheckBoxes sets if the *TableView has check boxes.
 func (tv *TableView) SetCheckBoxes(value bool) {
-	exStyle := tv.SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	exStyle := tv.SendMessage(win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	oldStyle := exStyle
 	if value {
-		exStyle |= LVS_EX_CHECKBOXES
+		exStyle |= win.LVS_EX_CHECKBOXES
 	} else {
-		exStyle &^= LVS_EX_CHECKBOXES
+		exStyle &^= win.LVS_EX_CHECKBOXES
 	}
 	if exStyle != oldStyle {
-		tv.SendMessage(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+		tv.SendMessage(win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 	}
 
-	mask := tv.SendMessage(LVM_GETCALLBACKMASK, 0, 0)
+	mask := tv.SendMessage(win.LVM_GETCALLBACKMASK, 0, 0)
 
 	if value {
-		mask |= LVIS_STATEIMAGEMASK
+		mask |= win.LVIS_STATEIMAGEMASK
 	} else {
-		mask &^= LVIS_STATEIMAGEMASK
+		mask &^= win.LVIS_STATEIMAGEMASK
 	}
 
-	if FALSE == tv.SendMessage(LVM_SETCALLBACKMASK, mask, 0) {
+	if win.FALSE == tv.SendMessage(win.LVM_SETCALLBACKMASK, mask, 0) {
 		newError("SendMessage(LVM_SETCALLBACKMASK)")
 	}
 }
@@ -483,41 +483,41 @@ func (tv *TableView) visibleColumns() []*TableViewColumn {
 }*/
 
 func (tv *TableView) setSelectedColumnIndex(index int) {
-	tv.SendMessage(LVM_SETSELECTEDCOLUMN, uintptr(tv.toLVColIdx(index)), 0)
+	tv.SendMessage(win.LVM_SETSELECTEDCOLUMN, uintptr(tv.toLVColIdx(index)), 0)
 }
 
 func (tv *TableView) setSortIcon(index int, order SortOrder) error {
-	headerHwnd := HWND(tv.SendMessage(LVM_GETHEADER, 0, 0))
+	headerHwnd := win.HWND(tv.SendMessage(win.LVM_GETHEADER, 0, 0))
 
 	idx := int(tv.toLVColIdx(index))
 
 	for i := range tv.visibleColumns() {
-		item := HDITEM{
-			Mask: HDI_FORMAT,
+		item := win.HDITEM{
+			Mask: win.HDI_FORMAT,
 		}
 
 		iPtr := uintptr(i)
 		itemPtr := uintptr(unsafe.Pointer(&item))
 
-		if SendMessage(headerHwnd, HDM_GETITEM, iPtr, itemPtr) == 0 {
+		if win.SendMessage(headerHwnd, win.HDM_GETITEM, iPtr, itemPtr) == 0 {
 			return newError("SendMessage(HDM_GETITEM)")
 		}
 
 		if i == idx {
 			switch order {
 			case SortAscending:
-				item.Fmt &^= HDF_SORTDOWN
-				item.Fmt |= HDF_SORTUP
+				item.Fmt &^= win.HDF_SORTDOWN
+				item.Fmt |= win.HDF_SORTUP
 
 			case SortDescending:
-				item.Fmt &^= HDF_SORTUP
-				item.Fmt |= HDF_SORTDOWN
+				item.Fmt &^= win.HDF_SORTUP
+				item.Fmt |= win.HDF_SORTDOWN
 			}
 		} else {
-			item.Fmt &^= HDF_SORTDOWN | HDF_SORTUP
+			item.Fmt &^= win.HDF_SORTDOWN | win.HDF_SORTUP
 		}
 
-		if SendMessage(headerHwnd, HDM_SETITEM, iPtr, itemPtr) == 0 {
+		if win.SendMessage(headerHwnd, win.HDM_SETITEM, iPtr, itemPtr) == 0 {
 			return newError("SendMessage(HDM_SETITEM)")
 		}
 	}
@@ -550,19 +550,19 @@ func (tv *TableView) CurrentIndex() int {
 //
 // Call this with a value of -1 to have no current item.
 func (tv *TableView) SetCurrentIndex(value int) error {
-	var lvi LVITEM
+	var lvi win.LVITEM
 
-	lvi.StateMask = LVIS_FOCUSED | LVIS_SELECTED
+	lvi.StateMask = win.LVIS_FOCUSED | win.LVIS_SELECTED
 	if value > -1 {
-		lvi.State = LVIS_FOCUSED | LVIS_SELECTED
+		lvi.State = win.LVIS_FOCUSED | win.LVIS_SELECTED
 	}
 
-	if FALSE == tv.SendMessage(LVM_SETITEMSTATE, uintptr(value), uintptr(unsafe.Pointer(&lvi))) {
+	if win.FALSE == tv.SendMessage(win.LVM_SETITEMSTATE, uintptr(value), uintptr(unsafe.Pointer(&lvi))) {
 		return newError("SendMessage(LVM_SETITEMSTATE)")
 	}
 
 	if value != -1 {
-		if FALSE == tv.SendMessage(LVM_ENSUREVISIBLE, uintptr(value), uintptr(0)) {
+		if win.FALSE == tv.SendMessage(win.LVM_ENSUREVISIBLE, uintptr(value), uintptr(0)) {
 			return newError("SendMessage(LVM_ENSUREVISIBLE)")
 		}
 	}
@@ -586,18 +586,18 @@ func (tv *TableView) CurrentIndexChanged() *Event {
 //
 // By default multiple items can be selected at once.
 func (tv *TableView) SingleItemSelection() bool {
-	style := uint(GetWindowLong(tv.hWnd, GWL_STYLE))
+	style := uint(win.GetWindowLong(tv.hWnd, win.GWL_STYLE))
 	if style == 0 {
 		lastError("GetWindowLong")
 		return false
 	}
 
-	return style&LVS_SINGLESEL > 0
+	return style&win.LVS_SINGLESEL > 0
 }
 
 // SetSingleItemSelection sets if only a single item can be selected at once.
 func (tv *TableView) SetSingleItemSelection(value bool) error {
-	return tv.ensureStyleBits(LVS_SINGLESEL, value)
+	return tv.ensureStyleBits(win.LVS_SINGLESEL, value)
 }
 
 // SelectedIndexes returns a list of the currently selected item indexes.
@@ -627,12 +627,12 @@ func (tv *TableView) SetItemStateChangedEventDelay(delay int) {
 }
 
 func (tv *TableView) updateSelectedIndexes() {
-	count := int(tv.SendMessage(LVM_GETSELECTEDCOUNT, 0, 0))
+	count := int(tv.SendMessage(win.LVM_GETSELECTEDCOUNT, 0, 0))
 	indexes := make([]int, count)
 
 	j := -1
 	for i := 0; i < count; i++ {
-		j = int(tv.SendMessage(LVM_GETNEXTITEM, uintptr(j), LVNI_SELECTED))
+		j = int(tv.SendMessage(win.LVM_GETNEXTITEM, uintptr(j), win.LVNI_SELECTED))
 		indexes[i] = j
 	}
 
@@ -649,7 +649,7 @@ func (tv *TableView) updateSelectedIndexes() {
 	if changed {
 		tv.selectedIndexes.items = indexes
 		if tv.itemStateChangedEventDelay > 0 {
-			if 0 == SetTimer(
+			if 0 == win.SetTimer(
 				tv.hWnd,
 				tableViewSelectedIndexesChangedTimerId,
 				uint32(tv.itemStateChangedEventDelay),
@@ -701,7 +701,7 @@ func (tv *TableView) StretchLastColumn() error {
 		return nil
 	}
 
-	if 0 == tv.SendMessage(LVM_SETCOLUMNWIDTH, uintptr(colCount-1), LVSCW_AUTOSIZE_USEHEADER) {
+	if 0 == tv.SendMessage(win.LVM_SETCOLUMNWIDTH, uintptr(colCount-1), win.LVSCW_AUTOSIZE_USEHEADER) {
 		return newError("LVM_SETCOLUMNWIDTH failed")
 	}
 
@@ -746,7 +746,7 @@ func (tv *TableView) SaveState() error {
 		indices := make([]int32, visibleCount)
 		lParam := uintptr(unsafe.Pointer(&indices[0]))
 
-		if 0 == tv.SendMessage(LVM_GETCOLUMNORDERARRAY, uintptr(visibleCount), lParam) {
+		if 0 == tv.SendMessage(win.LVM_GETCOLUMNORDERARRAY, uintptr(visibleCount), lParam) {
 			return newError("LVM_GETCOLUMNORDERARRAY")
 		}
 
@@ -859,7 +859,7 @@ func (tv *TableView) RestoreState() error {
 		if !failed {
 			wParam := uintptr(len(indices))
 			lParam := uintptr(unsafe.Pointer(&indices[0]))
-			if 0 == tv.SendMessage(LVM_SETCOLUMNORDERARRAY, wParam, lParam) {
+			if 0 == tv.SendMessage(win.LVM_SETCOLUMNORDERARRAY, wParam, lParam) {
 				return newError("LVM_SETCOLUMNORDERARRAY")
 			}
 		}
@@ -904,7 +904,7 @@ func (tv *TableView) toggleItemChecked(index int) error {
 		return wrapError(err)
 	}
 
-	if FALSE == tv.SendMessage(LVM_UPDATE, uintptr(index), 0) {
+	if win.FALSE == tv.SendMessage(win.LVM_UPDATE, uintptr(index), 0) {
 		return newError("SendMessage(LVM_UPDATE)")
 	}
 
@@ -914,7 +914,7 @@ func (tv *TableView) toggleItemChecked(index int) error {
 func (tv *TableView) applyImageListForImage(image interface{}) {
 	tv.hIml, tv.usingSysIml, _ = imageListForImage(image)
 
-	tv.SendMessage(LVM_SETIMAGELIST, LVSIL_SMALL, uintptr(tv.hIml))
+	tv.SendMessage(win.LVM_SETIMAGELIST, win.LVSIL_SMALL, uintptr(tv.hIml))
 
 	tv.imageUintptr2Index = make(map[uintptr]int32)
 	tv.filePath2IconIndex = make(map[string]int32)
@@ -922,9 +922,9 @@ func (tv *TableView) applyImageListForImage(image interface{}) {
 
 func (tv *TableView) disposeImageListAndCaches() {
 	if tv.hIml != 0 && !tv.usingSysIml {
-		tv.SendMessage(LVM_SETIMAGELIST, LVSIL_SMALL, 0)
+		tv.SendMessage(win.LVM_SETIMAGELIST, win.LVSIL_SMALL, 0)
 
-		ImageList_Destroy(tv.hIml)
+		win.ImageList_Destroy(tv.hIml)
 	}
 	tv.hIml = 0
 
@@ -932,9 +932,9 @@ func (tv *TableView) disposeImageListAndCaches() {
 	tv.filePath2IconIndex = nil
 }
 
-func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_ERASEBKGND:
+	case win.WM_ERASEBKGND:
 		if tv.lastColumnStretched && !tv.inEraseBkgnd {
 			tv.inEraseBkgnd = true
 			defer func() {
@@ -944,25 +944,25 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 		}
 		return 1
 
-	case WM_GETDLGCODE:
-		if wParam == VK_RETURN {
-			return DLGC_WANTALLKEYS
+	case win.WM_GETDLGCODE:
+		if wParam == win.VK_RETURN {
+			return win.DLGC_WANTALLKEYS
 		}
 
-	case WM_LBUTTONDOWN, WM_RBUTTONDOWN, WM_LBUTTONDBLCLK, WM_RBUTTONDBLCLK:
-		var hti LVHITTESTINFO
-		hti.Pt = POINT{GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)}
-		tv.SendMessage(LVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
+	case win.WM_LBUTTONDOWN, win.WM_RBUTTONDOWN, win.WM_LBUTTONDBLCLK, win.WM_RBUTTONDBLCLK:
+		var hti win.LVHITTESTINFO
+		hti.Pt = win.POINT{win.GET_X_LPARAM(lParam), win.GET_Y_LPARAM(lParam)}
+		tv.SendMessage(win.LVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
 
-		if hti.Flags == LVHT_NOWHERE && tv.SingleItemSelection() {
+		if hti.Flags == win.LVHT_NOWHERE && tv.SingleItemSelection() {
 			// We keep the current item, if in single item selection mode.
 			tv.SetFocus()
 			return 0
 		}
 
 		switch msg {
-		case WM_LBUTTONDOWN, WM_RBUTTONDOWN:
-			if hti.Flags == LVHT_ONITEMSTATEICON &&
+		case win.WM_LBUTTONDOWN, win.WM_RBUTTONDOWN:
+			if hti.Flags == win.LVHT_ONITEMSTATEICON &&
 				tv.itemChecker != nil &&
 				tv.CheckBoxes() {
 
@@ -970,8 +970,8 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 			}
 		}
 
-	case WM_KEYDOWN:
-		if wParam == VK_SPACE &&
+	case win.WM_KEYDOWN:
+		if wParam == win.VK_SPACE &&
 			tv.currentIndex > -1 &&
 			tv.itemChecker != nil &&
 			tv.CheckBoxes() {
@@ -979,15 +979,15 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 			tv.toggleItemChecked(tv.currentIndex)
 		}
 
-	case WM_NOTIFY:
-		switch int32(((*NMHDR)(unsafe.Pointer(lParam))).Code) {
-		case LVN_GETDISPINFO:
-			di := (*NMLVDISPINFO)(unsafe.Pointer(lParam))
+	case win.WM_NOTIFY:
+		switch int32(((*win.NMHDR)(unsafe.Pointer(lParam))).Code) {
+		case win.LVN_GETDISPINFO:
+			di := (*win.NMLVDISPINFO)(unsafe.Pointer(lParam))
 
 			row := int(di.Item.IItem)
 			col := tv.fromLVColIdx(di.Item.ISubItem)
 
-			if di.Item.Mask&LVIF_TEXT > 0 {
+			if di.Item.Mask&win.LVIF_TEXT > 0 {
 				var text string
 				switch val := tv.model.Value(row, col).(type) {
 				case string:
@@ -1027,7 +1027,7 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 				copy((*buf)[:], utf16[:max])
 			}
 
-			if tv.imageProvider != nil && di.Item.Mask&LVIF_IMAGE > 0 {
+			if tv.imageProvider != nil && di.Item.Mask&win.LVIF_IMAGE > 0 {
 				if image := tv.imageProvider.Image(row); image != nil {
 					if tv.hIml == 0 {
 						tv.applyImageListForImage(image)
@@ -1042,7 +1042,7 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 				}
 			}
 
-			if di.Item.StateMask&LVIS_STATEIMAGEMASK > 0 &&
+			if di.Item.StateMask&win.LVIS_STATEIMAGEMASK > 0 &&
 				tv.itemChecker != nil {
 				checked := tv.itemChecker.Checked(row)
 
@@ -1053,25 +1053,25 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 				}
 			}
 
-		case NM_CUSTOMDRAW:
+		case win.NM_CUSTOMDRAW:
 			if tv.alternatingRowBGColor != defaultTVRowBGColor {
-				nmlvcd := (*NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
+				nmlvcd := (*win.NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
 
 				switch nmlvcd.Nmcd.DwDrawStage {
-				case CDDS_PREPAINT:
-					return CDRF_NOTIFYITEMDRAW
+				case win.CDDS_PREPAINT:
+					return win.CDRF_NOTIFYITEMDRAW
 
-				case CDDS_ITEMPREPAINT:
+				case win.CDDS_ITEMPREPAINT:
 					if nmlvcd.Nmcd.DwItemSpec%2 == 1 {
-						nmlvcd.ClrTextBk = COLORREF(tv.alternatingRowBGColor)
+						nmlvcd.ClrTextBk = win.COLORREF(tv.alternatingRowBGColor)
 					}
 				}
 			}
 
-			return CDRF_DODEFAULT
+			return win.CDRF_DODEFAULT
 
-		case LVN_COLUMNCLICK:
-			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
+		case win.LVN_COLUMNCLICK:
+			nmlv := (*win.NMLISTVIEW)(unsafe.Pointer(lParam))
 
 			col := tv.fromLVColIdx(nmlv.ISubItem)
 			tv.columnClickedPublisher.Publish(col)
@@ -1087,14 +1087,14 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 				sorter.Sort(col, order)
 			}
 
-		case LVN_ITEMCHANGED:
-			nmlv := (*NMLISTVIEW)(unsafe.Pointer(lParam))
-			selectedNow := nmlv.UNewState&LVIS_SELECTED > 0
-			selectedBefore := nmlv.UOldState&LVIS_SELECTED > 0
+		case win.LVN_ITEMCHANGED:
+			nmlv := (*win.NMLISTVIEW)(unsafe.Pointer(lParam))
+			selectedNow := nmlv.UNewState&win.LVIS_SELECTED > 0
+			selectedBefore := nmlv.UOldState&win.LVIS_SELECTED > 0
 			if selectedNow && !selectedBefore {
 				tv.currentIndex = int(nmlv.IItem)
 				if tv.itemStateChangedEventDelay > 0 {
-					if 0 == SetTimer(
+					if 0 == win.SetTimer(
 						tv.hWnd,
 						tableViewCurrentIndexChangedTimerId,
 						uint32(tv.itemStateChangedEventDelay),
@@ -1110,11 +1110,11 @@ func (tv *TableView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uint
 				tv.updateSelectedIndexes()
 			}
 
-		case LVN_ITEMACTIVATE:
+		case win.LVN_ITEMACTIVATE:
 			tv.itemActivatedPublisher.Publish()
 		}
 
-	case WM_TIMER:
+	case win.WM_TIMER:
 		switch wParam {
 		case tableViewCurrentIndexChangedTimerId:
 			tv.currentIndexChangedPublisher.Publish()

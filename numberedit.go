@@ -13,7 +13,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const numberEditWindowClass = `\o/ Walk_NumberEdit_Class \o/`
@@ -36,8 +36,8 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 		ne,
 		parent,
 		numberEditWindowClass,
-		WS_VISIBLE,
-		WS_EX_CONTROLPARENT); err != nil {
+		win.WS_VISIBLE,
+		win.WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
 
@@ -258,7 +258,7 @@ func (ne *NumberEdit) ValueChanged() *Event {
 
 // SetFocus sets the keyboard input focus to the NumberEdit.
 func (ne *NumberEdit) SetFocus() error {
-	if SetFocus(ne.edit.hWnd) == 0 {
+	if win.SetFocus(ne.edit.hWnd) == 0 {
 		return lastError("SetFocus")
 	}
 
@@ -281,9 +281,9 @@ func (ne *NumberEdit) SetTextSelection(start, end int) {
 //
 // When implementing your own WndProc to add or modify behavior, call the
 // WndProc of the embedded NumberEdit for messages you don't handle yourself.
-func (ne *NumberEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (ne *NumberEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_SIZE, WM_SIZING:
+	case win.WM_SIZE, win.WM_SIZING:
 		if ne.edit == nil {
 			break
 		}
@@ -329,7 +329,7 @@ func newNumberLineEdit(parent Widget) (*numberLineEdit, error) {
 		}
 	}()
 
-	if err := nle.LineEdit.setAndClearStyleBits(ES_RIGHT, ES_LEFT|ES_CENTER); err != nil {
+	if err := nle.LineEdit.setAndClearStyleBits(win.ES_RIGHT, win.ES_LEFT|win.ES_CENTER); err != nil {
 		return nil, err
 	}
 
@@ -474,9 +474,9 @@ func (nle *numberLineEdit) selectNumber() {
 }
 
 func (nle *numberLineEdit) textUTF16() []uint16 {
-	textLength := nle.SendMessage(WM_GETTEXTLENGTH, 0, 0)
+	textLength := nle.SendMessage(win.WM_GETTEXTLENGTH, 0, 0)
 	buf := make([]uint16, textLength+1)
-	nle.SendMessage(WM_GETTEXT, uintptr(textLength+1), uintptr(unsafe.Pointer(&buf[0])))
+	nle.SendMessage(win.WM_GETTEXT, uintptr(textLength+1), uintptr(unsafe.Pointer(&buf[0])))
 
 	return buf[:len(buf)-1]
 }
@@ -496,9 +496,9 @@ func (nle *numberLineEdit) incrementValue(delta float64) {
 	nle.selectNumber()
 }
 
-func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_CHAR:
+	case win.WM_CHAR:
 		if AltDown() {
 			return 0
 		}
@@ -571,7 +571,7 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 			return 0
 		}
 
-	case WM_KEYDOWN:
+	case win.WM_KEYDOWN:
 		switch Key(wParam) {
 		case KeyA:
 			if ControlDown() {
@@ -612,11 +612,11 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 			return 0
 
 		case KeyLeft:
-			var pos POINT
-			GetCaretPos(&pos)
+			var pos win.POINT
+			win.GetCaretPos(&pos)
 
-			lParam := uintptr(MAKELONG(uint16(pos.X), uint16(pos.Y)))
-			i := int(LOWORD(uint32(nle.SendMessage(EM_CHARFROMPOS, 0, lParam))))
+			lParam := uintptr(win.MAKELONG(uint16(pos.X), uint16(pos.Y)))
+			i := int(win.LOWORD(uint32(nle.SendMessage(win.EM_CHARFROMPOS, 0, lParam))))
 
 			if min := len(nle.prefix); i <= min {
 				if !ShiftDown() {
@@ -633,11 +633,11 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 			}
 
 		case KeyRight:
-			var pos POINT
-			GetCaretPos(&pos)
+			var pos win.POINT
+			win.GetCaretPos(&pos)
 
-			lParam := uintptr(MAKELONG(uint16(pos.X), uint16(pos.Y)))
-			i := int(LOWORD(uint32(nle.SendMessage(EM_CHARFROMPOS, 0, lParam))))
+			lParam := uintptr(win.MAKELONG(uint16(pos.X), uint16(pos.Y)))
+			i := int(win.LOWORD(uint32(nle.SendMessage(win.EM_CHARFROMPOS, 0, lParam))))
 
 			if max := len(nle.textUTF16()) - len(nle.suffix); i >= max {
 				if !ShiftDown() {
@@ -651,7 +651,7 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 			return 0
 		}
 
-	case WM_GETDLGCODE:
+	case win.WM_GETDLGCODE:
 		if !nle.inEditMode {
 			if form := ancestor(nle); form != nil {
 				if dlg, ok := form.(dialogish); ok {
@@ -664,15 +664,15 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 			}
 		}
 
-		if wParam == VK_RETURN {
-			return DLGC_WANTALLKEYS
+		if wParam == win.VK_RETURN {
+			return win.DLGC_WANTALLKEYS
 		}
 
-	case WM_KILLFOCUS:
+	case win.WM_KILLFOCUS:
 		nle.endEdit()
 
-	case WM_LBUTTONDOWN:
-		i := int(LOWORD(uint32(nle.SendMessage(EM_CHARFROMPOS, 0, lParam))))
+	case win.WM_LBUTTONDOWN:
+		i := int(win.LOWORD(uint32(nle.SendMessage(win.EM_CHARFROMPOS, 0, lParam))))
 
 		if min := len(nle.prefix); i < min {
 			nle.SetFocus()
@@ -685,12 +685,12 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 			return 0
 		}
 
-	case WM_LBUTTONDBLCLK:
+	case win.WM_LBUTTONDBLCLK:
 		nle.selectNumber()
 		return 0
 
-	case WM_MOUSEMOVE:
-		i := int(LOWORD(uint32(nle.SendMessage(EM_CHARFROMPOS, 0, lParam))))
+	case win.WM_MOUSEMOVE:
+		i := int(win.LOWORD(uint32(nle.SendMessage(win.EM_CHARFROMPOS, 0, lParam))))
 
 		if min := len(nle.prefix); i < min {
 			return 0
@@ -699,12 +699,12 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 			return 0
 		}
 
-	case WM_MOUSEWHEEL:
-		delta := float64(int16(HIWORD(uint32(wParam))))
+	case win.WM_MOUSEWHEEL:
+		delta := float64(int16(win.HIWORD(uint32(wParam))))
 		nle.incrementValue(delta / 120 * nle.increment)
 		return 0
 
-	case WM_PASTE:
+	case win.WM_PASTE:
 		ret := nle.LineEdit.WndProc(hwnd, msg, wParam, lParam)
 		if !nle.tryUpdateValue(true) {
 			nle.setTextFromValue(nle.value)
@@ -712,10 +712,10 @@ func (nle *numberLineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr
 		nle.selectNumber()
 		return ret
 
-	case WM_SETFOCUS:
+	case win.WM_SETFOCUS:
 		nle.selectNumber()
 
-	case EM_SETSEL:
+	case win.EM_SETSEL:
 		start := int(wParam)
 		end := int(lParam)
 		adjusted := false

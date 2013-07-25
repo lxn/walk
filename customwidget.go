@@ -5,7 +5,7 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const customWidgetWindowClass = `\o/ Walk_CustomWidget_Class \o/`
@@ -30,7 +30,7 @@ func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidg
 		cw,
 		parent,
 		customWidgetWindowClass,
-		WS_VISIBLE|uint32(style),
+		win.WS_VISIBLE|uint32(style),
 		0); err != nil {
 		return nil, err
 	}
@@ -62,22 +62,22 @@ func (cw *CustomWidget) SetInvalidatesOnResize(value bool) {
 	cw.invalidatesOnResize = value
 }
 
-func (cw *CustomWidget) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_PAINT:
+	case win.WM_PAINT:
 		if cw.paint == nil {
 			newError("paint func is nil")
 			break
 		}
 
-		var ps PAINTSTRUCT
+		var ps win.PAINTSTRUCT
 
-		hdc := BeginPaint(cw.hWnd, &ps)
+		hdc := win.BeginPaint(cw.hWnd, &ps)
 		if hdc == 0 {
 			newError("BeginPaint failed")
 			break
 		}
-		defer EndPaint(cw.hWnd, &ps)
+		defer win.EndPaint(cw.hWnd, &ps)
 
 		canvas, err := newCanvasFromHDC(hdc)
 		if err != nil {
@@ -102,12 +102,12 @@ func (cw *CustomWidget) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) u
 
 		return 0
 
-	case WM_ERASEBKGND:
+	case win.WM_ERASEBKGND:
 		if !cw.clearsBackground {
 			return 1
 		}
 
-	case WM_SIZE, WM_SIZING:
+	case win.WM_SIZE, win.WM_SIZING:
 		if cw.invalidatesOnResize {
 			cw.Invalidate()
 		}

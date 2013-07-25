@@ -9,9 +9,9 @@ import (
 )
 
 import (
-	"github.com/lxn/go-winapi"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"github.com/lxn/win"
 )
 
 const myWidgetWindowClass = "MyWidget Class"
@@ -60,7 +60,7 @@ func NewMyWidget(parent walk.Container) (*MyWidget, error) {
 		w,
 		parent,
 		myWidgetWindowClass,
-		winapi.WS_VISIBLE,
+		win.WS_VISIBLE,
 		0); err != nil {
 
 		return nil, err
@@ -79,9 +79,9 @@ func (*MyWidget) MinSizeHint() walk.Size {
 	return walk.Size{50, 50}
 }
 
-func (w *MyWidget) WndProc(hwnd winapi.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (w *MyWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case winapi.WM_LBUTTONDOWN:
+	case win.WM_LBUTTONDOWN:
 		log.Printf("%s: WM_LBUTTONDOWN", w.Name())
 	}
 
@@ -107,9 +107,9 @@ func NewMyPushButton(parent walk.Container) (*MyPushButton, error) {
 	return mpb, nil
 }
 
-func (mpb *MyPushButton) WndProc(hwnd winapi.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (mpb *MyPushButton) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case winapi.WM_LBUTTONDOWN:
+	case win.WM_LBUTTONDOWN:
 		log.Printf("%s: WM_LBUTTONDOWN", mpb.Text())
 	}
 

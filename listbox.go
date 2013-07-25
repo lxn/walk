@@ -13,7 +13,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type ListBox struct {
@@ -38,7 +38,7 @@ func NewListBox(parent Container) (*ListBox, error) {
 		lb,
 		parent,
 		"LISTBOX",
-		WS_BORDER|WS_TABSTOP|WS_VISIBLE|WS_VSCROLL|LBS_NOINTEGRALHEIGHT|LBS_NOTIFY,
+		win.WS_BORDER|win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|win.LBS_NOINTEGRALHEIGHT|win.LBS_NOTIFY,
 		0)
 	if err != nil {
 		return nil, err
@@ -73,8 +73,8 @@ func (lb *ListBox) itemString(index int) string {
 func (lb *ListBox) insertItemAt(index int) error {
 	str := lb.itemString(index)
 	lp := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(str)))
-	ret := int(lb.SendMessage(LB_INSERTSTRING, uintptr(index), lp))
-	if ret == LB_ERRSPACE || ret == LB_ERR {
+	ret := int(lb.SendMessage(win.LB_INSERTSTRING, uintptr(index), lp))
+	if ret == win.LB_ERRSPACE || ret == win.LB_ERR {
 		return newError("SendMessage(LB_INSERTSTRING)")
 	}
 	return nil
@@ -85,7 +85,7 @@ func (lb *ListBox) resetItems() error {
 	lb.SetSuspended(true)
 	defer lb.SetSuspended(false)
 
-	lb.SendMessage(LB_RESETCONTENT, 0, 0)
+	lb.SendMessage(win.LB_RESETCONTENT, 0, 0)
 
 	lb.maxItemTextWidth = 0
 
@@ -113,7 +113,7 @@ func (lb *ListBox) attachModel() {
 	lb.itemsResetHandlerHandle = lb.model.ItemsReset().Attach(itemsResetHandler)
 
 	itemChangedHandler := func(index int) {
-		if CB_ERR == lb.SendMessage(LB_DELETESTRING, uintptr(index), 0) {
+		if win.CB_ERR == lb.SendMessage(win.LB_DELETESTRING, uintptr(index), 0) {
 			newError("SendMessage(CB_DELETESTRING)")
 		}
 
@@ -225,15 +225,15 @@ func (lb *ListBox) SetPrecision(value int) {
 }
 
 func (lb *ListBox) calculateMaxItemTextWidth() int {
-	hdc := GetDC(lb.hWnd)
+	hdc := win.GetDC(lb.hWnd)
 	if hdc == 0 {
 		newError("GetDC failed")
 		return -1
 	}
-	defer ReleaseDC(lb.hWnd, hdc)
+	defer win.ReleaseDC(lb.hWnd, hdc)
 
-	hFontOld := SelectObject(hdc, HGDIOBJ(lb.Font().handleForDPI(0)))
-	defer SelectObject(hdc, hFontOld)
+	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(lb.Font().handleForDPI(0)))
+	defer win.SelectObject(hdc, hFontOld)
 
 	var maxWidth int
 
@@ -243,10 +243,10 @@ func (lb *ListBox) calculateMaxItemTextWidth() int {
 	count := lb.model.ItemCount()
 	for i := 0; i < count; i++ {
 		item := lb.itemString(i)
-		var s SIZE
+		var s win.SIZE
 		str := syscall.StringToUTF16(item)
 
-		if !GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
+		if !win.GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
 			newError("GetTextExtentPoint32 failed")
 			return -1
 		}
@@ -258,7 +258,6 @@ func (lb *ListBox) calculateMaxItemTextWidth() int {
 }
 
 func (lb *ListBox) SizeHint() Size {
-
 	defaultSize := lb.dialogBaseUnitsToPixels(Size{50, 12})
 
 	if lb.maxItemTextWidth <= 0 {
@@ -270,19 +269,18 @@ func (lb *ListBox) SizeHint() Size {
 	h := defaultSize.Height + 1
 
 	return Size{w, h}
-
 }
 
 func (lb *ListBox) CurrentIndex() int {
-	return int(int32(lb.SendMessage(LB_GETCURSEL, 0, 0)))
+	return int(int32(lb.SendMessage(win.LB_GETCURSEL, 0, 0)))
 }
 
 func (lb *ListBox) SetCurrentIndex(value int) error {
 	if value < 0 {
 		return nil
 	}
-	ret := int(int32(lb.SendMessage(LB_SETCURSEL, uintptr(value), 0)))
-	if ret == LB_ERR {
+
+	if win.LB_ERR == int(int32(lb.SendMessage(win.LB_SETCURSEL, uintptr(value), 0))) {
 		return newError("Invalid index or ensure lb is single-selection listbox")
 	}
 
@@ -290,6 +288,7 @@ func (lb *ListBox) SetCurrentIndex(value int) error {
 		lb.prevCurIndex = value
 		lb.currentIndexChangedPublisher.Publish()
 	}
+
 	return nil
 }
 
@@ -301,19 +300,19 @@ func (lb *ListBox) ItemActivated() *Event {
 	return lb.itemActivatedPublisher.Event()
 }
 
-func (lb *ListBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_COMMAND:
-		switch HIWORD(uint32(wParam)) {
-		case LBN_SELCHANGE:
+	case win.WM_COMMAND:
+		switch win.HIWORD(uint32(wParam)) {
+		case win.LBN_SELCHANGE:
 			lb.prevCurIndex = lb.CurrentIndex()
 			lb.currentIndexChangedPublisher.Publish()
 
-		case LBN_DBLCLK:
+		case win.LBN_DBLCLK:
 			lb.itemActivatedPublisher.Publish()
 		}
 
-	case WM_GETDLGCODE:
+	case win.WM_GETDLGCODE:
 		if form := ancestor(lb); form != nil {
 			if dlg, ok := form.(dialogish); ok {
 				if dlg.DefaultButton() != nil {
@@ -324,11 +323,11 @@ func (lb *ListBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintpt
 			}
 		}
 
-		if wParam == VK_RETURN {
-			return DLGC_WANTALLKEYS
+		if wParam == win.VK_RETURN {
+			return win.DLGC_WANTALLKEYS
 		}
 
-	case WM_KEYDOWN:
+	case win.WM_KEYDOWN:
 		if uint32(lParam)>>30 == 0 && Key(wParam) == KeyReturn && lb.CurrentIndex() > -1 {
 			lb.itemActivatedPublisher.Publish()
 		}

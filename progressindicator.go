@@ -9,12 +9,12 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type ProgressIndicator struct {
-	hwnd         HWND
-	taskbarList3 *ITaskbarList3
+	hwnd         win.HWND
+	taskbarList3 *win.ITaskbarList3
 	completed    uint32
 	total        uint32
 	state        PIState
@@ -23,33 +23,33 @@ type ProgressIndicator struct {
 type PIState int
 
 const (
-	PINoProgress    PIState = TBPF_NOPROGRESS
-	PIIndeterminate PIState = TBPF_INDETERMINATE
-	PINormal        PIState = TBPF_NORMAL
-	PIError         PIState = TBPF_ERROR
-	PIPaused        PIState = TBPF_PAUSED
+	PINoProgress    PIState = win.TBPF_NOPROGRESS
+	PIIndeterminate PIState = win.TBPF_INDETERMINATE
+	PINormal        PIState = win.TBPF_NORMAL
+	PIError         PIState = win.TBPF_ERROR
+	PIPaused        PIState = win.TBPF_PAUSED
 )
 
 //newTaskbarList3 precondition: Windows version is at least 6.1 (yes, Win 7 is version 6.1).
-func newTaskbarList3(hwnd HWND) (*ProgressIndicator, error) {
+func newTaskbarList3(hwnd win.HWND) (*ProgressIndicator, error) {
 	var classFactoryPtr unsafe.Pointer
-	if hr := CoGetClassObject(&CLSID_TaskbarList, CLSCTX_ALL, nil, &IID_IClassFactory, &classFactoryPtr); FAILED(hr) {
+	if hr := win.CoGetClassObject(&win.CLSID_TaskbarList, win.CLSCTX_ALL, nil, &win.IID_IClassFactory, &classFactoryPtr); win.FAILED(hr) {
 		return nil, errorFromHRESULT("CoGetClassObject", hr)
 	}
 
 	var taskbarList3ObjectPtr unsafe.Pointer
-	classFactory := (*IClassFactory)(classFactoryPtr)
+	classFactory := (*win.IClassFactory)(classFactoryPtr)
 	defer classFactory.Release()
 
-	if hr := classFactory.CreateInstance(nil, &IID_ITaskbarList3, &taskbarList3ObjectPtr); FAILED(hr) {
+	if hr := classFactory.CreateInstance(nil, &win.IID_ITaskbarList3, &taskbarList3ObjectPtr); win.FAILED(hr) {
 		return nil, errorFromHRESULT("IClassFactory.CreateInstance", hr)
 	}
 
-	return &ProgressIndicator{taskbarList3: (*ITaskbarList3)(taskbarList3ObjectPtr), hwnd: hwnd}, nil
+	return &ProgressIndicator{taskbarList3: (*win.ITaskbarList3)(taskbarList3ObjectPtr), hwnd: hwnd}, nil
 }
 
 func (pi *ProgressIndicator) SetState(state PIState) error {
-	if hr := pi.taskbarList3.SetProgressState(pi.hwnd, (int)(state)); FAILED(hr) {
+	if hr := pi.taskbarList3.SetProgressState(pi.hwnd, (int)(state)); win.FAILED(hr) {
 		return errorFromHRESULT("ITaskbarList3.setprogressState", hr)
 	}
 	pi.state = state
@@ -69,7 +69,7 @@ func (pi *ProgressIndicator) Total() uint32 {
 }
 
 func (pi *ProgressIndicator) SetCompleted(completed uint32) error {
-	if hr := pi.taskbarList3.SetProgressValue(pi.hwnd, completed, pi.total); FAILED(hr) {
+	if hr := pi.taskbarList3.SetProgressValue(pi.hwnd, completed, pi.total); win.FAILED(hr) {
 		return errorFromHRESULT("ITaskbarList3.SetProgressValue", hr)
 	}
 	pi.completed = completed

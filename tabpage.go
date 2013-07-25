@@ -9,7 +9,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const tabPageWindowClass = `\o/ Walk_TabPage_Class \o/`
@@ -19,7 +19,7 @@ var tabPageBackgroundBrush Brush
 func init() {
 	MustRegisterWindowClass(tabPageWindowClass)
 
-	tabPageBackgroundBrush, _ = NewSystemColorBrush(COLOR_WINDOW)
+	tabPageBackgroundBrush, _ = NewSystemColorBrush(win.COLOR_WINDOW)
 }
 
 type TabPage struct {
@@ -36,8 +36,8 @@ func NewTabPage() (*TabPage, error) {
 		tp,
 		nil,
 		tabPageWindowClass,
-		WS_POPUP,
-		WS_EX_CONTROLPARENT); err != nil {
+		win.WS_POPUP,
+		win.WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
 
@@ -91,11 +91,11 @@ func (tp *TabPage) SetTitle(value string) error {
 	return tp.tabWidget.onPageChanged(tp)
 }
 
-func (tp *TabPage) tcItem() *TCITEM {
+func (tp *TabPage) tcItem() *win.TCITEM {
 	text := syscall.StringToUTF16(tp.Title())
 
-	item := &TCITEM{
-		Mask:       TCIF_TEXT,
+	item := &win.TCITEM{
+		Mask:       win.TCIF_TEXT,
 		PszText:    &text[0],
 		CchTextMax: int32(len(text)),
 	}

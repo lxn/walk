@@ -9,7 +9,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const groupBoxWindowClass = `\o/ Walk_GroupBox_Class \o/`
@@ -20,7 +20,7 @@ func init() {
 
 type GroupBox struct {
 	WidgetBase
-	hWndGroupBox          HWND
+	hWndGroupBox          win.HWND
 	composite             *Composite
 	titleChangedPublisher EventPublisher
 }
@@ -32,8 +32,8 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 		gb,
 		parent,
 		groupBoxWindowClass,
-		WS_VISIBLE,
-		WS_EX_CONTROLPARENT); err != nil {
+		win.WS_VISIBLE,
+		win.WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
 
@@ -50,9 +50,9 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 		return nil, err
 	}
 
-	gb.hWndGroupBox = CreateWindowEx(
+	gb.hWndGroupBox = win.CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
-		WS_CHILD|WS_VISIBLE|BS_GROUPBOX,
+		win.WS_CHILD|win.WS_VISIBLE|win.BS_GROUPBOX,
 		0, 0, 80, 24, gb.hWnd, 0, 0, nil)
 	if gb.hWndGroupBox == 0 {
 		return nil, lastError("CreateWindowEx(BUTTON)")
@@ -160,18 +160,18 @@ func (gb *GroupBox) SetLayout(value Layout) error {
 	return gb.composite.SetLayout(value)
 }
 
-func (gb *GroupBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if gb.composite != nil {
 		switch msg {
-		case WM_COMMAND, WM_NOTIFY:
+		case win.WM_COMMAND, win.WM_NOTIFY:
 			gb.composite.WndProc(hwnd, msg, wParam, lParam)
 
-		case WM_SETTEXT:
+		case win.WM_SETTEXT:
 			gb.titleChangedPublisher.Publish()
 
-		case WM_SIZE, WM_SIZING:
+		case win.WM_SIZE, win.WM_SIZING:
 			wbcb := gb.WidgetBase.ClientBounds()
-			if !MoveWindow(
+			if !win.MoveWindow(
 				gb.hWndGroupBox,
 				int32(wbcb.X),
 				int32(wbcb.Y),

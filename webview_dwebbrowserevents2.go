@@ -9,12 +9,14 @@ import (
 	"unsafe"
 )
 
-import . "github.com/lxn/go-winapi"
+import (
+	"github.com/lxn/win"
+)
 
-var webViewDWebBrowserEvents2Vtbl *DWebBrowserEvents2Vtbl
+var webViewDWebBrowserEvents2Vtbl *win.DWebBrowserEvents2Vtbl
 
 func init() {
-	webViewDWebBrowserEvents2Vtbl = &DWebBrowserEvents2Vtbl{
+	webViewDWebBrowserEvents2Vtbl = &win.DWebBrowserEvents2Vtbl{
 		syscall.NewCallback(webView_DWebBrowserEvents2_QueryInterface),
 		syscall.NewCallback(webView_DWebBrowserEvents2_AddRef),
 		syscall.NewCallback(webView_DWebBrowserEvents2_Release),
@@ -26,15 +28,15 @@ func init() {
 }
 
 type webViewDWebBrowserEvents2 struct {
-	DWebBrowserEvents2
+	win.DWebBrowserEvents2
 }
 
-func webView_DWebBrowserEvents2_QueryInterface(wbe2 *webViewDWebBrowserEvents2, riid REFIID, ppvObject *unsafe.Pointer) uintptr {
+func webView_DWebBrowserEvents2_QueryInterface(wbe2 *webViewDWebBrowserEvents2, riid win.REFIID, ppvObject *unsafe.Pointer) uintptr {
 	// Just reuse the QueryInterface implementation we have for IOleClientSite.
 	// We need to adjust object, which initially points at our
 	// webViewDWebBrowserEvents2, so it refers to the containing
 	// webViewIOleClientSite for the call.
-	var clientSite IOleClientSite
+	var clientSite win.IOleClientSite
 	var webViewInPlaceSite webViewIOleInPlaceSite
 	var docHostUIHandler webViewIDocHostUIHandler
 
@@ -64,7 +66,7 @@ func webView_DWebBrowserEvents2_GetTypeInfoCount(args *uintptr) uintptr {
 
 		return S_OK*/
 
-	return E_NOTIMPL
+	return win.E_NOTIMPL
 }
 
 func webView_DWebBrowserEvents2_GetTypeInfo(args *uintptr) uintptr {
@@ -76,7 +78,7 @@ func webView_DWebBrowserEvents2_GetTypeInfo(args *uintptr) uintptr {
 		    LCID  lcid,
 		    ITypeInfo FAR* FAR*  ppTInfo*/
 
-	return E_NOTIMPL
+	return win.E_NOTIMPL
 }
 
 func webView_DWebBrowserEvents2_GetIDsOfNames(args *uintptr) uintptr {
@@ -89,17 +91,17 @@ func webView_DWebBrowserEvents2_GetIDsOfNames(args *uintptr) uintptr {
 		rgDispId  *DISPID
 	})(unsafe.Pointer(args))*/
 
-	return E_NOTIMPL
+	return win.E_NOTIMPL
 }
 
 func webView_DWebBrowserEvents2_Invoke(
 	wbe2 *webViewDWebBrowserEvents2,
-	dispIdMember DISPID,
-	riid REFIID,
+	dispIdMember win.DISPID,
+	riid win.REFIID,
 	lcid uint32, // LCID
 	wFlags uint16,
-	pDispParams *DISPPARAMS,
-	pVarResult *VARIANT,
+	pDispParams *win.DISPPARAMS,
+	pVarResult *win.VARIANT,
 	pExcepInfo unsafe.Pointer, // *EXCEPINFO
 	puArgErr *uint32) uintptr {
 
@@ -112,9 +114,9 @@ func webView_DWebBrowserEvents2_Invoke(
 		uintptr(unsafe.Sizeof(wb))))
 
 	switch dispIdMember {
-	case DISPID_NAVIGATECOMPLETE2:
+	case win.DISPID_NAVIGATECOMPLETE2:
 		wv.urlChangedPublisher.Publish()
 	}
 
-	return DISP_E_MEMBERNOTFOUND
+	return win.DISP_E_MEMBERNOTFOUND
 }

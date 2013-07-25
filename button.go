@@ -5,7 +5,7 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type clickable interface {
@@ -57,7 +57,7 @@ func (b *Button) SetText(value string) error {
 }
 
 func (b *Button) Checked() bool {
-	return b.SendMessage(BM_GETCHECK, 0, 0) == BST_CHECKED
+	return b.SendMessage(win.BM_GETCHECK, 0, 0) == win.BST_CHECKED
 }
 
 func (b *Button) SetChecked(checked bool) {
@@ -72,12 +72,12 @@ func (b *Button) setChecked(checked bool) {
 	var chk uintptr
 
 	if checked {
-		chk = BST_CHECKED
+		chk = win.BST_CHECKED
 	} else {
-		chk = BST_UNCHECKED
+		chk = win.BST_UNCHECKED
 	}
 
-	b.SendMessage(BM_SETCHECK, chk, 0)
+	b.SendMessage(win.BM_SETCHECK, chk, 0)
 
 	b.checkedChangedPublisher.Publish()
 }
@@ -94,15 +94,15 @@ func (b *Button) raiseClicked() {
 	b.clickedPublisher.Publish()
 }
 
-func (b *Button) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (b *Button) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_COMMAND:
-		switch HIWORD(uint32(wParam)) {
-		case BN_CLICKED:
+	case win.WM_COMMAND:
+		switch win.HIWORD(uint32(wParam)) {
+		case win.BN_CLICKED:
 			b.raiseClicked()
 		}
 
-	case WM_SETTEXT:
+	case win.WM_SETTEXT:
 		b.textChangedPublisher.Publish()
 	}
 

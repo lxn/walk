@@ -9,7 +9,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type Settings interface {
@@ -73,7 +73,7 @@ func (app *Application) SetSettings(value Settings) {
 func (app *Application) Exit(exitCode int) {
 	app.exiting = true
 	app.exitCode = exitCode
-	PostQuitMessage(int32(exitCode))
+	win.PostQuitMessage(int32(exitCode))
 }
 
 func (app *Application) ExitCode() int {

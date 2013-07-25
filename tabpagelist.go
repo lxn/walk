@@ -5,7 +5,7 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type tabPageListObserver interface {
@@ -69,7 +69,7 @@ func (l *TabPageList) Contains(item *TabPage) bool {
 	return l.Index(item) > -1
 }
 
-func (l *TabPageList) indexHandle(handle HWND) int {
+func (l *TabPageList) indexHandle(handle win.HWND) int {
 	for i, page := range l.items {
 		if page.Handle() == handle {
 			return i
@@ -79,7 +79,7 @@ func (l *TabPageList) indexHandle(handle HWND) int {
 	return -1
 }
 
-func (l *TabPageList) containsHandle(handle HWND) bool {
+func (l *TabPageList) containsHandle(handle win.HWND) bool {
 	return l.indexHandle(handle) > -1
 }
 

@@ -9,13 +9,13 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
-func knownFolderPath(id CSIDL) (string, error) {
-	var buf [MAX_PATH]uint16
+func knownFolderPath(id win.CSIDL) (string, error) {
+	var buf [win.MAX_PATH]uint16
 
-	if !SHGetSpecialFolderPath(0, &buf[0], id, false) {
+	if !win.SHGetSpecialFolderPath(0, &buf[0], id, false) {
 		return "", newError("SHGetSpecialFolderPath failed")
 	}
 
@@ -23,25 +23,25 @@ func knownFolderPath(id CSIDL) (string, error) {
 }
 
 func AppDataPath() (string, error) {
-	return knownFolderPath(CSIDL_APPDATA)
+	return knownFolderPath(win.CSIDL_APPDATA)
 }
 
 func CommonAppDataPath() (string, error) {
-	return knownFolderPath(CSIDL_COMMON_APPDATA)
+	return knownFolderPath(win.CSIDL_COMMON_APPDATA)
 }
 
 func LocalAppDataPath() (string, error) {
-	return knownFolderPath(CSIDL_LOCAL_APPDATA)
+	return knownFolderPath(win.CSIDL_LOCAL_APPDATA)
 }
 
 func DriveNames() ([]string, error) {
-	bufLen := GetLogicalDriveStrings(0, nil)
+	bufLen := win.GetLogicalDriveStrings(0, nil)
 	if bufLen == 0 {
 		return nil, lastError("GetLogicalDriveStrings")
 	}
 	buf := make([]uint16, bufLen+1)
 
-	bufLen = GetLogicalDriveStrings(bufLen+1, &buf[0])
+	bufLen = win.GetLogicalDriveStrings(bufLen+1, &buf[0])
 	if bufLen == 0 {
 		return nil, lastError("GetLogicalDriveStrings")
 	}

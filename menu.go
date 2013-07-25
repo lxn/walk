@@ -11,17 +11,17 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type Menu struct {
-	hMenu   HMENU
-	hWnd    HWND
+	hMenu   win.HMENU
+	hWnd    win.HWND
 	actions *ActionList
 }
 
 func newMenuBar() (*Menu, error) {
-	hMenu := CreateMenu()
+	hMenu := win.CreateMenu()
 	if hMenu == 0 {
 		return nil, lastError("CreateMenu")
 	}
@@ -33,22 +33,22 @@ func newMenuBar() (*Menu, error) {
 }
 
 func NewMenu() (*Menu, error) {
-	hMenu := CreatePopupMenu()
+	hMenu := win.CreatePopupMenu()
 	if hMenu == 0 {
 		return nil, lastError("CreatePopupMenu")
 	}
 
-	var mi MENUINFO
+	var mi win.MENUINFO
 	mi.CbSize = uint32(unsafe.Sizeof(mi))
 
-	if !GetMenuInfo(hMenu, &mi) {
+	if !win.GetMenuInfo(hMenu, &mi) {
 		return nil, lastError("GetMenuInfo")
 	}
 
-	mi.FMask |= MIM_STYLE
-	mi.DwStyle = MNS_CHECKORBMP
+	mi.FMask |= win.MIM_STYLE
+	mi.DwStyle = win.MNS_CHECKORBMP
 
-	if !SetMenuInfo(hMenu, &mi) {
+	if !win.SetMenuInfo(hMenu, &mi) {
 		return nil, lastError("SetMenuInfo")
 	}
 
@@ -60,7 +60,7 @@ func NewMenu() (*Menu, error) {
 
 func (m *Menu) Dispose() {
 	if m.hMenu != 0 {
-		DestroyMenu(m.hMenu)
+		win.DestroyMenu(m.hMenu)
 		m.hMenu = 0
 	}
 }
@@ -73,17 +73,17 @@ func (m *Menu) Actions() *ActionList {
 	return m.actions
 }
 
-func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
+func (m *Menu) initMenuItemInfoFromAction(mii *win.MENUITEMINFO, action *Action) {
 	mii.CbSize = uint32(unsafe.Sizeof(*mii))
-	mii.FMask = MIIM_FTYPE | MIIM_ID | MIIM_STATE | MIIM_STRING
+	mii.FMask = win.MIIM_FTYPE | win.MIIM_ID | win.MIIM_STATE | win.MIIM_STRING
 	if action.image != nil {
-		mii.FMask |= MIIM_BITMAP
+		mii.FMask |= win.MIIM_BITMAP
 		mii.HbmpItem = action.image.handle()
 	}
 	if action.IsSeparator() {
-		mii.FType = MFT_SEPARATOR
+		mii.FType = win.MFT_SEPARATOR
 	} else {
-		mii.FType = MFT_STRING
+		mii.FType = win.MFT_STRING
 		var text string
 		if s := action.shortcut; s.Key != 0 {
 			text = fmt.Sprintf("%s\t%s", action.text, s.String())
@@ -96,14 +96,14 @@ func (m *Menu) initMenuItemInfoFromAction(mii *MENUITEMINFO, action *Action) {
 	mii.WID = uint32(action.id)
 
 	if action.Enabled() {
-		mii.FState &^= MFS_DISABLED
+		mii.FState &^= win.MFS_DISABLED
 	} else {
-		mii.FState |= MFS_DISABLED
+		mii.FState |= win.MFS_DISABLED
 	}
 
 	menu := action.menu
 	if menu != nil {
-		mii.FMask |= MIIM_SUBMENU
+		mii.FMask |= win.MIIM_SUBMENU
 		mii.HSubMenu = menu.hMenu
 	}
 }
@@ -113,11 +113,11 @@ func (m *Menu) onActionChanged(action *Action) error {
 		return nil
 	}
 
-	var mii MENUITEMINFO
+	var mii win.MENUITEMINFO
 
 	m.initMenuItemInfoFromAction(&mii, action)
 
-	if !SetMenuItemInfo(m.hMenu, uint32(m.actions.indexInObserver(action)), true, &mii) {
+	if !win.SetMenuItemInfo(m.hMenu, uint32(m.actions.indexInObserver(action)), true, &mii) {
 		return newError("SetMenuItemInfo failed")
 	}
 
@@ -152,11 +152,11 @@ func (m *Menu) insertAction(action *Action, visibleChanged bool) (err error) {
 
 	index := m.actions.indexInObserver(action)
 
-	var mii MENUITEMINFO
+	var mii win.MENUITEMINFO
 
 	m.initMenuItemInfoFromAction(&mii, action)
 
-	if !InsertMenuItem(m.hMenu, uint32(index), true, &mii) {
+	if !win.InsertMenuItem(m.hMenu, uint32(index), true, &mii) {
 		return newError("InsertMenuItem failed")
 	}
 
@@ -166,7 +166,7 @@ func (m *Menu) insertAction(action *Action, visibleChanged bool) (err error) {
 	}
 
 	if m.hWnd != 0 {
-		DrawMenuBar(m.hWnd)
+		win.DrawMenuBar(m.hWnd)
 	}
 
 	return
@@ -175,7 +175,7 @@ func (m *Menu) insertAction(action *Action, visibleChanged bool) (err error) {
 func (m *Menu) removeAction(action *Action, visibleChanged bool) error {
 	index := m.actions.indexInObserver(action)
 
-	if !RemoveMenu(m.hMenu, uint32(index), MF_BYPOSITION) {
+	if !win.RemoveMenu(m.hMenu, uint32(index), win.MF_BYPOSITION) {
 		return lastError("RemoveMenu")
 	}
 
@@ -184,7 +184,7 @@ func (m *Menu) removeAction(action *Action, visibleChanged bool) error {
 	}
 
 	if m.hWnd != 0 {
-		DrawMenuBar(m.hWnd)
+		win.DrawMenuBar(m.hWnd)
 	}
 
 	return nil

@@ -13,7 +13,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type ComboBox struct {
@@ -36,11 +36,11 @@ type ComboBox struct {
 
 var comboBoxEditWndProcPtr = syscall.NewCallback(comboBoxEditWndProc)
 
-func comboBoxEditWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
-	cb := (*ComboBox)(unsafe.Pointer(GetWindowLongPtr(hwnd, GWLP_USERDATA)))
+func comboBoxEditWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	cb := (*ComboBox)(unsafe.Pointer(win.GetWindowLongPtr(hwnd, win.GWLP_USERDATA)))
 
 	switch msg {
-	case WM_GETDLGCODE:
+	case win.WM_GETDLGCODE:
 		if form := ancestor(cb); form != nil {
 			if dlg, ok := form.(dialogish); ok {
 				if dlg.DefaultButton() != nil {
@@ -51,40 +51,40 @@ func comboBoxEditWndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr 
 			}
 		}
 
-		if wParam == VK_RETURN {
-			return DLGC_WANTALLKEYS
+		if wParam == win.VK_RETURN {
+			return win.DLGC_WANTALLKEYS
 		}
 
-	case WM_KEYDOWN:
-		if wParam != VK_RETURN || 0 == cb.SendMessage(CB_GETDROPPEDSTATE, 0, 0) {
+	case win.WM_KEYDOWN:
+		if wParam != win.VK_RETURN || 0 == cb.SendMessage(win.CB_GETDROPPEDSTATE, 0, 0) {
 			cb.handleKeyDown(wParam, lParam)
 		}
 
-	case WM_KEYUP:
-		if wParam != VK_RETURN || 0 == cb.SendMessage(CB_GETDROPPEDSTATE, 0, 0) {
+	case win.WM_KEYUP:
+		if wParam != win.VK_RETURN || 0 == cb.SendMessage(win.CB_GETDROPPEDSTATE, 0, 0) {
 			cb.handleKeyUp(wParam, lParam)
 		}
 	}
 
-	return CallWindowProc(cb.editOrigWndProcPtr, hwnd, msg, wParam, lParam)
+	return win.CallWindowProc(cb.editOrigWndProcPtr, hwnd, msg, wParam, lParam)
 }
 
 func NewComboBox(parent Container) (*ComboBox, error) {
-	cb, err := newComboBoxWithStyle(parent, CBS_DROPDOWN)
+	cb, err := newComboBoxWithStyle(parent, win.CBS_DROPDOWN)
 	if err != nil {
 		return nil, err
 	}
 
-	editHwnd := GetWindow(cb.hWnd, GW_CHILD)
+	editHwnd := win.GetWindow(cb.hWnd, win.GW_CHILD)
 
-	SetWindowLongPtr(editHwnd, GWLP_USERDATA, uintptr(unsafe.Pointer(cb)))
-	cb.editOrigWndProcPtr = SetWindowLongPtr(editHwnd, GWLP_WNDPROC, comboBoxEditWndProcPtr)
+	win.SetWindowLongPtr(editHwnd, win.GWLP_USERDATA, uintptr(unsafe.Pointer(cb)))
+	cb.editOrigWndProcPtr = win.SetWindowLongPtr(editHwnd, win.GWLP_WNDPROC, comboBoxEditWndProcPtr)
 
 	return cb, nil
 }
 
 func NewDropDownBox(parent Container) (*ComboBox, error) {
-	return newComboBoxWithStyle(parent, CBS_DROPDOWNLIST)
+	return newComboBoxWithStyle(parent, win.CBS_DROPDOWNLIST)
 }
 
 func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
@@ -94,7 +94,7 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		cb,
 		parent,
 		"COMBOBOX",
-		WS_TABSTOP|WS_VISIBLE|WS_VSCROLL|style,
+		win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|style,
 		0); err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (cb *ComboBox) SizeHint() Size {
 }
 
 func (cb *ComboBox) Editable() bool {
-	return !cb.hasStyleBits(CBS_DROPDOWNLIST)
+	return !cb.hasStyleBits(win.CBS_DROPDOWNLIST)
 }
 
 func (cb *ComboBox) itemString(index int) string {
@@ -205,7 +205,7 @@ func (cb *ComboBox) insertItemAt(index int) error {
 	str := cb.itemString(index)
 	lp := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(str)))
 
-	if CB_ERR == cb.SendMessage(CB_INSERTSTRING, uintptr(index), lp) {
+	if win.CB_ERR == cb.SendMessage(win.CB_INSERTSTRING, uintptr(index), lp) {
 		return newError("SendMessage(CB_INSERTSTRING)")
 	}
 
@@ -216,7 +216,7 @@ func (cb *ComboBox) resetItems() error {
 	cb.SetSuspended(true)
 	defer cb.SetSuspended(false)
 
-	if FALSE == cb.SendMessage(CB_RESETCONTENT, 0, 0) {
+	if win.FALSE == cb.SendMessage(win.CB_RESETCONTENT, 0, 0) {
 		return newError("SendMessage(CB_RESETCONTENT)")
 	}
 
@@ -246,7 +246,7 @@ func (cb *ComboBox) attachModel() {
 	cb.itemsResetHandlerHandle = cb.model.ItemsReset().Attach(itemsResetHandler)
 
 	itemChangedHandler := func(index int) {
-		if CB_ERR == cb.SendMessage(CB_DELETESTRING, uintptr(index), 0) {
+		if win.CB_ERR == cb.SendMessage(win.CB_DELETESTRING, uintptr(index), 0) {
 			newError("SendMessage(CB_DELETESTRING)")
 		}
 
@@ -415,24 +415,24 @@ func (cb *ComboBox) SetPrecision(value int) {
 }
 
 func (cb *ComboBox) calculateMaxItemTextWidth() int {
-	hdc := GetDC(cb.hWnd)
+	hdc := win.GetDC(cb.hWnd)
 	if hdc == 0 {
 		newError("GetDC failed")
 		return -1
 	}
-	defer ReleaseDC(cb.hWnd, hdc)
+	defer win.ReleaseDC(cb.hWnd, hdc)
 
-	hFontOld := SelectObject(hdc, HGDIOBJ(cb.Font().handleForDPI(0)))
-	defer SelectObject(hdc, hFontOld)
+	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(cb.Font().handleForDPI(0)))
+	defer win.SelectObject(hdc, hFontOld)
 
 	var maxWidth int
 
 	count := cb.model.ItemCount()
 	for i := 0; i < count; i++ {
-		var s SIZE
+		var s win.SIZE
 		str := syscall.StringToUTF16(cb.itemString(i))
 
-		if !GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
+		if !win.GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
 			newError("GetTextExtentPoint32 failed")
 			return -1
 		}
@@ -444,11 +444,11 @@ func (cb *ComboBox) calculateMaxItemTextWidth() int {
 }
 
 func (cb *ComboBox) CurrentIndex() int {
-	return int(int32(cb.SendMessage(CB_GETCURSEL, 0, 0)))
+	return int(int32(cb.SendMessage(win.CB_GETCURSEL, 0, 0)))
 }
 
 func (cb *ComboBox) SetCurrentIndex(value int) error {
-	index := int(int32(cb.SendMessage(CB_SETCURSEL, uintptr(value), 0)))
+	index := int(int32(cb.SendMessage(win.CB_SETCURSEL, uintptr(value), 0)))
 
 	if index != value {
 		return newError("invalid index")
@@ -475,32 +475,32 @@ func (cb *ComboBox) SetText(value string) error {
 }
 
 func (cb *ComboBox) TextSelection() (start, end int) {
-	cb.SendMessage(CB_GETEDITSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
+	cb.SendMessage(win.CB_GETEDITSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
 	return
 }
 
 func (cb *ComboBox) SetTextSelection(start, end int) {
-	cb.SendMessage(CB_SETEDITSEL, 0, uintptr(MAKELONG(uint16(start), uint16(end))))
+	cb.SendMessage(win.CB_SETEDITSEL, 0, uintptr(win.MAKELONG(uint16(start), uint16(end))))
 }
 
-func (cb *ComboBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_COMMAND:
-		code := HIWORD(uint32(wParam))
+	case win.WM_COMMAND:
+		code := win.HIWORD(uint32(wParam))
 		selIndex := cb.CurrentIndex()
 
 		switch code {
-		case CBN_SELCHANGE:
+		case win.CBN_SELCHANGE:
 			cb.selChangeIndex = selIndex
 
-		case CBN_SELENDCANCEL:
+		case win.CBN_SELENDCANCEL:
 			if cb.selChangeIndex != -1 {
 				cb.SetCurrentIndex(cb.selChangeIndex)
 
 				cb.selChangeIndex = -1
 			}
 
-		case CBN_SELENDOK:
+		case win.CBN_SELENDOK:
 			if selIndex != cb.prevCurIndex {
 				cb.currentIndexChangedPublisher.Publish()
 				cb.prevCurIndex = selIndex

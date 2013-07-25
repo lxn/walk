@@ -10,8 +10,8 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type LogView struct {
@@ -20,7 +20,7 @@ type LogView struct {
 }
 
 const (
-	TEM_APPENDTEXT = WM_USER + 6
+	TEM_APPENDTEXT = win.WM_USER + 6
 )
 
 func NewLogView(parent walk.Container) (*LogView, error) {
@@ -31,12 +31,12 @@ func NewLogView(parent walk.Container) (*LogView, error) {
 		lv,
 		parent,
 		"EDIT",
-		WS_TABSTOP|WS_VISIBLE|WS_VSCROLL|ES_MULTILINE|ES_WANTRETURN,
-		WS_EX_CLIENTEDGE); err != nil {
+		win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|win.ES_MULTILINE|win.ES_WANTRETURN,
+		win.WS_EX_CLIENTEDGE); err != nil {
 		return nil, err
 	}
 	lv.setReadOnly(true)
-	lv.SendMessage(EM_SETLIMITTEXT, 4294967295, 0)
+	lv.SendMessage(win.EM_SETLIMITTEXT, 4294967295, 0)
 	return lv, nil
 }
 
@@ -53,7 +53,7 @@ func (*LogView) SizeHint() walk.Size {
 }
 
 func (lv *LogView) setTextSelection(start, end int) {
-	lv.SendMessage(EM_SETSEL, uintptr(start), uintptr(end))
+	lv.SendMessage(win.EM_SETSEL, uintptr(start), uintptr(end))
 }
 
 func (lv *LogView) textLength() int {
@@ -63,11 +63,11 @@ func (lv *LogView) textLength() int {
 func (lv *LogView) AppendText(value string) {
 	textLength := lv.textLength()
 	lv.setTextSelection(textLength, textLength)
-	lv.SendMessage(EM_REPLACESEL, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value))))
+	lv.SendMessage(win.EM_REPLACESEL, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value))))
 }
 
 func (lv *LogView) setReadOnly(readOnly bool) error {
-	if 0 == lv.SendMessage(EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
+	if 0 == lv.SendMessage(win.EM_SETREADONLY, uintptr(win.BoolToBOOL(readOnly)), 0) {
 		return errors.New("fail to call EM_SETREADONLY")
 	}
 
@@ -76,7 +76,7 @@ func (lv *LogView) setReadOnly(readOnly bool) error {
 
 func (lv *LogView) PostAppendText(value string) {
 	lv.logChan <- value
-	PostMessage(lv.Handle(), TEM_APPENDTEXT, 0, 0)
+	win.PostMessage(lv.Handle(), TEM_APPENDTEXT, 0, 0)
 }
 
 func (lv *LogView) Write(p []byte) (int, error) {
@@ -84,14 +84,14 @@ func (lv *LogView) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (lv *LogView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (lv *LogView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_GETDLGCODE:
-		if wParam == VK_RETURN {
-			return DLGC_WANTALLKEYS
+	case win.WM_GETDLGCODE:
+		if wParam == win.VK_RETURN {
+			return win.DLGC_WANTALLKEYS
 		}
 
-		return DLGC_HASSETSEL | DLGC_WANTARROWS | DLGC_WANTCHARS
+		return win.DLGC_HASSETSEL | win.DLGC_WANTARROWS | win.DLGC_WANTCHARS
 	case TEM_APPENDTEXT:
 		select {
 		case value := <-lv.logChan:

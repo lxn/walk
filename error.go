@@ -11,7 +11,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 var (
@@ -88,14 +88,14 @@ func newErrorNoPanic(message string) error {
 }
 
 func lastError(win32FuncName string) error {
-	if errno := GetLastError(); errno != ERROR_SUCCESS {
+	if errno := win.GetLastError(); errno != win.ERROR_SUCCESS {
 		return newError(fmt.Sprintf("%s: Error %d", win32FuncName, errno))
 	}
 
 	return newError(win32FuncName)
 }
 
-func errorFromHRESULT(funcName string, hr HRESULT) error {
+func errorFromHRESULT(funcName string, hr win.HRESULT) error {
 	return newError(fmt.Sprintf("%s: Error %d", funcName, hr))
 }
 

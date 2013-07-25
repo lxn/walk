@@ -10,7 +10,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const clipboardWindowClass = `\o/ Walk_Clipboard_Class \o/`
@@ -18,7 +18,7 @@ const clipboardWindowClass = `\o/ Walk_Clipboard_Class \o/`
 func init() {
 	MustRegisterWindowClass(clipboardWindowClass)
 
-	hwnd := CreateWindowEx(
+	hwnd := win.CreateWindowEx(
 		0,
 		syscall.StringToUTF16Ptr(clipboardWindowClass),
 		nil,
@@ -27,7 +27,7 @@ func init() {
 		0,
 		0,
 		0,
-		HWND_MESSAGE,
+		win.HWND_MESSAGE,
 		0,
 		0,
 		nil)
@@ -48,13 +48,13 @@ func Clipboard() *ClipboardService {
 
 // ClipboardService provides access to the system clipboard.
 type ClipboardService struct {
-	hwnd HWND
+	hwnd win.HWND
 }
 
 // Clear clears the contents of the clipboard.
 func (c *ClipboardService) Clear() error {
 	return c.withOpenClipboard(func() error {
-		if !EmptyClipboard() {
+		if !win.EmptyClipboard() {
 			return lastError("EmptyClipboard")
 		}
 
@@ -65,7 +65,7 @@ func (c *ClipboardService) Clear() error {
 // ContainsText returns whether the clipboard currently contains text data.
 func (c *ClipboardService) ContainsText() (available bool, err error) {
 	err = c.withOpenClipboard(func() error {
-		available = IsClipboardFormatAvailable(CF_UNICODETEXT)
+		available = win.IsClipboardFormatAvailable(win.CF_UNICODETEXT)
 
 		return nil
 	})
@@ -76,18 +76,18 @@ func (c *ClipboardService) ContainsText() (available bool, err error) {
 // Text returns the current text data of the clipboard.
 func (c *ClipboardService) Text() (text string, err error) {
 	err = c.withOpenClipboard(func() error {
-		hMem := HGLOBAL(GetClipboardData(CF_UNICODETEXT))
+		hMem := win.HGLOBAL(win.GetClipboardData(win.CF_UNICODETEXT))
 		if hMem == 0 {
 			return lastError("GetClipboardData")
 		}
 
-		p := GlobalLock(hMem)
+		p := win.GlobalLock(hMem)
 		if p == nil {
 			return lastError("GlobalLock()")
 		}
-		defer GlobalUnlock(hMem)
+		defer win.GlobalUnlock(hMem)
 
-		text = UTF16PtrToString((*uint16)(p))
+		text = win.UTF16PtrToString((*uint16)(p))
 
 		return nil
 	})
@@ -103,23 +103,23 @@ func (c *ClipboardService) SetText(s string) error {
 			return err
 		}
 
-		hMem := GlobalAlloc(GMEM_MOVEABLE, uintptr(len(utf16)*2))
+		hMem := win.GlobalAlloc(win.GMEM_MOVEABLE, uintptr(len(utf16)*2))
 		if hMem == 0 {
 			return lastError("GlobalAlloc")
 		}
 
-		p := GlobalLock(hMem)
+		p := win.GlobalLock(hMem)
 		if p == nil {
 			return lastError("GlobalLock()")
 		}
 
-		MoveMemory(p, unsafe.Pointer(&utf16[0]), uintptr(len(utf16)*2))
+		win.MoveMemory(p, unsafe.Pointer(&utf16[0]), uintptr(len(utf16)*2))
 
-		GlobalUnlock(hMem)
+		win.GlobalUnlock(hMem)
 
-		if 0 == SetClipboardData(CF_UNICODETEXT, HANDLE(hMem)) {
+		if 0 == win.SetClipboardData(win.CF_UNICODETEXT, win.HANDLE(hMem)) {
 			// We need to free hMem.
-			defer GlobalFree(hMem)
+			defer win.GlobalFree(hMem)
 
 			return lastError("SetClipboardData")
 		}
@@ -131,10 +131,10 @@ func (c *ClipboardService) SetText(s string) error {
 }
 
 func (c *ClipboardService) withOpenClipboard(f func() error) error {
-	if !OpenClipboard(c.hwnd) {
+	if !win.OpenClipboard(c.hwnd) {
 		return lastError("OpenClipboard")
 	}
-	defer CloseClipboard()
+	defer win.CloseClipboard()
 
 	return f()
 }

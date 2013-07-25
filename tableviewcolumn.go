@@ -10,7 +10,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 // TableViewColumn represents a column in a TableView.
@@ -218,7 +218,7 @@ func (tvc *TableViewColumn) Width() int {
 		return tvc.width
 	}
 
-	return int(tvc.tv.SendMessage(LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0))
+	return int(tvc.tv.SendMessage(win.LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0))
 }
 
 // SetWidth sets the width of the column in pixels.
@@ -260,11 +260,11 @@ func (tvc *TableViewColumn) indexInListView() int32 {
 }
 
 func (tvc *TableViewColumn) create() error {
-	var lvc LVCOLUMN
+	var lvc win.LVCOLUMN
 
 	index := tvc.indexInListView()
 
-	lvc.Mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM
+	lvc.Mask = win.LVCF_FMT | win.LVCF_WIDTH | win.LVCF_TEXT | win.LVCF_SUBITEM
 	lvc.ISubItem = index
 	lvc.PszText = syscall.StringToUTF16Ptr(tvc.TitleEffective())
 	if tvc.width > 0 {
@@ -281,7 +281,7 @@ func (tvc *TableViewColumn) create() error {
 		lvc.Fmt = 1
 	}
 
-	j := tvc.tv.SendMessage(LVM_INSERTCOLUMN, uintptr(index), uintptr(unsafe.Pointer(&lvc)))
+	j := tvc.tv.SendMessage(win.LVM_INSERTCOLUMN, uintptr(index), uintptr(unsafe.Pointer(&lvc)))
 	if int(j) == -1 {
 		return newError("TableView.SetModel: Failed to insert column.")
 	}
@@ -290,7 +290,7 @@ func (tvc *TableViewColumn) create() error {
 }
 
 func (tvc *TableViewColumn) destroy() error {
-	if FALSE == tvc.tv.SendMessage(LVM_DELETECOLUMN, uintptr(tvc.indexInListView()), 0) {
+	if win.FALSE == tvc.tv.SendMessage(win.LVM_DELETECOLUMN, uintptr(tvc.indexInListView()), 0) {
 		return newError("LVM_DELETECOLUMN")
 	}
 
@@ -304,17 +304,17 @@ func (tvc *TableViewColumn) update() error {
 
 	lvc := tvc.getLVCOLUMN()
 
-	if FALSE == tvc.tv.SendMessage(LVM_SETCOLUMN, uintptr(tvc.indexInListView()), uintptr(unsafe.Pointer(lvc))) {
+	if win.FALSE == tvc.tv.SendMessage(win.LVM_SETCOLUMN, uintptr(tvc.indexInListView()), uintptr(unsafe.Pointer(lvc))) {
 		return newError("LVM_SETCOLUMN")
 	}
 
 	return nil
 }
 
-func (tvc *TableViewColumn) getLVCOLUMN() *LVCOLUMN {
-	var lvc LVCOLUMN
+func (tvc *TableViewColumn) getLVCOLUMN() *win.LVCOLUMN {
+	var lvc win.LVCOLUMN
 
-	lvc.Mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM
+	lvc.Mask = win.LVCF_FMT | win.LVCF_WIDTH | win.LVCF_TEXT | win.LVCF_SUBITEM
 	lvc.ISubItem = int32(tvc.indexInListView())
 	lvc.PszText = syscall.StringToUTF16Ptr(tvc.TitleEffective())
 	lvc.Cx = int32(tvc.width)

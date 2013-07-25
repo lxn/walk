@@ -5,7 +5,7 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type RadioButtonGroup struct {
@@ -43,7 +43,7 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 	}
 	var groupBit uint32
 	if rb.group == nil {
-		groupBit = WS_GROUP
+		groupBit = win.WS_GROUP
 		rb.group = new(RadioButtonGroup)
 	}
 
@@ -51,7 +51,7 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 		rb,
 		parent,
 		"BUTTON",
-		groupBit|WS_TABSTOP|WS_VISIBLE|BS_AUTORADIOBUTTON,
+		groupBit|win.WS_TABSTOP|win.WS_VISIBLE|win.BS_AUTORADIOBUTTON,
 		0); err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (rb *RadioButton) MinSizeHint() Size {
 	textSize := rb.calculateTextSizeImpl("n" + windowText(rb.hWnd))
 
 	// FIXME: Use GetThemePartSize instead of GetSystemMetrics?
-	w := textSize.Width + int(GetSystemMetrics(SM_CXMENUCHECK))
+	w := textSize.Width + int(win.GetSystemMetrics(win.SM_CXMENUCHECK))
 	h := maxi(defaultSize.Height, textSize.Height)
 
 	return Size{w, h}
@@ -117,11 +117,11 @@ func (rb *RadioButton) SetValue(value interface{}) {
 	rb.value = value
 }
 
-func (rb *RadioButton) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (rb *RadioButton) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_COMMAND:
-		switch HIWORD(uint32(wParam)) {
-		case BN_CLICKED:
+	case win.WM_COMMAND:
+		switch win.HIWORD(uint32(wParam)) {
+		case win.BN_CLICKED:
 			prevChecked := rb.group.checkedButton
 			rb.group.checkedButton = rb
 

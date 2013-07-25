@@ -3,7 +3,7 @@ About Walk
 
 Walk is a "Windows Application Library Kit" for the Go Programming Language.
 
-Its focus is graphical user interfaces but there is some more stuff.
+Its primarily useful for Desktop GUI development, but there is some more stuff.
 
 Setup
 =====

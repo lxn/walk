@@ -12,22 +12,22 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
-func withCompatibleDC(f func(hdc HDC) error) error {
-	hdc := CreateCompatibleDC(0)
+func withCompatibleDC(f func(hdc win.HDC) error) error {
+	hdc := win.CreateCompatibleDC(0)
 	if hdc == 0 {
 		return newError("CreateCompatibleDC failed")
 	}
-	defer DeleteDC(hdc)
+	defer win.DeleteDC(hdc)
 
 	return f(hdc)
 }
 
-func hPackedDIBFromHBITMAP(hBmp HBITMAP) (HGLOBAL, error) {
-	var dib DIBSECTION
-	if GetObject(HGDIOBJ(hBmp), unsafe.Sizeof(dib), unsafe.Pointer(&dib)) == 0 {
+func hPackedDIBFromHBITMAP(hBmp win.HBITMAP) (win.HGLOBAL, error) {
+	var dib win.DIBSECTION
+	if win.GetObject(win.HGDIOBJ(hBmp), unsafe.Sizeof(dib), unsafe.Pointer(&dib)) == 0 {
 		return 0, newError("GetObject failed")
 	}
 
@@ -37,30 +37,30 @@ func hPackedDIBFromHBITMAP(hBmp HBITMAP) (HGLOBAL, error) {
 
 	totalSize := bmihSize + pixelsSize
 
-	hPackedDIB := GlobalAlloc(GHND, totalSize)
-	dest := GlobalLock(hPackedDIB)
-	defer GlobalUnlock(hPackedDIB)
+	hPackedDIB := win.GlobalAlloc(win.GHND, totalSize)
+	dest := win.GlobalLock(hPackedDIB)
+	defer win.GlobalUnlock(hPackedDIB)
 
 	src := unsafe.Pointer(&dib.DsBmih)
 
-	MoveMemory(dest, src, bmihSize)
+	win.MoveMemory(dest, src, bmihSize)
 
 	dest = unsafe.Pointer(uintptr(dest) + bmihSize)
 	src = unsafe.Pointer(uintptr(src) + bmihSize)
 
-	MoveMemory(dest, src, pixelsSize)
+	win.MoveMemory(dest, src, pixelsSize)
 
 	return hPackedDIB, nil
 }
 
-func hBitmapFromImage(im image.Image) (HBITMAP, error) {
-	var bi BITMAPV5HEADER
+func hBitmapFromImage(im image.Image) (win.HBITMAP, error) {
+	var bi win.BITMAPV5HEADER
 	bi.BiSize = uint32(unsafe.Sizeof(bi))
 	bi.BiWidth = int32(im.Bounds().Dx())
 	bi.BiHeight = -int32(im.Bounds().Dy())
 	bi.BiPlanes = 1
 	bi.BiBitCount = 32
-	bi.BiCompression = BI_BITFIELDS
+	bi.BiCompression = win.BI_BITFIELDS
 	// The following mask specification specifies a supported 32 BPP
 	// alpha format for Windows XP.
 	bi.BV4RedMask = 0x00FF0000
@@ -68,15 +68,15 @@ func hBitmapFromImage(im image.Image) (HBITMAP, error) {
 	bi.BV4BlueMask = 0x000000FF
 	bi.BV4AlphaMask = 0xFF000000
 
-	hdc := GetDC(0)
-	defer ReleaseDC(0, hdc)
+	hdc := win.GetDC(0)
+	defer win.ReleaseDC(0, hdc)
 
 	var lpBits unsafe.Pointer
 
 	// Create the DIB section with an alpha channel.
-	hBitmap := CreateDIBSection(hdc, &bi.BITMAPINFOHEADER, DIB_RGB_COLORS, &lpBits, 0, 0)
+	hBitmap := win.CreateDIBSection(hdc, &bi.BITMAPINFOHEADER, win.DIB_RGB_COLORS, &lpBits, 0, 0)
 	switch hBitmap {
-	case 0, ERROR_INVALID_PARAMETER:
+	case 0, win.ERROR_INVALID_PARAMETER:
 		return 0, newError("CreateDIBSection failed")
 	}
 
@@ -98,14 +98,14 @@ func hBitmapFromImage(im image.Image) (HBITMAP, error) {
 }
 
 type Bitmap struct {
-	hBmp       HBITMAP
-	hPackedDIB HGLOBAL
+	hBmp       win.HBITMAP
+	hPackedDIB win.HGLOBAL
 	size       Size
 }
 
-func newBitmapFromHBITMAP(hBmp HBITMAP) (bmp *Bitmap, err error) {
-	var dib DIBSECTION
-	if GetObject(HGDIOBJ(hBmp), unsafe.Sizeof(dib), unsafe.Pointer(&dib)) == 0 {
+func newBitmapFromHBITMAP(hBmp win.HBITMAP) (bmp *Bitmap, err error) {
+	var dib win.DIBSECTION
+	if win.GetObject(win.HGDIOBJ(hBmp), unsafe.Sizeof(dib), unsafe.Pointer(&dib)) == 0 {
 		return nil, newError("GetObject failed")
 	}
 
@@ -116,18 +116,18 @@ func newBitmapFromHBITMAP(hBmp HBITMAP) (bmp *Bitmap, err error) {
 
 	totalSize := uintptr(bmihSize + pixelsSize)
 
-	hPackedDIB := GlobalAlloc(GHND, totalSize)
-	dest := GlobalLock(hPackedDIB)
-	defer GlobalUnlock(hPackedDIB)
+	hPackedDIB := win.GlobalAlloc(win.GHND, totalSize)
+	dest := win.GlobalLock(hPackedDIB)
+	defer win.GlobalUnlock(hPackedDIB)
 
 	src := unsafe.Pointer(&dib.DsBmih)
 
-	MoveMemory(dest, src, bmihSize)
+	win.MoveMemory(dest, src, bmihSize)
 
 	dest = unsafe.Pointer(uintptr(dest) + bmihSize)
 	src = dib.DsBm.BmBits
 
-	MoveMemory(dest, src, pixelsSize)
+	win.MoveMemory(dest, src, pixelsSize)
 
 	return &Bitmap{
 		hBmp:       hBmp,
@@ -140,18 +140,18 @@ func newBitmapFromHBITMAP(hBmp HBITMAP) (bmp *Bitmap, err error) {
 }
 
 func NewBitmap(size Size) (bmp *Bitmap, err error) {
-	var hdr BITMAPINFOHEADER
+	var hdr win.BITMAPINFOHEADER
 	hdr.BiSize = uint32(unsafe.Sizeof(hdr))
 	hdr.BiBitCount = 24
-	hdr.BiCompression = BI_RGB
+	hdr.BiCompression = win.BI_RGB
 	hdr.BiPlanes = 1
 	hdr.BiWidth = int32(size.Width)
 	hdr.BiHeight = int32(size.Height)
 
-	err = withCompatibleDC(func(hdc HDC) error {
-		hBmp := CreateDIBSection(hdc, &hdr, DIB_RGB_COLORS, nil, 0, 0)
+	err = withCompatibleDC(func(hdc win.HDC) error {
+		hBmp := win.CreateDIBSection(hdc, &hdr, win.DIB_RGB_COLORS, nil, 0, 0)
 		switch hBmp {
-		case 0, ERROR_INVALID_PARAMETER:
+		case 0, win.ERROR_INVALID_PARAMETER:
 			return newError("CreateDIBSection failed")
 		}
 
@@ -163,21 +163,21 @@ func NewBitmap(size Size) (bmp *Bitmap, err error) {
 }
 
 func NewBitmapFromFile(filePath string) (*Bitmap, error) {
-	var si GdiplusStartupInput
+	var si win.GdiplusStartupInput
 	si.GdiplusVersion = 1
-	if status := GdiplusStartup(&si, nil); status != Ok {
+	if status := win.GdiplusStartup(&si, nil); status != win.Ok {
 		return nil, newError(fmt.Sprintf("GdiplusStartup failed with status '%s'", status))
 	}
-	defer GdiplusShutdown()
+	defer win.GdiplusShutdown()
 
-	var gpBmp *GpBitmap
-	if status := GdipCreateBitmapFromFile(syscall.StringToUTF16Ptr(filePath), &gpBmp); status != Ok {
+	var gpBmp *win.GpBitmap
+	if status := win.GdipCreateBitmapFromFile(syscall.StringToUTF16Ptr(filePath), &gpBmp); status != win.Ok {
 		return nil, newError(fmt.Sprintf("GdipCreateBitmapFromFile failed with status '%s' for file '%s'", status, filePath))
 	}
-	defer GdipDisposeImage((*GpImage)(gpBmp))
+	defer win.GdipDisposeImage((*win.GpImage)(gpBmp))
 
-	var hBmp HBITMAP
-	if status := GdipCreateHBITMAPFromBitmap(gpBmp, &hBmp, 0); status != Ok {
+	var hBmp win.HBITMAP
+	if status := win.GdipCreateHBITMAPFromBitmap(gpBmp, &hBmp, 0); status != win.Ok {
 		return nil, newError(fmt.Sprintf("GdipCreateHBITMAPFromBitmap failed with status '%s' for file '%s'", status, filePath))
 	}
 
@@ -192,23 +192,23 @@ func NewBitmapFromImage(im image.Image) (*Bitmap, error) {
 	return newBitmapFromHBITMAP(hBmp)
 }
 
-func (bmp *Bitmap) withSelectedIntoMemDC(f func(hdcMem HDC) error) error {
-	return withCompatibleDC(func(hdcMem HDC) error {
-		hBmpOld := SelectObject(hdcMem, HGDIOBJ(bmp.hBmp))
+func (bmp *Bitmap) withSelectedIntoMemDC(f func(hdcMem win.HDC) error) error {
+	return withCompatibleDC(func(hdcMem win.HDC) error {
+		hBmpOld := win.SelectObject(hdcMem, win.HGDIOBJ(bmp.hBmp))
 		if hBmpOld == 0 {
 			return newError("SelectObject failed")
 		}
-		defer SelectObject(hdcMem, hBmpOld)
+		defer win.SelectObject(hdcMem, hBmpOld)
 
 		return f(hdcMem)
 	})
 }
 
-func (bmp *Bitmap) draw(hdc HDC, location Point) error {
-	return bmp.withSelectedIntoMemDC(func(hdcMem HDC) error {
+func (bmp *Bitmap) draw(hdc win.HDC, location Point) error {
+	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
 		size := bmp.Size()
 
-		if !BitBlt(
+		if !win.BitBlt(
 			hdc,
 			int32(location.X),
 			int32(location.Y),
@@ -217,7 +217,7 @@ func (bmp *Bitmap) draw(hdc HDC, location Point) error {
 			hdcMem,
 			0,
 			0,
-			SRCCOPY) {
+			win.SRCCOPY) {
 
 			return lastError("BitBlt")
 		}
@@ -226,11 +226,11 @@ func (bmp *Bitmap) draw(hdc HDC, location Point) error {
 	})
 }
 
-func (bmp *Bitmap) drawStretched(hdc HDC, bounds Rectangle) error {
-	return bmp.withSelectedIntoMemDC(func(hdcMem HDC) error {
+func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds Rectangle) error {
+	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
 		size := bmp.Size()
 
-		if !StretchBlt(
+		if !win.StretchBlt(
 			hdc,
 			int32(bounds.X),
 			int32(bounds.Y),
@@ -241,7 +241,7 @@ func (bmp *Bitmap) drawStretched(hdc HDC, bounds Rectangle) error {
 			0,
 			int32(size.Width),
 			int32(size.Height),
-			SRCCOPY) {
+			win.SRCCOPY) {
 
 			return newError("StretchBlt failed")
 		}
@@ -250,16 +250,16 @@ func (bmp *Bitmap) drawStretched(hdc HDC, bounds Rectangle) error {
 	})
 }
 
-func (bmp *Bitmap) handle() HBITMAP {
+func (bmp *Bitmap) handle() win.HBITMAP {
 	return bmp.hBmp
 }
 
 func (bmp *Bitmap) Dispose() {
 	if bmp.hBmp != 0 {
-		DeleteObject(HGDIOBJ(bmp.hBmp))
+		win.DeleteObject(win.HGDIOBJ(bmp.hBmp))
 
-		GlobalUnlock(bmp.hPackedDIB)
-		GlobalFree(bmp.hPackedDIB)
+		win.GlobalUnlock(bmp.hPackedDIB)
+		win.GlobalFree(bmp.hPackedDIB)
 
 		bmp.hPackedDIB = 0
 		bmp.hBmp = 0

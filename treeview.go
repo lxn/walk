@@ -10,12 +10,12 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type treeViewItemInfo struct {
-	handle       HTREEITEM
-	child2Handle map[TreeItem]HTREEITEM
+	handle       win.HTREEITEM
+	child2Handle map[TreeItem]win.HTREEITEM
 }
 
 type TreeView struct {
@@ -25,9 +25,9 @@ type TreeView struct {
 	itemsResetEventHandlerHandle  int
 	itemChangedEventHandlerHandle int
 	item2Info                     map[TreeItem]*treeViewItemInfo
-	handle2Item                   map[HTREEITEM]TreeItem
+	handle2Item                   map[win.HTREEITEM]TreeItem
 	currItem                      TreeItem
-	hIml                          HIMAGELIST
+	hIml                          win.HIMAGELIST
 	usingSysIml                   bool
 	imageUintptr2Index            map[uintptr]int32
 	filePath2IconIndex            map[string]int32
@@ -42,8 +42,8 @@ func NewTreeView(parent Container) (*TreeView, error) {
 		tv,
 		parent,
 		"SysTreeView32",
-		WS_TABSTOP|WS_VISIBLE|TVS_HASBUTTONS|TVS_LINESATROOT|TVS_SHOWSELALWAYS|TVS_TRACKSELECT,
-		WS_EX_CLIENTEDGE); err != nil {
+		win.WS_TABSTOP|win.WS_VISIBLE|win.TVS_HASBUTTONS|win.TVS_LINESATROOT|win.TVS_SHOWSELALWAYS|win.TVS_TRACKSELECT,
+		win.WS_EX_CLIENTEDGE); err != nil {
 		return nil, err
 	}
 
@@ -134,7 +134,7 @@ func (tv *TreeView) SetCurrentItem(item TreeItem) error {
 		return nil
 	}
 
-	var handle HTREEITEM
+	var handle win.HTREEITEM
 	if item != nil {
 		if info := tv.item2Info[item]; info == nil {
 			return newError("invalid item")
@@ -143,7 +143,7 @@ func (tv *TreeView) SetCurrentItem(item TreeItem) error {
 		}
 	}
 
-	if 0 == tv.SendMessage(TVM_SELECTITEM, TVGN_CARET, uintptr(handle)) {
+	if 0 == tv.SendMessage(win.TVM_SELECTITEM, win.TVGN_CARET, uintptr(handle)) {
 		return newError("SendMessage(TVM_SELECTITEM) failed")
 	}
 
@@ -153,9 +153,9 @@ func (tv *TreeView) SetCurrentItem(item TreeItem) error {
 }
 
 func (tv *TreeView) ItemAt(x, y int) TreeItem {
-	hti := TVHITTESTINFO{Pt: POINT{int32(x), int32(y)}}
+	hti := win.TVHITTESTINFO{Pt: win.POINT{int32(x), int32(y)}}
 
-	tv.SendMessage(TVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
+	tv.SendMessage(win.TVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
 
 	if item, ok := tv.handle2Item[hti.HItem]; ok {
 		return item
@@ -184,12 +184,12 @@ func (tv *TreeView) resetItems() error {
 }
 
 func (tv *TreeView) clearItems() error {
-	if 0 == tv.SendMessage(TVM_DELETEITEM, 0, 0) {
+	if 0 == tv.SendMessage(win.TVM_DELETEITEM, 0, 0) {
 		return newError("SendMessage(TVM_DELETEITEM) failed")
 	}
 
 	tv.item2Info = make(map[TreeItem]*treeViewItemInfo)
-	tv.handle2Item = make(map[HTREEITEM]TreeItem)
+	tv.handle2Item = make(map[win.HTREEITEM]TreeItem)
 
 	return nil
 }
@@ -209,7 +209,7 @@ func (tv *TreeView) insertRoots() error {
 func (tv *TreeView) applyImageListForImage(image interface{}) {
 	tv.hIml, tv.usingSysIml, _ = imageListForImage(image)
 
-	tv.SendMessage(TVM_SETIMAGELIST, 0, uintptr(tv.hIml))
+	tv.SendMessage(win.TVM_SETIMAGELIST, 0, uintptr(tv.hIml))
 
 	tv.imageUintptr2Index = make(map[uintptr]int32)
 	tv.filePath2IconIndex = make(map[string]int32)
@@ -217,7 +217,7 @@ func (tv *TreeView) applyImageListForImage(image interface{}) {
 
 func (tv *TreeView) disposeImageListAndCaches() {
 	if tv.hIml != 0 && !tv.usingSysIml {
-		ImageList_Destroy(tv.hIml)
+		win.ImageList_Destroy(tv.hIml)
 	}
 	tv.hIml = 0
 
@@ -225,7 +225,7 @@ func (tv *TreeView) disposeImageListAndCaches() {
 	tv.filePath2IconIndex = nil
 }
 
-func (tv *TreeView) setTVITEMImageInfo(tvi *TVITEM, item TreeItem) {
+func (tv *TreeView) setTVITEMImageInfo(tvi *win.TVITEM, item TreeItem) {
 	if imager, ok := item.(Imager); ok {
 		if tv.hIml == 0 {
 			tv.applyImageListForImage(imager.Image())
@@ -234,7 +234,7 @@ func (tv *TreeView) setTVITEMImageInfo(tvi *TVITEM, item TreeItem) {
 		// FIXME: If not setting TVIF_SELECTEDIMAGE and tvi.ISelectedImage,
 		// some default icon will show up, even though we have not asked for it.
 
-		tvi.Mask |= TVIF_IMAGE | TVIF_SELECTEDIMAGE
+		tvi.Mask |= win.TVIF_IMAGE | win.TVIF_SELECTEDIMAGE
 		tvi.IImage = imageIndexMaybeAdd(
 			imager.Image(),
 			tv.hIml,
@@ -246,20 +246,20 @@ func (tv *TreeView) setTVITEMImageInfo(tvi *TVITEM, item TreeItem) {
 	}
 }
 
-func (tv *TreeView) insertItem(index int, item TreeItem) (HTREEITEM, error) {
-	var tvins TVINSERTSTRUCT
+func (tv *TreeView) insertItem(index int, item TreeItem) (win.HTREEITEM, error) {
+	var tvins win.TVINSERTSTRUCT
 	tvi := &tvins.Item
 
-	tvi.Mask = TVIF_CHILDREN | TVIF_TEXT
-	tvi.PszText = LPSTR_TEXTCALLBACK
-	tvi.CChildren = I_CHILDRENCALLBACK
+	tvi.Mask = win.TVIF_CHILDREN | win.TVIF_TEXT
+	tvi.PszText = win.LPSTR_TEXTCALLBACK
+	tvi.CChildren = win.I_CHILDRENCALLBACK
 
 	tv.setTVITEMImageInfo(tvi, item)
 
 	parent := item.Parent()
 
 	if parent == nil {
-		tvins.HParent = TVI_ROOT
+		tvins.HParent = win.TVI_ROOT
 	} else {
 		info := tv.item2Info[parent]
 		if info == nil {
@@ -269,7 +269,7 @@ func (tv *TreeView) insertItem(index int, item TreeItem) (HTREEITEM, error) {
 	}
 
 	if index == 0 {
-		tvins.HInsertAfter = TVI_LAST
+		tvins.HInsertAfter = win.TVI_LAST
 	} else {
 		var prevItem TreeItem
 		if parent == nil {
@@ -284,11 +284,11 @@ func (tv *TreeView) insertItem(index int, item TreeItem) (HTREEITEM, error) {
 		tvins.HInsertAfter = info.handle
 	}
 
-	hItem := HTREEITEM(tv.SendMessage(TVM_INSERTITEM, 0, uintptr(unsafe.Pointer(&tvins))))
+	hItem := win.HTREEITEM(tv.SendMessage(win.TVM_INSERTITEM, 0, uintptr(unsafe.Pointer(&tvins))))
 	if hItem == 0 {
 		return 0, newError("TVM_INSERTITEM failed")
 	}
-	tv.item2Info[item] = &treeViewItemInfo{hItem, make(map[TreeItem]HTREEITEM)}
+	tv.item2Info[item] = &treeViewItemInfo{hItem, make(map[TreeItem]win.HTREEITEM)}
 	tv.handle2Item[hItem] = item
 
 	if !tv.lazyPopulation {
@@ -318,15 +318,15 @@ func (tv *TreeView) insertChildren(parent TreeItem) error {
 }
 
 func (tv *TreeView) updateItem(item TreeItem) error {
-	tvi := &TVITEM{
-		Mask:    TVIF_TEXT,
+	tvi := &win.TVITEM{
+		Mask:    win.TVIF_TEXT,
 		HItem:   tv.item2Info[item].handle,
-		PszText: LPSTR_TEXTCALLBACK,
+		PszText: win.LPSTR_TEXTCALLBACK,
 	}
 
 	tv.setTVITEMImageInfo(tvi, item)
 
-	if 0 == tv.SendMessage(TVM_SETITEM, 0, uintptr(unsafe.Pointer(tvi))) {
+	if 0 == tv.SendMessage(win.TVM_SETITEM, 0, uintptr(unsafe.Pointer(tvi))) {
 		return newError("SendMessage(TVM_SETITEM) failed")
 	}
 
@@ -343,7 +343,7 @@ func (tv *TreeView) removeItem(item TreeItem) error {
 		return newError("invalid item")
 	}
 
-	if 0 == tv.SendMessage(TVM_DELETEITEM, 0, uintptr(info.handle)) {
+	if 0 == tv.SendMessage(win.TVM_DELETEITEM, 0, uintptr(info.handle)) {
 		return newError("SendMessage(TVM_DELETEITEM) failed")
 	}
 
@@ -367,28 +367,28 @@ func (tv *TreeView) removeDescendants(parent TreeItem) error {
 }
 
 func (tv *TreeView) Expanded(item TreeItem) bool {
-	tvi := &TVITEM{
+	tvi := &win.TVITEM{
 		HItem:     tv.item2Info[item].handle,
-		Mask:      TVIF_STATE,
-		StateMask: TVIS_EXPANDED,
+		Mask:      win.TVIF_STATE,
+		StateMask: win.TVIS_EXPANDED,
 	}
 
-	if 0 == tv.SendMessage(TVM_GETITEM, 0, uintptr(unsafe.Pointer(tvi))) {
+	if 0 == tv.SendMessage(win.TVM_GETITEM, 0, uintptr(unsafe.Pointer(tvi))) {
 		newError("SendMessage(TVM_GETITEM) failed")
 	}
 
-	return tvi.State&TVIS_EXPANDED != 0
+	return tvi.State&win.TVIS_EXPANDED != 0
 }
 
 func (tv *TreeView) SetExpanded(item TreeItem, expanded bool) error {
 	var action uintptr
 	if expanded {
-		action = TVE_EXPAND
+		action = win.TVE_EXPAND
 	} else {
-		action = TVE_COLLAPSE
+		action = win.TVE_COLLAPSE
 	}
 
-	if 0 == tv.SendMessage(TVM_EXPAND, action, uintptr(tv.item2Info[item].handle)) {
+	if 0 == tv.SendMessage(win.TVM_EXPAND, action, uintptr(tv.item2Info[item].handle)) {
 		return newError("SendMessage(TVM_EXPAND) failed")
 	}
 
@@ -403,54 +403,54 @@ func (tv *TreeView) CurrentItemChanged() *Event {
 	return tv.currentItemChangedPublisher.Event()
 }
 
-func (tv *TreeView) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_NOTIFY:
-		nmhdr := (*NMHDR)(unsafe.Pointer(lParam))
+	case win.WM_NOTIFY:
+		nmhdr := (*win.NMHDR)(unsafe.Pointer(lParam))
 
 		switch nmhdr.Code {
-		case TVN_GETDISPINFO:
-			nmtvdi := (*NMTVDISPINFO)(unsafe.Pointer(lParam))
+		case win.TVN_GETDISPINFO:
+			nmtvdi := (*win.NMTVDISPINFO)(unsafe.Pointer(lParam))
 			item := tv.handle2Item[nmtvdi.Item.HItem]
 
-			if nmtvdi.Item.Mask&TVIF_TEXT != 0 {
+			if nmtvdi.Item.Mask&win.TVIF_TEXT != 0 {
 				nmtvdi.Item.PszText = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item.Text())))
 			}
-			if nmtvdi.Item.Mask&TVIF_CHILDREN != 0 {
+			if nmtvdi.Item.Mask&win.TVIF_CHILDREN != 0 {
 				nmtvdi.Item.CChildren = int32(item.ChildCount())
 			}
 
-		case TVN_ITEMEXPANDING:
-			nmtv := (*NMTREEVIEW)(unsafe.Pointer(lParam))
+		case win.TVN_ITEMEXPANDING:
+			nmtv := (*win.NMTREEVIEW)(unsafe.Pointer(lParam))
 			item := tv.handle2Item[nmtv.ItemNew.HItem]
 
-			if nmtv.Action == TVE_EXPAND && tv.lazyPopulation {
+			if nmtv.Action == win.TVE_EXPAND && tv.lazyPopulation {
 				info := tv.item2Info[item]
 				if len(info.child2Handle) == 0 {
 					tv.insertChildren(item)
 				}
 			}
 
-		case TVN_ITEMEXPANDED:
-			nmtv := (*NMTREEVIEW)(unsafe.Pointer(lParam))
+		case win.TVN_ITEMEXPANDED:
+			nmtv := (*win.NMTREEVIEW)(unsafe.Pointer(lParam))
 			item := tv.handle2Item[nmtv.ItemNew.HItem]
 
 			switch nmtv.Action {
-			case TVE_COLLAPSE:
+			case win.TVE_COLLAPSE:
 				tv.expandedChangedPublisher.Publish(item)
 
-			case TVE_COLLAPSERESET:
+			case win.TVE_COLLAPSERESET:
 
-			case TVE_EXPAND:
+			case win.TVE_EXPAND:
 				tv.expandedChangedPublisher.Publish(item)
 
-			case TVE_EXPANDPARTIAL:
+			case win.TVE_EXPANDPARTIAL:
 
-			case TVE_TOGGLE:
+			case win.TVE_TOGGLE:
 			}
 
-		case TVN_SELCHANGED:
-			nmtv := (*NMTREEVIEW)(unsafe.Pointer(lParam))
+		case win.TVN_SELCHANGED:
+			nmtv := (*win.NMTREEVIEW)(unsafe.Pointer(lParam))
 
 			tv.currItem = tv.handle2Item[nmtv.ItemNew.HItem]
 

@@ -5,34 +5,34 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type HatchStyle int
 
 const (
-	HatchHorizontal       HatchStyle = HS_HORIZONTAL
-	HatchVertical         HatchStyle = HS_VERTICAL
-	HatchForwardDiagonal  HatchStyle = HS_FDIAGONAL
-	HatchBackwardDiagonal HatchStyle = HS_BDIAGONAL
-	HatchCross            HatchStyle = HS_CROSS
-	HatchDiagonalCross    HatchStyle = HS_DIAGCROSS
+	HatchHorizontal       HatchStyle = win.HS_HORIZONTAL
+	HatchVertical         HatchStyle = win.HS_VERTICAL
+	HatchForwardDiagonal  HatchStyle = win.HS_FDIAGONAL
+	HatchBackwardDiagonal HatchStyle = win.HS_BDIAGONAL
+	HatchCross            HatchStyle = win.HS_CROSS
+	HatchDiagonalCross    HatchStyle = win.HS_DIAGCROSS
 )
 
 type Brush interface {
 	Dispose()
-	handle() HBRUSH
-	logbrush() *LOGBRUSH
+	handle() win.HBRUSH
+	logbrush() *win.LOGBRUSH
 }
 
 type nullBrush struct {
-	hBrush HBRUSH
+	hBrush win.HBRUSH
 }
 
 func newNullBrush() *nullBrush {
-	lb := &LOGBRUSH{LbStyle: BS_NULL}
+	lb := &win.LOGBRUSH{LbStyle: win.BS_NULL}
 
-	hBrush := CreateBrushIndirect(lb)
+	hBrush := win.CreateBrushIndirect(lb)
 	if hBrush == 0 {
 		panic("failed to create null brush")
 	}
@@ -42,18 +42,18 @@ func newNullBrush() *nullBrush {
 
 func (b *nullBrush) Dispose() {
 	if b.hBrush != 0 {
-		DeleteObject(HGDIOBJ(b.hBrush))
+		win.DeleteObject(win.HGDIOBJ(b.hBrush))
 
 		b.hBrush = 0
 	}
 }
 
-func (b *nullBrush) handle() HBRUSH {
+func (b *nullBrush) handle() win.HBRUSH {
 	return b.hBrush
 }
 
-func (b *nullBrush) logbrush() *LOGBRUSH {
-	return &LOGBRUSH{LbStyle: BS_NULL}
+func (b *nullBrush) logbrush() *win.LOGBRUSH {
+	return &win.LOGBRUSH{LbStyle: win.BS_NULL}
 }
 
 var nullBrushSingleton Brush = newNullBrush()
@@ -63,12 +63,12 @@ func NullBrush() Brush {
 }
 
 type SystemColorBrush struct {
-	hBrush     HBRUSH
+	hBrush     win.HBRUSH
 	colorIndex int
 }
 
 func NewSystemColorBrush(colorIndex int) (*SystemColorBrush, error) {
-	hBrush := GetSysColorBrush(colorIndex)
+	hBrush := win.GetSysColorBrush(colorIndex)
 	if hBrush == 0 {
 		return nil, newError("GetSysColorBrush failed")
 	}
@@ -84,26 +84,26 @@ func (b *SystemColorBrush) Dispose() {
 	// nop
 }
 
-func (b *SystemColorBrush) handle() HBRUSH {
+func (b *SystemColorBrush) handle() win.HBRUSH {
 	return b.hBrush
 }
 
-func (b *SystemColorBrush) logbrush() *LOGBRUSH {
-	return &LOGBRUSH{
-		LbStyle: BS_SOLID,
-		LbColor: COLORREF(GetSysColor(b.colorIndex)),
+func (b *SystemColorBrush) logbrush() *win.LOGBRUSH {
+	return &win.LOGBRUSH{
+		LbStyle: win.BS_SOLID,
+		LbColor: win.COLORREF(win.GetSysColor(b.colorIndex)),
 	}
 }
 
 type SolidColorBrush struct {
-	hBrush HBRUSH
+	hBrush win.HBRUSH
 	color  Color
 }
 
 func NewSolidColorBrush(color Color) (*SolidColorBrush, error) {
-	lb := &LOGBRUSH{LbStyle: BS_SOLID, LbColor: COLORREF(color)}
+	lb := &win.LOGBRUSH{LbStyle: win.BS_SOLID, LbColor: win.COLORREF(color)}
 
-	hBrush := CreateBrushIndirect(lb)
+	hBrush := win.CreateBrushIndirect(lb)
 	if hBrush == 0 {
 		return nil, newError("CreateBrushIndirect failed")
 	}
@@ -117,30 +117,30 @@ func (b *SolidColorBrush) Color() Color {
 
 func (b *SolidColorBrush) Dispose() {
 	if b.hBrush != 0 {
-		DeleteObject(HGDIOBJ(b.hBrush))
+		win.DeleteObject(win.HGDIOBJ(b.hBrush))
 
 		b.hBrush = 0
 	}
 }
 
-func (b *SolidColorBrush) handle() HBRUSH {
+func (b *SolidColorBrush) handle() win.HBRUSH {
 	return b.hBrush
 }
 
-func (b *SolidColorBrush) logbrush() *LOGBRUSH {
-	return &LOGBRUSH{LbStyle: BS_SOLID, LbColor: COLORREF(b.color)}
+func (b *SolidColorBrush) logbrush() *win.LOGBRUSH {
+	return &win.LOGBRUSH{LbStyle: win.BS_SOLID, LbColor: win.COLORREF(b.color)}
 }
 
 type HatchBrush struct {
-	hBrush HBRUSH
+	hBrush win.HBRUSH
 	color  Color
 	style  HatchStyle
 }
 
 func NewHatchBrush(color Color, style HatchStyle) (*HatchBrush, error) {
-	lb := &LOGBRUSH{LbStyle: BS_HATCHED, LbColor: COLORREF(color), LbHatch: uintptr(style)}
+	lb := &win.LOGBRUSH{LbStyle: win.BS_HATCHED, LbColor: win.COLORREF(color), LbHatch: uintptr(style)}
 
-	hBrush := CreateBrushIndirect(lb)
+	hBrush := win.CreateBrushIndirect(lb)
 	if hBrush == 0 {
 		return nil, newError("CreateBrushIndirect failed")
 	}
@@ -154,18 +154,18 @@ func (b *HatchBrush) Color() Color {
 
 func (b *HatchBrush) Dispose() {
 	if b.hBrush != 0 {
-		DeleteObject(HGDIOBJ(b.hBrush))
+		win.DeleteObject(win.HGDIOBJ(b.hBrush))
 
 		b.hBrush = 0
 	}
 }
 
-func (b *HatchBrush) handle() HBRUSH {
+func (b *HatchBrush) handle() win.HBRUSH {
 	return b.hBrush
 }
 
-func (b *HatchBrush) logbrush() *LOGBRUSH {
-	return &LOGBRUSH{LbStyle: BS_HATCHED, LbColor: COLORREF(b.color), LbHatch: uintptr(b.style)}
+func (b *HatchBrush) logbrush() *win.LOGBRUSH {
+	return &win.LOGBRUSH{LbStyle: win.BS_HATCHED, LbColor: win.COLORREF(b.color), LbHatch: uintptr(b.style)}
 }
 
 func (b *HatchBrush) Style() HatchStyle {
@@ -173,7 +173,7 @@ func (b *HatchBrush) Style() HatchStyle {
 }
 
 type BitmapBrush struct {
-	hBrush HBRUSH
+	hBrush win.HBRUSH
 	bitmap *Bitmap
 }
 
@@ -182,9 +182,9 @@ func NewBitmapBrush(bitmap *Bitmap) (*BitmapBrush, error) {
 		return nil, newError("bitmap cannot be nil")
 	}
 
-	lb := &LOGBRUSH{LbStyle: BS_DIBPATTERN, LbColor: DIB_RGB_COLORS, LbHatch: uintptr(bitmap.hPackedDIB)}
+	lb := &win.LOGBRUSH{LbStyle: win.BS_DIBPATTERN, LbColor: win.DIB_RGB_COLORS, LbHatch: uintptr(bitmap.hPackedDIB)}
 
-	hBrush := CreateBrushIndirect(lb)
+	hBrush := win.CreateBrushIndirect(lb)
 	if hBrush == 0 {
 		return nil, newError("CreateBrushIndirect failed")
 	}
@@ -194,18 +194,18 @@ func NewBitmapBrush(bitmap *Bitmap) (*BitmapBrush, error) {
 
 func (b *BitmapBrush) Dispose() {
 	if b.hBrush != 0 {
-		DeleteObject(HGDIOBJ(b.hBrush))
+		win.DeleteObject(win.HGDIOBJ(b.hBrush))
 
 		b.hBrush = 0
 	}
 }
 
-func (b *BitmapBrush) handle() HBRUSH {
+func (b *BitmapBrush) handle() win.HBRUSH {
 	return b.hBrush
 }
 
-func (b *BitmapBrush) logbrush() *LOGBRUSH {
-	return &LOGBRUSH{LbStyle: BS_DIBPATTERN, LbColor: DIB_RGB_COLORS, LbHatch: uintptr(b.bitmap.hPackedDIB)}
+func (b *BitmapBrush) logbrush() *win.LOGBRUSH {
+	return &win.LOGBRUSH{LbStyle: win.BS_DIBPATTERN, LbColor: win.DIB_RGB_COLORS, LbHatch: uintptr(b.bitmap.hPackedDIB)}
 }
 
 func (b *BitmapBrush) Bitmap() *Bitmap {

@@ -10,7 +10,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const (
@@ -34,8 +34,8 @@ func newLineEdit(parent Window) (*LineEdit, error) {
 		le,
 		parent,
 		"EDIT",
-		WS_CHILD|WS_TABSTOP|WS_VISIBLE|ES_AUTOHSCROLL,
-		WS_EX_CLIENTEDGE); err != nil {
+		win.WS_CHILD|win.WS_TABSTOP|win.WS_VISIBLE|win.ES_AUTOHSCROLL,
+		win.WS_EX_CLIENTEDGE); err != nil {
 		return nil, err
 	}
 
@@ -89,7 +89,7 @@ func NewLineEdit(parent Container) (*LineEdit, error) {
 
 func (le *LineEdit) CueBanner() string {
 	buf := make([]uint16, 128)
-	if FALSE == le.SendMessage(EM_GETCUEBANNER, uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf))) {
+	if win.FALSE == le.SendMessage(win.EM_GETCUEBANNER, uintptr(unsafe.Pointer(&buf[0])), uintptr(len(buf))) {
 		newError("EM_GETCUEBANNER failed")
 		return ""
 	}
@@ -98,7 +98,7 @@ func (le *LineEdit) CueBanner() string {
 }
 
 func (le *LineEdit) SetCueBanner(value string) error {
-	if FALSE == le.SendMessage(EM_SETCUEBANNER, FALSE, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value)))) {
+	if win.FALSE == le.SendMessage(win.EM_SETCUEBANNER, win.FALSE, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value)))) {
 		return newError("EM_SETCUEBANNER failed")
 	}
 
@@ -106,11 +106,11 @@ func (le *LineEdit) SetCueBanner(value string) error {
 }
 
 func (le *LineEdit) MaxLength() int {
-	return int(le.SendMessage(EM_GETLIMITTEXT, 0, 0))
+	return int(le.SendMessage(win.EM_GETLIMITTEXT, 0, 0))
 }
 
 func (le *LineEdit) SetMaxLength(value int) {
-	le.SendMessage(EM_LIMITTEXT, uintptr(value), 0)
+	le.SendMessage(win.EM_LIMITTEXT, uintptr(value), 0)
 }
 
 func (le *LineEdit) Text() string {
@@ -122,16 +122,16 @@ func (le *LineEdit) SetText(value string) error {
 }
 
 func (le *LineEdit) TextSelection() (start, end int) {
-	le.SendMessage(EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
+	le.SendMessage(win.EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
 	return
 }
 
 func (le *LineEdit) SetTextSelection(start, end int) {
-	le.SendMessage(EM_SETSEL, uintptr(start), uintptr(end))
+	le.SendMessage(win.EM_SETSEL, uintptr(start), uintptr(end))
 }
 
 func (le *LineEdit) PasswordMode() bool {
-	return le.SendMessage(EM_GETPASSWORDCHAR, 0, 0) != 0
+	return le.SendMessage(win.EM_GETPASSWORDCHAR, 0, 0) != 0
 }
 
 func (le *LineEdit) SetPasswordMode(value bool) {
@@ -140,15 +140,15 @@ func (le *LineEdit) SetPasswordMode(value bool) {
 		c = uintptr('*')
 	}
 
-	le.SendMessage(EM_SETPASSWORDCHAR, c, 0)
+	le.SendMessage(win.EM_SETPASSWORDCHAR, c, 0)
 }
 
 func (le *LineEdit) ReadOnly() bool {
-	return le.hasStyleBits(ES_READONLY)
+	return le.hasStyleBits(win.ES_READONLY)
 }
 
 func (le *LineEdit) SetReadOnly(readOnly bool) error {
-	if 0 == le.SendMessage(EM_SETREADONLY, uintptr(BoolToBOOL(readOnly)), 0) {
+	if 0 == le.SendMessage(win.EM_SETREADONLY, uintptr(win.BoolToBOOL(readOnly)), 0) {
 		return newError("SendMessage(EM_SETREADONLY)")
 	}
 
@@ -193,19 +193,19 @@ func (le *LineEdit) initCharWidth() {
 	le.charWidthFont = font
 	le.charWidth = 8
 
-	hdc := GetDC(le.hWnd)
+	hdc := win.GetDC(le.hWnd)
 	if hdc == 0 {
 		newError("GetDC failed")
 		return
 	}
-	defer ReleaseDC(le.hWnd, hdc)
+	defer win.ReleaseDC(le.hWnd, hdc)
 
-	defer SelectObject(hdc, SelectObject(hdc, HGDIOBJ(font.handleForDPI(0))))
+	defer win.SelectObject(hdc, win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(0))))
 
 	buf := []uint16{'M'}
 
-	var s SIZE
-	if !GetTextExtentPoint32(hdc, &buf[0], int32(len(buf)), &s) {
+	var s win.SIZE
+	if !win.GetTextExtentPoint32(hdc, &buf[0], int32(len(buf)), &s) {
 		newError("GetTextExtentPoint32 failed")
 		return
 	}
@@ -220,15 +220,15 @@ func (le *LineEdit) TextChanged() *Event {
 	return le.textChangedPublisher.Event()
 }
 
-func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (le *LineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_COMMAND:
-		switch HIWORD(uint32(wParam)) {
-		case EN_CHANGE:
+	case win.WM_COMMAND:
+		switch win.HIWORD(uint32(wParam)) {
+		case win.EN_CHANGE:
 			le.textChangedPublisher.Publish()
 		}
 
-	case WM_GETDLGCODE:
+	case win.WM_GETDLGCODE:
 		if form := ancestor(le); form != nil {
 			if dlg, ok := form.(dialogish); ok {
 				if dlg.DefaultButton() != nil {
@@ -239,11 +239,11 @@ func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 			}
 		}
 
-		if wParam == VK_RETURN {
-			return DLGC_WANTALLKEYS
+		if wParam == win.VK_RETURN {
+			return win.DLGC_WANTALLKEYS
 		}
 
-	case WM_KEYDOWN:
+	case win.WM_KEYDOWN:
 		switch Key(wParam) {
 		case KeyA:
 			if ControlDown() {
@@ -254,7 +254,7 @@ func (le *LineEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintp
 			le.editingFinishedPublisher.Publish()
 		}
 
-	case WM_KILLFOCUS:
+	case win.WM_KILLFOCUS:
 		// FIXME: This may be dangerous, see remarks section:
 		// http://msdn.microsoft.com/en-us/library/ms646282(v=vs.85).aspx
 		le.editingFinishedPublisher.Publish()

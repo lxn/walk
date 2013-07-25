@@ -9,7 +9,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type gridLayoutCell struct {
@@ -457,7 +457,7 @@ func (l *GridLayout) Update(reset bool) error {
 	widths := l.sectionSizes(Horizontal)
 	heights := l.sectionSizes(Vertical)
 
-	hdwp := BeginDeferWindowPos(int32(l.container.Children().Len()))
+	hdwp := win.BeginDeferWindowPos(int32(l.container.Children().Len()))
 	if hdwp == 0 {
 		return lastError("BeginDeferWindowPos")
 	}
@@ -500,7 +500,7 @@ func (l *GridLayout) Update(reset bool) error {
 			}
 		}
 
-		if hdwp = DeferWindowPos(
+		if hdwp = win.DeferWindowPos(
 			hdwp,
 			widget.Handle(),
 			0,
@@ -508,13 +508,13 @@ func (l *GridLayout) Update(reset bool) error {
 			int32(y),
 			int32(w),
 			int32(h),
-			SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOZORDER); hdwp == 0 {
+			win.SWP_NOACTIVATE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER); hdwp == 0 {
 
 			return lastError("DeferWindowPos")
 		}
 	}
 
-	if !EndDeferWindowPos(hdwp) {
+	if !win.EndDeferWindowPos(hdwp) {
 		return lastError("EndDeferWindowPos")
 	}
 

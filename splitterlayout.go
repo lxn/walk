@@ -5,7 +5,7 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type splitterLayout struct {
@@ -190,7 +190,7 @@ func (l *splitterLayout) Update(reset bool) error {
 		}
 	}
 
-	hdwp := BeginDeferWindowPos(int32(len(widgets)))
+	hdwp := win.BeginDeferWindowPos(int32(len(widgets)))
 	if hdwp == 0 {
 		return lastError("BeginDeferWindowPos")
 	}
@@ -211,7 +211,7 @@ func (l *splitterLayout) Update(reset bool) error {
 			x, y, w, h = 0, p1, space2, s1
 		}
 
-		if hdwp = DeferWindowPos(
+		if hdwp = win.DeferWindowPos(
 			hdwp,
 			widget.Handle(),
 			0,
@@ -219,7 +219,7 @@ func (l *splitterLayout) Update(reset bool) error {
 			int32(y),
 			int32(w),
 			int32(h),
-			SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOZORDER); hdwp == 0 {
+			win.SWP_NOACTIVATE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER); hdwp == 0 {
 
 			return lastError("DeferWindowPos")
 		}
@@ -227,7 +227,7 @@ func (l *splitterLayout) Update(reset bool) error {
 		p1 += s1
 	}
 
-	if !EndDeferWindowPos(hdwp) {
+	if !win.EndDeferWindowPos(hdwp) {
 		return lastError("EndDeferWindowPos")
 	}
 

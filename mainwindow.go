@@ -9,7 +9,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
@@ -20,7 +20,7 @@ func init() {
 
 type MainWindow struct {
 	FormBase
-	windowPlacement *WINDOWPLACEMENT
+	windowPlacement *win.WINDOWPLACEMENT
 	menu            *Menu
 	toolBar         *ToolBar
 	statusBar       *StatusBar
@@ -33,8 +33,8 @@ func NewMainWindow() (*MainWindow, error) {
 		mw,
 		nil,
 		mainWindowWindowClass,
-		WS_OVERLAPPEDWINDOW,
-		WS_EX_CONTROLPARENT); err != nil {
+		win.WS_OVERLAPPEDWINDOW,
+		win.WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
 
@@ -52,7 +52,7 @@ func NewMainWindow() (*MainWindow, error) {
 	if mw.menu, err = newMenuBar(); err != nil {
 		return nil, err
 	}
-	if !SetMenu(mw.hWnd, mw.menu.hMenu) {
+	if !win.SetMenu(mw.hWnd, mw.menu.hMenu) {
 		return nil, lastError("SetMenu")
 	}
 
@@ -65,7 +65,7 @@ func NewMainWindow() (*MainWindow, error) {
 	}
 
 	// This forces display of focus rectangles, as soon as the user starts to type.
-	mw.SendMessage(WM_CHANGEUISTATE, UIS_INITIALIZE, 0)
+	mw.SendMessage(win.WM_CHANGEUISTATE, win.UIS_INITIALIZE, 0)
 
 	succeeded = true
 
@@ -103,7 +103,7 @@ func (mw *MainWindow) ClientBounds() Rectangle {
 
 func (mw *MainWindow) SetVisible(visible bool) {
 	if visible {
-		DrawMenuBar(mw.hWnd)
+		win.DrawMenuBar(mw.hWnd)
 
 		if mw.clientComposite.layout != nil {
 			mw.clientComposite.layout.Update(false)
@@ -114,7 +114,7 @@ func (mw *MainWindow) SetVisible(visible bool) {
 }
 
 func (mw *MainWindow) Fullscreen() bool {
-	return GetWindowLong(mw.hWnd, GWL_STYLE)&WS_OVERLAPPEDWINDOW == 0
+	return win.GetWindowLong(mw.hWnd, win.GWL_STYLE)&win.WS_OVERLAPPEDWINDOW == 0
 }
 
 func (mw *MainWindow) SetFullscreen(fullscreen bool) error {
@@ -123,44 +123,44 @@ func (mw *MainWindow) SetFullscreen(fullscreen bool) error {
 	}
 
 	if fullscreen {
-		var mi MONITORINFO
+		var mi win.MONITORINFO
 		mi.CbSize = uint32(unsafe.Sizeof(mi))
 
 		if mw.windowPlacement == nil {
-			mw.windowPlacement = new(WINDOWPLACEMENT)
+			mw.windowPlacement = new(win.WINDOWPLACEMENT)
 		}
 
-		if !GetWindowPlacement(mw.hWnd, mw.windowPlacement) {
+		if !win.GetWindowPlacement(mw.hWnd, mw.windowPlacement) {
 			return lastError("GetWindowPlacement")
 		}
-		if !GetMonitorInfo(MonitorFromWindow(
-			mw.hWnd, MONITOR_DEFAULTTOPRIMARY), &mi) {
+		if !win.GetMonitorInfo(win.MonitorFromWindow(
+			mw.hWnd, win.MONITOR_DEFAULTTOPRIMARY), &mi) {
 
 			return newError("GetMonitorInfo")
 		}
 
-		if err := mw.ensureStyleBits(WS_OVERLAPPEDWINDOW, false); err != nil {
+		if err := mw.ensureStyleBits(win.WS_OVERLAPPEDWINDOW, false); err != nil {
 			return err
 		}
 
-		if r := mi.RcMonitor; !SetWindowPos(
-			mw.hWnd, HWND_TOP,
+		if r := mi.RcMonitor; !win.SetWindowPos(
+			mw.hWnd, win.HWND_TOP,
 			r.Left, r.Top, r.Right-r.Left, r.Bottom-r.Top,
-			SWP_FRAMECHANGED|SWP_NOOWNERZORDER) {
+			win.SWP_FRAMECHANGED|win.SWP_NOOWNERZORDER) {
 
 			return lastError("SetWindowPos")
 		}
 	} else {
-		if err := mw.ensureStyleBits(WS_OVERLAPPEDWINDOW, true); err != nil {
+		if err := mw.ensureStyleBits(win.WS_OVERLAPPEDWINDOW, true); err != nil {
 			return err
 		}
 
-		if !SetWindowPlacement(mw.hWnd, mw.windowPlacement) {
+		if !win.SetWindowPlacement(mw.hWnd, mw.windowPlacement) {
 			return lastError("SetWindowPlacement")
 		}
 
-		if !SetWindowPos(mw.hWnd, 0, 0, 0, 0, 0, SWP_FRAMECHANGED|SWP_NOMOVE|
-			SWP_NOOWNERZORDER|SWP_NOSIZE|SWP_NOZORDER) {
+		if !win.SetWindowPos(mw.hWnd, 0, 0, 0, 0, 0, win.SWP_FRAMECHANGED|win.SWP_NOMOVE|
+			win.SWP_NOOWNERZORDER|win.SWP_NOSIZE|win.SWP_NOZORDER) {
 
 			return lastError("SetWindowPos")
 		}

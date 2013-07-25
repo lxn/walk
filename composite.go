@@ -5,7 +5,7 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const compositeWindowClass = `\o/ Walk_Composite_Class \o/`
@@ -28,8 +28,8 @@ func newCompositeWithStyle(parent Window, style uint32) (*Composite, error) {
 		c,
 		parent,
 		compositeWindowClass,
-		WS_CHILD|WS_VISIBLE|style,
-		WS_EX_CONTROLPARENT); err != nil {
+		win.WS_CHILD|win.WS_VISIBLE|style,
+		win.WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
 

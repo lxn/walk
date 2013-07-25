@@ -9,7 +9,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type Margins struct {
@@ -233,15 +233,15 @@ func (cb *ContainerBase) SetSuspended(suspend bool) {
 	}
 }
 
-func (cb *ContainerBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_COMMAND:
+	case win.WM_COMMAND:
 		if lParam == 0 {
-			switch HIWORD(uint32(wParam)) {
+			switch win.HIWORD(uint32(wParam)) {
 			case 0:
-				cmdId := LOWORD(uint32(wParam))
+				cmdId := win.LOWORD(uint32(wParam))
 				switch cmdId {
-				case IDOK, IDCANCEL:
+				case win.IDOK, win.IDCANCEL:
 					form := ancestor(cb)
 					if form == nil {
 						break
@@ -253,7 +253,7 @@ func (cb *ContainerBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) 
 					}
 
 					var button *PushButton
-					if cmdId == IDOK {
+					if cmdId == win.IDOK {
 						button = dlg.DefaultButton()
 					} else {
 						button = dlg.CancelButton()
@@ -267,7 +267,7 @@ func (cb *ContainerBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) 
 				}
 
 				// Menu
-				actionId := uint16(LOWORD(uint32(wParam)))
+				actionId := uint16(win.LOWORD(uint32(wParam)))
 				if action, ok := actionsById[actionId]; ok {
 					action.raiseTriggered()
 					return 0
@@ -278,21 +278,21 @@ func (cb *ContainerBase) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) 
 			}
 		} else {
 			// The window that sent the notification shall handle it itself.
-			hWnd := HWND(lParam)
+			hWnd := win.HWND(lParam)
 			if window := windowFromHandle(hWnd); window != nil {
 				window.WndProc(hwnd, msg, wParam, lParam)
 				return 0
 			}
 		}
 
-	case WM_NOTIFY:
-		nmh := (*NMHDR)(unsafe.Pointer(lParam))
+	case win.WM_NOTIFY:
+		nmh := (*win.NMHDR)(unsafe.Pointer(lParam))
 		if window := windowFromHandle(nmh.HwndFrom); window != nil {
 			// The window that sent the notification shall handle it itself.
 			return window.WndProc(hwnd, msg, wParam, lParam)
 		}
 
-	case WM_SIZE, WM_SIZING:
+	case win.WM_SIZE, win.WM_SIZING:
 		if cb.layout != nil {
 			cb.layout.Update(false)
 		}

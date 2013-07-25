@@ -10,7 +10,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const lineErrorPresenterWindowClass = `\o/ Walk_LineErrorPresenter_Class \o/`
@@ -38,8 +38,8 @@ func NewLineErrorPresenter(parent Container) (*LineErrorPresenter, error) {
 		lep,
 		parent,
 		lineErrorPresenterWindowClass,
-		WS_VISIBLE,
-		WS_EX_CONTROLPARENT); err != nil {
+		win.WS_VISIBLE,
+		win.WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
 
@@ -183,9 +183,9 @@ func (lep *LineErrorPresenter) PresentError(err error, widget Widget) {
 	}
 }
 
-func (lep *LineErrorPresenter) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (lep *LineErrorPresenter) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_SIZE, WM_SIZING:
+	case win.WM_SIZE, win.WM_SIZING:
 		if lep.composite != nil {
 			b := lep.ClientBounds()
 			lep.composite.SetBounds(Rectangle{b.X + 2, b.Y + 2, b.Width - 4, b.Height - 4})

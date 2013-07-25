@@ -5,7 +5,7 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type CheckBox struct {
@@ -19,7 +19,7 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 		cb,
 		parent,
 		"BUTTON",
-		WS_TABSTOP|WS_VISIBLE|BS_AUTOCHECKBOX,
+		win.WS_TABSTOP|win.WS_VISIBLE|win.BS_AUTOCHECKBOX,
 		0); err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (cb *CheckBox) MinSizeHint() Size {
 	textSize := cb.calculateTextSizeImpl("n" + windowText(cb.hWnd))
 
 	// FIXME: Use GetThemePartSize instead of GetSystemMetrics?
-	w := textSize.Width + int(GetSystemMetrics(SM_CXMENUCHECK))
+	w := textSize.Width + int(win.GetSystemMetrics(win.SM_CXMENUCHECK))
 	h := maxi(defaultSize.Height, textSize.Height)
 
 	return Size{w, h}
@@ -48,11 +48,11 @@ func (cb *CheckBox) SizeHint() Size {
 	return cb.MinSizeHint()
 }
 
-func (cb *CheckBox) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (cb *CheckBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_COMMAND:
-		switch HIWORD(uint32(wParam)) {
-		case BN_CLICKED:
+	case win.WM_COMMAND:
+		switch win.HIWORD(uint32(wParam)) {
+		case win.BN_CLICKED:
 			cb.checkedChangedPublisher.Publish()
 		}
 	}

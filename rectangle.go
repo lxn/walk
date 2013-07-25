@@ -5,14 +5,14 @@
 package walk
 
 import (
-	"github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type Rectangle struct {
 	X, Y, Width, Height int
 }
 
-func rectangleFromRECT(r winapi.RECT) Rectangle {
+func rectangleFromRECT(r win.RECT) Rectangle {
 	return Rectangle{
 		X:      int(r.Left),
 		Y:      int(r.Top),
@@ -59,8 +59,8 @@ func (r *Rectangle) SetSize(s Size) Rectangle {
 	return *r
 }
 
-func (r Rectangle) toRECT() winapi.RECT {
-	return winapi.RECT{
+func (r Rectangle) toRECT() win.RECT {
+	return win.RECT{
 		int32(r.X),
 		int32(r.Y),
 		int32(r.X + r.Width),

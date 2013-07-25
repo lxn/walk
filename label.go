@@ -5,7 +5,7 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type Label struct {
@@ -20,7 +20,7 @@ func NewLabel(parent Container) (*Label, error) {
 		l,
 		parent,
 		"STATIC",
-		WS_VISIBLE|SS_CENTERIMAGE,
+		win.WS_VISIBLE|win.SS_CENTERIMAGE,
 		0); err != nil {
 		return nil, err
 	}
@@ -65,12 +65,12 @@ func (l *Label) SetText(value string) error {
 	return l.updateParentLayout()
 }
 
-func (l *Label) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (l *Label) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_SETTEXT:
+	case win.WM_SETTEXT:
 		l.textChangedPublisher.Publish()
 
-	case WM_SIZE, WM_SIZING:
+	case win.WM_SIZE, win.WM_SIZING:
 		l.Invalidate()
 	}
 

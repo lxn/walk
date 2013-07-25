@@ -10,7 +10,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type DateEdit struct {
@@ -25,7 +25,7 @@ func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
 		de,
 		parent,
 		"SysDateTimePick32",
-		WS_TABSTOP|WS_VISIBLE|DTS_SHORTDATEFORMAT|style,
+		win.WS_TABSTOP|win.WS_VISIBLE|win.DTS_SHORTDATEFORMAT|style,
 		0); err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func NewDateEdit(parent Container) (*DateEdit, error) {
 }
 
 func NewDateEditWithNoneOption(parent Container) (*DateEdit, error) {
-	return newDateEdit(parent, DTS_SHOWNONE)
+	return newDateEdit(parent, win.DTS_SHOWNONE)
 }
 
 func (*DateEdit) LayoutFlags() LayoutFlags {
@@ -62,20 +62,20 @@ func (de *DateEdit) SizeHint() Size {
 	return de.MinSizeHint()
 }
 
-func (de *DateEdit) systemTimeToTime(st *SYSTEMTIME) time.Time {
-	if st == nil || !de.hasStyleBits(DTS_SHOWNONE) && st.WYear == 1601 && st.WMonth == 1 && st.WDay == 1 {
+func (de *DateEdit) systemTimeToTime(st *win.SYSTEMTIME) time.Time {
+	if st == nil || !de.hasStyleBits(win.DTS_SHOWNONE) && st.WYear == 1601 && st.WMonth == 1 && st.WDay == 1 {
 		return time.Time{}
 	}
 
 	return time.Date(int(st.WYear), time.Month(st.WMonth), int(st.WDay), 0, 0, 0, 0, time.Local)
 }
 
-func (de *DateEdit) timeToSystemTime(t time.Time) *SYSTEMTIME {
+func (de *DateEdit) timeToSystemTime(t time.Time) *win.SYSTEMTIME {
 	if t.IsZero() {
-		if de.hasStyleBits(DTS_SHOWNONE) {
+		if de.hasStyleBits(win.DTS_SHOWNONE) {
 			return nil
 		} else {
-			return &SYSTEMTIME{
+			return &win.SYSTEMTIME{
 				WYear:  uint16(1601),
 				WMonth: uint16(1),
 				WDay:   uint16(1),
@@ -83,37 +83,37 @@ func (de *DateEdit) timeToSystemTime(t time.Time) *SYSTEMTIME {
 		}
 	}
 
-	return &SYSTEMTIME{
+	return &win.SYSTEMTIME{
 		WYear:  uint16(t.Year()),
 		WMonth: uint16(t.Month()),
 		WDay:   uint16(t.Day()),
 	}
 }
 
-func (de *DateEdit) systemTime() (*SYSTEMTIME, error) {
-	var st SYSTEMTIME
+func (de *DateEdit) systemTime() (*win.SYSTEMTIME, error) {
+	var st win.SYSTEMTIME
 
-	switch de.SendMessage(DTM_GETSYSTEMTIME, 0, uintptr(unsafe.Pointer(&st))) {
-	case GDT_VALID:
+	switch de.SendMessage(win.DTM_GETSYSTEMTIME, 0, uintptr(unsafe.Pointer(&st))) {
+	case win.GDT_VALID:
 		return &st, nil
 
-	case GDT_NONE:
+	case win.GDT_NONE:
 		return nil, nil
 	}
 
 	return nil, newError("SendMessage(DTM_GETSYSTEMTIME)")
 }
 
-func (de *DateEdit) setSystemTime(st *SYSTEMTIME) error {
+func (de *DateEdit) setSystemTime(st *win.SYSTEMTIME) error {
 	var wParam uintptr
 
 	if st != nil {
-		wParam = GDT_VALID
+		wParam = win.GDT_VALID
 	} else {
-		wParam = GDT_NONE
+		wParam = win.GDT_NONE
 	}
 
-	if 0 == de.SendMessage(DTM_SETSYSTEMTIME, wParam, uintptr(unsafe.Pointer(st))) {
+	if 0 == de.SendMessage(win.DTM_SETSYSTEMTIME, wParam, uintptr(unsafe.Pointer(st))) {
 		return newError("SendMessage(DTM_SETSYSTEMTIME)")
 	}
 
@@ -123,15 +123,15 @@ func (de *DateEdit) setSystemTime(st *SYSTEMTIME) error {
 }
 
 func (de *DateEdit) Range() (min, max time.Time) {
-	var st [2]SYSTEMTIME
+	var st [2]win.SYSTEMTIME
 
-	ret := de.SendMessage(DTM_GETRANGE, 0, uintptr(unsafe.Pointer(&st[0])))
+	ret := de.SendMessage(win.DTM_GETRANGE, 0, uintptr(unsafe.Pointer(&st[0])))
 
-	if ret&GDTR_MIN > 0 {
+	if ret&win.GDTR_MIN > 0 {
 		min = de.systemTimeToTime(&st[0])
 	}
 
-	if ret&GDTR_MAX > 0 {
+	if ret&win.GDTR_MAX > 0 {
 		max = de.systemTimeToTime(&st[1])
 	}
 
@@ -147,20 +147,20 @@ func (de *DateEdit) SetRange(min, max time.Time) error {
 		}
 	}
 
-	var st [2]SYSTEMTIME
+	var st [2]win.SYSTEMTIME
 	var wParam uintptr
 
 	if !min.IsZero() {
-		wParam |= GDTR_MIN
+		wParam |= win.GDTR_MIN
 		st[0] = *de.timeToSystemTime(min)
 	}
 
 	if !max.IsZero() {
-		wParam |= GDTR_MAX
+		wParam |= win.GDTR_MAX
 		st[1] = *de.timeToSystemTime(max)
 	}
 
-	if 0 == de.SendMessage(DTM_SETRANGE, wParam, uintptr(unsafe.Pointer(&st[0]))) {
+	if 0 == de.SendMessage(win.DTM_SETRANGE, wParam, uintptr(unsafe.Pointer(&st[0]))) {
 		return newError("SendMessage(DTM_SETRANGE)")
 	}
 
@@ -188,11 +188,11 @@ func (de *DateEdit) DateChanged() *Event {
 	return de.dateChangedPublisher.Event()
 }
 
-func (de *DateEdit) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (de *DateEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case WM_NOTIFY:
-		switch uint32(((*NMHDR)(unsafe.Pointer(lParam))).Code) {
-		case DTN_DATETIMECHANGE:
+	case win.WM_NOTIFY:
+		switch uint32(((*win.NMHDR)(unsafe.Pointer(lParam))).Code) {
+		case win.DTN_DATETIMECHANGE:
 			de.dateChangedPublisher.Publish()
 		}
 	}

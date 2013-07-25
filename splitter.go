@@ -12,7 +12,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const splitterWindowClass = `\o/ Walk_Splitter_Class \o/`
@@ -22,7 +22,7 @@ var splitterHandleDraggingBrush *SolidColorBrush
 func init() {
 	MustRegisterWindowClass(splitterWindowClass)
 
-	splitterHandleDraggingBrush, _ = NewSolidColorBrush(Color(GetSysColor(COLOR_BTNSHADOW)))
+	splitterHandleDraggingBrush, _ = NewSolidColorBrush(Color(win.GetSysColor(win.COLOR_BTNSHADOW)))
 }
 
 type Splitter struct {
@@ -48,8 +48,8 @@ func newSplitter(parent Container, orientation Orientation) (*Splitter, error) {
 		s,
 		parent,
 		splitterWindowClass,
-		WS_VISIBLE,
-		WS_EX_CONTROLPARENT); err != nil {
+		win.WS_VISIBLE,
+		win.WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
 

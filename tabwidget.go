@@ -11,7 +11,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const tabWidgetWindowClass = `\o/ Walk_TabWidget_Class \o/`
@@ -22,7 +22,7 @@ func init() {
 
 type TabWidget struct {
 	WidgetBase
-	hWndTab                      HWND
+	hWndTab                      win.HWND
 	pages                        *TabPageList
 	currentIndex                 int
 	currentIndexChangedPublisher EventPublisher
@@ -37,8 +37,8 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 		tw,
 		parent,
 		tabWidgetWindowClass,
-		WS_VISIBLE,
-		WS_EX_CONTROLPARENT); err != nil {
+		win.WS_VISIBLE,
+		win.WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
 
@@ -51,14 +51,14 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 
 	tw.SetPersistent(true)
 
-	tw.hWndTab = CreateWindowEx(
+	tw.hWndTab = win.CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("SysTabControl32"), nil,
-		WS_CHILD|WS_CLIPSIBLINGS|WS_TABSTOP|WS_VISIBLE,
+		win.WS_CHILD|win.WS_CLIPSIBLINGS|win.WS_TABSTOP|win.WS_VISIBLE,
 		0, 0, 0, 0, tw.hWnd, 0, 0, nil)
 	if tw.hWndTab == 0 {
 		return nil, lastError("CreateWindowEx")
 	}
-	SendMessage(tw.hWndTab, WM_SETFONT, uintptr(defaultFont.handleForDPI(0)), 1)
+	win.SendMessage(tw.hWndTab, win.WM_SETFONT, uintptr(defaultFont.handleForDPI(0)), 1)
 
 	tw.MustRegisterProperty("HasCurrentPage", NewReadOnlyBoolProperty(
 		func() bool {
@@ -137,7 +137,7 @@ func (tw *TabWidget) SetCurrentIndex(index int) error {
 		return newError("invalid index")
 	}
 
-	ret := int(SendMessage(tw.hWndTab, TCM_SETCURSEL, uintptr(index), 0))
+	ret := int(win.SendMessage(tw.hWndTab, win.TCM_SETCURSEL, uintptr(index), 0))
 	if ret == -1 {
 		return newError("SendMessage(TCM_SETCURSEL) failed")
 	}
@@ -206,28 +206,28 @@ func (tw *TabWidget) RestoreState() error {
 }
 
 func (tw *TabWidget) resizePages() {
-	var r RECT
-	if !GetWindowRect(tw.hWndTab, &r) {
+	var r win.RECT
+	if !win.GetWindowRect(tw.hWndTab, &r) {
 		lastError("GetWindowRect")
 		return
 	}
 
-	p := POINT{
+	p := win.POINT{
 		r.Left,
 		r.Top,
 	}
-	if !ScreenToClient(tw.hWnd, &p) {
+	if !win.ScreenToClient(tw.hWnd, &p) {
 		newError("ScreenToClient failed")
 		return
 	}
 
-	r = RECT{
+	r = win.RECT{
 		p.X,
 		p.Y,
 		r.Right - r.Left + p.X,
 		r.Bottom - r.Top + p.Y,
 	}
-	SendMessage(tw.hWndTab, TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
+	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
 	for _, page := range tw.pages.items {
 		if err := page.SetBounds(
@@ -244,8 +244,8 @@ func (tw *TabWidget) resizePages() {
 }
 
 func (tw *TabWidget) onResize(lParam uintptr) {
-	r := RECT{0, 0, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)}
-	if !MoveWindow(tw.hWndTab, r.Left, r.Top, r.Right-r.Left, r.Bottom-r.Top, true) {
+	r := win.RECT{0, 0, win.GET_X_LPARAM(lParam), win.GET_Y_LPARAM(lParam)}
+	if !win.MoveWindow(tw.hWndTab, r.Left, r.Top, r.Right-r.Left, r.Bottom-r.Top, true) {
 		lastError("MoveWindow")
 		return
 	}
@@ -261,7 +261,7 @@ func (tw *TabWidget) onSelChange() {
 		page.SetVisible(false)
 	}
 
-	tw.currentIndex = int(SendMessage(tw.hWndTab, TCM_GETCURSEL, 0, 0))
+	tw.currentIndex = int(win.SendMessage(tw.hWndTab, win.TCM_GETCURSEL, 0, 0))
 
 	if tw.currentIndex > -1 && tw.currentIndex < pageCount {
 		page := tw.pages.At(tw.currentIndex)
@@ -272,17 +272,17 @@ func (tw *TabWidget) onSelChange() {
 	tw.currentIndexChangedPublisher.Publish()
 }
 
-func (tw *TabWidget) WndProc(hwnd HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (tw *TabWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if tw.hWndTab != 0 {
 		switch msg {
-		case WM_SIZE, WM_SIZING:
+		case win.WM_SIZE, win.WM_SIZING:
 			tw.onResize(lParam)
 
-		case WM_NOTIFY:
-			nmhdr := (*NMHDR)(unsafe.Pointer(lParam))
+		case win.WM_NOTIFY:
+			nmhdr := (*win.NMHDR)(unsafe.Pointer(lParam))
 
 			switch int32(nmhdr.Code) {
-			case TCN_SELCHANGE:
+			case win.TCN_SELCHANGE:
 				tw.onSelChange()
 			}
 		}
@@ -295,7 +295,7 @@ func (tw *TabWidget) onPageChanged(page *TabPage) (err error) {
 	index := tw.pages.Index(page)
 	item := page.tcItem()
 
-	if 0 == SendMessage(tw.hWndTab, TCM_SETITEM, uintptr(index), uintptr(unsafe.Pointer(item))) {
+	if 0 == win.SendMessage(tw.hWndTab, win.TCM_SETITEM, uintptr(index), uintptr(unsafe.Pointer(item))) {
 		return newError("SendMessage(TCM_SETITEM) failed")
 	}
 
@@ -309,26 +309,26 @@ func (tw *TabWidget) onInsertingPage(index int, page *TabPage) (err error) {
 func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err error) {
 	item := page.tcItem()
 
-	if idx := int(SendMessage(tw.hWndTab, TCM_INSERTITEM, uintptr(index), uintptr(unsafe.Pointer(item)))); idx == -1 {
+	if idx := int(win.SendMessage(tw.hWndTab, win.TCM_INSERTITEM, uintptr(index), uintptr(unsafe.Pointer(item)))); idx == -1 {
 		return newError("SendMessage(TCM_INSERTITEM) failed")
 	}
 
 	page.SetVisible(false)
 
-	style := uint32(GetWindowLong(page.hWnd, GWL_STYLE))
+	style := uint32(win.GetWindowLong(page.hWnd, win.GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
 
-	style |= WS_CHILD
-	style &^= WS_POPUP
+	style |= win.WS_CHILD
+	style &^= win.WS_POPUP
 
-	SetLastError(0)
-	if SetWindowLong(page.hWnd, GWL_STYLE, int32(style)) == 0 {
+	win.SetLastError(0)
+	if win.SetWindowLong(page.hWnd, win.GWL_STYLE, int32(style)) == 0 {
 		return lastError("SetWindowLong")
 	}
 
-	if SetParent(page.hWnd, tw.hWnd) == 0 {
+	if win.SetParent(page.hWnd, tw.hWnd) == 0 {
 		return lastError("SetParent")
 	}
 
@@ -347,16 +347,16 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err error) {
 func (tw *TabWidget) removePage(page *TabPage) (err error) {
 	page.SetVisible(false)
 
-	style := uint32(GetWindowLong(page.hWnd, GWL_STYLE))
+	style := uint32(win.GetWindowLong(page.hWnd, win.GWL_STYLE))
 	if style == 0 {
 		return lastError("GetWindowLong")
 	}
 
-	style &^= WS_CHILD
-	style |= WS_POPUP
+	style &^= win.WS_CHILD
+	style |= win.WS_POPUP
 
-	SetLastError(0)
-	if SetWindowLong(page.hWnd, GWL_STYLE, int32(style)) == 0 {
+	win.SetLastError(0)
+	if win.SetWindowLong(page.hWnd, win.GWL_STYLE, int32(style)) == 0 {
 		return lastError("SetWindowLong")
 	}
 
@@ -375,11 +375,11 @@ func (tw *TabWidget) onRemovedPage(index int, page *TabPage) (err error) {
 		return
 	}
 
-	SendMessage(tw.hWndTab, TCM_DELETEITEM, uintptr(index), 0)
+	win.SendMessage(tw.hWndTab, win.TCM_DELETEITEM, uintptr(index), 0)
 
 	if tw.pages.Len() > 0 {
 		tw.currentIndex = 0
-		SendMessage(tw.hWndTab, TCM_SETCURSEL, uintptr(tw.currentIndex), 0)
+		win.SendMessage(tw.hWndTab, win.TCM_SETCURSEL, uintptr(tw.currentIndex), 0)
 	} else {
 		tw.currentIndex = -1
 	}
@@ -413,7 +413,7 @@ func (tw *TabWidget) onClearingPages(pages []*TabPage) (err error) {
 }
 
 func (tw *TabWidget) onClearedPages(pages []*TabPage) (err error) {
-	SendMessage(tw.hWndTab, TCM_DELETEALLITEMS, 0, 0)
+	win.SendMessage(tw.hWndTab, win.TCM_DELETEALLITEMS, 0, 0)
 	for _, page := range pages {
 		tw.removePage(page)
 	}

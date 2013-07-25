@@ -10,7 +10,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 // StatusBar is a widget that displays status messages.
@@ -27,7 +27,7 @@ func NewStatusBar(parent Container) (*StatusBar, error) {
 		sb,
 		parent,
 		"msctls_statusbar32",
-		SBARS_SIZEGRIP|SBARS_TOOLTIPS,
+		win.SBARS_SIZEGRIP|win.SBARS_TOOLTIPS,
 		0); err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (sb *StatusBar) Items() *StatusBarItemList {
 func (sb *StatusBar) SetVisible(visible bool) {
 	sb.WidgetBase.SetVisible(visible)
 
-	sb.Parent().SendMessage(WM_SIZE, 0, 0)
+	sb.Parent().SendMessage(win.WM_SIZE, 0, 0)
 }
 
 func (sb *StatusBar) update() error {
@@ -94,7 +94,7 @@ func (sb *StatusBar) updateParts() error {
 	}
 
 	if 0 == sb.SendMessage(
-		SB_SETPARTS,
+		win.SB_SETPARTS,
 		uintptr(len(items)),
 		uintptr(unsafe.Pointer(rep))) {
 
@@ -236,13 +236,13 @@ func (sbi *StatusBarItem) update(index int) error {
 }
 
 func (sbi *StatusBarItem) updateIcon(index int) error {
-	var hIcon HICON
+	var hIcon win.HICON
 	if sbi.icon != nil {
 		hIcon = sbi.icon.hIcon
 	}
 
 	if 0 == sbi.sb.SendMessage(
-		SB_SETICON,
+		win.SB_SETICON,
 		uintptr(index),
 		uintptr(hIcon)) {
 
@@ -259,8 +259,8 @@ func (sbi *StatusBarItem) updateText(index int) error {
 	}
 
 	if 0 == sbi.sb.SendMessage(
-		SB_SETTEXT,
-		uintptr(MAKEWORD(byte(index), 0)),
+		win.SB_SETTEXT,
+		uintptr(win.MAKEWORD(byte(index), 0)),
 		uintptr(unsafe.Pointer(utf16))) {
 
 		return newError("SB_SETTEXT")
@@ -276,7 +276,7 @@ func (sbi *StatusBarItem) updateToolTipText(index int) error {
 	}
 
 	sbi.sb.SendMessage(
-		SB_SETTIPTEXT,
+		win.SB_SETTIPTEXT,
 		uintptr(index),
 		uintptr(unsafe.Pointer(utf16)))
 

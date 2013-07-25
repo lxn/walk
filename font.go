@@ -9,7 +9,7 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type FontStyle byte
@@ -30,10 +30,10 @@ var (
 
 func init() {
 	// Retrieve screen DPI
-	hDC := GetDC(0)
-	defer ReleaseDC(0, hDC)
-	screenDPIX = int(GetDeviceCaps(hDC, LOGPIXELSX))
-	screenDPIY = int(GetDeviceCaps(hDC, LOGPIXELSY))
+	hDC := win.GetDC(0)
+	defer win.ReleaseDC(0, hDC)
+	screenDPIX = int(win.GetDeviceCaps(hDC, win.LOGPIXELSX))
+	screenDPIY = int(win.GetDeviceCaps(hDC, win.LOGPIXELSY))
 
 	// Initialize default font
 	var err error
@@ -45,7 +45,7 @@ func init() {
 // Font represents a typographic typeface that is used for text drawing
 // operations and on many GUI widgets.
 type Font struct {
-	dpi2hFont map[int]HFONT
+	dpi2hFont map[int]win.HFONT
 	family    string
 	pointSize int
 	style     FontStyle
@@ -61,7 +61,7 @@ func NewFont(family string, pointSize int, style FontStyle) (*Font, error) {
 		family:    family,
 		pointSize: pointSize,
 		style:     style,
-		dpi2hFont: make(map[int]HFONT),
+		dpi2hFont: make(map[int]win.HFONT),
 	}
 
 	hFont := font.createForDPI(screenDPIY)
@@ -75,42 +75,42 @@ func NewFont(family string, pointSize int, style FontStyle) (*Font, error) {
 	return font, nil
 }
 
-func newFontFromLOGFONT(lf *LOGFONT, dpi int) (*Font, error) {
+func newFontFromLOGFONT(lf *win.LOGFONT, dpi int) (*Font, error) {
 	if lf == nil {
 		return nil, newError("lf cannot be nil")
 	}
 
-	family := UTF16PtrToString(&lf.LfFaceName[0])
-	pointSize := int(MulDiv(lf.LfHeight, 72, int32(dpi)))
+	family := win.UTF16PtrToString(&lf.LfFaceName[0])
+	pointSize := int(win.MulDiv(lf.LfHeight, 72, int32(dpi)))
 	if pointSize < 0 {
 		pointSize = -pointSize
 	}
 
 	var style FontStyle
-	if lf.LfWeight > FW_NORMAL {
+	if lf.LfWeight > win.FW_NORMAL {
 		style |= FontBold
 	}
-	if lf.LfItalic == TRUE {
+	if lf.LfItalic == win.TRUE {
 		style |= FontItalic
 	}
-	if lf.LfUnderline == TRUE {
+	if lf.LfUnderline == win.TRUE {
 		style |= FontUnderline
 	}
-	if lf.LfStrikeOut == TRUE {
+	if lf.LfStrikeOut == win.TRUE {
 		style |= FontStrikeOut
 	}
 
 	return NewFont(family, pointSize, style)
 }
 
-func (f *Font) createForDPI(dpi int) HFONT {
-	var lf LOGFONT
+func (f *Font) createForDPI(dpi int) win.HFONT {
+	var lf win.LOGFONT
 
-	lf.LfHeight = -MulDiv(int32(f.pointSize), int32(dpi), 72)
+	lf.LfHeight = -win.MulDiv(int32(f.pointSize), int32(dpi), 72)
 	if f.style&FontBold > 0 {
-		lf.LfWeight = FW_BOLD
+		lf.LfWeight = win.FW_BOLD
 	} else {
-		lf.LfWeight = FW_NORMAL
+		lf.LfWeight = win.FW_NORMAL
 	}
 	if f.style&FontItalic > 0 {
 		lf.LfItalic = 1
@@ -121,17 +121,17 @@ func (f *Font) createForDPI(dpi int) HFONT {
 	if f.style&FontStrikeOut > 0 {
 		lf.LfStrikeOut = 1
 	}
-	lf.LfCharSet = DEFAULT_CHARSET
-	lf.LfOutPrecision = OUT_TT_PRECIS
-	lf.LfClipPrecision = CLIP_DEFAULT_PRECIS
-	lf.LfQuality = CLEARTYPE_QUALITY
-	lf.LfPitchAndFamily = VARIABLE_PITCH | FF_SWISS
+	lf.LfCharSet = win.DEFAULT_CHARSET
+	lf.LfOutPrecision = win.OUT_TT_PRECIS
+	lf.LfClipPrecision = win.CLIP_DEFAULT_PRECIS
+	lf.LfQuality = win.CLEARTYPE_QUALITY
+	lf.LfPitchAndFamily = win.VARIABLE_PITCH | win.FF_SWISS
 
 	src := syscall.StringToUTF16(f.family)
 	dest := lf.LfFaceName[:]
 	copy(dest, src)
 
-	return CreateFontIndirect(&lf)
+	return win.CreateFontIndirect(&lf)
 }
 
 // Bold returns if text drawn using the Font appears with
@@ -147,7 +147,7 @@ func (f *Font) Bold() bool {
 func (f *Font) Dispose() {
 	for dpi, hFont := range f.dpi2hFont {
 		if dpi != 0 {
-			DeleteObject(HGDIOBJ(hFont))
+			win.DeleteObject(win.HGDIOBJ(hFont))
 		}
 
 		delete(f.dpi2hFont, dpi)
@@ -168,7 +168,7 @@ func (f *Font) Italic() bool {
 // DPI value.
 //
 // A value of 0 returns a HFONT suitable for the screen.
-func (f *Font) handleForDPI(dpi int) HFONT {
+func (f *Font) handleForDPI(dpi int) win.HFONT {
 	hFont := f.dpi2hFont[dpi]
 	if hFont == 0 {
 		hFont = f.createForDPI(dpi)

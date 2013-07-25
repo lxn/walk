@@ -5,7 +5,7 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 const splitterHandleWindowClass = `\o/ Walk_SplitterHandle_Class \o/`
@@ -30,12 +30,12 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, error) {
 		sh,
 		splitter,
 		splitterHandleWindowClass,
-		WS_CHILD|WS_VISIBLE,
+		win.WS_CHILD|win.WS_VISIBLE,
 		0); err != nil {
 		return nil, err
 	}
 
-	if err := sh.setAndClearStyleBits(0, WS_CLIPSIBLINGS); err != nil {
+	if err := sh.setAndClearStyleBits(0, win.WS_CLIPSIBLINGS); err != nil {
 		return nil, err
 	}
 

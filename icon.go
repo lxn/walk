@@ -11,42 +11,42 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 // Icon is a bitmap that supports transparency and combining multiple
 // variants of an image in different resolutions.
 type Icon struct {
-	hIcon   HICON
+	hIcon   win.HICON
 	isStock bool
 }
 
 func IconApplication() *Icon {
-	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_APPLICATION)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_APPLICATION)), true}
 }
 
 func IconError() *Icon {
-	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_ERROR)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_ERROR)), true}
 }
 
 func IconQuestion() *Icon {
-	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_QUESTION)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_QUESTION)), true}
 }
 
 func IconWarning() *Icon {
-	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_WARNING)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_WARNING)), true}
 }
 
 func IconInformation() *Icon {
-	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_INFORMATION)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_INFORMATION)), true}
 }
 
 func IconWinLogo() *Icon {
-	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_WINLOGO)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_WINLOGO)), true}
 }
 
 func IconShield() *Icon {
-	return &Icon{LoadIcon(0, MAKEINTRESOURCE(IDI_SHIELD)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_SHIELD)), true}
 }
 
 // NewIconFromFile returns a new Icon, using the specified icon image file.
@@ -56,13 +56,13 @@ func NewIconFromFile(filePath string) (*Icon, error) {
 		return nil, wrapError(err)
 	}
 
-	hIcon := HICON(LoadImage(
+	hIcon := win.HICON(win.LoadImage(
 		0,
 		syscall.StringToUTF16Ptr(absFilePath),
-		IMAGE_ICON,
+		win.IMAGE_ICON,
 		0,
 		0,
-		LR_DEFAULTSIZE|LR_LOADFROMFILE))
+		win.LR_DEFAULTSIZE|win.LR_LOADFROMFILE))
 	if hIcon == 0 {
 		return nil, lastError("LoadImage")
 	}
@@ -72,12 +72,12 @@ func NewIconFromFile(filePath string) (*Icon, error) {
 
 // NewIconFromResource returns a new Icon, using the specified icon resource.
 func NewIconFromResource(resName string) (ic *Icon, err error) {
-	hInst := GetModuleHandle(nil)
+	hInst := win.GetModuleHandle(nil)
 	if hInst == 0 {
 		err = lastError("GetModuleHandle")
 		return
 	}
-	if hIcon := LoadIcon(hInst, syscall.StringToUTF16Ptr(resName)); hIcon == 0 {
+	if hIcon := win.LoadIcon(hInst, syscall.StringToUTF16Ptr(resName)); hIcon == 0 {
 		err = lastError("LoadIcon")
 	} else {
 		ic = &Icon{hIcon: hIcon}
@@ -99,7 +99,7 @@ func (i *Icon) Dispose() error {
 		return nil
 	}
 
-	if !DestroyIcon(i.hIcon) {
+	if !win.DestroyIcon(i.hIcon) {
 		return lastError("DestroyIcon")
 	}
 
@@ -110,23 +110,23 @@ func (i *Icon) Dispose() error {
 
 // create an Alpha Icon or Cursor from an Image
 // http://support.microsoft.com/kb/318876
-func createAlphaCursorOrIconFromImage(im image.Image, hotspot image.Point, fIcon bool) (HICON, error) {
+func createAlphaCursorOrIconFromImage(im image.Image, hotspot image.Point, fIcon bool) (win.HICON, error) {
 	hBitmap, err := hBitmapFromImage(im)
 	if err != nil {
 		return 0, err
 	}
-	defer DeleteObject(HGDIOBJ(hBitmap))
+	defer win.DeleteObject(win.HGDIOBJ(hBitmap))
 
 	// Create an empty mask bitmap.
-	hMonoBitmap := CreateBitmap(int32(im.Bounds().Dx()), int32(im.Bounds().Dy()), 1, 1, nil)
+	hMonoBitmap := win.CreateBitmap(int32(im.Bounds().Dx()), int32(im.Bounds().Dy()), 1, 1, nil)
 	if hMonoBitmap == 0 {
 		return 0, newError("CreateBitmap failed")
 	}
-	defer DeleteObject(HGDIOBJ(hMonoBitmap))
+	defer win.DeleteObject(win.HGDIOBJ(hMonoBitmap))
 
-	var ii ICONINFO
+	var ii win.ICONINFO
 	if fIcon {
-		ii.FIcon = TRUE
+		ii.FIcon = win.TRUE
 	}
 	ii.XHotspot = uint32(hotspot.X)
 	ii.YHotspot = uint32(hotspot.Y)
@@ -134,7 +134,7 @@ func createAlphaCursorOrIconFromImage(im image.Image, hotspot image.Point, fIcon
 	ii.HbmColor = hBitmap
 
 	// Create the alpha cursor with the alpha DIB section.
-	hIconOrCursor := CreateIconIndirect(&ii)
+	hIconOrCursor := win.CreateIconIndirect(&ii)
 
 	return hIconOrCursor, nil
 }

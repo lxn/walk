@@ -9,12 +9,12 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type Image interface {
-	draw(hdc HDC, location Point) error
-	drawStretched(hdc HDC, bounds Rectangle) error
+	draw(hdc win.HDC, location Point) error
+	drawStretched(hdc win.HDC, bounds Rectangle) error
 	Dispose()
 	Size() Size
 }

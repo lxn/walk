@@ -10,43 +10,43 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type RegistryKey struct {
-	hKey HKEY
+	hKey win.HKEY
 }
 
 func ClassesRootKey() *RegistryKey {
-	return &RegistryKey{HKEY_CLASSES_ROOT}
+	return &RegistryKey{win.HKEY_CLASSES_ROOT}
 }
 
 func CurrentUserKey() *RegistryKey {
-	return &RegistryKey{HKEY_CURRENT_USER}
+	return &RegistryKey{win.HKEY_CURRENT_USER}
 }
 
 func LocalMachineKey() *RegistryKey {
-	return &RegistryKey{HKEY_LOCAL_MACHINE}
+	return &RegistryKey{win.HKEY_LOCAL_MACHINE}
 }
 
 func RegistryKeyString(rootKey *RegistryKey, subKeyPath, valueName string) (value string, err error) {
-	var hKey HKEY
-	if RegOpenKeyEx(
+	var hKey win.HKEY
+	if win.RegOpenKeyEx(
 		rootKey.hKey,
 		syscall.StringToUTF16Ptr(subKeyPath),
 		0,
-		KEY_READ,
-		&hKey) != ERROR_SUCCESS {
+		win.KEY_READ,
+		&hKey) != win.ERROR_SUCCESS {
 
 		return "", newError("RegistryKeyString: Failed to open subkey.")
 	}
-	defer RegCloseKey(hKey)
+	defer win.RegCloseKey(hKey)
 
 	var typ uint32
 	var data []uint16
 	var bufSize uint32
 
-	if ERROR_SUCCESS != RegQueryValueEx(
+	if win.ERROR_SUCCESS != win.RegQueryValueEx(
 		hKey,
 		syscall.StringToUTF16Ptr(valueName),
 		nil,
@@ -59,7 +59,7 @@ func RegistryKeyString(rootKey *RegistryKey, subKeyPath, valueName string) (valu
 
 	data = make([]uint16, bufSize/2+1)
 
-	if ERROR_SUCCESS != RegQueryValueEx(
+	if win.ERROR_SUCCESS != win.RegQueryValueEx(
 		hKey,
 		syscall.StringToUTF16Ptr(valueName),
 		nil,
@@ -74,21 +74,21 @@ func RegistryKeyString(rootKey *RegistryKey, subKeyPath, valueName string) (valu
 }
 
 func RegistryKeyUint32(rootKey *RegistryKey, subKeyPath, valueName string) (value uint32, err error) {
-	var hKey HKEY
-	if RegOpenKeyEx(
+	var hKey win.HKEY
+	if win.RegOpenKeyEx(
 		rootKey.hKey,
 		syscall.StringToUTF16Ptr(subKeyPath),
 		0,
-		KEY_READ,
-		&hKey) != ERROR_SUCCESS {
+		win.KEY_READ,
+		&hKey) != win.ERROR_SUCCESS {
 
 		return 0, newError("RegistryKeyUint32: Failed to open subkey.")
 	}
-	defer RegCloseKey(hKey)
+	defer win.RegCloseKey(hKey)
 
 	bufSize := uint32(4)
 
-	if ERROR_SUCCESS != RegQueryValueEx(
+	if win.ERROR_SUCCESS != win.RegQueryValueEx(
 		hKey,
 		syscall.StringToUTF16Ptr(valueName),
 		nil,

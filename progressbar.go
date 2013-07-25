@@ -5,7 +5,7 @@
 package walk
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type ProgressBar struct {
@@ -19,7 +19,7 @@ func NewProgressBar(parent Container) (*ProgressBar, error) {
 		pb,
 		parent,
 		"msctls_progress32",
-		WS_VISIBLE,
+		win.WS_VISIBLE,
 		0); err != nil {
 		return nil, err
 	}
@@ -40,21 +40,21 @@ func (pb *ProgressBar) SizeHint() Size {
 }
 
 func (pb *ProgressBar) MinValue() int {
-	return int(pb.SendMessage(PBM_GETRANGE, 1, 0))
+	return int(pb.SendMessage(win.PBM_GETRANGE, 1, 0))
 }
 
 func (pb *ProgressBar) MaxValue() int {
-	return int(pb.SendMessage(PBM_GETRANGE, 0, 0))
+	return int(pb.SendMessage(win.PBM_GETRANGE, 0, 0))
 }
 
 func (pb *ProgressBar) SetRange(min, max int) {
-	pb.SendMessage(PBM_SETRANGE32, uintptr(min), uintptr(max))
+	pb.SendMessage(win.PBM_SETRANGE32, uintptr(min), uintptr(max))
 }
 
 func (pb *ProgressBar) Value() int {
-	return int(pb.SendMessage(PBM_GETPOS, 0, 0))
+	return int(pb.SendMessage(win.PBM_GETPOS, 0, 0))
 }
 
 func (pb *ProgressBar) SetValue(value int) {
-	pb.SendMessage(PBM_SETPOS, uintptr(value), 0)
+	pb.SendMessage(win.PBM_SETPOS, uintptr(value), 0)
 }

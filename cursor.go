@@ -9,92 +9,92 @@ import (
 )
 
 import (
-	. "github.com/lxn/go-winapi"
+	"github.com/lxn/win"
 )
 
 type Cursor interface {
 	Dispose()
-	handle() HCURSOR
+	handle() win.HCURSOR
 }
 
 type stockCursor struct {
-	hCursor HCURSOR
+	hCursor win.HCURSOR
 }
 
 func (sc stockCursor) Dispose() {
 	// nop
 }
 
-func (sc stockCursor) handle() HCURSOR {
+func (sc stockCursor) handle() win.HCURSOR {
 	return sc.hCursor
 }
 
 func CursorArrow() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_ARROW))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_ARROW))}
 }
 
 func CursorIBeam() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_IBEAM))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_IBEAM))}
 }
 
 func CursorWait() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_WAIT))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_WAIT))}
 }
 
 func CursorCross() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_CROSS))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_CROSS))}
 }
 
 func CursorUpArrow() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_UPARROW))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_UPARROW))}
 }
 
 func CursorSizeNWSE() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_SIZENWSE))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_SIZENWSE))}
 }
 
 func CursorSizeNESW() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_SIZENESW))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_SIZENESW))}
 }
 
 func CursorSizeWE() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_SIZEWE))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_SIZEWE))}
 }
 
 func CursorSizeNS() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_SIZENS))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_SIZENS))}
 }
 
 func CursorSizeAll() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_SIZEALL))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_SIZEALL))}
 }
 
 func CursorNo() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_NO))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_NO))}
 }
 
 func CursorHand() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_HAND))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_HAND))}
 }
 
 func CursorAppStarting() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_APPSTARTING))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_APPSTARTING))}
 }
 
 func CursorHelp() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_HELP))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_HELP))}
 }
 
 func CursorIcon() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_ICON))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_ICON))}
 }
 
 func CursorSize() Cursor {
-	return stockCursor{LoadCursor(0, MAKEINTRESOURCE(IDC_SIZE))}
+	return stockCursor{win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_SIZE))}
 }
 
 type customCursor struct {
-	hCursor HCURSOR
+	hCursor win.HCURSOR
 }
 
 func NewCursorFromImage(im image.Image, hotspot image.Point) (Cursor, error) {
@@ -102,13 +102,13 @@ func NewCursorFromImage(im image.Image, hotspot image.Point) (Cursor, error) {
 	if err != nil {
 		return nil, err
 	}
-	return customCursor{HCURSOR(i)}, nil
+	return customCursor{win.HCURSOR(i)}, nil
 }
 
 func (cc customCursor) Dispose() {
-	DestroyIcon(HICON(cc.hCursor))
+	win.DestroyIcon(win.HICON(cc.hCursor))
 }
 
-func (cc customCursor) handle() HCURSOR {
+func (cc customCursor) handle() win.HCURSOR {
 	return cc.hCursor
 }

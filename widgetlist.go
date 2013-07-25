@@ -4,7 +4,9 @@
 
 package walk
 
-import . "github.com/lxn/go-winapi"
+import (
+	"github.com/lxn/win"
+)
 
 type widgetListObserver interface {
 	onInsertingWidget(index int, widget Widget) error
@@ -67,7 +69,7 @@ func (l *WidgetList) Contains(item Widget) bool {
 	return l.Index(item) > -1
 }
 
-func (l *WidgetList) indexHandle(handle HWND) int {
+func (l *WidgetList) indexHandle(handle win.HWND) int {
 	for i, widget := range l.items {
 		if widget.Handle() == handle {
 			return i
@@ -77,7 +79,7 @@ func (l *WidgetList) indexHandle(handle HWND) int {
 	return -1
 }
 
-func (l *WidgetList) containsHandle(handle HWND) bool {
+func (l *WidgetList) containsHandle(handle win.HWND) bool {
 	return l.indexHandle(handle) > -1
 }
 
