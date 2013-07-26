@@ -170,12 +170,12 @@ func firstFocusableDescendantCallback(hwnd win.HWND, lParam uintptr) uintptr {
 
 var firstFocusableDescendantCallbackPtr = syscall.NewCallback(firstFocusableDescendantCallback)
 
-func firstFocusableDescendant(container Container) Widget {
+func firstFocusableDescendant(container Container) Window {
 	var hwnd win.HWND
 
 	win.EnumChildWindows(container.Handle(), firstFocusableDescendantCallbackPtr, uintptr(unsafe.Pointer(&hwnd)))
 
-	return windowFromHandle(hwnd).(Widget)
+	return windowFromHandle(hwnd)
 }
 
 type textSelectable interface {
@@ -183,16 +183,16 @@ type textSelectable interface {
 }
 
 func (dlg *Dialog) focusFirstCandidateDescendant() {
-	widget := firstFocusableDescendant(dlg)
-	if widget == nil {
+	window := firstFocusableDescendant(dlg)
+	if window == nil {
 		return
 	}
 
-	if err := widget.SetFocus(); err != nil {
+	if err := window.SetFocus(); err != nil {
 		return
 	}
 
-	if textSel, ok := widget.(textSelectable); ok {
+	if textSel, ok := window.(textSelectable); ok {
 		textSel.SetTextSelection(0, -1)
 	}
 }
