@@ -32,34 +32,42 @@ as illustrated in this small example:
 		. "github.com/lxn/walk/declarative"
 		"strings"
 	)
-	
-	func main() {
-		var inTE, outTE *walk.TextEdit
-	
-		MainWindow{
-			Title:   "SCREAMO",
-			MinSize: Size{600, 400},
-			Layout:  VBox{},
-			Children: []Widget{
-				HSplitter{
-					Children: []Widget{
-						TextEdit{AssignTo: &inTE},
-						TextEdit{AssignTo: &outTE, ReadOnly: true},
-					},
-				},
-				PushButton{
-					Text: "SCREAM",
-					OnClicked: func() {
-						outTE.SetText(strings.ToUpper(inTE.Text()))
-					},
+
+```go
+func main() {
+	var inTE, outTE *walk.TextEdit
+
+	MainWindow{
+		Title:   "SCREAMO",
+		MinSize: Size{600, 400},
+		Layout:  VBox{},
+		Children: []Widget{
+			HSplitter{
+				Children: []Widget{
+					TextEdit{AssignTo: &inTE},
+					TextEdit{AssignTo: &outTE, ReadOnly: true},
 				},
 			},
-		}.Run()
-	}
+			PushButton{
+				Text: "SCREAM",
+				OnClicked: func() {
+					outTE.SetText(strings.ToUpper(inTE.Text()))
+				},
+			},
+		},
+	}.Run()
+}
+```
 
 ##### Build app
 
-	go build test.go
+In the directory containing `test.go` run
+
+	go build
+	
+To get rid of the cmd window, instead run
+
+	go build -ldflags="-H windowsgui"
 
 ##### Create Manifest `test.exe.manifest`
 
