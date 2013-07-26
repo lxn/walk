@@ -25,15 +25,15 @@ as illustrated in this small example:
 
 ##### `test.go`
 
-	package main
-	
-	import (
-		"github.com/lxn/walk"
-		. "github.com/lxn/walk/declarative"
-		"strings"
-	)
-
 ```go
+package main
+
+import (
+	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
+	"strings"
+)
+
 func main() {
 	var inTE, outTE *walk.TextEdit
 
