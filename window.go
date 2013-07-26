@@ -277,9 +277,11 @@ type WindowBase struct {
 	visibleChangedPublisher EventPublisher
 }
 
-var defaultWndProcPtr uintptr = syscall.NewCallback(defaultWndProc)
-
-var registeredWindowClasses map[string]bool = make(map[string]bool)
+var (
+	registeredWindowClasses = make(map[string]bool)
+	defaultWndProcPtr       = syscall.NewCallback(defaultWndProc)
+	hwnd2WindowBase         = make(map[win.HWND]*WindowBase)
+)
 
 // MustRegisterWindowClass registers the specified window class.
 //
@@ -369,7 +371,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}()
 
-	win.SetWindowLongPtr(wb.hWnd, win.GWLP_USERDATA, uintptr(unsafe.Pointer(wb)))
+	hwnd2WindowBase[wb.hWnd] = wb
 
 	if !registeredWindowClasses[className] {
 		// We subclass all windows of system classes.
@@ -1134,14 +1136,11 @@ func (wb *WindowBase) putState(state string) error {
 }
 
 func windowFromHandle(hwnd win.HWND) Window {
-	ptr := win.GetWindowLongPtr(hwnd, win.GWLP_USERDATA)
-	if ptr == 0 {
-		return nil
+	if wb := hwnd2WindowBase[hwnd]; wb != nil {
+		return wb.window
 	}
 
-	wb := (*WindowBase)(unsafe.Pointer(ptr))
-
-	return wb.window
+	return nil
 }
 
 func defaultWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (result uintptr) {
@@ -1298,6 +1297,8 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		case Widget:
 			globalToolTip.RemoveTool(w)
 		}
+
+		delete(hwnd2WindowBase, hwnd)
 
 		wb.hWnd = 0
 		wb.window.Dispose()
