@@ -65,6 +65,12 @@ func (d Dialog) Create(owner walk.Form) error {
 
 	builder := NewBuilder(nil)
 
+	w.SetSuspended(true)
+	builder.Defer(func() error {
+		w.SetSuspended(false)
+		return nil
+	})
+
 	return builder.InitWidget(tlwi, w, func() error {
 		if err := w.SetTitle(d.Title); err != nil {
 			return err

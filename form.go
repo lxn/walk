@@ -142,6 +142,14 @@ func (fb *FormBase) SetDataBinder(db *DataBinder) {
 	fb.clientComposite.SetDataBinder(db)
 }
 
+func (fb *FormBase) Suspended() bool {
+	return fb.clientComposite.Suspended()
+}
+
+func (fb *FormBase) SetSuspended(suspended bool) {
+	fb.clientComposite.SetSuspended(suspended)
+}
+
 func (fb *FormBase) onInsertingWidget(index int, widget Widget) error {
 	return fb.clientComposite.onInsertingWidget(index, widget)
 }

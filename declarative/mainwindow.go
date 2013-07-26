@@ -60,6 +60,12 @@ func (mw MainWindow) Create() error {
 
 	builder := NewBuilder(nil)
 
+	w.SetSuspended(true)
+	builder.Defer(func() error {
+		w.SetSuspended(false)
+		return nil
+	})
+
 	builder.deferBuildMenuActions(w.Menu(), mw.MenuItems)
 	builder.deferBuildActions(w.ToolBar().Actions(), mw.ToolBarItems)
 
