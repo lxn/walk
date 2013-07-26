@@ -186,11 +186,11 @@ func formatFloatString(s string, prec int, grouped bool) string {
 	return b.String()
 }
 
-func setDescendantsEnabled(widget Widget, enabled bool) {
-	wb := widget.AsWindowBase()
+func setDescendantsEnabled(window Window, enabled bool) {
+	wb := window.AsWindowBase()
 	wb.SetEnabled(enabled)
 
-	walkDescendants(widget, func(w Widget) bool {
+	walkDescendants(window, func(w Window) bool {
 		if w.Handle() == wb.hWnd {
 			return true
 		}
@@ -201,11 +201,11 @@ func setDescendantsEnabled(widget Widget, enabled bool) {
 	})
 }
 
-func setDescendantsFont(widget Widget, f *Font) {
-	wb := widget.AsWindowBase()
+func setDescendantsFont(window Window, f *Font) {
+	wb := window.AsWindowBase()
 	wb.SetFont(f)
 
-	walkDescendants(widget, func(w Widget) bool {
+	walkDescendants(window, func(w Window) bool {
 		if w.Handle() == wb.hWnd {
 			return true
 		}
@@ -220,14 +220,14 @@ func setDescendantsFont(widget Widget, f *Font) {
 	})
 }
 
-func walkDescendants(widget Widget, f func(w Widget) bool) {
-	if widget == nil || !f(widget) {
+func walkDescendants(window Window, f func(w Window) bool) {
+	if window == nil || !f(window) {
 		return
 	}
 
 	var children []Widget
 
-	switch w := widget.(type) {
+	switch w := window.(type) {
 	case *NumberEdit:
 		children = append(children, w.edit)
 

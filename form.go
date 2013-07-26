@@ -61,7 +61,6 @@ type Form interface {
 
 type FormBase struct {
 	WindowBase
-	form                  Form
 	clientComposite       *Composite
 	owner                 Form
 	closingPublisher      CloseEventPublisher
@@ -75,8 +74,6 @@ type FormBase struct {
 }
 
 func (fb *FormBase) init(form Form) error {
-	fb.form = form
-
 	var err error
 	if fb.clientComposite, err = NewComposite(form); err != nil {
 		return err

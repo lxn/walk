@@ -71,7 +71,6 @@ type Widget interface {
 
 type WidgetBase struct {
 	WindowBase
-	widget                      Widget
 	parent                      Container
 	toolTipTextProperty         Property
 	toolTipTextChangedPublisher EventPublisher
@@ -104,8 +103,6 @@ func InitWidget(widget Widget, parent Window, className string, style, exStyle u
 }
 
 func (wb *WidgetBase) init(widget Widget) error {
-	wb.widget = widget
-
 	if _, ok := widget.(*ToolTip); !ok {
 		if err := globalToolTip.AddTool(wb); err != nil {
 			return err
@@ -114,10 +111,10 @@ func (wb *WidgetBase) init(widget Widget) error {
 
 	wb.toolTipTextProperty = NewProperty(
 		func() interface{} {
-			return wb.widget.ToolTipText()
+			return wb.window.(Widget).ToolTipText()
 		},
 		func(v interface{}) error {
-			wb.widget.SetToolTipText(v.(string))
+			wb.window.(Widget).SetToolTipText(v.(string))
 			return nil
 		},
 		wb.toolTipTextChangedPublisher.Event())
@@ -273,12 +270,14 @@ func (wb *WidgetBase) SetParent(parent Container) (err error) {
 		return nil
 	}
 
+	widget := wb.window.(Widget)
+
 	if oldChildren != nil {
-		oldChildren.Remove(wb.widget)
+		oldChildren.Remove(widget)
 	}
 
 	if newChildren != nil && !newChildren.containsHandle(wb.hWnd) {
-		newChildren.Add(wb.widget)
+		newChildren.Add(widget)
 	}
 
 	return nil
@@ -287,17 +286,17 @@ func (wb *WidgetBase) SetParent(parent Container) (err error) {
 // SizeHint returns a default Size that should be "overidden" by a concrete
 // Widget type.
 func (wb *WidgetBase) SizeHint() Size {
-	return wb.widget.MinSizeHint()
+	return wb.window.(Widget).MinSizeHint()
 }
 
 // ToolTipText returns the tool tip text of the WidgetBase.
 func (wb *WidgetBase) ToolTipText() string {
-	return globalToolTip.Text(wb.widget)
+	return globalToolTip.Text(wb.window.(Widget))
 }
 
 // SetToolTipText sets the tool tip text of the WidgetBase.
 func (wb *WidgetBase) SetToolTipText(s string) error {
-	if err := globalToolTip.SetText(wb.widget, s); err != nil {
+	if err := globalToolTip.SetText(wb.window.(Widget), s); err != nil {
 		return err
 	}
 

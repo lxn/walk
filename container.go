@@ -41,9 +41,9 @@ func shouldLayoutWidget(widget Widget) bool {
 func DescendantByName(container Container, name string) Widget {
 	var widget Widget
 
-	walkDescendants(container.AsContainerBase(), func(w Widget) bool {
+	walkDescendants(container.AsContainerBase(), func(w Window) bool {
 		if w.Name() == name {
-			widget = w
+			widget = w.(Widget)
 			return false
 		}
 
@@ -69,7 +69,6 @@ type Container interface {
 
 type ContainerBase struct {
 	WidgetBase
-	container  Container
 	layout     Layout
 	children   *WidgetList
 	dataBinder *DataBinder
@@ -77,8 +76,6 @@ type ContainerBase struct {
 }
 
 func (cb *ContainerBase) init(container Container) error {
-	cb.container = container
-
 	return nil
 }
 
@@ -113,13 +110,13 @@ func (cb *ContainerBase) SizeHint() Size {
 func (cb *ContainerBase) SetEnabled(enabled bool) {
 	cb.WidgetBase.SetEnabled(enabled)
 
-	setDescendantsEnabled(cb.widget, enabled)
+	setDescendantsEnabled(cb.window.(Widget), enabled)
 }
 
 func (cb *ContainerBase) SetFont(f *Font) {
 	cb.WidgetBase.SetFont(f)
 
-	setDescendantsFont(cb.widget, f)
+	setDescendantsFont(cb.window.(Widget), f)
 }
 
 func (cb *ContainerBase) Children() *WidgetList {
@@ -164,7 +161,7 @@ func (cb *ContainerBase) SetDataBinder(db *DataBinder) {
 	if db != nil {
 		var boundWidgets []Widget
 
-		walkDescendants(cb.widget, func(w Widget) bool {
+		walkDescendants(cb.window, func(w Window) bool {
 			if w.Handle() == cb.hWnd {
 				return true
 			}
@@ -175,7 +172,7 @@ func (cb *ContainerBase) SetDataBinder(db *DataBinder) {
 
 			for _, prop := range w.AsWindowBase().name2Property {
 				if _, ok := prop.Source().(string); ok {
-					boundWidgets = append(boundWidgets, w)
+					boundWidgets = append(boundWidgets, w.(Widget))
 					break
 				}
 			}
@@ -307,8 +304,7 @@ func (cb *ContainerBase) onInsertingWidget(index int, widget Widget) (err error)
 
 func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err error) {
 	if parent := widget.Parent(); parent == nil || parent.Handle() != cb.hWnd {
-		err = widget.SetParent(cb.container)
-		if err != nil {
+		if err = widget.SetParent(cb.window.(Container)); err != nil {
 			return
 		}
 	}

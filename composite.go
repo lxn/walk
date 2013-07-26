@@ -20,7 +20,6 @@ type Composite struct {
 
 func newCompositeWithStyle(parent Window, style uint32) (*Composite, error) {
 	c := new(Composite)
-	c.container = c
 	c.children = newWidgetList(c)
 	c.SetPersistent(true)
 

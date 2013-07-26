@@ -21,7 +21,7 @@ func NewImageView(parent Container) (*ImageView, error) {
 
 	iv.CustomWidget = cw
 
-	iv.widget = iv
+	iv.window = iv
 
 	iv.SetInvalidatesOnResize(true)
 

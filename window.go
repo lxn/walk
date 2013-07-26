@@ -445,7 +445,6 @@ func InitWrapperWindow(window Window) error {
 
 	if widget, ok := window.(Widget); ok {
 		widgetBase := widget.AsWidgetBase()
-		widgetBase.widget = widget
 
 		if widgetBase.parent != nil {
 			children := widgetBase.parent.Children().items
@@ -457,13 +456,6 @@ func InitWrapperWindow(window Window) error {
 				}
 			}
 		}
-	}
-
-	if c, ok := window.(Container); ok {
-		c.AsContainerBase().container = c
-	}
-	if f, ok := window.(Form); ok {
-		f.AsFormBase().form = f
 	}
 
 	return nil

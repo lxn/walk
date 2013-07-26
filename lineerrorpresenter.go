@@ -121,13 +121,15 @@ func (lep *LineErrorPresenter) PresentError(err error, widget Widget) {
 	}
 
 	var found bool
-	walkDescendants(ancestor(widget).AsFormBase().clientComposite, func(w Widget) bool {
+	walkDescendants(ancestor(widget).AsFormBase().clientComposite, func(w Window) bool {
 		if found {
 			return false
 		}
 
-		if e, ok := lep.widget2error[w]; ok {
-			err, widget, found = e, w, true
+		wt := w.(Widget)
+
+		if e, ok := lep.widget2error[wt]; ok {
+			err, widget, found = e, wt, true
 		}
 
 		return !found
