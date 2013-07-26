@@ -11,6 +11,10 @@ Setup
 Make sure you have a working Go installation.
 See [Getting Started](http://golang.org/doc/install.html)
 
+##### Note
+`Go 1.0.x` doesn't work with walk anymore, Make sure you use `Go 1.1.x`
+
+##### To Install
 Now run `go get github.com/lxn/walk`
 
 Using Walk
@@ -18,6 +22,8 @@ Using Walk
 
 The preferred way to create GUIs with Walk is to use its declarative sub package,
 as illustrated in this small example:
+
+##### `test.go`
 
 	package main
 	
@@ -51,6 +57,33 @@ as illustrated in this small example:
 		}.Run()
 	}
 
+##### Build app
+
+	go build test.go
+
+##### Create Manifest `test.exe.manifest`
+
+```xml
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+        <assemblyIdentity version="1.0.0.0" processorArchitecture="*" name="SomeFunkyNameHere" type="win32"/>
+        <dependency>
+            <dependentAssembly>
+                <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*"/>
+            </dependentAssembly>
+        </dependency>
+    </assembly>
+```
+
+##### Run app
+	
+	test.exe
+	
+##### Sample Output (Windows 7)
+
+![alt tag](http://i.imgur.com/lUrgE2Q.png)
+
+##### More Examples
 There are some [examples](examples) that should get you started.
 
 Application Manifest Files
