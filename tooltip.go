@@ -21,7 +21,7 @@ func init() {
 }
 
 type ToolTip struct {
-	WidgetBase
+	WindowBase
 }
 
 var globalToolTip *ToolTip

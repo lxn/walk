@@ -103,10 +103,8 @@ func InitWidget(widget Widget, parent Window, className string, style, exStyle u
 }
 
 func (wb *WidgetBase) init(widget Widget) error {
-	if _, ok := widget.(*ToolTip); !ok {
-		if err := globalToolTip.AddTool(wb); err != nil {
-			return err
-		}
+	if err := globalToolTip.AddTool(wb); err != nil {
+		return err
 	}
 
 	wb.toolTipTextProperty = NewProperty(
