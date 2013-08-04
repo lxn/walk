@@ -451,7 +451,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		fb.titleChangedPublisher.Publish()
 
 	case win.WM_SIZE, win.WM_SIZING:
-		fb.clientComposite.SetBounds(fb.ClientBounds())
+		fb.clientComposite.SetBounds(fb.window.ClientBounds())
 
 	case win.WM_SYSCOMMAND:
 		if wParam == win.SC_CLOSE {

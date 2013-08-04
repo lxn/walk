@@ -35,6 +35,7 @@ func NewMainWindow() (*MainWindow, error) {
 		mainWindowWindowClass,
 		win.WS_OVERLAPPEDWINDOW,
 		win.WS_EX_CONTROLPARENT); err != nil {
+
 		return nil, err
 	}
 
@@ -59,10 +60,18 @@ func NewMainWindow() (*MainWindow, error) {
 	if mw.toolBar, err = NewToolBar(mw); err != nil {
 		return nil, err
 	}
+	mw.toolBar.parent = nil
+	mw.Children().Remove(mw.toolBar)
+	mw.toolBar.parent = mw
+	win.SetParent(mw.toolBar.hWnd, mw.hWnd)
 
 	if mw.statusBar, err = NewStatusBar(mw); err != nil {
 		return nil, err
 	}
+	mw.statusBar.parent = nil
+	mw.Children().Remove(mw.statusBar)
+	mw.statusBar.parent = mw
+	win.SetParent(mw.statusBar.hWnd, mw.hWnd)
 
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	mw.SendMessage(win.WM_CHANGEUISTATE, win.UIS_INITIALIZE, 0)
@@ -167,4 +176,16 @@ func (mw *MainWindow) SetFullscreen(fullscreen bool) error {
 	}
 
 	return nil
+}
+
+func (mw *MainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	switch msg {
+	case win.WM_SIZE, win.WM_SIZING:
+		cb := mw.ClientBounds()
+
+		mw.toolBar.SetBounds(Rectangle{0, 0, cb.Width, mw.toolBar.Height()})
+		mw.statusBar.SetBounds(Rectangle{0, cb.Height, cb.Width, mw.statusBar.Height()})
+	}
+
+	return mw.FormBase.WndProc(hwnd, msg, wParam, lParam)
 }
