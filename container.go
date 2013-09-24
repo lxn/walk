@@ -75,10 +75,6 @@ type ContainerBase struct {
 	persistent bool
 }
 
-func (cb *ContainerBase) init(container Container) error {
-	return nil
-}
-
 func (cb *ContainerBase) AsWidgetBase() *WidgetBase {
 	return &cb.WidgetBase
 }

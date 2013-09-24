@@ -391,14 +391,6 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
-	if container, ok := window.(Container); ok {
-		if cb := container.AsContainerBase(); cb != nil {
-			if err := cb.init(container); err != nil {
-				return err
-			}
-		}
-	}
-
 	if widget, ok := window.(Widget); ok {
 		if wb := widget.AsWidgetBase(); wb != nil {
 			if err := wb.init(widget); err != nil {
