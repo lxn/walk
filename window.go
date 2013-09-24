@@ -383,9 +383,9 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 
 	setWindowFont(wb.hWnd, defaultFont)
 
-	if widget, ok := window.(Widget); ok {
-		if wb := widget.AsWidgetBase(); wb != nil {
-			if err := wb.init(widget); err != nil {
+	if form, ok := window.(Form); ok {
+		if fb := form.AsFormBase(); fb != nil {
+			if err := fb.init(form); err != nil {
 				return err
 			}
 		}
@@ -399,9 +399,9 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
-	if form, ok := window.(Form); ok {
-		if fb := form.AsFormBase(); fb != nil {
-			if err := fb.init(form); err != nil {
+	if widget, ok := window.(Widget); ok {
+		if wb := widget.AsWidgetBase(); wb != nil {
+			if err := wb.init(widget); err != nil {
 				return err
 			}
 		}
