@@ -91,7 +91,7 @@ func (dlg *FileDialog) ShowBrowseFolder(owner Form) (accepted bool, err error) {
 
 	// We use this callback to disable the OK button in case of "invalid"
 	// selections.
-	callback := func(hwnd win.HWND, msg uint32, lp, wp uintptr) int32 {
+	callback := func(hwnd win.HWND, msg uint32, lp, wp uintptr) uintptr {
 		const BFFM_SELCHANGED = 2
 		if msg == BFFM_SELCHANGED {
 			_, err := pathFromPIDL(lp)
