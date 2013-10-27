@@ -234,7 +234,7 @@ func main() {
 		Title:    "Walk File Browser Example",
 		MinSize:  Size{600, 400},
 		Size:     Size{800, 600},
-		Layout:   HBox{},
+		Layout:   HBox{MarginsZero: true},
 		Children: []Widget{
 			HSplitter{
 				Children: []Widget{
@@ -256,19 +256,16 @@ func main() {
 						AssignTo: &tableView,
 						Columns: []TableViewColumn{
 							TableViewColumn{
-								Title:      "Name",
 								DataMember: "Name",
 								Width:      200,
 							},
 							TableViewColumn{
-								Title:      "Size",
 								DataMember: "Size",
 								Format:     "%d",
 								Alignment:  AlignFar,
 								Width:      80,
 							},
 							TableViewColumn{
-								Title:      "Modified",
 								DataMember: "Modified",
 								Format:     "2006-01-02 15:04:05",
 								Width:      120,

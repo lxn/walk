@@ -178,7 +178,11 @@ func (tvc *TableViewColumn) TitleEffective() string {
 		return tvc.titleOverride
 	}
 
-	return tvc.title
+	if tvc.title != "" {
+		return tvc.title
+	}
+
+	return tvc.dataMember
 }
 
 // Visible returns if the column is visible.
