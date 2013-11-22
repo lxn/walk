@@ -23,6 +23,7 @@ func init() {
 type TabWidget struct {
 	WidgetBase
 	hWndTab                      win.HWND
+	imageList                    *ImageList
 	pages                        *TabPageList
 	currentIndex                 int
 	currentIndexChangedPublisher EventPublisher
@@ -69,6 +70,15 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 	succeeded = true
 
 	return tw, nil
+}
+
+func (tw *TabWidget) Dispose() {
+	tw.WidgetBase.Dispose()
+
+	if tw.imageList != nil {
+		tw.imageList.Dispose()
+		tw.imageList = nil
+	}
 }
 
 func (tw *TabWidget) LayoutFlags() LayoutFlags {
@@ -293,7 +303,7 @@ func (tw *TabWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 
 func (tw *TabWidget) onPageChanged(page *TabPage) (err error) {
 	index := tw.pages.Index(page)
-	item := page.tcItem()
+	item := tw.tcitemFromPage(page)
 
 	if 0 == win.SendMessage(tw.hWndTab, win.TCM_SETITEM, uintptr(index), uintptr(unsafe.Pointer(item))) {
 		return newError("SendMessage(TCM_SETITEM) failed")
@@ -307,7 +317,7 @@ func (tw *TabWidget) onInsertingPage(index int, page *TabPage) (err error) {
 }
 
 func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err error) {
-	item := page.tcItem()
+	item := tw.tcitemFromPage(page)
 
 	if idx := int(win.SendMessage(tw.hWndTab, win.TCM_INSERTITEM, uintptr(index), uintptr(unsafe.Pointer(item)))); idx == -1 {
 		return newError("SendMessage(TCM_INSERTITEM) failed")
@@ -419,4 +429,38 @@ func (tw *TabWidget) onClearedPages(pages []*TabPage) (err error) {
 	}
 	tw.currentIndex = -1
 	return nil
+}
+
+func (tw *TabWidget) tcitemFromPage(page *TabPage) *win.TCITEM {
+	imageIndex, _ := tw.imageIndex(page.image)
+	text := syscall.StringToUTF16(page.title)
+
+	item := &win.TCITEM{
+		Mask:       win.TCIF_IMAGE | win.TCIF_TEXT,
+		IImage:     imageIndex,
+		PszText:    &text[0],
+		CchTextMax: int32(len(text)),
+	}
+
+	return item
+}
+
+func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
+	index = -1
+	if image != nil {
+		if tw.imageList == nil {
+			if tw.imageList, err = NewImageList(Size{16, 16}, 0); err != nil {
+				return
+			}
+
+			win.SendMessage(tw.hWndTab, win.TCM_SETIMAGELIST, 0, uintptr(tw.imageList.hIml))
+		}
+
+		// FIXME: Protect against duplicate insertion
+		if index, err = tw.imageList.AddMasked(image); err != nil {
+			return
+		}
+	}
+
+	return
 }

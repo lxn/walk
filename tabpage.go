@@ -5,10 +5,6 @@
 package walk
 
 import (
-	"syscall"
-)
-
-import (
 	"github.com/lxn/win"
 )
 
@@ -24,6 +20,7 @@ func init() {
 
 type TabPage struct {
 	ContainerBase
+	image                 *Bitmap
 	title                 string
 	tabWidget             *TabWidget
 	titleChangedPublisher EventPublisher
@@ -75,6 +72,20 @@ func (tp *TabPage) Font() *Font {
 	return defaultFont
 }
 
+func (tp *TabPage) Image() *Bitmap {
+	return tp.image
+}
+
+func (tp *TabPage) SetImage(value *Bitmap) error {
+	tp.image = value
+
+	if tp.tabWidget == nil {
+		return nil
+	}
+
+	return tp.tabWidget.onPageChanged(tp)
+}
+
 func (tp *TabPage) Title() string {
 	return tp.title
 }
@@ -89,16 +100,4 @@ func (tp *TabPage) SetTitle(value string) error {
 	}
 
 	return tp.tabWidget.onPageChanged(tp)
-}
-
-func (tp *TabPage) tcItem() *win.TCITEM {
-	text := syscall.StringToUTF16(tp.Title())
-
-	item := &win.TCITEM{
-		Mask:       win.TCIF_TEXT,
-		PszText:    &text[0],
-		CchTextMax: int32(len(text)),
-	}
-
-	return item
 }

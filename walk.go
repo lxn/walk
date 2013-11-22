@@ -39,3 +39,32 @@ func tr(source string, context ...string) string {
 
 	return translation(source, context...)
 }
+
+type Disposable interface {
+	Dispose()
+}
+
+type Disposables struct {
+	items []Disposable
+	done  bool
+}
+
+func (d *Disposables) Add(item Disposable) {
+	d.items = append(d.items, item)
+}
+
+func (d *Disposables) Spare() {
+	d.done = true
+}
+
+func (d *Disposables) Treat() {
+	if d.done {
+		return
+	}
+
+	for _, item := range d.items {
+		item.Dispose()
+	}
+
+	d.done = true
+}
