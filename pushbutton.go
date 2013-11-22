@@ -14,6 +14,7 @@ import (
 
 type PushButton struct {
 	Button
+	image interface{}
 }
 
 func NewPushButton(parent Container) (*PushButton, error) {
@@ -47,6 +48,50 @@ func (pb *PushButton) MinSizeHint() Size {
 
 func (pb *PushButton) SizeHint() Size {
 	return pb.MinSizeHint()
+}
+
+func (pb *PushButton) Image() interface{} {
+	return pb.image
+}
+
+func (pb *PushButton) SetImage(image interface{}) error {
+	var typ uintptr
+	var handle uintptr
+	switch img := image.(type) {
+	case nil:
+		// zeroes are good
+
+	case *Bitmap:
+		typ = win.IMAGE_BITMAP
+		handle = uintptr(img.hBmp)
+
+	case *Icon:
+		typ = win.IMAGE_ICON
+		handle = uintptr(img.hIcon)
+
+	default:
+		return newError("image must be either *walk.Bitmap or *walk.Icon")
+	}
+
+	pb.SendMessage(win.BM_SETIMAGE, typ, handle)
+
+	pb.image = image
+
+	return pb.updateParentLayout()
+}
+
+func (pb *PushButton) ImageAboveText() bool {
+	return pb.hasStyleBits(win.BS_TOP)
+}
+
+func (pb *PushButton) SetImageAboveText(value bool) error {
+	if err := pb.ensureStyleBits(win.BS_TOP, value); err != nil {
+		return err
+	}
+
+	// We need to set the image again, or Windows will fail to calculate the
+	// button control size correctly.
+	return pb.SetImage(pb.image)
 }
 
 func (pb *PushButton) ensureProperDialogDefaultButton(hwndFocus win.HWND) {
