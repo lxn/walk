@@ -105,38 +105,26 @@ func RunAnimalDialog(owner walk.Form, animal *Animal) (int, error) {
 		Layout:  VBox{},
 		Children: []Widget{
 			Composite{
-				Layout: Grid{},
+				Layout: Grid{Columns: 2},
 				Children: []Widget{
 					Label{
-						Row:    0,
-						Column: 0,
-						Text:   "Name:",
+						Text: "Name:",
 					},
 					LineEdit{
-						Row:    0,
-						Column: 1,
-						Text:   Bind("Name"),
+						Text: Bind("Name"),
 					},
 
 					Label{
-						Row:    1,
-						Column: 0,
-						Text:   "Arrival Date:",
+						Text: "Arrival Date:",
 					},
 					DateEdit{
-						Row:    1,
-						Column: 1,
-						Date:   Bind("ArrivalDate"),
+						Date: Bind("ArrivalDate"),
 					},
 
 					Label{
-						Row:    2,
-						Column: 0,
-						Text:   "Species:",
+						Text: "Species:",
 					},
 					ComboBox{
-						Row:           2,
-						Column:        1,
 						Value:         Bind("SpeciesId", SelRequired{}),
 						BindingMember: "Id",
 						DisplayMember: "Name",
@@ -144,8 +132,6 @@ func RunAnimalDialog(owner walk.Form, animal *Animal) (int, error) {
 					},
 
 					RadioButtonGroupBox{
-						Row:        3,
-						Column:     0,
 						ColumnSpan: 2,
 						Title:      "Sex",
 						Layout:     HBox{},
@@ -158,52 +144,40 @@ func RunAnimalDialog(owner walk.Form, animal *Animal) (int, error) {
 					},
 
 					Label{
-						Row:    4,
-						Column: 0,
-						Text:   "Weight:",
+						Text: "Weight:",
 					},
 					NumberEdit{
-						Row:      4,
-						Column:   1,
 						Value:    Bind("Weight", Range{0.01, 9999.99}),
 						Suffix:   " kg",
 						Decimals: 2,
 					},
 
 					Label{
-						Row:    5,
-						Column: 0,
-						Text:   "Preferred Food:",
+						Text: "Preferred Food:",
 					},
 					ComboBox{
-						Row:      5,
-						Column:   1,
 						Editable: true,
 						Value:    Bind("PreferredFood"),
 						Model:    []string{"Fruit", "Grass", "Fish", "Meat"},
 					},
 
 					Label{
-						Row:    6,
-						Column: 0,
-						Text:   "Domesticated:",
+						Text: "Domesticated:",
 					},
 					CheckBox{
-						Row:     6,
-						Column:  1,
 						Checked: Bind("Domesticated"),
 					},
 
-					VSpacer{Row: 7, Size: 8},
+					VSpacer{
+						ColumnSpan: 2,
+						Size:       8,
+					},
 
 					Label{
-						Row:    8,
-						Column: 0,
-						Text:   "Remarks:",
+						ColumnSpan: 2,
+						Text:       "Remarks:",
 					},
 					TextEdit{
-						Row:        9,
-						Column:     0,
 						ColumnSpan: 2,
 						MinSize:    Size{100, 50},
 						Text:       Bind("Remarks"),
@@ -211,8 +185,6 @@ func RunAnimalDialog(owner walk.Form, animal *Animal) (int, error) {
 
 					LineErrorPresenter{
 						AssignTo:   &ep,
-						Row:        10,
-						Column:     0,
 						ColumnSpan: 2,
 					},
 				},

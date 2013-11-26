@@ -37,6 +37,9 @@ type declWidget struct {
 
 type Builder struct {
 	level                    int
+	columns                  int
+	row                      int
+	col                      int
 	parent                   walk.Container
 	declWidgets              []declWidget
 	name2Window              map[string]walk.Window
@@ -179,15 +182,26 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 				}
 
 			case *walk.GridLayout:
-				cs := columnSpan
-				if cs < 1 {
-					cs = 1
+				if rowSpan < 1 {
+					rowSpan = 1
 				}
-				rs := rowSpan
-				if rs < 1 {
-					rs = 1
+				if columnSpan < 1 {
+					columnSpan = 1
 				}
-				r := walk.Rectangle{column, row, cs, rs}
+
+				if b.columns > 0 && row == 0 && column == 0 {
+					if b.col+columnSpan > b.columns {
+						b.row++
+						b.col = 0
+					}
+
+					row = b.row
+					column = b.col
+
+					b.col += columnSpan
+				}
+
+				r := walk.Rectangle{column, row, columnSpan, rowSpan}
 
 				if err := l.SetRange(widget, r); err != nil {
 					return err
@@ -219,6 +233,17 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 			defer func() {
 				b.parent = oldParent
 			}()
+
+			if g, ok := layout.(Grid); ok {
+				columns := b.columns
+				defer func() {
+					b.columns, b.row, b.col = columns, row, column+columnSpan
+				}()
+
+				b.columns = g.Columns
+				b.row = 0
+				b.col = 0
+			}
 
 			for _, child := range children {
 				if err := child.Create(b); err != nil {

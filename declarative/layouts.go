@@ -98,6 +98,7 @@ func (vb VBox) Create() (walk.Layout, error) {
 }
 
 type Grid struct {
+	Columns     int
 	Margins     Margins
 	Spacing     int
 	MarginsZero bool
