@@ -12,7 +12,7 @@ Make sure you have a working Go installation.
 See [Getting Started](http://golang.org/doc/install.html)
 
 ##### Note
-`Go 1.0.x` doesn't work with walk anymore, Make sure you use `Go 1.1.x`
+`Go 1.0.x` doesn't work with walk anymore, Make sure you use `Go 1.1.x` or later.
 
 ##### To Install
 Now run `go get github.com/lxn/walk`
