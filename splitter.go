@@ -140,6 +140,11 @@ func (s *Splitter) SetPersistent(value bool) {
 	s.persistent = value
 }
 
+func (s *Splitter) SetFractions(value []float64) {
+	layout := s.Layout().(*splitterLayout)
+	layout.SetFractions(value)
+}
+
 func (s *Splitter) SaveState() error {
 	buf := bytes.NewBuffer(nil)
 
