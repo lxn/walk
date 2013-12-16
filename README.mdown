@@ -12,7 +12,7 @@ Make sure you have a working Go installation.
 See [Getting Started](http://golang.org/doc/install.html)
 
 ##### Note
-`Go 1.0.x` doesn't work with walk anymore, Make sure you use `Go 1.1.x`
+`Go 1.0.x` doesn't work with walk anymore, Make sure you use `Go 1.1.x` or later.
 
 ##### To Install
 Now run `go get github.com/lxn/walk`
@@ -59,17 +59,7 @@ func main() {
 }
 ```
 
-##### Build app
-
-In the directory containing `test.go` run
-
-	go build
-	
-To get rid of the cmd window, instead run
-
-	go build -ldflags="-H windowsgui"
-
-##### Create Manifest `test.exe.manifest`
+##### Create Manifest `test.manifest`
 
 ```xml
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -82,6 +72,23 @@ To get rid of the cmd window, instead run
         </dependency>
     </assembly>
 ```
+
+Then either compile the manifest using the [rsrc tool](https://github.com/akavel/rsrc), like this:
+
+	go get github.com/akavel/rsrc
+	rsrc -manifest test.manifest -o rsrc.syso
+
+or rename the `test.manifest` file to `test.exe.manifest` and distribute it with the application instead.
+
+##### Build app
+
+In the directory containing `test.go` run
+
+	go build
+	
+To get rid of the cmd window, instead run
+
+	go build -ldflags="-H windowsgui"
 
 ##### Run app
 	
@@ -102,7 +109,10 @@ resource.
 
 You can copy one of the application manifest files that come with the examples.
 
-IMPORTANT: Do not launch your executable before the manifest file is in place.
+To embed a manifest file as a resource, you can use the [rsrc tool](https://github.com/akavel/rsrc).
+
+IMPORTANT: If you don't embed a manifest as a resource, then you should not launch
+your executable before the manifest file is in place.
 If you do anyway, the program will not run properly. And worse, Windows will not
 recognize a manifest file, you later drop next to the executable. To fix this,
 rebuild your executable and only launch it with a manifest file in place.
