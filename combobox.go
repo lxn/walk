@@ -170,7 +170,7 @@ func (cb *ComboBox) MinSizeHint() Size {
 	}
 
 	// FIXME: Use GetThemePartSize instead of guessing
-	w := maxi(defaultSize.Width, cb.maxItemTextWidth+24)
+	w := maxi(defaultSize.Width, cb.maxItemTextWidth+26)
 	h := defaultSize.Height + 1
 
 	return Size{w, h}
