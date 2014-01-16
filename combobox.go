@@ -32,6 +32,7 @@ type ComboBox struct {
 	selChangeIndex               int
 	maxLength                    int
 	currentIndexChangedPublisher EventPublisher
+	textChangedPublisher         EventPublisher
 	editOrigWndProcPtr           uintptr
 }
 
@@ -116,7 +117,7 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		func(v interface{}) error {
 			return cb.SetText(v.(string))
 		},
-		cb.CurrentIndexChanged()))
+		cb.TextChanged()))
 
 	cb.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
@@ -494,6 +495,10 @@ func (cb *ComboBox) SetTextSelection(start, end int) {
 	cb.SendMessage(win.CB_SETEDITSEL, 0, uintptr(win.MAKELONG(uint16(start), uint16(end))))
 }
 
+func (cb *ComboBox) TextChanged() *Event {
+	return cb.textChangedPublisher.Event()
+}
+
 func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_COMMAND:
@@ -501,6 +506,10 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		selIndex := cb.CurrentIndex()
 
 		switch code {
+		case win.CBN_EDITCHANGE:
+			cb.textChangedPublisher.Publish()
+			cb.currentIndexChangedPublisher.Publish()
+
 		case win.CBN_SELCHANGE:
 			cb.selChangeIndex = selIndex
 
@@ -512,7 +521,10 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			}
 
 		case win.CBN_SELENDOK:
-			if selIndex != cb.prevCurIndex {
+			if editable := cb.Editable(); editable || selIndex != cb.prevCurIndex {
+				if editable {
+					cb.Property("Value").Set(cb.model.Value(selIndex))
+				}
 				cb.currentIndexChangedPublisher.Publish()
 				cb.prevCurIndex = selIndex
 				return 0
