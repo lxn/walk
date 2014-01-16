@@ -310,7 +310,7 @@ func (cb *ComboBox) SetModel(mdl interface{}) error {
 		return err
 	}
 
-	if model != nil && model.ItemCount() == 1 {
+	if !cb.Editable() && model != nil && model.ItemCount() == 1 {
 		cb.SetCurrentIndex(0)
 	}
 
