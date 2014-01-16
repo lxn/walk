@@ -44,6 +44,21 @@ func NewListBox(parent Container) (*ListBox, error) {
 		return nil, err
 	}
 
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			lb.Dispose()
+		}
+	}()
+
+	lb.MustRegisterProperty("HasCurrentItem", NewReadOnlyBoolProperty(
+		func() bool {
+			return lb.CurrentIndex() != -1
+		},
+		lb.CurrentIndexChanged()))
+
+	succeeded = true
+
 	return lb, nil
 }
 
