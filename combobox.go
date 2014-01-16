@@ -101,6 +101,13 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		return nil, err
 	}
 
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			cb.Dispose()
+		}
+	}()
+
 	cb.MustRegisterProperty("CurrentIndex", NewProperty(
 		func() interface{} {
 			return cb.CurrentIndex()
@@ -155,6 +162,8 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 			return cb.SetCurrentIndex(index)
 		},
 		cb.CurrentIndexChanged()))
+
+	succeeded = true
 
 	return cb, nil
 }
