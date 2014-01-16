@@ -30,6 +30,7 @@ type ComboBox struct {
 	maxItemTextWidth             int
 	prevCurIndex                 int
 	selChangeIndex               int
+	maxLength                    int
 	currentIndexChangedPublisher EventPublisher
 	editOrigWndProcPtr           uintptr
 }
@@ -412,6 +413,16 @@ func (cb *ComboBox) Precision() int {
 
 func (cb *ComboBox) SetPrecision(value int) {
 	cb.precision = value
+}
+
+func (cb *ComboBox) MaxLength() int {
+	return cb.maxLength
+}
+
+func (cb *ComboBox) SetMaxLength(value int) {
+	cb.SendMessage(win.CB_LIMITTEXT, uintptr(value), 0)
+
+	cb.maxLength = value
 }
 
 func (cb *ComboBox) calculateMaxItemTextWidth() int {

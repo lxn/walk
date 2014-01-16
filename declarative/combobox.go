@@ -37,6 +37,7 @@ type ComboBox struct {
 	Editable              bool
 	Format                string
 	Precision             int
+	MaxLength             int
 	BindingMember         string
 	DisplayMember         string
 	Model                 interface{}
@@ -66,6 +67,7 @@ func (cb ComboBox) Create(builder *Builder) error {
 	return builder.InitWidget(cb, w, func() error {
 		w.SetFormat(cb.Format)
 		w.SetPrecision(cb.Precision)
+		w.SetMaxLength(cb.MaxLength)
 
 		if err := w.SetBindingMember(cb.BindingMember); err != nil {
 			return err
