@@ -276,11 +276,7 @@ func (lb *ListBox) CurrentIndex() int {
 }
 
 func (lb *ListBox) SetCurrentIndex(value int) error {
-	if value < 0 {
-		return nil
-	}
-
-	if win.LB_ERR == int(int32(lb.SendMessage(win.LB_SETCURSEL, uintptr(value), 0))) {
+	if value > -1 && win.LB_ERR == int(int32(lb.SendMessage(win.LB_SETCURSEL, uintptr(value), 0))) {
 		return newError("Invalid index or ensure lb is single-selection listbox")
 	}
 
