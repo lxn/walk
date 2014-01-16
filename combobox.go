@@ -522,7 +522,7 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		case win.CBN_SELENDOK:
 			if editable := cb.Editable(); editable || selIndex != cb.prevCurIndex {
-				if editable {
+				if editable && selIndex > -1 {
 					cb.Property("Value").Set(cb.model.Value(selIndex))
 				}
 				cb.currentIndexChangedPublisher.Publish()
