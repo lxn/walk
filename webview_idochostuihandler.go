@@ -104,7 +104,7 @@ func webView_IDocHostUIHandler_ResizeBorder(docHostUIHandler *webViewIDocHostUIH
 	return win.S_OK
 }
 
-func webView_IDocHostUIHandler_TranslateAccelerator(docHostUIHandler *webViewIDocHostUIHandler, lpMsg *win.MSG, pguidCmdGroup *win.GUID, nCmdID uint) uintptr {
+func webView_IDocHostUIHandler_TranslateAccelerator(docHostUIHandler *webViewIDocHostUIHandler, lpMsg *win.MSG, pguidCmdGroup *syscall.GUID, nCmdID uint) uintptr {
 	return win.S_FALSE
 }
 
