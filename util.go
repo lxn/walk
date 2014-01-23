@@ -250,104 +250,156 @@ func walkDescendants(window Window, f func(w Window) bool) {
 }
 
 func less(a, b interface{}, order SortOrder) bool {
-	c := func(ls bool) bool {
-		if order == SortAscending {
-			return ls
-		}
-
-		return !ls
-	}
-
 	if _, ok := a.(error); ok {
 		_, bIsErr := b.(error)
 
-		return c(!bIsErr)
+		return order == SortAscending == !bIsErr
 	}
 	if _, ok := b.(error); ok {
-		return c(false)
+		return order == SortDescending
 	}
 
 	if a == nil {
-		return c(b != nil)
+		return order == SortAscending == (b != nil)
 	}
 	if b == nil {
-		return c(false)
+		return order == SortDescending
 	}
 
 	switch av := a.(type) {
 	case string:
 		if bv, ok := b.(string); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case int:
 		if bv, ok := b.(int); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case float64:
 		if bv, ok := b.(float64); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case float32:
 		if bv, ok := b.(float32); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case int64:
 		if bv, ok := b.(int64); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case int32:
 		if bv, ok := b.(int32); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case int16:
 		if bv, ok := b.(int16); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case int8:
 		if bv, ok := b.(int8); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case uint:
 		if bv, ok := b.(uint); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case uint64:
 		if bv, ok := b.(uint64); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case uint32:
 		if bv, ok := b.(uint32); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case uint16:
 		if bv, ok := b.(uint16); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case uint8:
 		if bv, ok := b.(uint8); ok {
-			return c(av < bv)
+			if order == SortAscending {
+				return av < bv
+			} else {
+				return bv < av
+			}
 		}
 
 	case time.Time:
 		if bv, ok := b.(time.Time); ok {
-			return c(av.Before(bv))
+			if order == SortAscending {
+				return av.Before(bv)
+			} else {
+				return bv.Before(av)
+			}
 		}
 
 	case bool:
 		if bv, ok := b.(bool); ok {
-			return c(!av && bv)
+			if order == SortAscending {
+				return !av && bv
+			} else {
+				return !bv && av
+			}
 		}
 	}
 
