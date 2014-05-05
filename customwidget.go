@@ -38,6 +38,10 @@ func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidg
 	return cw, nil
 }
 
+func (cw *CustomWidget) SetPaint(paint PaintFunc) {
+    cw.paint = paint
+}
+
 func (*CustomWidget) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
