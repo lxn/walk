@@ -11,7 +11,7 @@ import (
 )
 
 import (
-	"github.com/lxn/win"
+	"github.com/kumakichi/win"
 )
 
 // Icon is a bitmap that supports transparency and combining multiple

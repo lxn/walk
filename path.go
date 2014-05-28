@@ -9,7 +9,7 @@ import (
 )
 
 import (
-	"github.com/lxn/win"
+	"github.com/kumakichi/win"
 )
 
 func knownFolderPath(id win.CSIDL) (string, error) {

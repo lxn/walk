@@ -5,7 +5,7 @@
 package declarative
 
 import (
-	"github.com/lxn/walk"
+	"github.com/kumakichi/walk"
 )
 
 type ImageView struct {

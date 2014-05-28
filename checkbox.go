@@ -5,7 +5,7 @@
 package walk
 
 import (
-	"github.com/lxn/win"
+	"github.com/kumakichi/win"
 )
 
 type CheckBox struct {

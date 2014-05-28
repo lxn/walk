@@ -13,7 +13,7 @@ import (
 )
 
 import (
-	"github.com/lxn/win"
+	"github.com/kumakichi/win"
 )
 
 type ComboBox struct {

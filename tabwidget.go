@@ -11,7 +11,7 @@ import (
 )
 
 import (
-	"github.com/lxn/win"
+	"github.com/kumakichi/win"
 )
 
 const tabWidgetWindowClass = `\o/ Walk_TabWidget_Class \o/`
