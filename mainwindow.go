@@ -184,7 +184,7 @@ func (mw *MainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		cb := mw.ClientBounds()
 
 		mw.toolBar.SetBounds(Rectangle{0, 0, cb.Width, mw.toolBar.Height()})
-		mw.statusBar.SetBounds(Rectangle{0, cb.Height, cb.Width, mw.statusBar.Height()})
+		mw.statusBar.SetBounds(Rectangle{0, cb.Height + mw.statusBar.Height(), cb.Width, mw.statusBar.Height()})
 	}
 
 	return mw.FormBase.WndProc(hwnd, msg, wParam, lParam)
