@@ -15,7 +15,7 @@ See [Getting Started](http://golang.org/doc/install.html)
 `Go 1.0.x` doesn't work with walk anymore, Make sure you use `Go 1.1.x` or later.
 
 ##### To Install
-Now run `go get github.com/kumakichi/walk`
+Now run `go get github.com/lxn/walk`
 
 Using Walk
 ==========
@@ -29,8 +29,8 @@ as illustrated in this small example:
 package main
 
 import (
-	"github.com/kumakichi/walk"
-	. "github.com/kumakichi/walk/declarative"
+	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 	"strings"
 )
 
