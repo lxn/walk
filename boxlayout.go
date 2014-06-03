@@ -5,7 +5,6 @@
 package walk
 
 import (
-        "fmt"
 	"sort"
 )
 
@@ -314,7 +313,6 @@ func (l *BoxLayout) MaxSize() Size {
 
 	for _, widget := range widgets {
 		max := maxSizeEffective(widget)
-fmt.Println(max)
 
 		if l.orientation == Horizontal {
 			s.Width += max.Width

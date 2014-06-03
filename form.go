@@ -447,10 +447,6 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			int32(maxi(max.Width, fb.maxSize.Width)),
 			int32(maxi(max.Height, fb.maxSize.Height)),
 		}
-        fmt.Println("111:", mmi.PtMinTrackSize)
-        fmt.Println("222:", mmi.PtMaxTrackSize)
-        fmt.Println("xxx:", min)
-        fmt.Println("yyy:", max)
 		return 0
 
 	case win.WM_NOTIFY:
