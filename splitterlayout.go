@@ -110,6 +110,24 @@ func (l *splitterLayout) MinSize() Size {
 	return s
 }
 
+func (l *splitterLayout) MaxSize() Size {
+	var s Size
+
+	for _, widget := range l.container.Children().items {
+		cur := maxSizeEffective(widget)
+
+		if l.orientation == Horizontal {
+			s.Width += cur.Width
+			s.Height = maxi(s.Height, cur.Height)
+		} else {
+			s.Height += cur.Height
+			s.Width = maxi(s.Width, cur.Width)
+		}
+	}
+
+	return s
+}
+
 func (l *splitterLayout) spaceForRegularWidgets() int {
 	splitter := l.container.(*Splitter)
 	cb := splitter.ClientBounds().Size()

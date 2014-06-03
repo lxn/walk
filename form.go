@@ -433,15 +433,24 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		layout := fb.clientComposite.Layout()
 
-		var min Size
+		var min,max Size
 		if layout != nil {
 			min = fb.sizeFromClientSize(layout.MinSize())
+			max = fb.sizeFromClientSize(layout.MaxSize())
 		}
 
 		mmi.PtMinTrackSize = win.POINT{
 			int32(maxi(min.Width, fb.minSize.Width)),
 			int32(maxi(min.Height, fb.minSize.Height)),
 		}
+		mmi.PtMaxTrackSize = win.POINT{
+			int32(maxi(max.Width, fb.maxSize.Width)),
+			int32(maxi(max.Height, fb.maxSize.Height)),
+		}
+        fmt.Println("111:", mmi.PtMinTrackSize)
+        fmt.Println("222:", mmi.PtMaxTrackSize)
+        fmt.Println("xxx:", min)
+        fmt.Println("yyy:", max)
 		return 0
 
 	case win.WM_NOTIFY:

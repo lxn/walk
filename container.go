@@ -25,6 +25,7 @@ type Layout interface {
 	SetSpacing(value int) error
 	LayoutFlags() LayoutFlags
 	MinSize() Size
+	MaxSize() Size
 	Update(reset bool) error
 }
 
