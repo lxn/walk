@@ -5,7 +5,7 @@
 package walk
 
 import (
-	"github.com/kumakichi/win"
+	"github.com/lxn/win"
 )
 
 // LayoutFlags specify how a Widget wants to be treated when used with a Layout.

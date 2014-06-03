@@ -17,7 +17,7 @@ import (
 )
 
 import (
-	"github.com/kumakichi/win"
+	"github.com/lxn/win"
 )
 
 var defaultTVRowBGColor Color = Color(win.GetSysColor(win.COLOR_WINDOW))

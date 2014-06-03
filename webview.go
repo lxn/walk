@@ -11,7 +11,7 @@ import (
 )
 
 import (
-	"github.com/kumakichi/win"
+	"github.com/lxn/win"
 )
 
 const webViewWindowClass = `\o/ Walk_WebView_Class \o/`

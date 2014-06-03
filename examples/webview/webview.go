@@ -5,8 +5,8 @@
 package main
 
 import (
-	"github.com/kumakichi/walk"
-	. "github.com/kumakichi/walk/declarative"
+	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 )
 
 func main() {

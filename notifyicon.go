@@ -10,7 +10,7 @@ import (
 )
 
 import (
-	"github.com/kumakichi/win"
+	"github.com/lxn/win"
 )
 
 const notifyIconWindowClass = `\o/ Walk_NotifyIcon_Class \o/`

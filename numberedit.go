@@ -13,7 +13,7 @@ import (
 )
 
 import (
-	"github.com/kumakichi/win"
+	"github.com/lxn/win"
 )
 
 const numberEditWindowClass = `\o/ Walk_NumberEdit_Class \o/`

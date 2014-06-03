@@ -5,7 +5,7 @@
 package walk
 
 import (
-	"github.com/kumakichi/win"
+	"github.com/lxn/win"
 )
 
 type Label struct {

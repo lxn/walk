@@ -10,7 +10,7 @@ import (
 )
 
 import (
-	"github.com/kumakichi/win"
+	"github.com/lxn/win"
 )
 
 const lineErrorPresenterWindowClass = `\o/ Walk_LineErrorPresenter_Class \o/`

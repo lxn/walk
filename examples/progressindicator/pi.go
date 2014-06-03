@@ -11,7 +11,7 @@ import (
 )
 
 import (
-	"github.com/kumakichi/walk"
+	"github.com/lxn/walk"
 )
 
 func main() {
