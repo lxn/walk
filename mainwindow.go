@@ -182,10 +182,16 @@ func (mw *MainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	switch msg {
 	case win.WM_SIZE, win.WM_SIZING:
 		cb := mw.ClientBounds()
+		cb.Height += mw.statusBar.Height()
 		spacing := mw.statusBar.Parent().Layout().Spacing()
+		windowHeight := mw.Bounds().Height
 
 		mw.toolBar.SetBounds(Rectangle{0, 0, cb.Width, mw.toolBar.Height()})
-		mw.statusBar.SetBounds(Rectangle{0, cb.Height + mw.statusBar.Height() + spacing, cb.Width, mw.statusBar.Height()})
+		if cb.Height+spacing*2+mw.statusBar.Height() > windowHeight {
+			mw.statusBar.SetBounds(Rectangle{0, cb.Height - mw.statusBar.Height(), cb.Width, mw.statusBar.Height()})
+		} else {
+			mw.statusBar.SetBounds(Rectangle{0, cb.Height + spacing, cb.Width, mw.statusBar.Height()})
+		}
 	}
 
 	return mw.FormBase.WndProc(hwnd, msg, wParam, lParam)
