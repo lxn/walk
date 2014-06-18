@@ -5,7 +5,7 @@
 package declarative
 
 import (
-	"github.com/ZhuBicen/walk"
+	"github.com/lxn/walk"
 )
 
 type GroupBox struct {

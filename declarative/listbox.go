@@ -9,7 +9,7 @@ import (
 )
 
 import (
-	"github.com/ZhuBicen/walk"
+	"github.com/lxn/walk"
 )
 
 type ListBox struct {

@@ -5,7 +5,7 @@
 package declarative
 
 import (
-	"github.com/ZhuBicen/walk"
+	"github.com/lxn/walk"
 )
 
 func tr(source string, context ...string) string {
