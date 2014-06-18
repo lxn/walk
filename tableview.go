@@ -1022,9 +1022,11 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				}
 
 				utf16 := syscall.StringToUTF16(text)
-				buf := (*[256]uint16)(unsafe.Pointer(di.Item.PszText))
-				max := mini(len(utf16), int(di.Item.CchTextMax))
-				copy((*buf)[:], utf16[:max])
+				buf := (*[1<<30 - 1]uint16)(unsafe.Pointer(di.Item.PszText))
+				bytesCopied := copy((*buf)[:di.Item.CchTextMax], utf16[:])
+				if bytesCopied == int(di.Item.CchTextMax) {
+					(*buf)[di.Item.CchTextMax-1] = '\x00'
+				}
 			}
 
 			if tv.imageProvider != nil && di.Item.Mask&win.LVIF_IMAGE > 0 {
