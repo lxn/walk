@@ -50,17 +50,18 @@ func RunMainWindow() error {
 		Name:    "mainWindow", // Name is needed for settings persistence
 		Title:   "Walk Settings Example",
 		MinSize: Size{800, 600},
-		Layout:  VBox{},
+		Layout:  VBox{MarginsZero: true},
 		Children: []Widget{
 			TableView{
 				Name: "tableView", // Name is needed for settings persistence
 				AlternatingRowBGColor: walk.RGB(255, 255, 200),
 				ColumnsOrderable:      true,
 				Columns: []TableViewColumn{
-					{DataMember: "Index"},
-					{DataMember: "Bar"},
-					{DataMember: "Baz", Format: "%.2f", Alignment: AlignFar},
-					{DataMember: "Quux", Format: "2006-01-02 15:04:05", Width: 150},
+					// Name is needed for settings persistence
+					{Name: "#", DataMember: "Index"}, // Use DataMember, if names differ
+					{Name: "Bar"},
+					{Name: "Baz", Format: "%.2f", Alignment: AlignFar},
+					{Name: "Quux", Format: "2006-01-02 15:04:05", Width: 150},
 				},
 				Model: NewFooModel(),
 			}},
