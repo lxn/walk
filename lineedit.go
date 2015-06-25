@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	lineEditMinChars    = 10 // number of characters needed to make a LineEdit usable
-	lineEditGreedyLimit = 80 // fields with MaxLength larger than this will be greedy (default length is 32767)
+	lineEditMinChars    = 1  // 10 // number of characters needed to make a LineEdit usable
+	lineEditGreedyLimit = 29 // 80 // fields with MaxLength larger than this will be greedy (default length is 32767)
 )
 
 type LineEdit struct {

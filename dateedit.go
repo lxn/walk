@@ -5,6 +5,8 @@
 package walk
 
 import (
+	"strings"
+	"syscall"
 	"time"
 	"unsafe"
 )
@@ -16,6 +18,7 @@ import (
 type DateEdit struct {
 	WidgetBase
 	dateChangedPublisher EventPublisher
+	format               string
 }
 
 func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
@@ -55,7 +58,7 @@ func (*DateEdit) LayoutFlags() LayoutFlags {
 }
 
 func (de *DateEdit) MinSizeHint() Size {
-	return de.dialogBaseUnitsToPixels(Size{64, 12})
+	return de.dialogBaseUnitsToPixels(Size{80, 12})
 }
 
 func (de *DateEdit) SizeHint() Size {
@@ -67,11 +70,18 @@ func (de *DateEdit) systemTimeToTime(st *win.SYSTEMTIME) time.Time {
 		return time.Time{}
 	}
 
-	return time.Date(int(st.WYear), time.Month(st.WMonth), int(st.WDay), 0, 0, 0, 0, time.Local)
+	var hour, minute, second int
+	if de.timeOfDayDisplayed() {
+		hour = int(st.WHour)
+		minute = int(st.WMinute)
+		second = int(st.WSecond)
+	}
+
+	return time.Date(int(st.WYear), time.Month(st.WMonth), int(st.WDay), hour, minute, second, 0, time.Local)
 }
 
 func (de *DateEdit) timeToSystemTime(t time.Time) *win.SYSTEMTIME {
-	if t.IsZero() {
+	if t.Year() < 1601 {
 		if de.hasStyleBits(win.DTS_SHOWNONE) {
 			return nil
 		} else {
@@ -83,11 +93,19 @@ func (de *DateEdit) timeToSystemTime(t time.Time) *win.SYSTEMTIME {
 		}
 	}
 
-	return &win.SYSTEMTIME{
+	st := &win.SYSTEMTIME{
 		WYear:  uint16(t.Year()),
 		WMonth: uint16(t.Month()),
 		WDay:   uint16(t.Day()),
 	}
+
+	if de.timeOfDayDisplayed() {
+		st.WHour = uint16(t.Hour())
+		st.WMinute = uint16(t.Minute())
+		st.WSecond = uint16(t.Second())
+	}
+
+	return st
 }
 
 func (de *DateEdit) systemTime() (*win.SYSTEMTIME, error) {
@@ -110,6 +128,9 @@ func (de *DateEdit) setSystemTime(st *win.SYSTEMTIME) error {
 	if st != nil {
 		wParam = win.GDT_VALID
 	} else {
+		// Ensure today's date is displayed.
+		de.setSystemTime(de.timeToSystemTime(time.Now()))
+
 		wParam = win.GDT_NONE
 	}
 
@@ -118,6 +139,26 @@ func (de *DateEdit) setSystemTime(st *win.SYSTEMTIME) error {
 	}
 
 	de.dateChangedPublisher.Publish()
+
+	return nil
+}
+
+func (de *DateEdit) timeOfDayDisplayed() bool {
+	return strings.ContainsAny(de.format, "Hhms")
+}
+
+func (de *DateEdit) Format() string {
+	return de.format
+}
+
+func (de *DateEdit) SetFormat(format string) error {
+	lp := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(format)))
+
+	if 0 == de.SendMessage(win.DTM_SETFORMAT, 0, lp) {
+		return newErr("DTM_SETFORMAT failed")
+	}
+
+	de.format = format
 
 	return nil
 }
@@ -177,7 +218,7 @@ func (de *DateEdit) Date() time.Time {
 		return time.Time{}
 	}
 
-	return time.Unix(de.systemTimeToTime(st).Unix(), 0)
+	return de.systemTimeToTime(st)
 }
 
 func (de *DateEdit) SetDate(date time.Time) error {

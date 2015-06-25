@@ -164,7 +164,7 @@ func main() {
 	MainWindow{
 		Title:  "Walk TableView Example",
 		Size:   Size{800, 600},
-		Layout: VBox{},
+		Layout: VBox{MarginsZero: true},
 		Children: []Widget{
 			PushButton{
 				Text:      "Reset Rows",

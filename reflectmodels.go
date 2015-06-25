@@ -360,64 +360,24 @@ func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member str
 		return ""
 	}
 
-	p := itemsValue.Index(index)
+	v := itemsValue.Index(index)
 
-	if p.IsNil() {
+	if v.Kind() == reflect.Ptr && v.IsNil() {
 		if populator, ok := dataSource.(Populator); ok {
 			if err := populator.Populate(index); err != nil {
 				return err
 			}
 		}
 
-		if p.IsNil() {
+		if v.IsNil() {
 			return nil
 		}
 	}
 
-	s := p.Elem()
-
-	var v reflect.Value
-	for i, name := range path {
-		// Try as field first.
-		v = s.FieldByName(name)
-		if !v.IsValid() {
-			// We support methods on pointer receivers only for now.
-			method := p.MethodByName(name)
-			if !method.IsValid() {
-				return fmt.Errorf("bad member: '%s'", member)
-			}
-
-			// We assume it takes no args and returns one mandatory value plus
-			// maybe an error.
-			rvs := method.Call(nil)
-			switch len(rvs) {
-			case 1:
-				v = rvs[0]
-
-			case 2:
-				rv2 := rvs[1].Interface()
-				if err, ok := rv2.(error); ok {
-					return err
-				} else if rv2 != nil {
-					return fmt.Errorf("Second method return value must implement error.")
-				}
-
-				v = rvs[0]
-
-			default:
-				return fmt.Errorf("Method must return a value plus optionally an error: %s", name)
-			}
-		}
-
-		if i < len(path)-1 {
-			// Here v must be a pointer.
-			p = v
-			if p.IsNil() {
-				return nil
-			}
-			s = p.Elem()
-		}
+	vv, err := reflectValueFromPath(v, path)
+	if err != nil {
+		return err
 	}
 
-	return v.Interface()
+	return vv.Interface()
 }

@@ -20,7 +20,9 @@ type Image interface {
 }
 
 func NewImageFromFile(filePath string) (Image, error) {
-	if strings.HasSuffix(filePath, ".emf") {
+	if strings.HasSuffix(filePath, ".ico") {
+		return NewIconFromFile(filePath)
+	} else if strings.HasSuffix(filePath, ".emf") {
 		return NewMetafileFromFile(filePath)
 	}
 

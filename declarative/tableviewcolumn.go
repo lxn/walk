@@ -17,13 +17,14 @@ const (
 )
 
 type TableViewColumn struct {
-	Alignment  Alignment1D
+	Name       string
 	DataMember string
 	Format     string
-	Hidden     bool
-	Precision  int
 	Title      string
+	Alignment  Alignment1D
+	Precision  int
 	Width      int
+	Hidden     bool
 }
 
 func (tvc TableViewColumn) Create(tv *walk.TableView) error {
@@ -41,6 +42,7 @@ func (tvc TableViewColumn) Create(tv *walk.TableView) error {
 	if err := w.SetPrecision(tvc.Precision); err != nil {
 		return err
 	}
+	w.SetName(tvc.Name)
 	if err := w.SetTitle(tvc.Title); err != nil {
 		return err
 	}

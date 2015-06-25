@@ -385,14 +385,24 @@ func (l *GridLayout) MinSize() Size {
 		}
 	}
 
-	width := l.margins.HNear + l.spacing*(len(widths)-1) + l.margins.HFar
-	height := l.margins.VNear + l.spacing*(len(heights)-1) + l.margins.VFar
+	width := l.margins.HNear + l.margins.HFar
+	height := l.margins.VNear + l.margins.VFar
 
-	for _, w := range widths {
-		width += w
+	for i, w := range widths {
+		if w > 0 {
+			if i > 0 {
+				width += l.spacing
+			}
+			width += w
+		}
 	}
-	for _, h := range heights {
-		height += h
+	for i, h := range heights {
+		if h > 0 {
+			if i > 0 {
+				height += l.spacing
+			}
+			height += h
+		}
 	}
 
 	return Size{width, height}

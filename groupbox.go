@@ -118,6 +118,8 @@ func (gb *GroupBox) SetFont(value *Font) {
 		setWindowFont(gb.hWndGroupBox, value)
 
 		gb.font = value
+
+		gb.composite.SetFont(value)
 	}
 }
 

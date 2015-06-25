@@ -31,6 +31,7 @@ type DataBinder struct {
 	autoSubmit                bool
 	canSubmit                 bool
 	inReset                   bool
+	dirty                     bool
 }
 
 func NewDataBinder() *DataBinder {
@@ -93,13 +94,15 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 			db.property2Widget[prop] = widget
 
 			db.property2ChangedHandle[prop] = prop.Changed().Attach(func() {
+				db.dirty = true
+
 				if db.autoSubmit {
 					if prop.Get() == nil {
 						return
 					}
 
-					p, s := db.reflectValuesFromDataSource()
-					field := db.fieldBoundToProperty(p, s, prop)
+					v := reflect.ValueOf(db.dataSource)
+					field := db.fieldBoundToProperty(v, prop)
 					if !field.IsValid() {
 						return
 					}
@@ -230,6 +233,8 @@ func (db *DataBinder) Reset() error {
 
 	db.validateProperties()
 
+	db.dirty = false
+
 	return nil
 }
 
@@ -244,12 +249,23 @@ func (db *DataBinder) Submit() error {
 		return err
 	}
 
+	db.dirty = false
+
 	db.submittedPublisher.Publish()
 
 	return nil
 }
 
+func (db *DataBinder) Dirty() bool {
+	return db.dirty
+}
+
 func (db *DataBinder) submitProperty(prop Property, field reflect.Value) error {
+	if !field.CanSet() {
+		// FIXME: handle properly
+		return nil
+	}
+
 	value := prop.Get()
 	if value == nil {
 		// This happens e.g. if CurrentIndex() of a ComboBox returns -1.
@@ -284,13 +300,13 @@ func (db *DataBinder) submitProperty(prop Property, field reflect.Value) error {
 }
 
 func (db *DataBinder) forEach(f func(prop Property, field reflect.Value) error) error {
-	p, s := db.reflectValuesFromDataSource()
-	if p.IsNil() {
+	dsv := reflect.ValueOf(db.dataSource)
+	if dsv.Kind() == reflect.Ptr && dsv.IsNil() {
 		return nil
 	}
 
 	for _, prop := range db.properties {
-		field := db.fieldBoundToProperty(p, s, prop)
+		field := db.fieldBoundToProperty(dsv, prop)
 
 		if err := f(prop, field); err != nil {
 			return err
@@ -300,40 +316,78 @@ func (db *DataBinder) forEach(f func(prop Property, field reflect.Value) error) 
 	return nil
 }
 
-func (db *DataBinder) reflectValuesFromDataSource() (p, s reflect.Value) {
-	p = reflect.ValueOf(db.dataSource)
-	if p.IsNil() {
-		return
-	}
-
-	s = p.Elem()
-
-	return
-}
-
-func (db *DataBinder) fieldBoundToProperty(p, s reflect.Value, prop Property) reflect.Value {
-	var v reflect.Value
+func (db *DataBinder) fieldBoundToProperty(v reflect.Value, prop Property) reflect.Value {
 	source := prop.Source().(string)
 	path := strings.Split(source, ".")
 
-	for i, name := range path {
-		v = s.FieldByName(name)
-		if !v.IsValid() {
-			panic(fmt.Sprintf("invalid element '%s' in source '%s'", name, source))
-		}
-		if i < len(path)-1 {
-			p = v
-			if p.IsNil() {
-				return reflect.Value{}
-			}
-			s = p.Elem()
-		}
+	vv, err := reflectValueFromPath(v, path)
+	if err != nil {
+		panic(fmt.Sprintf("invalid source '%s'", source))
 	}
 
-	return v
+	return vv
 }
 
 func validateBindingMemberSyntax(member string) error {
 	// FIXME
 	return nil
+}
+
+func reflectValueFromPath(root reflect.Value, path []string) (reflect.Value, error) {
+	v := root
+
+	for _, name := range path {
+		var p reflect.Value
+		for v.Kind() == reflect.Ptr {
+			p = v
+			v = v.Elem()
+		}
+
+		// Try as field first.
+		var f reflect.Value
+		if v.Kind() == reflect.Struct {
+			f = v.FieldByName(name)
+		}
+		if f.IsValid() {
+			v = f
+		} else {
+			// No field, so let's see if we got a method.
+			var m reflect.Value
+			if p.IsValid() {
+				// Try pointer receiver first.
+				m = p.MethodByName(name)
+			}
+
+			if !m.IsValid() {
+				// No pointer, try directly.
+				m = v.MethodByName(name)
+			}
+			if !m.IsValid() {
+				return v, fmt.Errorf("bad member: '%s'", strings.Join(path, "."))
+			}
+
+			// We assume it takes no args and returns one mandatory value plus
+			// maybe an error.
+			rvs := m.Call(nil)
+			switch len(rvs) {
+			case 1:
+				v = rvs[0]
+
+			case 2:
+				rv2 := rvs[1].Interface()
+				if err, ok := rv2.(error); ok {
+					return v, err
+				} else if rv2 != nil {
+					return v, fmt.Errorf("Second method return value must implement error.")
+				}
+
+				v = rvs[0]
+
+			default:
+				return v, fmt.Errorf("Method must return a value plus optionally an error: %s", name)
+			}
+		}
+	}
+
+	return v, nil
 }

@@ -66,8 +66,8 @@ func (rbg RadioButtonGroup) Create(builder *Builder) error {
 	return nil
 }
 
-func (w RadioButtonGroup) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return "", false, false, nil, "", Size{}, Size{}, 0, 0, 0, 0, 0, nil, nil, nil, nil, nil, nil, nil, nil
+func (w RadioButtonGroup) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+	return "", false, false, nil, "", Size{}, Size{}, 0, 0, 0, 0, 0, false, nil, nil, nil, nil, nil, nil, nil, nil
 }
 
 type radioButtonGroupValidator struct {

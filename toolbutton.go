@@ -19,7 +19,7 @@ func NewToolButton(parent Container) (*ToolButton, error) {
 		tb,
 		parent,
 		"BUTTON",
-		win.WS_TABSTOP|win.WS_VISIBLE|win.BS_PUSHBUTTON,
+		win.WS_TABSTOP|win.WS_VISIBLE|win.BS_BITMAP|win.BS_PUSHBUTTON,
 		0); err != nil {
 		return nil, err
 	}

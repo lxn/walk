@@ -16,6 +16,7 @@ import (
 // TableViewColumn represents a column in a TableView.
 type TableViewColumn struct {
 	tv            *TableView
+	name          string
 	dataMember    string
 	alignment     Alignment1D
 	format        string
@@ -63,6 +64,16 @@ func (tvc *TableViewColumn) DataMember() string {
 	return tvc.dataMember
 }
 
+// DataMemberEffective returns the effective data member this TableViewColumn is
+// bound against.
+func (tvc *TableViewColumn) DataMemberEffective() string {
+	if tvc.dataMember != "" {
+		return tvc.dataMember
+	}
+
+	return tvc.name
+}
+
 // SetDataMember sets the data member this TableViewColumn is bound against.
 func (tvc *TableViewColumn) SetDataMember(dataMember string) {
 	tvc.dataMember = dataMember
@@ -93,6 +104,16 @@ func (tvc *TableViewColumn) SetFormat(format string) (err error) {
 	}
 
 	return tvc.tv.Invalidate()
+}
+
+// Name returns the name of this TableViewColumn.
+func (tvc *TableViewColumn) Name() string {
+	return tvc.name
+}
+
+// SetName sets the name of this TableViewColumn.
+func (tvc *TableViewColumn) SetName(name string) {
+	tvc.name = name
 }
 
 // Precision returns the number of decimal places for formatting float32,
@@ -182,7 +203,7 @@ func (tvc *TableViewColumn) TitleEffective() string {
 		return tvc.title
 	}
 
-	return tvc.dataMember
+	return tvc.DataMemberEffective()
 }
 
 // Visible returns if the column is visible.
@@ -294,9 +315,13 @@ func (tvc *TableViewColumn) create() error {
 }
 
 func (tvc *TableViewColumn) destroy() error {
+	width := tvc.Width()
+
 	if win.FALSE == tvc.tv.SendMessage(win.LVM_DELETECOLUMN, uintptr(tvc.indexInListView()), 0) {
 		return newError("LVM_DELETECOLUMN")
 	}
+
+	tvc.width = width
 
 	return nil
 }

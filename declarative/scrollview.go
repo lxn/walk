@@ -1,4 +1,4 @@
-// Copyright 2012 The Walk Authors. All rights reserved.
+// Copyright 2014 The Walk Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -8,8 +8,8 @@ import (
 	"github.com/lxn/walk"
 )
 
-type ImageView struct {
-	AssignTo           **walk.ImageView
+type ScrollView struct {
+	AssignTo           **walk.ScrollView
 	Name               string
 	Enabled            Property
 	Visible            Property
@@ -31,28 +31,36 @@ type ImageView struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
-	Image              walk.Image
+	DataBinder         DataBinder
+	Layout             Layout
+	Children           []Widget
 }
 
-func (iv ImageView) Create(builder *Builder) error {
-	w, err := walk.NewImageView(builder.Parent())
+func (sv ScrollView) Create(builder *Builder) error {
+	w, err := walk.NewScrollView(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return builder.InitWidget(iv, w, func() error {
-		if err := w.SetImage(iv.Image); err != nil {
-			return err
-		}
+	w.SetSuspended(true)
+	builder.Defer(func() error {
+		w.SetSuspended(false)
+		return nil
+	})
 
-		if iv.AssignTo != nil {
-			*iv.AssignTo = w
+	return builder.InitWidget(sv, w, func() error {
+		if sv.AssignTo != nil {
+			*sv.AssignTo = w
 		}
 
 		return nil
 	})
 }
 
-func (w ImageView) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+func (w ScrollView) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
 	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.AlwaysConsumeSpace, w.ContextMenuItems, w.OnKeyDown, w.OnKeyPress, w.OnKeyUp, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
+}
+
+func (sv ScrollView) ContainerInfo() (DataBinder, Layout, []Widget) {
+	return sv.DataBinder, sv.Layout, sv.Children
 }

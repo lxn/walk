@@ -16,7 +16,7 @@ func main() {
 	MainWindow{
 		Title:   "Walk WebView Example",
 		MinSize: Size{800, 600},
-		Layout:  VBox{},
+		Layout:  VBox{MarginsZero: true},
 		Children: []Widget{
 			LineEdit{
 				AssignTo: &le,

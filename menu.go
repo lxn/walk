@@ -101,6 +101,13 @@ func (m *Menu) initMenuItemInfoFromAction(mii *win.MENUITEMINFO, action *Action)
 		mii.FState |= win.MFS_DISABLED
 	}
 
+	if action.Checkable() {
+		mii.FMask |= win.MIIM_CHECKMARKS
+	}
+	if action.Checked() {
+		mii.FState |= win.MFS_CHECKED
+	}
+
 	menu := action.menu
 	if menu != nil {
 		mii.FMask |= win.MIIM_SUBMENU

@@ -17,6 +17,7 @@ type Button struct {
 	checkedChangedPublisher EventPublisher
 	clickedPublisher        EventPublisher
 	textChangedPublisher    EventPublisher
+	image                   Image
 }
 
 func (b *Button) init() {
@@ -38,6 +39,36 @@ func (b *Button) init() {
 			return b.SetText(v.(string))
 		},
 		b.textChangedPublisher.Event()))
+}
+
+func (b *Button) Image() Image {
+	return b.image
+}
+
+func (b *Button) SetImage(image Image) error {
+	var typ uintptr
+	var handle uintptr
+	switch img := image.(type) {
+	case nil:
+		// zeroes are good
+
+	case *Bitmap:
+		typ = win.IMAGE_BITMAP
+		handle = uintptr(img.hBmp)
+
+	case *Icon:
+		typ = win.IMAGE_ICON
+		handle = uintptr(img.hIcon)
+
+	default:
+		return newError("image must be either *walk.Bitmap or *walk.Icon")
+	}
+
+	b.SendMessage(win.BM_SETIMAGE, typ, handle)
+
+	b.image = image
+
+	return b.updateParentLayout()
 }
 
 func (b *Button) Text() string {

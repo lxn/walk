@@ -26,6 +26,7 @@ type Action struct {
 	Visible     Property
 	Shortcut    Shortcut
 	OnTriggered walk.EventHandler
+	Checkable   bool
 }
 
 func (a Action) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, error) {
@@ -35,6 +36,9 @@ func (a Action) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, e
 		return nil, err
 	}
 	if err := setActionImage(action, a.Image); err != nil {
+		return nil, err
+	}
+	if err := action.SetCheckable(a.Checkable); err != nil {
 		return nil, err
 	}
 

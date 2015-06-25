@@ -5,7 +5,7 @@
 package walk
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
@@ -20,7 +20,10 @@ import (
 	"github.com/lxn/win"
 )
 
-var defaultTVRowBGColor Color = Color(win.GetSysColor(win.COLOR_WINDOW))
+var (
+	defaultTVRowBGColor Color = Color(win.GetSysColor(win.COLOR_WINDOW))
+	white                     = win.COLORREF(RGB(255, 255, 255))
+)
 
 const (
 	tableViewCurrentIndexChangedTimerId = 1 + iota
@@ -33,31 +36,33 @@ const (
 // amounts of data.
 type TableView struct {
 	WidgetBase
-	columns                          *TableViewColumnList
-	model                            TableModel
-	providedModel                    interface{}
-	itemChecker                      ItemChecker
-	imageProvider                    ImageProvider
-	hIml                             win.HIMAGELIST
-	usingSysIml                      bool
-	imageUintptr2Index               map[uintptr]int32
-	filePath2IconIndex               map[string]int32
-	rowsResetHandlerHandle           int
-	rowChangedHandlerHandle          int
-	sortChangedHandlerHandle         int
-	currentIndex                     int
-	currentIndexChangedPublisher     EventPublisher
-	selectedIndexes                  *IndexList
-	selectedIndexesChangedPublisher  EventPublisher
-	itemActivatedPublisher           EventPublisher
-	columnClickedPublisher           IntEventPublisher
-	columnsOrderableChangedPublisher EventPublisher
-	columnsSizableChangedPublisher   EventPublisher
-	lastColumnStretched              bool
-	inEraseBkgnd                     bool
-	persistent                       bool
-	itemStateChangedEventDelay       int
-	alternatingRowBGColor            Color
+	columns                            *TableViewColumnList
+	model                              TableModel
+	providedModel                      interface{}
+	itemChecker                        ItemChecker
+	imageProvider                      ImageProvider
+	hIml                               win.HIMAGELIST
+	usingSysIml                        bool
+	imageUintptr2Index                 map[uintptr]int32
+	filePath2IconIndex                 map[string]int32
+	rowsResetHandlerHandle             int
+	rowChangedHandlerHandle            int
+	sortChangedHandlerHandle           int
+	currentIndex                       int
+	currentIndexChangedPublisher       EventPublisher
+	selectedIndexes                    *IndexList
+	selectedIndexesChangedPublisher    EventPublisher
+	itemActivatedPublisher             EventPublisher
+	columnClickedPublisher             IntEventPublisher
+	columnsOrderableChangedPublisher   EventPublisher
+	columnsSizableChangedPublisher     EventPublisher
+	lastColumnStretched                bool
+	inEraseBkgnd                       bool
+	persistent                         bool
+	itemStateChangedEventDelay         int
+	alternatingRowBGColor              Color
+	hasDarkAltBGColor                  bool
+	delayedCurrentIndexChangedCanceled bool
 }
 
 // NewTableView creates and returns a *TableView as child of the specified
@@ -91,7 +96,7 @@ func NewTableView(parent Container) (*TableView, error) {
 	tv.SetPersistent(true)
 
 	exStyle := tv.SendMessage(win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
-	exStyle |= win.LVS_EX_DOUBLEBUFFER | win.LVS_EX_FULLROWSELECT
+	exStyle |= win.LVS_EX_DOUBLEBUFFER | win.LVS_EX_FULLROWSELECT | win.LVS_EX_LABELTIP
 	tv.SendMessage(win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 
 	if err := tv.setTheme("Explorer"); err != nil {
@@ -230,6 +235,8 @@ func (tv *TableView) AlternatingRowBGColor() Color {
 func (tv *TableView) SetAlternatingRowBGColor(c Color) {
 	tv.alternatingRowBGColor = c
 
+	tv.hasDarkAltBGColor = int(c.R())+int(c.G())+int(c.B()) < 128*3
+
 	tv.Invalidate()
 }
 
@@ -252,7 +259,7 @@ func (tv *TableView) VisibleColumnsInDisplayOrder() []*TableViewColumn {
 	orderedCols := make([]*TableViewColumn, len(visibleCols))
 
 	for i, j := range indices {
-		orderedCols[j] = visibleCols[i]
+		orderedCols[i] = visibleCols[j]
 	}
 
 	return orderedCols
@@ -361,7 +368,7 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 			dataMembers := make([]string, len(tv.columns.items))
 
 			for i, col := range tv.columns.items {
-				dataMembers[i] = col.dataMember
+				dataMembers[i] = col.DataMemberEffective()
 			}
 
 			dms.setDataMembers(dataMembers)
@@ -375,6 +382,11 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 	}
 
 	return tv.setItemCount()
+}
+
+// TableModel returns the TableModel of the TableView.
+func (tv *TableView) TableModel() TableModel {
+	return tv.model
 }
 
 func (tv *TableView) setItemCount() error {
@@ -565,6 +577,10 @@ func (tv *TableView) SetCurrentIndex(value int) error {
 		if win.FALSE == tv.SendMessage(win.LVM_ENSUREVISIBLE, uintptr(value), uintptr(0)) {
 			return newError("SendMessage(LVM_ENSUREVISIBLE)")
 		}
+		// Windows bug? Sometimes a second LVM_ENSUREVISIBLE is required.
+		if win.FALSE == tv.SendMessage(win.LVM_ENSUREVISIBLE, uintptr(value), uintptr(0)) {
+			return newError("SendMessage(LVM_ENSUREVISIBLE)")
+		}
 	}
 
 	tv.currentIndex = value
@@ -720,80 +736,59 @@ func (tv *TableView) SetPersistent(value bool) {
 	tv.persistent = value
 }
 
+type tableViewState struct {
+	SortColumnName     string
+	SortOrder          SortOrder
+	ColumnDisplayOrder []string // Also indicates visibility
+	Columns            []tableViewColumnState
+}
+
+type tableViewColumnState struct {
+	Name  string
+	Title string
+	Width int
+}
+
 // SaveState writes the UI state of the *TableView to the settings.
 func (tv *TableView) SaveState() error {
-	buf := new(bytes.Buffer)
+	var tvs tableViewState
 
-	count := tv.columns.Len()
-	if count > 0 {
-		for i := 0; i < count; i++ {
-			if i > 0 {
-				buf.WriteString(" ")
-			}
-
-			width := tv.Columns().At(i).Width()
-			if width == 0 {
-				width = 100
-			}
-
-			buf.WriteString(strconv.Itoa(int(width)))
-		}
-
-		buf.WriteString(";")
-
-		visibleCount := tv.visibleColumnCount()
-
-		indices := make([]int32, visibleCount)
-		lParam := uintptr(unsafe.Pointer(&indices[0]))
-
-		if 0 == tv.SendMessage(win.LVM_GETCOLUMNORDERARRAY, uintptr(visibleCount), lParam) {
-			return newError("LVM_GETCOLUMNORDERARRAY")
-		}
-
-		for i, idx := range indices {
-			if i > 0 {
-				buf.WriteString(" ")
-			}
-
-			buf.WriteString(strconv.Itoa(int(idx)))
-		}
-
-		buf.WriteString(";")
-
-		for i, tvc := range tv.columns.items {
-			if i > 0 {
-				buf.WriteString("|")
-			}
-
-			buf.WriteString(tvc.TitleOverride())
-		}
-
-		buf.WriteString(";")
-
-		for i, tvc := range tv.columns.items {
-			if i > 0 {
-				buf.WriteString(" ")
-			}
-
-			if tvc.Visible() {
-				buf.WriteString("1")
-			} else {
-				buf.WriteString("0")
-			}
-		}
-
-		buf.WriteString(";")
-
-		if sorter, ok := tv.model.(Sorter); ok {
-			buf.WriteString(strconv.Itoa(sorter.SortedColumn()))
-			buf.WriteString(" ")
-			buf.WriteString(strconv.Itoa(int(sorter.SortOrder())))
-		} else {
-			buf.WriteString("- -")
-		}
+	if sorter, ok := tv.model.(Sorter); ok {
+		tvs.SortColumnName = tv.columns.items[sorter.SortedColumn()].name
+		tvs.SortOrder = sorter.SortOrder()
 	}
 
-	return tv.putState(buf.String())
+	tvs.Columns = make([]tableViewColumnState, tv.columns.Len())
+
+	for i, tvc := range tv.columns.items {
+		tvcs := &tvs.Columns[i]
+
+		tvcs.Name = tvc.name
+		tvcs.Title = tvc.titleOverride
+		tvcs.Width = tvc.Width()
+	}
+
+	visibleCols := tv.visibleColumns()
+	indices := make([]int32, len(visibleCols))
+	var lParam uintptr
+	if len(visibleCols) > 0 {
+		lParam = uintptr(unsafe.Pointer(&indices[0]))
+	}
+	if 0 == tv.SendMessage(win.LVM_GETCOLUMNORDERARRAY, uintptr(len(visibleCols)), lParam) {
+		return newError("LVM_GETCOLUMNORDERARRAY")
+	}
+
+	tvs.ColumnDisplayOrder = make([]string, len(visibleCols))
+	for i, j := range indices {
+		tvs.ColumnDisplayOrder[i] = visibleCols[j].name
+	}
+
+	state, err := json.Marshal(tvs)
+	if err != nil {
+		return err
+	}
+
+	return tv.putState(string(state))
 }
 
 // RestoreState restores the UI state of the *TableView from the settings.
@@ -806,15 +801,201 @@ func (tv *TableView) RestoreState() error {
 		return nil
 	}
 
-	parts := strings.Split(state, ";")
-
 	tv.SetSuspended(true)
 	defer tv.SetSuspended(false)
+
+	var tvs tableViewState
+
+	if err := json.Unmarshal(([]byte)(state), &tvs); err != nil {
+		return tv.restoreStateOldStyle(state)
+	}
+
+	name2tvc := make(map[string]*TableViewColumn)
+
+	for _, tvc := range tv.columns.items {
+		name2tvc[tvc.name] = tvc
+	}
+
+	name2tvcs := make(map[string]*tableViewColumnState)
+
+	for i, tvcs := range tvs.Columns {
+		name2tvcs[tvcs.Name] = &tvs.Columns[i]
+
+		if tvc := name2tvc[tvcs.Name]; tvc != nil {
+			if err := tvc.SetTitleOverride(tvcs.Title); err != nil {
+				return err
+			}
+			if err := tvc.SetWidth(tvcs.Width); err != nil {
+				return err
+			}
+			var visible bool
+			for _, name := range tvs.ColumnDisplayOrder {
+				if name == tvc.name {
+					visible = true
+					break
+				}
+			}
+			if err := tvc.SetVisible(visible); err != nil {
+				return err
+			}
+		}
+	}
+
+	visibleCount := tv.visibleColumnCount()
+
+	indices := make([]int32, visibleCount)
+
+	knownNames := make(map[string]struct{})
+
+	displayOrder := make([]string, 0, visibleCount)
+	for _, name := range tvs.ColumnDisplayOrder {
+		knownNames[name] = struct{}{}
+		if _, ok := name2tvc[name]; ok {
+			displayOrder = append(displayOrder, name)
+		}
+	}
+	for _, tvc := range tv.visibleColumns() {
+		if _, ok := knownNames[tvc.name]; !ok {
+			displayOrder = append(displayOrder, tvc.name)
+		}
+	}
+
+	for i, tvc := range tv.visibleColumns() {
+		for j, name := range displayOrder {
+			if tvc.name == name {
+				indices[j] = int32(i)
+				break
+			}
+		}
+	}
+
+	wParam := uintptr(len(indices))
+	var lParam uintptr
+	if len(indices) > 0 {
+		lParam = uintptr(unsafe.Pointer(&indices[0]))
+	}
+	if 0 == tv.SendMessage(win.LVM_SETCOLUMNORDERARRAY, wParam, lParam) {
+		return newError("LVM_SETCOLUMNORDERARRAY")
+	}
+
+	if sorter, ok := tv.model.(Sorter); ok {
+		for i, c := range tvs.Columns {
+			if c.Name == tvs.SortColumnName {
+				if sorter.ColumnSortable(i) {
+					sorter.Sort(i, tvs.SortOrder)
+				}
+				break
+			}
+		}
+	}
+
+	//if sorter, ok := tv.model.(Sorter); ok {
+	//	index := -1
+	//	order := SortAscending
+
+	//	for i, c := range tvs.Columns {
+	//		if tv.columns.items[i].visible && sorter.ColumnSortable(i) {
+	//			if c.Name == tvs.SortColumnName {
+	//				index = i
+	//				order = tvs.SortOrder
+	//				break
+	//			} else if index == -1 {
+	//				index = i
+	//			}
+	//		}
+	//	}
+
+	//	if index > -1 {
+	//		sorter.Sort(index, order)
+	//	}
+	//}
+
+	return nil
+}
+
+//// SaveState writes the UI state of the *TableView to the settings.
+//func (tv *TableView) SaveState() error {
+//	buf := new(bytes.Buffer)
+
+//	count := tv.columns.Len()
+//	if count > 0 {
+//		for i := 0; i < count; i++ {
+//			if i > 0 {
+//				buf.WriteString(" ")
+//			}
+
+//			width := tv.Columns().At(i).Width()
+//			if width == 0 {
+//				width = 100
+//			}
+
+//			buf.WriteString(strconv.Itoa(int(width)))
+//		}
+
+//		buf.WriteString(";")
+
+//		visibleCount := tv.visibleColumnCount()
+
+//		indices := make([]int32, visibleCount)
+//		lParam := uintptr(unsafe.Pointer(&indices[0]))
+
+//		if 0 == tv.SendMessage(win.LVM_GETCOLUMNORDERARRAY, uintptr(visibleCount), lParam) {
+//			return newError("LVM_GETCOLUMNORDERARRAY")
+//		}
+
+//		for i, idx := range indices {
+//			if i > 0 {
+//				buf.WriteString(" ")
+//			}
+
+//			buf.WriteString(strconv.Itoa(int(idx)))
+//		}
+
+//		buf.WriteString(";")
+
+//		for i, tvc := range tv.columns.items {
+//			if i > 0 {
+//				buf.WriteString("|")
+//			}
+
+//			buf.WriteString(tvc.TitleOverride())
+//		}
+
+//		buf.WriteString(";")
+
+//		for i, tvc := range tv.columns.items {
+//			if i > 0 {
+//				buf.WriteString(" ")
+//			}
+
+//			if tvc.Visible() {
+//				buf.WriteString("1")
+//			} else {
+//				buf.WriteString("0")
+//			}
+//		}
+
+//		buf.WriteString(";")
+
+//		if sorter, ok := tv.model.(Sorter); ok {
+//			buf.WriteString(strconv.Itoa(sorter.SortedColumn()))
+//			buf.WriteString(" ")
+//			buf.WriteString(strconv.Itoa(int(sorter.SortOrder())))
+//		} else {
+//			buf.WriteString("- -")
+//		}
+//	}
+
+//	return tv.putState(buf.String())
+//}
+
+func (tv *TableView) restoreStateOldStyle(state string) error {
+	parts := strings.Split(state, ";")
 
 	widthStrs := strings.Split(parts[0], " ")
 
 	// FIXME: Solve this in a better way.
-	if len(widthStrs) != tv.columns.Len() {
+	if len(widthStrs) > tv.columns.Len() {
 		log.Print("*TableView.RestoreState: failed due to unexpected column count (FIXME!)")
 		return nil
 	}
@@ -1008,7 +1189,9 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 					text = FormatFloatGrouped(val, prec)
 
 				case time.Time:
-					text = val.Format(tv.columns.items[col].format)
+					if val.Year() > 1601 {
+						text = val.Format(tv.columns.items[col].format)
+					}
 
 				case *big.Rat:
 					prec := tv.columns.items[col].precision
@@ -1022,9 +1205,10 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				}
 
 				utf16 := syscall.StringToUTF16(text)
-				buf := (*[256]uint16)(unsafe.Pointer(di.Item.PszText))
+				buf := (*[264]uint16)(unsafe.Pointer(di.Item.PszText))
 				max := mini(len(utf16), int(di.Item.CchTextMax))
 				copy((*buf)[:], utf16[:max])
+				(*buf)[max-1] = 0
 			}
 
 			if tv.imageProvider != nil && di.Item.Mask&win.LVIF_IMAGE > 0 {
@@ -1063,8 +1247,29 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 
 				case win.CDDS_ITEMPREPAINT:
 					if nmlvcd.Nmcd.DwItemSpec%2 == 1 {
+						/*if tv.hasDarkAltBGColor &&
+							nmlvcd.Nmcd.UItemState&win.CDIS_HOT == 0 &&
+							tv.SendMessage(win.LVM_GETITEMSTATE, nmlvcd.Nmcd.DwItemSpec, win.LVIS_SELECTED) == 0 &&
+							int32(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)) != nmlvcd.ISubItem {
+							fmt.Printf("selcol: %d, subitem: %d\n", int32(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)), nmlvcd.ISubItem)
+							nmlvcd.ClrText = white
+						}*/
 						nmlvcd.ClrTextBk = win.COLORREF(tv.alternatingRowBGColor)
 					}
+
+					return win.CDRF_NOTIFYSUBITEMDRAW
+
+				case win.CDDS_ITEMPREPAINT | win.CDDS_SUBITEM:
+					if nmlvcd.Nmcd.DwItemSpec%2 == 1 &&
+						tv.hasDarkAltBGColor &&
+						nmlvcd.Nmcd.UItemState&win.CDIS_HOT == 0 &&
+						tv.SendMessage(win.LVM_GETITEMSTATE, nmlvcd.Nmcd.DwItemSpec, win.LVIS_SELECTED) == 0 &&
+						int32(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)) != nmlvcd.ISubItem {
+
+						nmlvcd.ClrText = white
+					}
+
+					return win.CDRF_NEWFONT
 				}
 			}
 
@@ -1094,6 +1299,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 			if selectedNow && !selectedBefore {
 				tv.currentIndex = int(nmlv.IItem)
 				if tv.itemStateChangedEventDelay > 0 {
+					tv.delayedCurrentIndexChangedCanceled = false
 					if 0 == win.SetTimer(
 						tv.hWnd,
 						tableViewCurrentIndexChangedTimerId,
@@ -1111,13 +1317,24 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 			}
 
 		case win.LVN_ITEMACTIVATE:
+			nmia := (*win.NMITEMACTIVATE)(unsafe.Pointer(lParam))
+
+			if tv.itemStateChangedEventDelay > 0 {
+				tv.delayedCurrentIndexChangedCanceled = true
+			}
+
+			tv.SetCurrentIndex(int(nmia.IItem))
+			tv.currentIndexChangedPublisher.Publish()
+
 			tv.itemActivatedPublisher.Publish()
 		}
 
 	case win.WM_TIMER:
 		switch wParam {
 		case tableViewCurrentIndexChangedTimerId:
-			tv.currentIndexChangedPublisher.Publish()
+			if !tv.delayedCurrentIndexChangedCanceled {
+				tv.currentIndexChangedPublisher.Publish()
+			}
 
 		case tableViewSelectedIndexesChangedTimerId:
 			tv.selectedIndexesChangedPublisher.Publish()

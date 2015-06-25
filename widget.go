@@ -38,6 +38,10 @@ const (
 type Widget interface {
 	Window
 
+	// AlwaysConsumeSpace returns if the Widget should consume space even if it
+	// is not visible.
+	AlwaysConsumeSpace() bool
+
 	// AsWidgetBase returns a *WidgetBase that implements Widget.
 	AsWidgetBase() *WidgetBase
 
@@ -54,6 +58,10 @@ type Widget interface {
 
 	// Parent returns the Container of the Widget.
 	Parent() Container
+
+	// SetAlwaysConsumeSpace sets if the Widget should consume space even if it
+	// is not visible.
+	SetAlwaysConsumeSpace(b bool) error
 
 	// SetParent sets the parent of the Widget and adds the Widget to the
 	// Children list of the Container.
@@ -74,6 +82,7 @@ type WidgetBase struct {
 	parent                      Container
 	toolTipTextProperty         Property
 	toolTipTextChangedPublisher EventPublisher
+	alwaysConsumeSpace          bool
 }
 
 // InitWidget initializes a Widget.
@@ -189,6 +198,20 @@ func (wb *WidgetBase) Form() Form {
 // WidgetBase wants to be treated by Layout implementations.
 func (wb *WidgetBase) LayoutFlags() LayoutFlags {
 	return 0
+}
+
+// AlwaysConsumeSpace returns if the Widget should consume space even if it is
+// not visible.
+func (wb *WidgetBase) AlwaysConsumeSpace() bool {
+	return wb.alwaysConsumeSpace
+}
+
+// SetAlwaysConsumeSpace sets if the Widget should consume space even if it is
+// not visible.
+func (wb *WidgetBase) SetAlwaysConsumeSpace(b bool) error {
+	wb.alwaysConsumeSpace = b
+
+	return wb.updateParentLayout()
 }
 
 // MinSizeHint returns the minimum outer Size, including decorations, that

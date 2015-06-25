@@ -210,6 +210,14 @@ func (fb *FormBase) Font() *Font {
 	return defaultFont
 }
 
+func (fb *FormBase) SetFont(value *Font) {
+	if value != fb.font {
+		fb.WindowBase.SetFont(value)
+
+		fb.clientComposite.SetFont(value)
+	}
+}
+
 func (fb *FormBase) Title() string {
 	return windowText(fb.hWnd)
 }

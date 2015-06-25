@@ -54,6 +54,11 @@ func NewTreeView(parent Container) (*TreeView, error) {
 		}
 	}()
 
+	// FIXME: This is Vista and later only
+	//if hr := win.HRESULT(tv.SendMessage(win.TVM_SETEXTENDEDSTYLE, win.TVS_EX_DOUBLEBUFFER, win.TVS_EX_DOUBLEBUFFER)); win.FAILED(hr) {
+	//	return nil, errorFromHRESULT("TVM_SETEXTENDEDSTYLE", hr)
+	//}
+
 	if err := tv.setTheme("Explorer"); err != nil {
 		return nil, err
 	}

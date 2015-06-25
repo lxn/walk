@@ -35,7 +35,7 @@ func shouldLayoutWidget(widget Widget) bool {
 
 	_, isSpacer := widget.(*Spacer)
 
-	return isSpacer || widget.AsWindowBase().visible
+	return isSpacer || widget.AsWindowBase().visible || widget.AlwaysConsumeSpace()
 }
 
 func DescendantByName(container Container, name string) Widget {

@@ -126,6 +126,18 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		},
 		cb.TextChanged()))
 
+	cb.MustRegisterProperty("HasCurrentItem", NewReadOnlyBoolProperty(
+		func() bool {
+			return cb.CurrentIndex() != -1
+		},
+		cb.CurrentIndexChanged()))
+
+	cb.MustRegisterProperty("TextNotEmpty", NewReadOnlyBoolProperty(
+		func() bool {
+			return cb.Text() != ""
+		},
+		cb.CurrentIndexChanged()))
+
 	cb.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
 			if cb.Editable() {
@@ -146,7 +158,11 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 			}
 
 			if cb.bindingValueProvider == nil {
-				return newError("Data binding is only supported using a model that implements BindingValueProvider.")
+				if cb.model == nil {
+					return nil
+				} else {
+					return newError("Data binding is only supported using a model that implements BindingValueProvider.")
+				}
 			}
 
 			index := -1
@@ -180,7 +196,7 @@ func (cb *ComboBox) MinSizeHint() Size {
 	}
 
 	// FIXME: Use GetThemePartSize instead of guessing
-	w := maxi(defaultSize.Width, cb.maxItemTextWidth+26)
+	w := maxi(defaultSize.Width, cb.maxItemTextWidth+30)
 	h := defaultSize.Height + 1
 
 	return Size{w, h}
@@ -227,6 +243,8 @@ func (cb *ComboBox) resetItems() error {
 	cb.SetSuspended(true)
 	defer cb.SetSuspended(false)
 
+	cb.selChangeIndex = -1
+
 	if win.FALSE == cb.SendMessage(win.CB_RESETCONTENT, 0, 0) {
 		return newError("SendMessage(CB_RESETCONTENT)")
 	}
@@ -246,6 +264,8 @@ func (cb *ComboBox) resetItems() error {
 			return err
 		}
 	}
+
+	cb.updateParentLayout()
 
 	return nil
 }
@@ -525,7 +545,9 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		case win.CBN_SELENDCANCEL:
 			if cb.selChangeIndex != -1 {
-				cb.SetCurrentIndex(cb.selChangeIndex)
+				if cb.selChangeIndex < cb.model.ItemCount() {
+					cb.SetCurrentIndex(cb.selChangeIndex)
+				}
 
 				cb.selChangeIndex = -1
 			}
@@ -541,6 +563,11 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			}
 
 			cb.selChangeIndex = -1
+		}
+
+	case win.WM_MOUSEWHEEL:
+		if !cb.Enabled() {
+			return 0
 		}
 	}
 

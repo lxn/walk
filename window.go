@@ -686,6 +686,10 @@ func (wb *WindowBase) SetSuspended(suspend bool) {
 	wb.SendMessage(win.WM_SETREDRAW, uintptr(wParam), 0)
 
 	wb.suspended = suspend
+
+	if !suspend {
+		wb.Invalidate()
+	}
 }
 
 // Invalidate schedules a full repaint of the *WindowBase.
@@ -765,7 +769,7 @@ func (wb *WindowBase) Bounds() Rectangle {
 	}
 }
 
-// SetBounds returns the outer bounding box Rectangle of the *WindowBase,
+// SetBounds sets the outer bounding box Rectangle of the *WindowBase,
 // including decorations.
 //
 // For a Form, like *MainWindow or *Dialog, the Rectangle is in screen
@@ -871,7 +875,7 @@ func (wb *WindowBase) calculateTextSizeImpl(text string) Size {
 	}
 	defer win.ReleaseDC(wb.hWnd, hdc)
 
-	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(wb.Font().handleForDPI(0)))
+	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(wb.window.Font().handleForDPI(0)))
 	defer win.SelectObject(hdc, hFontOld)
 
 	var size Size

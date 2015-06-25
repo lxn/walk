@@ -17,10 +17,6 @@ type DataBinder struct {
 }
 
 func (db DataBinder) create() (*walk.DataBinder, error) {
-	if db.DataSource == nil {
-		return nil, nil
-	}
-
 	b := walk.NewDataBinder()
 
 	if db.ErrorPresenter != nil {

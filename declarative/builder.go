@@ -111,7 +111,7 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	b.declWidgets = append(b.declWidgets, declWidget{d, w})
 
 	// Widget
-	name, _, _, font, toolTipText, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, contextMenuItems, onKeyDown, onKeyPress, onKeyUp, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
+	name, _, _, font, toolTipText, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, alwaysConsumeSpace, contextMenuItems, onKeyDown, onKeyPress, onKeyUp, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
 
 	w.SetName(name)
 
@@ -171,6 +171,10 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	}
 
 	if widget, ok := w.(walk.Widget); ok {
+		if err := widget.SetAlwaysConsumeSpace(alwaysConsumeSpace); err != nil {
+			return err
+		}
+
 		if p := widget.Parent(); p != nil {
 			switch l := p.Layout().(type) {
 			case *walk.BoxLayout:
@@ -251,9 +255,12 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 				}
 			}
 
-			var err error
-			if db, err = dataBinder.create(); err != nil {
-				return err
+			if dataBinder.AssignTo != nil || dataBinder.DataSource != nil {
+				if dataB, err := dataBinder.create(); err != nil {
+					return err
+				} else {
+					db = dataB
+				}
 			}
 		}
 	}
@@ -290,6 +297,10 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 				b.Defer(func() error {
 					// FIXME: Currently SetDataBinder must be called after initProperties.
 					wc.SetDataBinder(db)
+
+					if db.DataSource() == nil {
+						return nil
+					}
 
 					return db.Reset()
 				})

@@ -85,6 +85,20 @@ func NewIconFromResource(resName string) (ic *Icon, err error) {
 	return
 }
 
+func NewIconFromResourceId(id uintptr) (*Icon, error) {
+	hInst := win.GetModuleHandle(nil)
+	if hInst == 0 {
+		return nil, lastError("GetModuleHandle")
+	}
+
+	hIcon := win.LoadIcon(hInst, win.MAKEINTRESOURCE(id))
+	if hIcon == 0 {
+		return nil, lastError("LoadIcon")
+	}
+
+	return &Icon{hIcon: hIcon}, nil
+}
+
 func NewIconFromImage(im image.Image) (ic *Icon, err error) {
 	hIcon, err := createAlphaCursorOrIconFromImage(im, image.Pt(0, 0), true)
 	if err != nil {
@@ -94,18 +108,31 @@ func NewIconFromImage(im image.Image) (ic *Icon, err error) {
 }
 
 // Dispose releases the operating system resources associated with the Icon.
-func (i *Icon) Dispose() error {
+func (i *Icon) Dispose() {
 	if i.isStock || i.hIcon == 0 {
-		return nil
+		return
 	}
 
-	if !win.DestroyIcon(i.hIcon) {
-		return lastError("DestroyIcon")
-	}
-
+	win.DestroyIcon(i.hIcon)
 	i.hIcon = 0
+}
+
+func (i *Icon) draw(hdc win.HDC, location Point) error {
+	s := i.Size()
+
+	return i.drawStretched(hdc, Rectangle{location.X, location.Y, s.Width, s.Height})
+}
+
+func (i *Icon) drawStretched(hdc win.HDC, bounds Rectangle) error {
+	if !win.DrawIconEx(hdc, int32(bounds.X), int32(bounds.Y), i.hIcon, int32(bounds.Width), int32(bounds.Height), 0, 0, win.DI_NORMAL) {
+		return lastError("DrawIconEx")
+	}
 
 	return nil
+}
+
+func (i *Icon) Size() Size {
+	return Size{int(win.GetSystemMetrics(win.SM_CXICON)), int(win.GetSystemMetrics(win.SM_CYICON))}
 }
 
 // create an Alpha Icon or Cursor from an Image

@@ -118,8 +118,9 @@ func (ne *NumberEdit) MinSizeHint() Size {
 // SizeHint returns information that is mainly interesting to Layout
 // implementations.
 func (ne *NumberEdit) SizeHint() Size {
-	s := ne.dialogBaseUnitsToPixels(Size{50, 12})
-	return Size{s.Width, maxi(s.Height, 22)}
+	return ne.dialogBaseUnitsToPixels(Size{50, 12})
+	//	s := ne.dialogBaseUnitsToPixels(Size{50, 12})
+	//	return Size{s.Width, maxi(s.Height, 22)}
 }
 
 // Decimals returns the number of decimal places in the NumberEdit.

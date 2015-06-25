@@ -54,6 +54,10 @@ func (s *Spacer) LayoutFlags() LayoutFlags {
 	return s.layoutFlags
 }
 
+func (s *Spacer) MinSizeHint() Size {
+	return s.sizeHint
+}
+
 func (s *Spacer) SizeHint() Size {
 	return s.sizeHint
 }
