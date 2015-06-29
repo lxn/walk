@@ -381,6 +381,8 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 		}
 	}
 
+	tv.SetCurrentIndex(-1)
+
 	return tv.setItemCount()
 }
 
