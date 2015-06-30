@@ -9,31 +9,35 @@ import (
 )
 
 type CheckBox struct {
-	AssignTo           **walk.CheckBox
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	ToolTipText        Property
-	MinSize            Size
-	MaxSize            Size
-	StretchFactor      int
-	Row                int
-	RowSpan            int
-	Column             int
-	ColumnSpan         int
-	AlwaysConsumeSpace bool
-	ContextMenuItems   []MenuItem
-	OnKeyDown          walk.KeyEventHandler
-	OnKeyPress         walk.KeyEventHandler
-	OnKeyUp            walk.KeyEventHandler
-	OnMouseDown        walk.MouseEventHandler
-	OnMouseMove        walk.MouseEventHandler
-	OnMouseUp          walk.MouseEventHandler
-	OnSizeChanged      walk.EventHandler
-	Text               Property
-	Checked            Property
-	OnClicked          walk.EventHandler
+	AssignTo            **walk.CheckBox
+	Name                string
+	Enabled             Property
+	Visible             Property
+	Font                Font
+	ToolTipText         Property
+	MinSize             Size
+	MaxSize             Size
+	StretchFactor       int
+	Row                 int
+	RowSpan             int
+	Column              int
+	ColumnSpan          int
+	AlwaysConsumeSpace  bool
+	ContextMenuItems    []MenuItem
+	OnKeyDown           walk.KeyEventHandler
+	OnKeyPress          walk.KeyEventHandler
+	OnKeyUp             walk.KeyEventHandler
+	OnMouseDown         walk.MouseEventHandler
+	OnMouseMove         walk.MouseEventHandler
+	OnMouseUp           walk.MouseEventHandler
+	OnSizeChanged       walk.EventHandler
+	Text                Property
+	Checked             Property
+	CheckState          Property
+	Tristate            bool
+	OnClicked           walk.EventHandler
+	OnCheckedChanged    walk.EventHandler
+	OnCheckStateChanged walk.EventHandler
 }
 
 func (cb CheckBox) Create(builder *Builder) error {
@@ -43,8 +47,20 @@ func (cb CheckBox) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(cb, w, func() error {
+		if err := w.SetTristate(cb.Tristate); err != nil {
+			return err
+		}
+
 		if cb.OnClicked != nil {
 			w.Clicked().Attach(cb.OnClicked)
+		}
+
+		if cb.OnCheckedChanged != nil {
+			w.CheckedChanged().Attach(cb.OnCheckedChanged)
+		}
+
+		if cb.OnCheckStateChanged != nil {
+			w.CheckStateChanged().Attach(cb.OnCheckStateChanged)
 		}
 
 		if cb.AssignTo != nil {

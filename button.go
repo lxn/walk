@@ -12,6 +12,10 @@ type clickable interface {
 	raiseClicked()
 }
 
+type setCheckeder interface {
+	setChecked(checked bool)
+}
+
 type Button struct {
 	WidgetBase
 	checkedChangedPublisher EventPublisher
@@ -96,7 +100,7 @@ func (b *Button) SetChecked(checked bool) {
 		return
 	}
 
-	b.setChecked(checked)
+	b.window.(setCheckeder).setChecked(checked)
 }
 
 func (b *Button) setChecked(checked bool) {
