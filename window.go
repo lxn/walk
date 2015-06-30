@@ -482,10 +482,7 @@ func (wb *WindowBase) setAndClearStyleBits(set, clear uint32) error {
 		return lastError("GetWindowLong")
 	}
 
-	var newStyle uint32
-	newStyle = (style | set) &^ clear
-
-	if newStyle != style {
+	if newStyle := style&^clear | set; newStyle != style {
 		win.SetLastError(0)
 		if win.SetWindowLong(wb.hWnd, win.GWL_STYLE, int32(newStyle)) == 0 {
 			return lastError("SetWindowLong")
