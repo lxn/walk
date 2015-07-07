@@ -526,6 +526,9 @@ func (wb *WindowBase) SetName(name string) {
 func (wb *WindowBase) writePath(buf *bytes.Buffer) {
 	hWndParent := win.GetAncestor(wb.hWnd, win.GA_PARENT)
 	if pwi := windowFromHandle(hWndParent); pwi != nil {
+		if sv, ok := pwi.(*ScrollView); ok {
+			pwi = sv.Parent()
+		}
 		pwi.AsWindowBase().writePath(buf)
 		buf.WriteByte('/')
 	}

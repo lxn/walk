@@ -99,6 +99,30 @@ func (sv *ScrollView) SetLayout(value Layout) error {
 	return sv.composite.SetLayout(value)
 }
 
+func (sv *ScrollView) Name() string {
+	return sv.composite.Name()
+}
+
+func (sv *ScrollView) SetName(name string) {
+	sv.composite.SetName(name)
+}
+
+func (sv *ScrollView) Persistent() bool {
+	return sv.composite.Persistent()
+}
+
+func (sv *ScrollView) SetPersistent(value bool) {
+	sv.composite.SetPersistent(value)
+}
+
+func (sv *ScrollView) SaveState() error {
+	return sv.composite.SaveState()
+}
+
+func (sv *ScrollView) RestoreState() error {
+	return sv.composite.RestoreState()
+}
+
 func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if sv.composite != nil {
 		switch msg {
