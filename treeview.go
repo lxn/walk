@@ -16,6 +16,7 @@ import (
 type treeViewItemInfo struct {
 	handle       win.HTREEITEM
 	child2Handle map[TreeItem]win.HTREEITEM
+	utf16Text    *uint16
 }
 
 type TreeView struct {
@@ -293,7 +294,7 @@ func (tv *TreeView) insertItem(index int, item TreeItem) (win.HTREEITEM, error) 
 	if hItem == 0 {
 		return 0, newError("TVM_INSERTITEM failed")
 	}
-	tv.item2Info[item] = &treeViewItemInfo{hItem, make(map[TreeItem]win.HTREEITEM)}
+	tv.item2Info[item] = &treeViewItemInfo{hItem, make(map[TreeItem]win.HTREEITEM), nil}
 	tv.handle2Item[hItem] = item
 
 	if !tv.lazyPopulation {
@@ -419,7 +420,9 @@ func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			item := tv.handle2Item[nmtvdi.Item.HItem]
 
 			if nmtvdi.Item.Mask&win.TVIF_TEXT != 0 {
-				nmtvdi.Item.PszText = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(item.Text())))
+				info := tv.item2Info[item]
+				info.utf16Text = syscall.StringToUTF16Ptr(item.Text())
+				nmtvdi.Item.PszText = uintptr(unsafe.Pointer(info.utf16Text))
 			}
 			if nmtvdi.Item.Mask&win.TVIF_CHILDREN != 0 {
 				nmtvdi.Item.CChildren = int32(item.ChildCount())
