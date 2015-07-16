@@ -50,7 +50,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 		return nil, err
 	}
 
-	gb.hWndGroupBox = win.CreateWindowEx(
+	gb.hWndGroupBox, _ = win.CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
 		win.WS_CHILD|win.WS_VISIBLE|win.BS_GROUPBOX,
 		0, 0, 80, 24, gb.hWnd, 0, 0, nil)

@@ -7,6 +7,7 @@ package walk
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -351,7 +352,8 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
-	wb.hWnd = win.CreateWindowEx(
+	var err syscall.Errno
+	wb.hWnd, err = win.CreateWindowEx(
 		exStyle,
 		syscall.StringToUTF16Ptr(className),
 		nil,
@@ -364,6 +366,8 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		0,
 		0,
 		nil)
+	file, _ := os.Open("NUL")
+	fmt.Fprintf(file, "%v", err)
 	if wb.hWnd == 0 {
 		return lastError("CreateWindowEx")
 	}

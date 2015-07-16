@@ -52,7 +52,7 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 
 	tw.SetPersistent(true)
 
-	tw.hWndTab = win.CreateWindowEx(
+	tw.hWndTab, _ = win.CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("SysTabControl32"), nil,
 		win.WS_CHILD|win.WS_CLIPSIBLINGS|win.WS_TABSTOP|win.WS_VISIBLE,
 		0, 0, 0, 0, tw.hWnd, 0, 0, nil)
