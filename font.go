@@ -26,6 +26,7 @@ var (
 	screenDPIX  int
 	screenDPIY  int
 	defaultFont *Font
+	knownFonts  = make(map[fontInfo]*Font)
 )
 
 func init() {
@@ -40,6 +41,12 @@ func init() {
 	if defaultFont, err = NewFont("MS Shell Dlg 2", 8, 0); err != nil {
 		panic("failed to create default font")
 	}
+}
+
+type fontInfo struct {
+	family    string
+	pointSize int
+	style     FontStyle
 }
 
 // Font represents a typographic typeface that is used for text drawing
@@ -57,6 +64,16 @@ func NewFont(family string, pointSize int, style FontStyle) (*Font, error) {
 		return nil, newError("invalid style")
 	}
 
+	fi := fontInfo{
+		family:    family,
+		pointSize: pointSize,
+		style:     style,
+	}
+
+	if font, ok := knownFonts[fi]; ok {
+		return font, nil
+	}
+
 	font := &Font{
 		family:    family,
 		pointSize: pointSize,
@@ -64,13 +81,7 @@ func NewFont(family string, pointSize int, style FontStyle) (*Font, error) {
 		dpi2hFont: make(map[int]win.HFONT),
 	}
 
-	hFont := font.createForDPI(screenDPIY)
-	if hFont == 0 {
-		return nil, newError("CreateFontIndirect failed")
-	}
-
-	font.dpi2hFont[screenDPIY] = hFont
-	font.dpi2hFont[0] = hFont // Make HFONT for screen easier accessible.
+	knownFonts[fi] = font
 
 	return font, nil
 }
@@ -169,6 +180,16 @@ func (f *Font) Italic() bool {
 //
 // A value of 0 returns a HFONT suitable for the screen.
 func (f *Font) handleForDPI(dpi int) win.HFONT {
+	if len(f.dpi2hFont) == 0 {
+		hFont := f.createForDPI(screenDPIY)
+		if hFont == 0 {
+			return 0
+		}
+
+		f.dpi2hFont[screenDPIY] = hFont
+		f.dpi2hFont[0] = hFont // Make HFONT for screen easier accessible.
+	}
+
 	hFont := f.dpi2hFont[dpi]
 	if hFont == 0 {
 		hFont = f.createForDPI(dpi)
