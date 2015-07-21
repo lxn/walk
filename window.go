@@ -24,6 +24,10 @@ const (
 
 // Window is an interface that provides operations common to all windows.
 type Window interface {
+	// AddDisposable adds a Disposable resource that should be disposed of
+	// together with this Window.
+	AddDisposable(d Disposable)
+
 	// AsWindowBase returns a *WindowBase, a pointer to an instance of the
 	// struct that implements most operations common to all windows.
 	AsWindowBase() *WindowBase
@@ -72,6 +76,10 @@ type Window interface {
 	// Also, if a Container is disposed of, all its descendants will be released
 	// as well.
 	Dispose()
+
+	// Disposing returns an Event that is published when the Window is disposed
+	// of.
+	Disposing() *Event
 
 	// Enabled returns if the Window is enabled for user interaction.
 	Enabled() bool
@@ -256,6 +264,8 @@ type WindowBase struct {
 	name                    string
 	font                    *Font
 	contextMenu             *Menu
+	disposables             []Disposable
+	disposingPublisher      EventPublisher
 	keyDownPublisher        KeyEventPublisher
 	keyPressPublisher       KeyEventPublisher
 	keyUpPublisher          KeyEventPublisher
@@ -553,6 +563,12 @@ func (wb *WindowBase) AsWindowBase() *WindowBase {
 	return wb
 }
 
+// AddDisposable adds a Disposable resource that should be disposed of
+// together with this Window.
+func (wb *WindowBase) AddDisposable(d Disposable) {
+	wb.disposables = append(wb.disposables, d)
+}
+
 // Dispose releases the operating system resources, associated with the
 // *WindowBase.
 //
@@ -560,8 +576,14 @@ func (wb *WindowBase) AsWindowBase() *WindowBase {
 // Also, if a Container is disposed of, all its descendants will be released
 // as well.
 func (wb *WindowBase) Dispose() {
+	for _, d := range wb.disposables {
+		d.Dispose()
+	}
+
 	hWnd := wb.hWnd
 	if hWnd != 0 {
+		wb.disposingPublisher.Publish()
+
 		switch w := wb.window.(type) {
 		case *ToolTip:
 		case Widget:
@@ -569,16 +591,25 @@ func (wb *WindowBase) Dispose() {
 		}
 
 		wb.hWnd = 0
-		win.DestroyWindow(hWnd)
+		if _, ok := hwnd2WindowBase[hWnd]; ok {
+			win.DestroyWindow(hWnd)
+		}
 	}
 
 	if cm := wb.contextMenu; cm != nil {
 		cm.actions.Clear()
+		cm.Dispose()
 	}
 
 	for _, p := range wb.name2Property {
 		p.SetSource(nil)
 	}
+}
+
+// Disposing returns an Event that is published when the Window is disposed
+// of.
+func (wb *WindowBase) Disposing() *Event {
+	return wb.disposingPublisher.Event()
 }
 
 // IsDisposed returns if the *WindowBase has been disposed of.
@@ -1292,23 +1323,22 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		wb.sizeChangedPublisher.Publish()
 
 	case win.WM_DESTROY:
-		switch w := wb.window.(type) {
-		case *ToolTip:
-		case Widget:
-			globalToolTip.RemoveTool(w)
+		if wb.origWndProcPtr != 0 {
+			// As we subclass all windows of system classes, we prevented the
+			// clean-up code in the WM_NCDESTROY handlers of some windows from
+			// being called. To fix this, we restore the original window
+			// procedure here.
+			win.SetWindowLongPtr(wb.hWnd, win.GWLP_WNDPROC, wb.origWndProcPtr)
 		}
 
 		delete(hwnd2WindowBase, hwnd)
 
-		wb.hWnd = 0
 		wb.window.Dispose()
+		wb.hWnd = 0
 	}
 
-	if window := windowFromHandle(hwnd); window != nil {
-		origWndProcPtr := window.AsWindowBase().origWndProcPtr
-		if origWndProcPtr != 0 {
-			return win.CallWindowProc(origWndProcPtr, hwnd, msg, wParam, lParam)
-		}
+	if wb.origWndProcPtr != 0 {
+		return win.CallWindowProc(wb.origWndProcPtr, hwnd, msg, wParam, lParam)
 	}
 
 	return win.DefWindowProc(hwnd, msg, wParam, lParam)

@@ -80,6 +80,7 @@ func (a *Action) release() {
 
 		if a.menu != nil {
 			a.menu.actions.Clear()
+			a.menu.Dispose()
 		}
 
 		delete(actionsById, a.id)

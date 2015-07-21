@@ -140,9 +140,7 @@ func NewTableView(parent Container) (*TableView, error) {
 func (tv *TableView) Dispose() {
 	tv.columns.unsetColumnsTV()
 
-	if tv.model != nil {
-		tv.detachModel()
-	}
+	tv.SetModel(nil)
 
 	if tv.hWnd != 0 {
 		if !win.KillTimer(tv.hWnd, tableViewCurrentIndexChangedTimerId) {

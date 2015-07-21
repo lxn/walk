@@ -47,7 +47,7 @@ func (pb PushButton) Create(builder *Builder) error {
 		img := pb.Image
 		if s, ok := img.(string); ok {
 			var err error
-			if img, err = walk.NewImageFromFile(s); err != nil {
+			if img, err = imageFromFile(s); err != nil {
 				return err
 			}
 		}

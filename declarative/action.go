@@ -180,7 +180,7 @@ func addToActionList(list *walk.ActionList, actions []*walk.Action) error {
 }
 
 func setActionImage(action *walk.Action, image interface{}) (err error) {
-	var img *walk.Bitmap
+	var img walk.Image
 
 	switch image := image.(type) {
 	case nil:
@@ -190,13 +190,14 @@ func setActionImage(action *walk.Action, image interface{}) (err error) {
 		img = image
 
 	case string:
-		if img, err = walk.NewBitmapFromFile(image); err != nil {
+		if img, err = imageFromFile(image); err != nil {
 			return
 		}
-
-	default:
-		return errors.New("invalid type for Image")
 	}
 
-	return action.SetImage(img)
+	if bmp, ok := img.(*walk.Bitmap); ok {
+		return action.SetImage(bmp)
+	}
+
+	return errors.New("invalid type for Image")
 }

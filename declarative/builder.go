@@ -14,7 +14,25 @@ import (
 	"github.com/lxn/walk"
 )
 
-var conditionsByName = make(map[string]walk.Condition)
+var (
+	conditionsByName = make(map[string]walk.Condition)
+	imagesByFilePath = make(map[string]walk.Image)
+)
+
+func imageFromFile(filePath string) (walk.Image, error) {
+	if image, ok := imagesByFilePath[filePath]; ok {
+		return image, nil
+	}
+
+	image, err := walk.NewImageFromFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	imagesByFilePath[filePath] = image
+
+	return image, nil
+}
 
 func MustRegisterCondition(name string, condition walk.Condition) {
 	if name == "" {
