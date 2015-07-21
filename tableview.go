@@ -140,7 +140,7 @@ func NewTableView(parent Container) (*TableView, error) {
 func (tv *TableView) Dispose() {
 	tv.columns.unsetColumnsTV()
 
-	tv.SetModel(nil)
+	tv.disposeImageListAndCaches()
 
 	if tv.hWnd != 0 {
 		if !win.KillTimer(tv.hWnd, tableViewCurrentIndexChangedTimerId) {
