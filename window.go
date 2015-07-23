@@ -1205,6 +1205,24 @@ func defaultWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (result u
 	return
 }
 
+type menuer interface {
+	Menu() *Menu
+}
+
+func menuContainsAction(menu *Menu, action *Action) bool {
+	if menu.Actions().Contains(action) {
+		return true
+	}
+
+	for _, a := range menu.actions.actions {
+		if a.menu != nil && menuContainsAction(a.menu, action) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (wb *WindowBase) handleKeyDown(wParam, lParam uintptr) {
 	key := Key(wParam)
 
@@ -1216,7 +1234,15 @@ func (wb *WindowBase) handleKeyDown(wParam, lParam uintptr) {
 		shortcut := Shortcut{ModifiersDown(), key}
 		if action, ok := shortcut2Action[shortcut]; ok {
 			if action.Visible() && action.Enabled() {
-				action.raiseTriggered()
+				window := wb.window
+
+				if w, ok := window.(Widget); ok {
+					window = ancestor(w)
+				}
+
+				if m, ok := window.(menuer); ok && menuContainsAction(m.Menu(), action) {
+					action.raiseTriggered()
+				}
 			}
 		}
 	}
