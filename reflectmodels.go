@@ -167,10 +167,6 @@ func (m *reflectTableModel) setDataMembers(dataMembers []string) {
 	for col, dm := range dataMembers {
 		m.columnPaths[col] = strings.Split(dm, ".")
 	}
-
-	if m.sorterBase != nil {
-		m.sort(0, SortAscending)
-	}
 }
 
 func (m *reflectTableModel) RowCount() int {

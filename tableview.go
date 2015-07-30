@@ -63,6 +63,8 @@ type TableView struct {
 	alternatingRowBGColor              Color
 	hasDarkAltBGColor                  bool
 	delayedCurrentIndexChangedCanceled bool
+	sortedColumnIndex                  int
+	sortOrder                          SortOrder
 }
 
 // NewTableView creates and returns a *TableView as child of the specified
@@ -373,9 +375,7 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 		}
 
 		if sorter, ok := tv.model.(Sorter); ok {
-			col := sorter.SortedColumn()
-			tv.setSelectedColumnIndex(col)
-			tv.setSortIcon(col, sorter.SortOrder())
+			sorter.Sort(tv.sortedColumnIndex, tv.sortOrder)
 		}
 	}
 
@@ -753,10 +753,8 @@ type tableViewColumnState struct {
 func (tv *TableView) SaveState() error {
 	var tvs tableViewState
 
-	if sorter, ok := tv.model.(Sorter); ok {
-		tvs.SortColumnName = tv.columns.items[sorter.SortedColumn()].name
-		tvs.SortOrder = sorter.SortOrder()
-	}
+	tvs.SortColumnName = tv.columns.items[tv.sortedColumnIndex].name
+	tvs.SortOrder = tv.sortOrder
 
 	tvs.Columns = make([]tableViewColumnState, tv.columns.Len())
 
@@ -878,15 +876,24 @@ func (tv *TableView) RestoreState() error {
 		return newError("LVM_SETCOLUMNORDERARRAY")
 	}
 
+	for i, c := range tvs.Columns {
+		if c.Name == tvs.SortColumnName {
+			tv.sortedColumnIndex = i
+			tv.sortOrder = tvs.SortOrder
+			break
+		}
+	}
+
 	if sorter, ok := tv.model.(Sorter); ok {
-		for i, c := range tvs.Columns {
-			if c.Name == tvs.SortColumnName {
+		if !sorter.ColumnSortable(tv.sortedColumnIndex) {
+			for i := range tvs.Columns {
 				if sorter.ColumnSortable(i) {
-					sorter.Sort(i, tvs.SortOrder)
+					tv.sortedColumnIndex = i
 				}
-				break
 			}
 		}
+
+		sorter.Sort(tv.sortedColumnIndex, tvs.SortOrder)
 	}
 
 	//if sorter, ok := tv.model.(Sorter); ok {
@@ -1289,6 +1296,8 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				} else {
 					order = SortDescending
 				}
+				tv.sortedColumnIndex = col
+				tv.sortOrder = order
 				sorter.Sort(col, order)
 			}
 
