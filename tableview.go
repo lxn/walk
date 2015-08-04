@@ -1286,7 +1286,6 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 			nmlv := (*win.NMLISTVIEW)(unsafe.Pointer(lParam))
 
 			col := tv.fromLVColIdx(nmlv.ISubItem)
-			tv.columnClickedPublisher.Publish(col)
 
 			if sorter, ok := tv.model.(Sorter); ok && sorter.ColumnSortable(col) {
 				prevCol := sorter.SortedColumn()
@@ -1300,6 +1299,8 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				tv.sortOrder = order
 				sorter.Sort(col, order)
 			}
+
+			tv.columnClickedPublisher.Publish(col)
 
 		case win.LVN_ITEMCHANGED:
 			nmlv := (*win.NMLISTVIEW)(unsafe.Pointer(lParam))
