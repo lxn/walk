@@ -408,7 +408,7 @@ func (l *BoxLayout) Update(reset bool) error {
 		}
 	}
 
-	sort.Sort(sortedWidgetInfo)
+	sort.Stable(sortedWidgetInfo)
 
 	cb := l.container.ClientBounds()
 	var start1, start2, space1, space2 int

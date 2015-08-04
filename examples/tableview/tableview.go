@@ -85,7 +85,7 @@ func (m *FooModel) SetChecked(row int, checked bool) error {
 func (m *FooModel) Sort(col int, order walk.SortOrder) error {
 	m.sortColumn, m.sortOrder = col, order
 
-	sort.Sort(m)
+	sort.Stable(m)
 
 	return m.SorterBase.Sort(col, order)
 }

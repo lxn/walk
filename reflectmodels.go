@@ -251,7 +251,7 @@ func (m *reflectTableModel) sort(col int, order SortOrder) error {
 	if sb := m.sorterBase; sb != nil {
 		sb.col, sb.order = col, order
 
-		sort.Sort(m)
+		sort.Stable(m)
 
 		sb.changedPublisher.Publish()
 

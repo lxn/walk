@@ -637,7 +637,7 @@ func (l *GridLayout) sectionSizes(orientation Orientation) []int {
 		}
 	}
 
-	sort.Sort(sortedSections)
+	sort.Stable(sortedSections)
 
 	cb := l.container.ClientBounds()
 	var space int
