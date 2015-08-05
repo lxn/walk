@@ -233,7 +233,7 @@ func main() {
 		AssignTo: &mainWindow,
 		Title:    "Walk File Browser Example",
 		MinSize:  Size{600, 400},
-		Size:     Size{800, 600},
+		Size:     Size{1024, 640},
 		Layout:   HBox{MarginsZero: true},
 		Children: []Widget{
 			HSplitter{
@@ -253,17 +253,18 @@ func main() {
 						},
 					},
 					TableView{
-						AssignTo: &tableView,
+						AssignTo:      &tableView,
+						StretchFactor: 2,
 						Columns: []TableViewColumn{
 							TableViewColumn{
 								DataMember: "Name",
-								Width:      200,
+								Width:      192,
 							},
 							TableViewColumn{
 								DataMember: "Size",
 								Format:     "%d",
 								Alignment:  AlignFar,
-								Width:      80,
+								Width:      64,
 							},
 							TableViewColumn{
 								DataMember: "Modified",
@@ -284,7 +285,8 @@ func main() {
 						},
 					},
 					WebView{
-						AssignTo: &webView,
+						AssignTo:      &webView,
+						StretchFactor: 2,
 					},
 				},
 			},

@@ -193,9 +193,13 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 			return err
 		}
 
+		type SetStretchFactorer interface {
+			SetStretchFactor(widget walk.Widget, factor int) error
+		}
+
 		if p := widget.Parent(); p != nil {
 			switch l := p.Layout().(type) {
-			case *walk.BoxLayout:
+			case SetStretchFactorer:
 				if stretchFactor < 1 {
 					stretchFactor = 1
 				}

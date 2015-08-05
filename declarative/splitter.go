@@ -42,6 +42,12 @@ func (s HSplitter) Create(builder *Builder) error {
 		return err
 	}
 
+	w.SetSuspended(true)
+	builder.Defer(func() error {
+		w.SetSuspended(false)
+		return nil
+	})
+
 	return builder.InitWidget(s, w, func() error {
 		if s.HandleWidth > 0 {
 			if err := w.SetHandleWidth(s.HandleWidth); err != nil {

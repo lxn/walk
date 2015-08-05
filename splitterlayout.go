@@ -9,15 +9,17 @@ import (
 )
 
 type splitterLayout struct {
-	container   Container
-	orientation Orientation
-	fractions   []float64
-	resetNeeded bool
+	container          Container
+	orientation        Orientation
+	fractions          []float64
+	hwnd2StretchFactor map[win.HWND]int
+	resetNeeded        bool
 }
 
 func newSplitterLayout(orientation Orientation) *splitterLayout {
 	return &splitterLayout{
-		orientation: orientation,
+		orientation:        orientation,
+		hwnd2StretchFactor: make(map[win.HWND]int),
 	}
 }
 
@@ -88,6 +90,47 @@ func (l *splitterLayout) SetFractions(fractions []float64) error {
 	return l.Update(false)
 }
 
+func (l *splitterLayout) StretchFactor(widget Widget) int {
+	if factor, ok := l.hwnd2StretchFactor[widget.Handle()]; ok {
+		return factor
+	}
+
+	return 1
+}
+
+func (l *splitterLayout) SetStretchFactor(widget Widget, factor int) error {
+	if factor != l.StretchFactor(widget) {
+		if l.container == nil {
+			return newError("container required")
+		}
+
+		handle := widget.Handle()
+
+		if !l.container.Children().containsHandle(handle) {
+			return newError("unknown widget")
+		}
+		if factor < 1 {
+			return newError("factor must be >= 1")
+		}
+
+		l.hwnd2StretchFactor[handle] = factor
+
+		l.Update(false)
+	}
+
+	return nil
+}
+
+func (l *splitterLayout) cleanupStretchFactors() {
+	widgets := l.container.Children()
+
+	for handle, _ := range l.hwnd2StretchFactor {
+		if !widgets.containsHandle(handle) {
+			delete(l.hwnd2StretchFactor, handle)
+		}
+	}
+}
+
 func (l *splitterLayout) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
@@ -125,6 +168,8 @@ func (l *splitterLayout) spaceForRegularWidgets() int {
 }
 
 func (l *splitterLayout) reset() {
+	l.cleanupStretchFactors()
+
 	children := l.container.Children()
 	regularCount := children.Len()/2 + children.Len()%2
 
@@ -140,10 +185,27 @@ func (l *splitterLayout) reset() {
 		return
 	}
 
-	fraction := 1 / float64(regularCount)
+	stretchTotal := 0
+	for i := children.Len() - 1; i >= 0; i-- {
+		if i%2 == 1 {
+			continue
+		}
 
-	for i := 0; i < regularCount; i++ {
-		l.fractions[i] = fraction
+		child := children.At(i)
+
+		stretchTotal += l.StretchFactor(child)
+	}
+
+	j := len(l.fractions) - 1
+	for i := children.Len() - 1; i >= 0; i-- {
+		if i%2 == 1 {
+			continue
+		}
+
+		child := children.At(i)
+
+		l.fractions[j] = float64(l.StretchFactor(child)) / float64(stretchTotal)
+		j--
 	}
 }
 
