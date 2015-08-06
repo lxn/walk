@@ -113,6 +113,12 @@ func (lep *LineErrorPresenter) SizeHint() Size {
 	return lep.MinSizeHint()
 }
 
+func (lep *LineErrorPresenter) applyFont(font *Font) {
+	lep.WidgetBase.applyFont(font)
+
+	lep.composite.applyFont(font)
+}
+
 func (lep *LineErrorPresenter) PresentError(err error, widget Widget) {
 	if err == nil {
 		delete(lep.widget2error, widget)

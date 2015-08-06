@@ -82,25 +82,8 @@ func (ne *NumberEdit) SetEnabled(value bool) {
 	ne.WidgetBase.SetEnabled(value)
 }
 
-// Font returns the Font of the NumberEdit.
-func (ne *NumberEdit) Font() *Font {
-	var f *Font
-	if ne.edit != nil {
-		f = ne.font
-	}
-
-	if f != nil {
-		return f
-	} else if ne.parent != nil {
-		return ne.parent.Font()
-	}
-
-	return defaultFont
-}
-
-// SetFont sets the Font of the NumberEdit.
-func (ne *NumberEdit) SetFont(value *Font) {
-	ne.edit.SetFont(value)
+func (ne *NumberEdit) applyFont(font *Font) {
+	ne.edit.applyFont(font)
 }
 
 // LayoutFlags returns information that is mainly interesting to Layout

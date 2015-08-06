@@ -685,17 +685,25 @@ func (wb *WindowBase) Font() *Font {
 	return defaultFont
 }
 
-func setWindowFont(hwnd win.HWND, font *Font) {
-	win.SendMessage(hwnd, win.WM_SETFONT, uintptr(font.handleForDPI(0)), 1)
+// SetFont sets the *Font of the *WindowBase.
+func (wb *WindowBase) SetFont(font *Font) {
+	if font != wb.font {
+		wb.font = font
+
+		wb.window.(applyFonter).applyFont(font)
+	}
 }
 
-// SetFont sets the *Font of the *WindowBase.
-func (wb *WindowBase) SetFont(value *Font) {
-	if value != wb.font {
-		setWindowFont(wb.hWnd, value)
+type applyFonter interface {
+	applyFont(font *Font)
+}
 
-		wb.font = value
-	}
+func (wb *WindowBase) applyFont(font *Font) {
+	setWindowFont(wb.hWnd, font)
+}
+
+func setWindowFont(hwnd win.HWND, font *Font) {
+	win.SendMessage(hwnd, win.WM_SETFONT, uintptr(font.handleForDPI(0)), 1)
 }
 
 // Suspended returns if the *WindowBase is suspended for layout and repainting

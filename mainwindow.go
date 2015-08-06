@@ -136,6 +136,18 @@ func (mw *MainWindow) SetVisible(visible bool) {
 	mw.FormBase.SetVisible(visible)
 }
 
+func (mw *MainWindow) applyFont(font *Font) {
+	mw.FormBase.applyFont(font)
+
+	if mw.toolBar != nil {
+		mw.toolBar.applyFont(font)
+	}
+
+	if mw.statusBar != nil {
+		mw.statusBar.applyFont(font)
+	}
+}
+
 func (mw *MainWindow) Fullscreen() bool {
 	return win.GetWindowLong(mw.hWnd, win.GWL_STYLE)&win.WS_OVERLAPPEDWINDOW == 0
 }

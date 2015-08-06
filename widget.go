@@ -189,6 +189,12 @@ func (wb *WidgetBase) Font() *Font {
 	return defaultFont
 }
 
+func (wb *WidgetBase) applyFont(font *Font) {
+	wb.WindowBase.applyFont(font)
+
+	wb.updateParentLayout()
+}
+
 // Form returns the root ancestor Form of the Widget.
 func (wb *WidgetBase) Form() Form {
 	return ancestor(wb)

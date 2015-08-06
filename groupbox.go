@@ -59,8 +59,8 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	}
 
 	// Set font to nil first to outsmart SetFont.
-	gb.font = nil
-	gb.SetFont(defaultFont)
+	//	gb.font = nil
+	//	gb.SetFont(defaultFont)
 
 	gb.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
@@ -113,14 +113,10 @@ func (gb *GroupBox) ClientBounds() Rectangle {
 	return Rectangle{cb.X + 1, cb.Y + 14, cb.Width - 2, cb.Height - 9}
 }
 
-func (gb *GroupBox) SetFont(value *Font) {
-	if value != gb.font {
-		setWindowFont(gb.hWndGroupBox, value)
+func (gb *GroupBox) applyFont(font *Font) {
+	setWindowFont(gb.hWndGroupBox, font)
 
-		gb.font = value
-
-		gb.composite.SetFont(value)
-	}
+	gb.composite.applyFont(font)
 }
 
 func (gb *GroupBox) SetSuspended(suspend bool) {

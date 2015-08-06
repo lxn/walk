@@ -128,10 +128,12 @@ func (tw *TabWidget) SetEnabled(enabled bool) {
 	setDescendantsEnabled(tw, enabled)
 }
 
-func (tw *TabWidget) SetFont(f *Font) {
-	tw.WidgetBase.SetFont(f)
+func (tw *TabWidget) applyFont(font *Font) {
+	tw.WidgetBase.applyFont(font)
 
-	setDescendantsFont(tw, f)
+	setWindowFont(tw.hWndTab, font)
+
+	applyFontToDescendants(tw, font)
 }
 
 func (tw *TabWidget) CurrentIndex() int {

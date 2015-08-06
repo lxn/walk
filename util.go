@@ -201,9 +201,9 @@ func setDescendantsEnabled(window Window, enabled bool) {
 	})
 }
 
-func setDescendantsFont(window Window, f *Font) {
+func applyFontToDescendants(window Window, font *Font) {
 	wb := window.AsWindowBase()
-	wb.SetFont(f)
+	wb.applyFont(font)
 
 	walkDescendants(window, func(w Window) bool {
 		if w.Handle() == wb.hWnd {
@@ -214,7 +214,7 @@ func setDescendantsFont(window Window, f *Font) {
 			return false
 		}
 
-		setWindowFont(w.Handle(), f)
+		w.(applyFonter).applyFont(font)
 
 		return true
 	})

@@ -202,20 +202,10 @@ func (fb *FormBase) SetEnabled(enabled bool) {
 	fb.WindowBase.SetEnabled(enabled)
 }
 
-func (fb *FormBase) Font() *Font {
-	if fb.font != nil {
-		return fb.font
-	}
+func (fb *FormBase) applyFont(font *Font) {
+	fb.WindowBase.applyFont(font)
 
-	return defaultFont
-}
-
-func (fb *FormBase) SetFont(value *Font) {
-	if value != fb.font {
-		fb.WindowBase.SetFont(value)
-
-		fb.clientComposite.SetFont(value)
-	}
+	fb.clientComposite.applyFont(font)
 }
 
 func (fb *FormBase) Title() string {

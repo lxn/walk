@@ -109,10 +109,10 @@ func (cb *ContainerBase) SetEnabled(enabled bool) {
 	setDescendantsEnabled(cb.window.(Widget), enabled)
 }
 
-func (cb *ContainerBase) SetFont(f *Font) {
-	cb.WidgetBase.SetFont(f)
+func (cb *ContainerBase) applyFont(font *Font) {
+	cb.WidgetBase.applyFont(font)
 
-	setDescendantsFont(cb.window.(Widget), f)
+	applyFontToDescendants(cb.window.(Widget), font)
 }
 
 func (cb *ContainerBase) Children() *WidgetList {
