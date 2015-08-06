@@ -8,6 +8,15 @@ import (
 	"github.com/lxn/walk"
 )
 
+type ToolBarButtonStyle int
+
+const (
+	ToolBarButtonImageOnly ToolBarButtonStyle = iota
+	ToolBarButtonTextOnly
+	ToolBarButtonImageBeforeText
+	ToolBarButtonImageAboveText
+)
+
 type ToolBar struct {
 	AssignTo           **walk.ToolBar
 	Name               string
@@ -31,20 +40,17 @@ type ToolBar struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
-	Actions            []*walk.Action
+	Actions            []*walk.Action // Deprecated, use Items instead
+	Items              []MenuItem
 	MaxTextRows        int
 	Orientation        Orientation
+	ButtonStyle        ToolBarButtonStyle
 }
 
-func (tb ToolBar) Create(builder *Builder) (err error) {
-	var w *walk.ToolBar
-	if tb.Orientation == Vertical {
-		w, err = walk.NewVerticalToolBar(builder.Parent())
-	} else {
-		w, err = walk.NewToolBar(builder.Parent())
-	}
+func (tb ToolBar) Create(builder *Builder) error {
+	w, err := walk.NewToolBarWithOrientationAndButtonStyle(builder.Parent(), walk.Orientation(tb.Orientation), walk.ToolBarButtonStyle(tb.ButtonStyle))
 	if err != nil {
-		return
+		return err
 	}
 
 	return builder.InitWidget(tb, w, func() error {
@@ -62,8 +68,12 @@ func (tb ToolBar) Create(builder *Builder) (err error) {
 			return err
 		}
 
-		if err := addToActionList(w.Actions(), tb.Actions); err != nil {
-			return err
+		if len(tb.Items) > 0 {
+			builder.deferBuildActions(w.Actions(), tb.Items)
+		} else {
+			if err := addToActionList(w.Actions(), tb.Actions); err != nil {
+				return err
+			}
 		}
 
 		if tb.AssignTo != nil {
