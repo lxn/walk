@@ -14,17 +14,42 @@ import (
 	"github.com/lxn/win"
 )
 
+type ToolBarButtonStyle int
+
+const (
+	ToolBarButtonImageOnly ToolBarButtonStyle = iota
+	ToolBarButtonTextOnly
+	ToolBarButtonImageBeforeText
+	ToolBarButtonImageAboveText
+)
+
 type ToolBar struct {
 	WidgetBase
 	imageList          *ImageList
 	actions            *ActionList
 	defaultButtonWidth int
 	maxTextRows        int
+	buttonStyle        ToolBarButtonStyle
 }
 
-func newToolBar(parent Container, style uint32) (*ToolBar, error) {
-	tb := new(ToolBar)
+func NewToolBarWithOrientationAndButtonStyle(parent Container, orientation Orientation, buttonStyle ToolBarButtonStyle) (*ToolBar, error) {
+	var style uint32
+	if orientation == Vertical {
+		style = win.CCS_VERT | win.CCS_NORESIZE
+	} else {
+		style = win.TBSTYLE_WRAPABLE
+	}
+
+	if buttonStyle != ToolBarButtonImageAboveText {
+		style |= win.TBSTYLE_LIST
+	}
+
+	tb := &ToolBar{buttonStyle: buttonStyle}
 	tb.actions = newActionList(tb)
+
+	if orientation == Vertical {
+		tb.defaultButtonWidth = 100
+	}
 
 	if err := InitWidget(
 		tb,
@@ -43,18 +68,11 @@ func newToolBar(parent Container, style uint32) (*ToolBar, error) {
 }
 
 func NewToolBar(parent Container) (*ToolBar, error) {
-	return newToolBar(parent, win.TBSTYLE_LIST|win.TBSTYLE_WRAPABLE)
+	return NewToolBarWithOrientationAndButtonStyle(parent, Horizontal, ToolBarButtonImageOnly)
 }
 
 func NewVerticalToolBar(parent Container) (*ToolBar, error) {
-	tb, err := newToolBar(parent, win.CCS_VERT|win.CCS_NORESIZE)
-	if err != nil {
-		return nil, err
-	}
-
-	tb.defaultButtonWidth = 100
-
-	return tb, nil
+	return NewToolBarWithOrientationAndButtonStyle(parent, Vertical, ToolBarButtonImageAboveText)
 }
 
 func (tb *ToolBar) LayoutFlags() LayoutFlags {
@@ -88,6 +106,10 @@ func (tb *ToolBar) SizeHint() Size {
 	height := int(win.HIWORD(size))
 
 	return Size{width, height}
+}
+
+func (tb *ToolBar) ButtonStyle() ToolBarButtonStyle {
+	return tb.buttonStyle
 }
 
 func (tb *ToolBar) applyDefaultButtonWidth() error {
@@ -174,7 +196,7 @@ func (tb *ToolBar) ImageList() *ImageList {
 func (tb *ToolBar) SetImageList(value *ImageList) {
 	var hIml win.HIMAGELIST
 
-	if value != nil {
+	if tb.buttonStyle != ToolBarButtonTextOnly && value != nil {
 		hIml = value.hIml
 	}
 
@@ -265,7 +287,7 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 		*style |= win.BTNS_GROUP
 	}
 
-	if action.image == nil {
+	if tb.buttonStyle != ToolBarButtonImageOnly {
 		*style |= win.BTNS_SHOWTEXT
 	}
 
@@ -281,12 +303,14 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 		*style = win.BTNS_SEP
 	}
 
-	if *image, err = tb.imageIndex(action.image); err != nil {
-		return
+	if tb.buttonStyle != ToolBarButtonTextOnly {
+		if *image, err = tb.imageIndex(action.image); err != nil {
+			return
+		}
 	}
 
 	var actionText string
-	if s := action.shortcut; s.Key != 0 {
+	if s := action.shortcut; tb.buttonStyle == ToolBarButtonImageOnly && s.Key != 0 {
 		actionText = fmt.Sprintf("%s (%s)", action.Text(), s.String())
 	} else {
 		actionText = action.Text()
