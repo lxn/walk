@@ -66,52 +66,55 @@ func main() {
 				},
 			},
 		},
-		ToolBarItems: []MenuItem{
-			ActionRef{&openAction},
-			Menu{
-				Text:  "New A",
-				Image: "../img/document-new.png",
-				Items: []MenuItem{
-					Action{
-						Text:        "A",
-						OnTriggered: mw.newAction_Triggered,
+		ToolBar: ToolBar{
+			ButtonStyle: ToolBarButtonImageBeforeText,
+			Items: []MenuItem{
+				ActionRef{&openAction},
+				Menu{
+					Text:  "New A",
+					Image: "../img/document-new.png",
+					Items: []MenuItem{
+						Action{
+							Text:        "A",
+							OnTriggered: mw.newAction_Triggered,
+						},
+						Action{
+							Text:        "B",
+							OnTriggered: mw.newAction_Triggered,
+						},
+						Action{
+							Text:        "C",
+							OnTriggered: mw.newAction_Triggered,
+						},
 					},
-					Action{
-						Text:        "B",
-						OnTriggered: mw.newAction_Triggered,
-					},
-					Action{
-						Text:        "C",
-						OnTriggered: mw.newAction_Triggered,
+					OnTriggered: mw.newAction_Triggered,
+				},
+				Separator{},
+				Menu{
+					Text:  "View",
+					Image: "../img/document-properties.png",
+					Items: []MenuItem{
+						Action{
+							Text:        "X",
+							OnTriggered: mw.changeViewAction_Triggered,
+						},
+						Action{
+							Text:        "Y",
+							OnTriggered: mw.changeViewAction_Triggered,
+						},
+						Action{
+							Text:        "Z",
+							OnTriggered: mw.changeViewAction_Triggered,
+						},
 					},
 				},
-				OnTriggered: mw.newAction_Triggered,
-			},
-			Separator{},
-			Menu{
-				Text:  "View",
-				Image: "../img/document-properties.png",
-				Items: []MenuItem{
-					Action{
-						Text:        "X",
-						OnTriggered: mw.changeViewAction_Triggered,
-					},
-					Action{
-						Text:        "Y",
-						OnTriggered: mw.changeViewAction_Triggered,
-					},
-					Action{
-						Text:        "Z",
-						OnTriggered: mw.changeViewAction_Triggered,
-					},
+				Separator{},
+				Action{
+					Text:        "Special",
+					Image:       "../img/system-shutdown.png",
+					Enabled:     Bind("isSpecialMode && enabledCB.Checked"),
+					OnTriggered: mw.specialAction_Triggered,
 				},
-			},
-			Separator{},
-			Action{
-				Text:        "Special",
-				Image:       "../img/system-shutdown.png",
-				Enabled:     Bind("isSpecialMode && enabledCB.Checked"),
-				OnTriggered: mw.specialAction_Triggered,
 			},
 		},
 		ContextMenuItems: []MenuItem{
