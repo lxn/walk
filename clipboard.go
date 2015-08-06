@@ -18,7 +18,7 @@ const clipboardWindowClass = `\o/ Walk_Clipboard_Class \o/`
 func init() {
 	MustRegisterWindowClass(clipboardWindowClass)
 
-	hwnd := win.CreateWindowEx(
+	hwnd, _ := win.CreateWindowEx(
 		0,
 		syscall.StringToUTF16Ptr(clipboardWindowClass),
 		nil,

@@ -87,7 +87,7 @@ type NotifyIcon struct {
 // The NotifyIcon is initially not visible.
 func NewNotifyIcon() (*NotifyIcon, error) {
 	// Create the message-only window for the NotifyIcon.
-	hWnd := win.CreateWindowEx(
+	hWnd, _ := win.CreateWindowEx(
 		0,
 		syscall.StringToUTF16Ptr(notifyIconWindowClass),
 		nil,
