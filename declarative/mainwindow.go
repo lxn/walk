@@ -30,7 +30,8 @@ type MainWindow struct {
 	Layout           Layout
 	Children         []Widget
 	MenuItems        []MenuItem
-	ToolBarItems     []MenuItem
+	ToolBarItems     []MenuItem // Deprecated, use ToolBar instead
+	ToolBar          ToolBar
 }
 
 func (mw MainWindow) Create() error {
@@ -67,9 +68,25 @@ func (mw MainWindow) Create() error {
 	})
 
 	builder.deferBuildMenuActions(w.Menu(), mw.MenuItems)
-	builder.deferBuildActions(w.ToolBar().Actions(), mw.ToolBarItems)
 
 	return builder.InitWidget(tlwi, w, func() error {
+		if len(mw.ToolBar.Items) > 0 {
+			var tb *walk.ToolBar
+			if mw.ToolBar.AssignTo == nil {
+				mw.ToolBar.AssignTo = &tb
+			}
+
+			if err := mw.ToolBar.Create(builder); err != nil {
+				return err
+			}
+
+			old := w.ToolBar()
+			w.SetToolBar(*mw.ToolBar.AssignTo)
+			old.Dispose()
+		} else {
+			builder.deferBuildActions(w.ToolBar().Actions(), mw.ToolBarItems)
+		}
+
 		if err := w.SetTitle(mw.Title); err != nil {
 			return err
 		}
