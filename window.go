@@ -339,6 +339,11 @@ func MustRegisterWindowClassWithWndProcPtr(className string, wndProcPtr uintptr)
 	registeredWindowClasses[className] = true
 }
 
+// FocusedWindow returns the Window that has the keyboard input focus.
+func FocusedWindow() Window {
+	return windowFromHandle(win.GetFocus())
+}
+
 // InitWindow initializes a window.
 //
 // Widgets should be initialized using InitWidget instead.
