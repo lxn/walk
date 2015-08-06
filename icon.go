@@ -7,7 +7,9 @@ package walk
 import (
 	"image"
 	"path/filepath"
+	"strconv"
 	"syscall"
+	"unsafe"
 )
 
 import (
@@ -72,12 +74,18 @@ func NewIconFromFile(filePath string) (*Icon, error) {
 
 // NewIconFromResource returns a new Icon, using the specified icon resource.
 func NewIconFromResource(resName string) (ic *Icon, err error) {
+	var lpIconName *uint16
 	hInst := win.GetModuleHandle(nil)
 	if hInst == 0 {
 		err = lastError("GetModuleHandle")
 		return
 	}
-	if hIcon := win.LoadIcon(hInst, syscall.StringToUTF16Ptr(resName)); hIcon == 0 {
+	if id, atoierr := strconv.Atoi(resName); atoierr == nil {
+		lpIconName = (*uint16)(unsafe.Pointer(uintptr(id)))
+	} else {
+		lpIconName = syscall.StringToUTF16Ptr(resName)
+	}
+	if hIcon := win.LoadIcon(hInst, lpIconName); hIcon == 0 {
 		err = lastError("LoadIcon")
 	} else {
 		ic = &Icon{hIcon: hIcon}

@@ -31,6 +31,7 @@ type MainWindow struct {
 	Children         []Widget
 	MenuItems        []MenuItem
 	ToolBarItems     []MenuItem
+	ShowStatusBar    bool
 }
 
 func (mw MainWindow) Create() error {
@@ -86,6 +87,10 @@ func (mw MainWindow) Create() error {
 
 		if mw.AssignTo != nil {
 			*mw.AssignTo = w
+		}
+
+		if mw.ShowStatusBar == true {
+			w.StatusBar().SetVisible(true)
 		}
 
 		builder.Defer(func() error {

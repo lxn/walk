@@ -303,6 +303,39 @@ func (l *BoxLayout) MinSize() Size {
 	return s
 }
 
+func (l *BoxLayout) MaxSize() Size {
+	if l.container == nil {
+		return Size{}
+	}
+
+	widgets := l.widgets()
+	var s Size
+
+	for _, widget := range widgets {
+		max := maxSizeEffective(widget)
+
+		if l.orientation == Horizontal {
+			s.Width += max.Width
+			s.Height = maxi(s.Height, max.Height)
+		} else {
+			s.Height += max.Height
+			s.Width = maxi(s.Width, max.Width)
+		}
+	}
+
+	if l.orientation == Horizontal {
+		s.Width += l.spacing * (len(widgets) - 1)
+		s.Width += l.margins.HNear + l.margins.HFar
+		s.Height += l.margins.VNear + l.margins.VFar
+	} else {
+		s.Height += l.spacing * (len(widgets) - 1)
+		s.Height += l.margins.VNear + l.margins.VFar
+		s.Width += l.margins.HNear + l.margins.HFar
+	}
+
+	return s
+}
+
 func (l *BoxLayout) Update(reset bool) error {
 	if l.container == nil {
 		return nil

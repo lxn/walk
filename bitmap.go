@@ -7,6 +7,7 @@ package walk
 import (
 	"fmt"
 	"image"
+	"strconv"
 	"syscall"
 	"unsafe"
 )
@@ -182,6 +183,26 @@ func NewBitmapFromFile(filePath string) (*Bitmap, error) {
 	}
 
 	return newBitmapFromHBITMAP(hBmp)
+}
+
+func NewBitmapFromResource(resName string) (b *Bitmap, err error) {
+	var lpBitMapName *uint16
+	hInst := win.GetModuleHandle(nil)
+	if hInst == 0 {
+		err = lastError("GetModuleHandle")
+		return
+	}
+	if id, atoierr := strconv.Atoi(resName); atoierr == nil {
+		lpBitMapName = (*uint16)(unsafe.Pointer(uintptr(id)))
+	} else {
+		lpBitMapName = syscall.StringToUTF16Ptr(resName)
+	}
+	if hBitMap := win.LoadBitmap(hInst, lpBitMapName); hBitMap == 0 {
+		err = lastError("LoadBitmap")
+	} else {
+		b = &Bitmap{hBmp: hBitMap}
+	}
+	return
 }
 
 func NewBitmapFromImage(im image.Image) (*Bitmap, error) {

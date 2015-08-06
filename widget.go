@@ -348,3 +348,7 @@ func ancestor(w Widget) Form {
 func minSizeEffective(w Widget) Size {
 	return maxSize(w.MinSize(), w.MinSizeHint())
 }
+
+func maxSizeEffective(w Widget) Size {
+	return maxSize(w.MaxSize(), w.MinSizeHint())
+}

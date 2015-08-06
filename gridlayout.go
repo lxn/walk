@@ -408,6 +408,57 @@ func (l *GridLayout) MinSize() Size {
 	return Size{width, height}
 }
 
+func (l *GridLayout) MaxSize() Size {
+	if l.container == nil {
+		return Size{}
+	}
+
+	widths := make([]int, len(l.cells[0]))
+	heights := make([]int, len(l.cells))
+
+	widget2MaxSize := make(map[Widget]Size)
+
+	for widget, _ := range l.widget2Info {
+		if !shouldLayoutWidget(widget) {
+			continue
+		}
+
+		widget2MaxSize[widget] = maxSizeEffective(widget)
+	}
+
+	for row := 0; row < len(heights); row++ {
+		for col := 0; col < len(widths); col++ {
+			widget := l.cells[row][col].widget
+
+			if !shouldLayoutWidget(widget) {
+				continue
+			}
+
+			min := widget2MaxSize[widget]
+			info := l.widget2Info[widget]
+
+			if info.spanHorz == 1 {
+				widths[col] = maxi(widths[col], min.Width)
+			}
+			if info.spanVert == 1 {
+				heights[row] = maxi(heights[row], min.Height)
+			}
+		}
+	}
+
+	width := l.margins.HNear + l.spacing*(len(widths)-1) + l.margins.HFar
+	height := l.margins.VNear + l.spacing*(len(heights)-1) + l.margins.VFar
+
+	for _, w := range widths {
+		width += w
+	}
+	for _, h := range heights {
+		height += h
+	}
+
+	return Size{width, height}
+}
+
 type gridLayoutSectionInfo struct {
 	index              int
 	minSize            int
