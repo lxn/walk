@@ -53,6 +53,8 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 		return nil, err
 	}
 
+	ne.edit.applyFont(ne.Font())
+
 	if err = ne.SetValue(0); err != nil {
 		return nil, err
 	}
@@ -83,6 +85,12 @@ func (ne *NumberEdit) SetEnabled(value bool) {
 }
 
 func (ne *NumberEdit) applyFont(font *Font) {
+	ne.WidgetBase.applyFont(font)
+
+	if ne.edit == nil {
+		return
+	}
+
 	ne.edit.applyFont(font)
 }
 

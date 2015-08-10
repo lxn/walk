@@ -309,6 +309,8 @@ func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err error) 
 		cb.layout.Update(true)
 	}
 
+	widget.(applyFonter).applyFont(cb.Font())
+
 	return
 }
 

@@ -56,6 +56,8 @@ func NewLineErrorPresenter(parent Container) (*LineErrorPresenter, error) {
 		return nil, err
 	}
 
+	lep.composite.applyFont(lep.Font())
+
 	l := NewGridLayout()
 	l.SetMargins(Margins{2, 2, 2, 2})
 
@@ -115,6 +117,10 @@ func (lep *LineErrorPresenter) SizeHint() Size {
 
 func (lep *LineErrorPresenter) applyFont(font *Font) {
 	lep.WidgetBase.applyFont(font)
+
+	if lep.composite == nil {
+		return
+	}
 
 	lep.composite.applyFont(font)
 }

@@ -61,6 +61,8 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 	}
 	win.SendMessage(tw.hWndTab, win.WM_SETFONT, uintptr(defaultFont.handleForDPI(0)), 1)
 
+	setWindowFont(tw.hWndTab, tw.Font())
+
 	tw.MustRegisterProperty("HasCurrentPage", NewReadOnlyBoolProperty(
 		func() bool {
 			return tw.CurrentIndex() != -1
@@ -352,6 +354,8 @@ func (tw *TabWidget) onInsertedPage(index int, page *TabPage) (err error) {
 	tw.resizePages()
 
 	page.tabWidget = tw
+
+	page.applyFont(tw.Font())
 
 	return
 }
