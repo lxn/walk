@@ -1278,6 +1278,8 @@ func (wb *WindowBase) handleKeyUp(wParam, lParam uintptr) {
 // When implementing your own WndProc to add or modify behavior, call the
 // WndProc of the embedded window for messages you don't handle yourself.
 func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	window := windowFromHandle(hwnd)
+
 	switch msg {
 	case win.WM_ERASEBKGND:
 		if wb.background == nil {
@@ -1376,8 +1378,10 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		wb.hWnd = 0
 	}
 
-	if wb.origWndProcPtr != 0 {
-		return win.CallWindowProc(wb.origWndProcPtr, hwnd, msg, wParam, lParam)
+	if window != nil {
+		if wndProc := window.AsWindowBase().origWndProcPtr; wndProc != 0 {
+			return win.CallWindowProc(wndProc, hwnd, msg, wParam, lParam)
+		}
 	}
 
 	return win.DefWindowProc(hwnd, msg, wParam, lParam)
