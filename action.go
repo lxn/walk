@@ -175,6 +175,8 @@ func (a *Action) SetEnabledCondition(c Condition) {
 			}
 		})
 	}
+
+	a.raiseChanged()
 }
 
 func (a *Action) Exclusive() bool {
@@ -336,6 +338,8 @@ func (a *Action) SetVisibleCondition(c Condition) {
 			}
 		})
 	}
+
+	a.raiseChanged()
 }
 
 func (a *Action) Triggered() *Event {
