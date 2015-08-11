@@ -84,6 +84,13 @@ type Window interface {
 	// Enabled returns if the Window is enabled for user interaction.
 	Enabled() bool
 
+	// Focused returns whether the Window has the keyboard input focus.
+	Focused() bool
+
+	// FocusedChanged returns an Event that you can attach to for handling focus
+	// changed events for the Window.
+	FocusedChanged() *Event
+
 	// Font returns the *Font of the Window.
 	//
 	// By default this is a MS Shell Dlg 2, 8 point font.
@@ -285,6 +292,8 @@ type WindowBase struct {
 	enabledChangedPublisher EventPublisher
 	visibleProperty         Property
 	visibleChangedPublisher EventPublisher
+	focusedProperty         Property
+	focusedChangedPublisher EventPublisher
 }
 
 var (
@@ -337,11 +346,6 @@ func MustRegisterWindowClassWithWndProcPtr(className string, wndProcPtr uintptr)
 	}
 
 	registeredWindowClasses[className] = true
-}
-
-// FocusedWindow returns the Window that has the keyboard input focus.
-func FocusedWindow() Window {
-	return windowFromHandle(win.GetFocus())
 }
 
 // InitWindow initializes a window.
@@ -438,8 +442,15 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		},
 		wb.visibleChangedPublisher.Event())
 
+	wb.focusedProperty = NewReadOnlyBoolProperty(
+		func() bool {
+			return wb.Focused()
+		},
+		wb.focusedChangedPublisher.Event())
+
 	wb.MustRegisterProperty("Enabled", wb.enabledProperty)
 	wb.MustRegisterProperty("Visible", wb.visibleProperty)
+	wb.MustRegisterProperty("Focused", wb.focusedProperty)
 
 	succeeded = true
 
@@ -1057,6 +1068,16 @@ func (wb *WindowBase) SetClientSize(value Size) error {
 	return wb.SetSize(wb.sizeFromClientSize(value))
 }
 
+// FocusedWindow returns the Window that has the keyboard input focus.
+func FocusedWindow() Window {
+	return windowFromHandle(win.GetFocus())
+}
+
+// Focused returns whether the Window has the keyboard input focus.
+func (wb *WindowBase) Focused() bool {
+	return wb.hWnd == win.GetFocus()
+}
+
 // SetFocus sets the keyboard input focus to the *WindowBase.
 func (wb *WindowBase) SetFocus() error {
 	if win.SetFocus(wb.hWnd) == 0 {
@@ -1064,6 +1085,12 @@ func (wb *WindowBase) SetFocus() error {
 	}
 
 	return nil
+}
+
+// FocusedChanged returns an Event that you can attach to for handling focus
+// change events for the WindowBase.
+func (wb *WindowBase) FocusedChanged() *Event {
+	return wb.focusedChangedPublisher.Event()
 }
 
 // CreateCanvas creates and returns a *Canvas that can be used to draw
@@ -1318,6 +1345,9 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	case win.WM_MOUSEMOVE:
 		wb.publishMouseEvent(&wb.mouseMovePublisher, wParam, lParam)
+
+	case win.WM_SETFOCUS, win.WM_KILLFOCUS:
+		wb.focusedChangedPublisher.Publish()
 
 	case win.WM_SETCURSOR:
 		if wb.cursor != nil {
