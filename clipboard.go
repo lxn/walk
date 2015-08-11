@@ -36,7 +36,21 @@ func init() {
 		panic("failed to create clipboard window")
 	}
 
+	if !win.AddClipboardFormatListener(hwnd) {
+		panic(lastError("AddClipboardFormatListener"))
+	}
+
 	clipboard.hwnd = hwnd
+}
+
+func clipboardWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
+	switch msg {
+	case win.WM_CLIPBOARDUPDATE:
+		clipboard.contentsChangedPublisher.Publish()
+		return 0
+	}
+
+	return win.DefWindowProc(hwnd, msg, wp, lp)
 }
 
 var clipboard ClipboardService
@@ -48,7 +62,14 @@ func Clipboard() *ClipboardService {
 
 // ClipboardService provides access to the system clipboard.
 type ClipboardService struct {
-	hwnd win.HWND
+	hwnd                     win.HWND
+	contentsChangedPublisher EventPublisher
+}
+
+// ContentsChanged returns an Event that you can attach to for handling
+// clipboard content changes.
+func (c *ClipboardService) ContentsChanged() *Event {
+	return c.contentsChangedPublisher.Event()
 }
 
 // Clear clears the contents of the clipboard.
