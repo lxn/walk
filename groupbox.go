@@ -58,9 +58,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 		return nil, lastError("CreateWindowEx(BUTTON)")
 	}
 
-	// Set font to nil first to outsmart SetFont.
-	//	gb.font = nil
-	//	gb.SetFont(defaultFont)
+	setWindowFont(gb.hWndGroupBox, gb.Font())
 
 	gb.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
@@ -114,9 +112,15 @@ func (gb *GroupBox) ClientBounds() Rectangle {
 }
 
 func (gb *GroupBox) applyFont(font *Font) {
-	setWindowFont(gb.hWndGroupBox, font)
+	gb.WidgetBase.applyFont(font)
 
-	gb.composite.applyFont(font)
+	if gb.hWndGroupBox != 0 {
+		setWindowFont(gb.hWndGroupBox, font)
+	}
+
+	if gb.composite != nil {
+		gb.composite.applyFont(font)
+	}
 }
 
 func (gb *GroupBox) SetSuspended(suspend bool) {
