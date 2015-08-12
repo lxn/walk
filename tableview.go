@@ -1168,7 +1168,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 		}
 
 	case win.WM_NOTIFY:
-		switch int32(((*win.NMHDR)(unsafe.Pointer(lParam))).Code) {
+		switch ((*win.NMHDR)(unsafe.Pointer(lParam))).Code {
 		case win.LVN_GETDISPINFO:
 			di := (*win.NMLVDISPINFO)(unsafe.Pointer(lParam))
 

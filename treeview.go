@@ -34,6 +34,7 @@ type TreeView struct {
 	filePath2IconIndex            map[string]int32
 	expandedChangedPublisher      TreeItemEventPublisher
 	currentItemChangedPublisher   EventPublisher
+	itemActivatedPublisher        EventPublisher
 }
 
 func NewTreeView(parent Container) (*TreeView, error) {
@@ -409,8 +410,17 @@ func (tv *TreeView) CurrentItemChanged() *Event {
 	return tv.currentItemChangedPublisher.Event()
 }
 
+func (tv *TreeView) ItemActivated() *Event {
+	return tv.itemActivatedPublisher.Event()
+}
+
 func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
+	case win.WM_GETDLGCODE:
+		if wParam == win.VK_RETURN {
+			return win.DLGC_WANTALLKEYS
+		}
+
 	case win.WM_NOTIFY:
 		nmhdr := (*win.NMHDR)(unsafe.Pointer(lParam))
 
@@ -455,6 +465,15 @@ func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			case win.TVE_EXPANDPARTIAL:
 
 			case win.TVE_TOGGLE:
+			}
+
+		case win.NM_DBLCLK:
+			tv.itemActivatedPublisher.Publish()
+
+		case win.TVN_KEYDOWN:
+			nmtvkd := (*win.NMTVKEYDOWN)(unsafe.Pointer(lParam))
+			if nmtvkd.WVKey == uint16(KeyReturn) {
+				tv.itemActivatedPublisher.Publish()
 			}
 
 		case win.TVN_SELCHANGED:
