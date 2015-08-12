@@ -35,6 +35,8 @@ type GroupBox struct {
 	DataBinder         DataBinder
 	Layout             Layout
 	Children           []Widget
+	Checkable          bool
+	Checked            Property
 }
 
 func (gb GroupBox) Create(builder *Builder) error {
@@ -53,6 +55,8 @@ func (gb GroupBox) Create(builder *Builder) error {
 		if err := w.SetTitle(gb.Title); err != nil {
 			return err
 		}
+
+		w.SetCheckable(gb.Checkable)
 
 		if gb.AssignTo != nil {
 			*gb.AssignTo = w

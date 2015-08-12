@@ -21,6 +21,7 @@ func init() {
 type GroupBox struct {
 	WidgetBase
 	hWndGroupBox          win.HWND
+	checkBox              *CheckBox
 	composite             *Composite
 	titleChangedPublisher EventPublisher
 }
@@ -44,12 +45,6 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 		}
 	}()
 
-	var err error
-	gb.composite, err = NewComposite(gb)
-	if err != nil {
-		return nil, err
-	}
-
 	gb.hWndGroupBox = win.CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
 		win.WS_CHILD|win.WS_VISIBLE|win.BS_GROUPBOX,
@@ -60,6 +55,28 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 
 	setWindowFont(gb.hWndGroupBox, gb.Font())
 
+	var err error
+
+	gb.checkBox, err = NewCheckBox(gb)
+	if err != nil {
+		return nil, err
+	}
+
+	gb.checkBox.SetChecked(true)
+
+	gb.checkBox.CheckedChanged().Attach(func() {
+		gb.applyEnabled(gb.checkBox.Checked())
+	})
+
+	setWindowVisible(gb.checkBox.hWnd, false)
+
+	gb.composite, err = NewComposite(gb)
+	if err != nil {
+		return nil, err
+	}
+
+	win.SetWindowPos(gb.checkBox.hWnd, win.HWND_TOP, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE)
+
 	gb.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
 			return gb.Title()
@@ -68,6 +85,16 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 			return gb.SetTitle(v.(string))
 		},
 		gb.titleChangedPublisher.Event()))
+
+	gb.MustRegisterProperty("Checked", NewBoolProperty(
+		func() bool {
+			return gb.Checked()
+		},
+		func(v bool) error {
+			gb.SetChecked(v)
+			return nil
+		},
+		gb.CheckedChanged()))
 
 	succeeded = true
 
@@ -93,7 +120,14 @@ func (gb *GroupBox) MinSizeHint() Size {
 
 	cmsh := gb.composite.MinSizeHint()
 
-	return Size{cmsh.Width + 2, cmsh.Height + 9}
+	if gb.Checkable() {
+		s := gb.checkBox.SizeHint()
+
+		cmsh.Width = maxi(cmsh.Width, s.Width)
+		cmsh.Height += s.Height
+	}
+
+	return Size{cmsh.Width + 2, cmsh.Height + 14}
 }
 
 func (gb *GroupBox) SizeHint() Size {
@@ -107,12 +141,21 @@ func (gb *GroupBox) ClientBounds() Rectangle {
 		return cb
 	}
 
+	if gb.Checkable() {
+		s := gb.checkBox.SizeHint()
+
+		cb.Y += s.Height
+		cb.Height -= s.Height
+	}
+
 	// FIXME: Use appropriate margins
-	return Rectangle{cb.X + 1, cb.Y + 14, cb.Width - 2, cb.Height - 9}
+	return Rectangle{cb.X + 1, cb.Y + 14, cb.Width - 2, cb.Height - 14}
 }
 
 func (gb *GroupBox) applyEnabled(enabled bool) {
-	gb.WidgetBase.applyEnabled(enabled)
+	if !gb.Checkable() {
+		gb.WidgetBase.applyEnabled(enabled)
+	}
 
 	if gb.hWndGroupBox != 0 {
 		setWindowEnabled(gb.hWndGroupBox, enabled)
@@ -150,11 +193,39 @@ func (gb *GroupBox) SetDataBinder(dataBinder *DataBinder) {
 }
 
 func (gb *GroupBox) Title() string {
+	if gb.Checkable() {
+		return gb.checkBox.Text()
+	}
+
 	return windowText(gb.hWndGroupBox)
 }
 
-func (gb *GroupBox) SetTitle(value string) error {
-	return setWindowText(gb.hWndGroupBox, value)
+func (gb *GroupBox) SetTitle(title string) error {
+	if gb.Checkable() {
+		return gb.checkBox.SetText(title)
+	}
+
+	return setWindowText(gb.hWndGroupBox, title)
+}
+
+func (gb *GroupBox) Checkable() bool {
+	return gb.checkBox.visible
+}
+
+func (gb *GroupBox) SetCheckable(visible bool) {
+	gb.checkBox.SetVisible(visible)
+}
+
+func (gb *GroupBox) Checked() bool {
+	return gb.checkBox.Checked()
+}
+
+func (gb *GroupBox) SetChecked(checked bool) {
+	gb.checkBox.SetChecked(checked)
+}
+
+func (gb *GroupBox) CheckedChanged() *Event {
+	return gb.checkBox.CheckedChanged()
 }
 
 func (gb *GroupBox) Children() *WidgetList {
@@ -183,6 +254,9 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		case win.WM_SETTEXT:
 			gb.titleChangedPublisher.Publish()
 
+		case win.WM_PAINT:
+			win.UpdateWindow(gb.checkBox.hWnd)
+
 		case win.WM_SIZE, win.WM_SIZING:
 			wbcb := gb.WidgetBase.ClientBounds()
 			if !win.MoveWindow(
@@ -195,6 +269,11 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 				lastError("MoveWindow")
 				break
+			}
+
+			if gb.Checkable() {
+				s := gb.checkBox.SizeHint()
+				gb.checkBox.SetBounds(Rectangle{9, 14, s.Width, s.Height})
 			}
 
 			gbcb := gb.ClientBounds()

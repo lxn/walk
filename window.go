@@ -796,13 +796,7 @@ func (wb *WindowBase) Visible() bool {
 
 // SetVisible sets if the *WindowBase is visible.
 func (wb *WindowBase) SetVisible(visible bool) {
-	var cmd int32
-	if visible {
-		cmd = win.SW_SHOW
-	} else {
-		cmd = win.SW_HIDE
-	}
-	win.ShowWindow(wb.hWnd, cmd)
+	setWindowVisible(wb.hWnd, visible)
 
 	wb.visible = visible
 
@@ -811,6 +805,16 @@ func (wb *WindowBase) SetVisible(visible bool) {
 	}
 
 	wb.visibleChangedPublisher.Publish()
+}
+
+func setWindowVisible(hwnd win.HWND, visible bool) {
+	var cmd int32
+	if visible {
+		cmd = win.SW_SHOW
+	} else {
+		cmd = win.SW_HIDE
+	}
+	win.ShowWindow(hwnd, cmd)
 }
 
 // BringToTop moves the *WindowBase to the top of the keyboard focus order.
