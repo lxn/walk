@@ -111,6 +111,18 @@ func (gb *GroupBox) ClientBounds() Rectangle {
 	return Rectangle{cb.X + 1, cb.Y + 14, cb.Width - 2, cb.Height - 9}
 }
 
+func (gb *GroupBox) applyEnabled(enabled bool) {
+	gb.WidgetBase.applyEnabled(enabled)
+
+	if gb.hWndGroupBox != 0 {
+		setWindowEnabled(gb.hWndGroupBox, enabled)
+	}
+
+	if gb.composite != nil {
+		gb.composite.applyEnabled(enabled)
+	}
+}
+
 func (gb *GroupBox) applyFont(font *Font) {
 	gb.WidgetBase.applyFont(font)
 

@@ -186,16 +186,20 @@ func formatFloatString(s string, prec int, grouped bool) string {
 	return b.String()
 }
 
-func setDescendantsEnabled(window Window, enabled bool) {
+func applyEnabledToDescendants(window Window, enabled bool) {
 	wb := window.AsWindowBase()
-	wb.SetEnabled(enabled)
+	wb.applyEnabled(enabled)
 
 	walkDescendants(window, func(w Window) bool {
 		if w.Handle() == wb.hWnd {
 			return true
 		}
 
-		win.EnableWindow(w.Handle(), enabled && w.AsWindowBase().enabled)
+		if enabled && !w.AsWindowBase().enabled {
+			return false
+		}
+
+		w.(applyEnableder).applyEnabled(enabled)
 
 		return true
 	})

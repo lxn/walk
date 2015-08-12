@@ -103,10 +103,10 @@ func (cb *ContainerBase) SizeHint() Size {
 	return Size{100, 100}
 }
 
-func (cb *ContainerBase) SetEnabled(enabled bool) {
-	cb.WidgetBase.SetEnabled(enabled)
+func (cb *ContainerBase) applyEnabled(enabled bool) {
+	cb.WidgetBase.applyEnabled(enabled)
 
-	setDescendantsEnabled(cb.window.(Widget), enabled)
+	applyEnabledToDescendants(cb.window.(Widget), enabled)
 }
 
 func (cb *ContainerBase) applyFont(font *Font) {

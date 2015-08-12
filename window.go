@@ -677,12 +677,26 @@ func (wb *WindowBase) Enabled() bool {
 }
 
 // SetEnabled sets if the *WindowBase is enabled for user interaction.
-func (wb *WindowBase) SetEnabled(value bool) {
-	wb.enabled = value
+func (wb *WindowBase) SetEnabled(enabled bool) {
+	wb.enabled = enabled
 
-	win.EnableWindow(wb.hWnd, wb.window.Enabled())
+	wb.window.(applyEnableder).applyEnabled(wb.window.Enabled())
 
 	wb.enabledChangedPublisher.Publish()
+}
+
+type applyEnableder interface {
+	applyEnabled(enabled bool)
+}
+
+func (wb *WindowBase) applyEnabled(enabled bool) {
+	setWindowEnabled(wb.hWnd, enabled)
+}
+
+func setWindowEnabled(hwnd win.HWND, enabled bool) {
+	win.EnableWindow(hwnd, enabled)
+
+	win.UpdateWindow(hwnd)
 }
 
 // Font returns the *Font of the *WindowBase.

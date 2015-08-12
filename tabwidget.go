@@ -124,10 +124,12 @@ func (tw *TabWidget) SizeHint() Size {
 	return Size{100, 100}
 }
 
-func (tw *TabWidget) SetEnabled(enabled bool) {
-	tw.WidgetBase.SetEnabled(enabled)
+func (tw *TabWidget) applyEnabled(enabled bool) {
+	tw.WidgetBase.applyEnabled(enabled)
 
-	setDescendantsEnabled(tw, enabled)
+	setWindowEnabled(tw.hWndTab, enabled)
+
+	applyEnabledToDescendants(tw, enabled)
 }
 
 func (tw *TabWidget) applyFont(font *Font) {

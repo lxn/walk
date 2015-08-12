@@ -73,15 +73,14 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 	return ne, nil
 }
 
-// Enabled returns whether the NumberEdit is enabled.
-func (ne *NumberEdit) Enabled() bool {
-	return ne.WidgetBase.Enabled()
-}
+func (ne *NumberEdit) applyEnabled(enabled bool) {
+	ne.WidgetBase.applyEnabled(enabled)
 
-// SetEnabled sets whether the NumberEdit is enabled.
-func (ne *NumberEdit) SetEnabled(value bool) {
-	ne.edit.SetEnabled(value)
-	ne.WidgetBase.SetEnabled(value)
+	if ne.edit == nil {
+		return
+	}
+
+	ne.edit.applyEnabled(enabled)
 }
 
 func (ne *NumberEdit) applyFont(font *Font) {
