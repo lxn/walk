@@ -1333,8 +1333,10 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				tv.delayedCurrentIndexChangedCanceled = true
 			}
 
-			tv.SetCurrentIndex(int(nmia.IItem))
-			tv.currentIndexChangedPublisher.Publish()
+			if int(nmia.IItem) != tv.currentIndex {
+				tv.SetCurrentIndex(int(nmia.IItem))
+				tv.currentIndexChangedPublisher.Publish()
+			}
 
 			tv.itemActivatedPublisher.Publish()
 		}
