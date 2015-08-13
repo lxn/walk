@@ -8,6 +8,14 @@ import (
 	"github.com/lxn/walk"
 )
 
+type CaseMode uint32
+
+const (
+	CaseModeMixed CaseMode = CaseMode(walk.CaseModeMixed)
+	CaseModeUpper CaseMode = CaseMode(walk.CaseModeUpper)
+	CaseModeLower CaseMode = CaseMode(walk.CaseModeLower)
+)
+
 type LineEdit struct {
 	AssignTo           **walk.LineEdit
 	Name               string
@@ -38,6 +46,7 @@ type LineEdit struct {
 	PasswordMode       bool
 	OnEditingFinished  walk.EventHandler
 	OnTextChanged      walk.EventHandler
+	CaseMode           CaseMode
 }
 
 func (le LineEdit) Create(builder *Builder) error {
@@ -54,6 +63,10 @@ func (le LineEdit) Create(builder *Builder) error {
 		}
 		w.SetMaxLength(le.MaxLength)
 		w.SetPasswordMode(le.PasswordMode)
+
+		if err := w.SetCaseMode(walk.CaseMode(le.CaseMode)); err != nil {
+			return err
+		}
 
 		if le.OnEditingFinished != nil {
 			w.EditingFinished().Attach(le.OnEditingFinished)

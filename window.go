@@ -500,8 +500,8 @@ func (wb *WindowBase) Property(name string) Property {
 	return wb.name2Property[name]
 }
 
-func (wb *WindowBase) hasStyleBits(bits uint) bool {
-	style := uint(win.GetWindowLong(wb.hWnd, win.GWL_STYLE))
+func (wb *WindowBase) hasStyleBits(bits uint32) bool {
+	style := uint32(win.GetWindowLong(wb.hWnd, win.GWL_STYLE))
 
 	return style&bits == bits
 }

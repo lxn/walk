@@ -13,6 +13,14 @@ import (
 	"github.com/lxn/win"
 )
 
+type CaseMode uint32
+
+const (
+	CaseModeMixed CaseMode = iota
+	CaseModeUpper
+	CaseModeLower
+)
+
 const (
 	lineEditMinChars    = 1  // 10 // number of characters needed to make a LineEdit usable
 	lineEditGreedyLimit = 29 // 80 // fields with MaxLength larger than this will be greedy (default length is 32767)
@@ -128,6 +136,40 @@ func (le *LineEdit) TextSelection() (start, end int) {
 
 func (le *LineEdit) SetTextSelection(start, end int) {
 	le.SendMessage(win.EM_SETSEL, uintptr(start), uintptr(end))
+}
+
+func (le *LineEdit) CaseMode() CaseMode {
+	style := uint32(win.GetWindowLong(le.hWnd, win.GWL_STYLE))
+
+	if style&win.ES_UPPERCASE != 0 {
+		return CaseModeUpper
+	} else if style&win.ES_LOWERCASE != 0 {
+		return CaseModeLower
+	} else {
+		return CaseModeMixed
+	}
+}
+
+func (le *LineEdit) SetCaseMode(mode CaseMode) error {
+	var set, clear uint32
+
+	switch mode {
+	case CaseModeMixed:
+		clear = win.ES_UPPERCASE | win.ES_LOWERCASE
+
+	case CaseModeUpper:
+		set = win.ES_UPPERCASE
+		clear = win.ES_LOWERCASE
+
+	case CaseModeLower:
+		set = win.ES_LOWERCASE
+		clear = win.ES_UPPERCASE
+
+	default:
+		panic("invalid CaseMode")
+	}
+
+	return le.setAndClearStyleBits(set, clear)
 }
 
 func (le *LineEdit) PasswordMode() bool {
