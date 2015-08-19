@@ -65,7 +65,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	gb.checkBox.SetChecked(true)
 
 	gb.checkBox.CheckedChanged().Attach(func() {
-		gb.applyEnabled(gb.checkBox.Checked())
+		gb.applyEnabledFromCheckBox(gb.checkBox.Checked())
 	})
 
 	setWindowVisible(gb.checkBox.hWnd, false)
@@ -153,10 +153,22 @@ func (gb *GroupBox) ClientBounds() Rectangle {
 }
 
 func (gb *GroupBox) applyEnabled(enabled bool) {
-	if !gb.Checkable() {
-		gb.WidgetBase.applyEnabled(enabled)
+	gb.WidgetBase.applyEnabled(enabled)
+
+	if gb.hWndGroupBox != 0 {
+		setWindowEnabled(gb.hWndGroupBox, enabled)
 	}
 
+	if gb.checkBox != nil {
+		gb.checkBox.applyEnabled(enabled)
+	}
+
+	if gb.composite != nil {
+		gb.composite.applyEnabled(enabled)
+	}
+}
+
+func (gb *GroupBox) applyEnabledFromCheckBox(enabled bool) {
 	if gb.hWndGroupBox != 0 {
 		setWindowEnabled(gb.hWndGroupBox, enabled)
 	}
