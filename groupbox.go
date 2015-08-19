@@ -181,6 +181,10 @@ func (gb *GroupBox) applyEnabledFromCheckBox(enabled bool) {
 func (gb *GroupBox) applyFont(font *Font) {
 	gb.WidgetBase.applyFont(font)
 
+	if gb.checkBox != nil {
+		gb.checkBox.applyFont(font)
+	}
+
 	if gb.hWndGroupBox != 0 {
 		setWindowFont(gb.hWndGroupBox, font)
 	}
