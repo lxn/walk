@@ -68,7 +68,7 @@ func newDialogWithStyle(owner Form, style uint32) (*Dialog, error) {
 		owner,
 		dialogWindowClass,
 		win.WS_CAPTION|win.WS_SYSMENU|style,
-		win.WS_EX_DLGMODALFRAME); err != nil {
+		0); err != nil {
 		return nil, err
 	}
 
