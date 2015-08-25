@@ -194,12 +194,10 @@ func (fb *FormBase) SetContextMenu(contextMenu *Menu) {
 	fb.clientComposite.SetContextMenu(contextMenu)
 }
 
-func (fb *FormBase) Enabled() bool {
-	return fb.enabled
-}
+func (fb *FormBase) applyEnabled(enabled bool) {
+	fb.WindowBase.applyEnabled(enabled)
 
-func (fb *FormBase) SetEnabled(enabled bool) {
-	fb.WindowBase.SetEnabled(enabled)
+	fb.clientComposite.applyEnabled(enabled)
 }
 
 func (fb *FormBase) applyFont(font *Font) {
