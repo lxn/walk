@@ -56,8 +56,6 @@ func NewLineErrorPresenter(parent Container) (*LineErrorPresenter, error) {
 		return nil, err
 	}
 
-	lep.composite.applyFont(lep.Font())
-
 	l := NewGridLayout()
 	l.SetMargins(Margins{2, 2, 2, 2})
 
@@ -122,7 +120,9 @@ func (lep *LineErrorPresenter) applyFont(font *Font) {
 		return
 	}
 
-	lep.composite.applyFont(font)
+	// We have to call SetFont instead of applyFont here, because
+	// LineErrorPresenter does not implement Container.
+	lep.composite.SetFont(font)
 }
 
 func (lep *LineErrorPresenter) PresentError(err error, widget Widget) {
