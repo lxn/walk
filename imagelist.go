@@ -22,7 +22,7 @@ func NewImageList(imageSize Size, maskColor Color) (*ImageList, error) {
 	hIml := win.ImageList_Create(
 		int32(imageSize.Width),
 		int32(imageSize.Height),
-		win.ILC_MASK|win.ILC_COLOR24,
+		win.ILC_MASK|win.ILC_COLOR32,
 		8,
 		8)
 	if hIml == 0 {
@@ -84,7 +84,7 @@ func imageListForImage(image interface{}) (hIml win.HIMAGELIST, isSysIml bool, e
 	} else {
 		w, h := win.GetSystemMetrics(win.SM_CXSMICON), win.GetSystemMetrics(win.SM_CYSMICON)
 
-		hIml = win.ImageList_Create(w, h, win.ILC_MASK|win.ILC_COLOR24, 8, 8)
+		hIml = win.ImageList_Create(w, h, win.ILC_MASK|win.ILC_COLOR32, 8, 8)
 		if hIml == 0 {
 			return 0, false, newError("ImageList_Create failed")
 		}
