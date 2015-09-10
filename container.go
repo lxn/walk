@@ -99,10 +99,6 @@ func (cb *ContainerBase) MinSizeHint() Size {
 	return cb.layout.MinSize()
 }
 
-func (cb *ContainerBase) SizeHint() Size {
-	return Size{100, 100}
-}
-
 func (cb *ContainerBase) applyEnabled(enabled bool) {
 	cb.WidgetBase.applyEnabled(enabled)
 
