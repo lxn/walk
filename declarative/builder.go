@@ -198,16 +198,29 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 		}
 
 		if p := widget.Parent(); p != nil {
+			if stretchFactor < 1 {
+				stretchFactor = 1
+			}
+
 			switch l := p.Layout().(type) {
 			case SetStretchFactorer:
-				if stretchFactor < 1 {
-					stretchFactor = 1
-				}
 				if err := l.SetStretchFactor(widget, stretchFactor); err != nil {
 					return err
 				}
 
 			case *walk.GridLayout:
+				csf := l.ColumnStretchFactor(column)
+				if csf < stretchFactor {
+					csf = stretchFactor
+				}
+				l.SetColumnStretchFactor(column, csf)
+
+				rsf := l.RowStretchFactor(row)
+				if rsf < stretchFactor {
+					rsf = stretchFactor
+				}
+				l.SetRowStretchFactor(row, rsf)
+
 				if rowSpan < 1 {
 					rowSpan = 1
 				}
