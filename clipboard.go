@@ -37,7 +37,7 @@ func init() {
 	}
 
 	if !win.AddClipboardFormatListener(hwnd) {
-		panic(lastError("AddClipboardFormatListener"))
+		lastError("AddClipboardFormatListener")
 	}
 
 	clipboard.hwnd = hwnd
