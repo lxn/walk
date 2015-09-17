@@ -48,6 +48,7 @@ type TableView struct {
 	rowsResetHandlerHandle             int
 	rowChangedHandlerHandle            int
 	sortChangedHandlerHandle           int
+	prevIndex                          int
 	currentIndex                       int
 	currentIndexChangedPublisher       EventPublisher
 	selectedIndexes                    *IndexList
@@ -1156,6 +1157,12 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 
 				tv.toggleItemChecked(int(hti.IItem))
 			}
+
+		case win.WM_LBUTTONDBLCLK, win.WM_RBUTTONDBLCLK:
+			if tv.currentIndex != tv.prevIndex && tv.itemStateChangedEventDelay > 0 {
+				tv.prevIndex = tv.currentIndex
+				tv.currentIndexChangedPublisher.Publish()
+			}
 		}
 
 	case win.WM_KEYDOWN:
@@ -1307,6 +1314,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 			selectedNow := nmlv.UNewState&win.LVIS_SELECTED > 0
 			selectedBefore := nmlv.UOldState&win.LVIS_SELECTED > 0
 			if selectedNow && !selectedBefore {
+				tv.prevIndex = tv.currentIndex
 				tv.currentIndex = int(nmlv.IItem)
 				if tv.itemStateChangedEventDelay > 0 {
 					tv.delayedCurrentIndexChangedCanceled = false
