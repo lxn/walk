@@ -152,6 +152,18 @@ func (fb *FormBase) SetSuspended(suspended bool) {
 	fb.clientComposite.SetSuspended(suspended)
 }
 
+func (fb *FormBase) MouseDown() *MouseEvent {
+	return fb.clientComposite.MouseDown()
+}
+
+func (fb *FormBase) MouseMove() *MouseEvent {
+	return fb.clientComposite.MouseMove()
+}
+
+func (fb *FormBase) MouseUp() *MouseEvent {
+	return fb.clientComposite.MouseUp()
+}
+
 func (fb *FormBase) onInsertingWidget(index int, widget Widget) error {
 	return fb.clientComposite.onInsertingWidget(index, widget)
 }

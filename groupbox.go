@@ -263,6 +263,18 @@ func (gb *GroupBox) SetLayout(value Layout) error {
 	return gb.composite.SetLayout(value)
 }
 
+func (gb *GroupBox) MouseDown() *MouseEvent {
+	return gb.composite.MouseDown()
+}
+
+func (gb *GroupBox) MouseMove() *MouseEvent {
+	return gb.composite.MouseMove()
+}
+
+func (gb *GroupBox) MouseUp() *MouseEvent {
+	return gb.composite.MouseUp()
+}
+
 func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if gb.composite != nil {
 		switch msg {

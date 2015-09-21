@@ -1169,18 +1169,7 @@ func (wb *WindowBase) MouseUp() *MouseEvent {
 func (wb *WindowBase) publishMouseEvent(publisher *MouseEventPublisher, wParam, lParam uintptr) {
 	x := int(win.GET_X_LPARAM(lParam))
 	y := int(win.GET_Y_LPARAM(lParam))
-
-	var button MouseButton
-	switch true {
-	case wParam&win.MK_LBUTTON > 0:
-		button = LeftButton
-
-	case wParam&win.MK_MBUTTON > 0:
-		button = MiddleButton
-
-	case wParam&win.MK_RBUTTON > 0:
-		button = RightButton
-	}
+	button := MouseButton(wParam&win.MK_LBUTTON | wParam&win.MK_RBUTTON | wParam&win.MK_MBUTTON)
 
 	publisher.Publish(x, y, button)
 }

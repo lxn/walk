@@ -6,12 +6,16 @@
 
 package walk
 
+import (
+	"github.com/lxn/win"
+)
+
 type MouseButton int
 
 const (
-	LeftButton MouseButton = iota
-	RightButton
-	MiddleButton
+	LeftButton   MouseButton = win.MK_LBUTTON
+	RightButton  MouseButton = win.MK_RBUTTON
+	MiddleButton MouseButton = win.MK_MBUTTON
 )
 
 type MouseEventHandler func(x, y int, button MouseButton)

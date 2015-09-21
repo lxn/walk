@@ -125,6 +125,18 @@ func (sv *ScrollView) RestoreState() error {
 	return sv.composite.RestoreState()
 }
 
+func (sv *ScrollView) MouseDown() *MouseEvent {
+	return sv.composite.MouseDown()
+}
+
+func (sv *ScrollView) MouseMove() *MouseEvent {
+	return sv.composite.MouseMove()
+}
+
+func (sv *ScrollView) MouseUp() *MouseEvent {
+	return sv.composite.MouseUp()
+}
+
 func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if sv.composite != nil {
 		switch msg {
