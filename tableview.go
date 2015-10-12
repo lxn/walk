@@ -73,6 +73,12 @@ type TableView struct {
 // NewTableView creates and returns a *TableView as child of the specified
 // Container.
 func NewTableView(parent Container) (*TableView, error) {
+	return NewTableViewWithStyle(parent, win.LVS_SHOWSELALWAYS)
+}
+
+// NewTableViewWithStyle creates and returns a *TableView as child of the specified
+// Container and with the provided additional style bits set.
+func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 	tv := &TableView{
 		alternatingRowBGColor: defaultTVRowBGColor,
 		imageUintptr2Index:    make(map[uintptr]int32),
@@ -86,7 +92,7 @@ func NewTableView(parent Container) (*TableView, error) {
 		tv,
 		parent,
 		"SysListView32",
-		win.WS_TABSTOP|win.WS_VISIBLE|win.LVS_OWNERDATA|win.LVS_SHOWSELALWAYS|win.LVS_REPORT,
+		win.WS_TABSTOP|win.WS_VISIBLE|win.LVS_OWNERDATA|win.LVS_REPORT|style,
 		win.WS_EX_CLIENTEDGE); err != nil {
 		return nil, err
 	}
@@ -227,6 +233,11 @@ func (tv *TableView) SetColumnsSizable(b bool) error {
 	tv.columnsSizableChangedPublisher.Publish()
 
 	return nil
+}
+
+// SortableByHeaderClick returns if the user can change sorting by clicking the header.
+func (tv *TableView) SortableByHeaderClick() bool {
+	return !tv.hasStyleBits(win.LVS_NOSORTHEADER)
 }
 
 // AlternatingRowBGColor returns the alternating row background color.
