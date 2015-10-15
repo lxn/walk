@@ -64,6 +64,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 		return nil, err
 	}
 
+	gb.SetCheckable(false)
 	gb.checkBox.SetChecked(true)
 
 	gb.checkBox.CheckedChanged().Attach(func() {
@@ -220,6 +221,10 @@ func (gb *GroupBox) Title() string {
 
 func (gb *GroupBox) SetTitle(title string) error {
 	if gb.Checkable() {
+		if err := setWindowText(gb.hWndGroupBox, ""); err != nil {
+			return err
+		}
+
 		return gb.checkBox.SetText(title)
 	}
 
@@ -230,8 +235,14 @@ func (gb *GroupBox) Checkable() bool {
 	return gb.checkBox.visible
 }
 
-func (gb *GroupBox) SetCheckable(visible bool) {
-	gb.checkBox.SetVisible(visible)
+func (gb *GroupBox) SetCheckable(checkable bool) {
+	title := gb.Title()
+
+	gb.checkBox.SetVisible(checkable)
+
+	gb.SetTitle(title)
+
+	gb.updateParentLayout()
 }
 
 func (gb *GroupBox) Checked() bool {
@@ -256,6 +267,12 @@ func (gb *GroupBox) Children() *WidgetList {
 }
 
 func (gb *GroupBox) Layout() Layout {
+	if gb.composite == nil {
+		// Without this we would get into trouble through the call to
+		// SetCheckable in NewGroupBox.
+		return nil
+	}
+
 	return gb.composite.Layout()
 }
 
