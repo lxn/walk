@@ -32,6 +32,12 @@ const (
 	tableViewSelectedIndexesChangedTimerId
 )
 
+// TableRow defines the color and font of each row
+type TableRow struct {
+	TextColor       Color
+	BackgroundColor Color
+}
+
 // TableView is a model based widget for record centric, tabular data.
 //
 // TableView is implemented as a virtual mode list view to support quite large
@@ -68,6 +74,7 @@ type TableView struct {
 	delayedCurrentIndexChangedCanceled bool
 	sortedColumnIndex                  int
 	sortOrder                          SortOrder
+	rows                               map[int]*TableRow
 }
 
 // NewTableView creates and returns a *TableView as child of the specified
@@ -85,6 +92,7 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 		filePath2IconIndex:    make(map[string]int32),
 		selectedIndexes:       NewIndexList(nil),
 	}
+	tv.rows = make(map[int]*TableRow)
 
 	tv.columns = newTableViewColumnList(tv)
 
@@ -144,6 +152,28 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 	succeeded = true
 
 	return tv, nil
+}
+
+// SetRowTextColor set the row's text color
+func (tv *TableView) SetRowTextColor(index int, c Color) {
+	r, ok := tv.rows[index]
+	if !ok {
+		tv.rows[index] = &TableRow{TextColor: c, BackgroundColor: RGB(255, 255, 255)}
+		return
+	}
+	r.TextColor = c
+	return
+}
+
+// SetRowBackgroundColor set the row's background color
+func (tv *TableView) SetRowBackgroundColor(index int, c Color) {
+	r, ok := tv.rows[index]
+	if !ok {
+		tv.rows[index] = &TableRow{TextColor: RGB(0, 0, 0), BackgroundColor: c}
+		return
+	}
+	r.BackgroundColor = c
+	return
 }
 
 // Dispose releases the operating system resources, associated with the
@@ -1265,8 +1295,9 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 			}
 
 		case win.NM_CUSTOMDRAW:
+			nmlvcd := (*win.NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
+			v, ok := tv.rows[int(nmlvcd.Nmcd.DwItemSpec)]
 			if tv.alternatingRowBGColor != defaultTVRowBGColor {
-				nmlvcd := (*win.NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
 
 				switch nmlvcd.Nmcd.DwDrawStage {
 				case win.CDDS_PREPAINT:
@@ -1283,8 +1314,9 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 						}*/
 						nmlvcd.ClrTextBk = win.COLORREF(tv.alternatingRowBGColor)
 					}
-
-					return win.CDRF_NOTIFYSUBITEMDRAW
+					if !ok {
+						return win.CDRF_NOTIFYSUBITEMDRAW
+					}
 
 				case win.CDDS_ITEMPREPAINT | win.CDDS_SUBITEM:
 					if nmlvcd.Nmcd.DwItemSpec%2 == 1 &&
@@ -1295,12 +1327,24 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 
 						nmlvcd.ClrText = white
 					}
-
-					return win.CDRF_NEWFONT
+					if !ok {
+						return win.CDRF_NEWFONT
+					}
 				}
 			}
-
-			return win.CDRF_DODEFAULT
+			if ok {
+				switch nmlvcd.Nmcd.DwDrawStage {
+				case win.CDDS_PREPAINT:
+					return win.CDRF_NOTIFYITEMDRAW
+				case win.CDDS_ITEMPREPAINT:
+					nmlvcd.ClrTextBk = win.COLORREF(v.BackgroundColor)
+					return win.CDRF_NOTIFYSUBITEMDRAW
+				case win.CDDS_ITEMPREPAINT | win.CDDS_SUBITEM:
+					nmlvcd.ClrText = win.COLORREF(v.TextColor)
+					return win.CDRF_NEWFONT
+				}
+				return win.CDRF_DODEFAULT
+			}
 
 		case win.LVN_COLUMNCLICK:
 			nmlv := (*win.NMLISTVIEW)(unsafe.Pointer(lParam))
