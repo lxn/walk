@@ -36,6 +36,7 @@ type ProgressBar struct {
 	MinValue           int
 	MaxValue           int
 	Value              int
+	MarqueeMode        bool
 }
 
 func (pb ProgressBar) Create(builder *Builder) error {
@@ -45,8 +46,14 @@ func (pb ProgressBar) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(pb, w, func() error {
-		w.SetRange(pb.MinValue, pb.MaxValue)
+		if pb.MaxValue > pb.MinValue {
+			w.SetRange(pb.MinValue, pb.MaxValue)
+		}
 		w.SetValue(pb.Value)
+
+		if err := w.SetMarqueeMode(pb.MarqueeMode); err != nil {
+			return err
+		}
 
 		if pb.AssignTo != nil {
 			*pb.AssignTo = w

@@ -60,3 +60,17 @@ func (pb *ProgressBar) Value() int {
 func (pb *ProgressBar) SetValue(value int) {
 	pb.SendMessage(win.PBM_SETPOS, uintptr(value), 0)
 }
+
+func (pb *ProgressBar) MarqueeMode() bool {
+	return pb.hasStyleBits(win.PBS_MARQUEE)
+}
+
+func (pb *ProgressBar) SetMarqueeMode(marqueeMode bool) error {
+	if err := pb.ensureStyleBits(win.PBS_MARQUEE, marqueeMode); err != nil {
+		return err
+	}
+
+	pb.SendMessage(win.PBM_SETMARQUEE, uintptr(win.BoolToBOOL(marqueeMode)), 0)
+
+	return nil
+}
