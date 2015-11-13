@@ -35,6 +35,7 @@ type TextEdit struct {
 	OnSizeChanged      walk.EventHandler
 	Text               Property
 	ReadOnly           Property
+	MaxLength          int
 }
 
 func (te TextEdit) Create(builder *Builder) error {
@@ -46,6 +47,10 @@ func (te TextEdit) Create(builder *Builder) error {
 	return builder.InitWidget(te, w, func() error {
 		if te.AssignTo != nil {
 			*te.AssignTo = w
+		}
+
+		if te.MaxLength > 0 {
+			w.SetMaxLength(te.MaxLength)
 		}
 
 		return nil
