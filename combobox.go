@@ -208,6 +208,15 @@ func (cb *ComboBox) SizeHint() Size {
 	return cb.MinSizeHint()
 }
 
+func (cb *ComboBox) applyFont(font *Font) {
+	cb.WidgetBase.applyFont(font)
+
+	if cb.model != nil {
+		cb.maxItemTextWidth = cb.calculateMaxItemTextWidth()
+		cb.updateParentLayout()
+	}
+}
+
 func (cb *ComboBox) Editable() bool {
 	return !cb.hasStyleBits(win.CBS_DROPDOWNLIST)
 }
