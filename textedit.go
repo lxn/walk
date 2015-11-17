@@ -78,6 +78,14 @@ func (te *TextEdit) SetText(value string) error {
 	return setWindowText(te.hWnd, value)
 }
 
+func (te *TextEdit) MaxLength() int {
+	return int(te.SendMessage(win.EM_GETLIMITTEXT, 0, 0))
+}
+
+func (te *TextEdit) SetMaxLength(value int) {
+	te.SendMessage(win.EM_SETLIMITTEXT, uintptr(value), 0)
+}
+
 func (te *TextEdit) TextSelection() (start, end int) {
 	te.SendMessage(win.EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
 	return
