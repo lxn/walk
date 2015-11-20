@@ -15,6 +15,9 @@ import (
 	"github.com/lxn/win"
 )
 
+// see https://msdn.microsoft.com/en-us/library/windows/desktop/bb760416(v=vs.85).aspx
+const maxToolTipTextLen = 80 // including NUL terminator
+
 func init() {
 	var err error
 	if globalToolTip, err = NewToolTip(); err != nil {
@@ -148,8 +151,17 @@ func (tt *ToolTip) SetText(tool Widget, text string) error {
 		return newError("unknown tool")
 	}
 
-	if len(text) > 79 {
-		text = text[:79]
+	n := 0
+	for i, r := range text {
+		if r < 0x10000 {
+			n++
+		} else {
+			n += 2 // surrogate pair
+		}
+		if n >= maxToolTipTextLen {
+			text = text[:i]
+			break
+		}
 	}
 
 	ti.LpszText = syscall.StringToUTF16Ptr(text)
@@ -161,7 +173,7 @@ func (tt *ToolTip) SetText(tool Widget, text string) error {
 
 func (tt *ToolTip) toolInfo(tool Widget) *win.TOOLINFO {
 	var ti win.TOOLINFO
-	var buf [80]uint16
+	var buf [maxToolTipTextLen]uint16
 
 	hwnd := tool.Handle()
 

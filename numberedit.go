@@ -729,3 +729,7 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 
 	return nle.LineEdit.WndProc(hwnd, msg, wParam, lParam)
 }
+
+func (ne *NumberEdit) SetToolTipText(s string) error {
+	return ne.edit.SetToolTipText(s)
+}
