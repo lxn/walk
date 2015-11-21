@@ -10,6 +10,14 @@ import (
 	"github.com/lxn/walk"
 )
 
+type PaintMode int
+
+const (
+	PaintNormal   PaintMode = iota // erase background before PaintFunc
+	PaintNoErase                   // PaintFunc clears background, single buffered
+	PaintBuffered                  // PaintFunc clears background, double buffered
+)
+
 type CustomWidget struct {
 	AssignTo            **walk.CustomWidget
 	Name                string
@@ -37,6 +45,7 @@ type CustomWidget struct {
 	Paint               walk.PaintFunc
 	ClearsBackground    bool
 	InvalidatesOnResize bool
+	PaintMode           PaintMode
 }
 
 func (cw CustomWidget) Create(builder *Builder) error {
@@ -46,8 +55,12 @@ func (cw CustomWidget) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(cw, w, func() error {
+		if cw.PaintMode != PaintNormal && cw.ClearsBackground {
+			panic("PaintMode and ClearsBackground are incompatible")
+		}
 		w.SetClearsBackground(cw.ClearsBackground)
 		w.SetInvalidatesOnResize(cw.InvalidatesOnResize)
+		w.SetPaintMode(walk.PaintMode(cw.PaintMode))
 
 		if cw.AssignTo != nil {
 			*cw.AssignTo = w
