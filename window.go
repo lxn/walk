@@ -281,6 +281,7 @@ type WindowBase struct {
 	mouseDownPublisher      MouseEventPublisher
 	mouseUpPublisher        MouseEventPublisher
 	mouseMovePublisher      MouseEventPublisher
+	mouseWheelPublisher     MouseEventPublisher
 	sizeChangedPublisher    EventPublisher
 	maxSize                 Size
 	minSize                 Size
@@ -1166,11 +1167,23 @@ func (wb *WindowBase) MouseUp() *MouseEvent {
 	return wb.mouseUpPublisher.Event()
 }
 
+func (wb *WindowBase) MouseWheel() *MouseEvent {
+	return wb.mouseWheelPublisher.Event()
+}
+
 func (wb *WindowBase) publishMouseEvent(publisher *MouseEventPublisher, wParam, lParam uintptr) {
 	x := int(win.GET_X_LPARAM(lParam))
 	y := int(win.GET_Y_LPARAM(lParam))
 	button := MouseButton(wParam&win.MK_LBUTTON | wParam&win.MK_RBUTTON | wParam&win.MK_MBUTTON)
 
+	publisher.Publish(x, y, button)
+}
+
+func (wb *WindowBase) publishMouseWheelEvent(publisher *MouseEventPublisher, wParam, lParam uintptr) {
+	x := int(win.GET_X_LPARAM(lParam))
+	y := int(win.GET_Y_LPARAM(lParam))
+	button := MouseButton(uint32(wParam))
+	
 	publisher.Publish(x, y, button)
 }
 
@@ -1354,6 +1367,9 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	case win.WM_MOUSEMOVE:
 		wb.publishMouseEvent(&wb.mouseMovePublisher, wParam, lParam)
+
+	case win.WM_MOUSEWHEEL:
+		wb.publishMouseWheelEvent(&wb.mouseWheelPublisher, wParam, lParam)
 
 	case win.WM_SETFOCUS, win.WM_KILLFOCUS:
 		wb.focusedChangedPublisher.Publish()
