@@ -55,3 +55,11 @@ func (p *MouseEventPublisher) Publish(x, y int, button MouseButton) {
 		}
 	}
 }
+
+func MouseWheelEventDelta(button MouseButton) int {
+	return int(int32(button) >> 16)
+}
+
+func MouseWheelEventKeyState(button MouseButton) int {
+	return int(int32(button) & 0xFFFF)
+}
