@@ -18,11 +18,19 @@ func init() {
 
 type PaintFunc func(canvas *Canvas, updateBounds Rectangle) error
 
+type PaintMode int
+
+const (
+	PaintNormal   PaintMode = iota // erase background before PaintFunc
+	PaintNoErase                   // PaintFunc clears background, single buffered
+	PaintBuffered                  // PaintFunc clears background, double buffered
+)
+
 type CustomWidget struct {
 	WidgetBase
 	paint               PaintFunc
-	clearsBackground    bool
 	invalidatesOnResize bool
+	paintMode           PaintMode
 }
 
 func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidget, error) {
@@ -48,12 +56,20 @@ func (cw *CustomWidget) SizeHint() Size {
 	return Size{100, 100}
 }
 
+// deprecated, use PaintMode
 func (cw *CustomWidget) ClearsBackground() bool {
-	return cw.clearsBackground
+	return cw.paintMode != PaintNormal
 }
 
+// deprecated, use SetPaintMode
 func (cw *CustomWidget) SetClearsBackground(value bool) {
-	cw.clearsBackground = value
+	if value != cw.ClearsBackground() {
+		if value {
+			cw.paintMode = PaintNoErase
+		} else {
+			cw.paintMode = PaintNormal
+		}
+	}
 }
 
 func (cw *CustomWidget) InvalidatesOnResize() bool {
@@ -62,6 +78,14 @@ func (cw *CustomWidget) InvalidatesOnResize() bool {
 
 func (cw *CustomWidget) SetInvalidatesOnResize(value bool) {
 	cw.invalidatesOnResize = value
+}
+
+func (cw *CustomWidget) PaintMode() PaintMode {
+	return cw.paintMode
+}
+
+func (cw *CustomWidget) SetPaintMode(value PaintMode) {
+	cw.paintMode = value
 }
 
 func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -89,14 +113,18 @@ func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 		defer canvas.Dispose()
 
 		r := &ps.RcPaint
-		err = cw.paint(
-			canvas,
-			Rectangle{
-				int(r.Left),
-				int(r.Top),
-				int(r.Right - r.Left),
-				int(r.Bottom - r.Top),
-			})
+		bounds := Rectangle{
+			int(r.Left),
+			int(r.Top),
+			int(r.Right - r.Left),
+			int(r.Bottom - r.Top),
+		}
+		if cw.paintMode == PaintBuffered {
+			err = cw.bufferedPaint(canvas, bounds)
+		} else {
+			err = cw.paint(canvas, bounds)
+		}
+
 		if err != nil {
 			newError("paint failed")
 			break
@@ -105,7 +133,7 @@ func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 		return 0
 
 	case win.WM_ERASEBKGND:
-		if !cw.clearsBackground {
+		if cw.paintMode != PaintNormal {
 			return 1
 		}
 
@@ -116,4 +144,47 @@ func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 	}
 
 	return cw.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (cw *CustomWidget) bufferedPaint(canvas *Canvas, updateBounds Rectangle) error {
+	hdc := win.CreateCompatibleDC(canvas.hdc)
+	if hdc == 0 {
+		return newError("CreateCompatibleDC failed")
+	}
+	defer win.DeleteDC(hdc)
+
+	buffered := Canvas{hdc: hdc, doNotDispose: true}
+	if _, err := buffered.init(); err != nil {
+		return err
+	}
+
+	w, h := int32(updateBounds.Width), int32(updateBounds.Height)
+	if w < 1 {
+		w = 1
+	}
+	if h < 1 {
+		h = 1
+	}
+	hbmp := win.CreateCompatibleBitmap(canvas.hdc, w, h)
+	if hbmp == 0 {
+		return lastError("CreateCompatibleBitmap failed")
+	}
+	defer win.DeleteObject(win.HGDIOBJ(hbmp))
+
+	oldbmp := win.SelectObject(buffered.hdc, win.HGDIOBJ(hbmp))
+	if oldbmp == 0 {
+		return newError("SelectObject failed")
+	}
+	defer win.SelectObject(buffered.hdc, oldbmp)
+
+	err := cw.paint(&buffered, updateBounds)
+
+	if !win.BitBlt(canvas.hdc,
+		int32(updateBounds.X), int32(updateBounds.Y), w, h,
+		buffered.hdc,
+		int32(updateBounds.X), int32(updateBounds.Y), win.SRCCOPY) {
+		return lastError("buffered BitBlt failed")
+	}
+
+	return err
 }
