@@ -177,6 +177,9 @@ func (cw *CustomWidget) bufferedPaint(canvas *Canvas, updateBounds Rectangle) er
 	}
 	defer win.SelectObject(buffered.hdc, oldbmp)
 
+	win.SetViewportOrgEx(buffered.hdc, -int32(updateBounds.X), -int32(updateBounds.Y), nil)
+	win.SetBrushOrgEx(buffered.hdc, -int32(updateBounds.X), -int32(updateBounds.Y), nil)
+
 	err := cw.paint(&buffered, updateBounds)
 
 	if !win.BitBlt(canvas.hdc,
