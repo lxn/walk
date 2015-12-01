@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"strings"
 )
 
 type reflectModel interface {
@@ -25,9 +24,7 @@ type bindingAndDisplayMemberSetter interface {
 type reflectListModel struct {
 	ListModelBase
 	bindingMember string
-	bindingPath   []string
 	displayMember string
-	displayPath   []string
 	dataSource    interface{}
 	items         interface{}
 	value         reflect.Value
@@ -67,12 +64,10 @@ func newReflectListModel(dataSource interface{}) (ListModel, error) {
 
 func (m *reflectListModel) setBindingMember(member string) {
 	m.bindingMember = member
-	m.bindingPath = strings.Split(member, ".")
 }
 
 func (m *reflectListModel) setDisplayMember(member string) {
 	m.displayMember = member
-	m.displayPath = strings.Split(member, ".")
 }
 
 func (m *reflectListModel) ItemCount() int {
@@ -80,11 +75,11 @@ func (m *reflectListModel) ItemCount() int {
 }
 
 func (m *reflectListModel) BindingValue(index int) interface{} {
-	return valueFromSlice(m.dataSource, m.value, m.bindingMember, m.bindingPath, index)
+	return valueFromSlice(m.dataSource, m.value, m.bindingMember, index)
 }
 
 func (m *reflectListModel) Value(index int) interface{} {
-	return valueFromSlice(m.dataSource, m.value, m.displayMember, m.displayPath, index)
+	return valueFromSlice(m.dataSource, m.value, m.displayMember, index)
 }
 
 type dataMembersSetter interface {
@@ -95,7 +90,6 @@ type reflectTableModel struct {
 	TableModelBase
 	sorterBase  *SorterBase
 	dataMembers []string
-	columnPaths [][]string
 	dataSource  interface{}
 	items       interface{}
 	value       reflect.Value
@@ -164,11 +158,6 @@ func newReflectTableModel(dataSource interface{}) (TableModel, error) {
 
 func (m *reflectTableModel) setDataMembers(dataMembers []string) {
 	m.dataMembers = dataMembers
-	m.columnPaths = make([][]string, len(dataMembers))
-
-	for col, dm := range dataMembers {
-		m.columnPaths[col] = strings.Split(dm, ".")
-	}
 }
 
 func (m *reflectTableModel) RowCount() int {
@@ -176,9 +165,7 @@ func (m *reflectTableModel) RowCount() int {
 }
 
 func (m *reflectTableModel) Value(row, col int) interface{} {
-	path := m.columnPaths[col]
-
-	return valueFromSlice(m.dataSource, m.value, m.dataMembers[col], path, row)
+	return valueFromSlice(m.dataSource, m.value, m.dataMembers[col], row)
 }
 
 func (m *reflectTableModel) Checked(row int) bool {
@@ -349,7 +336,7 @@ func itemsFromReflectModelDataSource(dataSource interface{}, requiredInterfaceNa
 	return items, nil
 }
 
-func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member string, path []string, index int) interface{} {
+func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member string, index int) interface{} {
 	if member == "" {
 		if strs, ok := dataSource.([]string); ok {
 			return strs[index]
@@ -372,7 +359,7 @@ func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member str
 		}
 	}
 
-	vv, err := reflectValueFromPath(v, path)
+	vv, err := reflectValueFromPath(v, member)
 	if err != nil {
 		return err
 	}

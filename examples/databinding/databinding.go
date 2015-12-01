@@ -60,6 +60,11 @@ type Animal struct {
 	PreferredFood string
 	Domesticated  bool
 	Remarks       string
+	Patience      time.Duration
+}
+
+func (a *Animal) PatienceField() *DurationField {
+	return &DurationField{&a.Patience}
 }
 
 type Species struct {
@@ -75,6 +80,20 @@ func KnownSpecies() []*Species {
 		{4, "Fish"},
 		{5, "Elephant"},
 	}
+}
+
+type DurationField struct {
+	p *time.Duration
+}
+
+func (*DurationField) CanSet() bool       { return true }
+func (f *DurationField) Get() interface{} { return f.p.String() }
+func (f *DurationField) Set(v interface{}) error {
+	x, err := time.ParseDuration(v.(string))
+	if err == nil {
+		*f.p = x
+	}
+	return err
 }
 
 type Sex byte
@@ -181,6 +200,15 @@ func RunAnimalDialog(owner walk.Form, animal *Animal) (int, error) {
 						ColumnSpan: 2,
 						MinSize:    Size{100, 50},
 						Text:       Bind("Remarks"),
+					},
+
+					Label{
+						ColumnSpan: 2,
+						Text:       "Patience:",
+					},
+					LineEdit{
+						ColumnSpan: 2,
+						Text:       Bind("PatienceField"),
 					},
 
 					LineErrorPresenter{
