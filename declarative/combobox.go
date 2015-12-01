@@ -47,6 +47,7 @@ type ComboBox struct {
 	Value                 Property
 	CurrentIndex          Property
 	OnCurrentIndexChanged walk.EventHandler
+	OnTextChanged         walk.EventHandler
 }
 
 func (cb ComboBox) Create(builder *Builder) error {
