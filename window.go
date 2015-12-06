@@ -275,10 +275,10 @@ type WindowBase struct {
 	contextMenu             *Menu
 	disposables             []Disposable
 	disposingPublisher      EventPublisher
+	dropFilesPublisher      DropFilesEventPublisher
 	keyDownPublisher        KeyEventPublisher
 	keyPressPublisher       KeyEventPublisher
 	keyUpPublisher          KeyEventPublisher
-	dropFilesPublisher      DropFilesEventPublisher
 	mouseDownPublisher      MouseEventPublisher
 	mouseUpPublisher        MouseEventPublisher
 	mouseMovePublisher      MouseEventPublisher
@@ -1153,7 +1153,7 @@ func (wb *WindowBase) KeyUp() *KeyEvent {
 // DropFiles returns a *DropFilesEvent that you can attach to for handling
 // drop file events for the *WindowBase.
 func (wb *WindowBase) DropFiles() *DropFilesEvent {
-	return wb.dropFilesPublisher.Event()
+	return wb.dropFilesPublisher.Event(wb.hWnd)
 }
 
 // MouseDown returns a *MouseEvent that you can attach to for handling
@@ -1329,10 +1329,6 @@ func (wb *WindowBase) handleKeyUp(wParam, lParam uintptr) {
 	wb.keyUpPublisher.Publish(Key(wParam))
 }
 
-func (wb *WindowBase) handleDropFiles(wParam uintptr) {
-	wb.dropFilesPublisher.Publish(win.HDROP(wParam))
-}
-
 // WndProc is the window procedure of the window.
 //
 // When implementing your own WndProc to add or modify behavior, call the
@@ -1427,7 +1423,7 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		wb.handleKeyUp(wParam, lParam)
 
 	case win.WM_DROPFILES:
-		wb.handleDropFiles(wParam)
+		wb.dropFilesPublisher.Publish(win.HDROP(wParam))
 
 	case win.WM_SIZE, win.WM_SIZING:
 		wb.sizeChangedPublisher.Publish()

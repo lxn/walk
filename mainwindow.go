@@ -206,14 +206,6 @@ func (mw *MainWindow) SetFullscreen(fullscreen bool) error {
 	return nil
 }
 
-func (mw *MainWindow) SetDropFiles(handler DropFilesEventHandler) {
-	if handler != nil {
-		if win.DragAcceptFiles(mw.hWnd, true) {
-			mw.DropFiles().Attach(handler)
-		}
-	}
-}
-
 func (mw *MainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_SIZE, win.WM_SIZING:

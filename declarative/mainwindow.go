@@ -105,7 +105,7 @@ func (mw MainWindow) Create() error {
 		w.ToolBar().SetImageList(imageList)
 
 		if mw.OnDropFiles != nil {
-			w.SetDropFiles(mw.OnDropFiles)
+			w.DropFiles().Attach(mw.OnDropFiles)
 		}
 
 		if mw.AssignTo != nil {
