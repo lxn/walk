@@ -19,7 +19,9 @@ type DropFilesEvent struct {
 }
 
 func (e *DropFilesEvent) Attach(handler DropFilesEventHandler) int {
-	win.DragAcceptFiles(e.hWnd, true)
+	if len(e.handlers) == 0 {
+		win.DragAcceptFiles(e.hWnd, true)
+	}
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -32,8 +34,13 @@ func (e *DropFilesEvent) Attach(handler DropFilesEventHandler) int {
 }
 
 func (e *DropFilesEvent) Detach(handle int) {
-	win.DragAcceptFiles(e.hWnd, false)
 	e.handlers[handle] = nil
+	for _, h := range e.handlers {
+		if h != nil {
+			return
+		}
+	}
+	win.DragAcceptFiles(e.hWnd, false)
 }
 
 type DropFilesEventPublisher struct {
