@@ -25,6 +25,7 @@ type MainWindow struct {
 	OnMouseDown      walk.MouseEventHandler
 	OnMouseMove      walk.MouseEventHandler
 	OnMouseUp        walk.MouseEventHandler
+	OnDropFiles      walk.DropFilesEventHandler
 	OnSizeChanged    walk.EventHandler
 	Title            string
 	Size             Size
@@ -102,6 +103,10 @@ func (mw MainWindow) Create() error {
 			return err
 		}
 		w.ToolBar().SetImageList(imageList)
+
+		if mw.OnDropFiles != nil {
+			w.DropFiles().Attach(mw.OnDropFiles)
+		}
 
 		if mw.AssignTo != nil {
 			*mw.AssignTo = w
