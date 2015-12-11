@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 )
 
 var (
@@ -105,7 +104,7 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 
 					v := reflect.ValueOf(db.dataSource)
 					field := db.fieldBoundToProperty(v, prop)
-					if !field.IsValid() {
+					if field == nil {
 						return
 					}
 
@@ -173,9 +172,9 @@ func (db *DataBinder) Reset() error {
 		db.inReset = false
 	}()
 
-	if err := db.forEach(func(prop Property, field reflect.Value) error {
+	if err := db.forEach(func(prop Property, field DataField) error {
 		if f64, ok := prop.Get().(float64); ok {
-			switch v := field.Interface().(type) {
+			switch v := field.Get().(type) {
 			case float32:
 				f64 = float64(v)
 
@@ -216,14 +215,14 @@ func (db *DataBinder) Reset() error {
 				f64 = float64(v)
 
 			default:
-				return newError(fmt.Sprintf("Field '%s': Can't convert %s to float64.", prop.Source().(string), field.Type().Name()))
+				return newError(fmt.Sprintf("Field '%s': Can't convert %t to float64.", prop.Source().(string), field.Get()))
 			}
 
 			if err := prop.Set(f64); err != nil {
 				return err
 			}
 		} else {
-			if err := prop.Set(field.Interface()); err != nil {
+			if err := prop.Set(field.Get()); err != nil {
 				return err
 			}
 		}
@@ -245,7 +244,7 @@ func (db *DataBinder) Submit() error {
 		return errValidationFailed
 	}
 
-	if err := db.forEach(func(prop Property, field reflect.Value) error {
+	if err := db.forEach(func(prop Property, field DataField) error {
 		return db.submitProperty(prop, field)
 	}); err != nil {
 		return err
@@ -262,7 +261,7 @@ func (db *DataBinder) Dirty() bool {
 	return db.dirty
 }
 
-func (db *DataBinder) submitProperty(prop Property, field reflect.Value) error {
+func (db *DataBinder) submitProperty(prop Property, field DataField) error {
 	if !field.CanSet() {
 		// FIXME: handle properly
 		return nil
@@ -278,30 +277,10 @@ func (db *DataBinder) submitProperty(prop Property, field reflect.Value) error {
 		return err
 	}
 
-	if f64, ok := value.(float64); ok {
-		switch field.Kind() {
-		case reflect.Float32, reflect.Float64:
-			field.SetFloat(f64)
-
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			field.SetInt(int64(f64))
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-			field.SetUint(uint64(f64))
-
-		default:
-			return newError(fmt.Sprintf("Field '%s': Can't convert float64 to %s.", prop.Source().(string), field.Type().Name()))
-		}
-
-		return nil
-	}
-
-	field.Set(reflect.ValueOf(value))
-
-	return nil
+	return field.Set(value)
 }
 
-func (db *DataBinder) forEach(f func(prop Property, field reflect.Value) error) error {
+func (db *DataBinder) forEach(f func(prop Property, field DataField) error) error {
 	dsv := reflect.ValueOf(db.dataSource)
 	if dsv.Kind() == reflect.Ptr && dsv.IsNil() {
 		return nil
@@ -318,16 +297,15 @@ func (db *DataBinder) forEach(f func(prop Property, field reflect.Value) error) 
 	return nil
 }
 
-func (db *DataBinder) fieldBoundToProperty(v reflect.Value, prop Property) reflect.Value {
+func (db *DataBinder) fieldBoundToProperty(v reflect.Value, prop Property) DataField {
 	source := prop.Source().(string)
-	path := strings.Split(source, ".")
 
-	vv, err := reflectValueFromPath(v, path)
+	f, err := dataFieldFromPath(v, source)
 	if err != nil {
 		panic(fmt.Sprintf("invalid source '%s'", source))
 	}
 
-	return vv
+	return f
 }
 
 func validateBindingMemberSyntax(member string) error {
@@ -335,10 +313,33 @@ func validateBindingMemberSyntax(member string) error {
 	return nil
 }
 
-func reflectValueFromPath(root reflect.Value, path []string) (reflect.Value, error) {
+type DataField interface {
+	CanSet() bool
+	Get() interface{}
+	Set(interface{}) error
+}
+
+func dataFieldFromPath(root reflect.Value, path string) (DataField, error) {
+	v, err := reflectValueFromPath(root, path)
+	if err != nil {
+		return nil, err
+	}
+
+	// convert to DataField
+	if i, ok := v.Interface().(DataField); ok {
+		return i, nil
+	}
+
+	return reflectField(v), nil
+}
+
+func reflectValueFromPath(root reflect.Value, path string) (reflect.Value, error) {
 	v := root
 
-	for _, name := range path {
+	for path != "" {
+		var name string
+		name, path = nextPathPart(path)
+
 		var p reflect.Value
 		for v.Kind() == reflect.Ptr {
 			p = v
@@ -365,7 +366,7 @@ func reflectValueFromPath(root reflect.Value, path []string) (reflect.Value, err
 				m = v.MethodByName(name)
 			}
 			if !m.IsValid() {
-				return v, fmt.Errorf("bad member: '%s'", strings.Join(path, "."))
+				return v, fmt.Errorf("bad member: '%s'", path, ".")
 			}
 
 			// We assume it takes no args and returns one mandatory value plus
@@ -392,4 +393,48 @@ func reflectValueFromPath(root reflect.Value, path []string) (reflect.Value, err
 	}
 
 	return v, nil
+}
+
+func nextPathPart(p string) (next, remaining string) {
+	for i, r := range p {
+		if r == '.' {
+			return p[:i], p[i+1:]
+		}
+	}
+	return p, ""
+}
+
+type reflectField reflect.Value
+
+func (f reflectField) CanSet() bool {
+	return reflect.Value(f).CanSet()
+}
+
+func (f reflectField) Get() interface{} {
+	return reflect.Value(f).Interface()
+}
+
+func (f reflectField) Set(value interface{}) error {
+	v := reflect.Value(f)
+	if f64, ok := value.(float64); ok {
+		switch v.Kind() {
+		case reflect.Float32, reflect.Float64:
+			v.SetFloat(f64)
+
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			v.SetInt(int64(f64))
+
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			v.SetUint(uint64(f64))
+
+		default:
+			return newError(fmt.Sprintf("Can't convert float64 to %s.", v.Type().Name()))
+		}
+
+		return nil
+	}
+
+	v.Set(reflect.ValueOf(value))
+
+	return nil
 }
