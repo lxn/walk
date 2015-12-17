@@ -55,11 +55,13 @@ type MyMainWindow struct {
 
 func (mw *MyMainWindow) lb_CurrentIndexChanged() {
 	i := mw.lb.CurrentIndex()
+	idx := mw.lb.CurrentIndexes()
 	item := &mw.model.items[i]
 
 	mw.te.SetText(item.value)
 
 	fmt.Println("CurrentIndex: ", i)
+	fmt.Println("CurrentIndexes: ", idx)
 	fmt.Println("CurrentEnvVarName: ", item.name)
 }
 

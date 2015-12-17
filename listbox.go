@@ -40,7 +40,7 @@ func NewListBox(parent Container) (*ListBox, error) {
 		lb,
 		parent,
 		"LISTBOX",
-		win.WS_BORDER|win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|win.LBS_NOINTEGRALHEIGHT|win.LBS_NOTIFY,
+		win.WS_BORDER|win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|win.LBS_NOINTEGRALHEIGHT|win.LBS_NOTIFY|win.LBS_EXTENDEDSEL,
 		0)
 	if err != nil {
 		return nil, err
@@ -303,6 +303,39 @@ func (lb *ListBox) SetCurrentIndex(value int) error {
 	}
 
 	return nil
+}
+
+// TODO(ktye): This has no effect. We cannot change the listbox style after creation.
+func (lb *ListBox) SetMultiSelection(multisel bool) error {
+	if multisel {
+		return lb.setAndClearStyleBits(win.LBS_EXTENDEDSEL, 0)
+	}
+	return lb.setAndClearStyleBits(0, win.LBS_EXTENDEDSEL)
+}
+
+func (lb *ListBox) CurrentIndexes() []int {
+	count := int(int32(lb.SendMessage(win.LB_GETCOUNT, 0, 0)))
+	if count < 1 {
+		return nil
+	}
+	index32 := make([]int32, count)
+	if n := int(int32(lb.SendMessage(win.LB_GETSELITEMS, uintptr(count), uintptr(unsafe.Pointer(&index32[0]))))); n == win.LB_ERR {
+		return nil
+	} else {
+		indexes := make([]int, n)
+		for i := 0; i < n; i++ {
+			indexes[i] = int(index32[i])
+		}
+		return indexes
+	}
+}
+
+func (lb *ListBox) SelectMultiple(indexes []int) {
+	var m int32 = -1
+	lb.SendMessage(win.LB_SETSEL, win.FALSE, uintptr(m))
+	for _, v := range indexes {
+		lb.SendMessage(win.LB_SETSEL, win.TRUE, uintptr(uint32(v)))
+	}
 }
 
 func (lb *ListBox) CurrentIndexChanged() *Event {
