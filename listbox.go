@@ -34,13 +34,17 @@ type ListBox struct {
 }
 
 func NewListBox(parent Container) (*ListBox, error) {
+	return NewListBoxWithStyle(parent, 0)
+}
+
+func NewListBoxWithStyle(parent Container, style uint32) (*ListBox, error) {
 	lb := new(ListBox)
 
 	err := InitWidget(
 		lb,
 		parent,
 		"LISTBOX",
-		win.WS_BORDER|win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|win.LBS_NOINTEGRALHEIGHT|win.LBS_NOTIFY|win.LBS_EXTENDEDSEL,
+		win.WS_BORDER|win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|win.WS_HSCROLL|win.LBS_NOINTEGRALHEIGHT|win.LBS_NOTIFY|style,
 		0)
 	if err != nil {
 		return nil, err
@@ -119,6 +123,10 @@ func (lb *ListBox) resetItems() error {
 			return err
 		}
 	}
+
+	// Update the listbox width (this sets the correct horizontal scrollbar).
+	sh := lb.SizeHint()
+	lb.SendMessage(win.LB_SETHORIZONTALEXTENT, uintptr(sh.Width), 0)
 
 	return nil
 }
@@ -305,15 +313,7 @@ func (lb *ListBox) SetCurrentIndex(value int) error {
 	return nil
 }
 
-// TODO(ktye): This has no effect. We cannot change the listbox style after creation.
-func (lb *ListBox) SetMultiSelection(multisel bool) error {
-	if multisel {
-		return lb.setAndClearStyleBits(win.LBS_EXTENDEDSEL, 0)
-	}
-	return lb.setAndClearStyleBits(0, win.LBS_EXTENDEDSEL)
-}
-
-func (lb *ListBox) CurrentIndexes() []int {
+func (lb *ListBox) SelectedIndexes() []int {
 	count := int(int32(lb.SendMessage(win.LB_GETCOUNT, 0, 0)))
 	if count < 1 {
 		return nil
@@ -330,7 +330,7 @@ func (lb *ListBox) CurrentIndexes() []int {
 	}
 }
 
-func (lb *ListBox) SelectMultiple(indexes []int) {
+func (lb *ListBox) SetSelectedIndexes(indexes []int) {
 	var m int32 = -1
 	lb.SendMessage(win.LB_SETSEL, win.FALSE, uintptr(m))
 	for _, v := range indexes {

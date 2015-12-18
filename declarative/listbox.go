@@ -12,6 +12,7 @@ import (
 
 import (
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type ListBox struct {
@@ -37,6 +38,7 @@ type ListBox struct {
 	OnMouseMove           walk.MouseEventHandler
 	OnMouseUp             walk.MouseEventHandler
 	OnSizeChanged         walk.EventHandler
+	SingleSelection       bool
 	Format                string
 	Precision             int
 	DataMember            string
@@ -46,11 +48,17 @@ type ListBox struct {
 }
 
 func (lb ListBox) Create(builder *Builder) error {
+	var w *walk.ListBox
+	var err error
 	if _, ok := lb.Model.([]string); ok && lb.DataMember != "" {
 		return errors.New("ListBox.Create: DataMember must be empty for []string models.")
 	}
 
-	w, err := walk.NewListBox(builder.Parent())
+	if lb.SingleSelection {
+		w, err = walk.NewListBox(builder.Parent())
+	} else {
+		w, err = walk.NewListBoxWithStyle(builder.Parent(), win.LBS_EXTENDEDSEL)
+	}
 	if err != nil {
 		return err
 	}

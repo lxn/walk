@@ -26,7 +26,7 @@ func main() {
 		Size:     Size{300, 400},
 		Layout:   VBox{MarginsZero: true},
 		Children: []Widget{
-			VSplitter{
+			HSplitter{
 				Children: []Widget{
 					ListBox{
 						AssignTo: &mw.lb,
@@ -55,7 +55,7 @@ type MyMainWindow struct {
 
 func (mw *MyMainWindow) lb_CurrentIndexChanged() {
 	i := mw.lb.CurrentIndex()
-	idx := mw.lb.CurrentIndexes()
+	idx := mw.lb.SelectedIndexes()
 	item := &mw.model.items[i]
 
 	mw.te.SetText(item.value)
