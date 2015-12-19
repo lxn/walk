@@ -42,7 +42,7 @@ type TableView struct {
 	LastColumnStretched        bool
 	ColumnsOrderable           Property
 	ColumnsSizable             Property
-	SingleItemSelection        bool
+	MultiSelection             bool
 	NotSortableByHeaderClick   bool
 	OnCurrentIndexChanged      walk.EventHandler
 	OnSelectedIndexesChanged   walk.EventHandler
@@ -80,7 +80,7 @@ func (tv TableView) Create(builder *Builder) error {
 		if err := w.SetLastColumnStretched(tv.LastColumnStretched); err != nil {
 			return err
 		}
-		if err := w.SetSingleItemSelection(tv.SingleItemSelection); err != nil {
+		if err := w.SetMultiSelection(tv.MultiSelection); err != nil {
 			return err
 		}
 

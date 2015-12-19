@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"sort"
 	"strings"
@@ -161,6 +162,8 @@ func main() {
 
 	model := NewFooModel()
 
+	var tv *walk.TableView
+
 	MainWindow{
 		Title:  "Walk TableView Example",
 		Size:   Size{800, 600},
@@ -170,10 +173,18 @@ func main() {
 				Text:      "Reset Rows",
 				OnClicked: model.ResetRows,
 			},
+			PushButton{
+				Text: "Select first 5 even Rows",
+				OnClicked: func() {
+					tv.SetSelectedIndexes([]int{0, 2, 4, 6, 8})
+				},
+			},
 			TableView{
+				AssignTo:              &tv,
 				AlternatingRowBGColor: walk.RGB(255, 255, 224),
 				CheckBoxes:            true,
 				ColumnsOrderable:      true,
+				MultiSelection:        true,
 				Columns: []TableViewColumn{
 					{Title: "#"},
 					{Title: "Bar"},
@@ -181,6 +192,9 @@ func main() {
 					{Title: "Quux", Format: "2006-01-02 15:04:05", Width: 150},
 				},
 				Model: model,
+				OnSelectedIndexesChanged: func() {
+					fmt.Printf("SelectedIndexes: %v\n", tv.SelectedIndexes())
+				},
 			},
 		},
 	}.Run()

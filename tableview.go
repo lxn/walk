@@ -50,15 +50,17 @@ type TableView struct {
 	rowsResetHandlerHandle             int
 	rowChangedHandlerHandle            int
 	sortChangedHandlerHandle           int
+	selectedIndexes                    []int
 	prevIndex                          int
 	currentIndex                       int
 	currentIndexChangedPublisher       EventPublisher
-	selectedIndexes                    *IndexList
 	selectedIndexesChangedPublisher    EventPublisher
 	itemActivatedPublisher             EventPublisher
 	columnClickedPublisher             IntEventPublisher
 	columnsOrderableChangedPublisher   EventPublisher
 	columnsSizableChangedPublisher     EventPublisher
+	publishNextSelClear                bool
+	inSetSelectedIndexes               bool
 	lastColumnStretched                bool
 	inEraseBkgnd                       bool
 	persistent                         bool
@@ -83,7 +85,6 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 		alternatingRowBGColor: defaultTVRowBGColor,
 		imageUintptr2Index:    make(map[uintptr]int32),
 		filePath2IconIndex:    make(map[string]int32),
-		selectedIndexes:       NewIndexList(nil),
 	}
 
 	tv.columns = newTableViewColumnList(tv)
@@ -612,27 +613,92 @@ func (tv *TableView) CurrentIndexChanged() *Event {
 	return tv.currentIndexChangedPublisher.Event()
 }
 
-// SingleItemSelection returns if only a single item can be selected at once.
+// MultiSelection returns whether multiple items can be selected at once.
 //
-// By default multiple items can be selected at once.
-func (tv *TableView) SingleItemSelection() bool {
+// By default only a single item can be selected at once.
+func (tv *TableView) MultiSelection() bool {
 	style := uint(win.GetWindowLong(tv.hWnd, win.GWL_STYLE))
 	if style == 0 {
 		lastError("GetWindowLong")
 		return false
 	}
 
-	return style&win.LVS_SINGLESEL > 0
+	return style&win.LVS_SINGLESEL == 0
 }
 
-// SetSingleItemSelection sets if only a single item can be selected at once.
-func (tv *TableView) SetSingleItemSelection(value bool) error {
-	return tv.ensureStyleBits(win.LVS_SINGLESEL, value)
+// SetMultiSelection sets whether multiple items can be selected at once.
+func (tv *TableView) SetMultiSelection(multiSel bool) error {
+	return tv.ensureStyleBits(win.LVS_SINGLESEL, !multiSel)
 }
 
-// SelectedIndexes returns a list of the currently selected item indexes.
-func (tv *TableView) SelectedIndexes() *IndexList {
-	return tv.selectedIndexes
+// SelectedIndexes returns the indexes of the currently selected items.
+func (tv *TableView) SelectedIndexes() []int {
+	indexes := make([]int, len(tv.selectedIndexes))
+
+	for i, j := range tv.selectedIndexes {
+		indexes[i] = j
+	}
+
+	return indexes
+}
+
+// SetSelectedIndexes sets the indexes of the currently selected items.
+func (tv *TableView) SetSelectedIndexes(indexes []int) error {
+	tv.inSetSelectedIndexes = true
+	defer func() {
+		tv.inSetSelectedIndexes = false
+		tv.publishSelectedIndexesChanged()
+	}()
+
+	lvi := &win.LVITEM{StateMask: win.LVIS_FOCUSED | win.LVIS_SELECTED}
+	lp := uintptr(unsafe.Pointer(lvi))
+
+	if win.FALSE == tv.SendMessage(win.LVM_SETITEMSTATE, ^uintptr(0), lp) {
+		return newError("SendMessage(LVM_SETITEMSTATE)")
+	}
+
+	lvi.State = win.LVIS_FOCUSED | win.LVIS_SELECTED
+	for _, i := range indexes {
+		if win.FALSE == tv.SendMessage(win.LVM_SETITEMSTATE, uintptr(i), lp) {
+			return newError("SendMessage(LVM_SETITEMSTATE)")
+		}
+	}
+
+	idxs := make([]int, len(indexes))
+
+	for i, j := range indexes {
+		idxs[i] = j
+	}
+
+	tv.selectedIndexes = idxs
+
+	return nil
+}
+
+func (tv *TableView) updateSelectedIndexes() {
+	count := int(tv.SendMessage(win.LVM_GETSELECTEDCOUNT, 0, 0))
+	indexes := make([]int, count)
+
+	j := -1
+	for i := 0; i < count; i++ {
+		j = int(tv.SendMessage(win.LVM_GETNEXTITEM, uintptr(j), win.LVNI_SELECTED))
+		indexes[i] = j
+	}
+
+	changed := len(indexes) != len(tv.selectedIndexes)
+	if !changed {
+		for i := 0; i < len(indexes); i++ {
+			if indexes[i] != tv.selectedIndexes[i] {
+				changed = true
+				break
+			}
+		}
+	}
+
+	if changed {
+		tv.selectedIndexes = indexes
+		tv.publishSelectedIndexesChanged()
+	}
 }
 
 // ItemStateChangedEventDelay returns the delay in milliseconds, between the
@@ -656,47 +722,25 @@ func (tv *TableView) SetItemStateChangedEventDelay(delay int) {
 	tv.itemStateChangedEventDelay = delay
 }
 
-func (tv *TableView) updateSelectedIndexes() {
-	count := int(tv.SendMessage(win.LVM_GETSELECTEDCOUNT, 0, 0))
-	indexes := make([]int, count)
-
-	j := -1
-	for i := 0; i < count; i++ {
-		j = int(tv.SendMessage(win.LVM_GETNEXTITEM, uintptr(j), win.LVNI_SELECTED))
-		indexes[i] = j
-	}
-
-	changed := len(indexes) != len(tv.selectedIndexes.items)
-	if !changed {
-		for i := 0; i < len(indexes); i++ {
-			if indexes[i] != tv.selectedIndexes.items[i] {
-				changed = true
-				break
-			}
-		}
-	}
-
-	if changed {
-		tv.selectedIndexes.items = indexes
-		if tv.itemStateChangedEventDelay > 0 {
-			if 0 == win.SetTimer(
-				tv.hWnd,
-				tableViewSelectedIndexesChangedTimerId,
-				uint32(tv.itemStateChangedEventDelay),
-				0) {
-
-				lastError("SetTimer")
-			}
-		} else {
-			tv.selectedIndexesChangedPublisher.Publish()
-		}
-	}
-}
-
 // SelectedIndexesChanged returns the event that is published when the list of
 // selected item indexes changed.
 func (tv *TableView) SelectedIndexesChanged() *Event {
 	return tv.selectedIndexesChangedPublisher.Event()
+}
+
+func (tv *TableView) publishSelectedIndexesChanged() {
+	if tv.itemStateChangedEventDelay > 0 {
+		if 0 == win.SetTimer(
+			tv.hWnd,
+			tableViewSelectedIndexesChangedTimerId,
+			uint32(tv.itemStateChangedEventDelay),
+			0) {
+
+			lastError("SetTimer")
+		}
+	} else {
+		tv.selectedIndexesChangedPublisher.Publish()
+	}
 }
 
 // LastColumnStretched returns if the last column should take up all remaining
@@ -1156,10 +1200,14 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 		hti.Pt = win.POINT{win.GET_X_LPARAM(lParam), win.GET_Y_LPARAM(lParam)}
 		tv.SendMessage(win.LVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
 
-		if hti.Flags == win.LVHT_NOWHERE && tv.SingleItemSelection() {
-			// We keep the current item, if in single item selection mode.
-			tv.SetFocus()
-			return 0
+		if hti.Flags == win.LVHT_NOWHERE {
+			if tv.MultiSelection() {
+				tv.publishNextSelClear = true
+			} else {
+				// We keep the current item, if in single item selection mode.
+				tv.SetFocus()
+				return 0
+			}
 		}
 
 		switch msg {
@@ -1324,6 +1372,11 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 
 		case win.LVN_ITEMCHANGED:
 			nmlv := (*win.NMLISTVIEW)(unsafe.Pointer(lParam))
+			if nmlv.IItem == -1 && !tv.publishNextSelClear {
+				break
+			}
+			tv.publishNextSelClear = false
+
 			selectedNow := nmlv.UNewState&win.LVIS_SELECTED > 0
 			selectedBefore := nmlv.UOldState&win.LVIS_SELECTED > 0
 			if selectedNow && !selectedBefore {
@@ -1343,9 +1396,15 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 					tv.currentIndexChangedPublisher.Publish()
 				}
 			}
-			if !tv.SingleItemSelection() {
-				tv.updateSelectedIndexes()
+
+			if selectedNow != selectedBefore {
+				if !tv.inSetSelectedIndexes && tv.MultiSelection() {
+					tv.updateSelectedIndexes()
+				}
 			}
+
+		case win.LVN_ODSTATECHANGED:
+			tv.updateSelectedIndexes()
 
 		case win.LVN_ITEMACTIVATE:
 			nmia := (*win.NMITEMACTIVATE)(unsafe.Pointer(lParam))
