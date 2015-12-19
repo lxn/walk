@@ -20,17 +20,18 @@ import (
 
 type ListBox struct {
 	WidgetBase
-	model                        ListModel
-	providedModel                interface{}
-	dataMember                   string
-	format                       string
-	precision                    int
-	prevCurIndex                 int
-	itemsResetHandlerHandle      int
-	itemChangedHandlerHandle     int
-	maxItemTextWidth             int
-	currentIndexChangedPublisher EventPublisher
-	itemActivatedPublisher       EventPublisher
+	model                           ListModel
+	providedModel                   interface{}
+	dataMember                      string
+	format                          string
+	precision                       int
+	prevCurIndex                    int
+	itemsResetHandlerHandle         int
+	itemChangedHandlerHandle        int
+	maxItemTextWidth                int
+	currentIndexChangedPublisher    EventPublisher
+	selectedIndexesChangedPublisher EventPublisher
+	itemActivatedPublisher          EventPublisher
 }
 
 func NewListBox(parent Container) (*ListBox, error) {
@@ -336,10 +337,15 @@ func (lb *ListBox) SetSelectedIndexes(indexes []int) {
 	for _, v := range indexes {
 		lb.SendMessage(win.LB_SETSEL, win.TRUE, uintptr(uint32(v)))
 	}
+	lb.selectedIndexesChangedPublisher.Publish()
 }
 
 func (lb *ListBox) CurrentIndexChanged() *Event {
 	return lb.currentIndexChangedPublisher.Event()
+}
+
+func (lb *ListBox) SelectedIndexesChanged() *Event {
+	return lb.selectedIndexesChangedPublisher.Event()
 }
 
 func (lb *ListBox) ItemActivated() *Event {
@@ -353,6 +359,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		case win.LBN_SELCHANGE:
 			lb.prevCurIndex = lb.CurrentIndex()
 			lb.currentIndexChangedPublisher.Publish()
+			lb.selectedIndexesChangedPublisher.Publish()
 
 		case win.LBN_DBLCLK:
 			lb.itemActivatedPublisher.Publish()
