@@ -63,11 +63,6 @@ func (mw *MyMainWindow) lb_CurrentIndexChanged() {
 	fmt.Println("CurrentEnvVarName: ", item.name)
 }
 
-func (mw *MyMainWindow) lb_SelectedIndexesChanged() {
-	idx := mw.lb.SelectedIndexes()
-	fmt.Println("CurrentIndexes: ", idx)
-}
-
 func (mw *MyMainWindow) lb_ItemActivated() {
 	value := mw.model.items[mw.lb.CurrentIndex()].value
 
