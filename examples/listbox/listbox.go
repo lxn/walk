@@ -26,7 +26,7 @@ func main() {
 		Size:     Size{300, 400},
 		Layout:   VBox{MarginsZero: true},
 		Children: []Widget{
-			VSplitter{
+			HSplitter{
 				Children: []Widget{
 					ListBox{
 						AssignTo: &mw.lb,

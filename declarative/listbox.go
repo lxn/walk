@@ -12,45 +12,54 @@ import (
 
 import (
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type ListBox struct {
-	AssignTo              **walk.ListBox
-	Name                  string
-	Enabled               Property
-	Visible               Property
-	Font                  Font
-	ToolTipText           Property
-	MinSize               Size
-	MaxSize               Size
-	StretchFactor         int
-	Row                   int
-	RowSpan               int
-	Column                int
-	ColumnSpan            int
-	AlwaysConsumeSpace    bool
-	ContextMenuItems      []MenuItem
-	OnKeyDown             walk.KeyEventHandler
-	OnKeyPress            walk.KeyEventHandler
-	OnKeyUp               walk.KeyEventHandler
-	OnMouseDown           walk.MouseEventHandler
-	OnMouseMove           walk.MouseEventHandler
-	OnMouseUp             walk.MouseEventHandler
-	OnSizeChanged         walk.EventHandler
-	Format                string
-	Precision             int
-	DataMember            string
-	Model                 interface{}
-	OnCurrentIndexChanged walk.EventHandler
-	OnItemActivated       walk.EventHandler
+	AssignTo                 **walk.ListBox
+	Name                     string
+	Enabled                  Property
+	Visible                  Property
+	Font                     Font
+	ToolTipText              Property
+	MinSize                  Size
+	MaxSize                  Size
+	StretchFactor            int
+	Row                      int
+	RowSpan                  int
+	Column                   int
+	ColumnSpan               int
+	AlwaysConsumeSpace       bool
+	ContextMenuItems         []MenuItem
+	OnKeyDown                walk.KeyEventHandler
+	OnKeyPress               walk.KeyEventHandler
+	OnKeyUp                  walk.KeyEventHandler
+	OnMouseDown              walk.MouseEventHandler
+	OnMouseMove              walk.MouseEventHandler
+	OnMouseUp                walk.MouseEventHandler
+	OnSizeChanged            walk.EventHandler
+	MultiSelection           bool
+	Format                   string
+	Precision                int
+	DataMember               string
+	Model                    interface{}
+	OnCurrentIndexChanged    walk.EventHandler
+	OnSelectedIndexesChanged walk.EventHandler
+	OnItemActivated          walk.EventHandler
 }
 
 func (lb ListBox) Create(builder *Builder) error {
+	var w *walk.ListBox
+	var err error
 	if _, ok := lb.Model.([]string); ok && lb.DataMember != "" {
 		return errors.New("ListBox.Create: DataMember must be empty for []string models.")
 	}
 
-	w, err := walk.NewListBox(builder.Parent())
+	if lb.MultiSelection {
+		w, err = walk.NewListBoxWithStyle(builder.Parent(), win.LBS_EXTENDEDSEL)
+	} else {
+		w, err = walk.NewListBox(builder.Parent())
+	}
 	if err != nil {
 		return err
 	}
@@ -69,6 +78,9 @@ func (lb ListBox) Create(builder *Builder) error {
 
 		if lb.OnCurrentIndexChanged != nil {
 			w.CurrentIndexChanged().Attach(lb.OnCurrentIndexChanged)
+		}
+		if lb.OnSelectedIndexesChanged != nil {
+			w.SelectedIndexesChanged().Attach(lb.OnSelectedIndexesChanged)
 		}
 		if lb.OnItemActivated != nil {
 			w.ItemActivated().Attach(lb.OnItemActivated)

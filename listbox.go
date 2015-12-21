@@ -20,27 +20,32 @@ import (
 
 type ListBox struct {
 	WidgetBase
-	model                        ListModel
-	providedModel                interface{}
-	dataMember                   string
-	format                       string
-	precision                    int
-	prevCurIndex                 int
-	itemsResetHandlerHandle      int
-	itemChangedHandlerHandle     int
-	maxItemTextWidth             int
-	currentIndexChangedPublisher EventPublisher
-	itemActivatedPublisher       EventPublisher
+	model                           ListModel
+	providedModel                   interface{}
+	dataMember                      string
+	format                          string
+	precision                       int
+	prevCurIndex                    int
+	itemsResetHandlerHandle         int
+	itemChangedHandlerHandle        int
+	maxItemTextWidth                int
+	currentIndexChangedPublisher    EventPublisher
+	selectedIndexesChangedPublisher EventPublisher
+	itemActivatedPublisher          EventPublisher
 }
 
 func NewListBox(parent Container) (*ListBox, error) {
+	return NewListBoxWithStyle(parent, 0)
+}
+
+func NewListBoxWithStyle(parent Container, style uint32) (*ListBox, error) {
 	lb := new(ListBox)
 
 	err := InitWidget(
 		lb,
 		parent,
 		"LISTBOX",
-		win.WS_BORDER|win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|win.LBS_NOINTEGRALHEIGHT|win.LBS_NOTIFY,
+		win.WS_BORDER|win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|win.WS_HSCROLL|win.LBS_NOINTEGRALHEIGHT|win.LBS_NOTIFY|style,
 		0)
 	if err != nil {
 		return nil, err
@@ -119,6 +124,10 @@ func (lb *ListBox) resetItems() error {
 			return err
 		}
 	}
+
+	// Update the listbox width (this sets the correct horizontal scrollbar).
+	sh := lb.SizeHint()
+	lb.SendMessage(win.LB_SETHORIZONTALEXTENT, uintptr(sh.Width), 0)
 
 	return nil
 }
@@ -305,8 +314,38 @@ func (lb *ListBox) SetCurrentIndex(value int) error {
 	return nil
 }
 
+func (lb *ListBox) SelectedIndexes() []int {
+	count := int(int32(lb.SendMessage(win.LB_GETCOUNT, 0, 0)))
+	if count < 1 {
+		return nil
+	}
+	index32 := make([]int32, count)
+	if n := int(int32(lb.SendMessage(win.LB_GETSELITEMS, uintptr(count), uintptr(unsafe.Pointer(&index32[0]))))); n == win.LB_ERR {
+		return nil
+	} else {
+		indexes := make([]int, n)
+		for i := 0; i < n; i++ {
+			indexes[i] = int(index32[i])
+		}
+		return indexes
+	}
+}
+
+func (lb *ListBox) SetSelectedIndexes(indexes []int) {
+	var m int32 = -1
+	lb.SendMessage(win.LB_SETSEL, win.FALSE, uintptr(m))
+	for _, v := range indexes {
+		lb.SendMessage(win.LB_SETSEL, win.TRUE, uintptr(uint32(v)))
+	}
+	lb.selectedIndexesChangedPublisher.Publish()
+}
+
 func (lb *ListBox) CurrentIndexChanged() *Event {
 	return lb.currentIndexChangedPublisher.Event()
+}
+
+func (lb *ListBox) SelectedIndexesChanged() *Event {
+	return lb.selectedIndexesChangedPublisher.Event()
 }
 
 func (lb *ListBox) ItemActivated() *Event {
@@ -320,6 +359,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		case win.LBN_SELCHANGE:
 			lb.prevCurIndex = lb.CurrentIndex()
 			lb.currentIndexChangedPublisher.Publish()
+			lb.selectedIndexesChangedPublisher.Publish()
 
 		case win.LBN_DBLCLK:
 			lb.itemActivatedPublisher.Publish()
