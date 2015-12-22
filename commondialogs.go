@@ -8,6 +8,7 @@ package walk
 
 import (
 	"fmt"
+	"path/filepath"
 	"syscall"
 	"unsafe"
 )
@@ -19,12 +20,13 @@ import (
 type FileDialog struct {
 	Title          string
 	FilePath       string
+	FilePaths      []string
 	InitialDirPath string
 	Filter         string
 	FilterIndex    int
 }
 
-func (dlg *FileDialog) show(owner Form, fun func(ofn *win.OPENFILENAME) bool) (accepted bool, err error) {
+func (dlg *FileDialog) show(owner Form, fun func(ofn *win.OPENFILENAME) bool, flags uint32) (accepted bool, err error) {
 	ofn := new(win.OPENFILENAME)
 
 	ofn.LStructSize = uint32(unsafe.Sizeof(*ofn))
@@ -43,14 +45,19 @@ func (dlg *FileDialog) show(owner Form, fun func(ofn *win.OPENFILENAME) bool) (a
 	ofn.LpstrFilter = &filter[0]
 	ofn.NFilterIndex = uint32(dlg.FilterIndex)
 
-	filePath := make([]uint16, 1024)
-	copy(filePath, syscall.StringToUTF16(dlg.FilePath))
-	ofn.LpstrFile = &filePath[0]
-	ofn.NMaxFile = uint32(len(filePath))
-
 	ofn.LpstrInitialDir = syscall.StringToUTF16Ptr(dlg.InitialDirPath)
 	ofn.LpstrTitle = syscall.StringToUTF16Ptr(dlg.Title)
-	ofn.Flags = win.OFN_FILEMUSTEXIST
+	ofn.Flags = win.OFN_FILEMUSTEXIST | flags
+
+	var fileBuf []uint16
+	if flags&win.OFN_ALLOWMULTISELECT > 0 {
+		fileBuf = make([]uint16, 65536)
+	} else {
+		fileBuf = make([]uint16, 1024)
+		copy(fileBuf, syscall.StringToUTF16(dlg.FilePath))
+	}
+	ofn.LpstrFile = &fileBuf[0]
+	ofn.NMaxFile = uint32(len(fileBuf))
 
 	if !fun(ofn) {
 		errno := win.CommDlgExtendedError()
@@ -60,7 +67,40 @@ func (dlg *FileDialog) show(owner Form, fun func(ofn *win.OPENFILENAME) bool) (a
 		return
 	}
 
-	dlg.FilePath = syscall.UTF16ToString(filePath)
+	if flags&win.OFN_ALLOWMULTISELECT > 0 {
+		split := func() [][]uint16 {
+			var parts [][]uint16
+
+			from := 0
+			for i, c := range fileBuf {
+				if c == 0 {
+					if i == from {
+						return parts
+					}
+
+					parts = append(parts, fileBuf[from:i])
+					from = i + 1
+				}
+			}
+
+			return parts
+		}
+
+		parts := split()
+
+		if len(parts) == 1 {
+			dlg.FilePaths = []string{syscall.UTF16ToString(parts[0])}
+		} else {
+			dirPath := syscall.UTF16ToString(parts[0])
+			dlg.FilePaths = make([]string, len(parts)-1)
+
+			for i, fp := range parts[1:] {
+				dlg.FilePaths[i] = filepath.Join(dirPath, syscall.UTF16ToString(fp))
+			}
+		}
+	} else {
+		dlg.FilePath = syscall.UTF16ToString(fileBuf)
+	}
 
 	accepted = true
 
@@ -68,11 +108,15 @@ func (dlg *FileDialog) show(owner Form, fun func(ofn *win.OPENFILENAME) bool) (a
 }
 
 func (dlg *FileDialog) ShowOpen(owner Form) (accepted bool, err error) {
-	return dlg.show(owner, win.GetOpenFileName)
+	return dlg.show(owner, win.GetOpenFileName, 0)
+}
+
+func (dlg *FileDialog) ShowOpenMultiple(owner Form) (accepted bool, err error) {
+	return dlg.show(owner, win.GetOpenFileName, win.OFN_ALLOWMULTISELECT|win.OFN_EXPLORER)
 }
 
 func (dlg *FileDialog) ShowSave(owner Form) (accepted bool, err error) {
-	return dlg.show(owner, win.GetSaveFileName)
+	return dlg.show(owner, win.GetSaveFileName, 0)
 }
 
 func (dlg *FileDialog) ShowBrowseFolder(owner Form) (accepted bool, err error) {
