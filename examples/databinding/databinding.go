@@ -55,6 +55,7 @@ type Animal struct {
 	Name          string
 	ArrivalDate   time.Time
 	SpeciesId     int
+	Speed         int
 	Sex           Sex
 	Weight        float64
 	PreferredFood string
@@ -148,6 +149,13 @@ func RunAnimalDialog(owner walk.Form, animal *Animal) (int, error) {
 						BindingMember: "Id",
 						DisplayMember: "Name",
 						Model:         KnownSpecies(),
+					},
+
+					Label{
+						Text: "Speed:",
+					},
+					TrackBar{
+						Value: Bind("Speed"),
 					},
 
 					RadioButtonGroupBox{
