@@ -1,4 +1,4 @@
-// Copyright 2012 The Walk Authors. All rights reserved.
+// Copyright 2016 The Walk Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,8 +10,8 @@ import (
 	"github.com/lxn/walk"
 )
 
-type TrackBar struct {
-	AssignTo           **walk.TrackBar
+type Slider struct {
+	AssignTo           **walk.Slider
 	Name               string
 	Enabled            Property
 	Visible            Property
@@ -40,29 +40,29 @@ type TrackBar struct {
 	Orientation        Orientation
 }
 
-func (tb TrackBar) Create(builder *Builder) error {
-	w, err := walk.NewTrackBarWithOrientation(builder.Parent(), walk.Orientation(tb.Orientation))
+func (sl Slider) Create(builder *Builder) error {
+	w, err := walk.NewSliderWithOrientation(builder.Parent(), walk.Orientation(sl.Orientation))
 	if err != nil {
 		return err
 	}
 
-	return builder.InitWidget(tb, w, func() error {
-		if tb.MaxValue > tb.MinValue {
-			w.SetRange(tb.MinValue, tb.MaxValue)
+	return builder.InitWidget(sl, w, func() error {
+		if sl.MaxValue > sl.MinValue {
+			w.SetRange(sl.MinValue, sl.MaxValue)
 		}
 
-		if tb.AssignTo != nil {
-			*tb.AssignTo = w
+		if sl.AssignTo != nil {
+			*sl.AssignTo = w
 		}
 
-		if tb.OnValueChanged != nil {
-			w.ValueChanged().Attach(tb.OnValueChanged)
+		if sl.OnValueChanged != nil {
+			w.ValueChanged().Attach(sl.OnValueChanged)
 		}
 
 		return nil
 	})
 }
 
-func (w TrackBar) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
+func (w Slider) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
 	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.AlwaysConsumeSpace, w.ContextMenuItems, w.OnKeyDown, w.OnKeyPress, w.OnKeyUp, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

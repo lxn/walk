@@ -1,4 +1,4 @@
-// Copyright 2013 The Walk Authors. All rights reserved.
+// Copyright 2016 The Walk Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -12,24 +12,24 @@ import (
 )
 
 func main() {
-	var tbv, tbh *walk.TrackBar
+	var slv, slh *walk.Slider
 	var maxEdit, minEdit, valueEdit *walk.NumberEdit
 
 	data := struct{ Min, Max, Value int }{0, 100, 30}
 
 	MainWindow{
-		Title:   "Walk TrackBar Example",
+		Title:   "Walk Slider Example",
 		MinSize: Size{320, 240},
 		Layout:  HBox{},
 		Children: []Widget{
-			TrackBar{
-				AssignTo:    &tbv,
+			Slider{
+				AssignTo:    &slv,
 				MinValue:    data.Min,
 				MaxValue:    data.Max,
 				Value:       data.Value,
 				Orientation: Vertical,
 				OnValueChanged: func() {
-					data.Value = tbv.Value()
+					data.Value = slv.Value()
 					valueEdit.SetValue(float64(data.Value))
 
 				},
@@ -46,8 +46,8 @@ func main() {
 						Value:    float64(data.Min),
 						OnValueChanged: func() {
 							data.Min = int(minEdit.Value())
-							tbh.SetRange(data.Min, data.Max)
-							tbv.SetRange(data.Min, data.Max)
+							slh.SetRange(data.Min, data.Max)
+							slv.SetRange(data.Min, data.Max)
 						},
 					},
 					NumberEdit{
@@ -55,8 +55,8 @@ func main() {
 						Value:    float64(data.Value),
 						OnValueChanged: func() {
 							data.Value = int(valueEdit.Value())
-							tbh.SetValue(data.Value)
-							tbv.SetValue(data.Value)
+							slh.SetValue(data.Value)
+							slv.SetValue(data.Value)
 						},
 					},
 					NumberEdit{
@@ -64,27 +64,28 @@ func main() {
 						Value:    float64(data.Max),
 						OnValueChanged: func() {
 							data.Max = int(maxEdit.Value())
-							tbh.SetRange(data.Min, data.Max)
-							tbv.SetRange(data.Min, data.Max)
+							slh.SetRange(data.Min, data.Max)
+							slv.SetRange(data.Min, data.Max)
 						},
 					},
-					TrackBar{
+					Slider{
 						ColumnSpan: 3,
-						AssignTo:   &tbh,
+						AssignTo:   &slh,
 						MinValue:   data.Min,
 						MaxValue:   data.Max,
 						Value:      data.Value,
 						OnValueChanged: func() {
-							data.Value = tbh.Value()
+							data.Value = slh.Value()
 							valueEdit.SetValue(float64(data.Value))
 						},
 					},
+					VSpacer{},
 					PushButton{
 						ColumnSpan: 3,
 						Text:       "Print state",
 						OnClicked: func() {
-							log.Printf("H: < %d | %d | %d >\n", tbh.MinValue(), tbh.Value(), tbh.MaxValue())
-							log.Printf("V: < %d | %d | %d >\n", tbv.MinValue(), tbv.Value(), tbv.MaxValue())
+							log.Printf("H: < %d | %d | %d >\n", slh.MinValue(), slh.Value(), slh.MaxValue())
+							log.Printf("V: < %d | %d | %d >\n", slv.MinValue(), slv.Value(), slv.MaxValue())
 						},
 					},
 				},
