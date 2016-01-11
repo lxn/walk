@@ -22,13 +22,13 @@ type Menu struct {
 	actions *ActionList
 }
 
-func newMenuBar() (*Menu, error) {
+func newMenuBar(hWnd win.HWND) (*Menu, error) {
 	hMenu := win.CreateMenu()
 	if hMenu == 0 {
 		return nil, lastError("CreateMenu")
 	}
 
-	m := &Menu{hMenu: hMenu}
+	m := &Menu{hMenu: hMenu, hWnd: hWnd}
 	m.actions = newActionList(m)
 
 	return m, nil

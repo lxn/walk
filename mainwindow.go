@@ -52,7 +52,7 @@ func NewMainWindow() (*MainWindow, error) {
 
 	var err error
 
-	if mw.menu, err = newMenuBar(); err != nil {
+	if mw.menu, err = newMenuBar(mw.hWnd); err != nil {
 		return nil, err
 	}
 	if !win.SetMenu(mw.hWnd, mw.menu.hMenu) {
