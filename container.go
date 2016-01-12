@@ -283,6 +283,12 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 			return window.WndProc(hwnd, msg, wParam, lParam)
 		}
 
+	case win.WM_HSCROLL, win.WM_VSCROLL:
+		if window := windowFromHandle(win.HWND(lParam)); window != nil {
+			// The window that sent the notification shall handle it itself.
+			return window.WndProc(hwnd, msg, wParam, lParam)
+		}
+
 	case win.WM_SIZE, win.WM_SIZING:
 		if cb.layout != nil {
 			cb.layout.Update(false)

@@ -1354,6 +1354,12 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 		return 1
 
+	case win.WM_HSCROLL, win.WM_VSCROLL:
+		if window := windowFromHandle(win.HWND(lParam)); window != nil {
+			// The window that sent the notification shall handle it itself.
+			return window.WndProc(hwnd, msg, wParam, lParam)
+		}
+
 	case win.WM_LBUTTONDOWN, win.WM_MBUTTONDOWN, win.WM_RBUTTONDOWN:
 		if msg == win.WM_LBUTTONDOWN && wb.origWndProcPtr == 0 {
 			// Only call SetCapture if this is no subclassed control.
