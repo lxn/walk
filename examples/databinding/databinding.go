@@ -154,7 +154,7 @@ func RunAnimalDialog(owner walk.Form, animal *Animal) (int, error) {
 					Label{
 						Text: "Speed:",
 					},
-					TrackBar{
+					Slider{
 						Value: Bind("Speed"),
 					},
 

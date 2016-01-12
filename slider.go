@@ -7,11 +7,6 @@
 package walk
 
 import (
-	"log"    // TODO remove
-	"unsafe" // TODO remove
-)
-
-import (
 	"github.com/lxn/win"
 )
 
@@ -97,40 +92,14 @@ func (sl *Slider) ValueChanged() *Event {
 	return sl.valueChangedPublisher.Event()
 }
 
-// I'm not sure anymore, if this is the right way!
-// It seems the proper way is to hook on WM_HSCROLL and WM_VSCROLL.
-// But they are not received here!
-// I read, a trackbar does not receive them, it sends them to it's parents.
-// Any Idea on what to do then?
 func (sl *Slider) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case win.WM_NOTIFY: // 0x4E
-		code := ((*win.NMHDR)(unsafe.Pointer(lParam))).Code
-		switch code {
-		case win.TRBN_THUMBPOSCHANGING:
-			// TRBN_THUMBPOSCHANGING is documented to exist only on Vista and above.
-			// I run windows 10, still I never recieve it.
-			log.Fatal("RECEIVED TRBN_THUMBPOSCHANGING") // This never happens.
+	case win.WM_HSCROLL, win.WM_VSCROLL:
+		switch win.LOWORD(uint32(wParam)) {
+		case win.TB_THUMBPOSITION, win.TB_ENDTRACK:
 			sl.valueChangedPublisher.Publish()
-		case win.NM_CUSTOMDRAW:
-			// This is received however, show we do anything with it?
-			nmcd := (*win.NMCUSTOMDRAW)(unsafe.Pointer(lParam))
-			log.Printf("WM_NOTIFY NM_CUSTOMDRAW: %+v code=%x\n", nmcd, nmcd.Hdr.Code)
-		default:
-			// I don't receive anything else, when I change the slider with an arrow key.
-			// There are some others however, when I drag with the mouse.
-			log.Printf("Other WM_NOFITY NMHDR CODE: 0x%x\n", code)
 		}
-	case win.WM_GETDLGCODE:
-		// I recieve this too. lParm is 0x8fca8
-		log.Printf("WM_GETDLGCODE: 0x%x 0x%x", wParam, lParam)
-	default:
-		log.Printf("Other msg: %v 0x%x\n", msg, msg)
-		// I receive these other messages, when I press an arrow key on a slider:
-		// 0x101  WM_KEYUP
-		// 0x100  WM_KEYFIRST
-		// 0xf    WM_PAINT
-		// There is no WM_VSROLL (0x114) or WM_HSCROLL (0x115).
+		return 0
 	}
 	return sl.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
