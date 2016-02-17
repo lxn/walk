@@ -213,6 +213,16 @@ type ImageProvider interface {
 	Image(index int) interface{}
 }
 
+// ColorProvider is the interface that a model must implement to support
+// displaying color of each item.
+type ColorProvider interface {
+	// BackgroundColor returns the background color to display for the item at index index.
+	BackgroundColor(index int) Color
+
+	// TextColor returns the text color to display for the item at index index.
+	TextColor(index int) Color
+}
+
 // ItemChecker is the interface that a model must implement to support check
 // boxes in a widget like TableView.
 type ItemChecker interface {
