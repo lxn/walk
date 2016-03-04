@@ -6,6 +6,7 @@ package main
 
 import (
 	"log"
+	"math"
 )
 
 import (
@@ -85,6 +86,16 @@ func (mw *MyMainWindow) drawStuff(canvas *walk.Canvas, updateBounds walk.Rectang
 		return err
 	}
 	if err := canvas.DrawLine(linesPen, walk.Point{bounds.X, bounds.Height}, walk.Point{bounds.Width, bounds.Y}); err != nil {
+		return err
+	}
+
+	points := make([]walk.Point, 10)
+	dx := bounds.Width / (len(points) - 1)
+	for i := range points {
+		points[i].X = i * dx
+		points[i].Y = int(float64(bounds.Height) / math.Pow(float64(bounds.Width/2), 2) * math.Pow(float64(i*dx-bounds.Width/2), 2))
+	}
+	if err := canvas.DrawPolyline(linesPen, points); err != nil {
 		return err
 	}
 
