@@ -98,12 +98,21 @@ func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 
 		var ps win.PAINTSTRUCT
 
-		hdc := win.BeginPaint(cw.hWnd, &ps)
+		var hdc win.HDC
+		if wParam == 0 {
+			hdc = win.BeginPaint(cw.hWnd, &ps)
+		} else {
+			hdc = win.HDC(wParam)
+		}
 		if hdc == 0 {
 			newError("BeginPaint failed")
 			break
 		}
-		defer win.EndPaint(cw.hWnd, &ps)
+		defer func() {
+			if wParam == 0 {
+				win.EndPaint(cw.hWnd, &ps)
+			}
+		}()
 
 		canvas, err := newCanvasFromHDC(hdc)
 		if err != nil {
@@ -136,6 +145,9 @@ func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 		if cw.paintMode != PaintNormal {
 			return 1
 		}
+
+	case win.WM_PRINTCLIENT:
+		win.SendMessage(hwnd, win.WM_PAINT, wParam, lParam)
 
 	case win.WM_SIZE, win.WM_SIZING:
 		if cw.invalidatesOnResize {

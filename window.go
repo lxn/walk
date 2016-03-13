@@ -9,6 +9,8 @@ package walk
 import (
 	"bytes"
 	"fmt"
+	"image"
+	"image/color"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -150,6 +152,9 @@ type Window interface {
 
 	// Name returns the name of the Window.
 	Name() string
+
+	// Screenshot returns an image of the window.
+	Screenshot() (*image.RGBA, error)
 
 	// SendMessage sends a message to the window and returns the result.
 	SendMessage(msg uint32, wParam, lParam uintptr) uintptr
@@ -1088,6 +1093,42 @@ func (wb *WindowBase) sizeFromClientSize(clientSize Size) Size {
 // excluding decorations.
 func (wb *WindowBase) SetClientSize(value Size) error {
 	return wb.SetSize(wb.sizeFromClientSize(value))
+}
+
+// Screenshot returns an image of the window.
+func (wb *WindowBase) Screenshot() (*image.RGBA, error) {
+	if hBmp, err := hBitmapFromWindow(wb); err != nil {
+		return nil, err
+	} else {
+
+		var bi win.BITMAPINFO
+		bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
+		hdc := win.GetDC(0)
+		if ret := win.GetDIBits(hdc, hBmp, 0, 0, nil, &bi, win.DIB_RGB_COLORS); ret == 0 {
+			return nil, newError("GetDIBits get bitmapinfo failed")
+		}
+
+		buf := make([]byte, bi.BmiHeader.BiSizeImage)
+		bi.BmiHeader.BiCompression = win.BI_RGB
+		if ret := win.GetDIBits(hdc, hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS); ret == 0 {
+			return nil, newError("GetDIBits failed")
+		}
+
+		width := int(bi.BmiHeader.BiWidth)
+		height := int(bi.BmiHeader.BiHeight)
+		im := image.NewRGBA(image.Rect(0, 0, width, height))
+		n := 0
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				r := buf[n+2]
+				g := buf[n+1]
+				b := buf[n+0]
+				n += 4
+				im.Set(x, height-y, color.RGBA{r, g, b, 255})
+			}
+		}
+		return im, nil
+	}
 }
 
 // FocusedWindow returns the Window that has the keyboard input focus.
