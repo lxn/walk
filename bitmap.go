@@ -99,6 +99,31 @@ func hBitmapFromImage(im image.Image) (win.HBITMAP, error) {
 	return hBitmap, nil
 }
 
+func hBitmapFromWindow(window Window) (win.HBITMAP, error) {
+	hdcMem := win.CreateCompatibleDC(0)
+	if hdcMem == 0 {
+		return 0, newError("CreateCompatibleDC failed")
+	}
+	defer win.DeleteDC(hdcMem)
+
+	var r win.RECT
+	if !win.GetWindowRect(window.Handle(), &r) {
+		return 0, newError("GetWindowRect failed")
+	}
+
+	hdc := win.GetDC(window.Handle())
+	width, height := r.Right-r.Left, r.Bottom-r.Top
+	hBmp := win.CreateCompatibleBitmap(hdc, width, height)
+	win.ReleaseDC(window.Handle(), hdc)
+
+	hOld := win.SelectObject(hdcMem, win.HGDIOBJ(hBmp))
+	flags := win.PRF_CHILDREN | win.PRF_CLIENT | win.PRF_ERASEBKGND | win.PRF_NONCLIENT | win.PRF_OWNED
+	window.SendMessage(win.WM_PRINT, uintptr(hdcMem), uintptr(flags))
+
+	win.SelectObject(hdcMem, hOld)
+	return hBmp, nil
+}
+
 type Bitmap struct {
 	hBmp       win.HBITMAP
 	hPackedDIB win.HGLOBAL
