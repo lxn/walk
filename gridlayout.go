@@ -350,7 +350,7 @@ func (l *GridLayout) LayoutFlags() LayoutFlags {
 }
 
 func (l *GridLayout) MinSize() Size {
-	if l.container == nil {
+	if l.container == nil || len(l.cells) == 0 {
 		return Size{}
 	}
 
