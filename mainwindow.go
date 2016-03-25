@@ -16,6 +16,8 @@ import (
 
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
 
+var winStyle uint32 = win.WS_OVERLAPPEDWINDOW
+
 func init() {
 	MustRegisterWindowClass(mainWindowWindowClass)
 }
@@ -35,7 +37,7 @@ func NewMainWindow() (*MainWindow, error) {
 		mw,
 		nil,
 		mainWindowWindowClass,
-		win.WS_OVERLAPPEDWINDOW,
+		winStyle,
 		win.WS_EX_CONTROLPARENT); err != nil {
 
 		return nil, err
@@ -79,6 +81,14 @@ func NewMainWindow() (*MainWindow, error) {
 	succeeded = true
 
 	return mw, nil
+}
+
+func (mw *MainWindow) WinStyle() uint32 {
+	return winStyle
+}
+
+func (mw *MainWindow) SetWinStyle(style uint32) {
+	winStyle = style
 }
 
 func (mw *MainWindow) Menu() *Menu {
