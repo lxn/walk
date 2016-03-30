@@ -57,6 +57,7 @@ type declWidget struct {
 
 type Builder struct {
 	level                    int
+	rows                     int
 	columns                  int
 	row                      int
 	col                      int
@@ -230,6 +231,18 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 					columnSpan = 1
 				}
 
+				if b.rows > 0 && column == 0 && row == 0 {
+					if b.row+rowSpan > b.rows {
+						b.col++
+						b.row = 0
+					}
+
+					column = b.col
+					row = b.row
+
+					b.row += rowSpan
+				}
+
 				if b.columns > 0 && row == 0 && column == 0 {
 					if b.col+columnSpan > b.columns {
 						b.row++
@@ -276,11 +289,13 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 			}()
 
 			if g, ok := layout.(Grid); ok {
+				rows := b.rows
 				columns := b.columns
 				defer func() {
-					b.columns, b.row, b.col = columns, row, column+columnSpan
+					b.rows, b.columns, b.row, b.col = rows, columns, row, column+columnSpan
 				}()
 
+				b.rows = g.Rows
 				b.columns = g.Columns
 				b.row = 0
 				b.col = 0

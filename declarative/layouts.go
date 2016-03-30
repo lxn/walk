@@ -7,6 +7,8 @@
 package declarative
 
 import (
+	"errors"
+
 	"github.com/lxn/walk"
 )
 
@@ -100,6 +102,7 @@ func (vb VBox) Create() (walk.Layout, error) {
 }
 
 type Grid struct {
+	Rows        int
 	Columns     int
 	Margins     Margins
 	Spacing     int
@@ -108,6 +111,10 @@ type Grid struct {
 }
 
 func (g Grid) Create() (walk.Layout, error) {
+	if g.Rows > 0 && g.Columns > 0 {
+		return nil, errors.New("only one of Rows and Columns may be > 0")
+	}
+
 	l := walk.NewGridLayout()
 
 	if err := setLayoutMargins(l, g.Margins, g.MarginsZero); err != nil {
