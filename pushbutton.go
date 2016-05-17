@@ -35,6 +35,10 @@ func NewPushButton(parent Container) (*PushButton, error) {
 	return pb, nil
 }
 
+func (pb *PushButton) SetEnabled(enabled bool) {
+	pb.Button.WidgetBase.WindowBase.SetEnabled(enabled)
+}
+
 func (*PushButton) LayoutFlags() LayoutFlags {
 	return GrowableHorz
 }
