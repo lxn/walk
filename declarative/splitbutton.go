@@ -36,7 +36,7 @@ type SplitButton struct {
 	Text               Property
 	Image              interface{}
 	ImageAboveText     bool
-	MenuItems        []MenuItem
+	MenuItems          []MenuItem
 	OnClicked          walk.EventHandler
 }
 

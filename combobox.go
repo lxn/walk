@@ -583,6 +583,15 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		if !cb.Enabled() {
 			return 0
 		}
+
+	case win.WM_SIZE:
+		if cb.Editable() {
+			result := cb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+
+			cb.SetTextSelection(0, 0)
+
+			return result
+		}
 	}
 
 	return cb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
