@@ -167,12 +167,13 @@ func (dlg *FileDialog) ShowBrowseFolder(owner Form) (accepted bool, err error) {
 	const BIF_NEWDIALOGSTYLE = 0x00000040
 
 	bi := win.BROWSEINFO{
-		HwndOwner:      ownerHwnd,
-		PszDisplayName: &buf[0],
-		LpszTitle:      syscall.StringToUTF16Ptr(dlg.Title),
-		UlFlags:        BIF_NEWDIALOGSTYLE,
-		Lpfn:           syscall.NewCallback(callback),
+		HwndOwner: ownerHwnd,
+		LpszTitle: syscall.StringToUTF16Ptr(dlg.Title),
+		UlFlags:   BIF_NEWDIALOGSTYLE,
+		Lpfn:      syscall.NewCallback(callback),
 	}
+
+	win.SHParseDisplayName(&buf[0], 0, &bi.PidlRoot, 0, nil)
 
 	pidl := win.SHBrowseForFolder(&bi)
 	if pidl == 0 {
