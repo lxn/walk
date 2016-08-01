@@ -186,12 +186,16 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 	return cb, nil
 }
 
-func (*ComboBox) LayoutFlags() LayoutFlags {
+func (cb *ComboBox) LayoutFlags() LayoutFlags {
+	if cb.Editable() {
+		return GrowableHorz | GreedyHorz
+	}
+
 	return GrowableHorz
 }
 
 func (cb *ComboBox) MinSizeHint() Size {
-	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 12})
+	defaultSize := cb.dialogBaseUnitsToPixels(Size{30, 12})
 
 	if cb.model != nil && cb.maxItemTextWidth <= 0 {
 		cb.maxItemTextWidth = cb.calculateMaxItemTextWidth()
