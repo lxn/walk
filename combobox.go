@@ -553,7 +553,6 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		case win.CBN_EDITCHANGE:
 			cb.selChangeIndex = -1
 			cb.textChangedPublisher.Publish()
-			cb.currentIndexChangedPublisher.Publish()
 
 		case win.CBN_SELCHANGE:
 			cb.selChangeIndex = selIndex
