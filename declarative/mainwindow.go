@@ -113,7 +113,9 @@ func (mw MainWindow) Create() error {
 		}
 
 		builder.Defer(func() error {
-			w.Show()
+			if mw.Visible != false {
+				w.Show()
+			}
 
 			return nil
 		})
