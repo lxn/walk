@@ -453,6 +453,30 @@ func (b *Builder) initProperties() error {
 }
 
 func (b *Builder) conditionOrProperty(data Property) interface{} {
+	parse := func(expr string, required bool) walk.Condition {
+		var negated bool
+		if strings.HasPrefix(expr, "!") {
+			negated = true
+			expr = strings.TrimSpace(expr[1:])
+		}
+
+		var condition walk.Condition
+
+		if p := b.property(expr); p != nil {
+			condition = p.(walk.Condition)
+		} else if c, ok := conditionsByName[expr]; ok {
+			condition = c
+		} else if required {
+			panic("unknown condition or property name: " + expr)
+		}
+
+		if negated {
+			condition = walk.NewNegatedCondition(condition)
+		}
+
+		return condition
+	}
+
 	switch val := data.(type) {
 	case bindData:
 		if c, ok := b.knownCompositeConditions[val.expression]; ok {
@@ -466,13 +490,7 @@ func (b *Builder) conditionOrProperty(data Property) interface{} {
 			var conditions []walk.Condition
 
 			for _, cond := range conds {
-				if p := b.property(cond); p != nil {
-					conditions = append(conditions, p.(walk.Condition))
-				} else if c, ok := conditionsByName[cond]; ok {
-					conditions = append(conditions, c)
-				} else {
-					panic("unknown condition or property name: " + cond)
-				}
+				conditions = append(conditions, parse(cond, true))
 			}
 
 			var condition walk.Condition
@@ -486,11 +504,7 @@ func (b *Builder) conditionOrProperty(data Property) interface{} {
 			return condition
 		}
 
-		if p := b.property(val.expression); p != nil {
-			return p
-		}
-
-		return conditionsByName[val.expression]
+		return parse(val.expression, false)
 
 	case walk.Condition:
 		return val

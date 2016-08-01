@@ -40,7 +40,7 @@ func main() {
 						Text:        "&Open",
 						Image:       "../img/open.png",
 						Enabled:     Bind("enabledCB.Checked"),
-						Visible:     Bind("openVisibleCB.Checked"),
+						Visible:     Bind("!openHiddenCB.Checked"),
 						Shortcut:    Shortcut{walk.ModControl, walk.KeyO},
 						OnTriggered: mw.openAction_Triggered,
 					},
@@ -129,8 +129,8 @@ func main() {
 				Checked: true,
 			},
 			CheckBox{
-				Name:    "openVisibleCB",
-				Text:    "Open Visible",
+				Name:    "openHiddenCB",
+				Text:    "Open Hidden",
 				Checked: true,
 			},
 			PushButton{
