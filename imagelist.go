@@ -34,6 +34,10 @@ func NewImageList(imageSize Size, maskColor Color) (*ImageList, error) {
 	return &ImageList{hIml: hIml, maskColor: maskColor}, nil
 }
 
+func (il *ImageList) Handle() win.HIMAGELIST {
+	return il.hIml
+}
+
 func (il *ImageList) Add(bitmap, maskBitmap *Bitmap) (int, error) {
 	if bitmap == nil {
 		return 0, newError("bitmap cannot be nil")
