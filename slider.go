@@ -23,7 +23,7 @@ func NewSlider(parent Container) (*Slider, error) {
 func NewSliderWithOrientation(parent Container, orientation Orientation) (*Slider, error) {
 	sl := new(Slider)
 
-	var style uint32 = win.WS_VISIBLE | win.TBS_TOOLTIPS
+	var style uint32 = win.WS_TABSTOP | win.WS_VISIBLE | win.TBS_TOOLTIPS
 	if orientation == Vertical {
 		style |= win.TBS_VERT
 		sl.layoutFlags = ShrinkableVert | GrowableVert | GreedyVert
