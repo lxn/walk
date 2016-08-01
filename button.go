@@ -134,9 +134,17 @@ func (b *Button) raiseClicked() {
 func (b *Button) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_COMMAND:
-		switch win.HIWORD(uint32(wParam)) {
-		case win.BN_CLICKED:
-			b.raiseClicked()
+		hiWP := win.HIWORD(uint32(wParam))
+
+		if hiWP == 0 && lParam == 0 {
+			if a, ok := actionsById[win.LOWORD(uint32(wParam))]; ok {
+				a.raiseTriggered()
+			}
+		} else {
+			switch hiWP {
+			case win.BN_CLICKED:
+				b.raiseClicked()
+			}
 		}
 
 	case win.WM_SETTEXT:
