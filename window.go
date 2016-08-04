@@ -1082,8 +1082,9 @@ func (wb *WindowBase) ClientBounds() Rectangle {
 }
 
 func (wb *WindowBase) sizeFromClientSize(clientSize Size) Size {
-	s := wb.Size()
-	cs := wb.ClientBounds().Size()
+	window := wb.window
+	s := window.Size()
+	cs := window.ClientBounds().Size()
 	ncs := Size{s.Width - cs.Width, s.Height - cs.Height}
 
 	return Size{clientSize.Width + ncs.Width, clientSize.Height + ncs.Height}

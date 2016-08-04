@@ -72,6 +72,9 @@ func NewMainWindow() (*MainWindow, error) {
 	mw.Children().Remove(mw.statusBar)
 	mw.statusBar.parent = mw
 	win.SetParent(mw.statusBar.hWnd, mw.hWnd)
+	mw.statusBar.visibleChangedPublisher.event.Attach(func() {
+		mw.SetBounds(mw.Bounds())
+	})
 
 	// This forces display of focus rectangles, as soon as the user starts to type.
 	mw.SendMessage(win.WM_CHANGEUISTATE, win.UIS_INITIALIZE, 0)
@@ -215,7 +218,7 @@ func (mw *MainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			mw.toolBar.SetBounds(Rectangle{0, 0, cb.Width, mw.toolBar.Height()})
 		}
 
-		mw.statusBar.SetBounds(Rectangle{0, cb.Height, cb.Width, mw.statusBar.Height()})
+		mw.statusBar.SetBounds(Rectangle{0, cb.Y + cb.Height, cb.Width, mw.statusBar.Height()})
 	}
 
 	return mw.FormBase.WndProc(hwnd, msg, wParam, lParam)
