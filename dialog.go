@@ -222,12 +222,12 @@ func (dlg *Dialog) Show() {
 		ob := dlg.owner.Bounds()
 
 		if dlg.centerInOwnerWhenRun {
-			dlg.SetBounds(Rectangle{
+			dlg.SetBounds(fitRectToScreen(dlg.hWnd, Rectangle{
 				ob.X + (ob.Width-size.Width)/2,
 				ob.Y + (ob.Height-size.Height)/2,
 				size.Width,
 				size.Height,
-			})
+			}))
 		}
 	} else {
 		dlg.SetBounds(dlg.Bounds())
@@ -236,6 +236,41 @@ func (dlg *Dialog) Show() {
 	dlg.FormBase.Show()
 
 	dlg.focusFirstCandidateDescendant()
+}
+
+func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {
+	var mi win.MONITORINFO
+	mi.CbSize = uint32(unsafe.Sizeof(mi))
+
+	if !win.GetMonitorInfo(win.MonitorFromWindow(
+		hWnd, win.MONITOR_DEFAULTTOPRIMARY), &mi) {
+
+		return r
+	}
+
+	mon := rectangleFromRECT(mi.RcWork)
+
+	mon.Height -= int(win.GetSystemMetrics(win.SM_CYCAPTION))
+
+	if r.Width <= mon.Width {
+		switch {
+		case r.X < mon.X:
+			r.X = mon.X
+		case r.X+r.Width > mon.X+mon.Width:
+			r.X = mon.X + mon.Width - r.Width
+		}
+	}
+
+	if r.Height <= mon.Height {
+		switch {
+		case r.Y < mon.Y:
+			r.Y = mon.Y
+		case r.Y+r.Height > mon.Y+mon.Height:
+			r.Y = mon.Y + mon.Height - r.Height
+		}
+	}
+
+	return r
 }
 
 func (dlg *Dialog) Run() int {
