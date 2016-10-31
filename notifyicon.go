@@ -13,6 +13,7 @@ import (
 
 import (
 	"github.com/lxn/win"
+	"errors"
 )
 
 const notifyIconWindowClass = `\o/ Walk_NotifyIcon_Class \o/`
@@ -78,6 +79,8 @@ type NotifyIcon struct {
 	hWnd               win.HWND
 	contextMenu        *Menu
 	icon               *Icon
+	uVersion           uint32
+	balloonIcon        *Icon
 	toolTip            string
 	visible            bool
 	mouseDownPublisher MouseEventPublisher
@@ -120,8 +123,14 @@ func NewNotifyIcon() (*NotifyIcon, error) {
 		return nil, newError("Shell_NotifyIcon")
 	}
 
-	// We want XP-compatible message behavior.
-	nid.UVersion = win.NOTIFYICON_VERSION
+
+	// We want XP-compatible message behavior or vista+ when available.
+	uVersion := win.NOTIFYICON_VERSION_XP
+	if win.LOBYTE(win.LOWORD(win.GetVersion())) >= 6 {
+		uVersion = win.NOTIFYICON_VERSION_VISTA
+	}
+
+	nid.UVersion = uVersion
 
 	if !win.Shell_NotifyIcon(win.NIM_SETVERSION, &nid) {
 		return nil, newError("Shell_NotifyIcon")
@@ -137,6 +146,7 @@ func NewNotifyIcon() (*NotifyIcon, error) {
 		id:          nid.UID,
 		hWnd:        hWnd,
 		contextMenu: menu,
+		uVersion: uVersion,
 	}
 
 	// Set our *NotifyIcon as user data for the message window.
@@ -256,6 +266,28 @@ func (ni *NotifyIcon) SetIcon(icon *Icon) error {
 	}
 
 	ni.icon = icon
+
+	return nil
+}
+
+// SetBalloonIcon sets the Icon of the custom message.
+func (ni *NotifyIcon) SetBalloonIcon(icon *Icon) error {
+	if ni.uVersion < win.NOTIFYICON_VERSION_VISTA{
+		return errors.New("Custom balloon icon is only supported on Windows Vista and higher!")
+	}
+
+	if icon == ni.balloonIcon {
+		return nil
+	}
+
+	nid := ni.notifyIconData()
+	if icon == nil {
+		nid.Set_hBalloonIcon(0)
+	} else {
+		nid.Set_hBalloonIcon(icon.hIcon)
+	}
+
+	ni.balloonIcon = icon
 
 	return nil
 }
