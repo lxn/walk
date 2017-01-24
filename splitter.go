@@ -153,7 +153,7 @@ func (s *Splitter) SaveState() error {
 			buf.WriteString(" ")
 		}
 
-		buf.WriteString(strconv.FormatFloat(layout.fractions[i/2], 'f', -1, 64))
+		buf.WriteString(strconv.FormatInt(int64(layout.hwnd2Item[s.children.At(i).Handle()].size), 10))
 	}
 
 	s.putState(buf.String())
@@ -183,31 +183,38 @@ func (s *Splitter) RestoreState() error {
 		return nil
 	}
 
-	fractionStrs := strings.Split(state, " ")
+	sizeStrs := strings.Split(state, " ")
 
 	// FIXME: Solve this in a better way.
-	if len(fractionStrs) != childCount {
+	if len(sizeStrs) != childCount {
 		log.Print("*Splitter.RestoreState: failed due to unexpected child count (FIXME!)")
 		return nil
 	}
 
-	layout := s.layout.(*splitterLayout)
-
 	s.SetSuspended(true)
 	defer s.SetSuspended(false)
 
-	var fractionsTotal float64
-	var fractions []float64
+	layout := s.layout.(*splitterLayout)
+
+	regularSpace := layout.spaceForRegularWidgets()
 
 	for i, widget := range s.children.items {
 		if i%2 == 0 {
-			fraction, err := strconv.ParseFloat(fractionStrs[i/2+i%2], 64)
+			j := i/2 + i%2
+			s := sizeStrs[j]
+
+			size, err := strconv.Atoi(s)
 			if err != nil {
-				return err
+				// OK, we probably got old style settings which were stored as fractions.
+				fraction, err := strconv.ParseFloat(s, 64)
+				if err != nil {
+					return err
+				}
+
+				size = int(float64(regularSpace) * fraction)
 			}
 
-			fractionsTotal += fraction
-			fractions = append(fractions, fraction)
+			layout.hwnd2Item[widget.Handle()].size = size
 		}
 
 		if persistable, ok := widget.(Persistable); ok {
@@ -217,11 +224,22 @@ func (s *Splitter) RestoreState() error {
 		}
 	}
 
-	for i := range fractions {
-		fractions[i] = fractions[i] / fractionsTotal
+	return nil
+}
+
+func (s *Splitter) Fixed(widget Widget) bool {
+	return s.layout.(*splitterLayout).Fixed(widget)
+}
+
+func (s *Splitter) SetFixed(widget Widget, fixed bool) error {
+	item := s.layout.(*splitterLayout).hwnd2Item[widget.Handle()]
+	if item == nil {
+		return newErr("unknown widget")
 	}
 
-	return layout.SetFractions(fractions)
+	item.fixed = fixed
+
+	return nil
 }
 
 func (s *Splitter) onInsertingWidget(index int, widget Widget) (err error) {
@@ -236,141 +254,141 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 		} else {
 			widget.SetCursor(CursorSizeNS())
 		}
-	} else if s.children.Len()%2 == 0 {
-		defer func() {
-			if err != nil {
-				return
-			}
+	} else {
+		layout := s.Layout().(*splitterLayout)
+		layout.hwnd2Item[widget.Handle()] = &splitterLayoutItem{stretchFactor: 1}
 
-			var handle *splitterHandle
-			handle, err = newSplitterHandle(s)
-			if err != nil {
-				return
-			}
+		if s.children.Len()%2 == 0 {
+			defer func() {
+				if err != nil {
+					return
+				}
 
-			var handleIndex int
-			if index == 0 {
-				handleIndex = 1
-			} else {
-				handleIndex = index
-			}
-			err = s.children.Insert(handleIndex, handle)
-			if err == nil {
-				// FIXME: These handlers will be leaked, if widgets get removed.
-				handle.MouseDown().Attach(func(x, y int, button MouseButton) {
-					if button != LeftButton {
-						return
-					}
+				var handle *splitterHandle
+				handle, err = newSplitterHandle(s)
+				if err != nil {
+					return
+				}
 
-					s.draggedHandle = handle
-					s.mouseDownPos = Point{x, y}
-					handle.SetBackground(splitterHandleDraggingBrush)
-				})
-
-				handle.MouseMove().Attach(func(x, y int, button MouseButton) {
-					if s.draggedHandle == nil {
-						return
-					}
-
-					handleIndex := s.children.Index(s.draggedHandle)
-
-					prev := s.children.At(handleIndex - 1)
-					bp := prev.Bounds()
-					msep := minSizeEffective(prev)
-
-					next := s.children.At(handleIndex + 1)
-					bn := next.Bounds()
-					msen := minSizeEffective(next)
-
-					if s.Orientation() == Horizontal {
-						xh := s.draggedHandle.X()
-
-						xnew := xh + x - s.mouseDownPos.X
-						if xnew < bp.X+msep.Width {
-							xnew = bp.X + msep.Width
-						} else if xnew >= bn.X+bn.Width-msen.Width-s.handleWidth {
-							xnew = bn.X + bn.Width - msen.Width - s.handleWidth
-						}
-
-						if e := s.draggedHandle.SetX(xnew); e != nil {
+				var handleIndex int
+				if index == 0 {
+					handleIndex = 1
+				} else {
+					handleIndex = index
+				}
+				err = s.children.Insert(handleIndex, handle)
+				if err == nil {
+					// FIXME: These handlers will be leaked, if widgets get removed.
+					handle.MouseDown().Attach(func(x, y int, button MouseButton) {
+						if button != LeftButton {
 							return
 						}
-					} else {
-						yh := s.draggedHandle.Y()
 
-						ynew := yh + y - s.mouseDownPos.Y
-						if ynew < bp.Y+msep.Height {
-							ynew = bp.Y + msep.Height
-						} else if ynew >= bn.Y+bn.Height-msen.Height-s.handleWidth {
-							ynew = bn.Y + bn.Height - msen.Height - s.handleWidth
-						}
+						s.draggedHandle = handle
+						s.mouseDownPos = Point{x, y}
+						handle.SetBackground(splitterHandleDraggingBrush)
+					})
 
-						if e := s.draggedHandle.SetY(ynew); e != nil {
+					handle.MouseMove().Attach(func(x, y int, button MouseButton) {
+						if s.draggedHandle == nil {
 							return
 						}
-					}
-				})
 
-				handle.MouseUp().Attach(func(x, y int, button MouseButton) {
-					if s.draggedHandle == nil {
-						return
-					}
+						handleIndex := s.children.Index(s.draggedHandle)
 
-					dragHandle := s.draggedHandle
-					s.draggedHandle = nil
-					dragHandle.SetBackground(nil)
+						prev := s.children.At(handleIndex - 1)
+						bp := prev.Bounds()
+						msep := minSizeEffective(prev)
 
-					handleIndex := s.children.Index(dragHandle)
-					prev := s.children.At(handleIndex - 1)
-					next := s.children.At(handleIndex + 1)
+						next := s.children.At(handleIndex + 1)
+						bn := next.Bounds()
+						msen := minSizeEffective(next)
 
-					prev.SetSuspended(true)
-					defer prev.Invalidate()
-					defer prev.SetSuspended(false)
-					next.SetSuspended(true)
-					defer next.Invalidate()
-					defer next.SetSuspended(false)
+						if s.Orientation() == Horizontal {
+							xh := s.draggedHandle.X()
 
-					bh := dragHandle.Bounds()
-					bp := prev.Bounds()
-					bn := next.Bounds()
+							xnew := xh + x - s.mouseDownPos.X
+							if xnew < bp.X+msep.Width {
+								xnew = bp.X + msep.Width
+							} else if xnew >= bn.X+bn.Width-msen.Width-s.handleWidth {
+								xnew = bn.X + bn.Width - msen.Width - s.handleWidth
+							}
 
-					var sizePrev int
-					var sizeNext int
+							if e := s.draggedHandle.SetX(xnew); e != nil {
+								return
+							}
+						} else {
+							yh := s.draggedHandle.Y()
 
-					if s.Orientation() == Horizontal {
-						bp.Width = bh.X - bp.X
-						bn.Width -= (bh.X + bh.Width) - bn.X
-						bn.X = bh.X + bh.Width
-						sizePrev = bp.Width
-						sizeNext = bn.Width
-					} else {
-						bp.Height = bh.Y - bp.Y
-						bn.Height -= (bh.Y + bh.Height) - bn.Y
-						bn.Y = bh.Y + bh.Height
-						sizePrev = bp.Height
-						sizeNext = bn.Height
-					}
+							ynew := yh + y - s.mouseDownPos.Y
+							if ynew < bp.Y+msep.Height {
+								ynew = bp.Y + msep.Height
+							} else if ynew >= bn.Y+bn.Height-msen.Height-s.handleWidth {
+								ynew = bn.Y + bn.Height - msen.Height - s.handleWidth
+							}
 
-					if e := prev.SetBounds(bp); e != nil {
-						return
-					}
+							if e := s.draggedHandle.SetY(ynew); e != nil {
+								return
+							}
+						}
+					})
 
-					if e := next.SetBounds(bn); e != nil {
-						return
-					}
+					handle.MouseUp().Attach(func(x, y int, button MouseButton) {
+						if s.draggedHandle == nil {
+							return
+						}
 
-					layout := s.Layout().(*splitterLayout)
-					space := float64(layout.spaceForRegularWidgets())
-					fractions := layout.fractions
-					i := handleIndex - 1
-					jp := i/2 + i%2
-					jn := jp + 1
-					fractions[jp] = float64(sizePrev) / space
-					fractions[jn] = float64(sizeNext) / space
-				})
-			}
-		}()
+						dragHandle := s.draggedHandle
+						s.draggedHandle = nil
+						dragHandle.SetBackground(nil)
+
+						handleIndex := s.children.Index(dragHandle)
+						prev := s.children.At(handleIndex - 1)
+						next := s.children.At(handleIndex + 1)
+
+						prev.SetSuspended(true)
+						defer prev.Invalidate()
+						defer prev.SetSuspended(false)
+						next.SetSuspended(true)
+						defer next.Invalidate()
+						defer next.SetSuspended(false)
+
+						bh := dragHandle.Bounds()
+						bp := prev.Bounds()
+						bn := next.Bounds()
+
+						var sizePrev int
+						var sizeNext int
+
+						if s.Orientation() == Horizontal {
+							bp.Width = bh.X - bp.X
+							bn.Width -= (bh.X + bh.Width) - bn.X
+							bn.X = bh.X + bh.Width
+							sizePrev = bp.Width
+							sizeNext = bn.Width
+						} else {
+							bp.Height = bh.Y - bp.Y
+							bn.Height -= (bh.Y + bh.Height) - bn.Y
+							bn.Y = bh.Y + bh.Height
+							sizePrev = bp.Height
+							sizeNext = bn.Height
+						}
+
+						if e := prev.SetBounds(bp); e != nil {
+							return
+						}
+
+						if e := next.SetBounds(bn); e != nil {
+							return
+						}
+
+						layout := s.Layout().(*splitterLayout)
+						layout.hwnd2Item[prev.Handle()].size = sizePrev
+						layout.hwnd2Item[next.Handle()].size = sizeNext
+					})
+				}
+			}()
+		}
 	}
 
 	return s.ContainerBase.onInsertedWidget(index, widget)
