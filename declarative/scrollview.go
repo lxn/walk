@@ -36,6 +36,8 @@ type ScrollView struct {
 	DataBinder         DataBinder
 	Layout             Layout
 	Children           []Widget
+	HorizontalFixed    bool
+	VerticalFixed      bool
 }
 
 func (sv ScrollView) Create(builder *Builder) error {
@@ -49,6 +51,8 @@ func (sv ScrollView) Create(builder *Builder) error {
 		w.SetSuspended(false)
 		return nil
 	})
+
+	w.SetScrollbars(!sv.HorizontalFixed, !sv.VerticalFixed)
 
 	return builder.InitWidget(sv, w, func() error {
 		if sv.AssignTo != nil {
