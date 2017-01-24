@@ -181,6 +181,10 @@ func (c *Canvas) withFontAndTextColor(font *Font, color Color, f func() error) e
 	})
 }
 
+func (c *Canvas) HDC() win.HDC {
+	return c.hdc
+}
+
 func (c *Canvas) Bounds() Rectangle {
 	return Rectangle{
 		Width:  int(win.GetDeviceCaps(c.hdc, win.HORZRES)),
