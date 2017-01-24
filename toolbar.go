@@ -78,9 +78,7 @@ func NewVerticalToolBar(parent Container) (*ToolBar, error) {
 }
 
 func (tb *ToolBar) LayoutFlags() LayoutFlags {
-	style := win.GetWindowLong(tb.hWnd, win.GWL_STYLE)
-
-	if style&win.CCS_VERT > 0 {
+	if tb.Orientation() == Vertical {
 		return ShrinkableVert | GrowableVert | GreedyVert
 	}
 
@@ -98,16 +96,42 @@ func (tb *ToolBar) SizeHint() Size {
 		return Size{}
 	}
 
-	size := uint32(tb.SendMessage(win.TB_GETBUTTONSIZE, 0, 0))
+	buttonSize := uint32(tb.SendMessage(win.TB_GETBUTTONSIZE, 0, 0))
 
 	width := tb.defaultButtonWidth
 	if width == 0 {
-		width = int(win.LOWORD(size))
+		width = int(win.LOWORD(buttonSize))
 	}
 
-	height := int(win.HIWORD(size))
+	height := int(win.HIWORD(buttonSize))
+
+	var size win.SIZE
+	var wp uintptr
+
+	if tb.Orientation() == Vertical {
+		wp = win.TRUE
+	} else {
+		wp = win.FALSE
+	}
+
+	if win.FALSE != tb.SendMessage(win.TB_GETIDEALSIZE, wp, uintptr(unsafe.Pointer(&size))) {
+		if wp == win.TRUE {
+			height = int(size.CY)
+		} else {
+			width = int(size.CX)
+		}
+	}
 
 	return Size{width, height}
+}
+func (tb *ToolBar) Orientation() Orientation {
+	style := win.GetWindowLong(tb.hWnd, win.GWL_STYLE)
+
+	if style&win.CCS_VERT > 0 {
+		return Vertical
+	}
+
+	return Horizontal
 }
 
 func (tb *ToolBar) ButtonStyle() ToolBarButtonStyle {
@@ -407,6 +431,8 @@ func (tb *ToolBar) insertAction(action *Action, visibleChanged bool) (err error)
 
 	tb.SendMessage(win.TB_AUTOSIZE, 0, 0)
 
+	tb.updateParentLayout()
+
 	return
 }
 
@@ -420,6 +446,8 @@ func (tb *ToolBar) removeAction(action *Action, visibleChanged bool) error {
 	if 0 == tb.SendMessage(win.TB_DELETEBUTTON, uintptr(index), 0) {
 		return newError("SendMessage(TB_DELETEBUTTON) failed")
 	}
+
+	tb.updateParentLayout()
 
 	return nil
 }
