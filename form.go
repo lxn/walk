@@ -229,6 +229,8 @@ func (fb *FormBase) SetTitle(value string) error {
 }
 
 func (fb *FormBase) Run() int {
+	fb.Layout().Update(false)
+
 	fb.startingPublisher.Publish()
 
 	var msg win.MSG
