@@ -208,6 +208,18 @@ func (wb *WidgetBase) LayoutFlags() LayoutFlags {
 	return 0
 }
 
+// SetMinMaxSize sets the minimum and maximum outer Size of the *WidgetBase,
+// including decorations.
+//
+// Use walk.Size{} to make the respective limit be ignored.
+func (wb *WidgetBase) SetMinMaxSize(min, max Size) (err error) {
+	err = wb.WindowBase.SetMinMaxSize(min, max)
+
+	wb.updateParentLayout()
+
+	return
+}
+
 // AlwaysConsumeSpace returns if the Widget should consume space even if it is
 // not visible.
 func (wb *WidgetBase) AlwaysConsumeSpace() bool {
