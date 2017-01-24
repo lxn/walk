@@ -115,6 +115,8 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 		return nil, err
 	}
 
+	tv.SendMessage(win.WM_CHANGEUISTATE, uintptr(win.MAKELONG(win.UIS_SET, win.UISF_HIDEFOCUS)), 0)
+
 	tv.currentIndex = -1
 
 	tv.MustRegisterProperty("ColumnsOrderable", NewBoolProperty(
@@ -1430,6 +1432,15 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 
 		case tableViewSelectedIndexesChangedTimerId:
 			tv.selectedIndexesChangedPublisher.Publish()
+		}
+
+	case win.WM_UPDATEUISTATE:
+		switch win.LOWORD(uint32(wParam)) {
+		case win.UIS_SET:
+			wParam |= win.UISF_HIDEFOCUS << 16
+
+		case win.UIS_CLEAR, win.UIS_INITIALIZE:
+			wParam &^= ^uintptr(win.UISF_HIDEFOCUS << 16)
 		}
 	}
 
