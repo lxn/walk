@@ -143,6 +143,10 @@ func (tv *TreeView) SetCurrentItem(item TreeItem) error {
 		return nil
 	}
 
+	if err := tv.ensureItemAndAncestorsInserted(item); err != nil {
+		return err
+	}
+
 	var handle win.HTREEITEM
 	if item != nil {
 		if info := tv.item2Info[item]; info == nil {
@@ -375,7 +379,37 @@ func (tv *TreeView) removeDescendants(parent TreeItem) error {
 	return nil
 }
 
+func (tv *TreeView) ensureItemAndAncestorsInserted(item TreeItem) error {
+	if item == nil {
+		return newError("invalid item")
+	}
+
+	var hierarchy []TreeItem
+
+	for item != nil && tv.item2Info[item] == nil {
+		item = item.Parent()
+
+		if item != nil {
+			hierarchy = append(hierarchy, item)
+		} else {
+			return newError("invalid item")
+		}
+	}
+
+	for i := len(hierarchy) - 1; i >= 0; i-- {
+		if err := tv.insertChildren(hierarchy[i]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (tv *TreeView) Expanded(item TreeItem) bool {
+	if tv.item2Info[item] == nil {
+		return false
+	}
+
 	tvi := &win.TVITEM{
 		HItem:     tv.item2Info[item].handle,
 		Mask:      win.TVIF_STATE,
@@ -390,6 +424,17 @@ func (tv *TreeView) Expanded(item TreeItem) bool {
 }
 
 func (tv *TreeView) SetExpanded(item TreeItem, expanded bool) error {
+	if expanded {
+		if err := tv.ensureItemAndAncestorsInserted(item); err != nil {
+			return err
+		}
+	}
+
+	info := tv.item2Info[item]
+	if info == nil {
+		return newError("invalid item")
+	}
+
 	var action uintptr
 	if expanded {
 		action = win.TVE_EXPAND
@@ -397,7 +442,7 @@ func (tv *TreeView) SetExpanded(item TreeItem, expanded bool) error {
 		action = win.TVE_COLLAPSE
 	}
 
-	if 0 == tv.SendMessage(win.TVM_EXPAND, action, uintptr(tv.item2Info[item].handle)) {
+	if 0 == tv.SendMessage(win.TVM_EXPAND, action, uintptr(info.handle)) {
 		return newError("SendMessage(TVM_EXPAND) failed")
 	}
 
