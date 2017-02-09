@@ -129,10 +129,6 @@ func (a *Action) SetChecked(value bool) (err error) {
 }
 
 func (a *Action) Enabled() bool {
-	if a.enabledCondition != nil {
-		return a.enabledCondition.Satisfied()
-	}
-
 	return a.enabled
 }
 
@@ -292,10 +288,6 @@ func (a *Action) SetToolTip(value string) (err error) {
 }
 
 func (a *Action) Visible() bool {
-	if a.visibleCondition != nil {
-		return a.visibleCondition.Satisfied()
-	}
-
 	return a.visible
 }
 
