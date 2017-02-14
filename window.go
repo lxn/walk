@@ -271,6 +271,8 @@ type Window interface {
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Windows.
 	Y() int
+
+	SwitchToThisWindow()
 }
 
 // WindowBase implements many operations common to all Windows.
@@ -1516,4 +1518,12 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	}
 
 	return win.DefWindowProc(hwnd, msg, wParam, lParam)
+}
+
+func (wb *WindowBase) SwitchToThisWindow() {
+	libuser32 := win.MustLoadLibrary("User32.dll")
+	syscall.Syscall(win.MustGetProcAddress(libuser32, "SwitchToThisWindow"), 2,
+		uintptr(wb.hWnd),
+		1,
+		0)
 }
