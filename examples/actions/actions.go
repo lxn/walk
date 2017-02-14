@@ -137,6 +137,19 @@ func main() {
 				AssignTo: &toggleSpecialModePB,
 				Text:     "Enable Special Mode",
 				OnClicked: func() {
+					if mw.FixedSize() &&
+						!mw.MaxBtnEnabled() &&
+						!mw.MinBtnEnabled() {
+						mw.SetFixedSize(false)
+						mw.SetMaxBtnEnabled(true)
+						mw.SetMinBtnEnabled(true)
+
+					} else {
+						mw.SetFixedSize(true)
+						mw.SetMaxBtnEnabled(false)
+						mw.SetMinBtnEnabled(false)
+					}
+
 					isSpecialMode.SetSatisfied(!isSpecialMode.Satisfied())
 
 					if isSpecialMode.Satisfied() {
@@ -162,6 +175,9 @@ func main() {
 
 	addRecentFileActions("Foo", "Bar", "Baz")
 
+	mw.SetFixedSize(true)
+	mw.SetMaxBtnEnabled(false)
+	mw.SetMinBtnEnabled(false)
 	mw.Run()
 }
 

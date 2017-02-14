@@ -88,6 +88,9 @@ type Window interface {
 	// Enabled returns if the Window is enabled for user interaction.
 	Enabled() bool
 
+	// FixedSize returns if the window is fixedSize for user interaction.
+	FixedSize() bool
+
 	// Focused returns whether the Window has the keyboard input focus.
 	Focused() bool
 
@@ -124,12 +127,18 @@ type Window interface {
 	// events for the Window.
 	KeyUp() *KeyEvent
 
+	// MaxBtnEnabled returns the maximize button of the window.
+	MaxBtnEnabled() bool
+
 	// MaxSize returns the maximum allowed outer Size for the Window, including
 	// decorations.
 	//
 	// For child windows, this is only relevant when the parent of the Window
 	// has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 	MaxSize() Size
+
+	// MinBtnEnabled returns minimize button of the window.
+	MinBtnEnabled() bool
 
 	// MinSize returns the minimum allowed outer Size for the Window, including
 	// decorations.
@@ -183,6 +192,9 @@ type Window interface {
 	// SetEnabled sets if the Window is enabled for user interaction.
 	SetEnabled(value bool)
 
+	// SetFixedSize sets if the Window is fixed for user interaction.
+	SetFixedSize(value bool) error
+
 	// SetFocus sets the keyboard input focus to the Window.
 	SetFocus() error
 
@@ -191,6 +203,12 @@ type Window interface {
 
 	// SetHeight sets the outer height of the Window, including decorations.
 	SetHeight(value int) error
+
+	// SetMaxBtnEnabled sets the maximize button of the Window.
+	SetMaxBtnEnabled(enabled bool) error
+
+	// SetMinBtnEnabled sets the minimize button of the Window.
+	SetMinBtnEnabled(enabled bool) error
 
 	// SetMinMaxSize sets the minimum and maximum outer Size of the Window,
 	// including decorations.
@@ -910,6 +928,36 @@ func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
 	wb.maxSize = max
 
 	return nil
+}
+
+// FixedSize returns if the window is fixedSize for user interaction.
+func (wb *WindowBase) FixedSize() bool {
+	return !wb.hasStyleBits(win.WS_THICKFRAME)
+}
+
+// SetFixedSize sets if the Window is fixed for user interaction.
+func (wb *WindowBase) SetFixedSize(fixed bool) error {
+	return wb.ensureStyleBits(win.WS_THICKFRAME, !fixed)
+}
+
+// MaxBtnEnabled returns the maximize button of the window.
+func (wb *WindowBase) MaxBtnEnabled() bool {
+	return wb.hasStyleBits(win.WS_MAXIMIZEBOX)
+}
+
+// SetMaxBtnEnabled sets the maximize button of the Window.
+func (wb *WindowBase) SetMaxBtnEnabled(enabled bool) error {
+	return wb.ensureStyleBits(win.WS_MAXIMIZEBOX, enabled)
+}
+
+// MinBtnEnabled returns minimize button of the window.
+func (wb *WindowBase) MinBtnEnabled() bool {
+	return wb.hasStyleBits(win.WS_MINIMIZEBOX)
+}
+
+// SetMinBtnEnabled sets the minimize button of the Window.
+func (wb *WindowBase) SetMinBtnEnabled(enabled bool) error {
+	return wb.ensureStyleBits(win.WS_MINIMIZEBOX, enabled)
 }
 
 var dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
