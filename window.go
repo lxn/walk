@@ -379,21 +379,25 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
-	wb.hWnd = win.CreateWindowEx(
-		exStyle,
-		syscall.StringToUTF16Ptr(className),
-		nil,
-		style|win.WS_CLIPSIBLINGS,
-		win.CW_USEDEFAULT,
-		win.CW_USEDEFAULT,
-		win.CW_USEDEFAULT,
-		win.CW_USEDEFAULT,
-		hwndParent,
-		0,
-		0,
-		nil)
-	if wb.hWnd == 0 {
-		return lastError("CreateWindowEx")
+	if hwnd := window.Handle(); hwnd == 0 {
+		wb.hWnd = win.CreateWindowEx(
+			exStyle,
+			syscall.StringToUTF16Ptr(className),
+			nil,
+			style|win.WS_CLIPSIBLINGS,
+			win.CW_USEDEFAULT,
+			win.CW_USEDEFAULT,
+			win.CW_USEDEFAULT,
+			win.CW_USEDEFAULT,
+			hwndParent,
+			0,
+			0,
+			nil)
+		if wb.hWnd == 0 {
+			return lastError("CreateWindowEx")
+		}
+	} else {
+		wb.hWnd = hwnd
 	}
 
 	succeeded := false
