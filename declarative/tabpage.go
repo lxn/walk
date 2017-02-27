@@ -30,7 +30,7 @@ type TabPage struct {
 	DataBinder       DataBinder
 	Layout           Layout
 	Children         []Widget
-	Image            interface{} // Either *walk.Bitmap or string (image file path)
+	Image            Property
 	Title            Property
 	Content          Widget
 }
@@ -42,19 +42,6 @@ func (tp TabPage) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(tp, w, func() error {
-		img := tp.Image
-		if s, ok := img.(string); ok {
-			var err error
-			if img, err = walk.NewBitmapFromFile(s); err != nil {
-				return err
-			}
-		}
-		if img != nil {
-			if err := w.SetImage(img.(*walk.Bitmap)); err != nil {
-				return err
-			}
-		}
-
 		if tp.Content != nil && len(tp.Children) == 0 {
 			if err := tp.Content.Create(builder); err != nil {
 				return err
