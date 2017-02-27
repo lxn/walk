@@ -5,6 +5,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 )
@@ -14,7 +16,8 @@ func main() {
 	var wv *walk.WebView
 
 	MainWindow{
-		Title:   "Walk WebView Example",
+		Icon:    Bind("'../img/' + icon(wv.URL) + '.ico'"),
+		Title:   "Walk WebView Example'",
 		MinSize: Size{800, 600},
 		Layout:  VBox{MarginsZero: true},
 		Children: []Widget{
@@ -30,7 +33,16 @@ func main() {
 			WebView{
 				AssignTo: &wv,
 				Name:     "wv",
-				URL:      "http://golang.org",
+				URL:      "https://github.com/lxn/walk",
+			},
+		},
+		Functions: map[string]func(args ...interface{}) (interface{}, error){
+			"icon": func(args ...interface{}) (interface{}, error) {
+				if strings.HasPrefix(args[0].(string), "https") {
+					return "check", nil
+				}
+
+				return "stop", nil
 			},
 		},
 	}.Run()
