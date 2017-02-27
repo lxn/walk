@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"reflect"
 	"strconv"
 	"strings"
 	"syscall"
@@ -139,6 +140,27 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 			return tv.SetColumnsSizable(b)
 		},
 		tv.columnsSizableChangedPublisher.Event()))
+
+	tv.MustRegisterProperty("CurrentIndex", NewProperty(
+		func() interface{} {
+			return tv.CurrentIndex()
+		},
+		func(v interface{}) error {
+			return tv.SetCurrentIndex(v.(int))
+		},
+		tv.CurrentIndexChanged()))
+
+	tv.MustRegisterProperty("CurrentItem", NewReadOnlyProperty(
+		func() interface{} {
+			if i := tv.CurrentIndex(); i > -1 {
+				if rm, ok := tv.providedModel.(reflectModel); ok {
+					return reflect.ValueOf(rm.Items()).Index(i).Interface()
+				}
+			}
+
+			return nil
+		},
+		tv.CurrentIndexChanged()))
 
 	tv.MustRegisterProperty("HasCurrentItem", NewReadOnlyBoolProperty(
 		func() bool {

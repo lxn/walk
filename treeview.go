@@ -67,6 +67,32 @@ func NewTreeView(parent Container) (*TreeView, error) {
 		return nil, err
 	}
 
+	tv.MustRegisterProperty("CurrentItem", NewReadOnlyProperty(
+		func() interface{} {
+			return tv.CurrentItem()
+		},
+		tv.CurrentItemChanged()))
+
+	tv.MustRegisterProperty("CurrentItemLevel", NewReadOnlyProperty(
+		func() interface{} {
+			level := -1
+			item := tv.CurrentItem()
+
+			for item != nil {
+				level++
+				item = item.Parent()
+			}
+
+			return level
+		},
+		tv.CurrentItemChanged()))
+
+	tv.MustRegisterProperty("HasCurrentItem", NewReadOnlyBoolProperty(
+		func() bool {
+			return tv.CurrentItem() != nil
+		},
+		tv.CurrentItemChanged()))
+
 	succeeded = true
 
 	return tv, nil
