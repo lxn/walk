@@ -136,6 +136,10 @@ func imageIndexAddIfNotExists(image interface{}, hIml win.HIMAGELIST, imageUintp
 	imageIndex := int32(-1)
 
 	if image != nil {
+		if name, ok := image.(string); ok {
+			image, _ = Resources.Image(name)
+		}
+
 		var ptr uintptr
 		switch img := image.(type) {
 		case *Bitmap:
