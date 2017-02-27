@@ -80,8 +80,8 @@ func (epr ErrorPresenterRef) Create() (walk.ErrorPresenter, error) {
 
 type topLevelWindowInfo struct {
 	Name             string
-	Disabled         bool
-	Hidden           bool
+	Enabled          Property
+	Visible          Property
 	Font             Font
 	ToolTipText      string
 	MinSize          Size
@@ -97,6 +97,8 @@ type topLevelWindowInfo struct {
 	DataBinder       DataBinder
 	Layout           Layout
 	Children         []Widget
+	Icon             Property
+	Title            Property
 }
 
 func (topLevelWindowInfo) Create(builder *Builder) error {
@@ -104,7 +106,7 @@ func (topLevelWindowInfo) Create(builder *Builder) error {
 }
 
 func (i topLevelWindowInfo) WidgetInfo() (name string, disabled, hidden bool, font *Font, ToolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return i.Name, i.Disabled, i.Hidden, &i.Font, i.ToolTipText, i.MinSize, i.MaxSize, 0, 0, 0, 0, 0, false, i.ContextMenuItems, i.OnKeyDown, i.OnKeyPress, i.OnKeyUp, i.OnMouseDown, i.OnMouseMove, i.OnMouseUp, i.OnSizeChanged
+	return i.Name, false, false, &i.Font, i.ToolTipText, i.MinSize, i.MaxSize, 0, 0, 0, 0, 0, false, i.ContextMenuItems, i.OnKeyDown, i.OnKeyPress, i.OnKeyUp, i.OnMouseDown, i.OnMouseMove, i.OnMouseUp, i.OnSizeChanged
 }
 
 func (i topLevelWindowInfo) ContainerInfo() (DataBinder, Layout, []Widget) {

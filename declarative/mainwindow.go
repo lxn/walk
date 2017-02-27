@@ -27,13 +27,14 @@ type MainWindow struct {
 	OnMouseUp        walk.MouseEventHandler
 	OnDropFiles      walk.DropFilesEventHandler
 	OnSizeChanged    walk.EventHandler
-	Title            string
+	Icon             Property
+	Title            Property
 	Size             Size
 	DataBinder       DataBinder
 	Layout           Layout
 	Children         []Widget
 	MenuItems        []MenuItem
-	ToolBarItems     []MenuItem // Deprecated, use ToolBar instead
+	ToolBarItems     []MenuItem // Deprecated: use ToolBar instead
 	ToolBar          ToolBar
 }
 
@@ -45,6 +46,8 @@ func (mw MainWindow) Create() error {
 
 	tlwi := topLevelWindowInfo{
 		Name:             mw.Name,
+		Enabled:          mw.Enabled,
+		Visible:          mw.Visible,
 		Font:             mw.Font,
 		ToolTipText:      "",
 		MinSize:          mw.MinSize,
@@ -60,6 +63,8 @@ func (mw MainWindow) Create() error {
 		DataBinder:       mw.DataBinder,
 		Layout:           mw.Layout,
 		Children:         mw.Children,
+		Icon:             mw.Icon,
+		Title:            mw.Title,
 	}
 
 	builder := NewBuilder(nil)
@@ -88,10 +93,6 @@ func (mw MainWindow) Create() error {
 			old.Dispose()
 		} else {
 			builder.deferBuildActions(w.ToolBar().Actions(), mw.ToolBarItems)
-		}
-
-		if err := w.SetTitle(mw.Title); err != nil {
-			return err
 		}
 
 		if err := w.SetSize(mw.Size.toW()); err != nil {

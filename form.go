@@ -15,6 +15,7 @@ import (
 
 import (
 	"github.com/lxn/win"
+	"strconv"
 )
 
 type CloseReason byte
@@ -68,6 +69,7 @@ type FormBase struct {
 	closingPublisher      CloseEventPublisher
 	startingPublisher     EventPublisher
 	titleChangedPublisher EventPublisher
+	iconChangedPublisher  EventPublisher
 	progressIndicator     *ProgressIndicator
 	icon                  *Icon
 	prevFocusHWnd         win.HWND
@@ -83,6 +85,39 @@ func (fb *FormBase) init(form Form) error {
 	fb.clientComposite.SetName("clientComposite")
 
 	fb.clientComposite.children.observer = form.AsFormBase()
+
+	fb.MustRegisterProperty("Icon", NewProperty(
+		func() interface{} {
+			return fb.Icon()
+		},
+		func(v interface{}) error {
+			var icon *Icon
+
+			switch val := v.(type) {
+			case *Icon:
+				icon = val
+
+			case int:
+				var err error
+				if icon, err = Resources.Icon(strconv.Itoa(val)); err != nil {
+					return err
+				}
+
+			case string:
+				var err error
+				if icon, err = Resources.Icon(val); err != nil {
+					return err
+				}
+
+			default:
+				return ErrInvalidType
+			}
+
+			fb.SetIcon(icon)
+
+			return nil
+		},
+		fb.iconChangedPublisher.Event()))
 
 	fb.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
@@ -303,6 +338,12 @@ func (fb *FormBase) SetIcon(icon *Icon) {
 
 	fb.SendMessage(win.WM_SETICON, 0, hIcon)
 	fb.SendMessage(win.WM_SETICON, 1, hIcon)
+
+	fb.iconChangedPublisher.Publish()
+}
+
+func (fb *FormBase) IconChanged() *Event {
+	return fb.iconChangedPublisher.Event()
 }
 
 func (fb *FormBase) Hide() {
