@@ -33,7 +33,7 @@ type ToolButton struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
-	Image              interface{}
+	Image              Property
 	Text               Property
 	OnClicked          walk.EventHandler
 }
@@ -45,19 +45,6 @@ func (tb ToolButton) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(tb, w, func() error {
-		img := tb.Image
-		if s, ok := img.(string); ok {
-			var err error
-			if img, err = imageFromFile(s); err != nil {
-				return err
-			}
-		}
-		if img != nil {
-			if err := w.SetImage(img.(walk.Image)); err != nil {
-				return err
-			}
-		}
-
 		if tb.OnClicked != nil {
 			w.Clicked().Attach(tb.OnClicked)
 		}

@@ -8,6 +8,7 @@ package walk
 
 import (
 	"github.com/lxn/win"
+	"strconv"
 )
 
 type clickable interface {
@@ -23,6 +24,7 @@ type Button struct {
 	checkedChangedPublisher EventPublisher
 	clickedPublisher        EventPublisher
 	textChangedPublisher    EventPublisher
+	imageChangedPublisher   EventPublisher
 	image                   Image
 }
 
@@ -36,6 +38,39 @@ func (b *Button) init() {
 			return nil
 		},
 		b.CheckedChanged()))
+
+	b.MustRegisterProperty("Image", NewProperty(
+		func() interface{} {
+			return b.Image()
+		},
+		func(v interface{}) error {
+			var img Image
+
+			switch val := v.(type) {
+			case Image:
+				img = val
+
+			case int:
+				var err error
+				if img, err = Resources.Image(strconv.Itoa(val)); err != nil {
+					return err
+				}
+
+			case string:
+				var err error
+				if img, err = Resources.Image(val); err != nil {
+					return err
+				}
+
+			default:
+				return ErrInvalidType
+			}
+
+			b.SetImage(img)
+
+			return nil
+		},
+		b.imageChangedPublisher.Event()))
 
 	b.MustRegisterProperty("Text", NewProperty(
 		func() interface{} {
@@ -74,7 +109,15 @@ func (b *Button) SetImage(image Image) error {
 
 	b.image = image
 
-	return b.updateParentLayout()
+	b.updateParentLayout()
+
+	b.imageChangedPublisher.Publish()
+
+	return nil
+}
+
+func (b *Button) ImageChanged() *Event {
+	return b.imageChangedPublisher.Event()
 }
 
 func (b *Button) Text() string {
