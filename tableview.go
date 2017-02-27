@@ -49,6 +49,8 @@ type TableView struct {
 	filePath2IconIndex                 map[string]int32
 	rowsResetHandlerHandle             int
 	rowChangedHandlerHandle            int
+	rowsInsertedHandlerHandle          int
+	rowsRemovedHandlerHandle           int
 	sortChangedHandlerHandle           int
 	selectedIndexes                    []int
 	prevIndex                          int
@@ -317,6 +319,36 @@ func (tv *TableView) attachModel() {
 		tv.UpdateItem(row)
 	})
 
+	tv.rowsInsertedHandlerHandle = tv.model.RowsInserted().Attach(func(from, to int) {
+		i := tv.currentIndex
+
+		tv.setItemCount()
+
+		if from <= i {
+			i += 1 + to - from
+
+			tv.SetCurrentIndex(i)
+		}
+	})
+
+	tv.rowsRemovedHandlerHandle = tv.model.RowsRemoved().Attach(func(from, to int) {
+		i := tv.currentIndex
+
+		tv.setItemCount()
+
+		index := i
+
+		if from <= i && i <= to {
+			index = -1
+		} else if from < i {
+			index -= 1 + to - from
+		}
+
+		if index != i {
+			tv.SetCurrentIndex(index)
+		}
+	})
+
 	if sorter, ok := tv.model.(Sorter); ok {
 		tv.sortChangedHandlerHandle = sorter.SortChanged().Attach(func() {
 			col := sorter.SortedColumn()
@@ -330,6 +362,8 @@ func (tv *TableView) attachModel() {
 func (tv *TableView) detachModel() {
 	tv.model.RowsReset().Detach(tv.rowsResetHandlerHandle)
 	tv.model.RowChanged().Detach(tv.rowChangedHandlerHandle)
+	tv.model.RowsInserted().Detach(tv.rowsInsertedHandlerHandle)
+	tv.model.RowsRemoved().Detach(tv.rowsRemovedHandlerHandle)
 	if sorter, ok := tv.model.(Sorter); ok {
 		sorter.SortChanged().Detach(tv.sortChangedHandlerHandle)
 	}
