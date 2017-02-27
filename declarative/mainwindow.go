@@ -36,6 +36,8 @@ type MainWindow struct {
 	MenuItems        []MenuItem
 	ToolBarItems     []MenuItem // Deprecated: use ToolBar instead
 	ToolBar          ToolBar
+	Expressions      func() map[string]walk.Expression
+	Functions        map[string]func(args ...interface{}) (interface{}, error)
 }
 
 func (mw MainWindow) Create() error {
@@ -111,6 +113,17 @@ func (mw MainWindow) Create() error {
 
 		if mw.AssignTo != nil {
 			*mw.AssignTo = w
+		}
+
+		if mw.Expressions != nil {
+			for name, expr := range mw.Expressions() {
+				builder.expressions[name] = expr
+			}
+		}
+		if mw.Functions != nil {
+			for name, fn := range mw.Functions {
+				builder.functions[name] = fn
+			}
 		}
 
 		builder.Defer(func() error {

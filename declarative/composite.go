@@ -36,6 +36,8 @@ type Composite struct {
 	DataBinder         DataBinder
 	Layout             Layout
 	Children           []Widget
+	Expressions        func() map[string]walk.Expression
+	Functions          map[string]func(args ...interface{}) (interface{}, error)
 }
 
 func (c Composite) Create(builder *Builder) error {
@@ -53,6 +55,17 @@ func (c Composite) Create(builder *Builder) error {
 	return builder.InitWidget(c, w, func() error {
 		if c.AssignTo != nil {
 			*c.AssignTo = w
+		}
+
+		if c.Expressions != nil {
+			for name, expr := range c.Expressions() {
+				builder.expressions[name] = expr
+			}
+		}
+		if c.Functions != nil {
+			for name, fn := range c.Functions {
+				builder.functions[name] = fn
+			}
 		}
 
 		return nil

@@ -35,6 +35,8 @@ type Dialog struct {
 	DefaultButton    **walk.PushButton
 	CancelButton     **walk.PushButton
 	FixedSize        bool
+	Expressions      func() map[string]walk.Expression
+	Functions        map[string]func(args ...interface{}) (interface{}, error)
 }
 
 func (d Dialog) Create(owner walk.Form) error {
@@ -115,6 +117,17 @@ func (d Dialog) Create(owner walk.Form) error {
 
 		if d.AssignTo != nil {
 			*d.AssignTo = w
+		}
+
+		if d.Expressions != nil {
+			for name, expr := range d.Expressions() {
+				builder.expressions[name] = expr
+			}
+		}
+		if d.Functions != nil {
+			for name, fn := range d.Functions {
+				builder.functions[name] = fn
+			}
 		}
 
 		return nil

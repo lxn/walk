@@ -9,32 +9,21 @@ package declarative
 import (
 	"fmt"
 	"reflect"
-	"strings"
+	"regexp"
 )
 
 import (
+	"log"
+	"strings"
+
+	"github.com/Knetic/govaluate"
 	"github.com/lxn/walk"
 )
 
 var (
 	conditionsByName = make(map[string]walk.Condition)
-	imagesByFilePath = make(map[string]walk.Image)
+	propertyRE       = regexp.MustCompile("[A-Za-z]+[0-9A-Za-z]*(\\.[A-Za-z]+[0-9A-Za-z]*)+")
 )
-
-func imageFromFile(filePath string) (walk.Image, error) {
-	if image, ok := imagesByFilePath[filePath]; ok {
-		return image, nil
-	}
-
-	image, err := walk.NewImageFromFile(filePath)
-	if err != nil {
-		return nil, err
-	}
-
-	imagesByFilePath[filePath] = image
-
-	return image, nil
-}
 
 func MustRegisterCondition(name string, condition walk.Condition) {
 	if name == "" {
@@ -66,6 +55,8 @@ type Builder struct {
 	name2Window              map[string]walk.Window
 	deferredFuncs            []func() error
 	knownCompositeConditions map[string]walk.Condition
+	expressions              map[string]walk.Expression
+	functions                map[string]govaluate.ExpressionFunction
 }
 
 func NewBuilder(parent walk.Container) *Builder {
@@ -73,6 +64,8 @@ func NewBuilder(parent walk.Container) *Builder {
 		parent:                   parent,
 		name2Window:              make(map[string]walk.Window),
 		knownCompositeConditions: make(map[string]walk.Condition),
+		expressions:              make(map[string]walk.Expression),
+		functions:                make(map[string]govaluate.ExpressionFunction),
 	}
 }
 
@@ -436,12 +429,6 @@ func (b *Builder) initProperties() error {
 					continue
 				}
 
-				v := prop.Get()
-				valt, vt := reflect.TypeOf(val), reflect.TypeOf(v)
-
-				if v != nil && valt != vt {
-					panic(fmt.Sprintf("cannot assign value %v of type %T to property %s of type %T", val, val, sf.Name, v))
-				}
 				if err := prop.Set(val); err != nil {
 					return err
 				}
@@ -453,72 +440,134 @@ func (b *Builder) initProperties() error {
 }
 
 func (b *Builder) conditionOrProperty(data Property) interface{} {
-	parse := func(expr string, required bool) walk.Condition {
-		var negated bool
-		if strings.HasPrefix(expr, "!") {
-			negated = true
-			expr = strings.TrimSpace(expr[1:])
-		}
-
-		var condition walk.Condition
-
-		if p := b.property(expr); p != nil {
-			condition = p.(walk.Condition)
-		} else if c, ok := conditionsByName[expr]; ok {
-			condition = c
-		} else if required {
-			panic("unknown condition or property name: " + expr)
-		}
-
-		if negated {
-			condition = walk.NewNegatedCondition(condition)
-		}
-
-		return condition
-	}
-
 	switch val := data.(type) {
 	case bindData:
-		if c, ok := b.knownCompositeConditions[val.expression]; ok {
-			return c
-		} else if conds := strings.Split(val.expression, "&&"); len(conds) > 1 {
-			// This looks like a composite condition.
-			for i, s := range conds {
-				conds[i] = strings.TrimSpace(s)
-			}
-
-			var conditions []walk.Condition
-
-			for _, cond := range conds {
-				conditions = append(conditions, parse(cond, true))
-			}
-
-			var condition walk.Condition
-			if len(conditions) > 1 {
-				condition = walk.NewAllCondition(conditions...)
-				b.knownCompositeConditions[val.expression] = condition
-			} else {
-				condition = conditions[0]
-			}
-
-			return condition
+		e := &expression{
+			text:           val.expression,
+			subExprsByPath: subExpressions(make(map[string]walk.Expression)),
 		}
 
-		return parse(val.expression, false)
+		var singleExpr walk.Expression
 
-	case walk.Condition:
+		text := propertyRE.ReplaceAllStringFunc(val.expression, func(s string) string {
+			if _, ok := e.subExprsByPath[s]; !ok {
+				parts := strings.Split(s, ".")
+
+				if w, ok := b.name2Window[parts[0]]; ok {
+					if prop := w.AsWindowBase().Property(parts[1]); prop != nil {
+						if len(s) == len(val.expression) {
+							singleExpr = prop
+							return ""
+						}
+
+						if len(parts) == 2 {
+							e.addSubExpression(s, prop)
+						} else {
+							e.addSubExpression(s, walk.NewReflectExpression(prop, s[len(parts[0])+len(parts[1])+2:]))
+						}
+					} else {
+						panic(fmt.Errorf(`invalid sub expression: "%s"`, s))
+					}
+				} else if expr, ok := b.expressions[parts[0]]; ok {
+					e.addSubExpression(s, walk.NewReflectExpression(expr, s[len(parts[0])+1:]))
+				}
+			}
+
+			return strings.Replace(s, ".", "\\.", -1)
+		})
+
+		if singleExpr != nil {
+			return singleExpr
+		}
+
+		expr, err := govaluate.NewEvaluableExpressionWithFunctions(text, b.functions)
+		if err != nil {
+			panic(fmt.Errorf(`invalid expression "%s": %s`, e.text, err.Error()))
+		}
+
+		for _, token := range expr.Tokens() {
+			if token.Kind == govaluate.VARIABLE {
+				name := token.Value.(string)
+				if c, ok := conditionsByName[name]; ok {
+					e.addSubExpression(name, c)
+				}
+				if x, ok := b.expressions[name]; ok {
+					e.addSubExpression(name, x)
+				}
+			}
+		}
+
+		e.expr = expr
+
+		if _, err := e.expr.Eval(e.subExprsByPath); err != nil {
+			// We hope for the best and leave it to a DataBinder...
+			return nil
+		}
+
+		if _, ok := e.Value().(bool); ok {
+			return &boolExpression{expression: e}
+		}
+
+		return e
+
+	case walk.Expression:
 		return val
 	}
 
 	return nil
 }
 
-func (b *Builder) property(expression string) walk.Property {
-	if parts := strings.Split(expression, "."); len(parts) == 2 {
-		if sw, ok := b.name2Window[parts[0]]; ok {
-			return sw.AsWindowBase().Property(parts[1])
-		}
+type expression struct {
+	expr                   *govaluate.EvaluableExpression
+	text                   string
+	subExprsByPath         subExpressions
+	subExprsChangedHandles []int
+	changedPublisher       walk.EventPublisher
+	lastReportedValue      interface{}
+}
+
+type subExpressions map[string]walk.Expression
+
+func (se subExpressions) Get(name string) (interface{}, error) {
+	if sub, ok := se[name]; ok {
+		return sub.Value(), nil
 	}
 
-	return nil
+	return nil, fmt.Errorf(`invalid sub expression: "%s"`, name)
+}
+
+func (e *expression) Value() interface{} {
+	val, err := e.expr.Eval(e.subExprsByPath)
+	if err != nil {
+		log.Printf(`walk - failed to evaluate expression "%s": %s`, e.text, err.Error())
+	}
+
+	e.lastReportedValue = val
+
+	return val
+}
+
+func (e *expression) Changed() *walk.Event {
+	return e.changedPublisher.Event()
+}
+
+func (e *expression) addSubExpression(path string, subExpr walk.Expression) {
+	e.subExprsByPath[path] = subExpr
+
+	handle := subExpr.Changed().Attach(func() {
+		last := e.lastReportedValue
+		if v := e.Value(); v != last {
+			e.changedPublisher.Publish()
+		}
+	})
+	e.subExprsChangedHandles = append(e.subExprsChangedHandles, handle)
+}
+
+type boolExpression struct {
+	*expression
+}
+
+func (be *boolExpression) Satisfied() bool {
+	satisfied, ok := be.Value().(bool)
+	return ok && satisfied
 }
