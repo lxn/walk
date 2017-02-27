@@ -229,6 +229,10 @@ func (fb *FormBase) SetTitle(value string) error {
 }
 
 func (fb *FormBase) Run() int {
+	if fb.owner != nil {
+		fb.owner.SetEnabled(false)
+	}
+
 	if layout := fb.Layout(); layout != nil {
 		layout.Update(false)
 	}

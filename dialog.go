@@ -273,10 +273,6 @@ func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {
 func (dlg *Dialog) Run() int {
 	dlg.Show()
 
-	if dlg.owner != nil {
-		dlg.owner.SetEnabled(false)
-	}
-
 	dlg.FormBase.Run()
 
 	return dlg.result
