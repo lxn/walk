@@ -102,12 +102,12 @@ func (rm *ResourceManager) Icon(name string) (*Icon, error) {
 
 // Image returns the Image identified by name, or an error if it could not be found.
 func (rm *ResourceManager) Image(name string) (Image, error) {
-	if bm, err := rm.Bitmap(name); err == nil {
-		return bm, nil
-	}
-
 	if icon, err := rm.Icon(name); err == nil {
 		return icon, nil
+	}
+
+	if bm, err := rm.Bitmap(name); err == nil {
+		return bm, nil
 	}
 
 	return nil, rm.notFoundErr("image", name)
