@@ -8,12 +8,14 @@ package walk
 
 import (
 	"github.com/lxn/win"
+	"strconv"
 )
 
 type Slider struct {
 	WidgetBase
 	valueChangedPublisher EventPublisher
 	layoutFlags           LayoutFlags
+	tracking              bool
 }
 
 func NewSlider(parent Container) (*Slider, error) {
@@ -92,12 +94,25 @@ func (sl *Slider) ValueChanged() *Event {
 	return sl.valueChangedPublisher.Event()
 }
 
+func (sl *Slider) Tracking() bool {
+	return sl.tracking
+}
+
+func (sl *Slider) SetTracking(tracking bool) {
+	sl.tracking = tracking
+}
+
 func (sl *Slider) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_HSCROLL, win.WM_VSCROLL:
 		switch win.LOWORD(uint32(wParam)) {
 		case win.TB_THUMBPOSITION, win.TB_ENDTRACK:
 			sl.valueChangedPublisher.Publish()
+
+		case win.TB_THUMBTRACK:
+			if sl.tracking {
+				sl.valueChangedPublisher.Publish()
+			}
 		}
 		return 0
 	}
