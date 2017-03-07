@@ -56,6 +56,8 @@ func NewScrollView(parent Container) (*ScrollView, error) {
 		sv.updateScrollBars()
 	})
 
+	sv.SetBackground(NullBrush())
+
 	succeeded = true
 
 	return sv, nil

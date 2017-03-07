@@ -78,6 +78,10 @@ func NewSystemColorBrush(colorIndex int) (*SystemColorBrush, error) {
 	return &SystemColorBrush{hBrush, colorIndex}, nil
 }
 
+func (b *SystemColorBrush) Color() Color {
+	return Color(win.GetSysColor(b.colorIndex))
+}
+
 func (b *SystemColorBrush) ColorIndex() int {
 	return b.colorIndex
 }

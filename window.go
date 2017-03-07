@@ -1373,6 +1373,47 @@ func (wb *WindowBase) handleKeyUp(wParam, lParam uintptr) {
 	wb.keyUpPublisher.Publish(Key(wParam))
 }
 
+func (wb *WindowBase) backgroundEffective() Brush {
+	bg := wb.window.Background()
+
+	if widget, ok := wb.window.(Widget); ok {
+		for bg == nullBrushSingleton && widget != nil {
+			if parent := widget.Parent(); parent != nil {
+				bg = parent.Background()
+
+				widget, _ = parent.(Widget)
+			} else {
+				break
+			}
+		}
+	}
+
+	return bg
+}
+
+func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
+	switch windowFromHandle(win.HWND(lParam)).(type) {
+	case *LineEdit, *TextEdit:
+	// nop
+
+	default:
+		if bg := wb.backgroundEffective(); bg != nil {
+			type colorer interface {
+				Color() Color
+			}
+
+			if c, ok := bg.(colorer); ok {
+				hdc := win.HDC(wParam)
+				win.SetBkColor(hdc, win.COLORREF(c.Color()))
+			}
+
+			return uintptr(bg.handle())
+		}
+	}
+
+	return 0
+}
+
 // WndProc is the window procedure of the window.
 //
 // When implementing your own WndProc to add or modify behavior, call the
@@ -1382,7 +1423,8 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	switch msg {
 	case win.WM_ERASEBKGND:
-		if wb.background == nil {
+		bg := wb.backgroundEffective()
+		if bg == nil {
 			break
 		}
 
@@ -1392,7 +1434,7 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		}
 		defer canvas.Dispose()
 
-		if err := canvas.FillRectangle(wb.background, wb.ClientBounds()); err != nil {
+		if err := canvas.FillRectangle(bg, wb.ClientBounds()); err != nil {
 			break
 		}
 
