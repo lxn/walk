@@ -33,6 +33,7 @@ type Slider struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
+	Persistent         bool
 	MinValue           int
 	MaxValue           int
 	Value              Property
@@ -48,6 +49,7 @@ func (sl Slider) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(sl, w, func() error {
+		w.SetPersistent(sl.Persistent)
 		w.SetTracking(sl.Tracking)
 
 		if sl.MaxValue > sl.MinValue {

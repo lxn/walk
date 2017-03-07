@@ -16,6 +16,7 @@ type Slider struct {
 	valueChangedPublisher EventPublisher
 	layoutFlags           LayoutFlags
 	tracking              bool
+	persistent            bool
 }
 
 func NewSlider(parent Container) (*Slider, error) {
@@ -92,6 +93,34 @@ func (sl *Slider) SetValue(value int) {
 // ValueChanged returns an Event that can be used to track changes to Value.
 func (sl *Slider) ValueChanged() *Event {
 	return sl.valueChangedPublisher.Event()
+}
+
+func (sl *Slider) Persistent() bool {
+	return sl.persistent
+}
+
+func (sl *Slider) SetPersistent(value bool) {
+	sl.persistent = value
+}
+
+func (sl *Slider) SaveState() error {
+	return sl.putState(strconv.Itoa(sl.Value()))
+}
+
+func (sl *Slider) RestoreState() error {
+	s, err := sl.getState()
+	if err != nil {
+		return err
+	}
+
+	value, err := strconv.Atoi(s)
+	if err != nil {
+		return err
+	}
+
+	sl.SetValue(value)
+
+	return nil
 }
 
 func (sl *Slider) Tracking() bool {
