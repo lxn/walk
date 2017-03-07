@@ -7,6 +7,7 @@
 package walk
 
 import (
+	"fmt"
 	"github.com/lxn/win"
 	"strconv"
 )
@@ -26,6 +27,7 @@ type Button struct {
 	textChangedPublisher    EventPublisher
 	imageChangedPublisher   EventPublisher
 	image                   Image
+	persistent              bool
 }
 
 func (b *Button) init() {
@@ -164,6 +166,29 @@ func (b *Button) setChecked(checked bool) {
 
 func (b *Button) CheckedChanged() *Event {
 	return b.checkedChangedPublisher.Event()
+}
+
+func (b *Button) Persistent() bool {
+	return b.persistent
+}
+
+func (b *Button) SetPersistent(value bool) {
+	b.persistent = value
+}
+
+func (b *Button) SaveState() error {
+	return b.putState(fmt.Sprintf("%t", b.Checked()))
+}
+
+func (b *Button) RestoreState() error {
+	s, err := b.getState()
+	if err != nil {
+		return err
+	}
+
+	b.SetChecked(s == "true")
+
+	return nil
 }
 
 func (b *Button) Clicked() *Event {

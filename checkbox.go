@@ -8,6 +8,7 @@ package walk
 
 import (
 	"github.com/lxn/win"
+	"strconv"
 )
 
 type CheckState int
@@ -20,7 +21,6 @@ const (
 
 type CheckBox struct {
 	Button
-
 	checkStateChangedPublisher EventPublisher
 }
 
@@ -109,6 +109,26 @@ func (cb *CheckBox) SetCheckState(state CheckState) {
 
 func (cb *CheckBox) CheckStateChanged() *Event {
 	return cb.checkStateChangedPublisher.Event()
+}
+
+func (cb *CheckBox) SaveState() error {
+	return cb.putState(strconv.Itoa(int(cb.CheckState())))
+}
+
+func (cb *CheckBox) RestoreState() error {
+	s, err := cb.getState()
+	if err != nil {
+		return err
+	}
+
+	cs, err := strconv.Atoi(s)
+	if err != nil {
+		return err
+	}
+
+	cb.SetCheckState(CheckState(cs))
+
+	return nil
 }
 
 func (cb *CheckBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
