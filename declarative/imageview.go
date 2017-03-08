@@ -33,7 +33,8 @@ type ImageView struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
-	Image              walk.Image
+	Image              Property
+	Margin             Property
 }
 
 func (iv ImageView) Create(builder *Builder) error {
@@ -43,10 +44,6 @@ func (iv ImageView) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(iv, w, func() error {
-		if err := w.SetImage(iv.Image); err != nil {
-			return err
-		}
-
 		if iv.AssignTo != nil {
 			*iv.AssignTo = w
 		}
