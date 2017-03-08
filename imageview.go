@@ -7,9 +7,12 @@
 package walk
 
 import (
+	"github.com/lxn/win"
 	"math"
 	"strconv"
 )
+
+var imageViewBackgroundBrush, _ = NewSystemColorBrush(win.COLOR_APPWORKSPACE)
 
 type ImageView struct {
 	*CustomWidget
@@ -34,6 +37,7 @@ func NewImageView(parent Container) (*ImageView, error) {
 	iv.window = iv
 
 	iv.SetInvalidatesOnResize(true)
+	iv.SetPaintMode(PaintNoErase)
 
 	iv.MustRegisterProperty("Image", NewProperty(
 		func() interface{} {
@@ -131,6 +135,8 @@ func (iv *ImageView) drawImage(canvas *Canvas, updateBounds Rectangle) error {
 	}
 
 	cb := iv.ClientBounds()
+
+	canvas.FillRectangle(imageViewBackgroundBrush, cb)
 
 	cb.Width -= iv.margin * 2
 	cb.Height -= iv.margin * 2
