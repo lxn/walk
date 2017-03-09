@@ -238,7 +238,6 @@ func newBitmapFromResource(res *uint16) (bm *Bitmap, err error) {
 		err = lastError("LoadImage")
 	} else {
 		bm, err = newBitmapFromHBITMAP(win.HBITMAP(hBmp))
-		win.DeleteObject(win.HGDIOBJ(hBmp))
 	}
 
 	return
