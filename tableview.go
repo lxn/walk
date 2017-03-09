@@ -44,6 +44,7 @@ type TableView struct {
 	providedModel                      interface{}
 	itemChecker                        ItemChecker
 	imageProvider                      ImageProvider
+	colorProvider                      ColorProvider
 	hIml                               win.HIMAGELIST
 	usingSysIml                        bool
 	imageUintptr2Index                 map[uintptr]int32
@@ -89,7 +90,6 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 		imageUintptr2Index:    make(map[uintptr]int32),
 		filePath2IconIndex:    make(map[string]int32),
 	}
-
 	tv.columns = newTableViewColumnList(tv)
 
 	if err := InitWidget(
@@ -431,6 +431,7 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 
 	tv.itemChecker, _ = model.(ItemChecker)
 	tv.imageProvider, _ = model.(ImageProvider)
+	tv.colorProvider, _ = model.(ColorProvider)
 
 	if model != nil {
 		tv.attachModel()
@@ -1371,9 +1372,22 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 			}
 
 		case win.NM_CUSTOMDRAW:
-			if tv.alternatingRowBGColor != defaultTVRowBGColor {
-				nmlvcd := (*win.NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
-
+			nmlvcd := (*win.NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
+			if tv.colorProvider != nil {
+				bkgColor := tv.colorProvider.BackgroundColor(int(nmlvcd.Nmcd.DwItemSpec))
+				textColor := tv.colorProvider.TextColor(int(nmlvcd.Nmcd.DwItemSpec))
+				switch nmlvcd.Nmcd.DwDrawStage {
+				case win.CDDS_PREPAINT:
+					return win.CDRF_NOTIFYITEMDRAW
+				case win.CDDS_ITEMPREPAINT:
+					nmlvcd.ClrTextBk = win.COLORREF(bkgColor)
+					return win.CDRF_NOTIFYSUBITEMDRAW
+				case win.CDDS_ITEMPREPAINT | win.CDDS_SUBITEM:
+					nmlvcd.ClrText = win.COLORREF(textColor)
+					return win.CDRF_NEWFONT
+				}
+				return win.CDRF_DODEFAULT
+			} else if tv.alternatingRowBGColor != defaultTVRowBGColor {
 				switch nmlvcd.Nmcd.DwDrawStage {
 				case win.CDDS_PREPAINT:
 					return win.CDRF_NOTIFYITEMDRAW
