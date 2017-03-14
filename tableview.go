@@ -44,6 +44,8 @@ type TableView struct {
 	providedModel                      interface{}
 	itemChecker                        ItemChecker
 	imageProvider                      ImageProvider
+	styler                             CellStyler
+	style                              CellStyle
 	hIml                               win.HIMAGELIST
 	usingSysIml                        bool
 	imageUintptr2Index                 map[uintptr]int32
@@ -111,7 +113,7 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 	tv.SetPersistent(true)
 
 	exStyle := tv.SendMessage(win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
-	exStyle |= win.LVS_EX_DOUBLEBUFFER | win.LVS_EX_FULLROWSELECT | win.LVS_EX_LABELTIP
+	exStyle |= win.LVS_EX_DOUBLEBUFFER | win.LVS_EX_FULLROWSELECT | win.LVS_EX_LABELTIP | win.LVS_EX_SUBITEMIMAGES
 	tv.SendMessage(win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 
 	if err := tv.setTheme("Explorer"); err != nil {
@@ -431,6 +433,7 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 
 	tv.itemChecker, _ = model.(ItemChecker)
 	tv.imageProvider, _ = model.(ImageProvider)
+	tv.styler, _ = mdl.(CellStyler)
 
 	if model != nil {
 		tv.attachModel()
@@ -460,6 +463,16 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 // TableModel returns the TableModel of the TableView.
 func (tv *TableView) TableModel() TableModel {
 	return tv.model
+}
+
+// CellStyler returns the CellStyler of the TableView.
+func (tv *TableView) CellStyler() CellStyler {
+	return tv.styler
+}
+
+// SetCellStyler sets the CellStyler of the TableView.
+func (tv *TableView) SetCellStyler(styler CellStyler) {
+	tv.styler = styler
 }
 
 func (tv *TableView) setItemCount() error {
@@ -1344,8 +1357,24 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				(*buf)[max-1] = 0
 			}
 
-			if tv.imageProvider != nil && di.Item.Mask&win.LVIF_IMAGE > 0 {
-				if image := tv.imageProvider.Image(row); image != nil {
+			if (tv.imageProvider != nil || tv.styler != nil) && di.Item.Mask&win.LVIF_IMAGE > 0 {
+				var image interface{}
+				if col == 0 {
+					if ip := tv.imageProvider; ip != nil && image == nil {
+						image = ip.Image(row)
+					}
+				}
+				if styler := tv.styler; styler != nil && image == nil {
+					tv.style.row = row
+					tv.style.col = col
+					tv.style.Image = nil
+
+					styler.StyleCell(&tv.style)
+
+					image = tv.style.Image
+				}
+
+				if image != nil {
 					if tv.hIml == 0 {
 						tv.applyImageListForImage(image)
 					}
@@ -1359,7 +1388,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				}
 			}
 
-			if di.Item.StateMask&win.LVIS_STATEIMAGEMASK > 0 &&
+			if col == 0 && di.Item.StateMask&win.LVIS_STATEIMAGEMASK > 0 &&
 				tv.itemChecker != nil {
 				checked := tv.itemChecker.Checked(row)
 
@@ -1371,39 +1400,54 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 			}
 
 		case win.NM_CUSTOMDRAW:
-			if tv.alternatingRowBGColor != defaultTVRowBGColor {
-				nmlvcd := (*win.NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
+			nmlvcd := (*win.NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
+
+			if nmlvcd.IIconPhase == 0 {
+				row := int(nmlvcd.Nmcd.DwItemSpec)
+				col := int(nmlvcd.ISubItem)
 
 				switch nmlvcd.Nmcd.DwDrawStage {
 				case win.CDDS_PREPAINT:
 					return win.CDRF_NOTIFYITEMDRAW
 
 				case win.CDDS_ITEMPREPAINT:
-					if nmlvcd.Nmcd.DwItemSpec%2 == 1 {
-						/*if tv.hasDarkAltBGColor &&
-							nmlvcd.Nmcd.UItemState&win.CDIS_HOT == 0 &&
-							tv.SendMessage(win.LVM_GETITEMSTATE, nmlvcd.Nmcd.DwItemSpec, win.LVIS_SELECTED) == 0 &&
-							int32(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)) != nmlvcd.ISubItem {
-							fmt.Printf("selcol: %d, subitem: %d\n", int32(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)), nmlvcd.ISubItem)
-							nmlvcd.ClrText = white
-						}*/
+					if tv.alternatingRowBGColor != 0 && row%2 == 1 {
+						tv.style.BackgroundColor = tv.alternatingRowBGColor
 						nmlvcd.ClrTextBk = win.COLORREF(tv.alternatingRowBGColor)
 					}
-
 					return win.CDRF_NOTIFYSUBITEMDRAW
 
 				case win.CDDS_ITEMPREPAINT | win.CDDS_SUBITEM:
-					if nmlvcd.Nmcd.DwItemSpec%2 == 1 &&
-						tv.hasDarkAltBGColor &&
-						nmlvcd.Nmcd.UItemState&win.CDIS_HOT == 0 &&
-						tv.SendMessage(win.LVM_GETITEMSTATE, nmlvcd.Nmcd.DwItemSpec, win.LVIS_SELECTED) == 0 &&
-						int32(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)) != nmlvcd.ISubItem {
+					if tv.styler != nil {
+						tv.style.row = row
+						tv.style.col = col
 
-						nmlvcd.ClrText = white
+						if tv.alternatingRowBGColor != 0 {
+							if row%2 == 1 {
+								tv.style.BackgroundColor = tv.alternatingRowBGColor
+							} else {
+								tv.style.BackgroundColor = RGB(255, 255, 255)
+							}
+						}
+
+						tv.style.TextColor = RGB(0, 0, 0)
+						tv.style.Font = nil
+						tv.style.Image = nil
+
+						tv.styler.StyleCell(&tv.style)
+
+						nmlvcd.ClrTextBk = win.COLORREF(tv.style.BackgroundColor)
+						nmlvcd.ClrText = win.COLORREF(tv.style.TextColor)
+
+						if font := tv.style.Font; font != nil {
+							win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(0)))
+						}
 					}
 
 					return win.CDRF_NEWFONT
 				}
+
+				return win.CDRF_DODEFAULT
 			}
 
 			return win.CDRF_DODEFAULT
