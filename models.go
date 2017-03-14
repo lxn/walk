@@ -249,6 +249,39 @@ type ImageProvider interface {
 	Image(index int) interface{}
 }
 
+// CellStyler is the interface that must be implemented to provide a tabular
+// widget like TableView with cell display style information.
+type CellStyler interface {
+	// StyleCell is called for each cell to pick up cell style information.
+	StyleCell(style *CellStyle)
+}
+
+// CellStyle carries information about the display style of a cell in a tabular widget
+// like TableView.
+type CellStyle struct {
+	row             int
+	col             int
+	BackgroundColor Color
+	TextColor       Color
+	Font            *Font
+
+	// Image is the image to display in the cell.
+	//
+	// Supported types are *walk.Bitmap, *walk.Icon and string. A string will be
+	// interpreted as a file path and the icon associated with the file will be
+	// used. It is not supported to use strings together with the other options
+	// in the same model instance.
+	Image interface{}
+}
+
+func (cs *CellStyle) Row() int {
+	return cs.row
+}
+
+func (cs *CellStyle) Col() int {
+	return cs.col
+}
+
 // ItemChecker is the interface that a model must implement to support check
 // boxes in a widget like TableView.
 type ItemChecker interface {
