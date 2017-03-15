@@ -46,6 +46,7 @@ type TableView struct {
 	imageProvider                      ImageProvider
 	styler                             CellStyler
 	style                              CellStyle
+	customDrawItemHot                  bool
 	hIml                               win.HIMAGELIST
 	usingSysIml                        bool
 	imageUintptr2Index                 map[uintptr]int32
@@ -1359,7 +1360,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 
 			if (tv.imageProvider != nil || tv.styler != nil) && di.Item.Mask&win.LVIF_IMAGE > 0 {
 				var image interface{}
-				if col == 0 {
+				if di.Item.ISubItem == 0 {
 					if ip := tv.imageProvider; ip != nil && image == nil {
 						image = ip.Image(row)
 					}
@@ -1388,7 +1389,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				}
 			}
 
-			if col == 0 && di.Item.StateMask&win.LVIS_STATEIMAGEMASK > 0 &&
+			if di.Item.ISubItem == 0 && di.Item.StateMask&win.LVIS_STATEIMAGEMASK > 0 &&
 				tv.itemChecker != nil {
 				checked := tv.itemChecker.Checked(row)
 
@@ -1404,13 +1405,15 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 
 			if nmlvcd.IIconPhase == 0 {
 				row := int(nmlvcd.Nmcd.DwItemSpec)
-				col := int(nmlvcd.ISubItem)
+				col := tv.fromLVColIdx(nmlvcd.ISubItem)
 
 				switch nmlvcd.Nmcd.DwDrawStage {
 				case win.CDDS_PREPAINT:
 					return win.CDRF_NOTIFYITEMDRAW
 
 				case win.CDDS_ITEMPREPAINT:
+					tv.customDrawItemHot = nmlvcd.Nmcd.UItemState&win.CDIS_HOT != 0
+
 					if tv.alternatingRowBGColor != 0 && row%2 == 1 {
 						tv.style.BackgroundColor = tv.alternatingRowBGColor
 						nmlvcd.ClrTextBk = win.COLORREF(tv.alternatingRowBGColor)
@@ -1426,7 +1429,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 							if row%2 == 1 {
 								tv.style.BackgroundColor = tv.alternatingRowBGColor
 							} else {
-								tv.style.BackgroundColor = RGB(255, 255, 255)
+								tv.style.BackgroundColor = defaultTVRowBGColor
 							}
 						}
 
@@ -1438,6 +1441,33 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 
 						nmlvcd.ClrTextBk = win.COLORREF(tv.style.BackgroundColor)
 						nmlvcd.ClrText = win.COLORREF(tv.style.TextColor)
+
+						if (tv.style.Image != nil || nmlvcd.ISubItem == 0) &&
+							tv.style.BackgroundColor != defaultTVRowBGColor &&
+							!tv.customDrawItemHot &&
+							win.IsAppThemed() &&
+							int(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)) != col &&
+							tv.SendMessage(win.LVM_GETITEMSTATE, uintptr(row), win.LVIS_SELECTED) == 0 {
+
+							canvas, _ := newCanvasFromHDC(nmlvcd.Nmcd.Hdc)
+							brush, _ := NewSolidColorBrush(tv.style.BackgroundColor)
+							defer brush.Dispose()
+
+							bounds := rectangleFromRECT(nmlvcd.Nmcd.Rc)
+							if nmlvcd.ISubItem == 0 {
+								if tv.CheckBoxes() {
+									bounds.X -= 20
+									bounds.Width = 36
+								} else {
+									bounds.X -= 4
+									bounds.Width = 20
+								}
+							} else {
+								bounds.Width = 18
+							}
+
+							canvas.FillRectangle(brush, bounds)
+						}
 
 						if font := tv.style.Font; font != nil {
 							win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(0)))
