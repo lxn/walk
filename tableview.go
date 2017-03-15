@@ -1444,13 +1444,13 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 						}
 					}
 
-					return win.CDRF_NEWFONT
+					return win.CDRF_NEWFONT | win.CDRF_SKIPPOSTPAINT
 				}
 
-				return win.CDRF_DODEFAULT
+				return win.CDRF_SKIPPOSTPAINT
 			}
 
-			return win.CDRF_DODEFAULT
+			return win.CDRF_SKIPPOSTPAINT
 
 		case win.LVN_COLUMNCLICK:
 			nmlv := (*win.NMLISTVIEW)(unsafe.Pointer(lParam))
