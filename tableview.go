@@ -956,16 +956,6 @@ func (tv *TableView) RestoreState() error {
 			if err := tvc.SetWidth(tvcs.Width); err != nil {
 				return err
 			}
-			var visible bool
-			for _, name := range tvs.ColumnDisplayOrder {
-				if name == tvc.name {
-					visible = true
-					break
-				}
-			}
-			if err := tvc.SetVisible(visible); err != nil {
-				return err
-			}
 		}
 	}
 
@@ -978,7 +968,7 @@ func (tv *TableView) RestoreState() error {
 	displayOrder := make([]string, 0, visibleCount)
 	for _, name := range tvs.ColumnDisplayOrder {
 		knownNames[name] = struct{}{}
-		if _, ok := name2tvc[name]; ok {
+		if tvc, ok := name2tvc[name]; ok && tvc.visible {
 			displayOrder = append(displayOrder, name)
 		}
 	}
