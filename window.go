@@ -670,6 +670,16 @@ func (wb *WindowBase) SetBackground(value Brush) {
 	wb.background = value
 
 	wb.Invalidate()
+
+	// Sliders need some extra encouragement...
+	walkDescendants(wb, func(w Window) bool {
+		if s, ok := w.(*Slider); ok {
+			s.SetRange(s.MinValue(), s.MaxValue()+1)
+			s.SetRange(s.MinValue(), s.MaxValue()-1)
+		}
+
+		return true
+	})
 }
 
 // Cursor returns the Cursor of the *WindowBase.
@@ -1373,12 +1383,14 @@ func (wb *WindowBase) handleKeyUp(wParam, lParam uintptr) {
 	wb.keyUpPublisher.Publish(Key(wParam))
 }
 
-func (wb *WindowBase) backgroundEffective() Brush {
-	bg := wb.window.Background()
+func (wb *WindowBase) backgroundEffective() (Brush, Window) {
+	wnd := wb.window
+	bg := wnd.Background()
 
 	if widget, ok := wb.window.(Widget); ok {
 		for bg == nullBrushSingleton && widget != nil {
 			if parent := widget.Parent(); parent != nil {
+				wnd = parent
 				bg = parent.Background()
 
 				widget, _ = parent.(Widget)
@@ -1388,24 +1400,31 @@ func (wb *WindowBase) backgroundEffective() Brush {
 		}
 	}
 
-	return bg
+	return bg, wnd
+}
+
+func (wb *WindowBase) prepareDCForBackground(hdc win.HDC, hwnd win.HWND, brushWnd Window) {
+	win.SetBkMode(hdc, win.TRANSPARENT)
+
+	var bgRC win.RECT
+	win.GetWindowRect(brushWnd.Handle(), &bgRC)
+
+	var rc win.RECT
+	win.GetWindowRect(hwnd, &rc)
+
+	win.SetBrushOrgEx(hdc, bgRC.Left-rc.Left, bgRC.Top-rc.Top, nil)
 }
 
 func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
-	switch windowFromHandle(win.HWND(lParam)).(type) {
+	hwnd := win.HWND(lParam)
+
+	switch windowFromHandle(hwnd).(type) {
 	case *LineEdit, *TextEdit:
 	// nop
 
 	default:
-		if bg := wb.backgroundEffective(); bg != nil {
-			type colorer interface {
-				Color() Color
-			}
-
-			if c, ok := bg.(colorer); ok {
-				hdc := win.HDC(wParam)
-				win.SetBkColor(hdc, win.COLORREF(c.Color()))
-			}
+		if bg, wnd := wb.backgroundEffective(); bg != nil {
+			wb.prepareDCForBackground(win.HDC(wParam), hwnd, wnd)
 
 			return uintptr(bg.handle())
 		}
@@ -1423,16 +1442,20 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	switch msg {
 	case win.WM_ERASEBKGND:
-		bg := wb.backgroundEffective()
+		bg, wnd := wb.backgroundEffective()
 		if bg == nil {
 			break
 		}
 
-		canvas, err := newCanvasFromHDC(win.HDC(wParam))
+		hdc := win.HDC(wParam)
+
+		canvas, err := newCanvasFromHDC(hdc)
 		if err != nil {
 			break
 		}
 		defer canvas.Dispose()
+
+		wb.prepareDCForBackground(hdc, hwnd, wnd)
 
 		if err := canvas.FillRectangle(bg, wb.ClientBounds()); err != nil {
 			break
