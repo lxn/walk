@@ -295,6 +295,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						}
 
 						handleIndex := s.children.Index(s.draggedHandle)
+						bh := s.draggedHandle.Bounds()
 
 						prev := s.children.At(handleIndex - 1)
 						bp := prev.Bounds()
@@ -331,6 +332,28 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 								return
 							}
 						}
+
+						rc := bh.toRECT()
+						if s.Orientation() == Horizontal {
+							rc.Left -= int32(bp.X)
+							rc.Right -= int32(bp.X)
+						} else {
+							rc.Top -= int32(bp.Y)
+							rc.Bottom -= int32(bp.Y)
+						}
+						win.InvalidateRect(prev.Handle(), &rc, true)
+
+						rc = bh.toRECT()
+						if s.Orientation() == Horizontal {
+							rc.Left -= int32(bn.X)
+							rc.Right -= int32(bn.X)
+						} else {
+							rc.Top -= int32(bn.Y)
+							rc.Bottom -= int32(bn.Y)
+						}
+						win.InvalidateRect(next.Handle(), &rc, true)
+
+						s.draggedHandle.Invalidate()
 					})
 
 					handle.MouseUp().Attach(func(x, y int, button MouseButton) {
