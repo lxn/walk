@@ -11,6 +11,8 @@ import (
 	"reflect"
 )
 
+import _ "github.com/Knetic/govaluate"
+
 type Expression interface {
 	Value() interface{}
 	Changed() *Event
