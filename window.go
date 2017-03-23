@@ -819,9 +819,15 @@ func (wb *WindowBase) Visible() bool {
 
 // SetVisible sets if the *WindowBase is visible.
 func (wb *WindowBase) SetVisible(visible bool) {
+	old := wb.Visible()
+
 	setWindowVisible(wb.hWnd, visible)
 
 	wb.visible = visible
+
+	if visible == old {
+		return
+	}
 
 	if widget, ok := wb.window.(Widget); ok {
 		widget.AsWidgetBase().updateParentLayout()

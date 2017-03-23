@@ -520,6 +520,16 @@ func (l *GridLayout) Update(reset bool) error {
 			}
 		}
 
+		if b := widget.Bounds(); b.X == x && b.Y == y && b.Width == w {
+			if _, ok := widget.(*ComboBox); ok {
+				if b.Height+1 == h {
+					continue
+				}
+			} else if b.Height == h {
+				continue
+			}
+		}
+
 		if hdwp = win.DeferWindowPos(
 			hdwp,
 			widget.Handle(),

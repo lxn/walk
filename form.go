@@ -171,6 +171,39 @@ func (fb *FormBase) SetLayout(value Layout) error {
 	return fb.clientComposite.SetLayout(value)
 }
 
+func (fb *FormBase) SetBounds(bounds Rectangle) error {
+	if layout := fb.Layout(); layout != nil {
+		minSize := fb.sizeFromClientSize(layout.MinSize())
+
+		if bounds.Width < minSize.Width {
+			bounds.Width = minSize.Width
+		}
+		if bounds.Height < minSize.Height {
+			bounds.Height = minSize.Height
+		}
+	}
+
+	if err := fb.WindowBase.SetBounds(bounds); err != nil {
+		return err
+	}
+
+	walkDescendants(fb, func(wnd Window) bool {
+		if container, ok := wnd.(Container); ok {
+			if layout := container.Layout(); layout != nil {
+				layout.Update(false)
+			}
+		}
+
+		return true
+	})
+
+	return nil
+}
+
+func (fb *FormBase) fixedSize() bool {
+	return !fb.hasStyleBits(win.WS_THICKFRAME)
+}
+
 func (fb *FormBase) DataBinder() *DataBinder {
 	return fb.clientComposite.DataBinder()
 }
@@ -438,6 +471,13 @@ func (fb *FormBase) RestoreState() error {
 	}
 
 	wp.Length = uint32(unsafe.Sizeof(wp))
+
+	if layout := fb.Layout(); layout != nil && fb.fixedSize() {
+		minSize := fb.sizeFromClientSize(layout.MinSize())
+
+		wp.RcNormalPosition.Right = wp.RcNormalPosition.Left + int32(minSize.Width) - 1
+		wp.RcNormalPosition.Bottom = wp.RcNormalPosition.Top + int32(minSize.Height) - 1
+	}
 
 	if !win.SetWindowPlacement(fb.hWnd, &wp) {
 		return lastError("SetWindowPlacement")

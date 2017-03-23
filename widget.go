@@ -347,11 +347,34 @@ func (wb *WidgetBase) SetToolTipText(s string) error {
 }
 
 func (wb *WidgetBase) updateParentLayout() error {
-	if wb.parent == nil || wb.parent.Layout() == nil || wb.parent.Suspended() {
+	parent := wb.window.(Widget).Parent()
+
+	if parent == nil || parent.Layout() == nil || parent.Suspended() || !parent.Visible() {
 		return nil
 	}
 
-	return wb.parent.Layout().Update(false)
+	layout := parent.Layout()
+	clientSize := parent.ClientBounds().Size()
+	minSize := layout.MinSize()
+
+	if clientSize.Width < minSize.Width || clientSize.Height < minSize.Height {
+		switch wnd := parent.(type) {
+		case Widget:
+			return wnd.AsWidgetBase().updateParentLayout()
+
+		case Form:
+			bounds := wnd.Bounds()
+
+			if wnd.AsFormBase().fixedSize() {
+				bounds.Width, bounds.Height = 0, 0
+			}
+
+			wnd.SetBounds(bounds)
+			return nil
+		}
+	}
+
+	return layout.Update(false)
 }
 
 func ancestor(w Widget) Form {
