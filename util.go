@@ -227,6 +227,8 @@ func applyFontToDescendants(window Window, font *Font) {
 }
 
 func walkDescendants(window Window, f func(w Window) bool) {
+	window = window.AsWindowBase().window
+
 	if window == nil || !f(window) {
 		return
 	}

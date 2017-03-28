@@ -84,6 +84,12 @@ func (il *ImageList) MaskColor() Color {
 }
 
 func imageListForImage(image interface{}) (hIml win.HIMAGELIST, isSysIml bool, err error) {
+	if name, ok := image.(string); ok {
+		if img, err := Resources.Image(name); err == nil {
+			image = img
+		}
+	}
+
 	if filePath, ok := image.(string); ok {
 		_, hIml = iconIndexAndHImlForFilePath(filePath)
 		isSysIml = hIml != 0
@@ -136,6 +142,10 @@ func imageIndexAddIfNotExists(image interface{}, hIml win.HIMAGELIST, imageUintp
 	imageIndex := int32(-1)
 
 	if image != nil {
+		if name, ok := image.(string); ok {
+			image, _ = Resources.Image(name)
+		}
+
 		var ptr uintptr
 		switch img := image.(type) {
 		case *Bitmap:

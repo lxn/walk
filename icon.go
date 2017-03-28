@@ -73,32 +73,28 @@ func NewIconFromFile(filePath string) (*Icon, error) {
 }
 
 // NewIconFromResource returns a new Icon, using the specified icon resource.
-func NewIconFromResource(resName string) (ic *Icon, err error) {
+func NewIconFromResource(name string) (*Icon, error) {
+	return newIconFromResource(syscall.StringToUTF16Ptr(name))
+}
+
+func NewIconFromResourceId(id int) (*Icon, error) {
+	return newIconFromResource(win.MAKEINTRESOURCE(uintptr(id)))
+}
+
+func newIconFromResource(res *uint16) (ic *Icon, err error) {
 	hInst := win.GetModuleHandle(nil)
 	if hInst == 0 {
 		err = lastError("GetModuleHandle")
 		return
 	}
-	if hIcon := win.LoadIcon(hInst, syscall.StringToUTF16Ptr(resName)); hIcon == 0 {
+
+	if hIcon := win.LoadIcon(hInst, res); hIcon == 0 {
 		err = lastError("LoadIcon")
 	} else {
 		ic = &Icon{hIcon: hIcon}
 	}
+
 	return
-}
-
-func NewIconFromResourceId(id uintptr) (*Icon, error) {
-	hInst := win.GetModuleHandle(nil)
-	if hInst == 0 {
-		return nil, lastError("GetModuleHandle")
-	}
-
-	hIcon := win.LoadIcon(hInst, win.MAKEINTRESOURCE(id))
-	if hIcon == 0 {
-		return nil, lastError("LoadIcon")
-	}
-
-	return &Icon{hIcon: hIcon}, nil
 }
 
 func NewIconFromImage(im image.Image) (ic *Icon, err error) {

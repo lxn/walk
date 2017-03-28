@@ -87,6 +87,8 @@ func NewLineErrorPresenter(parent Container) (*LineErrorPresenter, error) {
 	lep.composite.MouseDown().Attach(focusCurWidget)
 	lep.label.MouseDown().Attach(focusCurWidget)
 
+	lep.PresentError(nil, nil)
+
 	succeeded = true
 
 	return lep, nil
@@ -141,19 +143,21 @@ func (lep *LineErrorPresenter) PresentError(err error, widget Widget) {
 	}
 
 	var found bool
-	walkDescendants(ancestor(widget).AsFormBase().clientComposite, func(w Window) bool {
-		if found {
-			return false
-		}
+	if widget != nil {
+		walkDescendants(ancestor(widget).AsFormBase().clientComposite, func(w Window) bool {
+			if found {
+				return false
+			}
 
-		wt := w.(Widget)
+			wt := w.(Widget)
 
-		if e, ok := lep.widget2error[wt]; ok {
-			err, widget, found = e, wt, true
-		}
+			if e, ok := lep.widget2error[wt]; ok {
+				err, widget, found = e, wt, true
+			}
 
-		return !found
-	})
+			return !found
+		})
+	}
 
 	if err != nil {
 		lep.curWidget = widget
@@ -195,14 +199,15 @@ func (lep *LineErrorPresenter) PresentError(err error, widget Widget) {
 		buf.WriteString(err.Error())
 
 		msg = buf.String()
+	} else {
+		background = nullBrushSingleton
 	}
 
 	lep.SetBackground(background)
+	lep.composite.SetVisible(err != nil)
 	lep.label.SetText(msg)
 
-	if form := ancestor(lep); form != nil && form.Handle() != lep.hWnd {
-		form.SetBounds(form.Bounds())
-	}
+	lep.updateParentLayout()
 }
 
 func (lep *LineErrorPresenter) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {

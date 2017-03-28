@@ -9,12 +9,11 @@ package walk
 import (
 	"fmt"
 	"math/big"
+	"reflect"
 	"syscall"
 	"time"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -57,6 +56,27 @@ func NewListBoxWithStyle(parent Container, style uint32) (*ListBox, error) {
 			lb.Dispose()
 		}
 	}()
+
+	lb.MustRegisterProperty("CurrentIndex", NewProperty(
+		func() interface{} {
+			return lb.CurrentIndex()
+		},
+		func(v interface{}) error {
+			return lb.SetCurrentIndex(v.(int))
+		},
+		lb.CurrentIndexChanged()))
+
+	lb.MustRegisterProperty("CurrentItem", NewReadOnlyProperty(
+		func() interface{} {
+			if i := lb.CurrentIndex(); i > -1 {
+				if rm, ok := lb.providedModel.(reflectModel); ok {
+					return reflect.ValueOf(rm.Items()).Index(i).Interface()
+				}
+			}
+
+			return nil
+		},
+		lb.CurrentIndexChanged()))
 
 	lb.MustRegisterProperty("HasCurrentItem", NewReadOnlyBoolProperty(
 		func() bool {

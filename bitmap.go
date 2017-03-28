@@ -219,6 +219,30 @@ func NewBitmapFromImage(im image.Image) (*Bitmap, error) {
 	return newBitmapFromHBITMAP(hBmp)
 }
 
+func NewBitmapFromResource(name string) (*Bitmap, error) {
+	return newBitmapFromResource(syscall.StringToUTF16Ptr(name))
+}
+
+func NewBitmapFromResourceId(id int) (*Bitmap, error) {
+	return newBitmapFromResource(win.MAKEINTRESOURCE(uintptr(id)))
+}
+
+func newBitmapFromResource(res *uint16) (bm *Bitmap, err error) {
+	hInst := win.GetModuleHandle(nil)
+	if hInst == 0 {
+		err = lastError("GetModuleHandle")
+		return
+	}
+
+	if hBmp := win.LoadImage(hInst, res, win.IMAGE_BITMAP, 0, 0, win.LR_CREATEDIBSECTION); hBmp == 0 {
+		err = lastError("LoadImage")
+	} else {
+		bm, err = newBitmapFromHBITMAP(win.HBITMAP(hBmp))
+	}
+
+	return
+}
+
 func (bmp *Bitmap) withSelectedIntoMemDC(f func(hdcMem win.HDC) error) error {
 	return withCompatibleDC(func(hdcMem win.HDC) error {
 		hBmpOld := win.SelectObject(hdcMem, win.HGDIOBJ(bmp.hBmp))

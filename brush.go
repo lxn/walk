@@ -78,6 +78,10 @@ func NewSystemColorBrush(colorIndex int) (*SystemColorBrush, error) {
 	return &SystemColorBrush{hBrush, colorIndex}, nil
 }
 
+func (b *SystemColorBrush) Color() Color {
+	return Color(win.GetSysColor(b.colorIndex))
+}
+
 func (b *SystemColorBrush) ColorIndex() int {
 	return b.colorIndex
 }
@@ -184,11 +188,9 @@ func NewBitmapBrush(bitmap *Bitmap) (*BitmapBrush, error) {
 		return nil, newError("bitmap cannot be nil")
 	}
 
-	lb := &win.LOGBRUSH{LbStyle: win.BS_DIBPATTERN, LbColor: win.DIB_RGB_COLORS, LbHatch: uintptr(bitmap.hPackedDIB)}
-
-	hBrush := win.CreateBrushIndirect(lb)
+	hBrush := win.CreatePatternBrush(bitmap.hBmp)
 	if hBrush == 0 {
-		return nil, newError("CreateBrushIndirect failed")
+		return nil, newError("CreatePatternBrush failed")
 	}
 
 	return &BitmapBrush{hBrush: hBrush, bitmap: bitmap}, nil

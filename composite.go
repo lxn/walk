@@ -34,6 +34,8 @@ func newCompositeWithStyle(parent Window, style uint32) (*Composite, error) {
 		return nil, err
 	}
 
+	c.SetBackground(NullBrush())
+
 	return c, nil
 }
 

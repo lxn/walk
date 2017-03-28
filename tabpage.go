@@ -42,7 +42,9 @@ func NewTabPage() (*TabPage, error) {
 
 	tp.children = newWidgetList(tp)
 
-	tp.SetBackground(tabPageBackgroundBrush)
+	if win.IsAppThemed() {
+		tp.SetBackground(tabPageBackgroundBrush)
+	}
 
 	tp.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {

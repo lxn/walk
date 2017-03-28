@@ -27,14 +27,17 @@ type MainWindow struct {
 	OnMouseUp        walk.MouseEventHandler
 	OnDropFiles      walk.DropFilesEventHandler
 	OnSizeChanged    walk.EventHandler
-	Title            string
+	Icon             Property
+	Title            Property
 	Size             Size
 	DataBinder       DataBinder
 	Layout           Layout
 	Children         []Widget
 	MenuItems        []MenuItem
-	ToolBarItems     []MenuItem // Deprecated, use ToolBar instead
+	ToolBarItems     []MenuItem // Deprecated: use ToolBar instead
 	ToolBar          ToolBar
+	Expressions      func() map[string]walk.Expression
+	Functions        map[string]func(args ...interface{}) (interface{}, error)
 }
 
 func (mw MainWindow) Create() error {
@@ -45,6 +48,8 @@ func (mw MainWindow) Create() error {
 
 	tlwi := topLevelWindowInfo{
 		Name:             mw.Name,
+		Enabled:          mw.Enabled,
+		Visible:          mw.Visible,
 		Font:             mw.Font,
 		ToolTipText:      "",
 		MinSize:          mw.MinSize,
@@ -60,6 +65,8 @@ func (mw MainWindow) Create() error {
 		DataBinder:       mw.DataBinder,
 		Layout:           mw.Layout,
 		Children:         mw.Children,
+		Icon:             mw.Icon,
+		Title:            mw.Title,
 	}
 
 	builder := NewBuilder(nil)
@@ -90,10 +97,6 @@ func (mw MainWindow) Create() error {
 			builder.deferBuildActions(w.ToolBar().Actions(), mw.ToolBarItems)
 		}
 
-		if err := w.SetTitle(mw.Title); err != nil {
-			return err
-		}
-
 		if err := w.SetSize(mw.Size.toW()); err != nil {
 			return err
 		}
@@ -110,6 +113,17 @@ func (mw MainWindow) Create() error {
 
 		if mw.AssignTo != nil {
 			*mw.AssignTo = w
+		}
+
+		if mw.Expressions != nil {
+			for name, expr := range mw.Expressions() {
+				builder.expressions[name] = expr
+			}
+		}
+		if mw.Functions != nil {
+			for name, fn := range mw.Functions {
+				builder.functions[name] = fn
+			}
 		}
 
 		builder.Defer(func() error {

@@ -34,7 +34,7 @@ type PushButton struct {
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
 	Text               Property
-	Image              interface{}
+	Image              Property
 	ImageAboveText     bool
 	OnClicked          walk.EventHandler
 }
@@ -46,19 +46,6 @@ func (pb PushButton) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(pb, w, func() error {
-		img := pb.Image
-		if s, ok := img.(string); ok {
-			var err error
-			if img, err = imageFromFile(s); err != nil {
-				return err
-			}
-		}
-		if img != nil {
-			if err := w.SetImage(img.(walk.Image)); err != nil {
-				return err
-			}
-		}
-
 		if err := w.SetImageAboveText(pb.ImageAboveText); err != nil {
 			return err
 		}

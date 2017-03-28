@@ -83,9 +83,6 @@ func newDialogWithStyle(owner Form, style uint32) (*Dialog, error) {
 
 	dlg.centerInOwnerWhenRun = owner != nil
 
-	// This forces display of focus rectangles, as soon as the user starts to type.
-	dlg.SendMessage(win.WM_CHANGEUISTATE, win.UIS_INITIALIZE, 0)
-
 	dlg.result = DlgCmdNone
 
 	succeeded = true
@@ -275,10 +272,6 @@ func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {
 
 func (dlg *Dialog) Run() int {
 	dlg.Show()
-
-	if dlg.owner != nil {
-		dlg.owner.SetEnabled(false)
-	}
 
 	dlg.FormBase.Run()
 

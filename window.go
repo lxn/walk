@@ -384,21 +384,25 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
-	wb.hWnd = win.CreateWindowEx(
-		exStyle,
-		syscall.StringToUTF16Ptr(className),
-		nil,
-		style|win.WS_CLIPSIBLINGS,
-		win.CW_USEDEFAULT,
-		win.CW_USEDEFAULT,
-		win.CW_USEDEFAULT,
-		win.CW_USEDEFAULT,
-		hwndParent,
-		0,
-		0,
-		nil)
-	if wb.hWnd == 0 {
-		return lastError("CreateWindowEx")
+	if hwnd := window.Handle(); hwnd == 0 {
+		wb.hWnd = win.CreateWindowEx(
+			exStyle,
+			syscall.StringToUTF16Ptr(className),
+			nil,
+			style|win.WS_CLIPSIBLINGS,
+			win.CW_USEDEFAULT,
+			win.CW_USEDEFAULT,
+			win.CW_USEDEFAULT,
+			win.CW_USEDEFAULT,
+			hwndParent,
+			0,
+			0,
+			nil)
+		if wb.hWnd == 0 {
+			return lastError("CreateWindowEx")
+		}
+	} else {
+		wb.hWnd = hwnd
 	}
 
 	succeeded := false
@@ -671,6 +675,16 @@ func (wb *WindowBase) SetBackground(value Brush) {
 	wb.background = value
 
 	wb.Invalidate()
+
+	// Sliders need some extra encouragement...
+	walkDescendants(wb, func(w Window) bool {
+		if s, ok := w.(*Slider); ok {
+			s.SetRange(s.MinValue(), s.MaxValue()+1)
+			s.SetRange(s.MinValue(), s.MaxValue()-1)
+		}
+
+		return true
+	})
 }
 
 // Cursor returns the Cursor of the *WindowBase.
@@ -810,9 +824,15 @@ func (wb *WindowBase) Visible() bool {
 
 // SetVisible sets if the *WindowBase is visible.
 func (wb *WindowBase) SetVisible(visible bool) {
+	old := wb.Visible()
+
 	setWindowVisible(wb.hWnd, visible)
 
 	wb.visible = visible
+
+	if visible == old {
+		return
+	}
 
 	if widget, ok := wb.window.(Widget); ok {
 		widget.AsWidgetBase().updateParentLayout()
@@ -920,14 +940,12 @@ func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
 var dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
 
 func (wb *WindowBase) dialogBaseUnits() Size {
-	// The window may use a font different from that in WindowBase,
-	// like e.g. NumberEdit does, so we try to use the right one.
-	window := windowFromHandle(wb.hWnd)
-
 	hdc := win.GetDC(wb.hWnd)
 	defer win.ReleaseDC(wb.hWnd, hdc)
 
-	hFont := window.Font().handleForDPI(0)
+	// The window may use a font different from that in WindowBase,
+	// like e.g. NumberEdit does, so we try to use the right one.
+	hFont := wb.window.Font().handleForDPI(0)
 	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(hFont))
 	defer win.SelectObject(hdc, win.HGDIOBJ(hFontOld))
 
@@ -1386,6 +1404,56 @@ func (wb *WindowBase) handleHotkey(wParam, lParam uintptr) {
 	wb.hotkeyPublisher.Publish(int(wParam))
 }
 
+func (wb *WindowBase) backgroundEffective() (Brush, Window) {
+	wnd := wb.window
+	bg := wnd.Background()
+
+	if widget, ok := wb.window.(Widget); ok {
+		for bg == nullBrushSingleton && widget != nil {
+			if parent := widget.Parent(); parent != nil {
+				wnd = parent
+				bg = parent.Background()
+
+				widget, _ = parent.(Widget)
+			} else {
+				break
+			}
+		}
+	}
+
+	return bg, wnd
+}
+
+func (wb *WindowBase) prepareDCForBackground(hdc win.HDC, hwnd win.HWND, brushWnd Window) {
+	win.SetBkMode(hdc, win.TRANSPARENT)
+
+	var bgRC win.RECT
+	win.GetWindowRect(brushWnd.Handle(), &bgRC)
+
+	var rc win.RECT
+	win.GetWindowRect(hwnd, &rc)
+
+	win.SetBrushOrgEx(hdc, bgRC.Left-rc.Left, bgRC.Top-rc.Top, nil)
+}
+
+func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
+	hwnd := win.HWND(lParam)
+
+	switch windowFromHandle(hwnd).(type) {
+	case *LineEdit, *TextEdit:
+	// nop
+
+	default:
+		if bg, wnd := wb.backgroundEffective(); bg != nil {
+			wb.prepareDCForBackground(win.HDC(wParam), hwnd, wnd)
+
+			return uintptr(bg.handle())
+		}
+	}
+
+	return 0
+}
+
 // WndProc is the window procedure of the window.
 //
 // When implementing your own WndProc to add or modify behavior, call the
@@ -1395,17 +1463,22 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	switch msg {
 	case win.WM_ERASEBKGND:
-		if wb.background == nil {
+		bg, wnd := wb.backgroundEffective()
+		if bg == nil {
 			break
 		}
 
-		canvas, err := newCanvasFromHDC(win.HDC(wParam))
+		hdc := win.HDC(wParam)
+
+		canvas, err := newCanvasFromHDC(hdc)
 		if err != nil {
 			break
 		}
 		defer canvas.Dispose()
 
-		if err := canvas.FillRectangle(wb.background, wb.ClientBounds()); err != nil {
+		wb.prepareDCForBackground(hdc, hwnd, wnd)
+
+		if err := canvas.FillRectangle(bg, wb.ClientBounds()); err != nil {
 			break
 		}
 

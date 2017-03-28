@@ -22,11 +22,13 @@ func init() {
 
 type ScrollView struct {
 	WidgetBase
-	composite *Composite
+	composite  *Composite
+	horizontal bool
+	vertical   bool
 }
 
 func NewScrollView(parent Container) (*ScrollView, error) {
-	sv := new(ScrollView)
+	sv := &ScrollView{horizontal: true, vertical: true}
 
 	if err := InitWidget(
 		sv,
@@ -50,8 +52,11 @@ func NewScrollView(parent Container) (*ScrollView, error) {
 	}
 
 	sv.composite.SizeChanged().Attach(func() {
+		sv.updateParentLayout()
 		sv.updateScrollBars()
 	})
+
+	sv.SetBackground(NullBrush())
 
 	succeeded = true
 
@@ -63,11 +68,70 @@ func (sv *ScrollView) AsContainerBase() *ContainerBase {
 }
 
 func (sv *ScrollView) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
+	if sv.composite == nil {
+		return 0
+	}
+
+	compFlags := sv.composite.LayoutFlags()
+	var flags LayoutFlags
+
+	h, v := sv.Scrollbars()
+
+	if h {
+		flags |= compFlags & (ShrinkableHorz | GrowableHorz | GreedyHorz)
+	}
+
+	if v {
+		flags |= compFlags & (ShrinkableVert | GrowableVert | GreedyVert)
+	}
+
+	return flags
 }
 
 func (sv *ScrollView) SizeHint() Size {
 	return sv.MinSizeHint()
+}
+
+func (sv *ScrollView) MinSizeHint() Size {
+	if sv.composite == nil {
+		return Size{}
+	}
+
+	s := sv.composite.MinSizeHint()
+	cb := sv.ClientBounds()
+
+	h, v := sv.Scrollbars()
+	if h {
+		s.Width = 0
+	} else {
+		if s.Height > cb.Height {
+			s.Width += int(win.GetSystemMetrics(win.SM_CXVSCROLL))
+		}
+	}
+	if v {
+		s.Height = 0
+	} else {
+		if s.Width > cb.Width {
+			s.Height += int(win.GetSystemMetrics(win.SM_CYHSCROLL))
+		}
+	}
+
+	return s
+}
+
+func (sv *ScrollView) Scrollbars() (horizontal, vertical bool) {
+	horizontal = sv.horizontal
+	vertical = sv.vertical
+
+	return
+}
+
+func (sv *ScrollView) SetScrollbars(horizontal, vertical bool) {
+	sv.horizontal = horizontal
+	sv.vertical = vertical
+
+	sv.ensureStyleBits(win.WS_HSCROLL, horizontal)
+	sv.ensureStyleBits(win.WS_VSCROLL, vertical)
 }
 
 func (sv *ScrollView) SetSuspended(suspend bool) {
@@ -179,15 +243,21 @@ func (sv *ScrollView) updateScrollBars() {
 	si.CbSize = uint32(unsafe.Sizeof(si))
 	si.FMask = win.SIF_PAGE | win.SIF_RANGE
 
-	si.NMax = int32(s.Width - 1)
-	si.NPage = uint32(clb.Width)
-	win.SetScrollInfo(sv.hWnd, win.SB_HORZ, &si, false)
-	sv.composite.SetX(sv.scroll(win.SB_HORZ, win.SB_THUMBPOSITION))
+	h, v := sv.Scrollbars()
 
-	si.NMax = int32(s.Height - 1)
-	si.NPage = uint32(clb.Height)
-	win.SetScrollInfo(sv.hWnd, win.SB_VERT, &si, false)
-	sv.composite.SetY(sv.scroll(win.SB_VERT, win.SB_THUMBPOSITION))
+	if h {
+		si.NMax = int32(s.Width - 1)
+		si.NPage = uint32(clb.Width)
+		win.SetScrollInfo(sv.hWnd, win.SB_HORZ, &si, false)
+		sv.composite.SetX(sv.scroll(win.SB_HORZ, win.SB_THUMBPOSITION))
+	}
+
+	if v {
+		si.NMax = int32(s.Height - 1)
+		si.NPage = uint32(clb.Height)
+		win.SetScrollInfo(sv.hWnd, win.SB_VERT, &si, false)
+		sv.composite.SetY(sv.scroll(win.SB_VERT, win.SB_THUMBPOSITION))
+	}
 }
 
 func (sv *ScrollView) scroll(sb int32, cmd uint16) int {

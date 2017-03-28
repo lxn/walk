@@ -15,6 +15,7 @@ import (
 
 import (
 	"github.com/lxn/win"
+	"strconv"
 )
 
 type CloseReason byte
@@ -68,6 +69,7 @@ type FormBase struct {
 	closingPublisher      CloseEventPublisher
 	startingPublisher     EventPublisher
 	titleChangedPublisher EventPublisher
+	iconChangedPublisher  EventPublisher
 	progressIndicator     *ProgressIndicator
 	icon                  *Icon
 	prevFocusHWnd         win.HWND
@@ -83,6 +85,39 @@ func (fb *FormBase) init(form Form) error {
 	fb.clientComposite.SetName("clientComposite")
 
 	fb.clientComposite.children.observer = form.AsFormBase()
+
+	fb.MustRegisterProperty("Icon", NewProperty(
+		func() interface{} {
+			return fb.Icon()
+		},
+		func(v interface{}) error {
+			var icon *Icon
+
+			switch val := v.(type) {
+			case *Icon:
+				icon = val
+
+			case int:
+				var err error
+				if icon, err = Resources.Icon(strconv.Itoa(val)); err != nil {
+					return err
+				}
+
+			case string:
+				var err error
+				if icon, err = Resources.Icon(val); err != nil {
+					return err
+				}
+
+			default:
+				return ErrInvalidType
+			}
+
+			fb.SetIcon(icon)
+
+			return nil
+		},
+		fb.iconChangedPublisher.Event()))
 
 	fb.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
@@ -134,6 +169,39 @@ func (fb *FormBase) SetLayout(value Layout) error {
 	}
 
 	return fb.clientComposite.SetLayout(value)
+}
+
+func (fb *FormBase) SetBounds(bounds Rectangle) error {
+	if layout := fb.Layout(); layout != nil {
+		minSize := fb.sizeFromClientSize(layout.MinSize())
+
+		if bounds.Width < minSize.Width {
+			bounds.Width = minSize.Width
+		}
+		if bounds.Height < minSize.Height {
+			bounds.Height = minSize.Height
+		}
+	}
+
+	if err := fb.WindowBase.SetBounds(bounds); err != nil {
+		return err
+	}
+
+	walkDescendants(fb, func(wnd Window) bool {
+		if container, ok := wnd.(Container); ok {
+			if layout := container.Layout(); layout != nil {
+				layout.Update(false)
+			}
+		}
+
+		return true
+	})
+
+	return nil
+}
+
+func (fb *FormBase) fixedSize() bool {
+	return !fb.hasStyleBits(win.WS_THICKFRAME)
 }
 
 func (fb *FormBase) DataBinder() *DataBinder {
@@ -229,6 +297,14 @@ func (fb *FormBase) SetTitle(value string) error {
 }
 
 func (fb *FormBase) Run() int {
+	if fb.owner != nil {
+		fb.owner.SetEnabled(false)
+	}
+
+	if layout := fb.Layout(); layout != nil {
+		layout.Update(false)
+	}
+
 	fb.startingPublisher.Publish()
 
 	var msg win.MSG
@@ -295,6 +371,12 @@ func (fb *FormBase) SetIcon(icon *Icon) {
 
 	fb.SendMessage(win.WM_SETICON, 0, hIcon)
 	fb.SendMessage(win.WM_SETICON, 1, hIcon)
+
+	fb.iconChangedPublisher.Publish()
+}
+
+func (fb *FormBase) IconChanged() *Event {
+	return fb.iconChangedPublisher.Event()
 }
 
 func (fb *FormBase) Hide() {
@@ -389,6 +471,13 @@ func (fb *FormBase) RestoreState() error {
 	}
 
 	wp.Length = uint32(unsafe.Sizeof(wp))
+
+	if layout := fb.Layout(); layout != nil && fb.fixedSize() {
+		minSize := fb.sizeFromClientSize(layout.MinSize())
+
+		wp.RcNormalPosition.Right = wp.RcNormalPosition.Left + int32(minSize.Width) - 1
+		wp.RcNormalPosition.Bottom = wp.RcNormalPosition.Top + int32(minSize.Height) - 1
+	}
 
 	if !win.SetWindowPlacement(fb.hWnd, &wp) {
 		return lastError("SetWindowPlacement")

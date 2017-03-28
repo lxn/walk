@@ -36,6 +36,8 @@ type TableView struct {
 	OnSizeChanged              walk.EventHandler
 	Columns                    []TableViewColumn
 	Model                      interface{}
+	CellStyler                 walk.CellStyler
+	StyleCell                  func(style *walk.CellStyle)
 	AlternatingRowBGColor      walk.Color
 	CheckBoxes                 bool
 	ItemStateChangedEventDelay int
@@ -47,6 +49,27 @@ type TableView struct {
 	OnCurrentIndexChanged      walk.EventHandler
 	OnSelectedIndexesChanged   walk.EventHandler
 	OnItemActivated            walk.EventHandler
+}
+
+type tvStyler struct {
+	dflt              walk.CellStyler
+	colStyleCellFuncs []func(style *walk.CellStyle)
+}
+
+func (tvs *tvStyler) StyleCell(style *walk.CellStyle) {
+	if tvs.dflt != nil {
+		tvs.dflt.StyleCell(style)
+	}
+
+	if styleCell := tvs.colStyleCellFuncs[style.Col()]; styleCell != nil {
+		styleCell(style)
+	}
+}
+
+type styleCellFunc func(style *walk.CellStyle)
+
+func (scf styleCellFunc) StyleCell(style *walk.CellStyle) {
+	scf(style)
 }
 
 func (tv TableView) Create(builder *Builder) error {
@@ -70,6 +93,45 @@ func (tv TableView) Create(builder *Builder) error {
 
 		if err := w.SetModel(tv.Model); err != nil {
 			return err
+		}
+
+		defaultStyler, _ := tv.Model.(walk.CellStyler)
+
+		if tv.CellStyler != nil {
+			defaultStyler = tv.CellStyler
+		}
+
+		if tv.StyleCell != nil {
+			defaultStyler = styleCellFunc(tv.StyleCell)
+		}
+
+		var hasColStyleFunc bool
+		for _, c := range tv.Columns {
+			if c.StyleCell != nil {
+				hasColStyleFunc = true
+				break
+			}
+		}
+
+		if defaultStyler != nil || hasColStyleFunc {
+			var styler walk.CellStyler
+
+			if hasColStyleFunc {
+				tvs := &tvStyler{
+					dflt:              defaultStyler,
+					colStyleCellFuncs: make([]func(style *walk.CellStyle), len(tv.Columns)),
+				}
+
+				styler = tvs
+
+				for i, c := range tv.Columns {
+					tvs.colStyleCellFuncs[i] = c.StyleCell
+				}
+			} else {
+				styler = defaultStyler
+			}
+
+			w.SetCellStyler(styler)
 		}
 
 		if tv.AlternatingRowBGColor != 0 {

@@ -34,7 +34,7 @@ type SplitButton struct {
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
 	Text               Property
-	Image              interface{}
+	Image              Property
 	ImageAboveText     bool
 	MenuItems          []MenuItem
 	OnClicked          walk.EventHandler
@@ -49,19 +49,6 @@ func (sb SplitButton) Create(builder *Builder) error {
 	builder.deferBuildMenuActions(w.Menu(), sb.MenuItems)
 
 	return builder.InitWidget(sb, w, func() error {
-		img := sb.Image
-		if s, ok := img.(string); ok {
-			var err error
-			if img, err = imageFromFile(s); err != nil {
-				return err
-			}
-		}
-		if img != nil {
-			if err := w.SetImage(img.(walk.Image)); err != nil {
-				return err
-			}
-		}
-
 		if err := w.SetImageAboveText(sb.ImageAboveText); err != nil {
 			return err
 		}

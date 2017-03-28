@@ -26,7 +26,8 @@ type Dialog struct {
 	OnMouseMove      walk.MouseEventHandler
 	OnMouseUp        walk.MouseEventHandler
 	OnSizeChanged    walk.EventHandler
-	Title            string
+	Icon             Property
+	Title            Property
 	Size             Size
 	DataBinder       DataBinder
 	Layout           Layout
@@ -34,6 +35,8 @@ type Dialog struct {
 	DefaultButton    **walk.PushButton
 	CancelButton     **walk.PushButton
 	FixedSize        bool
+	Expressions      func() map[string]walk.Expression
+	Functions        map[string]func(args ...interface{}) (interface{}, error)
 }
 
 func (d Dialog) Create(owner walk.Form) error {
@@ -52,6 +55,8 @@ func (d Dialog) Create(owner walk.Form) error {
 
 	tlwi := topLevelWindowInfo{
 		Name:             d.Name,
+		Enabled:          d.Enabled,
+		Visible:          d.Visible,
 		Font:             d.Font,
 		ToolTipText:      "",
 		MinSize:          d.MinSize,
@@ -67,6 +72,8 @@ func (d Dialog) Create(owner walk.Form) error {
 		OnMouseMove:      d.OnMouseMove,
 		OnMouseUp:        d.OnMouseUp,
 		OnSizeChanged:    d.OnSizeChanged,
+		Icon:             d.Icon,
+		Title:            d.Title,
 	}
 
 	var db *walk.DataBinder
@@ -83,10 +90,6 @@ func (d Dialog) Create(owner walk.Form) error {
 	})
 
 	return builder.InitWidget(tlwi, w, func() error {
-		if err := w.SetTitle(d.Title); err != nil {
-			return err
-		}
-
 		if err := w.SetSize(d.Size.toW()); err != nil {
 			return err
 		}
@@ -114,6 +117,17 @@ func (d Dialog) Create(owner walk.Form) error {
 
 		if d.AssignTo != nil {
 			*d.AssignTo = w
+		}
+
+		if d.Expressions != nil {
+			for name, expr := range d.Expressions() {
+				builder.expressions[name] = expr
+			}
+		}
+		if d.Functions != nil {
+			for name, fn := range d.Functions {
+				builder.functions[name] = fn
+			}
 		}
 
 		return nil

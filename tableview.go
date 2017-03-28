@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"reflect"
 	"strconv"
 	"strings"
 	"syscall"
@@ -43,12 +44,17 @@ type TableView struct {
 	providedModel                      interface{}
 	itemChecker                        ItemChecker
 	imageProvider                      ImageProvider
+	styler                             CellStyler
+	style                              CellStyle
+	customDrawItemHot                  bool
 	hIml                               win.HIMAGELIST
 	usingSysIml                        bool
 	imageUintptr2Index                 map[uintptr]int32
 	filePath2IconIndex                 map[string]int32
 	rowsResetHandlerHandle             int
 	rowChangedHandlerHandle            int
+	rowsInsertedHandlerHandle          int
+	rowsRemovedHandlerHandle           int
 	sortChangedHandlerHandle           int
 	selectedIndexes                    []int
 	prevIndex                          int
@@ -108,12 +114,14 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 	tv.SetPersistent(true)
 
 	exStyle := tv.SendMessage(win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
-	exStyle |= win.LVS_EX_DOUBLEBUFFER | win.LVS_EX_FULLROWSELECT | win.LVS_EX_LABELTIP
+	exStyle |= win.LVS_EX_DOUBLEBUFFER | win.LVS_EX_FULLROWSELECT | win.LVS_EX_LABELTIP | win.LVS_EX_SUBITEMIMAGES
 	tv.SendMessage(win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 
 	if err := tv.setTheme("Explorer"); err != nil {
 		return nil, err
 	}
+
+	tv.SendMessage(win.WM_CHANGEUISTATE, uintptr(win.MAKELONG(win.UIS_SET, win.UISF_HIDEFOCUS)), 0)
 
 	tv.currentIndex = -1
 
@@ -135,6 +143,27 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 			return tv.SetColumnsSizable(b)
 		},
 		tv.columnsSizableChangedPublisher.Event()))
+
+	tv.MustRegisterProperty("CurrentIndex", NewProperty(
+		func() interface{} {
+			return tv.CurrentIndex()
+		},
+		func(v interface{}) error {
+			return tv.SetCurrentIndex(v.(int))
+		},
+		tv.CurrentIndexChanged()))
+
+	tv.MustRegisterProperty("CurrentItem", NewReadOnlyProperty(
+		func() interface{} {
+			if i := tv.CurrentIndex(); i > -1 {
+				if rm, ok := tv.providedModel.(reflectModel); ok {
+					return reflect.ValueOf(rm.Items()).Index(i).Interface()
+				}
+			}
+
+			return nil
+		},
+		tv.CurrentIndexChanged()))
 
 	tv.MustRegisterProperty("HasCurrentItem", NewReadOnlyBoolProperty(
 		func() bool {
@@ -315,6 +344,36 @@ func (tv *TableView) attachModel() {
 		tv.UpdateItem(row)
 	})
 
+	tv.rowsInsertedHandlerHandle = tv.model.RowsInserted().Attach(func(from, to int) {
+		i := tv.currentIndex
+
+		tv.setItemCount()
+
+		if from <= i {
+			i += 1 + to - from
+
+			tv.SetCurrentIndex(i)
+		}
+	})
+
+	tv.rowsRemovedHandlerHandle = tv.model.RowsRemoved().Attach(func(from, to int) {
+		i := tv.currentIndex
+
+		tv.setItemCount()
+
+		index := i
+
+		if from <= i && i <= to {
+			index = -1
+		} else if from < i {
+			index -= 1 + to - from
+		}
+
+		if index != i {
+			tv.SetCurrentIndex(index)
+		}
+	})
+
 	if sorter, ok := tv.model.(Sorter); ok {
 		tv.sortChangedHandlerHandle = sorter.SortChanged().Attach(func() {
 			col := sorter.SortedColumn()
@@ -328,6 +387,8 @@ func (tv *TableView) attachModel() {
 func (tv *TableView) detachModel() {
 	tv.model.RowsReset().Detach(tv.rowsResetHandlerHandle)
 	tv.model.RowChanged().Detach(tv.rowChangedHandlerHandle)
+	tv.model.RowsInserted().Detach(tv.rowsInsertedHandlerHandle)
+	tv.model.RowsRemoved().Detach(tv.rowsRemovedHandlerHandle)
 	if sorter, ok := tv.model.(Sorter); ok {
 		sorter.SortChanged().Detach(tv.sortChangedHandlerHandle)
 	}
@@ -373,6 +434,7 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 
 	tv.itemChecker, _ = model.(ItemChecker)
 	tv.imageProvider, _ = model.(ImageProvider)
+	tv.styler, _ = mdl.(CellStyler)
 
 	if model != nil {
 		tv.attachModel()
@@ -402,6 +464,16 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 // TableModel returns the TableModel of the TableView.
 func (tv *TableView) TableModel() TableModel {
 	return tv.model
+}
+
+// CellStyler returns the CellStyler of the TableView.
+func (tv *TableView) CellStyler() CellStyler {
+	return tv.styler
+}
+
+// SetCellStyler sets the CellStyler of the TableView.
+func (tv *TableView) SetCellStyler(styler CellStyler) {
+	tv.styler = styler
 }
 
 func (tv *TableView) setItemCount() error {
@@ -884,16 +956,6 @@ func (tv *TableView) RestoreState() error {
 			if err := tvc.SetWidth(tvcs.Width); err != nil {
 				return err
 			}
-			var visible bool
-			for _, name := range tvs.ColumnDisplayOrder {
-				if name == tvc.name {
-					visible = true
-					break
-				}
-			}
-			if err := tvc.SetVisible(visible); err != nil {
-				return err
-			}
 		}
 	}
 
@@ -906,7 +968,7 @@ func (tv *TableView) RestoreState() error {
 	displayOrder := make([]string, 0, visibleCount)
 	for _, name := range tvs.ColumnDisplayOrder {
 		knownNames[name] = struct{}{}
-		if _, ok := name2tvc[name]; ok {
+		if tvc, ok := name2tvc[name]; ok && tvc.visible {
 			displayOrder = append(displayOrder, name)
 		}
 	}
@@ -1286,8 +1348,24 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				(*buf)[max-1] = 0
 			}
 
-			if tv.imageProvider != nil && di.Item.Mask&win.LVIF_IMAGE > 0 {
-				if image := tv.imageProvider.Image(row); image != nil {
+			if (tv.imageProvider != nil || tv.styler != nil) && di.Item.Mask&win.LVIF_IMAGE > 0 {
+				var image interface{}
+				if di.Item.ISubItem == 0 {
+					if ip := tv.imageProvider; ip != nil && image == nil {
+						image = ip.Image(row)
+					}
+				}
+				if styler := tv.styler; styler != nil && image == nil {
+					tv.style.row = row
+					tv.style.col = col
+					tv.style.Image = nil
+
+					styler.StyleCell(&tv.style)
+
+					image = tv.style.Image
+				}
+
+				if image != nil {
 					if tv.hIml == 0 {
 						tv.applyImageListForImage(image)
 					}
@@ -1301,7 +1379,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				}
 			}
 
-			if di.Item.StateMask&win.LVIS_STATEIMAGEMASK > 0 &&
+			if di.Item.ISubItem == 0 && di.Item.StateMask&win.LVIS_STATEIMAGEMASK > 0 &&
 				tv.itemChecker != nil {
 				checked := tv.itemChecker.Checked(row)
 
@@ -1313,42 +1391,86 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 			}
 
 		case win.NM_CUSTOMDRAW:
-			if tv.alternatingRowBGColor != defaultTVRowBGColor {
-				nmlvcd := (*win.NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
+			nmlvcd := (*win.NMLVCUSTOMDRAW)(unsafe.Pointer(lParam))
+
+			if nmlvcd.IIconPhase == 0 {
+				row := int(nmlvcd.Nmcd.DwItemSpec)
+				col := tv.fromLVColIdx(nmlvcd.ISubItem)
 
 				switch nmlvcd.Nmcd.DwDrawStage {
 				case win.CDDS_PREPAINT:
 					return win.CDRF_NOTIFYITEMDRAW
 
 				case win.CDDS_ITEMPREPAINT:
-					if nmlvcd.Nmcd.DwItemSpec%2 == 1 {
-						/*if tv.hasDarkAltBGColor &&
-							nmlvcd.Nmcd.UItemState&win.CDIS_HOT == 0 &&
-							tv.SendMessage(win.LVM_GETITEMSTATE, nmlvcd.Nmcd.DwItemSpec, win.LVIS_SELECTED) == 0 &&
-							int32(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)) != nmlvcd.ISubItem {
-							fmt.Printf("selcol: %d, subitem: %d\n", int32(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)), nmlvcd.ISubItem)
-							nmlvcd.ClrText = white
-						}*/
+					tv.customDrawItemHot = nmlvcd.Nmcd.UItemState&win.CDIS_HOT != 0
+
+					if tv.alternatingRowBGColor != 0 && row%2 == 1 {
+						tv.style.BackgroundColor = tv.alternatingRowBGColor
 						nmlvcd.ClrTextBk = win.COLORREF(tv.alternatingRowBGColor)
 					}
-
 					return win.CDRF_NOTIFYSUBITEMDRAW
 
 				case win.CDDS_ITEMPREPAINT | win.CDDS_SUBITEM:
-					if nmlvcd.Nmcd.DwItemSpec%2 == 1 &&
-						tv.hasDarkAltBGColor &&
-						nmlvcd.Nmcd.UItemState&win.CDIS_HOT == 0 &&
-						tv.SendMessage(win.LVM_GETITEMSTATE, nmlvcd.Nmcd.DwItemSpec, win.LVIS_SELECTED) == 0 &&
-						int32(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)) != nmlvcd.ISubItem {
+					if tv.styler != nil {
+						tv.style.row = row
+						tv.style.col = col
 
-						nmlvcd.ClrText = white
+						if tv.alternatingRowBGColor != 0 {
+							if row%2 == 1 {
+								tv.style.BackgroundColor = tv.alternatingRowBGColor
+							} else {
+								tv.style.BackgroundColor = defaultTVRowBGColor
+							}
+						}
+
+						tv.style.TextColor = RGB(0, 0, 0)
+						tv.style.Font = nil
+						tv.style.Image = nil
+
+						tv.styler.StyleCell(&tv.style)
+
+						nmlvcd.ClrTextBk = win.COLORREF(tv.style.BackgroundColor)
+						nmlvcd.ClrText = win.COLORREF(tv.style.TextColor)
+
+						if (tv.style.Image != nil || nmlvcd.ISubItem == 0) &&
+							tv.style.BackgroundColor != defaultTVRowBGColor &&
+							!tv.customDrawItemHot &&
+							win.IsAppThemed() &&
+							int(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)) != col &&
+							tv.SendMessage(win.LVM_GETITEMSTATE, uintptr(row), win.LVIS_SELECTED) == 0 {
+
+							canvas, _ := newCanvasFromHDC(nmlvcd.Nmcd.Hdc)
+							brush, _ := NewSolidColorBrush(tv.style.BackgroundColor)
+							defer brush.Dispose()
+
+							bounds := rectangleFromRECT(nmlvcd.Nmcd.Rc)
+							if nmlvcd.ISubItem == 0 {
+								if tv.CheckBoxes() {
+									bounds.X -= 20
+									bounds.Width = 36
+								} else {
+									bounds.X -= 4
+									bounds.Width = 20
+								}
+							} else {
+								bounds.Width = 18
+							}
+
+							canvas.FillRectangle(brush, bounds)
+						}
+
+						if font := tv.style.Font; font != nil {
+							win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(0)))
+						}
 					}
 
-					return win.CDRF_NEWFONT
+					return win.CDRF_NEWFONT | win.CDRF_SKIPPOSTPAINT
 				}
+
+				return win.CDRF_SKIPPOSTPAINT
 			}
 
-			return win.CDRF_DODEFAULT
+			return win.CDRF_SKIPPOSTPAINT
 
 		case win.LVN_COLUMNCLICK:
 			nmlv := (*win.NMLISTVIEW)(unsafe.Pointer(lParam))
@@ -1430,6 +1552,15 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 
 		case tableViewSelectedIndexesChangedTimerId:
 			tv.selectedIndexesChangedPublisher.Publish()
+		}
+
+	case win.WM_UPDATEUISTATE:
+		switch win.LOWORD(uint32(wParam)) {
+		case win.UIS_SET:
+			wParam |= win.UISF_HIDEFOCUS << 16
+
+		case win.UIS_CLEAR, win.UIS_INITIALIZE:
+			wParam &^= ^uintptr(win.UISF_HIDEFOCUS << 16)
 		}
 	}
 

@@ -33,6 +33,7 @@ type CheckBox struct {
 	OnMouseMove         walk.MouseEventHandler
 	OnMouseUp           walk.MouseEventHandler
 	OnSizeChanged       walk.EventHandler
+	Persistent          bool
 	Text                Property
 	Checked             Property
 	CheckState          Property
@@ -49,6 +50,8 @@ func (cb CheckBox) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(cb, w, func() error {
+		w.SetPersistent(cb.Persistent)
+
 		if err := w.SetTristate(cb.Tristate); err != nil {
 			return err
 		}

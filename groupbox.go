@@ -80,6 +80,8 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 
 	win.SetWindowPos(gb.checkBox.hWnd, win.HWND_TOP, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE)
 
+	gb.SetBackground(NullBrush())
+
 	gb.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
 			return gb.Title()
@@ -295,6 +297,11 @@ func (gb *GroupBox) MouseUp() *MouseEvent {
 func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if gb.composite != nil {
 		switch msg {
+		case win.WM_CTLCOLORSTATIC:
+			if hBrush := gb.handleWMCTLCOLORSTATIC(wParam, lParam); hBrush != 0 {
+				return hBrush
+			}
+
 		case win.WM_COMMAND, win.WM_NOTIFY:
 			gb.composite.WndProc(hwnd, msg, wParam, lParam)
 
