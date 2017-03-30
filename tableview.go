@@ -956,6 +956,16 @@ func (tv *TableView) RestoreState() error {
 			if err := tvc.SetWidth(tvcs.Width); err != nil {
 				return err
 			}
+			var visible bool
+			for _, name := range tvs.ColumnDisplayOrder {
+				if name == tvc.name {
+					visible = true
+					break
+				}
+			}
+			if err := tvc.SetVisible(tvc.visible && visible); err != nil {
+				return err
+			}
 		}
 	}
 
