@@ -6,9 +6,7 @@
 
 package declarative
 
-import (
-	"github.com/lxn/walk"
-)
+import "github.com/lxn/walk"
 
 type MainWindow struct {
 	AssignTo         **walk.MainWindow
@@ -34,6 +32,7 @@ type MainWindow struct {
 	Layout           Layout
 	Children         []Widget
 	MenuItems        []MenuItem
+	StatusBarItems   []StatusBarItem
 	ToolBarItems     []MenuItem // Deprecated: use ToolBar instead
 	ToolBar          ToolBar
 	Expressions      func() map[string]walk.Expression
@@ -97,6 +96,21 @@ func (mw MainWindow) Create() error {
 			builder.deferBuildActions(w.ToolBar().Actions(), mw.ToolBarItems)
 		}
 
+		for _, sbi := range mw.StatusBarItems {
+			s := walk.NewStatusBarItem()
+			if sbi.AssignTo != nil {
+				*sbi.AssignTo = s
+			}
+			s.SetIcon(sbi.Icon)
+			s.SetText(sbi.Text)
+			s.SetToolTipText(sbi.ToolTipText)
+			if sbi.Width > 0 {
+				s.SetWidth(sbi.Width)
+			}
+			w.StatusBar().Items().Add(s)
+			w.StatusBar().SetVisible(true)
+		}
+
 		if err := w.SetSize(mw.Size.toW()); err != nil {
 			return err
 		}
@@ -150,4 +164,12 @@ func (mw MainWindow) Run() (int, error) {
 	}
 
 	return (*mw.AssignTo).Run(), nil
+}
+
+type StatusBarItem struct {
+	AssignTo    **walk.StatusBarItem
+	Icon        *walk.Icon
+	Text        string
+	ToolTipText string
+	Width       int
 }
