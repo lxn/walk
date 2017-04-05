@@ -107,6 +107,9 @@ func (mw MainWindow) Create() error {
 			if sbi.Width > 0 {
 				s.SetWidth(sbi.Width)
 			}
+			if sbi.OnClicked != nil {
+				s.Clicked().Attach(sbi.OnClicked)
+			}
 			w.StatusBar().Items().Add(s)
 			w.StatusBar().SetVisible(true)
 		}
@@ -172,4 +175,5 @@ type StatusBarItem struct {
 	Text        string
 	ToolTipText string
 	Width       int
+	OnClicked   walk.EventHandler
 }
