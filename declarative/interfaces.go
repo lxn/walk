@@ -78,6 +78,13 @@ func (epr ErrorPresenterRef) Create() (walk.ErrorPresenter, error) {
 	return nil, nil
 }
 
+type ToolTipErrorPresenter struct {
+}
+
+func (ToolTipErrorPresenter) Create() (walk.ErrorPresenter, error) {
+	return walk.NewToolTipErrorPresenter()
+}
+
 type topLevelWindowInfo struct {
 	Name             string
 	Enabled          Property
