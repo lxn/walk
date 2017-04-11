@@ -1370,11 +1370,13 @@ func (wb *WindowBase) backgroundEffective() (Brush, Window) {
 
 	if widget, ok := wb.window.(Widget); ok {
 		for bg == nullBrushSingleton && widget != nil {
-			if parent := widget.Parent(); parent != nil {
-				wnd = parent
-				bg = parent.Background()
+			if hwndParent := win.GetParent(widget.Handle()); hwndParent != 0 {
+				if parent := windowFromHandle(hwndParent); parent != nil {
+					wnd = parent
+					bg = parent.Background()
 
-				widget, _ = parent.(Widget)
+					widget, _ = parent.(Widget)
+				}
 			} else {
 				break
 			}
@@ -1399,11 +1401,19 @@ func (wb *WindowBase) prepareDCForBackground(hdc win.HDC, hwnd win.HWND, brushWn
 func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
 	hwnd := win.HWND(lParam)
 
-	switch windowFromHandle(hwnd).(type) {
+	switch wnd := windowFromHandle(hwnd).(type) {
 	case *LineEdit, *TextEdit:
-	// nop
+		// nop
 
 	default:
+		if wnd == nil {
+			switch windowFromHandle(win.GetParent(hwnd)).(type) {
+			case *ComboBox:
+				// nop
+				return 0
+			}
+		}
+
 		if bg, wnd := wb.backgroundEffective(); bg != nil {
 			wb.prepareDCForBackground(win.HDC(wParam), hwnd, wnd)
 
