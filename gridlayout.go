@@ -479,6 +479,8 @@ func (l *GridLayout) Update(reset bool) error {
 		l.cleanup()
 	}
 
+	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
+
 	widths := l.sectionSizes(Horizontal)
 	heights := l.sectionSizes(Vertical)
 

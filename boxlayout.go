@@ -329,6 +329,8 @@ func (l *BoxLayout) Update(reset bool) error {
 		l.cleanupStretchFactors()
 	}
 
+	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
+
 	// Begin by finding out which widgets we care about.
 	widgets := l.widgets()
 
