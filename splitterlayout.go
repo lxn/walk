@@ -14,6 +14,7 @@ import (
 type splitterLayout struct {
 	container   Container
 	orientation Orientation
+	margins     Margins
 	hwnd2Item   map[win.HWND]*splitterLayoutItem
 	resetNeeded bool
 }
@@ -53,15 +54,17 @@ func (l *splitterLayout) SetContainer(value Container) {
 }
 
 func (l *splitterLayout) Margins() Margins {
-	return Margins{}
+	return l.margins
 }
 
 func (l *splitterLayout) SetMargins(value Margins) error {
-	return newError("not supported")
+	l.margins = value
+
+	return l.Update(false)
 }
 
 func (l *splitterLayout) Spacing() int {
-	return 0
+	return l.container.(*Splitter).handleWidth
 }
 
 func (l *splitterLayout) SetSpacing(value int) error {
@@ -189,9 +192,9 @@ func (l *splitterLayout) spaceForRegularWidgets() int {
 
 	var space int
 	if l.orientation == Horizontal {
-		space = cb.Width
+		space = cb.Width - l.margins.HNear - l.margins.HFar
 	} else {
-		space = cb.Height
+		space = cb.Height - l.margins.VNear - l.margins.VFar
 	}
 
 	return space - (splitter.Children().Len()/2)*splitter.handleWidth
@@ -256,6 +259,10 @@ func (l *splitterLayout) Update(reset bool) error {
 	handleWidth := splitter.HandleWidth()
 	sizes := make([]int, len(widgets))
 	cb := splitter.ClientBounds()
+	cb.X += l.margins.HNear
+	cb.Y += l.margins.HFar
+	cb.Width -= l.margins.HNear + l.margins.HFar
+	cb.Height -= l.margins.VNear + l.margins.VFar
 	space1 := l.spaceForRegularWidgets()
 
 	var space2 int
@@ -354,7 +361,12 @@ func (l *splitterLayout) Update(reset bool) error {
 		return lastError("BeginDeferWindowPos")
 	}
 
-	p1 := 0
+	var p1 int
+	if l.orientation == Horizontal {
+		p1 = l.margins.HNear
+	} else {
+		p1 = l.margins.VNear
+	}
 	for i, widget := range widgets {
 		var s1 int
 		if i == len(widgets)-1 {
@@ -365,9 +377,9 @@ func (l *splitterLayout) Update(reset bool) error {
 
 		var x, y, w, h int
 		if l.orientation == Horizontal {
-			x, y, w, h = p1, 0, s1, space2
+			x, y, w, h = p1, l.margins.VNear, s1, space2
 		} else {
-			x, y, w, h = 0, p1, space2, s1
+			x, y, w, h = l.margins.HNear, p1, space2, s1
 		}
 
 		if hdwp = win.DeferWindowPos(

@@ -229,6 +229,14 @@ func (fb *FormBase) SetDataBinder(db *DataBinder) {
 	fb.clientComposite.SetDataBinder(db)
 }
 
+func (fb *FormBase) FocusEffect() WidgetGraphicsEffect {
+	return fb.clientComposite.focusEffect
+}
+
+func (fb *FormBase) SetFocusEffect(effect WidgetGraphicsEffect) {
+	fb.clientComposite.SetFocusEffect(effect)
+}
+
 func (fb *FormBase) Suspended() bool {
 	return fb.clientComposite.Suspended()
 }
@@ -320,6 +328,19 @@ func (fb *FormBase) TitleChanged() *Event {
 func (fb *FormBase) Run() int {
 	if fb.owner != nil {
 		fb.owner.SetEnabled(false)
+
+		invalidateDescendentBorders := func() {
+			walkDescendants(fb.owner, func(wnd Window) bool {
+				if widget, ok := wnd.(Widget); ok {
+					widget.AsWidgetBase().invalidateBorderInParent()
+				}
+
+				return true
+			})
+		}
+
+		invalidateDescendentBorders()
+		defer invalidateDescendentBorders()
 	}
 
 	if layout := fb.Layout(); layout != nil {

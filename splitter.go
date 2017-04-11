@@ -41,7 +41,7 @@ func newSplitter(parent Container, orientation Orientation) (*Splitter, error) {
 		ContainerBase: ContainerBase{
 			layout: layout,
 		},
-		handleWidth: 4,
+		handleWidth: 5,
 	}
 	s.children = newWidgetList(s)
 	layout.container = s
@@ -61,6 +61,8 @@ func newSplitter(parent Container, orientation Orientation) (*Splitter, error) {
 			s.Dispose()
 		}
 	}()
+
+	s.SetBackground(NullBrush())
 
 	if err := s.setOrientation(orientation); err != nil {
 		return nil, err
@@ -132,6 +134,14 @@ func (s *Splitter) setOrientation(value Orientation) error {
 
 	layout := s.layout.(*splitterLayout)
 	return layout.SetOrientation(value)
+}
+
+func (s *Splitter) applyFocusEffect(effect WidgetGraphicsEffect) {
+	var margins Margins
+	if effect != nil {
+		margins = Margins{5, 5, 5, 5}
+	}
+	s.layout.SetMargins(margins)
 }
 
 func (s *Splitter) Persistent() bool {
@@ -362,12 +372,15 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						}
 
 						dragHandle := s.draggedHandle
-						s.draggedHandle = nil
-						dragHandle.SetBackground(nil)
 
 						handleIndex := s.children.Index(dragHandle)
 						prev := s.children.At(handleIndex - 1)
 						next := s.children.At(handleIndex + 1)
+
+						s.draggedHandle = nil
+						dragHandle.SetBackground(NullBrush())
+						prev.AsWidgetBase().invalidateBorderInParent()
+						next.AsWidgetBase().invalidateBorderInParent()
 
 						prev.SetSuspended(true)
 						defer prev.Invalidate()

@@ -11,6 +11,7 @@ import (
 )
 
 import (
+	"fmt"
 	"github.com/lxn/win"
 )
 
@@ -95,14 +96,22 @@ type Container interface {
 	SetLayout(value Layout) error
 	DataBinder() *DataBinder
 	SetDataBinder(dbm *DataBinder)
+	FocusEffect() WidgetGraphicsEffect
+	SetFocusEffect(effect WidgetGraphicsEffect)
+}
+
+type applyFocusEffecter interface {
+	applyFocusEffect(effect WidgetGraphicsEffect)
 }
 
 type ContainerBase struct {
 	WidgetBase
-	layout     Layout
-	children   *WidgetList
-	dataBinder *DataBinder
-	persistent bool
+	layout       Layout
+	children     *WidgetList
+	dataBinder   *DataBinder
+	renderTarget *win.ID2D1RenderTarget
+	focusEffect  WidgetGraphicsEffect
+	persistent   bool
 }
 
 func (cb *ContainerBase) AsWidgetBase() *WidgetBase {
@@ -206,6 +215,34 @@ func (cb *ContainerBase) SetDataBinder(db *DataBinder) {
 	}
 }
 
+func (cb *ContainerBase) FocusEffect() WidgetGraphicsEffect {
+	if cb.focusEffect == nil {
+		if parent := cb.Parent(); parent != nil {
+			return parent.FocusEffect()
+		}
+	}
+
+	return cb.focusEffect
+}
+
+func (cb *ContainerBase) SetFocusEffect(effect WidgetGraphicsEffect) {
+	if cb.focusEffect == effect {
+		return
+	}
+
+	cb.focusEffect = effect
+
+	walkDescendants(cb.window, func(wnd Window) bool {
+		if afe, ok := wnd.(applyFocusEffecter); ok {
+			afe.applyFocusEffect(effect)
+		}
+
+		return true
+	})
+
+	cb.Invalidate()
+}
+
 func (cb *ContainerBase) forEachPersistableChild(f func(p Persistable) error) error {
 	if cb.children == nil {
 		return nil
@@ -252,12 +289,174 @@ func (cb *ContainerBase) SetSuspended(suspend bool) {
 	}
 }
 
+func (cb *ContainerBase) Dispose() {
+	if cb.renderTarget != nil {
+		cb.renderTarget.Release()
+		cb.renderTarget = nil
+	}
+
+	cb.WidgetBase.Dispose()
+}
+
+func (cb *ContainerBase) createRenderTarget(hdc win.HDC) error {
+	if cb.renderTarget != nil {
+		cb.renderTarget.Release()
+		cb.renderTarget = nil
+	}
+
+	if false {
+		props := win.D2D1_RENDER_TARGET_PROPERTIES{
+			Type: win.D2D1_RENDER_TARGET_TYPE_DEFAULT,
+			PixelFormat: win.D2D1_PIXEL_FORMAT{
+				Format:    win.DXGI_FORMAT_UNKNOWN,
+				AlphaMode: win.D2D1_ALPHA_MODE_UNKNOWN,
+			},
+			DpiX:     0.0,
+			DpiY:     0.0,
+			Usage:    win.D2D1_RENDER_TARGET_USAGE_NONE,
+			MinLevel: win.D2D1_FEATURE_LEVEL_DEFAULT,
+		}
+
+		b := cb.ClientBounds()
+
+		fmt.Printf("createRenderTarget - b: %#v\n", b)
+
+		hwndRTProps := win.D2D1_HWND_RENDER_TARGET_PROPERTIES{
+			Hwnd: cb.hWnd,
+			PixelSize: win.D2D1_SIZE_U{
+				Width:  uint32(b.Width),
+				Height: uint32(b.Height),
+			},
+			PresentOptions: win.D2D1_PRESENT_OPTIONS_RETAIN_CONTENTS,
+		}
+
+		var hwndRT *win.ID2D1HwndRenderTarget
+
+		if hr := id2d1Factory.CreateHwndRenderTarget(&props, &hwndRTProps, &hwndRT); !win.SUCCEEDED(hr) {
+			return errorFromHRESULT("ID2D1Factory.CreateHwndRenderTarget", hr)
+		}
+
+		cb.renderTarget = (*win.ID2D1RenderTarget)(unsafe.Pointer(hwndRT))
+	} else {
+		dpiX := float32(win.GetDeviceCaps(hdc, win.LOGPIXELSX))
+		dpiY := float32(win.GetDeviceCaps(hdc, win.LOGPIXELSY))
+
+		props := win.D2D1_RENDER_TARGET_PROPERTIES{
+			Type: win.D2D1_RENDER_TARGET_TYPE_DEFAULT,
+			PixelFormat: win.D2D1_PIXEL_FORMAT{
+				Format:    win.DXGI_FORMAT_B8G8R8A8_UNORM,
+				AlphaMode: win.D2D1_ALPHA_MODE_PREMULTIPLIED,
+			},
+			DpiX:     dpiX,
+			DpiY:     dpiY,
+			Usage:    win.D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE,
+			MinLevel: win.D2D1_FEATURE_LEVEL_DEFAULT,
+		}
+
+		var dcRT *win.ID2D1DCRenderTarget
+
+		if hr := id2d1Factory.CreateDCRenderTarget(&props, &dcRT); !win.SUCCEEDED(hr) {
+			return errorFromHRESULT("ID2D1Factory.CreateDCRenderTarget", hr)
+		}
+
+		rc := cb.ClientBounds().toRECT()
+		if hr := dcRT.BindDC(hdc, &rc); !win.SUCCEEDED(hr) {
+			return errorFromHRESULT("ID2D1DCRenderTarget.BindDC", hr)
+		}
+
+		cb.renderTarget = (*win.ID2D1RenderTarget)(unsafe.Pointer(dcRT))
+	}
+
+	return nil
+}
+
+func (cb *ContainerBase) doPaint() error {
+	var ps win.PAINTSTRUCT
+
+	hdc := win.BeginPaint(cb.hWnd, &ps)
+	defer win.EndPaint(cb.hWnd, &ps)
+
+	if cb.renderTarget == nil {
+		if err := cb.createRenderTarget(hdc); err != nil {
+			return err
+		}
+	}
+
+	dcRT := (*win.ID2D1DCRenderTarget)(unsafe.Pointer(cb.renderTarget))
+
+	rc := cb.ClientBounds().toRECT()
+	dcRT.BindDC(hdc, &rc)
+
+	cb.renderTarget.BeginDraw()
+	defer func() {
+		if hr := cb.renderTarget.EndDraw(nil, nil); uint32(hr) == win.D2DERR_RECREATE_TARGET {
+			fmt.Println("D2DERR_RECREATE_TARGET")
+			cb.renderTarget.Release()
+			cb.renderTarget = nil
+		}
+	}()
+
+	if focusEffect := cb.window.(Container).FocusEffect(); focusEffect != nil {
+		hwndFocused := win.GetFocus()
+		var widget Widget
+		if wnd := windowFromHandle(hwndFocused); wnd != nil {
+			widget, _ = wnd.(Widget)
+		}
+		for hwndFocused != 0 && (widget == nil || widget.Parent() == nil) {
+			hwndFocused = win.GetParent(hwndFocused)
+			if wnd := windowFromHandle(hwndFocused); wnd != nil {
+				widget, _ = wnd.(Widget)
+			}
+		}
+
+		if widget != nil && widget.Parent() != nil && widget.Parent().Handle() == cb.hWnd {
+			b := widget.Bounds().toRECT()
+			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
+
+			if err := focusEffect.Draw(widget, cb.renderTarget); err != nil {
+				return err
+			}
+		}
+	}
+
+	for _, widget := range cb.children.items {
+		if !win.IsWindowEnabled(widget.Handle()) || !win.IsWindowVisible(widget.Handle()) {
+			continue
+		}
+
+		for _, effect := range widget.GraphicsEffects().items {
+			b := widget.Bounds().toRECT()
+			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
+
+			if err := effect.Draw(widget, cb.renderTarget); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_CTLCOLORSTATIC:
 		if hBrush := cb.handleWMCTLCOLORSTATIC(wParam, lParam); hBrush != 0 {
 			return hBrush
 		}
+
+	//case win.WM_ERASEBKGND:
+	//	return 1
+
+	case win.WM_PAINT:
+		//if _, ok := cb.window.(*Splitter); ok {
+		//	break
+		//}
+
+		if err := cb.doPaint(); err != nil {
+			panic(err)
+		}
+
+		return 0
 
 	case win.WM_COMMAND:
 		if lParam == 0 {
@@ -326,6 +525,20 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 		if cb.layout != nil {
 			cb.layout.Update(false)
 		}
+
+		//if msg == win.WM_SIZE && cb.renderTarget != nil {
+		//	hwndRT := (*win.ID2D1HwndRenderTarget)(unsafe.Pointer(cb.renderTarget))
+		//
+		//	s := win.D2D1_SIZE_U{
+		//		Width:  uint32(win.GET_X_LPARAM(lParam)),
+		//		Height: uint32(win.GET_Y_LPARAM(lParam)),
+		//	}
+		//
+		//	// We ignore any error here.
+		//	hwndRT.Resize(&s)
+		//
+		//	cb.Invalidate()
+		//}
 	}
 
 	return cb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
@@ -347,6 +560,14 @@ func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err error) 
 	}
 
 	widget.(applyFonter).applyFont(cb.Font())
+
+	switch widget.(type) {
+	case *Composite, *GroupBox, *Label, *ScrollView, *Spacer, *Splitter, *splitterHandle, *TabWidget:
+		// nop
+
+	default:
+		widget.GraphicsEffects().Add(defaultDropShadowEffect)
+	}
 
 	return
 }

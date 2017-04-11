@@ -152,6 +152,20 @@ func (sv *ScrollView) SetDataBinder(dataBinder *DataBinder) {
 	sv.composite.SetDataBinder(dataBinder)
 }
 
+func (sv *ScrollView) FocusEffect() WidgetGraphicsEffect {
+	if sv.composite.focusEffect == nil {
+		if parent := sv.Parent(); parent != nil {
+			return parent.FocusEffect()
+		}
+	}
+
+	return sv.composite.focusEffect
+}
+
+func (sv *ScrollView) SetFocusEffect(effect WidgetGraphicsEffect) {
+	sv.composite.SetFocusEffect(effect)
+}
+
 func (sv *ScrollView) Children() *WidgetList {
 	if sv.composite == nil {
 		// Without this we would get into trouble in NewComposite.

@@ -37,6 +37,8 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, error) {
 		return nil, err
 	}
 
+	sh.SetBackground(NullBrush())
+
 	if err := sh.setAndClearStyleBits(0, win.WS_CLIPSIBLINGS); err != nil {
 		return nil, err
 	}
@@ -69,4 +71,37 @@ func (sh *splitterHandle) SizeHint() Size {
 	}
 
 	return size
+}
+
+func (sh *splitterHandle) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	switch msg {
+	case win.WM_ERASEBKGND:
+		splitter := sh.Parent().(*Splitter)
+
+		if sh.Background() == nullBrushSingleton && splitter.FocusEffect() != nil {
+			//i := splitter.children.Index(sh)
+			//
+			//if splitter.children.At(i - 1).Focused() || splitter.children.At(i + 1).Focused() {
+			return 1
+			//}
+		}
+
+	case win.WM_PAINT:
+		splitter := sh.Parent().(*Splitter)
+
+		if sh.Background() == nullBrushSingleton && splitter.FocusEffect() != nil {
+			//i := splitter.children.Index(sh)
+			//
+			//if splitter.children.At(i - 1).Focused() || splitter.children.At(i + 1).Focused() {
+			var ps win.PAINTSTRUCT
+
+			win.BeginPaint(hwnd, &ps)
+			defer win.EndPaint(hwnd, &ps)
+
+			return 0
+			//}
+		}
+	}
+
+	return sh.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }

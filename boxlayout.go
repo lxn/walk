@@ -510,6 +510,10 @@ func (l *BoxLayout) Update(reset bool) error {
 			}
 		}
 
+		if widget.GraphicsEffects().Len() > 0 {
+			widget.AsWidgetBase().invalidateBorderInParent()
+		}
+
 		if hdwp = win.DeferWindowPos(
 			hdwp,
 			widget.Handle(),
@@ -526,6 +530,14 @@ func (l *BoxLayout) Update(reset bool) error {
 
 	if !win.EndDeferWindowPos(hdwp) {
 		return lastError("EndDeferWindowPos")
+	}
+
+	for _, widget := range widgets {
+		if widget.GraphicsEffects().Len() == 0 {
+			continue
+		}
+
+		widget.AsWidgetBase().invalidateBorderInParent()
 	}
 
 	return nil
