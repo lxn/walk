@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"image/color"
 	"strings"
 	"syscall"
 	"unsafe"
