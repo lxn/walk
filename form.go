@@ -60,6 +60,20 @@ type Form interface {
 	Container
 	AsFormBase() *FormBase
 	Run() int
+	Starting() *Event
+	Closing() *CloseEvent
+	Activate() error
+	Show()
+	Hide()
+	Title() string
+	SetTitle(title string) error
+	TitleChanged() *Event
+	Icon() *Icon
+	SetIcon(icon *Icon)
+	IconChanged() *Event
+	Owner() Form
+	SetOwner(owner Form) error
+	ProgressIndicator() *ProgressIndicator
 }
 
 type FormBase struct {
@@ -299,6 +313,10 @@ func (fb *FormBase) SetTitle(value string) error {
 	return setWindowText(fb.hWnd, value)
 }
 
+func (fb *FormBase) TitleChanged() *Event {
+	return fb.titleChangedPublisher.Event()
+}
+
 func (fb *FormBase) Run() int {
 	if fb.owner != nil {
 		fb.owner.SetEnabled(false)
@@ -337,6 +355,14 @@ func (fb *FormBase) Run() int {
 
 func (fb *FormBase) Starting() *Event {
 	return fb.startingPublisher.Event()
+}
+
+func (fb *FormBase) Activate() error {
+	if hwndPrevActive := win.SetActiveWindow(fb.hWnd); hwndPrevActive == 0 {
+		return lastError("SetActiveWindow")
+	}
+
+	return nil
 }
 
 func (fb *FormBase) Owner() Form {
