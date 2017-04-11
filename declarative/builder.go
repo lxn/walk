@@ -305,6 +305,12 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 					return err
 				} else {
 					db = dataB
+
+					if ep := db.ErrorPresenter(); ep != nil {
+						if dep, ok := ep.(walk.Disposable); ok {
+							wc.AddDisposable(dep)
+						}
+					}
 				}
 			}
 		}

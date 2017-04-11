@@ -67,6 +67,8 @@ type FormBase struct {
 	clientComposite       *Composite
 	owner                 Form
 	closingPublisher      CloseEventPublisher
+	activatingPublisher   EventPublisher
+	deactivatingPublisher EventPublisher
 	startingPublisher     EventPublisher
 	titleChangedPublisher EventPublisher
 	iconChangedPublisher  EventPublisher
@@ -74,6 +76,7 @@ type FormBase struct {
 	icon                  *Icon
 	prevFocusHWnd         win.HWND
 	isInRestoreState      bool
+	started               bool
 	closeReason           CloseReason
 }
 
@@ -307,6 +310,7 @@ func (fb *FormBase) Run() int {
 
 	fb.focusFirstCandidateDescendant()
 
+	fb.started = true
 	fb.startingPublisher.Publish()
 
 	var msg win.MSG
@@ -505,9 +509,18 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				win.SetFocus(fb.prevFocusHWnd)
 			}
 
+			appSingleton.activeForm = fb.window.(Form)
+
+			fb.activatingPublisher.Publish()
+
 		case win.WA_INACTIVE:
 			fb.prevFocusHWnd = win.GetFocus()
+
+			appSingleton.activeForm = nil
+
+			fb.deactivatingPublisher.Publish()
 		}
+
 		return 0
 
 	case win.WM_CLOSE:

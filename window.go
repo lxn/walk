@@ -287,6 +287,7 @@ type WindowBase struct {
 	mouseUpPublisher        MouseEventPublisher
 	mouseMovePublisher      MouseEventPublisher
 	mouseWheelPublisher     MouseEventPublisher
+	boundsChangedPublisher  EventPublisher
 	sizeChangedPublisher    EventPublisher
 	maxSize                 Size
 	minSize                 Size
@@ -1522,6 +1523,9 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	case win.WM_SIZE, win.WM_SIZING:
 		wb.sizeChangedPublisher.Publish()
+
+	case win.WM_WINDOWPOSCHANGED:
+		wb.boundsChangedPublisher.Publish()
 
 	case win.WM_DESTROY:
 		if wb.origWndProcPtr != 0 {
