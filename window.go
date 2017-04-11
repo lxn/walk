@@ -1116,38 +1116,13 @@ func (wb *WindowBase) SetClientSize(value Size) error {
 
 // Screenshot returns an image of the window.
 func (wb *WindowBase) Screenshot() (*image.RGBA, error) {
-	if hBmp, err := hBitmapFromWindow(wb); err != nil {
+	bmp, err := NewBitmapFromWindow(wb)
+	if err != nil {
 		return nil, err
-	} else {
-
-		var bi win.BITMAPINFO
-		bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
-		hdc := win.GetDC(0)
-		if ret := win.GetDIBits(hdc, hBmp, 0, 0, nil, &bi, win.DIB_RGB_COLORS); ret == 0 {
-			return nil, newError("GetDIBits get bitmapinfo failed")
-		}
-
-		buf := make([]byte, bi.BmiHeader.BiSizeImage)
-		bi.BmiHeader.BiCompression = win.BI_RGB
-		if ret := win.GetDIBits(hdc, hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS); ret == 0 {
-			return nil, newError("GetDIBits failed")
-		}
-
-		width := int(bi.BmiHeader.BiWidth)
-		height := int(bi.BmiHeader.BiHeight)
-		im := image.NewRGBA(image.Rect(0, 0, width, height))
-		n := 0
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				r := buf[n+2]
-				g := buf[n+1]
-				b := buf[n+0]
-				n += 4
-				im.Set(x, height-y, color.RGBA{r, g, b, 255})
-			}
-		}
-		return im, nil
 	}
+	defer bmp.Dispose()
+
+	return bmp.ToImage()
 }
 
 // FocusedWindow returns the Window that has the keyboard input focus.
