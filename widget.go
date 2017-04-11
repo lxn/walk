@@ -361,6 +361,10 @@ func (wb *WidgetBase) updateParentLayout() error {
 
 		if clientSize.Width < minSize.Width || clientSize.Height < minSize.Height {
 			switch wnd := parent.(type) {
+			case *ScrollView:
+				ifContainerIsScrollViewDoCoolSpecialLayoutStuff(layout)
+				return nil
+
 			case Widget:
 				return wnd.AsWidgetBase().updateParentLayout()
 
