@@ -305,6 +305,8 @@ func (fb *FormBase) Run() int {
 		layout.Update(false)
 	}
 
+	fb.focusFirstCandidateDescendant()
+
 	fb.startingPublisher.Publish()
 
 	var msg win.MSG
@@ -568,4 +570,52 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	}
 
 	return fb.WindowBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (fb *FormBase) focusFirstCandidateDescendant() {
+	window := firstFocusableDescendant(fb)
+	if window == nil {
+		return
+	}
+
+	if err := window.SetFocus(); err != nil {
+		return
+	}
+
+	if textSel, ok := window.(textSelectable); ok {
+		textSel.SetTextSelection(0, -1)
+	}
+}
+
+func firstFocusableDescendantCallback(hwnd win.HWND, lParam uintptr) uintptr {
+	widget := windowFromHandle(hwnd)
+
+	if widget == nil || !widget.Visible() || !widget.Enabled() {
+		return 1
+	}
+
+	style := uint(win.GetWindowLong(hwnd, win.GWL_STYLE))
+	// FIXME: Ugly workaround for NumberEdit
+	_, isTextSelectable := widget.(textSelectable)
+	if style&win.WS_TABSTOP > 0 || isTextSelectable {
+		hwndPtr := (*win.HWND)(unsafe.Pointer(lParam))
+		*hwndPtr = hwnd
+		return 0
+	}
+
+	return 1
+}
+
+var firstFocusableDescendantCallbackPtr = syscall.NewCallback(firstFocusableDescendantCallback)
+
+func firstFocusableDescendant(container Container) Window {
+	var hwnd win.HWND
+
+	win.EnumChildWindows(container.Handle(), firstFocusableDescendantCallbackPtr, uintptr(unsafe.Pointer(&hwnd)))
+
+	return windowFromHandle(hwnd)
+}
+
+type textSelectable interface {
+	SetTextSelection(start, end int)
 }
