@@ -341,7 +341,16 @@ func (l *GridLayout) LayoutFlags() LayoutFlags {
 			widget := children.At(i)
 
 			if shouldLayoutWidget(widget) {
-				flags |= widget.LayoutFlags()
+				wf := widget.LayoutFlags()
+
+				if wf&GreedyHorz != 0 && widget.MaxSize().Width > 0 {
+					wf &^= GreedyHorz
+				}
+				if wf&GreedyVert != 0 && widget.MaxSize().Height > 0 {
+					wf &^= GreedyVert
+				}
+
+				flags |= wf
 			}
 		}
 	}
@@ -457,6 +466,10 @@ func (l *GridLayout) Update(reset bool) error {
 	}
 
 	if l.container.Suspended() {
+		return nil
+	}
+
+	if !performingScheduledLayouts && scheduleLayout(l) {
 		return nil
 	}
 

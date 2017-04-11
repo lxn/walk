@@ -318,6 +318,10 @@ func (l *BoxLayout) Update(reset bool) error {
 		return nil
 	}
 
+	if !performingScheduledLayouts && scheduleLayout(l) {
+		return nil
+	}
+
 	if l.resetNeeded {
 		l.resetNeeded = false
 

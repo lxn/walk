@@ -354,27 +354,36 @@ func (wb *WidgetBase) updateParentLayout() error {
 	}
 
 	layout := parent.Layout()
-	clientSize := parent.ClientBounds().Size()
-	minSize := layout.MinSize()
 
-	if clientSize.Width < minSize.Width || clientSize.Height < minSize.Height {
-		switch wnd := parent.(type) {
-		case Widget:
-			return wnd.AsWidgetBase().updateParentLayout()
+	if !formResizeScheduled || len(inProgressEventsByForm[appSingleton.activeForm]) == 0 {
+		clientSize := parent.ClientBounds().Size()
+		minSize := layout.MinSize()
 
-		case Form:
-			bounds := wnd.Bounds()
+		if clientSize.Width < minSize.Width || clientSize.Height < minSize.Height {
+			switch wnd := parent.(type) {
+			case Widget:
+				return wnd.AsWidgetBase().updateParentLayout()
 
-			if wnd.AsFormBase().fixedSize() {
-				bounds.Width, bounds.Height = 0, 0
+			case Form:
+				if len(inProgressEventsByForm[appSingleton.activeForm]) > 0 {
+					formResizeScheduled = true
+				} else {
+					bounds := wnd.Bounds()
+
+					if wnd.AsFormBase().fixedSize() {
+						bounds.Width, bounds.Height = 0, 0
+					}
+
+					wnd.SetBounds(bounds)
+				}
+				return nil
 			}
-
-			wnd.SetBounds(bounds)
-			return nil
 		}
 	}
 
-	return layout.Update(false)
+	layout.Update(false)
+
+	return nil
 }
 
 func ancestor(w Widget) Form {
