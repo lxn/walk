@@ -42,12 +42,6 @@ func NewTabPage() (*TabPage, error) {
 
 	tp.children = newWidgetList(tp)
 
-	//if win.IsAppThemed() {
-	//	tp.SetBackground(tabPageBackgroundBrush)
-	//}
-
-	tp.SetBackground(NullBrush())
-
 	tp.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
 			return tp.Title()
@@ -66,6 +60,20 @@ func (tp *TabPage) Enabled() bool {
 	}
 
 	return tp.enabled
+}
+
+func (tp *TabPage) Background() Brush {
+	if tp.background != nil {
+		return tp.background
+	} else if tp.tabWidget != nil && tp.tabWidget.background == nullBrushSingleton {
+		return nullBrushSingleton
+	}
+
+	if win.IsAppThemed() {
+		return tabPageBackgroundBrush
+	}
+
+	return nil
 }
 
 func (tp *TabPage) Font() *Font {

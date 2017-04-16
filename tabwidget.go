@@ -41,7 +41,7 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 		tw,
 		parent,
 		tabWidgetWindowClass,
-		win.WS_VISIBLE|win.TCS_OWNERDRAWFIXED,
+		win.WS_VISIBLE,
 		win.WS_EX_CONTROLPARENT); err != nil {
 		return nil, err
 	}
@@ -417,7 +417,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 				bg != tabPageBackgroundBrush &&
 				(page.layout == nil || !page.layout.Margins().isZero()) {
 
-				tw.prepareDCForBackground(canvas.hdc, page.hWnd, wnd)
+				tw.prepareDCForBackground(canvas.hdc, hwnd, wnd)
 
 				var rc win.RECT
 				if 0 == win.SendMessage(hwnd, win.TCM_GETITEMRECT, uintptr(tw.currentIndex), uintptr(unsafe.Pointer(&rc))) {
@@ -427,6 +427,18 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 				hRgn := win.CreateRectRgn(rc.Left, rc.Top, rc.Right, rc.Bottom+2)
 				win.FillRgn(canvas.hdc, hRgn, bg.handle())
 				win.DeleteObject(win.HGDIOBJ(hRgn))
+
+				hTheme := win.OpenThemeData(hwnd, syscall.StringToUTF16Ptr("tab"))
+				defer win.CloseThemeData(hTheme)
+
+				title := syscall.StringToUTF16(page.title)
+				rc.Left += 6
+				rc.Top += 1
+				options := win.DTTOPTS{DwFlags: win.DTT_GLOWSIZE, IGlowSize: 3}
+				options.DwSize = uint32(unsafe.Sizeof(options))
+				if hr := win.DrawThemeTextEx(hTheme, canvas.hdc, 0, win.TIS_SELECTED, &title[0], int32(len(title)), 0, &rc, &options); !win.SUCCEEDED(hr) {
+					return 0
+				}
 			}
 		}
 
