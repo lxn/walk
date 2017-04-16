@@ -46,6 +46,10 @@ type Margins struct {
 	HNear, VNear, HFar, VFar int
 }
 
+func (m Margins) isZero() bool {
+	return m.HNear == 0 && m.HFar == 0 && m.VNear == 0 && m.VFar == 0
+}
+
 type Layout interface {
 	Container() Container
 	SetContainer(value Container)
