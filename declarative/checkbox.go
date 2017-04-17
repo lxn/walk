@@ -42,8 +42,8 @@ type CheckBox struct {
 	// Button
 
 	Checked          Property
-	OnClicked        walk.EventHandler
 	OnCheckedChanged walk.EventHandler
+	OnClicked        walk.EventHandler
 	Text             Property
 
 	// CheckBox
