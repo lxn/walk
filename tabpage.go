@@ -8,6 +8,7 @@ package walk
 
 import (
 	"github.com/lxn/win"
+	"strconv"
 )
 
 const tabPageWindowClass = `\o/ Walk_TabPage_Class \o/`
@@ -26,6 +27,7 @@ type TabPage struct {
 	title                 string
 	tabWidget             *TabWidget
 	titleChangedPublisher EventPublisher
+	imageChangedPublisher EventPublisher
 }
 
 func NewTabPage() (*TabPage, error) {
@@ -50,6 +52,37 @@ func NewTabPage() (*TabPage, error) {
 			return tp.SetTitle(v.(string))
 		},
 		tp.titleChangedPublisher.Event()))
+
+	tp.MustRegisterProperty("Image", NewProperty(
+		func() interface{} {
+			return tp.Image()
+		},
+		func(v interface{}) error {
+			var img *Bitmap
+
+			switch val := v.(type) {
+			case *Bitmap:
+				img = val
+
+			case int:
+				var err error
+				if img, err = Resources.Bitmap(strconv.Itoa(val)); err != nil {
+					return err
+				}
+
+			case string:
+				var err error
+				if img, err = Resources.Bitmap(val); err != nil {
+					return err
+				}
+
+			default:
+				return ErrInvalidType
+			}
+
+			return tp.SetImage(img)
+		},
+		tp.imageChangedPublisher.Event()))
 
 	return tp, nil
 }
