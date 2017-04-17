@@ -11,36 +11,48 @@ import (
 )
 
 type GradientComposite struct {
-	AssignTo           **walk.GradientComposite
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	ToolTipText        Property
-	MinSize            Size
-	MaxSize            Size
-	StretchFactor      int
-	Row                int
-	RowSpan            int
+	// Window
+
+	ContextMenuItems []MenuItem
+	Enabled          Property
+	Font             Font
+	MaxSize          Size
+	MinSize          Size
+	Name             string
+	OnKeyDown        walk.KeyEventHandler
+	OnKeyPress       walk.KeyEventHandler
+	OnKeyUp          walk.KeyEventHandler
+	OnMouseDown      walk.MouseEventHandler
+	OnMouseMove      walk.MouseEventHandler
+	OnMouseUp        walk.MouseEventHandler
+	OnSizeChanged    walk.EventHandler
+	Persistent       bool
+	ToolTipText      Property
+	Visible          Property
+
+	// Widget
+
+	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
-	AlwaysConsumeSpace bool
-	ContextMenuItems   []MenuItem
-	OnKeyDown          walk.KeyEventHandler
-	OnKeyPress         walk.KeyEventHandler
-	OnKeyUp            walk.KeyEventHandler
-	OnMouseDown        walk.MouseEventHandler
-	OnMouseMove        walk.MouseEventHandler
-	OnMouseUp          walk.MouseEventHandler
-	OnSizeChanged      walk.EventHandler
-	DataBinder         DataBinder
-	Layout             Layout
-	Children           []Widget
-	Expressions        func() map[string]walk.Expression
-	Functions          map[string]func(args ...interface{}) (interface{}, error)
-	Vertical           Property
-	Color1             Property
-	Color2             Property
+	Row                int
+	RowSpan            int
+	StretchFactor      int
+
+	// Container
+
+	Children   []Widget
+	Layout     Layout
+	DataBinder DataBinder
+
+	// GradientComposite
+
+	AssignTo    **walk.GradientComposite
+	Color1      Property
+	Color2      Property
+	Expressions func() map[string]walk.Expression
+	Functions   map[string]func(args ...interface{}) (interface{}, error)
+	Vertical    Property
 }
 
 func (gc GradientComposite) Create(builder *Builder) error {
@@ -73,12 +85,4 @@ func (gc GradientComposite) Create(builder *Builder) error {
 
 		return nil
 	})
-}
-
-func (w GradientComposite) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.AlwaysConsumeSpace, w.ContextMenuItems, w.OnKeyDown, w.OnKeyPress, w.OnKeyUp, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
-}
-
-func (gc GradientComposite) ContainerInfo() (DataBinder, Layout, []Widget) {
-	return gc.DataBinder, gc.Layout, gc.Children
 }

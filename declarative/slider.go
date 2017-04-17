@@ -11,35 +11,43 @@ import (
 )
 
 type Slider struct {
-	AssignTo           **walk.Slider
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	ToolTipText        Property
-	MinSize            Size
-	MaxSize            Size
-	StretchFactor      int
-	Row                int
-	RowSpan            int
+	// Window
+
+	ContextMenuItems []MenuItem
+	Enabled          Property
+	Font             Font
+	MaxSize          Size
+	MinSize          Size
+	Name             string
+	OnKeyDown        walk.KeyEventHandler
+	OnKeyPress       walk.KeyEventHandler
+	OnKeyUp          walk.KeyEventHandler
+	OnMouseDown      walk.MouseEventHandler
+	OnMouseMove      walk.MouseEventHandler
+	OnMouseUp        walk.MouseEventHandler
+	OnSizeChanged    walk.EventHandler
+	Persistent       bool
+	ToolTipText      Property
+	Visible          Property
+
+	// Widget
+
+	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
-	AlwaysConsumeSpace bool
-	ContextMenuItems   []MenuItem
-	OnKeyDown          walk.KeyEventHandler
-	OnKeyPress         walk.KeyEventHandler
-	OnKeyUp            walk.KeyEventHandler
-	OnMouseDown        walk.MouseEventHandler
-	OnMouseMove        walk.MouseEventHandler
-	OnMouseUp          walk.MouseEventHandler
-	OnSizeChanged      walk.EventHandler
-	Persistent         bool
-	MinValue           int
-	MaxValue           int
-	Value              Property
-	OnValueChanged     walk.EventHandler
-	Orientation        Orientation
-	Tracking           bool
+	Row                int
+	RowSpan            int
+	StretchFactor      int
+
+	// Slider
+
+	AssignTo       **walk.Slider
+	MaxValue       int
+	MinValue       int
+	Orientation    Orientation
+	OnValueChanged walk.EventHandler
+	Tracking       bool
+	Value          Property
 }
 
 func (sl Slider) Create(builder *Builder) error {
@@ -66,8 +74,4 @@ func (sl Slider) Create(builder *Builder) error {
 
 		return nil
 	})
-}
-
-func (w Slider) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.AlwaysConsumeSpace, w.ContextMenuItems, w.OnKeyDown, w.OnKeyPress, w.OnKeyUp, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

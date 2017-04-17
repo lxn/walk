@@ -80,15 +80,15 @@ func (ToolTipErrorPresenter) Create() (walk.ErrorPresenter, error) {
 	return walk.NewToolTipErrorPresenter()
 }
 
-type topLevelWindowInfo struct {
-	Name             string
-	Enabled          Property
-	Visible          Property
-	Font             Font
-	ToolTipText      string
-	MinSize          Size
-	MaxSize          Size
+type formInfo struct {
+	// Window
+
 	ContextMenuItems []MenuItem
+	Enabled          Property
+	Font             Font
+	MaxSize          Size
+	MinSize          Size
+	Name             string
 	OnKeyDown        walk.KeyEventHandler
 	OnKeyPress       walk.KeyEventHandler
 	OnKeyUp          walk.KeyEventHandler
@@ -96,21 +96,21 @@ type topLevelWindowInfo struct {
 	OnMouseMove      walk.MouseEventHandler
 	OnMouseUp        walk.MouseEventHandler
 	OnSizeChanged    walk.EventHandler
-	DataBinder       DataBinder
-	Layout           Layout
-	Children         []Widget
-	Icon             Property
-	Title            Property
+	ToolTipText      string
+	Visible          Property
+
+	// Container
+
+	Children   []Widget
+	DataBinder DataBinder
+	Layout     Layout
+
+	// Form
+
+	Icon  Property
+	Title Property
 }
 
-func (topLevelWindowInfo) Create(builder *Builder) error {
+func (formInfo) Create(builder *Builder) error {
 	return nil
-}
-
-func (i topLevelWindowInfo) WidgetInfo() (name string, disabled, hidden bool, font *Font, ToolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return i.Name, false, false, &i.Font, i.ToolTipText, i.MinSize, i.MaxSize, 0, 0, 0, 0, 0, false, i.ContextMenuItems, i.OnKeyDown, i.OnKeyPress, i.OnKeyUp, i.OnMouseDown, i.OnMouseMove, i.OnMouseUp, i.OnSizeChanged
-}
-
-func (i topLevelWindowInfo) ContainerInfo() (DataBinder, Layout, []Widget) {
-	return i.DataBinder, i.Layout, i.Children
 }
