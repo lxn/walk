@@ -372,6 +372,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 			return 0
 		}
 
+		// Draw background of free area after tab items.
 		if bg, wnd := parent.AsWindowBase().backgroundEffective(); bg != nil {
 			tw.prepareDCForBackground(canvas.hdc, hwnd, wnd)
 
@@ -410,6 +411,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 			win.FillRgn(canvas.hdc, hRgn, bg.handle())
 		}
 
+		// Draw current tab item.
 		if tw.currentIndex != -1 {
 			page := tw.pages.At(tw.CurrentIndex())
 
@@ -427,6 +429,23 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 				hRgn := win.CreateRectRgn(rc.Left, rc.Top, rc.Right, rc.Bottom+2)
 				win.FillRgn(canvas.hdc, hRgn, bg.handle())
 				win.DeleteObject(win.HGDIOBJ(hRgn))
+
+				if page.image != nil {
+					x := rc.Left + 6
+					y := rc.Top
+					s := int32(16)
+
+					if imageCanvas, err := NewCanvasFromImage(page.image); err == nil {
+						defer imageCanvas.Dispose()
+
+						win.TransparentBlt(
+							canvas.hdc, x, y, s, s,
+							imageCanvas.hdc, 0, 0, int32(page.image.size.Width), int32(page.image.size.Height),
+							0)
+					}
+
+					rc.Left += s + 6
+				}
 
 				hTheme := win.OpenThemeData(hwnd, syscall.StringToUTF16Ptr("tab"))
 				defer win.CloseThemeData(hTheme)
