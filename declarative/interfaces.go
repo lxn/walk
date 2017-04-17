@@ -47,11 +47,6 @@ type Layout interface {
 
 type Widget interface {
 	Create(builder *Builder) error
-	WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler)
-}
-
-type Container interface {
-	ContainerInfo() (DataBinder, Layout, []Widget)
 }
 
 type MenuItem interface {

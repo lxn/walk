@@ -261,62 +261,60 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 
 	// Container
 	var db *walk.DataBinder
-	if _, ok := d.(Container); ok {
-		if wc, ok := w.(walk.Container); ok {
-			var layout Layout
-			if val := b.widgetValue.FieldByName("Layout"); val.IsValid() {
-				layout = val.Interface().(Layout)
+	if wc, ok := w.(walk.Container); ok {
+		var layout Layout
+		if val := b.widgetValue.FieldByName("Layout"); val.IsValid() {
+			layout = val.Interface().(Layout)
+		}
+
+		if layout != nil {
+			l, err := layout.Create()
+			if err != nil {
+				return err
 			}
 
-			if layout != nil {
-				l, err := layout.Create()
-				if err != nil {
-					return err
-				}
-
-				if err := wc.SetLayout(l); err != nil {
-					return err
-				}
+			if err := wc.SetLayout(l); err != nil {
+				return err
 			}
+		}
 
-			b.parent = wc
+		b.parent = wc
+		defer func() {
+			b.parent = oldParent
+		}()
+
+		if g, ok := layout.(Grid); ok {
+			rows := b.rows
+			columns := b.columns
 			defer func() {
-				b.parent = oldParent
+				b.rows, b.columns, b.row, b.col = rows, columns, row, column+columnSpan
 			}()
 
-			if g, ok := layout.(Grid); ok {
-				rows := b.rows
-				columns := b.columns
-				defer func() {
-					b.rows, b.columns, b.row, b.col = rows, columns, row, column+columnSpan
-				}()
+			b.rows = g.Rows
+			b.columns = g.Columns
+			b.row = 0
+			b.col = 0
+		}
 
-				b.rows = g.Rows
-				b.columns = g.Columns
-				b.row = 0
-				b.col = 0
-			}
-
-			if val := b.widgetValue.FieldByName("Children"); val.IsValid() {
-				for _, child := range val.Interface().([]Widget) {
-					if err := child.Create(b); err != nil {
-						return err
-					}
+		if val := b.widgetValue.FieldByName("Children"); val.IsValid() {
+			for _, child := range val.Interface().([]Widget) {
+				if err := child.Create(b); err != nil {
+					return err
 				}
 			}
+		}
 
-			dataBinder := b.widgetValue.FieldByName("DataBinder").Interface().(DataBinder)
+		dataBinder := b.widgetValue.FieldByName("DataBinder").Interface().(DataBinder)
 
-			if dataBinder.AssignTo != nil || dataBinder.DataSource != nil {
-				if dataB, err := dataBinder.create(); err != nil {
-					return err
-				} else {
-					db = dataB
+		if dataBinder.AssignTo != nil || dataBinder.DataSource != nil {
+			if dataB, err := dataBinder.create(); err != nil {
+				return err
+			} else {
+				db = dataB
 
-					if ep := db.ErrorPresenter(); ep != nil {
-						if dep, ok := ep.(walk.Disposable); ok {
-							wc.AddDisposable(dep)
-						}
+				if ep := db.ErrorPresenter(); ep != nil {
+					if dep, ok := ep.(walk.Disposable); ok {
+						wc.AddDisposable(dep)
 					}
 				}
 			}
@@ -350,19 +348,17 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	// Call Reset on DataBinder after customInit, so a Dialog gets a chance to first
 	// wire up its DefaultButton to the CanSubmitChanged event of a DataBinder.
 	if db != nil {
-		if _, ok := d.(Container); ok {
-			if wc, ok := w.(walk.Container); ok {
-				b.Defer(func() error {
-					// FIXME: Currently SetDataBinder must be called after initProperties.
-					wc.SetDataBinder(db)
+		if wc, ok := w.(walk.Container); ok {
+			b.Defer(func() error {
+				// FIXME: Currently SetDataBinder must be called after initProperties.
+				wc.SetDataBinder(db)
 
-					if db.DataSource() == nil {
-						return nil
-					}
+				if db.DataSource() == nil {
+					return nil
+				}
 
-					return db.Reset()
-				})
-			}
+				return db.Reset()
+			})
 		}
 	}
 
