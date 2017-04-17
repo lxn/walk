@@ -50,6 +50,7 @@ type Builder struct {
 	columns                  int
 	row                      int
 	col                      int
+	widgetValue              reflect.Value
 	parent                   walk.Container
 	declWidgets              []declWidget
 	name2Window              map[string]walk.Window
@@ -110,8 +111,11 @@ func (b *Builder) deferBuildActions(actionList *walk.ActionList, items []MenuIte
 }
 
 func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) error {
+	oldWidgetValue := b.widgetValue
+	b.widgetValue = reflect.ValueOf(d)
 	b.level++
 	defer func() {
+		b.widgetValue = oldWidgetValue
 		b.level--
 	}()
 
@@ -125,27 +129,16 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	b.declWidgets = append(b.declWidgets, declWidget{d, w})
 
 	// Widget
-	name, _, _, font, toolTipText, minSize, maxSize, stretchFactor, row, rowSpan, column, columnSpan, alwaysConsumeSpace, contextMenuItems, onKeyDown, onKeyPress, onKeyUp, onMouseDown, onMouseMove, onMouseUp, onSizeChanged := d.WidgetInfo()
-
-	w.SetName(name)
-
-	if name != "" {
+	if name := b.string("Name"); name != "" {
+		w.SetName(name)
 		b.name2Window[name] = w
 	}
 
-	if toolTipText != "" {
-		if widget, ok := w.(walk.Widget); ok {
-			if err := widget.SetToolTipText(toolTipText); err != nil {
-				return err
-			}
-		}
-	}
-
-	if err := w.SetMinMaxSize(minSize.toW(), maxSize.toW()); err != nil {
+	if err := w.SetMinMaxSize(b.size("MinSize").toW(), b.size("MaxSize").toW()); err != nil {
 		return err
 	}
 
-	if len(contextMenuItems) > 0 {
+	if contextMenuItems := b.menuItems("ContextMenuItems"); len(contextMenuItems) > 0 {
 		cm, err := walk.NewMenu()
 		if err != nil {
 			return err
@@ -156,44 +149,51 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 		w.SetContextMenu(cm)
 	}
 
-	if onKeyDown != nil {
-		w.KeyDown().Attach(onKeyDown)
+	if handler := b.keyEventHandler("OnKeyDown"); handler != nil {
+		w.KeyDown().Attach(handler)
 	}
 
-	if onKeyPress != nil {
-		w.KeyPress().Attach(onKeyPress)
+	if handler := b.keyEventHandler("OnKeyPress"); handler != nil {
+		w.KeyPress().Attach(handler)
 	}
 
-	if onKeyUp != nil {
-		w.KeyUp().Attach(onKeyUp)
+	if handler := b.keyEventHandler("OnKeyUp"); handler != nil {
+		w.KeyUp().Attach(handler)
 	}
 
-	if onMouseDown != nil {
-		w.MouseDown().Attach(onMouseDown)
+	if handler := b.mouseEventHandler("OnMouseDown"); handler != nil {
+		w.MouseDown().Attach(handler)
 	}
 
-	if onMouseMove != nil {
-		w.MouseMove().Attach(onMouseMove)
+	if handler := b.mouseEventHandler("OnMouseMove"); handler != nil {
+		w.MouseMove().Attach(handler)
 	}
 
-	if onMouseUp != nil {
-		w.MouseUp().Attach(onMouseUp)
+	if handler := b.mouseEventHandler("OnMouseUp"); handler != nil {
+		w.MouseUp().Attach(handler)
 	}
 
-	if onSizeChanged != nil {
-		w.SizeChanged().Attach(onSizeChanged)
+	if handler := b.eventHandler("OnSizeChanged"); handler != nil {
+		w.SizeChanged().Attach(handler)
 	}
+
+	row := b.int("Row")
+	rowSpan := b.int("RowSpan")
+	column := b.int("Column")
+	columnSpan := b.int("ColumnSpan")
 
 	if widget, ok := w.(walk.Widget); ok {
-		if err := widget.SetAlwaysConsumeSpace(alwaysConsumeSpace); err != nil {
+		if err := widget.SetAlwaysConsumeSpace(b.bool("AlwaysConsumeSpace")); err != nil {
 			return err
 		}
 
-		type SetStretchFactorer interface {
-			SetStretchFactor(widget walk.Widget, factor int) error
-		}
-
 		if p := widget.Parent(); p != nil {
+			type SetStretchFactorer interface {
+				SetStretchFactor(widget walk.Widget, factor int) error
+			}
+
+			stretchFactor := b.int("StretchFactor")
+
 			if stretchFactor < 1 {
 				stretchFactor = 1
 			}
@@ -261,9 +261,12 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 
 	// Container
 	var db *walk.DataBinder
-	if dc, ok := d.(Container); ok {
+	if _, ok := d.(Container); ok {
 		if wc, ok := w.(walk.Container); ok {
-			dataBinder, layout, children := dc.ContainerInfo()
+			var layout Layout
+			if val := b.widgetValue.FieldByName("Layout"); val.IsValid() {
+				layout = val.Interface().(Layout)
+			}
 
 			if layout != nil {
 				l, err := layout.Create()
@@ -294,11 +297,15 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 				b.col = 0
 			}
 
-			for _, child := range children {
-				if err := child.Create(b); err != nil {
-					return err
+			if val := b.widgetValue.FieldByName("Children"); val.IsValid() {
+				for _, child := range val.Interface().([]Widget) {
+					if err := child.Create(b); err != nil {
+						return err
+					}
 				}
 			}
+
+			dataBinder := b.widgetValue.FieldByName("DataBinder").Interface().(DataBinder)
 
 			if dataBinder.AssignTo != nil || dataBinder.DataSource != nil {
 				if dataB, err := dataBinder.create(); err != nil {
@@ -326,8 +333,8 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	b.parent = oldParent
 
 	// Widget continued
-	if font != nil {
-		if f, err := font.Create(); err != nil {
+	if val := b.widgetValue.FieldByName("Font"); val.IsValid() {
+		if f, err := val.Interface().(Font).Create(); err != nil {
 			return err
 		} else if f != nil {
 			w.SetFont(f)
@@ -370,6 +377,96 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	succeeded = true
 
 	return nil
+}
+
+func (b *Builder) bool(fieldName string) bool {
+	fieldValue := b.widgetValue.FieldByName(fieldName)
+
+	if fieldValue.IsValid() {
+		return fieldValue.Interface().(bool)
+	}
+
+	return false
+}
+
+func (b *Builder) eventHandler(fieldName string) walk.EventHandler {
+	fieldValue := b.widgetValue.FieldByName(fieldName)
+
+	if fieldValue.IsValid() {
+		return fieldValue.Interface().(walk.EventHandler)
+	}
+
+	return nil
+}
+
+func (b *Builder) float64(fieldName string) float64 {
+	fieldValue := b.widgetValue.FieldByName(fieldName)
+
+	if fieldValue.IsValid() {
+		return fieldValue.Interface().(float64)
+	}
+
+	return 0
+}
+
+func (b *Builder) int(fieldName string) int {
+	fieldValue := b.widgetValue.FieldByName(fieldName)
+
+	if fieldValue.IsValid() {
+		return fieldValue.Interface().(int)
+	}
+
+	return 0
+}
+
+func (b *Builder) keyEventHandler(fieldName string) walk.KeyEventHandler {
+	fieldValue := b.widgetValue.FieldByName(fieldName)
+
+	if fieldValue.IsValid() {
+		return fieldValue.Interface().(walk.KeyEventHandler)
+	}
+
+	return nil
+}
+
+func (b *Builder) menuItems(fieldName string) []MenuItem {
+	fieldValue := b.widgetValue.FieldByName(fieldName)
+
+	if fieldValue.IsValid() {
+		return fieldValue.Interface().([]MenuItem)
+	}
+
+	return nil
+}
+
+func (b *Builder) mouseEventHandler(fieldName string) walk.MouseEventHandler {
+	fieldValue := b.widgetValue.FieldByName(fieldName)
+
+	if fieldValue.IsValid() {
+		return fieldValue.Interface().(walk.MouseEventHandler)
+	}
+
+	return nil
+}
+
+func (b *Builder) size(fieldName string) Size {
+	fieldValue := b.widgetValue.FieldByName(fieldName)
+
+	if fieldValue.IsValid() {
+		return fieldValue.Interface().(Size)
+	}
+
+	return Size{}
+}
+
+func (b *Builder) string(fieldName string) string {
+	fieldValue := b.widgetValue.FieldByName(fieldName)
+
+	if fieldValue.IsValid() {
+		return fieldValue.Interface().(string)
+	}
+
+	return ""
 }
 
 func (b *Builder) initProperties() error {
