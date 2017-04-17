@@ -9,34 +9,48 @@ package declarative
 import "github.com/lxn/walk"
 
 type MainWindow struct {
-	AssignTo         **walk.MainWindow
-	Name             string
-	Enabled          Property
-	Visible          Property
-	Font             Font
-	MinSize          Size
-	MaxSize          Size
+	// Window
+
+	Background       Brush
 	ContextMenuItems []MenuItem
+	Enabled          Property
+	Font             Font
+	MaxSize          Size
+	MinSize          Size
+	Name             string
 	OnKeyDown        walk.KeyEventHandler
 	OnKeyPress       walk.KeyEventHandler
 	OnKeyUp          walk.KeyEventHandler
 	OnMouseDown      walk.MouseEventHandler
 	OnMouseMove      walk.MouseEventHandler
 	OnMouseUp        walk.MouseEventHandler
-	OnDropFiles      walk.DropFilesEventHandler
 	OnSizeChanged    walk.EventHandler
-	Icon             Property
-	Title            Property
-	Size             Size
-	DataBinder       DataBinder
-	Layout           Layout
-	Children         []Widget
-	MenuItems        []MenuItem
-	StatusBarItems   []StatusBarItem
-	ToolBarItems     []MenuItem // Deprecated: use ToolBar instead
-	ToolBar          ToolBar
-	Expressions      func() map[string]walk.Expression
-	Functions        map[string]func(args ...interface{}) (interface{}, error)
+	Persistent       bool
+	ToolTipText      Property
+	Visible          Property
+
+	// Container
+
+	Children   []Widget
+	DataBinder DataBinder
+	Layout     Layout
+
+	// Form
+
+	Icon  Property
+	Size  Size
+	Title Property
+
+	// MainWindow
+
+	AssignTo       **walk.MainWindow
+	Expressions    func() map[string]walk.Expression
+	Functions      map[string]func(args ...interface{}) (interface{}, error)
+	MenuItems      []MenuItem
+	OnDropFiles    walk.DropFilesEventHandler
+	StatusBarItems []StatusBarItem
+	ToolBar        ToolBar
+	ToolBarItems   []MenuItem // Deprecated: use ToolBar instead
 }
 
 func (mw MainWindow) Create() error {
@@ -45,15 +59,15 @@ func (mw MainWindow) Create() error {
 		return err
 	}
 
-	tlwi := topLevelWindowInfo{
-		Name:             mw.Name,
-		Enabled:          mw.Enabled,
-		Visible:          mw.Visible,
-		Font:             mw.Font,
-		ToolTipText:      "",
-		MinSize:          mw.MinSize,
-		MaxSize:          mw.MaxSize,
+	fi := formInfo{
+		// Window
+		Background:       mw.Background,
 		ContextMenuItems: mw.ContextMenuItems,
+		Enabled:          mw.Enabled,
+		Font:             mw.Font,
+		MaxSize:          mw.MaxSize,
+		MinSize:          mw.MinSize,
+		Name:             mw.Name,
 		OnKeyDown:        mw.OnKeyDown,
 		OnKeyPress:       mw.OnKeyPress,
 		OnKeyUp:          mw.OnKeyUp,
@@ -61,11 +75,16 @@ func (mw MainWindow) Create() error {
 		OnMouseMove:      mw.OnMouseMove,
 		OnMouseUp:        mw.OnMouseUp,
 		OnSizeChanged:    mw.OnSizeChanged,
-		DataBinder:       mw.DataBinder,
-		Layout:           mw.Layout,
-		Children:         mw.Children,
-		Icon:             mw.Icon,
-		Title:            mw.Title,
+		Visible:          mw.Visible,
+
+		// Container
+		Children:   mw.Children,
+		DataBinder: mw.DataBinder,
+		Layout:     mw.Layout,
+
+		// Form
+		Icon:  mw.Icon,
+		Title: mw.Title,
 	}
 
 	builder := NewBuilder(nil)
@@ -78,7 +97,7 @@ func (mw MainWindow) Create() error {
 
 	builder.deferBuildMenuActions(w.Menu(), mw.MenuItems)
 
-	return builder.InitWidget(tlwi, w, func() error {
+	return builder.InitWidget(fi, w, func() error {
 		if len(mw.ToolBar.Items) > 0 {
 			var tb *walk.ToolBar
 			if mw.ToolBar.AssignTo == nil {

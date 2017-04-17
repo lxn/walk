@@ -11,14 +11,15 @@ import (
 )
 
 type Dialog struct {
-	AssignTo         **walk.Dialog
-	Name             string
-	Enabled          Property
-	Visible          Property
-	Font             Font
-	MinSize          Size
-	MaxSize          Size
+	// Window
+
+	Background       Brush
 	ContextMenuItems []MenuItem
+	Enabled          Property
+	Font             Font
+	MaxSize          Size
+	MinSize          Size
+	Name             string
 	OnKeyDown        walk.KeyEventHandler
 	OnKeyPress       walk.KeyEventHandler
 	OnKeyUp          walk.KeyEventHandler
@@ -26,17 +27,30 @@ type Dialog struct {
 	OnMouseMove      walk.MouseEventHandler
 	OnMouseUp        walk.MouseEventHandler
 	OnSizeChanged    walk.EventHandler
-	Icon             Property
-	Title            Property
-	Size             Size
-	DataBinder       DataBinder
-	Layout           Layout
-	Children         []Widget
-	DefaultButton    **walk.PushButton
-	CancelButton     **walk.PushButton
-	FixedSize        bool
-	Expressions      func() map[string]walk.Expression
-	Functions        map[string]func(args ...interface{}) (interface{}, error)
+	Persistent       bool
+	ToolTipText      Property
+	Visible          Property
+
+	// Container
+
+	DataBinder DataBinder
+	Layout     Layout
+	Children   []Widget
+
+	// Form
+
+	Expressions func() map[string]walk.Expression
+	Functions   map[string]func(args ...interface{}) (interface{}, error)
+	Icon        Property
+	Title       Property
+	Size        Size
+
+	// Dialog
+
+	AssignTo      **walk.Dialog
+	CancelButton  **walk.PushButton
+	DefaultButton **walk.PushButton
+	FixedSize     bool
 }
 
 func (d Dialog) Create(owner walk.Form) error {
@@ -53,18 +67,15 @@ func (d Dialog) Create(owner walk.Form) error {
 		return err
 	}
 
-	tlwi := topLevelWindowInfo{
-		Name:             d.Name,
-		Enabled:          d.Enabled,
-		Visible:          d.Visible,
-		Font:             d.Font,
-		ToolTipText:      "",
-		MinSize:          d.MinSize,
-		MaxSize:          d.MaxSize,
+	fi := formInfo{
+		// Window
+		Background:       d.Background,
 		ContextMenuItems: d.ContextMenuItems,
-		DataBinder:       d.DataBinder,
-		Layout:           d.Layout,
-		Children:         d.Children,
+		Enabled:          d.Enabled,
+		Font:             d.Font,
+		MaxSize:          d.MaxSize,
+		MinSize:          d.MinSize,
+		Name:             d.Name,
 		OnKeyDown:        d.OnKeyDown,
 		OnKeyPress:       d.OnKeyPress,
 		OnKeyUp:          d.OnKeyUp,
@@ -72,8 +83,17 @@ func (d Dialog) Create(owner walk.Form) error {
 		OnMouseMove:      d.OnMouseMove,
 		OnMouseUp:        d.OnMouseUp,
 		OnSizeChanged:    d.OnSizeChanged,
-		Icon:             d.Icon,
-		Title:            d.Title,
+		ToolTipText:      "",
+		Visible:          d.Visible,
+
+		// Container
+		Children:   d.Children,
+		DataBinder: d.DataBinder,
+		Layout:     d.Layout,
+
+		// Form
+		Icon:  d.Icon,
+		Title: d.Title,
 	}
 
 	var db *walk.DataBinder
@@ -89,7 +109,7 @@ func (d Dialog) Create(owner walk.Form) error {
 		return nil
 	})
 
-	return builder.InitWidget(tlwi, w, func() error {
+	return builder.InitWidget(fi, w, func() error {
 		if err := w.SetSize(d.Size.toW()); err != nil {
 			return err
 		}

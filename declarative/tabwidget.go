@@ -11,32 +11,42 @@ import (
 )
 
 type TabWidget struct {
+	// Window
+
+	Background       Brush
+	ContextMenuItems []MenuItem
+	Enabled          Property
+	Font             Font
+	MaxSize          Size
+	MinSize          Size
+	Name             string
+	OnKeyDown        walk.KeyEventHandler
+	OnKeyPress       walk.KeyEventHandler
+	OnKeyUp          walk.KeyEventHandler
+	OnMouseDown      walk.MouseEventHandler
+	OnMouseMove      walk.MouseEventHandler
+	OnMouseUp        walk.MouseEventHandler
+	OnSizeChanged    walk.EventHandler
+	Persistent       bool
+	ToolTipText      Property
+	Visible          Property
+
+	// Widget
+
+	AlwaysConsumeSpace bool
+	Column             int
+	ColumnSpan         int
+	Row                int
+	RowSpan            int
+	StretchFactor      int
+
+	// TabWidget
+
 	AssignTo              **walk.TabWidget
-	Name                  string
-	Enabled               Property
-	Visible               Property
-	Font                  Font
-	ToolTipText           Property
-	MinSize               Size
-	MaxSize               Size
-	StretchFactor         int
-	Row                   int
-	RowSpan               int
-	Column                int
-	ColumnSpan            int
-	AlwaysConsumeSpace    bool
-	ContextMenuItems      []MenuItem
-	OnKeyDown             walk.KeyEventHandler
-	OnKeyPress            walk.KeyEventHandler
-	OnKeyUp               walk.KeyEventHandler
-	OnMouseDown           walk.MouseEventHandler
-	OnMouseMove           walk.MouseEventHandler
-	OnMouseUp             walk.MouseEventHandler
-	OnSizeChanged         walk.EventHandler
 	ContentMargins        Margins
 	ContentMarginsZero    bool
-	Pages                 []TabPage
 	OnCurrentIndexChanged walk.EventHandler
+	Pages                 []TabPage
 }
 
 func (tw TabWidget) Create(builder *Builder) error {
@@ -75,8 +85,4 @@ func (tw TabWidget) Create(builder *Builder) error {
 
 		return nil
 	})
-}
-
-func (w TabWidget) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.AlwaysConsumeSpace, w.ContextMenuItems, w.OnKeyDown, w.OnKeyPress, w.OnKeyUp, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

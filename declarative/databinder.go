@@ -12,9 +12,9 @@ import (
 
 type DataBinder struct {
 	AssignTo       **walk.DataBinder
+	AutoSubmit     bool
 	DataSource     interface{}
 	ErrorPresenter ErrorPresenter
-	AutoSubmit     bool
 	OnSubmitted    walk.EventHandler
 }
 
