@@ -70,8 +70,6 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 
 	setWindowFont(tw.hWndTab, tw.Font())
 
-	tw.SetBackground(NullBrush())
-
 	tw.MustRegisterProperty("HasCurrentPage", NewReadOnlyBoolProperty(
 		func() bool {
 			return tw.CurrentIndex() != -1
