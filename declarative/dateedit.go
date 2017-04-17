@@ -17,6 +17,7 @@ import (
 type DateEdit struct {
 	// Window
 
+	Background       Brush
 	ContextMenuItems []MenuItem
 	Enabled          Property
 	Font             Font

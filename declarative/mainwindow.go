@@ -11,6 +11,7 @@ import "github.com/lxn/walk"
 type MainWindow struct {
 	// Window
 
+	Background       Brush
 	ContextMenuItems []MenuItem
 	Enabled          Property
 	Font             Font
@@ -60,6 +61,7 @@ func (mw MainWindow) Create() error {
 
 	fi := formInfo{
 		// Window
+		Background:       mw.Background,
 		ContextMenuItems: mw.ContextMenuItems,
 		Enabled:          mw.Enabled,
 		Font:             mw.Font,

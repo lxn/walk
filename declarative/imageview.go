@@ -13,6 +13,7 @@ import (
 type ImageView struct {
 	// Window
 
+	Background       Brush
 	ContextMenuItems []MenuItem
 	Enabled          Property
 	Font             Font

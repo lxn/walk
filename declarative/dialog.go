@@ -13,6 +13,7 @@ import (
 type Dialog struct {
 	// Window
 
+	Background       Brush
 	ContextMenuItems []MenuItem
 	Enabled          Property
 	Font             Font
@@ -68,6 +69,7 @@ func (d Dialog) Create(owner walk.Form) error {
 
 	fi := formInfo{
 		// Window
+		Background:       d.Background,
 		ContextMenuItems: d.ContextMenuItems,
 		Enabled:          d.Enabled,
 		Font:             d.Font,

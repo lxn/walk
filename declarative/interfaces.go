@@ -41,6 +41,10 @@ func Bind(expression string, validators ...Validator) Property {
 	return bd
 }
 
+type Brush interface {
+	Create() (walk.Brush, error)
+}
+
 type Layout interface {
 	Create() (walk.Layout, error)
 }
@@ -83,6 +87,7 @@ func (ToolTipErrorPresenter) Create() (walk.ErrorPresenter, error) {
 type formInfo struct {
 	// Window
 
+	Background       Brush
 	ContextMenuItems []MenuItem
 	Enabled          Property
 	Font             Font

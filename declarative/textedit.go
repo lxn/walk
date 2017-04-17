@@ -13,6 +13,7 @@ import (
 type TextEdit struct {
 	// Window
 
+	Background       Brush
 	ContextMenuItems []MenuItem
 	Enabled          Property
 	Font             Font

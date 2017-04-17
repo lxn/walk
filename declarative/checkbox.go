@@ -13,6 +13,7 @@ import (
 type CheckBox struct {
 	// Window
 
+	Background       Brush
 	ContextMenuItems []MenuItem
 	Enabled          Property
 	Font             Font

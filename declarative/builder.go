@@ -134,6 +134,17 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 		b.name2Window[name] = w
 	}
 
+	if val := b.widgetValue.FieldByName("Background"); val.IsValid() {
+		if brush := val.Interface(); brush != nil {
+			bg, err := brush.(Brush).Create()
+			if err != nil {
+				return err
+			}
+
+			w.SetBackground(bg)
+		}
+	}
+
 	if err := w.SetMinMaxSize(b.size("MinSize").toW(), b.size("MaxSize").toW()); err != nil {
 		return err
 	}
