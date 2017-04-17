@@ -530,6 +530,10 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 			cb.layout.Update(false)
 		}
 
+		if cb.background == nullBrushSingleton {
+			cb.Invalidate()
+		}
+
 		//if msg == win.WM_SIZE && cb.renderTarget != nil {
 		//	hwndRT := (*win.ID2D1HwndRenderTarget)(unsafe.Pointer(cb.renderTarget))
 		//
