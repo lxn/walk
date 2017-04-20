@@ -145,7 +145,8 @@ func (l *splitterLayout) LayoutFlags() LayoutFlags {
 }
 
 func (l *splitterLayout) MinSize() Size {
-	var s Size
+	margins := Size{l.margins.HNear + l.margins.HFar, l.margins.VNear + l.margins.VFar}
+	s := margins
 
 	anyNonFixed := l.anyNonFixed()
 
@@ -166,10 +167,10 @@ func (l *splitterLayout) MinSize() Size {
 
 		if l.orientation == Horizontal {
 			s.Width += cur.Width
-			s.Height = maxi(s.Height, cur.Height)
+			s.Height = maxi(s.Height, margins.Height+cur.Height)
 		} else {
 			s.Height += cur.Height
-			s.Width = maxi(s.Width, cur.Width)
+			s.Width = maxi(s.Width, margins.Width+cur.Width)
 		}
 	}
 
@@ -188,13 +189,13 @@ func (l *splitterLayout) anyNonFixed() bool {
 
 func (l *splitterLayout) spaceForRegularWidgets() int {
 	splitter := l.container.(*Splitter)
-	cb := splitter.ClientBounds().Size()
+	s := splitter.ClientBounds().Size()
 
 	var space int
 	if l.orientation == Horizontal {
-		space = cb.Width - l.margins.HNear - l.margins.HFar
+		space = s.Width - l.margins.HNear - l.margins.HFar
 	} else {
-		space = cb.Height - l.margins.VNear - l.margins.VFar
+		space = s.Height - l.margins.VNear - l.margins.VFar
 	}
 
 	return space - (splitter.Children().Len()/2)*splitter.handleWidth
@@ -368,12 +369,7 @@ func (l *splitterLayout) Update(reset bool) error {
 		p1 = l.margins.VNear
 	}
 	for i, widget := range widgets {
-		var s1 int
-		if i == len(widgets)-1 {
-			s1 = space1 + len(widgets)/2*handleWidth - p1
-		} else {
-			s1 = sizes[i]
-		}
+		s1 := sizes[i]
 
 		var x, y, w, h int
 		if l.orientation == Horizontal {

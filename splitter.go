@@ -139,7 +139,20 @@ func (s *Splitter) setOrientation(value Orientation) error {
 func (s *Splitter) applyFocusEffect(effect WidgetGraphicsEffect) {
 	var margins Margins
 	if effect != nil {
-		margins = Margins{5, 5, 5, 5}
+		var marginsNeeded bool
+		for _, w := range s.children.items {
+			switch w.(type) {
+			case *splitterHandle, *TabWidget, Container:
+
+			default:
+				marginsNeeded = true
+				break
+			}
+		}
+
+		if marginsNeeded {
+			margins = Margins{5, 5, 5, 5}
+		}
 	}
 	s.layout.SetMargins(margins)
 }
