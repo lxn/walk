@@ -81,6 +81,7 @@ func (s HSplitter) Create(builder *Builder) error {
 type VSplitter struct {
 	// Window
 
+	Background       Brush
 	ContextMenuItems []MenuItem
 	Enabled          Property
 	Font             Font
@@ -123,6 +124,12 @@ func (s VSplitter) Create(builder *Builder) error {
 	if err != nil {
 		return err
 	}
+
+	w.SetSuspended(true)
+	builder.Defer(func() error {
+		w.SetSuspended(false)
+		return nil
+	})
 
 	return builder.InitWidget(s, w, func() error {
 		if s.HandleWidth > 0 {
