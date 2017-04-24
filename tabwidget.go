@@ -348,29 +348,37 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 		var err error
 		if tabWidgetBitmap == nil {
 			if tabWidgetBitmap, err = NewBitmap(cb.Size()); err != nil {
-				return 0
+				break
 			}
 		} else if tabWidgetBitmap.size.Width < cb.Width || tabWidgetBitmap.size.Height < cb.Height {
 			tabWidgetBitmap.Dispose()
 			if tabWidgetBitmap, err = NewBitmap(maxSize(tabWidgetBitmap.size, cb.Size())); err != nil {
-				return 0
+				break
 			}
 		}
 
 		canvas, err := NewCanvasFromImage(tabWidgetBitmap)
 		if err != nil {
-			return 0
+			break
 		}
 		defer canvas.Dispose()
+
+		themed := win.IsAppThemed()
+
+		if !themed {
+			if err := canvas.FillRectangle(sysColorBtnFaceBrush, cb); err != nil {
+				break
+			}
+		}
 
 		win.SendMessage(hwnd, win.WM_PRINTCLIENT, uintptr(canvas.hdc), uintptr(win.PRF_CLIENT|win.PRF_CHILDREN|win.PRF_ERASEBKGND))
 
 		parent := tw.Parent()
 		if parent == nil {
-			return 0
+			break
 		}
 
-		// Draw background of free area after tab items.
+		// Draw background of free area not occupied by tab items.
 		if bg, wnd := parent.AsWindowBase().backgroundEffective(); bg != nil {
 			tw.prepareDCForBackground(canvas.hdc, hwnd, wnd)
 
@@ -382,7 +390,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 			count := tw.pages.Len()
 			for i := 0; i < count; i++ {
 				if 0 == win.SendMessage(hwnd, win.TCM_GETITEMRECT, uintptr(i), uintptr(unsafe.Pointer(&rc))) {
-					return 0
+					break
 				}
 
 				if i == tw.currentIndex {
@@ -390,15 +398,13 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 					rc.Top -= 2
 					rc.Right += 2
 				} else {
-					if i == count-1 {
+					if i == count-1 && themed {
 						rc.Right -= 2
 					}
 				}
 
 				hRgnTab := win.CreateRectRgn(rc.Left, rc.Top, rc.Right, rc.Bottom)
-
 				win.CombineRgn(hRgn, hRgn, hRgnTab, win.RGN_OR)
-
 				win.DeleteObject(win.HGDIOBJ(hRgnTab))
 			}
 
@@ -406,7 +412,9 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 			win.CombineRgn(hRgn, hRgnRC, hRgn, win.RGN_DIFF)
 			win.DeleteObject(win.HGDIOBJ(hRgnRC))
 
-			win.FillRgn(canvas.hdc, hRgn, bg.handle())
+			if !win.FillRgn(canvas.hdc, hRgn, bg.handle()) {
+				break
+			}
 		}
 
 		// Draw current tab item.
@@ -421,12 +429,14 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 				var rc win.RECT
 				if 0 == win.SendMessage(hwnd, win.TCM_GETITEMRECT, uintptr(tw.currentIndex), uintptr(unsafe.Pointer(&rc))) {
-					return 0
+					break
 				}
 
 				hRgn := win.CreateRectRgn(rc.Left, rc.Top, rc.Right, rc.Bottom+2)
-				win.FillRgn(canvas.hdc, hRgn, bg.handle())
-				win.DeleteObject(win.HGDIOBJ(hRgn))
+				defer win.DeleteObject(win.HGDIOBJ(hRgn))
+				if !win.FillRgn(canvas.hdc, hRgn, bg.handle()) {
+					break
+				}
 
 				if page.image != nil {
 					x := rc.Left + 6
@@ -436,30 +446,42 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 					if imageCanvas, err := NewCanvasFromImage(page.image); err == nil {
 						defer imageCanvas.Dispose()
 
-						win.TransparentBlt(
+						if !win.TransparentBlt(
 							canvas.hdc, x, y, s, s,
 							imageCanvas.hdc, 0, 0, int32(page.image.size.Width), int32(page.image.size.Height),
-							0)
+							0) {
+							break
+						}
 					}
 
 					rc.Left += s + 6
 				}
 
-				hTheme := win.OpenThemeData(hwnd, syscall.StringToUTF16Ptr("tab"))
-				defer win.CloseThemeData(hTheme)
-
-				title := syscall.StringToUTF16(page.title)
 				rc.Left += 6
 				rc.Top += 1
-				options := win.DTTOPTS{DwFlags: win.DTT_GLOWSIZE, IGlowSize: 3}
-				options.DwSize = uint32(unsafe.Sizeof(options))
-				if hr := win.DrawThemeTextEx(hTheme, canvas.hdc, 0, win.TIS_SELECTED, &title[0], int32(len(title)), 0, &rc, &options); !win.SUCCEEDED(hr) {
-					return 0
+
+				title := syscall.StringToUTF16(page.title)
+
+				if themed {
+					hTheme := win.OpenThemeData(hwnd, syscall.StringToUTF16Ptr("tab"))
+					defer win.CloseThemeData(hTheme)
+
+					options := win.DTTOPTS{DwFlags: win.DTT_GLOWSIZE, IGlowSize: 3}
+					options.DwSize = uint32(unsafe.Sizeof(options))
+					if hr := win.DrawThemeTextEx(hTheme, canvas.hdc, 0, win.TIS_SELECTED, &title[0], int32(len(title)), 0, &rc, &options); !win.SUCCEEDED(hr) {
+						break
+					}
+				} else {
+					if 0 == win.DrawTextEx(canvas.hdc, &title[0], int32(len(title)), &rc, 0, nil) {
+						break
+					}
 				}
 			}
 		}
 
-		win.BitBlt(hdc, 0, 0, int32(cb.Width), int32(cb.Height), canvas.hdc, 0, 0, win.SRCCOPY)
+		if !win.BitBlt(hdc, 0, 0, int32(cb.Width), int32(cb.Height), canvas.hdc, 0, 0, win.SRCCOPY) {
+			break
+		}
 
 		return 0
 	}
