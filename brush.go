@@ -106,6 +106,8 @@ type SystemColorBrush struct {
 	sysColor SystemColor
 }
 
+var sysColorBtnFaceBrush, _ = NewSystemColorBrush(SysColorBtnFace)
+
 func NewSystemColorBrush(sysColor SystemColor) (*SystemColorBrush, error) {
 	hBrush := win.GetSysColorBrush(int(sysColor))
 	if hBrush == 0 {
