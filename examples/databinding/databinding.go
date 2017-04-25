@@ -96,6 +96,7 @@ func (f *DurationField) Set(v interface{}) error {
 	}
 	return err
 }
+func (f *DurationField) Zero() interface{} { return "" }
 
 type Sex byte
 
