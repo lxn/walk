@@ -98,10 +98,6 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 				db.dirty = true
 
 				if db.autoSubmit {
-					if prop.Get() == nil {
-						return
-					}
-
 					v := reflect.ValueOf(db.dataSource)
 					field := db.fieldBoundToProperty(v, prop)
 					if field == nil {
@@ -269,9 +265,11 @@ func (db *DataBinder) submitProperty(prop Property, field DataField) error {
 
 	value := prop.Get()
 	if value == nil {
-		// This happens e.g. if CurrentIndex() of a ComboBox returns -1.
-		// FIXME: Should we handle this differently?
-		return nil
+		if _, ok := db.property2Widget[prop].(*RadioButton); ok {
+			return nil
+		}
+
+		return field.Set(field.Zero())
 	}
 	if err, ok := value.(error); ok {
 		return err
@@ -317,6 +315,7 @@ type DataField interface {
 	CanSet() bool
 	Get() interface{}
 	Set(interface{}) error
+	Zero() interface{}
 }
 
 func dataFieldFromPath(root reflect.Value, path string) (DataField, error) {
@@ -437,4 +436,8 @@ func (f reflectField) Set(value interface{}) error {
 	v.Set(reflect.ValueOf(value))
 
 	return nil
+}
+
+func (f reflectField) Zero() interface{} {
+	return reflect.Zero(reflect.Value(f).Type()).Interface()
 }
