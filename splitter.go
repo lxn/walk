@@ -138,6 +138,16 @@ func (s *Splitter) setOrientation(value Orientation) error {
 
 func (s *Splitter) applyFocusEffect(effect WidgetGraphicsEffect) {
 	var margins Margins
+	var parentLayout Layout
+
+	if s.parent != nil {
+		if parentLayout = s.parent.Layout(); parentLayout != nil {
+			if m := parentLayout.Margins(); m.HNear < 9 || m.HFar < 9 || m.VNear < 9 || m.VFar < 9 {
+				parentLayout = nil
+			}
+		}
+	}
+
 	if effect != nil {
 		var marginsNeeded bool
 		for _, w := range s.children.items {
@@ -154,6 +164,11 @@ func (s *Splitter) applyFocusEffect(effect WidgetGraphicsEffect) {
 			margins = Margins{5, 5, 5, 5}
 		}
 	}
+
+	if parentLayout != nil {
+		parentLayout.SetMargins(Margins{9 - margins.HNear, 9 - margins.VNear, 9 - margins.HFar, 9 - margins.VFar})
+	}
+
 	s.layout.SetMargins(margins)
 }
 
