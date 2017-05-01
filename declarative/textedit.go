@@ -46,6 +46,8 @@ type TextEdit struct {
 	MaxLength int
 	ReadOnly  Property
 	Text      Property
+	HScroll   bool
+	VScroll   bool
 }
 
 func (te TextEdit) Create(builder *Builder) error {
@@ -53,6 +55,8 @@ func (te TextEdit) Create(builder *Builder) error {
 	if err != nil {
 		return err
 	}
+	
+	w.SetScrollbars(te.HScroll, te.VScroll)
 
 	return builder.InitWidget(te, w, func() error {
 		if te.AssignTo != nil {
