@@ -377,7 +377,6 @@ func (tv *TableView) attachModel() {
 	if sorter, ok := tv.model.(Sorter); ok {
 		tv.sortChangedHandlerHandle = sorter.SortChanged().Attach(func() {
 			col := sorter.SortedColumn()
-			tv.setSelectedColumnIndex(col)
 			tv.setSortIcon(col, sorter.SortOrder())
 			tv.Invalidate()
 		})
@@ -1276,9 +1275,15 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 			if tv.MultiSelection() {
 				tv.publishNextSelClear = true
 			} else {
-				// We keep the current item, if in single item selection mode.
-				tv.SetFocus()
-				return 0
+				if tv.CheckBoxes() {
+					if tv.currentIndex > -1 {
+						tv.SetCurrentIndex(-1)
+					}
+				} else {
+					// We keep the current item, if in single item selection mode without check boxes.
+					tv.SetFocus()
+					return 0
+				}
 			}
 		}
 
