@@ -19,18 +19,20 @@ type TextEdit struct {
 	WidgetBase
 	readOnlyChangedPublisher EventPublisher
 	textChangedPublisher     EventPublisher
-	horizontal               bool
-	vertical                 bool
 }
 
 func NewTextEdit(parent Container) (*TextEdit, error) {
-	te := &TextEdit{vertical: true}
+	return NewTextEditWithStyle(parent, 0)
+}
+
+func NewTextEditWithStyle(parent Container, style uint32) (*TextEdit, error) {
+	te := new(TextEdit)
 
 	if err := InitWidget(
 		te,
 		parent,
 		"EDIT",
-		win.WS_TABSTOP|win.WS_VISIBLE|win.ES_MULTILINE|win.ES_WANTRETURN,
+		win.WS_TABSTOP|win.WS_VISIBLE|win.ES_MULTILINE|win.ES_WANTRETURN|style,
 		win.WS_EX_CLIENTEDGE); err != nil {
 		return nil, err
 	}
@@ -123,14 +125,6 @@ func (te *TextEdit) SetReadOnly(readOnly bool) error {
 	te.readOnlyChangedPublisher.Publish()
 
 	return nil
-}
-
-func (te *TextEdit) SetScrollbars(horizontal, vertical bool) {
-	te.horizontal = horizontal
-	te.vertical = vertical
-
-	te.ensureStyleBits(win.WS_HSCROLL, horizontal)
-	te.ensureStyleBits(win.WS_VSCROLL, vertical)
 }
 
 func (te *TextEdit) TextChanged() *Event {
