@@ -8,6 +8,7 @@ package declarative
 
 import (
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type TextEdit struct {
@@ -51,20 +52,26 @@ type TextEdit struct {
 }
 
 func (te TextEdit) Create(builder *Builder) error {
-	w, err := walk.NewTextEdit(builder.Parent())
+	var style uint32
+	if te.HScroll {
+		style |= win.WS_HSCROLL
+	}
+	if te.VScroll {
+		style |= win.WS_VSCROLL
+	}
+
+	w, err := walk.NewTextEditWithStyle(builder.Parent(), style)
 	if err != nil {
 		return err
 	}
 
-	w.SetScrollbars(te.HScroll, te.VScroll)
-
 	return builder.InitWidget(te, w, func() error {
-		if te.AssignTo != nil {
-			*te.AssignTo = w
-		}
-
 		if te.MaxLength > 0 {
 			w.SetMaxLength(te.MaxLength)
+		}
+
+		if te.AssignTo != nil {
+			*te.AssignTo = w
 		}
 
 		return nil
