@@ -111,7 +111,7 @@ func NewWebView(parent Container) (*WebView, error) {
 	var rect win.RECT
 	win.GetClientRect(wv.hWnd, &rect)
 
-	if hr := browserObject.DoVerb(win.OLEIVERB_SHOW, nil, (*win.IOleClientSite)(unsafe.Pointer(&wv.clientSite)), -1, wv.hWnd, &rect); win.FAILED(hr) {
+	if hr := browserObject.DoVerb(win.OLEIVERB_SHOW, nil, (*win.IOleClientSite)(unsafe.Pointer(&wv.clientSite)), 0, wv.hWnd, &rect); win.FAILED(hr) {
 		return nil, errorFromHRESULT("IOleObject.DoVerb", hr)
 	}
 
@@ -248,6 +248,9 @@ func (wv *WebView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		}
 
 		wv.onResize()
+
+	case win.WM_MOUSEACTIVATE:
+		wv.invalidateBorderInParent()
 	}
 
 	return wv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)

@@ -414,11 +414,13 @@ func (cb *ContainerBase) doPaint() error {
 		}
 
 		if widget != nil && widget.Parent() != nil && widget.Parent().Handle() == cb.hWnd {
-			b := widget.Bounds().toRECT()
-			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
+			if _, ok := widget.(*WebView); !ok {
+				b := widget.Bounds().toRECT()
+				win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
 
-			if err := focusEffect.Draw(widget, cb.renderTarget); err != nil {
-				return err
+				if err := focusEffect.Draw(widget, cb.renderTarget); err != nil {
+					return err
+				}
 			}
 		}
 	}
