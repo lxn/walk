@@ -433,8 +433,9 @@ func (wb *WidgetBase) updateParentLayout() error {
 					}
 
 					wnd.SetBounds(bounds)
+
+					return nil
 				}
-				return nil
 			}
 		}
 	}
