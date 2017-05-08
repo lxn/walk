@@ -572,7 +572,7 @@ func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err error) 
 	widget.(applyFonter).applyFont(cb.Font())
 
 	switch widget.(type) {
-	case *Composite, *GroupBox, *Label, *ScrollView, *Separator, *Spacer, *Splitter, *splitterHandle, *TabWidget:
+	case Container, *Label, *Separator, *Spacer, *splitterHandle, *TabWidget:
 		// nop
 
 	default:
