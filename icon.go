@@ -105,6 +105,10 @@ func NewIconFromImage(im image.Image) (ic *Icon, err error) {
 	return &Icon{hIcon: hIcon}, nil
 }
 
+func NewIconFromHICON(hIcon win.HICON) (ic *Icon, err error) {
+	return &Icon{hIcon: hIcon}, nil
+}
+
 // Dispose releases the operating system resources associated with the Icon.
 func (i *Icon) Dispose() {
 	if i.isStock || i.hIcon == 0 {
