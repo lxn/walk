@@ -43,12 +43,13 @@ type TextEdit struct {
 
 	// TextEdit
 
-	AssignTo  **walk.TextEdit
-	HScroll   bool
-	MaxLength int
-	ReadOnly  Property
-	Text      Property
-	VScroll   bool
+	AssignTo      **walk.TextEdit
+	HScroll       bool
+	MaxLength     int
+	OnTextChanged walk.EventHandler
+	ReadOnly      Property
+	Text          Property
+	VScroll       bool
 }
 
 func (te TextEdit) Create(builder *Builder) error {
@@ -68,6 +69,10 @@ func (te TextEdit) Create(builder *Builder) error {
 	return builder.InitWidget(te, w, func() error {
 		if te.MaxLength > 0 {
 			w.SetMaxLength(te.MaxLength)
+		}
+
+		if te.OnTextChanged != nil {
+			w.TextChanged().Attach(te.OnTextChanged)
 		}
 
 		if te.AssignTo != nil {
