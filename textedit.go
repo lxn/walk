@@ -78,8 +78,14 @@ func (te *TextEdit) TextLength() int {
 	return int(te.SendMessage(win.WM_GETTEXTLENGTH, 0, 0))
 }
 
-func (te *TextEdit) SetText(value string) error {
-	return setWindowText(te.hWnd, value)
+func (te *TextEdit) SetText(value string) (err error) {
+	if value == te.Text() {
+		return nil
+	}
+
+	err = setWindowText(te.hWnd, value)
+	te.textChangedPublisher.Publish()
+	return
 }
 
 func (te *TextEdit) MaxLength() int {
