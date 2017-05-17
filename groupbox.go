@@ -230,20 +230,6 @@ func (gb *GroupBox) SetDataBinder(dataBinder *DataBinder) {
 	gb.composite.SetDataBinder(dataBinder)
 }
 
-func (gb *GroupBox) FocusEffect() WidgetGraphicsEffect {
-	if gb.composite.focusEffect == nil {
-		if parent := gb.Parent(); parent != nil {
-			return parent.FocusEffect()
-		}
-	}
-
-	return gb.composite.focusEffect
-}
-
-func (gb *GroupBox) SetFocusEffect(effect WidgetGraphicsEffect) {
-	gb.composite.SetFocusEffect(effect)
-}
-
 func (gb *GroupBox) Title() string {
 	if gb.Checkable() {
 		return gb.checkBox.Text()
