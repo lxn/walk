@@ -77,6 +77,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	if err != nil {
 		return nil, err
 	}
+	gb.composite.name = "composite"
 
 	win.SetWindowPos(gb.checkBox.hWnd, win.HWND_TOP, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE)
 
@@ -157,6 +158,22 @@ func (gb *GroupBox) ClientBounds() Rectangle {
 	return Rectangle{cb.X + 1, cb.Y + 14, cb.Width - 2, cb.Height - 14}
 }
 
+func (gb *GroupBox) Persistent() bool {
+	return gb.composite.Persistent()
+}
+
+func (gb *GroupBox) SetPersistent(value bool) {
+	gb.composite.SetPersistent(value)
+}
+
+func (gb *GroupBox) SaveState() error {
+	return gb.composite.SaveState()
+}
+
+func (gb *GroupBox) RestoreState() error {
+	return gb.composite.RestoreState()
+}
+
 func (gb *GroupBox) applyEnabled(enabled bool) {
 	gb.WidgetBase.applyEnabled(enabled)
 
@@ -211,6 +228,20 @@ func (gb *GroupBox) DataBinder() *DataBinder {
 
 func (gb *GroupBox) SetDataBinder(dataBinder *DataBinder) {
 	gb.composite.SetDataBinder(dataBinder)
+}
+
+func (gb *GroupBox) FocusEffect() WidgetGraphicsEffect {
+	if gb.composite.focusEffect == nil {
+		if parent := gb.Parent(); parent != nil {
+			return parent.FocusEffect()
+		}
+	}
+
+	return gb.composite.focusEffect
+}
+
+func (gb *GroupBox) SetFocusEffect(effect WidgetGraphicsEffect) {
+	gb.composite.SetFocusEffect(effect)
 }
 
 func (gb *GroupBox) Title() string {
