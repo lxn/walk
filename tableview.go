@@ -880,6 +880,10 @@ type tableViewColumnState struct {
 
 // SaveState writes the UI state of the *TableView to the settings.
 func (tv *TableView) SaveState() error {
+	if tv.columns.Len() == 0 {
+		return nil
+	}
+
 	var tvs tableViewState
 
 	tvs.SortColumnName = tv.columns.items[tv.sortedColumnIndex].name
@@ -989,14 +993,14 @@ func (tv *TableView) RestoreState() error {
 
 	for i, tvc := range tv.visibleColumns() {
 		for j, name := range displayOrder {
-			if tvc.name == name {
+			if tvc.name == name && j < visibleCount {
 				indices[j] = int32(i)
 				break
 			}
 		}
 	}
 
-	wParam := uintptr(len(indices))
+	wParam := uintptr(visibleCount)
 	var lParam uintptr
 	if len(indices) > 0 {
 		lParam = uintptr(unsafe.Pointer(&indices[0]))
@@ -1006,7 +1010,7 @@ func (tv *TableView) RestoreState() error {
 	}
 
 	for i, c := range tvs.Columns {
-		if c.Name == tvs.SortColumnName {
+		if c.Name == tvs.SortColumnName && i < visibleCount {
 			tv.sortedColumnIndex = i
 			tv.sortOrder = tvs.SortOrder
 			break
@@ -1423,6 +1427,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 						tv.style.BackgroundColor = tv.alternatingRowBGColor
 						nmlvcd.ClrTextBk = win.COLORREF(tv.alternatingRowBGColor)
 					}
+
 					return win.CDRF_NOTIFYSUBITEMDRAW
 
 				case win.CDDS_ITEMPREPAINT | win.CDDS_SUBITEM:

@@ -77,6 +77,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	if err != nil {
 		return nil, err
 	}
+	gb.composite.name = "composite"
 
 	win.SetWindowPos(gb.checkBox.hWnd, win.HWND_TOP, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE)
 
@@ -155,6 +156,22 @@ func (gb *GroupBox) ClientBounds() Rectangle {
 
 	// FIXME: Use appropriate margins
 	return Rectangle{cb.X + 1, cb.Y + 14, cb.Width - 2, cb.Height - 14}
+}
+
+func (gb *GroupBox) Persistent() bool {
+	return gb.composite.Persistent()
+}
+
+func (gb *GroupBox) SetPersistent(value bool) {
+	gb.composite.SetPersistent(value)
+}
+
+func (gb *GroupBox) SaveState() error {
+	return gb.composite.SaveState()
+}
+
+func (gb *GroupBox) RestoreState() error {
+	return gb.composite.RestoreState()
 }
 
 func (gb *GroupBox) applyEnabled(enabled bool) {
