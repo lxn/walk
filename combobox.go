@@ -147,6 +147,12 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		},
 		cb.CurrentIndexChanged()))
 
+	var valueChangedEvent *Event
+	if style&win.CBS_DROPDOWNLIST != 0 {
+		valueChangedEvent = cb.TextChanged()
+	} else {
+		valueChangedEvent = cb.CurrentIndexChanged()
+	}
 	cb.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
 			if cb.Editable() {
@@ -186,7 +192,7 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 
 			return cb.SetCurrentIndex(index)
 		},
-		cb.CurrentIndexChanged()))
+		valueChangedEvent))
 
 	succeeded = true
 
@@ -534,7 +540,13 @@ func (cb *ComboBox) Text() string {
 }
 
 func (cb *ComboBox) SetText(value string) error {
-	return setWindowText(cb.hWnd, value)
+	if err := setWindowText(cb.hWnd, value); err != nil {
+		return err
+	}
+
+	cb.textChangedPublisher.Publish()
+
+	return nil
 }
 
 func (cb *ComboBox) TextSelection() (start, end int) {
