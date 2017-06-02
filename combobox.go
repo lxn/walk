@@ -44,13 +44,6 @@ func comboBoxEditWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 	cb := (*ComboBox)(unsafe.Pointer(win.GetWindowLongPtr(hwnd, win.GWLP_USERDATA)))
 
 	switch msg {
-	case win.WM_SETFOCUS, win.WM_KILLFOCUS:
-		if wnd := windowFromHandle(win.GetParent(cb.Handle())); wnd != nil {
-			if _, ok := wnd.(Container); ok {
-				cb.invalidateBorderInParent()
-			}
-		}
-
 	case win.WM_GETDLGCODE:
 		if form := ancestor(cb); form != nil {
 			if dlg, ok := form.(dialogish); ok {
