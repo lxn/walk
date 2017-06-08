@@ -72,6 +72,9 @@ type Window interface {
 	// By default this is nil.
 	Cursor() Cursor
 
+	// Disable minimized button
+	DisableMinimizeButton() error
+
 	// Dispose releases the operating system resources, associated with the
 	// Window.
 	//
@@ -267,6 +270,8 @@ type Window interface {
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Windows.
 	Y() int
+
+	SwitchToThisWindow()
 }
 
 // WindowBase implements many operations common to all Windows.
@@ -596,6 +601,21 @@ func (wb *WindowBase) AsWindowBase() *WindowBase {
 // together with this Window.
 func (wb *WindowBase) AddDisposable(d Disposable) {
 	wb.disposables = append(wb.disposables, d)
+}
+
+// DisableMinimizeButton disables minimized button
+func (wb *WindowBase) DisableMinimizeButton() error {
+	style := uint32(win.GetWindowLong(wb.hWnd, win.GWL_STYLE))
+	if style == 0 {
+		return lastError("GetWindowLong")
+	}
+	if newStyle := style &^ win.WS_MINIMIZEBOX; newStyle != style {
+		win.SetLastError(0)
+		if win.SetWindowLong(wb.hWnd, win.GWL_STYLE, int32(newStyle)) == 0 {
+			return lastError("SetWindowLong")
+		}
+	}
+	return nil
 }
 
 // Dispose releases the operating system resources, associated with the
@@ -1559,4 +1579,12 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	}
 
 	return win.DefWindowProc(hwnd, msg, wParam, lParam)
+}
+
+func (wb *WindowBase) SwitchToThisWindow() {
+	libuser32 := win.MustLoadLibrary("User32.dll")
+	syscall.Syscall(win.MustGetProcAddress(libuser32, "SwitchToThisWindow"), 2,
+		uintptr(wb.hWnd),
+		1,
+		0)
 }
