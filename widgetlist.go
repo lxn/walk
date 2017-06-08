@@ -36,6 +36,16 @@ func (l *WidgetList) At(index int) Widget {
 	return l.items[index]
 }
 
+func (l *WidgetList) AtName(name string) (Widget) {
+	for _,item := range l.items {
+		if item.Name() == name {
+			return item
+		}
+	}
+
+	return nil
+}
+
 func (l *WidgetList) Clear() error {
 	observer := l.observer
 	if observer != nil {
