@@ -62,6 +62,7 @@ type Form interface {
 	Run() int
 	Starting() *Event
 	Closing() *CloseEvent
+	SysCommand() *SysCommandEvent
 	Activate() error
 	Show()
 	Hide()
@@ -81,6 +82,7 @@ type FormBase struct {
 	clientComposite       *Composite
 	owner                 Form
 	closingPublisher      CloseEventPublisher
+	sysCommandPublisher   SysCommandEventPublisher
 	activatingPublisher   EventPublisher
 	deactivatingPublisher EventPublisher
 	startingPublisher     EventPublisher
@@ -522,6 +524,10 @@ func (fb *FormBase) Closing() *CloseEvent {
 	return fb.closingPublisher.Event()
 }
 
+func (fb *FormBase) SysCommand() *SysCommandEvent {
+	return fb.sysCommandPublisher.Event()
+}
+
 func (fb *FormBase) ProgressIndicator() *ProgressIndicator {
 	return fb.progressIndicator
 }
@@ -594,6 +600,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		fb.clientComposite.SetBounds(fb.window.ClientBounds())
 
 	case win.WM_SYSCOMMAND:
+		fb.sysCommandPublisher.Publish(uint32(wParam))
 		if wParam == win.SC_CLOSE {
 			fb.closeReason = CloseReasonUser
 		}
