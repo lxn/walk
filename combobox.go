@@ -141,10 +141,10 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		cb.CurrentIndexChanged()))
 
 	var valueChangedEvent *Event
-	if style&win.CBS_DROPDOWNLIST != 0 {
-		valueChangedEvent = cb.TextChanged()
-	} else {
+	if style&win.CBS_DROPDOWNLIST == win.CBS_DROPDOWNLIST {
 		valueChangedEvent = cb.CurrentIndexChanged()
+	} else {
+		valueChangedEvent = cb.TextChanged()
 	}
 	cb.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
