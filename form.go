@@ -654,6 +654,10 @@ func firstFocusableDescendantCallback(hwnd win.HWND, lParam uintptr) uintptr {
 		return 1
 	}
 
+	if _, ok := widget.(*RadioButton); ok {
+		return 1
+	}
+
 	style := uint(win.GetWindowLong(hwnd, win.GWL_STYLE))
 	// FIXME: Ugly workaround for NumberEdit
 	_, isTextSelectable := widget.(textSelectable)

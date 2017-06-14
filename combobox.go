@@ -44,13 +44,6 @@ func comboBoxEditWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 	cb := (*ComboBox)(unsafe.Pointer(win.GetWindowLongPtr(hwnd, win.GWLP_USERDATA)))
 
 	switch msg {
-	case win.WM_SETFOCUS, win.WM_KILLFOCUS:
-		if wnd := windowFromHandle(win.GetParent(cb.Handle())); wnd != nil {
-			if _, ok := wnd.(Container); ok {
-				cb.invalidateBorderInParent()
-			}
-		}
-
 	case win.WM_GETDLGCODE:
 		if form := ancestor(cb); form != nil {
 			if dlg, ok := form.(dialogish); ok {
@@ -148,10 +141,10 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		cb.CurrentIndexChanged()))
 
 	var valueChangedEvent *Event
-	if style&win.CBS_DROPDOWNLIST != 0 {
-		valueChangedEvent = cb.TextChanged()
-	} else {
+	if style&win.CBS_DROPDOWNLIST == win.CBS_DROPDOWNLIST {
 		valueChangedEvent = cb.CurrentIndexChanged()
+	} else {
+		valueChangedEvent = cb.TextChanged()
 	}
 	cb.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
