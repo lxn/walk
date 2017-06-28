@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 )
 
 var (
@@ -29,6 +30,8 @@ type DataBinder struct {
 	errorPresenter            ErrorPresenter
 	canSubmitChangedPublisher EventPublisher
 	submittedPublisher        EventPublisher
+	autoSubmitDelay           time.Duration
+	autoSubmitTimer           *time.Timer
 	autoSubmit                bool
 	canSubmit                 bool
 	inReset                   bool
@@ -45,6 +48,14 @@ func (db *DataBinder) AutoSubmit() bool {
 
 func (db *DataBinder) SetAutoSubmit(autoSubmit bool) {
 	db.autoSubmit = autoSubmit
+}
+
+func (db *DataBinder) AutoSubmitDelay() time.Duration {
+	return db.autoSubmitDelay
+}
+
+func (db *DataBinder) SetAutoSubmitDelay(delay time.Duration) {
+	db.autoSubmitDelay = delay
 }
 
 func (db *DataBinder) Submitted() *Event {
@@ -98,17 +109,29 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 				db.dirty = true
 
 				if db.autoSubmit {
-					v := reflect.ValueOf(db.dataSource)
-					field := db.fieldBoundToProperty(v, prop)
-					if field == nil {
-						return
-					}
+					if db.autoSubmitDelay > 0 {
+						if db.autoSubmitTimer == nil {
+							db.autoSubmitTimer = time.AfterFunc(db.autoSubmitDelay, func() {
+								synchronize(func() {
+									db.Submit()
+								})
+							})
+						} else {
+							db.autoSubmitTimer.Reset(db.autoSubmitDelay)
+						}
+					} else {
+						v := reflect.ValueOf(db.dataSource)
+						field := db.fieldBoundToProperty(v, prop)
+						if field == nil {
+							return
+						}
 
-					if err := db.submitProperty(prop, field); err != nil {
-						return
-					}
+						if err := db.submitProperty(prop, field); err != nil {
+							return
+						}
 
-					db.submittedPublisher.Publish()
+						db.submittedPublisher.Publish()
+					}
 				} else {
 					if !db.inReset {
 						db.validateProperties()

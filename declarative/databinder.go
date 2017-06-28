@@ -8,14 +8,16 @@ package declarative
 
 import (
 	"github.com/lxn/walk"
+	"time"
 )
 
 type DataBinder struct {
-	AssignTo       **walk.DataBinder
-	AutoSubmit     bool
-	DataSource     interface{}
-	ErrorPresenter ErrorPresenter
-	OnSubmitted    walk.EventHandler
+	AssignTo        **walk.DataBinder
+	AutoSubmit      bool
+	AutoSubmitDelay time.Duration
+	DataSource      interface{}
+	ErrorPresenter  ErrorPresenter
+	OnSubmitted     walk.EventHandler
 }
 
 func (db DataBinder) create() (*walk.DataBinder, error) {
@@ -32,6 +34,7 @@ func (db DataBinder) create() (*walk.DataBinder, error) {
 	b.SetDataSource(db.DataSource)
 
 	b.SetAutoSubmit(db.AutoSubmit)
+	b.SetAutoSubmitDelay(db.AutoSubmitDelay)
 
 	if db.OnSubmitted != nil {
 		b.Submitted().Attach(db.OnSubmitted)
