@@ -16,8 +16,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Knetic/govaluate"
 	"github.com/lxn/walk"
+	"gopkg.in/Knetic/govaluate.v3"
 )
 
 var (

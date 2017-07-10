@@ -11,7 +11,7 @@ import (
 	"reflect"
 )
 
-import _ "github.com/Knetic/govaluate"
+import _ "gopkg.in/Knetic/govaluate.v3"
 
 type Expression interface {
 	Value() interface{}
