@@ -1418,9 +1418,11 @@ func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
 				// nop
 				return 0
 			}
+
+			wnd = wb
 		}
 
-		if bg, wnd := wb.backgroundEffective(); bg != nil {
+		if bg, wnd := wnd.AsWindowBase().backgroundEffective(); bg != nil {
 			wb.prepareDCForBackground(win.HDC(wParam), hwnd, wnd)
 
 			return uintptr(bg.handle())

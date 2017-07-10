@@ -43,6 +43,8 @@ func NewSliderWithOrientation(parent Container, orientation Orientation) (*Slide
 		return nil, err
 	}
 
+	sl.SetBackground(nullBrushSingleton)
+
 	sl.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
 			return sl.Value()
