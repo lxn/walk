@@ -27,6 +27,8 @@ func NewLabel(parent Container) (*Label, error) {
 		return nil, err
 	}
 
+	l.SetBackground(nullBrushSingleton)
+
 	l.MustRegisterProperty("Text", NewProperty(
 		func() interface{} {
 			return l.Text()

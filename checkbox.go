@@ -41,6 +41,8 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 
 	cb.Button.init()
 
+	cb.SetBackground(nullBrushSingleton)
+
 	cb.MustRegisterProperty("CheckState", NewProperty(
 		func() interface{} {
 			return cb.CheckState()
