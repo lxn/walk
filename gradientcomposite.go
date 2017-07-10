@@ -201,6 +201,12 @@ func (gc *GradientComposite) updateBackground() error {
 		gc.brush = nil
 	}
 
+	if gc.vertical {
+		bounds.Width = 1
+	} else {
+		bounds.Height = 1
+	}
+
 	bmp, err := NewBitmap(bounds.Size())
 	if err != nil {
 		return err
