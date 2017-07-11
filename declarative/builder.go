@@ -275,7 +275,7 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	if wc, ok := w.(walk.Container); ok {
 		var layout Layout
 		if val := b.widgetValue.FieldByName("Layout"); val.IsValid() {
-			layout = val.Interface().(Layout)
+			layout, _ = val.Interface().(Layout)
 		}
 
 		if layout != nil {
@@ -294,17 +294,19 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 			b.parent = oldParent
 		}()
 
-		if g, ok := layout.(Grid); ok {
-			rows := b.rows
-			columns := b.columns
-			defer func() {
-				b.rows, b.columns, b.row, b.col = rows, columns, row, column+columnSpan
-			}()
+		if layout != nil {
+			if g, ok := layout.(Grid); ok {
+				rows := b.rows
+				columns := b.columns
+				defer func() {
+					b.rows, b.columns, b.row, b.col = rows, columns, row, column+columnSpan
+				}()
 
-			b.rows = g.Rows
-			b.columns = g.Columns
-			b.row = 0
-			b.col = 0
+				b.rows = g.Rows
+				b.columns = g.Columns
+				b.row = 0
+				b.col = 0
+			}
 		}
 
 		if val := b.widgetValue.FieldByName("Children"); val.IsValid() {
