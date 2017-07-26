@@ -42,8 +42,9 @@ type Label struct {
 
 	// Label
 
-	AssignTo **walk.Label
-	Text     Property
+	AssignTo  **walk.Label
+	Text      Property
+	TextColor walk.Color
 }
 
 func (l Label) Create(builder *Builder) error {
@@ -53,6 +54,8 @@ func (l Label) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(l, w, func() error {
+		w.SetTextColor(l.TextColor)
+
 		if l.AssignTo != nil {
 			*l.AssignTo = w
 		}

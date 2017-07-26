@@ -1412,6 +1412,8 @@ func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
 	// nop
 
 	default:
+		hdc := win.HDC(wParam)
+
 		if wnd == nil {
 			switch windowFromHandle(win.GetParent(hwnd)).(type) {
 			case *ComboBox:
@@ -1420,12 +1422,19 @@ func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
 			}
 
 			wnd = wb
+		} else if lbl, ok := wnd.(*Label); ok {
+			win.SetTextColor(hdc, win.COLORREF(lbl.textColor))
 		}
 
 		if bg, wnd := wnd.AsWindowBase().backgroundEffective(); bg != nil {
-			wb.prepareDCForBackground(win.HDC(wParam), hwnd, wnd)
+			wb.prepareDCForBackground(hdc, hwnd, wnd)
 
 			return uintptr(bg.handle())
+		}
+
+		if _, ok := wnd.(*Label); ok {
+			win.SetBkMode(hdc, win.TRANSPARENT)
+			return uintptr(nullBrushSingleton.handle())
 		}
 	}
 
