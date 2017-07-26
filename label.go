@@ -13,6 +13,7 @@ import (
 type Label struct {
 	WidgetBase
 	textChangedPublisher EventPublisher
+	textColor            Color
 }
 
 func NewLabel(parent Container) (*Label, error) {
@@ -67,6 +68,16 @@ func (l *Label) SetText(value string) error {
 	}
 
 	return l.updateParentLayout()
+}
+
+func (l *Label) TextColor() Color {
+	return l.textColor
+}
+
+func (l *Label) SetTextColor(c Color) {
+	l.textColor = c
+
+	l.Invalidate()
 }
 
 func (l *Label) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
