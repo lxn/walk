@@ -49,6 +49,7 @@ type NumberEdit struct {
 	MinValue       float64
 	Prefix         string
 	OnValueChanged walk.EventHandler
+	ReadOnly       Property
 	Suffix         string
 	Value          Property
 }
