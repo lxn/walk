@@ -549,6 +549,10 @@ func (l *GridLayout) Update(reset bool) error {
 			}
 		}
 
+		if widget.GraphicsEffects().Len() > 0 {
+			widget.AsWidgetBase().invalidateBorderInParent()
+		}
+
 		if hdwp = win.DeferWindowPos(
 			hdwp,
 			widget.Handle(),
@@ -560,6 +564,14 @@ func (l *GridLayout) Update(reset bool) error {
 			win.SWP_NOACTIVATE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER); hdwp == 0 {
 
 			return lastError("DeferWindowPos")
+		}
+
+		for widget := range l.widget2Info {
+			if !shouldLayoutWidget(widget) || widget.GraphicsEffects().Len() == 0 {
+				continue
+			}
+
+			widget.AsWidgetBase().invalidateBorderInParent()
 		}
 	}
 
