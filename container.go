@@ -426,7 +426,16 @@ func (cb *ContainerBase) doPaint() error {
 	}
 
 	for _, widget := range cb.children.items {
-		if !win.IsWindowEnabled(widget.Handle()) || !win.IsWindowVisible(widget.Handle()) {
+		type ReadOnlyer interface {
+			ReadOnly() bool
+		}
+		if ro, ok := widget.(ReadOnlyer); ok {
+			if ro.ReadOnly() {
+				continue
+			}
+		}
+
+		if hwnd := widget.Handle(); !win.IsWindowEnabled(hwnd) || !win.IsWindowVisible(hwnd) {
 			continue
 		}
 
