@@ -382,7 +382,7 @@ func (wb *WidgetBase) invalidateBorderInParent() {
 		//}
 
 		b := wb.Bounds().toRECT()
-		s := int32(wb.parent.Layout().Spacing()) - 1
+		s := int32(wb.parent.Layout().Spacing())
 
 		hwnd := wb.parent.Handle()
 
