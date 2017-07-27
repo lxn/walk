@@ -510,21 +510,17 @@ func (l *GridLayout) Update(reset bool) error {
 
 		w := 0
 		for i := info.cell.column; i < info.cell.column+info.spanHorz; i++ {
-			if width := widths[i]; width > 0 {
-				w += width
-				if i > info.cell.column {
-					w += l.spacing
-				}
+			w += widths[i]
+			if i > info.cell.column {
+				w += l.spacing
 			}
 		}
 
 		h := 0
 		for i := info.cell.row; i < info.cell.row+info.spanVert; i++ {
-			if height := heights[i]; height > 0 {
-				h += height
-				if i > info.cell.row {
-					h += l.spacing
-				}
+			h += heights[i]
+			if i > info.cell.row {
+				h += l.spacing
 			}
 		}
 
@@ -549,10 +545,6 @@ func (l *GridLayout) Update(reset bool) error {
 			}
 		}
 
-		if widget.GraphicsEffects().Len() > 0 {
-			widget.AsWidgetBase().invalidateBorderInParent()
-		}
-
 		if hdwp = win.DeferWindowPos(
 			hdwp,
 			widget.Handle(),
@@ -569,14 +561,6 @@ func (l *GridLayout) Update(reset bool) error {
 
 	if !win.EndDeferWindowPos(hdwp) {
 		return lastError("EndDeferWindowPos")
-	}
-
-	for widget := range l.widget2Info {
-		if !shouldLayoutWidget(widget) || widget.GraphicsEffects().Len() == 0 {
-			continue
-		}
-
-		widget.AsWidgetBase().invalidateBorderInParent()
 	}
 
 	return nil
