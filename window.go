@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"image/color"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -293,6 +292,7 @@ type WindowBase struct {
 	mouseUpPublisher        MouseEventPublisher
 	mouseMovePublisher      MouseEventPublisher
 	mouseWheelPublisher     MouseEventPublisher
+	boundsChangedPublisher  EventPublisher
 	sizeChangedPublisher    EventPublisher
 	maxSize                 Size
 	minSize                 Size
@@ -1121,38 +1121,13 @@ func (wb *WindowBase) SetClientSize(value Size) error {
 
 // Screenshot returns an image of the window.
 func (wb *WindowBase) Screenshot() (*image.RGBA, error) {
-	if hBmp, err := hBitmapFromWindow(wb); err != nil {
+	bmp, err := NewBitmapFromWindow(wb)
+	if err != nil {
 		return nil, err
-	} else {
-
-		var bi win.BITMAPINFO
-		bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
-		hdc := win.GetDC(0)
-		if ret := win.GetDIBits(hdc, hBmp, 0, 0, nil, &bi, win.DIB_RGB_COLORS); ret == 0 {
-			return nil, newError("GetDIBits get bitmapinfo failed")
-		}
-
-		buf := make([]byte, bi.BmiHeader.BiSizeImage)
-		bi.BmiHeader.BiCompression = win.BI_RGB
-		if ret := win.GetDIBits(hdc, hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS); ret == 0 {
-			return nil, newError("GetDIBits failed")
-		}
-
-		width := int(bi.BmiHeader.BiWidth)
-		height := int(bi.BmiHeader.BiHeight)
-		im := image.NewRGBA(image.Rect(0, 0, width, height))
-		n := 0
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				r := buf[n+2]
-				g := buf[n+1]
-				b := buf[n+0]
-				n += 4
-				im.Set(x, height-y, color.RGBA{r, g, b, 255})
-			}
-		}
-		return im, nil
 	}
+	defer bmp.Dispose()
+
+	return bmp.ToImage()
 }
 
 // FocusedWindow returns the Window that has the keyboard input focus.
@@ -1410,11 +1385,13 @@ func (wb *WindowBase) backgroundEffective() (Brush, Window) {
 
 	if widget, ok := wb.window.(Widget); ok {
 		for bg == nullBrushSingleton && widget != nil {
-			if parent := widget.Parent(); parent != nil {
-				wnd = parent
-				bg = parent.Background()
+			if hwndParent := win.GetParent(widget.Handle()); hwndParent != 0 {
+				if parent := windowFromHandle(hwndParent); parent != nil {
+					wnd = parent
+					bg = parent.Background()
 
-				widget, _ = parent.(Widget)
+					widget, _ = parent.(Widget)
+				}
 			} else {
 				break
 			}
@@ -1439,15 +1416,34 @@ func (wb *WindowBase) prepareDCForBackground(hdc win.HDC, hwnd win.HWND, brushWn
 func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
 	hwnd := win.HWND(lParam)
 
-	switch windowFromHandle(hwnd).(type) {
+	switch wnd := windowFromHandle(hwnd).(type) {
 	case *LineEdit, *TextEdit:
-	// nop
+		// nop
 
 	default:
-		if bg, wnd := wb.backgroundEffective(); bg != nil {
-			wb.prepareDCForBackground(win.HDC(wParam), hwnd, wnd)
+		hdc := win.HDC(wParam)
+
+		if wnd == nil {
+			switch windowFromHandle(win.GetParent(hwnd)).(type) {
+			case *ComboBox:
+				// nop
+				return 0
+			}
+
+			wnd = wb
+		} else if lbl, ok := wnd.(*Label); ok {
+			win.SetTextColor(hdc, win.COLORREF(lbl.textColor))
+		}
+
+		if bg, wnd := wnd.AsWindowBase().backgroundEffective(); bg != nil {
+			wb.prepareDCForBackground(hdc, hwnd, wnd)
 
 			return uintptr(bg.handle())
+		}
+
+		if _, ok := wnd.(*Label); ok {
+			win.SetBkMode(hdc, win.TRANSPARENT)
+			return uintptr(nullBrushSingleton.handle())
 		}
 	}
 
@@ -1566,6 +1562,9 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	case win.WM_SIZE, win.WM_SIZING:
 		wb.sizeChangedPublisher.Publish()
+
+	case win.WM_WINDOWPOSCHANGED:
+		wb.boundsChangedPublisher.Publish()
 
 	case win.WM_DESTROY:
 		if wb.origWndProcPtr != 0 {

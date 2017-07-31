@@ -318,12 +318,18 @@ func (l *BoxLayout) Update(reset bool) error {
 		return nil
 	}
 
+	if !performingScheduledLayouts && scheduleLayout(l) {
+		return nil
+	}
+
 	if l.resetNeeded {
 		l.resetNeeded = false
 
 		// Make GC happy.
 		l.cleanupStretchFactors()
 	}
+
+	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
 
 	// Begin by finding out which widgets we care about.
 	widgets := l.widgets()

@@ -54,7 +54,7 @@ func NewLineErrorPresenter(parent Container) (*LineErrorPresenter, error) {
 
 	var err error
 
-	if lep.composite, err = newCompositeWithStyle(lep, 0); err != nil {
+	if lep.composite, err = NewCompositeWithStyle(lep, 0); err != nil {
 		return nil, err
 	}
 

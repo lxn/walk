@@ -7,7 +7,6 @@
 package walk
 
 import (
-	"syscall"
 	"unsafe"
 )
 
@@ -156,54 +155,6 @@ func (dlg *Dialog) Close(result int) {
 	dlg.FormBase.Close()
 }
 
-func firstFocusableDescendantCallback(hwnd win.HWND, lParam uintptr) uintptr {
-	widget := windowFromHandle(hwnd)
-
-	if widget == nil || !widget.Visible() || !widget.Enabled() {
-		return 1
-	}
-
-	style := uint(win.GetWindowLong(hwnd, win.GWL_STYLE))
-	// FIXME: Ugly workaround for NumberEdit
-	_, isTextSelectable := widget.(textSelectable)
-	if style&win.WS_TABSTOP > 0 || isTextSelectable {
-		hwndPtr := (*win.HWND)(unsafe.Pointer(lParam))
-		*hwndPtr = hwnd
-		return 0
-	}
-
-	return 1
-}
-
-var firstFocusableDescendantCallbackPtr = syscall.NewCallback(firstFocusableDescendantCallback)
-
-func firstFocusableDescendant(container Container) Window {
-	var hwnd win.HWND
-
-	win.EnumChildWindows(container.Handle(), firstFocusableDescendantCallbackPtr, uintptr(unsafe.Pointer(&hwnd)))
-
-	return windowFromHandle(hwnd)
-}
-
-type textSelectable interface {
-	SetTextSelection(start, end int)
-}
-
-func (dlg *Dialog) focusFirstCandidateDescendant() {
-	window := firstFocusableDescendant(dlg)
-	if window == nil {
-		return
-	}
-
-	if err := window.SetFocus(); err != nil {
-		return
-	}
-
-	if textSel, ok := window.(textSelectable); ok {
-		textSel.SetTextSelection(0, -1)
-	}
-}
-
 func (dlg *Dialog) Show() {
 	if dlg.owner != nil {
 		var size Size
@@ -231,8 +182,6 @@ func (dlg *Dialog) Show() {
 	}
 
 	dlg.FormBase.Show()
-
-	dlg.focusFirstCandidateDescendant()
 }
 
 func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {

@@ -13,6 +13,7 @@ import (
 
 import (
 	"github.com/lxn/win"
+	"time"
 )
 
 var webViewDWebBrowserEvents2Vtbl *win.DWebBrowserEvents2Vtbl
@@ -118,6 +119,18 @@ func webView_DWebBrowserEvents2_Invoke(
 	switch dispIdMember {
 	case win.DISPID_NAVIGATECOMPLETE2:
 		wv.urlChangedPublisher.Publish()
+
+	case win.DISPID_DOCUMENTCOMPLETE:
+		// FIXME: Horrible hack to avoid glitch where the document is not displayed.
+		time.AfterFunc(time.Millisecond*100, func() {
+			wv.Synchronize(func() {
+				b := wv.Bounds()
+				b.Width++
+				wv.SetBounds(b)
+				b.Width--
+				wv.SetBounds(b)
+			})
+		})
 	}
 
 	return win.DISP_E_MEMBERNOTFOUND

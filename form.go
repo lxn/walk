@@ -60,6 +60,20 @@ type Form interface {
 	Container
 	AsFormBase() *FormBase
 	Run() int
+	Starting() *Event
+	Closing() *CloseEvent
+	Activate() error
+	Show()
+	Hide()
+	Title() string
+	SetTitle(title string) error
+	TitleChanged() *Event
+	Icon() *Icon
+	SetIcon(icon *Icon)
+	IconChanged() *Event
+	Owner() Form
+	SetOwner(owner Form) error
+	ProgressIndicator() *ProgressIndicator
 }
 
 type FormBase struct {
@@ -67,6 +81,8 @@ type FormBase struct {
 	clientComposite       *Composite
 	owner                 Form
 	closingPublisher      CloseEventPublisher
+	activatingPublisher   EventPublisher
+	deactivatingPublisher EventPublisher
 	startingPublisher     EventPublisher
 	titleChangedPublisher EventPublisher
 	iconChangedPublisher  EventPublisher
@@ -74,6 +90,7 @@ type FormBase struct {
 	icon                  *Icon
 	prevFocusHWnd         win.HWND
 	isInRestoreState      bool
+	started               bool
 	closeReason           CloseReason
 }
 
@@ -296,6 +313,10 @@ func (fb *FormBase) SetTitle(value string) error {
 	return setWindowText(fb.hWnd, value)
 }
 
+func (fb *FormBase) TitleChanged() *Event {
+	return fb.titleChangedPublisher.Event()
+}
+
 func (fb *FormBase) Run() int {
 	if fb.owner != nil {
 		fb.owner.SetEnabled(false)
@@ -305,6 +326,9 @@ func (fb *FormBase) Run() int {
 		layout.Update(false)
 	}
 
+	fb.focusFirstCandidateDescendant()
+
+	fb.started = true
 	fb.startingPublisher.Publish()
 
 	var msg win.MSG
@@ -331,6 +355,14 @@ func (fb *FormBase) Run() int {
 
 func (fb *FormBase) Starting() *Event {
 	return fb.startingPublisher.Event()
+}
+
+func (fb *FormBase) Activate() error {
+	if hwndPrevActive := win.SetActiveWindow(fb.hWnd); hwndPrevActive == 0 {
+		return lastError("SetActiveWindow")
+	}
+
+	return nil
 }
 
 func (fb *FormBase) Owner() Form {
@@ -503,9 +535,18 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				win.SetFocus(fb.prevFocusHWnd)
 			}
 
+			appSingleton.activeForm = fb.window.(Form)
+
+			fb.activatingPublisher.Publish()
+
 		case win.WA_INACTIVE:
 			fb.prevFocusHWnd = win.GetFocus()
+
+			appSingleton.activeForm = nil
+
+			fb.deactivatingPublisher.Publish()
 		}
+
 		return 0
 
 	case win.WM_CLOSE:
@@ -568,4 +609,56 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	}
 
 	return fb.WindowBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (fb *FormBase) focusFirstCandidateDescendant() {
+	window := firstFocusableDescendant(fb)
+	if window == nil {
+		return
+	}
+
+	if err := window.SetFocus(); err != nil {
+		return
+	}
+
+	if textSel, ok := window.(textSelectable); ok {
+		textSel.SetTextSelection(0, -1)
+	}
+}
+
+func firstFocusableDescendantCallback(hwnd win.HWND, lParam uintptr) uintptr {
+	widget := windowFromHandle(hwnd)
+
+	if widget == nil || !widget.Visible() || !widget.Enabled() {
+		return 1
+	}
+
+	if _, ok := widget.(*RadioButton); ok {
+		return 1
+	}
+
+	style := uint(win.GetWindowLong(hwnd, win.GWL_STYLE))
+	// FIXME: Ugly workaround for NumberEdit
+	_, isTextSelectable := widget.(textSelectable)
+	if style&win.WS_TABSTOP > 0 || isTextSelectable {
+		hwndPtr := (*win.HWND)(unsafe.Pointer(lParam))
+		*hwndPtr = hwnd
+		return 0
+	}
+
+	return 1
+}
+
+var firstFocusableDescendantCallbackPtr = syscall.NewCallback(firstFocusableDescendantCallback)
+
+func firstFocusableDescendant(container Container) Window {
+	var hwnd win.HWND
+
+	win.EnumChildWindows(container.Handle(), firstFocusableDescendantCallbackPtr, uintptr(unsafe.Pointer(&hwnd)))
+
+	return windowFromHandle(hwnd)
+}
+
+type textSelectable interface {
+	SetTextSelection(start, end int)
 }

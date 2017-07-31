@@ -22,13 +22,17 @@ type TextEdit struct {
 }
 
 func NewTextEdit(parent Container) (*TextEdit, error) {
+	return NewTextEditWithStyle(parent, 0)
+}
+
+func NewTextEditWithStyle(parent Container, style uint32) (*TextEdit, error) {
 	te := new(TextEdit)
 
 	if err := InitWidget(
 		te,
 		parent,
 		"EDIT",
-		win.WS_TABSTOP|win.WS_VISIBLE|win.WS_VSCROLL|win.ES_MULTILINE|win.ES_WANTRETURN,
+		win.WS_TABSTOP|win.WS_VISIBLE|win.ES_MULTILINE|win.ES_WANTRETURN|style,
 		win.WS_EX_CLIENTEDGE); err != nil {
 		return nil, err
 	}
@@ -74,8 +78,14 @@ func (te *TextEdit) TextLength() int {
 	return int(te.SendMessage(win.WM_GETTEXTLENGTH, 0, 0))
 }
 
-func (te *TextEdit) SetText(value string) error {
-	return setWindowText(te.hWnd, value)
+func (te *TextEdit) SetText(value string) (err error) {
+	if value == te.Text() {
+		return nil
+	}
+
+	err = setWindowText(te.hWnd, value)
+	te.textChangedPublisher.Publish()
+	return
 }
 
 func (te *TextEdit) MaxLength() int {

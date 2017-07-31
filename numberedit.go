@@ -61,6 +61,15 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 		return nil, err
 	}
 
+	ne.MustRegisterProperty("ReadOnly", NewProperty(
+		func() interface{} {
+			return ne.ReadOnly()
+		},
+		func(v interface{}) error {
+			return ne.SetReadOnly(v.(bool))
+		},
+		ne.edit.readOnlyChangedPublisher.Event()))
+
 	ne.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
 			return ne.Value()
@@ -268,6 +277,16 @@ func (ne *NumberEdit) TextSelection() (start, end int) {
 // NumberEdit.
 func (ne *NumberEdit) SetTextSelection(start, end int) {
 	ne.edit.SetTextSelection(start, end)
+}
+
+// ReadOnly returns whether the NumberEdit is in read-only mode.
+func (ne *NumberEdit) ReadOnly() bool {
+	return ne.edit.ReadOnly()
+}
+
+// SetReadOnly sets whether the NumberEdit is in read-only mode.
+func (ne *NumberEdit) SetReadOnly(readOnly bool) error {
+	return ne.edit.SetReadOnly(readOnly)
 }
 
 // WndProc is the window procedure of the NumberEdit.
@@ -492,6 +511,10 @@ func (nle *numberLineEdit) incrementValue(delta float64) {
 func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_CHAR:
+		if nle.ReadOnly() {
+			break
+		}
+
 		if AltDown() {
 			return 0
 		}
@@ -573,6 +596,10 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			}
 
 		case KeyDelete:
+			if nle.ReadOnly() {
+				break
+			}
+
 			text := nle.textUTF16()
 			text = text[len(nle.prefix) : len(text)-len(nle.suffix)]
 			start, end := nle.TextSelection()
@@ -583,6 +610,10 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			return 0
 
 		case KeyDown:
+			if nle.ReadOnly() {
+				return 0
+			}
+
 			nle.incrementValue(-nle.increment)
 			return 0
 
@@ -619,6 +650,10 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			}
 
 		case KeyReturn:
+			if nle.ReadOnly() {
+				break
+			}
+
 			if nle.inEditMode {
 				nle.endEdit()
 				nle.selectNumber()
@@ -640,6 +675,10 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			}
 
 		case KeyUp:
+			if nle.ReadOnly() {
+				return 0
+			}
+
 			nle.incrementValue(nle.increment)
 			return 0
 		}
@@ -693,11 +732,19 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 		}
 
 	case win.WM_MOUSEWHEEL:
+		if nle.ReadOnly() {
+			break
+		}
+
 		delta := float64(int16(win.HIWORD(uint32(wParam))))
 		nle.incrementValue(delta / 120 * nle.increment)
 		return 0
 
 	case win.WM_PASTE:
+		if nle.ReadOnly() {
+			break
+		}
+
 		ret := nle.LineEdit.WndProc(hwnd, msg, wParam, lParam)
 		if !nle.tryUpdateValue(true) {
 			nle.setTextFromValue(nle.value)

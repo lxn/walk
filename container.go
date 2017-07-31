@@ -14,8 +14,40 @@ import (
 	"github.com/lxn/win"
 )
 
+var (
+	inProgressEventsByForm     = make(map[Form][]*Event)
+	scheduledLayoutsByForm     = make(map[Form][]Layout)
+	performingScheduledLayouts bool
+	formResizeScheduled        bool
+)
+
+func scheduleLayout(layout Layout) bool {
+	events := inProgressEventsByForm[appSingleton.activeForm]
+	if len(events) == 0 {
+		return false
+	}
+
+	layouts := scheduledLayoutsByForm[appSingleton.activeForm]
+
+	for _, l := range layouts {
+		if l == layout {
+			return true
+		}
+	}
+
+	layouts = append(layouts, layout)
+
+	scheduledLayoutsByForm[appSingleton.activeForm] = layouts
+
+	return true
+}
+
 type Margins struct {
 	HNear, VNear, HFar, VFar int
+}
+
+func (m Margins) isZero() bool {
+	return m.HNear == 0 && m.HFar == 0 && m.VNear == 0 && m.VFar == 0
 }
 
 type Layout interface {

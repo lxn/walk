@@ -8,7 +8,6 @@ package walk
 
 import (
 	"github.com/lxn/win"
-	"unsafe"
 )
 
 type GradientComposite struct {
@@ -191,8 +190,8 @@ func (gc *GradientComposite) SetColor2(c Color) (err error) {
 }
 
 func (gc *GradientComposite) updateBackground() error {
-	size := gc.ClientBounds().Size()
-	if size.Width < 1 || size.Height < 1 {
+	bounds := gc.ClientBounds()
+	if bounds.Width < 1 || bounds.Height < 1 {
 		return nil
 	}
 
@@ -202,7 +201,13 @@ func (gc *GradientComposite) updateBackground() error {
 		gc.brush = nil
 	}
 
-	bmp, err := NewBitmap(size)
+	if gc.vertical {
+		bounds.Width = 1
+	} else {
+		bounds.Height = 1
+	}
+
+	bmp, err := NewBitmap(bounds.Size())
 	if err != nil {
 		return err
 	}
@@ -218,38 +223,15 @@ func (gc *GradientComposite) updateBackground() error {
 	}
 	defer canvas.Dispose()
 
-	vertices := [2]win.TRIVERTEX{
-		{
-			X:     0,
-			Y:     0,
-			Red:   uint16(gc.color1.R()) * 256,
-			Green: uint16(gc.color1.G()) * 256,
-			Blue:  uint16(gc.color1.B()) * 256,
-			Alpha: 0,
-		}, {
-			X:     int32(size.Width),
-			Y:     int32(size.Height),
-			Red:   uint16(gc.color2.R()) * 256,
-			Green: uint16(gc.color2.G()) * 256,
-			Blue:  uint16(gc.color2.B()) * 256,
-			Alpha: 0,
-		},
-	}
-
-	indices := win.GRADIENT_RECT{
-		UpperLeft:  0,
-		LowerRight: 1,
-	}
-
-	var orientation uint32
+	var orientation Orientation
 	if gc.vertical {
-		orientation = win.GRADIENT_FILL_RECT_V
+		orientation = Vertical
 	} else {
-		orientation = win.GRADIENT_FILL_RECT_H
+		orientation = Horizontal
 	}
 
-	if !win.GradientFill(canvas.HDC(), &vertices[0], 2, unsafe.Pointer(&indices), 1, orientation) {
-		return newErr("GradientFill failed")
+	if err := canvas.GradientFillRectangle(gc.color1, gc.color2, orientation, bounds); err != nil {
+		return err
 	}
 
 	gc.brush, err = NewBitmapBrush(bmp)

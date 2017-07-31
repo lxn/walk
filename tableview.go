@@ -377,7 +377,6 @@ func (tv *TableView) attachModel() {
 	if sorter, ok := tv.model.(Sorter); ok {
 		tv.sortChangedHandlerHandle = sorter.SortChanged().Attach(func() {
 			col := sorter.SortedColumn()
-			tv.setSelectedColumnIndex(col)
 			tv.setSortIcon(col, sorter.SortOrder())
 			tv.Invalidate()
 		})
@@ -881,6 +880,10 @@ type tableViewColumnState struct {
 
 // SaveState writes the UI state of the *TableView to the settings.
 func (tv *TableView) SaveState() error {
+	if tv.columns.Len() == 0 {
+		return nil
+	}
+
 	var tvs tableViewState
 
 	tvs.SortColumnName = tv.columns.items[tv.sortedColumnIndex].name
@@ -956,6 +959,16 @@ func (tv *TableView) RestoreState() error {
 			if err := tvc.SetWidth(tvcs.Width); err != nil {
 				return err
 			}
+			var visible bool
+			for _, name := range tvs.ColumnDisplayOrder {
+				if name == tvc.name {
+					visible = true
+					break
+				}
+			}
+			if err := tvc.SetVisible(tvc.visible && visible); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -980,14 +993,14 @@ func (tv *TableView) RestoreState() error {
 
 	for i, tvc := range tv.visibleColumns() {
 		for j, name := range displayOrder {
-			if tvc.name == name {
+			if tvc.name == name && j < visibleCount {
 				indices[j] = int32(i)
 				break
 			}
 		}
 	}
 
-	wParam := uintptr(len(indices))
+	wParam := uintptr(visibleCount)
 	var lParam uintptr
 	if len(indices) > 0 {
 		lParam = uintptr(unsafe.Pointer(&indices[0]))
@@ -997,7 +1010,7 @@ func (tv *TableView) RestoreState() error {
 	}
 
 	for i, c := range tvs.Columns {
-		if c.Name == tvs.SortColumnName {
+		if c.Name == tvs.SortColumnName && i < visibleCount {
 			tv.sortedColumnIndex = i
 			tv.sortOrder = tvs.SortOrder
 			break
@@ -1266,9 +1279,15 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 			if tv.MultiSelection() {
 				tv.publishNextSelClear = true
 			} else {
-				// We keep the current item, if in single item selection mode.
-				tv.SetFocus()
-				return 0
+				if tv.CheckBoxes() {
+					if tv.currentIndex > -1 {
+						tv.SetCurrentIndex(-1)
+					}
+				} else {
+					// We keep the current item, if in single item selection mode without check boxes.
+					tv.SetFocus()
+					return 0
+				}
 			}
 		}
 
@@ -1408,6 +1427,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 						tv.style.BackgroundColor = tv.alternatingRowBGColor
 						nmlvcd.ClrTextBk = win.COLORREF(tv.alternatingRowBGColor)
 					}
+
 					return win.CDRF_NOTIFYSUBITEMDRAW
 
 				case win.CDDS_ITEMPREPAINT | win.CDDS_SUBITEM:

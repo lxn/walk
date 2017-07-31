@@ -21,6 +21,43 @@ const (
 	HatchDiagonalCross    HatchStyle = win.HS_DIAGCROSS
 )
 
+type SystemColor int
+
+const (
+	SysColor3DDkShadow              SystemColor = win.COLOR_3DDKSHADOW
+	SysColor3DFace                  SystemColor = win.COLOR_3DFACE
+	SysColor3DHighlight             SystemColor = win.COLOR_3DHIGHLIGHT
+	SysColor3DLight                 SystemColor = win.COLOR_3DLIGHT
+	SysColor3DShadow                SystemColor = win.COLOR_3DSHADOW
+	SysColorActiveBorder            SystemColor = win.COLOR_ACTIVEBORDER
+	SysColorActiveCaption           SystemColor = win.COLOR_ACTIVECAPTION
+	SysColorAppWorkspace            SystemColor = win.COLOR_APPWORKSPACE
+	SysColorBackground              SystemColor = win.COLOR_BACKGROUND
+	SysColorDesktop                 SystemColor = win.COLOR_DESKTOP
+	SysColorBtnFace                 SystemColor = win.COLOR_BTNFACE
+	SysColorBtnHighlight            SystemColor = win.COLOR_BTNHIGHLIGHT
+	SysColorBtnShadow               SystemColor = win.COLOR_BTNSHADOW
+	SysColorBtnText                 SystemColor = win.COLOR_BTNTEXT
+	SysColorCaptionText             SystemColor = win.COLOR_CAPTIONTEXT
+	SysColorGrayText                SystemColor = win.COLOR_GRAYTEXT
+	SysColorHighlight               SystemColor = win.COLOR_HIGHLIGHT
+	SysColorHighlightText           SystemColor = win.COLOR_HIGHLIGHTTEXT
+	SysColorInactiveBorder          SystemColor = win.COLOR_INACTIVEBORDER
+	SysColorInactiveCaption         SystemColor = win.COLOR_INACTIVECAPTION
+	SysColorInactiveCaptionText     SystemColor = win.COLOR_INACTIVECAPTIONTEXT
+	SysColorInfoBk                  SystemColor = win.COLOR_INFOBK
+	SysColorInfoText                SystemColor = win.COLOR_INFOTEXT
+	SysColorMenu                    SystemColor = win.COLOR_MENU
+	SysColorMenuText                SystemColor = win.COLOR_MENUTEXT
+	SysColorScrollBar               SystemColor = win.COLOR_SCROLLBAR
+	SysColorWindow                  SystemColor = win.COLOR_WINDOW
+	SysColorWindowFrame             SystemColor = win.COLOR_WINDOWFRAME
+	SysColorWindowText              SystemColor = win.COLOR_WINDOWTEXT
+	SysColorHotLight                SystemColor = win.COLOR_HOTLIGHT
+	SysColorGradientActiveCaption   SystemColor = win.COLOR_GRADIENTACTIVECAPTION
+	SysColorGradientInactiveCaption SystemColor = win.COLOR_GRADIENTINACTIVECAPTION
+)
+
 type Brush interface {
 	Dispose()
 	handle() win.HBRUSH
@@ -65,25 +102,27 @@ func NullBrush() Brush {
 }
 
 type SystemColorBrush struct {
-	hBrush     win.HBRUSH
-	colorIndex int
+	hBrush   win.HBRUSH
+	sysColor SystemColor
 }
 
-func NewSystemColorBrush(colorIndex int) (*SystemColorBrush, error) {
-	hBrush := win.GetSysColorBrush(colorIndex)
+var sysColorBtnFaceBrush, _ = NewSystemColorBrush(SysColorBtnFace)
+
+func NewSystemColorBrush(sysColor SystemColor) (*SystemColorBrush, error) {
+	hBrush := win.GetSysColorBrush(int(sysColor))
 	if hBrush == 0 {
 		return nil, newError("GetSysColorBrush failed")
 	}
 
-	return &SystemColorBrush{hBrush, colorIndex}, nil
+	return &SystemColorBrush{hBrush, sysColor}, nil
 }
 
 func (b *SystemColorBrush) Color() Color {
-	return Color(win.GetSysColor(b.colorIndex))
+	return Color(win.GetSysColor(int(b.sysColor)))
 }
 
-func (b *SystemColorBrush) ColorIndex() int {
-	return b.colorIndex
+func (b *SystemColorBrush) SystemColor() SystemColor {
+	return b.sysColor
 }
 
 func (b *SystemColorBrush) Dispose() {
@@ -97,7 +136,7 @@ func (b *SystemColorBrush) handle() win.HBRUSH {
 func (b *SystemColorBrush) logbrush() *win.LOGBRUSH {
 	return &win.LOGBRUSH{
 		LbStyle: win.BS_SOLID,
-		LbColor: win.COLORREF(win.GetSysColor(b.colorIndex)),
+		LbColor: win.COLORREF(win.GetSysColor(int(b.sysColor))),
 	}
 }
 

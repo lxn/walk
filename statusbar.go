@@ -106,14 +106,32 @@ func (sb *StatusBar) updateParts() error {
 	return nil
 }
 
+func (sb *StatusBar) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	switch msg {
+	case win.WM_NOTIFY:
+		nmhdr := (*win.NMHDR)(unsafe.Pointer(lParam))
+
+		switch nmhdr.Code {
+		case win.NM_CLICK:
+			lpnm := (*win.NMMOUSE)(unsafe.Pointer(lParam))
+			if n := int(lpnm.DwItemSpec); n >= 0 && n < sb.items.Len() {
+				sb.items.At(n).raiseClicked()
+			}
+		}
+	}
+
+	return sb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
 // StatusBarItem represents a section of a StatusBar that can have its own icon,
 // text, tool tip text and width.
 type StatusBarItem struct {
-	sb          *StatusBar
-	icon        *Icon
-	text        string
-	toolTipText string
-	width       int
+	sb               *StatusBar
+	icon             *Icon
+	text             string
+	toolTipText      string
+	width            int
+	clickedPublisher EventPublisher
 }
 
 // NewStatusBarItem returns a new StatusBarItem.
@@ -202,6 +220,14 @@ func (sbi *StatusBarItem) SetWidth(width int) error {
 	}
 
 	return nil
+}
+
+func (sbi *StatusBarItem) Clicked() *Event {
+	return sbi.clickedPublisher.Event()
+}
+
+func (sbi *StatusBarItem) raiseClicked() {
+	sbi.clickedPublisher.Publish()
 }
 
 func (sbi *StatusBarItem) maybeTry(f func(index int) error, rollback func()) error {

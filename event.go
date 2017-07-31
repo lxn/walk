@@ -37,6 +37,52 @@ func (p *EventPublisher) Event() *Event {
 }
 
 func (p *EventPublisher) Publish() {
+	events := inProgressEventsByForm[appSingleton.activeForm]
+	events = append(events, &p.event)
+	inProgressEventsByForm[appSingleton.activeForm] = events
+
+	defer func() {
+		events = events[:len(events)-1]
+		if len(events) == 0 {
+			delete(inProgressEventsByForm, appSingleton.activeForm)
+		} else {
+			inProgressEventsByForm[appSingleton.activeForm] = events
+			return
+		}
+
+		layouts := scheduledLayoutsByForm[appSingleton.activeForm]
+		delete(scheduledLayoutsByForm, appSingleton.activeForm)
+		if len(layouts) == 0 {
+			return
+		}
+
+		old := performingScheduledLayouts
+		performingScheduledLayouts = true
+		defer func() {
+			performingScheduledLayouts = old
+		}()
+
+		if formResizeScheduled {
+			formResizeScheduled = false
+
+			bounds := appSingleton.activeForm.Bounds()
+
+			if appSingleton.activeForm.AsFormBase().fixedSize() {
+				bounds.Width, bounds.Height = 0, 0
+			}
+
+			appSingleton.activeForm.SetBounds(bounds)
+		}
+
+		for _, layout := range layouts {
+			if widget, ok := layout.Container().(Widget); ok && widget.Form() != appSingleton.activeForm {
+				continue
+			}
+
+			layout.Update(false)
+		}
+	}()
+
 	for _, handler := range p.event.handlers {
 		if handler != nil {
 			handler()
