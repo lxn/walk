@@ -113,6 +113,13 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		}
 	}()
 
+	var event *Event
+	if style&win.CBS_DROPDOWNLIST == win.CBS_DROPDOWNLIST {
+		event = cb.CurrentIndexChanged()
+	} else {
+		event = cb.TextChanged()
+	}
+
 	cb.MustRegisterProperty("CurrentIndex", NewProperty(
 		func() interface{} {
 			return cb.CurrentIndex()
@@ -129,7 +136,7 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		func(v interface{}) error {
 			return cb.SetText(v.(string))
 		},
-		cb.TextChanged()))
+		event))
 
 	cb.MustRegisterProperty("HasCurrentItem", NewReadOnlyBoolProperty(
 		func() bool {
@@ -143,12 +150,6 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		},
 		cb.CurrentIndexChanged()))
 
-	var valueChangedEvent *Event
-	if style&win.CBS_DROPDOWNLIST == win.CBS_DROPDOWNLIST {
-		valueChangedEvent = cb.CurrentIndexChanged()
-	} else {
-		valueChangedEvent = cb.TextChanged()
-	}
 	cb.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
 			if cb.Editable() {
@@ -188,7 +189,7 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 
 			return cb.SetCurrentIndex(index)
 		},
-		valueChangedEvent))
+		event))
 
 	succeeded = true
 
