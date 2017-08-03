@@ -62,6 +62,8 @@ type Brush interface {
 	Dispose()
 	handle() win.HBRUSH
 	logbrush() *win.LOGBRUSH
+	attachWindow(wb *WindowBase)
+	detachWindow(wb *WindowBase)
 }
 
 type brushBase struct {
@@ -79,6 +81,30 @@ func (bb *brushBase) Dispose() {
 
 func (bb *brushBase) handle() win.HBRUSH {
 	return bb.hBrush
+}
+
+func (bb *brushBase) attachWindow(wb *WindowBase) {
+	if wb == nil {
+		return
+	}
+
+	if bb.wb2int == nil {
+		bb.wb2int = make(map[*WindowBase]int)
+	}
+
+	bb.wb2int[wb] = -1
+}
+
+func (bb *brushBase) detachWindow(wb *WindowBase) {
+	if bb.wb2int == nil || wb == nil {
+		return
+	}
+
+	delete(bb.wb2int, wb)
+
+	if len(bb.wb2int) == 0 {
+		bb.Dispose()
+	}
 }
 
 type nullBrush struct {

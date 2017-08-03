@@ -666,8 +666,16 @@ func (wb *WindowBase) Background() Brush {
 }
 
 // SetBackground sets the background Brush of the *WindowBase.
-func (wb *WindowBase) SetBackground(value Brush) {
-	wb.background = value
+func (wb *WindowBase) SetBackground(background Brush) {
+	if wb.background != nil {
+		wb.background.detachWindow(wb)
+	}
+
+	wb.background = background
+
+	if background != nil {
+		background.attachWindow(wb)
+	}
 
 	wb.Invalidate()
 
