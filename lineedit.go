@@ -196,6 +196,10 @@ func (le *LineEdit) SetReadOnly(readOnly bool) error {
 		return newError("SendMessage(EM_SETREADONLY)")
 	}
 
+	if readOnly != le.ReadOnly() {
+		le.invalidateBorderInParent()
+	}
+
 	le.readOnlyChangedPublisher.Publish()
 
 	return nil

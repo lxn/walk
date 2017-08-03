@@ -286,6 +286,10 @@ func (ne *NumberEdit) ReadOnly() bool {
 
 // SetReadOnly sets whether the NumberEdit is in read-only mode.
 func (ne *NumberEdit) SetReadOnly(readOnly bool) error {
+	if readOnly != ne.ReadOnly() {
+		ne.invalidateBorderInParent()
+	}
+
 	return ne.edit.SetReadOnly(readOnly)
 }
 
