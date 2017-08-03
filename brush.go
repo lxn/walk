@@ -64,8 +64,25 @@ type Brush interface {
 	logbrush() *win.LOGBRUSH
 }
 
-type nullBrush struct {
+type brushBase struct {
 	hBrush win.HBRUSH
+	wb2int map[*WindowBase]int
+}
+
+func (bb *brushBase) Dispose() {
+	if bb.hBrush != 0 {
+		win.DeleteObject(win.HGDIOBJ(bb.hBrush))
+
+		bb.hBrush = 0
+	}
+}
+
+func (bb *brushBase) handle() win.HBRUSH {
+	return bb.hBrush
+}
+
+type nullBrush struct {
+	brushBase
 }
 
 func newNullBrush() *nullBrush {
@@ -76,19 +93,15 @@ func newNullBrush() *nullBrush {
 		panic("failed to create null brush")
 	}
 
-	return &nullBrush{hBrush: hBrush}
+	return &nullBrush{brushBase: brushBase{hBrush: hBrush}}
 }
 
 func (b *nullBrush) Dispose() {
-	if b.hBrush != 0 {
-		win.DeleteObject(win.HGDIOBJ(b.hBrush))
-
-		b.hBrush = 0
+	if b == nullBrushSingleton {
+		return
 	}
-}
 
-func (b *nullBrush) handle() win.HBRUSH {
-	return b.hBrush
+	b.brushBase.Dispose()
 }
 
 func (b *nullBrush) logbrush() *win.LOGBRUSH {
@@ -102,7 +115,7 @@ func NullBrush() Brush {
 }
 
 type SystemColorBrush struct {
-	hBrush   win.HBRUSH
+	brushBase
 	sysColor SystemColor
 }
 
@@ -114,7 +127,7 @@ func NewSystemColorBrush(sysColor SystemColor) (*SystemColorBrush, error) {
 		return nil, newError("GetSysColorBrush failed")
 	}
 
-	return &SystemColorBrush{hBrush, sysColor}, nil
+	return &SystemColorBrush{brushBase: brushBase{hBrush: hBrush}, sysColor: sysColor}, nil
 }
 
 func (b *SystemColorBrush) Color() Color {
@@ -129,10 +142,6 @@ func (b *SystemColorBrush) Dispose() {
 	// nop
 }
 
-func (b *SystemColorBrush) handle() win.HBRUSH {
-	return b.hBrush
-}
-
 func (b *SystemColorBrush) logbrush() *win.LOGBRUSH {
 	return &win.LOGBRUSH{
 		LbStyle: win.BS_SOLID,
@@ -141,8 +150,8 @@ func (b *SystemColorBrush) logbrush() *win.LOGBRUSH {
 }
 
 type SolidColorBrush struct {
-	hBrush win.HBRUSH
-	color  Color
+	brushBase
+	color Color
 }
 
 func NewSolidColorBrush(color Color) (*SolidColorBrush, error) {
@@ -153,23 +162,11 @@ func NewSolidColorBrush(color Color) (*SolidColorBrush, error) {
 		return nil, newError("CreateBrushIndirect failed")
 	}
 
-	return &SolidColorBrush{hBrush: hBrush, color: color}, nil
+	return &SolidColorBrush{brushBase: brushBase{hBrush: hBrush}, color: color}, nil
 }
 
 func (b *SolidColorBrush) Color() Color {
 	return b.color
-}
-
-func (b *SolidColorBrush) Dispose() {
-	if b.hBrush != 0 {
-		win.DeleteObject(win.HGDIOBJ(b.hBrush))
-
-		b.hBrush = 0
-	}
-}
-
-func (b *SolidColorBrush) handle() win.HBRUSH {
-	return b.hBrush
 }
 
 func (b *SolidColorBrush) logbrush() *win.LOGBRUSH {
@@ -177,9 +174,9 @@ func (b *SolidColorBrush) logbrush() *win.LOGBRUSH {
 }
 
 type HatchBrush struct {
-	hBrush win.HBRUSH
-	color  Color
-	style  HatchStyle
+	brushBase
+	color Color
+	style HatchStyle
 }
 
 func NewHatchBrush(color Color, style HatchStyle) (*HatchBrush, error) {
@@ -190,23 +187,11 @@ func NewHatchBrush(color Color, style HatchStyle) (*HatchBrush, error) {
 		return nil, newError("CreateBrushIndirect failed")
 	}
 
-	return &HatchBrush{hBrush: hBrush, color: color, style: style}, nil
+	return &HatchBrush{brushBase: brushBase{hBrush: hBrush}, color: color, style: style}, nil
 }
 
 func (b *HatchBrush) Color() Color {
 	return b.color
-}
-
-func (b *HatchBrush) Dispose() {
-	if b.hBrush != 0 {
-		win.DeleteObject(win.HGDIOBJ(b.hBrush))
-
-		b.hBrush = 0
-	}
-}
-
-func (b *HatchBrush) handle() win.HBRUSH {
-	return b.hBrush
 }
 
 func (b *HatchBrush) logbrush() *win.LOGBRUSH {
@@ -218,7 +203,7 @@ func (b *HatchBrush) Style() HatchStyle {
 }
 
 type BitmapBrush struct {
-	hBrush win.HBRUSH
+	brushBase
 	bitmap *Bitmap
 }
 
@@ -232,19 +217,7 @@ func NewBitmapBrush(bitmap *Bitmap) (*BitmapBrush, error) {
 		return nil, newError("CreatePatternBrush failed")
 	}
 
-	return &BitmapBrush{hBrush: hBrush, bitmap: bitmap}, nil
-}
-
-func (b *BitmapBrush) Dispose() {
-	if b.hBrush != 0 {
-		win.DeleteObject(win.HGDIOBJ(b.hBrush))
-
-		b.hBrush = 0
-	}
-}
-
-func (b *BitmapBrush) handle() win.HBRUSH {
-	return b.hBrush
+	return &BitmapBrush{brushBase: brushBase{hBrush: hBrush}, bitmap: bitmap}, nil
 }
 
 func (b *BitmapBrush) logbrush() *win.LOGBRUSH {
