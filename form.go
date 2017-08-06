@@ -100,6 +100,7 @@ func (fb *FormBase) init(form Form) error {
 		return err
 	}
 	fb.clientComposite.SetName("clientComposite")
+	fb.clientComposite.background = nil
 
 	fb.clientComposite.children.observer = form.AsFormBase()
 
