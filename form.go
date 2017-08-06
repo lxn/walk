@@ -305,6 +305,14 @@ func (fb *FormBase) applyFont(font *Font) {
 	fb.clientComposite.applyFont(font)
 }
 
+func (fb *FormBase) Background() Brush {
+	return fb.clientComposite.Background()
+}
+
+func (fb *FormBase) SetBackground(background Brush) {
+	fb.clientComposite.SetBackground(background)
+}
+
 func (fb *FormBase) Title() string {
 	return windowText(fb.hWnd)
 }

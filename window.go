@@ -609,6 +609,10 @@ func (wb *WindowBase) Dispose() {
 		d.Dispose()
 	}
 
+	if wb.background != nil {
+		wb.background.detachWindow(wb)
+	}
+
 	hWnd := wb.hWnd
 	if hWnd != 0 {
 		wb.disposingPublisher.Publish()
@@ -1391,6 +1395,12 @@ func (wb *WindowBase) backgroundEffective() (Brush, Window) {
 		}
 	}
 
+	if bg != nil {
+		if pwb, ok := bg.(perWindowBrush); ok {
+			bg = pwb.delegateForWindow(wnd.AsWindowBase())
+		}
+	}
+
 	return bg, wnd
 }
 
@@ -1452,6 +1462,10 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	switch msg {
 	case win.WM_ERASEBKGND:
+		if _, ok := window.(Widget); !ok {
+			return 0
+		}
+
 		bg, wnd := wb.backgroundEffective()
 		if bg == nil {
 			break

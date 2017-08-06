@@ -62,3 +62,12 @@ func (bb BitmapBrush) Create() (walk.Brush, error) {
 
 	return walk.NewBitmapBrush(bmp)
 }
+
+type GradientBrush struct {
+	Vertexes  []walk.GradientVertex
+	Triangles []walk.GradientTriangle
+}
+
+func (gb GradientBrush) Create() (walk.Brush, error) {
+	return walk.NewGradientBrush(gb.Vertexes, gb.Triangles)
+}
