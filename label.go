@@ -67,14 +67,7 @@ func (l *Label) SetText(value string) error {
 		return err
 	}
 
-	if l.parent != nil && l.parent.Layout() == nil {
-		l.parent.Invalidate()
-	} else {
-		l.Invalidate()
-		l.updateParentLayout()
-	}
-
-	return nil
+	return l.updateParentLayout()
 }
 
 func (l *Label) TextColor() Color {
@@ -89,6 +82,8 @@ func (l *Label) SetTextColor(c Color) {
 
 func (l *Label) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
+	case win.WM_ERASEBKGND:
+
 	case win.WM_NCHITTEST:
 		return win.HTCLIENT
 
