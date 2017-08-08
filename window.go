@@ -1446,7 +1446,7 @@ func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
 
 		if _, ok := wnd.(*Label); ok {
 			win.SetBkMode(hdc, win.TRANSPARENT)
-			return uintptr(nullBrushSingleton.handle())
+			return win.COLOR_BTNSHADOW
 		}
 	}
 

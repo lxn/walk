@@ -67,8 +67,6 @@ func (l *Label) SetText(value string) error {
 		return err
 	}
 
-	l.Invalidate()
-
 	return l.updateParentLayout()
 }
 
