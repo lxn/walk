@@ -67,9 +67,14 @@ func (l *Label) SetText(value string) error {
 		return err
 	}
 
-	l.Invalidate()
+	if l.parent != nil && l.parent.Layout() == nil {
+		l.parent.Invalidate()
+	} else {
+		l.Invalidate()
+		l.updateParentLayout()
+	}
 
-	return l.updateParentLayout()
+	return nil
 }
 
 func (l *Label) TextColor() Color {
