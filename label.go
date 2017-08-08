@@ -82,8 +82,6 @@ func (l *Label) SetTextColor(c Color) {
 
 func (l *Label) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case win.WM_ERASEBKGND:
-
 	case win.WM_NCHITTEST:
 		return win.HTCLIENT
 
