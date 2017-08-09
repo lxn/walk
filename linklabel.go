@@ -44,10 +44,6 @@ func NewLinkLabel(parent Container) (*LinkLabel, error) {
 	return ll, nil
 }
 
-func (*LinkLabel) LayoutFlags() LayoutFlags {
-	return GrowableVert
-}
-
 func (ll *LinkLabel) MinSizeHint() Size {
 	var s win.SIZE
 
@@ -87,8 +83,18 @@ func (ll *LinkLabel) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 
 		switch nml.Hdr.Code {
 		case win.NM_CLICK, win.NM_RETURN:
-			ll.linkActivatedPublisher.Publish(ll.linkFromLITEM(&nml.Item))
+			link := &LinkLabelLink{
+				ll:    ll,
+				index: int(nml.Item.ILink),
+				id:    syscall.UTF16ToString(nml.Item.SzID[:]),
+				url:   syscall.UTF16ToString(nml.Item.SzUrl[:]),
+			}
+
+			ll.linkActivatedPublisher.Publish(link)
 		}
+
+	case win.WM_KILLFOCUS:
+		ll.ensureStyleBits(win.WS_TABSTOP, true)
 
 	case win.WM_SETTEXT:
 		ll.textChangedPublisher.Publish()
@@ -98,28 +104,6 @@ func (ll *LinkLabel) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 	}
 
 	return ll.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
-}
-
-func (ll *LinkLabel) Link(index int) (*LinkLabelLink, error) {
-	li := win.LITEM{
-		ILink: int32(index),
-		Mask:  win.LIF_ITEMID | win.LIF_ITEMINDEX | win.LIF_URL,
-	}
-
-	if win.TRUE != ll.SendMessage(win.LM_GETITEM, 0, uintptr(unsafe.Pointer(&li))) {
-		return nil, newErr("LM_GETITEM")
-	}
-
-	return ll.linkFromLITEM(&li), nil
-}
-
-func (ll *LinkLabel) linkFromLITEM(li *win.LITEM) *LinkLabelLink {
-	return &LinkLabelLink{
-		ll:    ll,
-		index: int(li.ILink),
-		id:    syscall.UTF16ToString(li.SzID[:]),
-		url:   syscall.UTF16ToString(li.SzUrl[:]),
-	}
 }
 
 type LinkLabelLinkEventHandler func(link *LinkLabelLink)
@@ -175,46 +159,60 @@ func (lll *LinkLabelLink) Id() string {
 	return lll.id
 }
 
-func (lll *LinkLabelLink) SetId(id string) error {
-	old := lll.id
-
-	lll.id = id
-
-	if err := lll.update(); err != nil {
-		lll.id = old
-		return err
-	}
-
-	return nil
-}
-
 func (lll *LinkLabelLink) URL() string {
 	return lll.url
 }
 
-func (lll *LinkLabelLink) SetURL(url string) error {
-	old := lll.url
-
-	lll.url = url
-
-	if err := lll.update(); err != nil {
-		lll.url = old
-		return err
-	}
-
-	return nil
+func (lll *LinkLabelLink) Enabled() (bool, error) {
+	return lll.hasState(win.LIS_ENABLED)
 }
 
-func (lll *LinkLabelLink) update() error {
+func (lll *LinkLabelLink) SetEnabled(enabled bool) error {
+	return lll.setState(win.LIS_ENABLED, enabled)
+}
+
+func (lll *LinkLabelLink) Focused() (bool, error) {
+	return lll.hasState(win.LIS_FOCUSED)
+}
+
+func (lll *LinkLabelLink) SetFocused(focused bool) error {
+	return lll.setState(win.LIS_FOCUSED, focused)
+}
+
+func (lll *LinkLabelLink) Visited() (bool, error) {
+	return lll.hasState(win.LIS_VISITED)
+}
+
+func (lll *LinkLabelLink) SetVisited(visited bool) error {
+	return lll.setState(win.LIS_VISITED, visited)
+}
+
+func (lll *LinkLabelLink) hasState(state uint32) (bool, error) {
 	li := win.LITEM{
-		ILink: int32(lll.index),
-		Mask:  win.LIF_ITEMID | win.LIF_ITEMINDEX | win.LIF_URL,
+		ILink:     int32(lll.index),
+		Mask:      win.LIF_ITEMINDEX | win.LIF_STATE,
+		StateMask: state,
 	}
 
-	id := syscall.StringToUTF16(lll.id)
-	url := syscall.StringToUTF16(lll.url)
-	copy(li.SzID[:], id[:mini(len(id), win.MAX_LINKID_TEXT)])
-	copy(li.SzUrl[:], url[:mini(len(url), win.L_MAX_URL_LENGTH)])
+	if win.TRUE != lll.ll.SendMessage(win.LM_GETITEM, 0, uintptr(unsafe.Pointer(&li))) {
+		return false, newErr("LM_GETITEM")
+	}
+
+	return li.State&state == state, nil
+}
+
+func (lll *LinkLabelLink) setState(state uint32, set bool) error {
+	li := win.LITEM{
+		Mask:      win.LIF_STATE,
+		StateMask: state,
+	}
+
+	if set {
+		li.State = state
+	}
+
+	li.Mask |= win.LIF_ITEMINDEX
+	li.ILink = int32(lll.index)
 
 	if win.TRUE != lll.ll.SendMessage(win.LM_SETITEM, 0, uintptr(unsafe.Pointer(&li))) {
 		return newErr("LM_SETITEM")
