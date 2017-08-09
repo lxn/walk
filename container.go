@@ -414,7 +414,10 @@ func (cb *ContainerBase) doPaint() error {
 		}
 
 		if widget != nil && widget.Parent() != nil && widget.Parent().Handle() == cb.hWnd {
-			if _, ok := widget.(*WebView); !ok {
+			switch widget.(type) {
+			case *LinkLabel, *WebView:
+
+			default:
 				b := widget.Bounds().toRECT()
 				win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
 
@@ -581,7 +584,7 @@ func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err error) 
 	widget.(applyFonter).applyFont(cb.Font())
 
 	switch widget.(type) {
-	case Container, *Label, *Separator, *Spacer, *splitterHandle, *TabWidget:
+	case Container, *Label, *LinkLabel, *Separator, *Spacer, *splitterHandle, *TabWidget:
 		// nop
 
 	default:
