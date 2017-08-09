@@ -100,6 +100,7 @@ func (fb *FormBase) init(form Form) error {
 		return err
 	}
 	fb.clientComposite.SetName("clientComposite")
+	fb.clientComposite.background = nil
 
 	fb.clientComposite.children.observer = form.AsFormBase()
 
@@ -311,6 +312,14 @@ func (fb *FormBase) applyFont(font *Font) {
 	fb.WindowBase.applyFont(font)
 
 	fb.clientComposite.applyFont(font)
+}
+
+func (fb *FormBase) Background() Brush {
+	return fb.clientComposite.Background()
+}
+
+func (fb *FormBase) SetBackground(background Brush) {
+	fb.clientComposite.SetBackground(background)
 }
 
 func (fb *FormBase) Title() string {

@@ -609,6 +609,10 @@ func (wb *WindowBase) Dispose() {
 		d.Dispose()
 	}
 
+	if wb.background != nil {
+		wb.background.detachWindow(wb)
+	}
+
 	hWnd := wb.hWnd
 	if hWnd != 0 {
 		wb.disposingPublisher.Publish()
@@ -666,8 +670,16 @@ func (wb *WindowBase) Background() Brush {
 }
 
 // SetBackground sets the background Brush of the *WindowBase.
-func (wb *WindowBase) SetBackground(value Brush) {
-	wb.background = value
+func (wb *WindowBase) SetBackground(background Brush) {
+	if wb.background != nil {
+		wb.background.detachWindow(wb)
+	}
+
+	wb.background = background
+
+	if background != nil {
+		background.attachWindow(wb)
+	}
 
 	wb.Invalidate()
 
@@ -1389,6 +1401,12 @@ func (wb *WindowBase) backgroundEffective() (Brush, Window) {
 		}
 	}
 
+	if bg != nil {
+		if pwb, ok := bg.(perWindowBrush); ok {
+			bg = pwb.delegateForWindow(wnd.AsWindowBase())
+		}
+	}
+
 	return bg, wnd
 }
 
@@ -1434,7 +1452,7 @@ func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
 
 		if _, ok := wnd.(*Label); ok {
 			win.SetBkMode(hdc, win.TRANSPARENT)
-			return uintptr(nullBrushSingleton.handle())
+			return win.COLOR_BTNSHADOW
 		}
 	}
 
@@ -1450,6 +1468,10 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	switch msg {
 	case win.WM_ERASEBKGND:
+		if _, ok := window.(Widget); !ok {
+			return 0
+		}
+
 		bg, wnd := wb.backgroundEffective()
 		if bg == nil {
 			break

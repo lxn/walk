@@ -12,8 +12,23 @@ import (
 func main() {
 	MainWindow{
 		Title:   "Walk GradientComposite Example",
-		MinSize: Size{360, 0},
-		Layout:  HBox{MarginsZero: true},
+		MinSize: Size{400, 0},
+		Background: GradientBrush{
+			Vertexes: []walk.GradientVertex{
+				{X: 0, Y: 0, Color: walk.RGB(255, 255, 127)},
+				{X: 1, Y: 0, Color: walk.RGB(127, 191, 255)},
+				{X: 0.5, Y: 0.5, Color: walk.RGB(255, 255, 255)},
+				{X: 1, Y: 1, Color: walk.RGB(127, 255, 127)},
+				{X: 0, Y: 1, Color: walk.RGB(255, 127, 127)},
+			},
+			Triangles: []walk.GradientTriangle{
+				{0, 1, 2},
+				{1, 3, 2},
+				{3, 4, 2},
+				{4, 0, 2},
+			},
+		},
+		Layout: HBox{Margins: Margins{100, 100, 100, 100}},
 		Children: []Widget{
 			GradientComposite{
 				Vertical: Bind("verticalCB.Checked"),
