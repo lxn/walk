@@ -44,6 +44,7 @@ type TextEdit struct {
 
 	// TextEdit
 
+	Alignment     Alignment1D
 	AssignTo      **walk.TextEdit
 	HScroll       bool
 	MaxLength     int
@@ -68,6 +69,10 @@ func (te TextEdit) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(te, w, func() error {
+		if err := w.SetAlignment(walk.Alignment1D(te.Alignment)); err != nil {
+			return err
+		}
+
 		if te.MaxLength > 0 {
 			w.SetMaxLength(te.MaxLength)
 		}

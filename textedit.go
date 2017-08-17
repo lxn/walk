@@ -88,6 +88,35 @@ func (te *TextEdit) SetText(value string) (err error) {
 	return
 }
 
+func (te *TextEdit) Alignment() Alignment1D {
+	switch win.GetWindowLong(te.hWnd, win.GWL_STYLE) & (win.ES_LEFT | win.ES_CENTER | win.ES_RIGHT) {
+	case win.ES_CENTER:
+		return AlignCenter
+
+	case win.ES_RIGHT:
+		return AlignFar
+	}
+
+	return AlignNear
+}
+
+func (te *TextEdit) SetAlignment(alignment Alignment1D) error {
+	var bit uint32
+
+	switch alignment {
+	case AlignCenter:
+		bit = win.ES_CENTER
+
+	case AlignFar:
+		bit = win.ES_RIGHT
+
+	default:
+		bit = win.ES_LEFT
+	}
+
+	return te.ensureStyleBits(bit, true)
+}
+
 func (te *TextEdit) MaxLength() int {
 	return int(te.SendMessage(win.EM_GETLIMITTEXT, 0, 0))
 }

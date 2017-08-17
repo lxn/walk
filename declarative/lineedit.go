@@ -51,6 +51,7 @@ type LineEdit struct {
 
 	// LineEdit
 
+	Alignment         Alignment1D
 	AssignTo          **walk.LineEdit
 	CaseMode          CaseMode
 	CueBanner         string
@@ -69,6 +70,10 @@ func (le LineEdit) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(le, w, func() error {
+		if err := w.SetAlignment(walk.Alignment1D(le.Alignment)); err != nil {
+			return err
+		}
+
 		if le.CueBanner != "" {
 			if err := w.SetCueBanner(le.CueBanner); err != nil {
 				return err
