@@ -188,6 +188,10 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 		w.SizeChanged().Attach(handler)
 	}
 
+	if rtl := b.bool("RightToLeftReading"); rtl {
+		w.SetRightToLeftReading(true)
+	}
+
 	row := b.int("Row")
 	rowSpan := b.int("RowSpan")
 	column := b.int("Column")

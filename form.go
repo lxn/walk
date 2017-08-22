@@ -74,6 +74,14 @@ type Form interface {
 	Owner() Form
 	SetOwner(owner Form) error
 	ProgressIndicator() *ProgressIndicator
+
+	// RightToLeftLayout returns whether coordinates on the x axis of the
+	// Form increase from right to left.
+	RightToLeftLayout() bool
+
+	// SetRightToLeftLayout sets whether coordinates on the x axis of the
+	// Form increase from right to left.
+	SetRightToLeftLayout(rtl bool) error
 }
 
 type FormBase struct {
@@ -332,6 +340,18 @@ func (fb *FormBase) SetTitle(value string) error {
 
 func (fb *FormBase) TitleChanged() *Event {
 	return fb.titleChangedPublisher.Event()
+}
+
+// RightToLeftLayout returns whether coordinates on the x axis of the
+// FormBase increase from right to left.
+func (fb *FormBase) RightToLeftLayout() bool {
+	return fb.hasExtendedStyleBits(win.WS_EX_LAYOUTRTL)
+}
+
+// SetRightToLeftLayout sets whether coordinates on the x axis of the
+// FormBase increase from right to left.
+func (fb *FormBase) SetRightToLeftLayout(rtl bool) error {
+	return fb.ensureExtendedStyleBits(win.WS_EX_LAYOUTRTL, rtl)
 }
 
 func (fb *FormBase) Run() int {
