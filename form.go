@@ -356,7 +356,7 @@ func (fb *FormBase) SetRightToLeftLayout(rtl bool) error {
 
 func (fb *FormBase) Run() int {
 	if fb.owner != nil {
-		fb.owner.SetEnabled(false)
+		win.EnableWindow(fb.owner.Handle(), false)
 
 		invalidateDescendentBorders := func() {
 			walkDescendants(fb.owner, func(wnd Window) bool {
@@ -605,7 +605,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		fb.closingPublisher.Publish(&canceled, fb.closeReason)
 		if !canceled {
 			if fb.owner != nil {
-				fb.owner.SetEnabled(true)
+				win.EnableWindow(fb.owner.Handle(), true)
 				if !win.SetWindowPos(fb.owner.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE|win.SWP_SHOWWINDOW) {
 					lastError("SetWindowPos")
 				}
