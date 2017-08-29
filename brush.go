@@ -383,20 +383,25 @@ func (b *GradientBrush) attachWindow(wb *WindowBase) {
 	}
 
 	var info *windowBrushInfo
-	info = &windowBrushInfo{
-		SizeChangedHandle: wb.SizeChanged().Attach(func() {
-			if bb, err := b.create(wb.window.ClientBounds().Size()); err == nil {
-				if info.Delegate != nil {
-					info.Delegate.bitmap.Dispose()
-					info.Delegate.Dispose()
-				}
 
-				info.Delegate = bb
-
-				wb.Invalidate()
+	update := func() {
+		if bb, err := b.create(wb.window.ClientBounds().Size()); err == nil {
+			if info.Delegate != nil {
+				info.Delegate.bitmap.Dispose()
+				info.Delegate.Dispose()
 			}
-		}),
+
+			info.Delegate = bb
+
+			wb.Invalidate()
+		}
 	}
+
+	info = &windowBrushInfo{
+		SizeChangedHandle: wb.SizeChanged().Attach(update),
+	}
+
+	update()
 
 	b.wb2info[wb] = info
 }
