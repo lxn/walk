@@ -679,6 +679,10 @@ func (tv *TableView) SetCurrentIndex(value int) error {
 		tv.currentIndexChangedPublisher.Publish()
 	}
 
+	if tv.MultiSelection() {
+		tv.updateSelectedIndexes()
+	}
+
 	return nil
 }
 
