@@ -156,6 +156,10 @@ type Window interface {
 	// Name returns the name of the Window.
 	Name() string
 
+	// RightToLeftReading returns whether the reading order of the Window
+	// is from right to left.
+	RightToLeftReading() bool
+
 	// Screenshot returns an image of the window.
 	Screenshot() (*image.RGBA, error)
 
@@ -207,6 +211,10 @@ type Window interface {
 	// Some windows support automatic state persistence. See Settings for
 	// details.
 	SetName(name string)
+
+	// SetRightToLeftReading sets whether the reading order of the Window
+	// is from right to left.
+	SetRightToLeftReading(rtl bool) error
 
 	// SetSize sets the outer Size of the Window, including decorations.
 	SetSize(value Size) error
@@ -519,20 +527,36 @@ func (wb *WindowBase) Property(name string) Property {
 }
 
 func (wb *WindowBase) hasStyleBits(bits uint32) bool {
-	style := uint32(win.GetWindowLong(wb.hWnd, win.GWL_STYLE))
+	return hasWindowLongBits(wb.hWnd, win.GWL_STYLE, bits)
+}
 
-	return style&bits == bits
+func (wb *WindowBase) hasExtendedStyleBits(bits uint32) bool {
+	return hasWindowLongBits(wb.hWnd, win.GWL_EXSTYLE, bits)
+}
+
+func hasWindowLongBits(hwnd win.HWND, index int32, bits uint32) bool {
+	value := uint32(win.GetWindowLong(hwnd, index))
+
+	return value&bits == bits
 }
 
 func (wb *WindowBase) setAndClearStyleBits(set, clear uint32) error {
-	style := uint32(win.GetWindowLong(wb.hWnd, win.GWL_STYLE))
-	if style == 0 {
+	return setAndClearWindowLongBits(wb.hWnd, win.GWL_STYLE, set, clear)
+}
+
+func (wb *WindowBase) setAndClearExtendedStyleBits(set, clear uint32) error {
+	return setAndClearWindowLongBits(wb.hWnd, win.GWL_EXSTYLE, set, clear)
+}
+
+func setAndClearWindowLongBits(hwnd win.HWND, index int32, set, clear uint32) error {
+	value := uint32(win.GetWindowLong(hwnd, index))
+	if value == 0 {
 		return lastError("GetWindowLong")
 	}
 
-	if newStyle := style&^clear | set; newStyle != style {
+	if newValue := value&^clear | set; newValue != value {
 		win.SetLastError(0)
-		if win.SetWindowLong(wb.hWnd, win.GWL_STYLE, int32(newStyle)) == 0 {
+		if win.SetWindowLong(hwnd, index, int32(newValue)) == 0 {
 			return lastError("SetWindowLong")
 		}
 	}
@@ -541,6 +565,14 @@ func (wb *WindowBase) setAndClearStyleBits(set, clear uint32) error {
 }
 
 func (wb *WindowBase) ensureStyleBits(bits uint32, set bool) error {
+	return ensureWindowLongBits(wb.hWnd, win.GWL_STYLE, bits, set)
+}
+
+func (wb *WindowBase) ensureExtendedStyleBits(bits uint32, set bool) error {
+	return ensureWindowLongBits(wb.hWnd, win.GWL_EXSTYLE, bits, set)
+}
+
+func ensureWindowLongBits(hwnd win.HWND, index int32, bits uint32, set bool) error {
 	var setBits uint32
 	var clearBits uint32
 	if set {
@@ -548,7 +580,7 @@ func (wb *WindowBase) ensureStyleBits(bits uint32, set bool) error {
 	} else {
 		clearBits = bits
 	}
-	return wb.setAndClearStyleBits(setBits, clearBits)
+	return setAndClearWindowLongBits(hwnd, index, setBits, clearBits)
 }
 
 // Handle returns the window handle of the Window.
@@ -614,6 +646,10 @@ func (wb *WindowBase) Dispose() {
 		d.Dispose()
 	}
 
+	if wb.background != nil {
+		wb.background.detachWindow(wb)
+	}
+
 	hWnd := wb.hWnd
 	if hWnd != 0 {
 		wb.disposingPublisher.Publish()
@@ -671,8 +707,16 @@ func (wb *WindowBase) Background() Brush {
 }
 
 // SetBackground sets the background Brush of the *WindowBase.
-func (wb *WindowBase) SetBackground(value Brush) {
-	wb.background = value
+func (wb *WindowBase) SetBackground(background Brush) {
+	if wb.background != nil {
+		wb.background.detachWindow(wb)
+	}
+
+	wb.background = background
+
+	if background != nil {
+		background.attachWindow(wb)
+	}
 
 	wb.Invalidate()
 
@@ -1119,6 +1163,18 @@ func (wb *WindowBase) SetClientSize(value Size) error {
 	return wb.SetSize(wb.sizeFromClientSize(value))
 }
 
+// RightToLeftReading returns whether the reading order of the Window
+// is from right to left.
+func (wb *WindowBase) RightToLeftReading() bool {
+	return wb.hasExtendedStyleBits(win.WS_EX_RTLREADING)
+}
+
+// SetRightToLeftReading sets whether the reading order of the Window
+// is from right to left.
+func (wb *WindowBase) SetRightToLeftReading(rtl bool) error {
+	return wb.ensureExtendedStyleBits(win.WS_EX_RTLREADING, rtl)
+}
+
 // Screenshot returns an image of the window.
 func (wb *WindowBase) Screenshot() (*image.RGBA, error) {
 	bmp, err := NewBitmapFromWindow(wb)
@@ -1398,6 +1454,12 @@ func (wb *WindowBase) backgroundEffective() (Brush, Window) {
 		}
 	}
 
+	if bg != nil {
+		if pwb, ok := bg.(perWindowBrush); ok {
+			bg = pwb.delegateForWindow(wnd.AsWindowBase())
+		}
+	}
+
 	return bg, wnd
 }
 
@@ -1443,7 +1505,7 @@ func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
 
 		if _, ok := wnd.(*Label); ok {
 			win.SetBkMode(hdc, win.TRANSPARENT)
-			return uintptr(nullBrushSingleton.handle())
+			return win.COLOR_BTNSHADOW
 		}
 	}
 
@@ -1459,6 +1521,10 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	switch msg {
 	case win.WM_ERASEBKGND:
+		if _, ok := window.(Widget); !ok {
+			return 0
+		}
+
 		bg, wnd := wb.backgroundEffective()
 		if bg == nil {
 			break

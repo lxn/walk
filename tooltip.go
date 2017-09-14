@@ -141,7 +141,13 @@ func (tt *ToolTip) track(tool Widget) error {
 	tt.SendMessage(win.TTM_TRACKACTIVATE, 1, uintptr(unsafe.Pointer(ti)))
 
 	b := tool.Bounds()
-	p := win.POINT{X: int32(b.X + b.Width/2), Y: int32(b.Y + b.Height)}
+
+	p := win.POINT{X: 0, Y: int32(b.Y + b.Height)}
+	if form.RightToLeftLayout() {
+		p.X = int32(b.X - b.Width/2)
+	} else {
+		p.X = int32(b.X + b.Width/2)
+	}
 
 	win.ClientToScreen(tool.Parent().Handle(), &p)
 

@@ -418,7 +418,6 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 			}
 		}
 	}
-	tv.providedModel = mdl
 
 	tv.SetSuspended(true)
 	defer tv.SetSuspended(false)
@@ -429,11 +428,16 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 		tv.disposeImageListAndCaches()
 	}
 
+	oldProvidedModelStyler, _ := tv.providedModel.(CellStyler)
+	if styler, ok := mdl.(CellStyler); ok || tv.styler == oldProvidedModelStyler {
+		tv.styler = styler
+	}
+
+	tv.providedModel = mdl
 	tv.model = model
 
 	tv.itemChecker, _ = model.(ItemChecker)
 	tv.imageProvider, _ = model.(ImageProvider)
-	tv.styler, _ = mdl.(CellStyler)
 
 	if model != nil {
 		tv.attachModel()
@@ -673,6 +677,10 @@ func (tv *TableView) SetCurrentIndex(value int) error {
 
 	if value == -1 {
 		tv.currentIndexChangedPublisher.Publish()
+	}
+
+	if tv.MultiSelection() {
+		tv.updateSelectedIndexes()
 	}
 
 	return nil

@@ -74,6 +74,14 @@ type Form interface {
 	Owner() Form
 	SetOwner(owner Form) error
 	ProgressIndicator() *ProgressIndicator
+
+	// RightToLeftLayout returns whether coordinates on the x axis of the
+	// Form increase from right to left.
+	RightToLeftLayout() bool
+
+	// SetRightToLeftLayout sets whether coordinates on the x axis of the
+	// Form increase from right to left.
+	SetRightToLeftLayout(rtl bool) error
 }
 
 type FormBase struct {
@@ -100,6 +108,7 @@ func (fb *FormBase) init(form Form) error {
 		return err
 	}
 	fb.clientComposite.SetName("clientComposite")
+	fb.clientComposite.background = nil
 
 	fb.clientComposite.children.observer = form.AsFormBase()
 
@@ -305,6 +314,14 @@ func (fb *FormBase) applyFont(font *Font) {
 	fb.clientComposite.applyFont(font)
 }
 
+func (fb *FormBase) Background() Brush {
+	return fb.clientComposite.Background()
+}
+
+func (fb *FormBase) SetBackground(background Brush) {
+	fb.clientComposite.SetBackground(background)
+}
+
 func (fb *FormBase) Title() string {
 	return windowText(fb.hWnd)
 }
@@ -317,9 +334,21 @@ func (fb *FormBase) TitleChanged() *Event {
 	return fb.titleChangedPublisher.Event()
 }
 
+// RightToLeftLayout returns whether coordinates on the x axis of the
+// FormBase increase from right to left.
+func (fb *FormBase) RightToLeftLayout() bool {
+	return fb.hasExtendedStyleBits(win.WS_EX_LAYOUTRTL)
+}
+
+// SetRightToLeftLayout sets whether coordinates on the x axis of the
+// FormBase increase from right to left.
+func (fb *FormBase) SetRightToLeftLayout(rtl bool) error {
+	return fb.ensureExtendedStyleBits(win.WS_EX_LAYOUTRTL, rtl)
+}
+
 func (fb *FormBase) Run() int {
 	if fb.owner != nil {
-		fb.owner.SetEnabled(false)
+		win.EnableWindow(fb.owner.Handle(), false)
 	}
 
 	if layout := fb.Layout(); layout != nil {
@@ -555,7 +584,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		fb.closingPublisher.Publish(&canceled, fb.closeReason)
 		if !canceled {
 			if fb.owner != nil {
-				fb.owner.SetEnabled(true)
+				win.EnableWindow(fb.owner.Handle(), true)
 				if !win.SetWindowPos(fb.owner.Handle(), win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE|win.SWP_SHOWWINDOW) {
 					lastError("SetWindowPos")
 				}

@@ -8,6 +8,7 @@ package walk
 
 import (
 	"github.com/lxn/win"
+	"unsafe"
 )
 
 type HatchStyle int
@@ -62,10 +63,63 @@ type Brush interface {
 	Dispose()
 	handle() win.HBRUSH
 	logbrush() *win.LOGBRUSH
+	attachWindow(wb *WindowBase)
+	detachWindow(wb *WindowBase)
+}
+
+type perWindowBrush interface {
+	Brush
+	delegateForWindow(wb *WindowBase) Brush
+}
+
+type windowBrushInfo struct {
+	SizeChangedHandle int
+	Delegate          *BitmapBrush
+}
+
+type brushBase struct {
+	hBrush  win.HBRUSH
+	wb2info map[*WindowBase]*windowBrushInfo
+}
+
+func (bb *brushBase) Dispose() {
+	if bb.hBrush != 0 {
+		win.DeleteObject(win.HGDIOBJ(bb.hBrush))
+
+		bb.hBrush = 0
+	}
+}
+
+func (bb *brushBase) handle() win.HBRUSH {
+	return bb.hBrush
+}
+
+func (bb *brushBase) attachWindow(wb *WindowBase) {
+	if wb == nil {
+		return
+	}
+
+	if bb.wb2info == nil {
+		bb.wb2info = make(map[*WindowBase]*windowBrushInfo)
+	}
+
+	bb.wb2info[wb] = nil
+}
+
+func (bb *brushBase) detachWindow(wb *WindowBase) {
+	if bb.wb2info == nil || wb == nil {
+		return
+	}
+
+	delete(bb.wb2info, wb)
+
+	if len(bb.wb2info) == 0 {
+		bb.Dispose()
+	}
 }
 
 type nullBrush struct {
-	hBrush win.HBRUSH
+	brushBase
 }
 
 func newNullBrush() *nullBrush {
@@ -76,19 +130,15 @@ func newNullBrush() *nullBrush {
 		panic("failed to create null brush")
 	}
 
-	return &nullBrush{hBrush: hBrush}
+	return &nullBrush{brushBase: brushBase{hBrush: hBrush}}
 }
 
 func (b *nullBrush) Dispose() {
-	if b.hBrush != 0 {
-		win.DeleteObject(win.HGDIOBJ(b.hBrush))
-
-		b.hBrush = 0
+	if b == nullBrushSingleton {
+		return
 	}
-}
 
-func (b *nullBrush) handle() win.HBRUSH {
-	return b.hBrush
+	b.brushBase.Dispose()
 }
 
 func (b *nullBrush) logbrush() *win.LOGBRUSH {
@@ -102,7 +152,7 @@ func NullBrush() Brush {
 }
 
 type SystemColorBrush struct {
-	hBrush   win.HBRUSH
+	brushBase
 	sysColor SystemColor
 }
 
@@ -114,7 +164,7 @@ func NewSystemColorBrush(sysColor SystemColor) (*SystemColorBrush, error) {
 		return nil, newError("GetSysColorBrush failed")
 	}
 
-	return &SystemColorBrush{hBrush, sysColor}, nil
+	return &SystemColorBrush{brushBase: brushBase{hBrush: hBrush}, sysColor: sysColor}, nil
 }
 
 func (b *SystemColorBrush) Color() Color {
@@ -129,10 +179,6 @@ func (b *SystemColorBrush) Dispose() {
 	// nop
 }
 
-func (b *SystemColorBrush) handle() win.HBRUSH {
-	return b.hBrush
-}
-
 func (b *SystemColorBrush) logbrush() *win.LOGBRUSH {
 	return &win.LOGBRUSH{
 		LbStyle: win.BS_SOLID,
@@ -141,8 +187,8 @@ func (b *SystemColorBrush) logbrush() *win.LOGBRUSH {
 }
 
 type SolidColorBrush struct {
-	hBrush win.HBRUSH
-	color  Color
+	brushBase
+	color Color
 }
 
 func NewSolidColorBrush(color Color) (*SolidColorBrush, error) {
@@ -153,23 +199,11 @@ func NewSolidColorBrush(color Color) (*SolidColorBrush, error) {
 		return nil, newError("CreateBrushIndirect failed")
 	}
 
-	return &SolidColorBrush{hBrush: hBrush, color: color}, nil
+	return &SolidColorBrush{brushBase: brushBase{hBrush: hBrush}, color: color}, nil
 }
 
 func (b *SolidColorBrush) Color() Color {
 	return b.color
-}
-
-func (b *SolidColorBrush) Dispose() {
-	if b.hBrush != 0 {
-		win.DeleteObject(win.HGDIOBJ(b.hBrush))
-
-		b.hBrush = 0
-	}
-}
-
-func (b *SolidColorBrush) handle() win.HBRUSH {
-	return b.hBrush
 }
 
 func (b *SolidColorBrush) logbrush() *win.LOGBRUSH {
@@ -177,9 +211,9 @@ func (b *SolidColorBrush) logbrush() *win.LOGBRUSH {
 }
 
 type HatchBrush struct {
-	hBrush win.HBRUSH
-	color  Color
-	style  HatchStyle
+	brushBase
+	color Color
+	style HatchStyle
 }
 
 func NewHatchBrush(color Color, style HatchStyle) (*HatchBrush, error) {
@@ -190,23 +224,11 @@ func NewHatchBrush(color Color, style HatchStyle) (*HatchBrush, error) {
 		return nil, newError("CreateBrushIndirect failed")
 	}
 
-	return &HatchBrush{hBrush: hBrush, color: color, style: style}, nil
+	return &HatchBrush{brushBase: brushBase{hBrush: hBrush}, color: color, style: style}, nil
 }
 
 func (b *HatchBrush) Color() Color {
 	return b.color
-}
-
-func (b *HatchBrush) Dispose() {
-	if b.hBrush != 0 {
-		win.DeleteObject(win.HGDIOBJ(b.hBrush))
-
-		b.hBrush = 0
-	}
-}
-
-func (b *HatchBrush) handle() win.HBRUSH {
-	return b.hBrush
 }
 
 func (b *HatchBrush) logbrush() *win.LOGBRUSH {
@@ -218,7 +240,7 @@ func (b *HatchBrush) Style() HatchStyle {
 }
 
 type BitmapBrush struct {
-	hBrush win.HBRUSH
+	brushBase
 	bitmap *Bitmap
 }
 
@@ -232,19 +254,7 @@ func NewBitmapBrush(bitmap *Bitmap) (*BitmapBrush, error) {
 		return nil, newError("CreatePatternBrush failed")
 	}
 
-	return &BitmapBrush{hBrush: hBrush, bitmap: bitmap}, nil
-}
-
-func (b *BitmapBrush) Dispose() {
-	if b.hBrush != 0 {
-		win.DeleteObject(win.HGDIOBJ(b.hBrush))
-
-		b.hBrush = 0
-	}
-}
-
-func (b *BitmapBrush) handle() win.HBRUSH {
-	return b.hBrush
+	return &BitmapBrush{brushBase: brushBase{hBrush: hBrush}, bitmap: bitmap}, nil
 }
 
 func (b *BitmapBrush) logbrush() *win.LOGBRUSH {
@@ -253,4 +263,172 @@ func (b *BitmapBrush) logbrush() *win.LOGBRUSH {
 
 func (b *BitmapBrush) Bitmap() *Bitmap {
 	return b.bitmap
+}
+
+type GradientVertex struct {
+	X     float64
+	Y     float64
+	Color Color
+}
+
+type GradientTriangle struct {
+	Vertex1 int
+	Vertex2 int
+	Vertex3 int
+}
+
+type GradientBrush struct {
+	brushBase
+	mainDelegate *BitmapBrush
+	vertexes     []GradientVertex
+	triangles    []GradientTriangle
+	absolute     bool
+	vertical     bool
+}
+
+func NewGradientBrush(vertexes []GradientVertex, triangles []GradientTriangle) (*GradientBrush, error) {
+	if len(vertexes) < 3 {
+		return nil, newErr("at least 3 vertexes are required")
+	}
+
+	if len(triangles) < 1 {
+		return nil, newErr("at least 1 triangle is required")
+	}
+
+	var size Size
+	for _, v := range vertexes {
+		size = maxSize(size, Size{int(v.X), int(v.Y)})
+	}
+
+	gb := &GradientBrush{vertexes: vertexes, triangles: triangles, absolute: size.Width > 1 || size.Height > 1}
+
+	if gb.absolute {
+		bb, err := gb.create(size)
+		if err != nil {
+			return nil, err
+		}
+
+		gb.mainDelegate = bb
+		gb.hBrush = bb.hBrush
+	}
+
+	return gb, nil
+}
+
+func (b *GradientBrush) logbrush() *win.LOGBRUSH {
+	if b.mainDelegate == nil {
+		return nil
+	}
+
+	return b.mainDelegate.logbrush()
+}
+
+func (b *GradientBrush) create(size Size) (*BitmapBrush, error) {
+	var disposables Disposables
+	defer disposables.Treat()
+
+	bitmap, err := NewBitmap(size)
+	if err != nil {
+		return nil, err
+	}
+	disposables.Add(bitmap)
+
+	canvas, err := NewCanvasFromImage(bitmap)
+	if err != nil {
+		return nil, err
+	}
+	defer canvas.Dispose()
+
+	var scaleX, scaleY float64
+	if b.absolute {
+		scaleX, scaleY = 1, 1
+	} else {
+		scaleX, scaleY = float64(size.Width), float64(size.Height)
+	}
+
+	vertexes := make([]win.TRIVERTEX, len(b.vertexes))
+	for i, src := range b.vertexes {
+		dst := &vertexes[i]
+
+		dst.X = int32(src.X * scaleX)
+		dst.Y = int32(src.Y * scaleY)
+		dst.Red = uint16(src.Color.R()) * 256
+		dst.Green = uint16(src.Color.G()) * 256
+		dst.Blue = uint16(src.Color.B()) * 256
+	}
+
+	triangles := make([]win.GRADIENT_TRIANGLE, len(b.triangles))
+	for i, src := range b.triangles {
+		dst := &triangles[i]
+
+		dst.Vertex1 = uint32(src.Vertex1)
+		dst.Vertex2 = uint32(src.Vertex2)
+		dst.Vertex3 = uint32(src.Vertex3)
+	}
+
+	if !win.GradientFill(canvas.hdc, &vertexes[0], uint32(len(vertexes)), unsafe.Pointer(&triangles[0]), uint32(len(triangles)), win.GRADIENT_FILL_TRIANGLE) {
+		return nil, newErr("GradientFill failed")
+	}
+
+	disposables.Spare()
+
+	return NewBitmapBrush(bitmap)
+}
+
+func (b *GradientBrush) attachWindow(wb *WindowBase) {
+	b.brushBase.attachWindow(wb)
+
+	if b.absolute {
+		return
+	}
+
+	var info *windowBrushInfo
+
+	update := func() {
+		if bb, err := b.create(wb.window.ClientBounds().Size()); err == nil {
+			if info.Delegate != nil {
+				info.Delegate.bitmap.Dispose()
+				info.Delegate.Dispose()
+			}
+
+			info.Delegate = bb
+
+			wb.Invalidate()
+		}
+	}
+
+	info = &windowBrushInfo{
+		SizeChangedHandle: wb.SizeChanged().Attach(update),
+	}
+
+	update()
+
+	b.wb2info[wb] = info
+}
+
+func (b *GradientBrush) detachWindow(wb *WindowBase) {
+	if !b.absolute {
+		if info, ok := b.wb2info[wb]; ok {
+			if info.Delegate != nil {
+				info.Delegate.bitmap.Dispose()
+				info.Delegate.Dispose()
+			}
+
+			wb.SizeChanged().Detach(info.SizeChangedHandle)
+		}
+	}
+
+	b.brushBase.detachWindow(wb)
+}
+
+func (b *GradientBrush) delegateForWindow(wb *WindowBase) Brush {
+	if b.absolute {
+		return b.mainDelegate
+	}
+
+	if info, ok := b.wb2info[wb]; ok && info.Delegate != nil {
+		return info.Delegate
+	}
+
+	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright 2012 The Walk Authors. All rights reserved.
+// Copyright 2017 The Walk Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,7 +10,7 @@ import (
 	"github.com/lxn/walk"
 )
 
-type ImageView struct {
+type LinkLabel struct {
 	// Window
 
 	Background         Brush
@@ -41,22 +41,26 @@ type ImageView struct {
 	RowSpan            int
 	StretchFactor      int
 
-	// ImageView
+	// LinkLabel
 
-	AssignTo **walk.ImageView
-	Image    Property
-	Margin   Property
+	AssignTo        **walk.LinkLabel
+	OnLinkActivated walk.LinkLabelLinkEventHandler
+	Text            Property
 }
 
-func (iv ImageView) Create(builder *Builder) error {
-	w, err := walk.NewImageView(builder.Parent())
+func (ll LinkLabel) Create(builder *Builder) error {
+	w, err := walk.NewLinkLabel(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	return builder.InitWidget(iv, w, func() error {
-		if iv.AssignTo != nil {
-			*iv.AssignTo = w
+	return builder.InitWidget(ll, w, func() error {
+		if ll.OnLinkActivated != nil {
+			w.LinkActivated().Attach(ll.OnLinkActivated)
+		}
+
+		if ll.AssignTo != nil {
+			*ll.AssignTo = w
 		}
 
 		return nil
