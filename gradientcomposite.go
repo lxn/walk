@@ -22,7 +22,11 @@ type GradientComposite struct {
 }
 
 func NewGradientComposite(parent Container) (*GradientComposite, error) {
-	composite, err := NewComposite(parent)
+	return NewGradientCompositeWithStyle(parent, 0)
+}
+
+func NewGradientCompositeWithStyle(parent Container, style uint32) (*GradientComposite, error) {
+	composite, err := NewCompositeWithStyle(parent, style)
 	if err != nil {
 		return nil, err
 	}

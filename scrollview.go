@@ -370,7 +370,10 @@ func ifContainerIsScrollViewDoCoolSpecialLayoutStuff(layout Layout) bool {
 						flags := parentLayout.LayoutFlags()
 
 						if !hsb && flags&GreedyHorz != 0 || !vsb && flags&GreedyVert != 0 {
-							parentLayout.Update(false)
+							// Because logic...
+							if win.IsAppThemed() {
+								parentLayout.Update(false)
+							}
 							return true
 						}
 					}

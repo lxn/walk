@@ -8,6 +8,7 @@ package declarative
 
 import (
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type Composite struct {
@@ -50,12 +51,17 @@ type Composite struct {
 	// Composite
 
 	AssignTo    **walk.Composite
+	Border      bool
 	Expressions func() map[string]walk.Expression
 	Functions   map[string]func(args ...interface{}) (interface{}, error)
 }
 
 func (c Composite) Create(builder *Builder) error {
-	w, err := walk.NewComposite(builder.Parent())
+	var style uint32
+	if c.Border {
+		style |= win.WS_BORDER
+	}
+	w, err := walk.NewCompositeWithStyle(builder.Parent(), style)
 	if err != nil {
 		return err
 	}
