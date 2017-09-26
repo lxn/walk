@@ -21,6 +21,7 @@ type TextEdit struct {
 	MaxSize            Size
 	MinSize            Size
 	Name               string
+	OnBoundsChanged    walk.EventHandler
 	OnKeyDown          walk.KeyEventHandler
 	OnKeyPress         walk.KeyEventHandler
 	OnKeyUp            walk.KeyEventHandler

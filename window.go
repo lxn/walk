@@ -48,6 +48,10 @@ type Window interface {
 	// parent.
 	Bounds() Rectangle
 
+	// BoundsChanged returns an *Event that you can attach to for handling bounds
+	// changed events for the Window.
+	BoundsChanged() *Event
+
 	// BringToTop moves the Window to the top of the keyboard focus order.
 	BringToTop() error
 
@@ -1289,6 +1293,12 @@ func (wb *WindowBase) publishMouseWheelEvent(publisher *MouseEventPublisher, wPa
 // changed events for the *WindowBase.
 func (wb *WindowBase) SizeChanged() *Event {
 	return wb.sizeChangedPublisher.Event()
+}
+
+// BoundsChanged returns an *Event that you can attach to for handling bounds
+// changed events for the *WindowBase.
+func (wb *WindowBase) BoundsChanged() *Event {
+	return wb.boundsChangedPublisher.Event()
 }
 
 // Synchronize enqueues func f to be called some time later by the main
