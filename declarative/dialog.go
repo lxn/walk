@@ -20,6 +20,7 @@ type Dialog struct {
 	MaxSize            Size
 	MinSize            Size
 	Name               string
+	OnBoundsChanged    walk.EventHandler
 	OnKeyDown          walk.KeyEventHandler
 	OnKeyPress         walk.KeyEventHandler
 	OnKeyUp            walk.KeyEventHandler
@@ -78,6 +79,7 @@ func (d Dialog) Create(owner walk.Form) error {
 		MaxSize:            d.MaxSize,
 		MinSize:            d.MinSize,
 		Name:               d.Name,
+		OnBoundsChanged:    d.OnBoundsChanged,
 		OnKeyDown:          d.OnKeyDown,
 		OnKeyPress:         d.OnKeyPress,
 		OnKeyUp:            d.OnKeyUp,
