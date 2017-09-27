@@ -1617,8 +1617,12 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 		var handle win.HWND
 		if widget, ok := sourceWindow.(Widget); ok {
-			handle = ancestor(widget).Handle()
-		} else {
+			if form := ancestor(widget); form != nil {
+				handle = form.Handle()
+			}
+		}
+
+		if handle == 0 {
 			handle = sourceWindow.Handle()
 		}
 
