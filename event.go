@@ -50,37 +50,7 @@ func (p *EventPublisher) Publish() {
 			return
 		}
 
-		layouts := scheduledLayoutsByForm[appSingleton.activeForm]
-		delete(scheduledLayoutsByForm, appSingleton.activeForm)
-		if len(layouts) == 0 {
-			return
-		}
-
-		old := performingScheduledLayouts
-		performingScheduledLayouts = true
-		defer func() {
-			performingScheduledLayouts = old
-		}()
-
-		if formResizeScheduled {
-			formResizeScheduled = false
-
-			bounds := appSingleton.activeForm.Bounds()
-
-			if appSingleton.activeForm.AsFormBase().fixedSize() {
-				bounds.Width, bounds.Height = 0, 0
-			}
-
-			appSingleton.activeForm.SetBounds(bounds)
-		}
-
-		for _, layout := range layouts {
-			if widget, ok := layout.Container().(Widget); ok && widget.Form() != appSingleton.activeForm {
-				continue
-			}
-
-			layout.Update(false)
-		}
+		performScheduledLayouts()
 	}()
 
 	for _, handler := range p.event.handlers {
