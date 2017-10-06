@@ -22,6 +22,11 @@ var (
 )
 
 func scheduleLayout(layout Layout) bool {
+	if appSingleton.activeForm == nil {
+		inProgressEventsByForm = make(map[Form][]*Event)
+		return false
+	}
+
 	events := inProgressEventsByForm[appSingleton.activeForm]
 	if len(events) == 0 {
 		return false
@@ -40,6 +45,40 @@ func scheduleLayout(layout Layout) bool {
 	scheduledLayoutsByForm[appSingleton.activeForm] = layouts
 
 	return true
+}
+
+func performScheduledLayouts() {
+	layouts := scheduledLayoutsByForm[appSingleton.activeForm]
+	delete(scheduledLayoutsByForm, appSingleton.activeForm)
+	if len(layouts) == 0 {
+		return
+	}
+
+	old := performingScheduledLayouts
+	performingScheduledLayouts = true
+	defer func() {
+		performingScheduledLayouts = old
+	}()
+
+	if formResizeScheduled {
+		formResizeScheduled = false
+
+		bounds := appSingleton.activeForm.Bounds()
+
+		if appSingleton.activeForm.AsFormBase().fixedSize() {
+			bounds.Width, bounds.Height = 0, 0
+		}
+
+		appSingleton.activeForm.SetBounds(bounds)
+	} else {
+		for _, layout := range layouts {
+			if widget, ok := layout.Container().(Widget); ok && widget.Form() != appSingleton.activeForm {
+				continue
+			}
+
+			layout.Update(false)
+		}
+	}
 }
 
 type Margins struct {

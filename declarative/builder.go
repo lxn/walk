@@ -160,6 +160,10 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 		w.SetContextMenu(cm)
 	}
 
+	if handler := b.eventHandler("OnBoundsChanged"); handler != nil {
+		w.BoundsChanged().Attach(handler)
+	}
+
 	if handler := b.keyEventHandler("OnKeyDown"); handler != nil {
 		w.KeyDown().Attach(handler)
 	}

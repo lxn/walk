@@ -8,6 +8,7 @@ package declarative
 
 import (
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type GradientComposite struct {
@@ -20,6 +21,7 @@ type GradientComposite struct {
 	MaxSize            Size
 	MinSize            Size
 	Name               string
+	OnBoundsChanged    walk.EventHandler
 	OnKeyDown          walk.KeyEventHandler
 	OnKeyPress         walk.KeyEventHandler
 	OnKeyUp            walk.KeyEventHandler
@@ -50,6 +52,7 @@ type GradientComposite struct {
 	// GradientComposite
 
 	AssignTo    **walk.GradientComposite
+	Border      bool
 	Color1      Property
 	Color2      Property
 	Expressions func() map[string]walk.Expression
@@ -58,7 +61,11 @@ type GradientComposite struct {
 }
 
 func (gc GradientComposite) Create(builder *Builder) error {
-	w, err := walk.NewGradientComposite(builder.Parent())
+	var style uint32
+	if gc.Border {
+		style |= win.WS_BORDER
+	}
+	w, err := walk.NewGradientCompositeWithStyle(builder.Parent(), style)
 	if err != nil {
 		return err
 	}

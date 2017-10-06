@@ -31,6 +31,7 @@ func main() {
 		Layout: HBox{Margins: Margins{100, 100, 100, 100}},
 		Children: []Widget{
 			GradientComposite{
+				Border:   true,
 				Vertical: Bind("verticalCB.Checked"),
 				Color1:   Bind("rgb(c1RedSld.Value, c1GreenSld.Value, c1BlueSld.Value)"),
 				Color2:   Bind("rgb(c2RedSld.Value, c2GreenSld.Value, c2BlueSld.Value)"),

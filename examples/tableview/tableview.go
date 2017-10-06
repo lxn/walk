@@ -146,11 +146,9 @@ func main() {
 	var tv *walk.TableView
 
 	MainWindow{
-		Title:              "Walk TableView Example",
-		RightToLeftLayout:  true,
-		RightToLeftReading: true,
-		Size:               Size{800, 600},
-		Layout:             VBox{MarginsZero: true},
+		Title:  "Walk TableView Example",
+		Size:   Size{800, 600},
+		Layout: VBox{MarginsZero: true},
 		Children: []Widget{
 			PushButton{
 				Text:      "Reset Rows",

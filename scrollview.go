@@ -207,14 +207,24 @@ func (sv *ScrollView) MouseUp() *MouseEvent {
 
 func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if sv.composite != nil {
+		avoidBGArtifacts := func() {
+			switch bg, _ := sv.backgroundEffective(); bg.(type) {
+			case nil, *SolidColorBrush, *SystemColorBrush:
+				// nop
+
+			default:
+				sv.composite.Invalidate()
+			}
+		}
+
 		switch msg {
 		case win.WM_HSCROLL:
 			sv.composite.SetX(sv.scroll(win.SB_HORZ, win.LOWORD(uint32(wParam))))
-			sv.composite.Invalidate()
+			avoidBGArtifacts()
 
 		case win.WM_VSCROLL:
 			sv.composite.SetY(sv.scroll(win.SB_VERT, win.LOWORD(uint32(wParam))))
-			sv.composite.Invalidate()
+			avoidBGArtifacts()
 
 		case win.WM_MOUSEWHEEL:
 			if win.GetWindowLong(sv.hWnd, win.GWL_STYLE)&win.WS_VSCROLL == 0 {
@@ -229,7 +239,7 @@ func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			}
 
 			sv.composite.SetY(sv.scroll(win.SB_VERT, cmd))
-			sv.composite.Invalidate()
+			avoidBGArtifacts()
 
 			return 0
 
@@ -356,7 +366,10 @@ func ifContainerIsScrollViewDoCoolSpecialLayoutStuff(layout Layout) bool {
 						flags := parentLayout.LayoutFlags()
 
 						if !hsb && flags&GreedyHorz != 0 || !vsb && flags&GreedyVert != 0 {
-							parentLayout.Update(false)
+							// Because logic...
+							if win.IsAppThemed() {
+								parentLayout.Update(false)
+							}
 							return true
 						}
 					}
