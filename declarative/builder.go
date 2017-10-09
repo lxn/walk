@@ -562,6 +562,10 @@ func (b *Builder) initProperties() error {
 func (b *Builder) conditionOrProperty(data Property) interface{} {
 	switch val := data.(type) {
 	case bindData:
+		if val.expression == "" {
+			return nil
+		}
+
 		e := &expression{
 			text:           val.expression,
 			subExprsByPath: subExpressions(make(map[string]walk.Expression)),
