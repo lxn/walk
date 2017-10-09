@@ -44,8 +44,8 @@ type RangeValidator struct {
 }
 
 func NewRangeValidator(min, max float64) (*RangeValidator, error) {
-	if max <= min {
-		return nil, errors.New("max <= min")
+	if max < min {
+		return nil, errors.New("max < min")
 	}
 
 	return &RangeValidator{min: min, max: max}, nil
