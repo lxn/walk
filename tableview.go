@@ -469,6 +469,16 @@ func (tv *TableView) TableModel() TableModel {
 	return tv.model
 }
 
+// ItemChecker returns the ItemChecker of the TableView.
+func (tv *TableView) ItemChecker() ItemChecker {
+	return tv.itemChecker
+}
+
+// SetItemChecker sets the ItemChecker of the TableView.
+func (tv *TableView) SetItemChecker(itemChecker ItemChecker) {
+	tv.itemChecker = itemChecker
+}
+
 // CellStyler returns the CellStyler of the TableView.
 func (tv *TableView) CellStyler() CellStyler {
 	return tv.styler
