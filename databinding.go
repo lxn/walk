@@ -309,6 +309,9 @@ func (db *DataBinder) forEach(f func(prop Property, field DataField) error) erro
 
 	for _, prop := range db.properties {
 		field := db.fieldBoundToProperty(dsv, prop)
+		if field == nil {
+			continue
+		}
 
 		if err := f(prop, field); err != nil {
 			return err
@@ -319,7 +322,10 @@ func (db *DataBinder) forEach(f func(prop Property, field DataField) error) erro
 }
 
 func (db *DataBinder) fieldBoundToProperty(v reflect.Value, prop Property) DataField {
-	source := prop.Source().(string)
+	source, ok := prop.Source().(string)
+	if !ok || source == "" {
+		return nil
+	}
 
 	f, err := dataFieldFromPath(v, source)
 	if err != nil {

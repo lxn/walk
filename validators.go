@@ -44,8 +44,8 @@ type RangeValidator struct {
 }
 
 func NewRangeValidator(min, max float64) (*RangeValidator, error) {
-	if max <= min {
-		return nil, errors.New("max <= min")
+	if max < min {
+		return nil, errors.New("max < min")
 	}
 
 	return &RangeValidator{min: min, max: max}, nil
@@ -60,8 +60,8 @@ func (rv *RangeValidator) Max() float64 {
 }
 
 func (rv *RangeValidator) Reset(min, max float64) error {
-	if max <= min {
-		return errors.New("max <= min")
+	if max < min {
+		return errors.New("max < min")
 	}
 
 	rv.min, rv.max = min, max
@@ -77,10 +77,10 @@ func (rv *RangeValidator) Validate(v interface{}) error {
 		if math.Abs(rv.min-math.Floor(rv.min)) < math.SmallestNonzeroFloat64 &&
 			math.Abs(rv.max-math.Floor(rv.max)) < math.SmallestNonzeroFloat64 {
 
-			msg = fmt.Sprintf(tr("Please enter a number between %.f and %.f.", "walk"),
+			msg = fmt.Sprintf(tr("Please enter a number from %.f to %.f.", "walk"),
 				rv.min, rv.max)
 		} else {
-			msg = fmt.Sprintf(tr("Please enter a number between %s and %s.", "walk"),
+			msg = fmt.Sprintf(tr("Please enter a number from %s to %s.", "walk"),
 				FormatFloatGrouped(rv.min, 2), FormatFloatGrouped(rv.max, 2))
 		}
 
