@@ -333,7 +333,15 @@ func MustRegisterWindowClass(className string) {
 	MustRegisterWindowClassWithWndProcPtr(className, defaultWndProcPtr)
 }
 
+func MustRegisterWindowClassWithStyle(className string, style uint32) {
+	MustRegisterWindowClassWithWndProcPtrAndStyle(className, defaultWndProcPtr, style)
+}
+
 func MustRegisterWindowClassWithWndProcPtr(className string, wndProcPtr uintptr) {
+	MustRegisterWindowClassWithWndProcPtrAndStyle(className, wndProcPtr, 0)
+}
+
+func MustRegisterWindowClassWithWndProcPtrAndStyle(className string, wndProcPtr uintptr, style uint32) {
 	if registeredWindowClasses[className] {
 		panic("window class already registered")
 	}
@@ -361,6 +369,7 @@ func MustRegisterWindowClassWithWndProcPtr(className string, wndProcPtr uintptr)
 	wc.HCursor = hCursor
 	wc.HbrBackground = win.COLOR_BTNFACE + 1
 	wc.LpszClassName = syscall.StringToUTF16Ptr(className)
+	wc.Style = style
 
 	if atom := win.RegisterClassEx(&wc); atom == 0 {
 		panic("RegisterClassEx")
