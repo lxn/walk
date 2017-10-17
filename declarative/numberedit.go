@@ -53,6 +53,7 @@ type NumberEdit struct {
 	OnValueChanged walk.EventHandler
 	ReadOnly       Property
 	Suffix         string
+	TextColor      walk.Color
 	Value          Property
 }
 
@@ -63,6 +64,8 @@ func (ne NumberEdit) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(ne, w, func() error {
+		w.SetTextColor(ne.TextColor)
+
 		if err := w.SetDecimals(ne.Decimals); err != nil {
 			return err
 		}

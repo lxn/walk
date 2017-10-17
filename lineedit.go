@@ -35,6 +35,7 @@ type LineEdit struct {
 	textChangedPublisher     EventPublisher
 	charWidthFont            *Font
 	charWidth                int
+	textColor                Color
 }
 
 func newLineEdit(parent Window) (*LineEdit, error) {
@@ -295,6 +296,16 @@ func (le *LineEdit) EditingFinished() *Event {
 
 func (le *LineEdit) TextChanged() *Event {
 	return le.textChangedPublisher.Event()
+}
+
+func (le *LineEdit) TextColor() Color {
+	return le.textColor
+}
+
+func (le *LineEdit) SetTextColor(c Color) {
+	le.textColor = c
+
+	le.Invalidate()
 }
 
 func (le *LineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {

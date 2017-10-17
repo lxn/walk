@@ -1476,38 +1476,62 @@ func (wb *WindowBase) prepareDCForBackground(hdc win.HDC, hwnd win.HWND, brushWn
 	win.SetBrushOrgEx(hdc, bgRC.Left-rc.Left, bgRC.Top-rc.Top, nil)
 }
 
-func (wb *WindowBase) handleWMCTLCOLORSTATIC(wParam, lParam uintptr) uintptr {
+func (wb *WindowBase) handleWMCTLCOLOR(wParam, lParam uintptr) uintptr {
 	hwnd := win.HWND(lParam)
+	hdc := win.HDC(wParam)
 
-	switch wnd := windowFromHandle(hwnd).(type) {
-	case *LineEdit, *TextEdit:
-	// nop
+	type TextColorer interface {
+		TextColor() Color
+	}
 
-	default:
-		hdc := win.HDC(wParam)
-
-		if wnd == nil {
-			switch windowFromHandle(win.GetParent(hwnd)).(type) {
-			case *ComboBox:
-				// nop
-				return 0
-			}
-
-			wnd = wb
-		} else if lbl, ok := wnd.(*Label); ok {
-			win.SetTextColor(hdc, win.COLORREF(lbl.textColor))
+	wnd := windowFromHandle(hwnd)
+	if wnd == nil {
+		switch windowFromHandle(win.GetParent(hwnd)).(type) {
+		case *ComboBox:
+			// nop
+			return 0
 		}
 
-		if bg, wnd := wnd.AsWindowBase().backgroundEffective(); bg != nil {
-			wb.prepareDCForBackground(hdc, hwnd, wnd)
+		wnd = wb
+	} else if tc, ok := wnd.(TextColorer); ok {
+		win.SetTextColor(hdc, win.COLORREF(tc.TextColor()))
+	}
 
-			return uintptr(bg.handle())
+	if bg, wnd := wnd.AsWindowBase().backgroundEffective(); bg != nil {
+		wb.prepareDCForBackground(hdc, hwnd, wnd)
+
+		type Colorer interface {
+			Color() Color
 		}
 
-		if _, ok := wnd.(*Label); ok {
-			win.SetBkMode(hdc, win.TRANSPARENT)
-			return win.COLOR_BTNSHADOW
+		if c, ok := bg.(Colorer); ok {
+			win.SetBkColor(hdc, win.COLORREF(c.Color()))
 		}
+
+		return uintptr(bg.handle())
+	}
+
+	switch wnd.(type) {
+	case *Label:
+		win.SetBkMode(hdc, win.TRANSPARENT)
+
+		return win.COLOR_BTNSHADOW
+
+	case *LineEdit, *numberLineEdit, *TextEdit:
+		type ReadOnlyer interface {
+			ReadOnly() bool
+		}
+
+		var sysColor int
+		if ro, ok := wnd.(ReadOnlyer); ok && ro.ReadOnly() {
+			sysColor = win.COLOR_BTNFACE
+		} else {
+			sysColor = win.COLOR_WINDOW
+		}
+
+		win.SetBkColor(hdc, win.COLORREF(win.GetSysColor(sysColor)))
+
+		return uintptr(win.GetSysColorBrush(sysColor))
 	}
 
 	return 0

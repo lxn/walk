@@ -19,6 +19,7 @@ type TextEdit struct {
 	WidgetBase
 	readOnlyChangedPublisher EventPublisher
 	textChangedPublisher     EventPublisher
+	textColor                Color
 }
 
 func NewTextEdit(parent Container) (*TextEdit, error) {
@@ -164,6 +165,16 @@ func (te *TextEdit) SetReadOnly(readOnly bool) error {
 
 func (te *TextEdit) TextChanged() *Event {
 	return te.textChangedPublisher.Event()
+}
+
+func (te *TextEdit) TextColor() Color {
+	return te.textColor
+}
+
+func (te *TextEdit) SetTextColor(c Color) {
+	te.textColor = c
+
+	te.Invalidate()
 }
 
 func (te *TextEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {

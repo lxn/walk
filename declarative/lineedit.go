@@ -62,6 +62,7 @@ type LineEdit struct {
 	PasswordMode      bool
 	ReadOnly          Property
 	Text              Property
+	TextColor         walk.Color
 }
 
 func (le LineEdit) Create(builder *Builder) error {
@@ -71,6 +72,8 @@ func (le LineEdit) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(le, w, func() error {
+		w.SetTextColor(le.TextColor)
+
 		if err := w.SetAlignment(walk.Alignment1D(le.Alignment)); err != nil {
 			return err
 		}
