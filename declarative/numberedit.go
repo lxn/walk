@@ -11,21 +11,16 @@ import (
 )
 
 type NumberEdit struct {
-	AssignTo           **walk.NumberEdit
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	ToolTipText        Property
-	MinSize            Size
-	MaxSize            Size
-	StretchFactor      int
-	Row                int
-	RowSpan            int
-	Column             int
-	ColumnSpan         int
-	AlwaysConsumeSpace bool
+	// Window
+
+	Background         Brush
 	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
 	OnKeyDown          walk.KeyEventHandler
 	OnKeyPress         walk.KeyEventHandler
 	OnKeyUp            walk.KeyEventHandler
@@ -33,14 +28,33 @@ type NumberEdit struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
-	Decimals           int
-	Prefix             string
-	Suffix             string
-	Increment          float64
-	MinValue           float64
-	MaxValue           float64
-	Value              Property
-	OnValueChanged     walk.EventHandler
+	Persistent         bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
+
+	// Widget
+
+	AlwaysConsumeSpace bool
+	Column             int
+	ColumnSpan         int
+	Row                int
+	RowSpan            int
+	StretchFactor      int
+
+	// NumberEdit
+
+	AssignTo       **walk.NumberEdit
+	Decimals       int
+	Increment      float64
+	MaxValue       float64
+	MinValue       float64
+	Prefix         string
+	OnValueChanged walk.EventHandler
+	ReadOnly       Property
+	Suffix         string
+	TextColor      walk.Color
+	Value          Property
 }
 
 func (ne NumberEdit) Create(builder *Builder) error {
@@ -50,6 +64,8 @@ func (ne NumberEdit) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(ne, w, func() error {
+		w.SetTextColor(ne.TextColor)
+
 		if err := w.SetDecimals(ne.Decimals); err != nil {
 			return err
 		}
@@ -86,8 +102,4 @@ func (ne NumberEdit) Create(builder *Builder) error {
 
 		return nil
 	})
-}
-
-func (w NumberEdit) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.AlwaysConsumeSpace, w.ContextMenuItems, w.OnKeyDown, w.OnKeyPress, w.OnKeyUp, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

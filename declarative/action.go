@@ -7,12 +7,12 @@
 package declarative
 
 import (
-	"errors"
 	"fmt"
 )
 
 import (
 	"github.com/lxn/walk"
+	"strconv"
 )
 
 type Shortcut struct {
@@ -182,24 +182,29 @@ func addToActionList(list *walk.ActionList, actions []*walk.Action) error {
 }
 
 func setActionImage(action *walk.Action, image interface{}) (err error) {
-	var img walk.Image
+	var bm *walk.Bitmap
 
 	switch image := image.(type) {
 	case nil:
 		return nil
 
 	case *walk.Bitmap:
-		img = image
+		bm = image
+
+	case int:
+		var err error
+		if bm, err = walk.Resources.Bitmap(strconv.Itoa(image)); err != nil {
+			return err
+		}
 
 	case string:
-		if img, err = imageFromFile(image); err != nil {
+		if bm, err = walk.Resources.Bitmap(image); err != nil {
 			return
 		}
+
+	default:
+		return walk.ErrInvalidType
 	}
 
-	if bmp, ok := img.(*walk.Bitmap); ok {
-		return action.SetImage(bmp)
-	}
-
-	return errors.New("invalid type for Image")
+	return action.SetImage(bm)
 }

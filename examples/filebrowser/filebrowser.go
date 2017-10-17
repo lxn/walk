@@ -219,6 +219,7 @@ func shouldExclude(name string) bool {
 
 func main() {
 	var mainWindow *walk.MainWindow
+	var splitter *walk.Splitter
 	var treeView *walk.TreeView
 	var tableView *walk.TableView
 	var webView *walk.WebView
@@ -237,6 +238,7 @@ func main() {
 		Layout:   HBox{MarginsZero: true},
 		Children: []Widget{
 			HSplitter{
+				AssignTo: &splitter,
 				Children: []Widget{
 					TreeView{
 						AssignTo: &treeView,
@@ -294,6 +296,9 @@ func main() {
 	}.Create()); err != nil {
 		log.Fatal(err)
 	}
+
+	splitter.SetFixed(treeView, true)
+	splitter.SetFixed(tableView, true)
 
 	mainWindow.Run()
 }

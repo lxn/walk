@@ -11,21 +11,16 @@ import (
 )
 
 type SplitButton struct {
-	AssignTo           **walk.SplitButton
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	ToolTipText        Property
-	MinSize            Size
-	MaxSize            Size
-	StretchFactor      int
-	Row                int
-	RowSpan            int
-	Column             int
-	ColumnSpan         int
-	AlwaysConsumeSpace bool
+	// Window
+
+	Background         Brush
 	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
 	OnKeyDown          walk.KeyEventHandler
 	OnKeyPress         walk.KeyEventHandler
 	OnKeyUp            walk.KeyEventHandler
@@ -33,11 +28,31 @@ type SplitButton struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
-	Text               Property
-	Image              interface{}
-	ImageAboveText     bool
-	MenuItems          []MenuItem
-	OnClicked          walk.EventHandler
+	Persistent         bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
+
+	// Widget
+
+	AlwaysConsumeSpace bool
+	Column             int
+	ColumnSpan         int
+	Row                int
+	RowSpan            int
+	StretchFactor      int
+
+	// Button
+
+	Image     Property
+	Text      Property
+	OnClicked walk.EventHandler
+
+	// SplitButton
+
+	AssignTo       **walk.SplitButton
+	ImageAboveText bool
+	MenuItems      []MenuItem
 }
 
 func (sb SplitButton) Create(builder *Builder) error {
@@ -49,19 +64,6 @@ func (sb SplitButton) Create(builder *Builder) error {
 	builder.deferBuildMenuActions(w.Menu(), sb.MenuItems)
 
 	return builder.InitWidget(sb, w, func() error {
-		img := sb.Image
-		if s, ok := img.(string); ok {
-			var err error
-			if img, err = imageFromFile(s); err != nil {
-				return err
-			}
-		}
-		if img != nil {
-			if err := w.SetImage(img.(walk.Image)); err != nil {
-				return err
-			}
-		}
-
 		if err := w.SetImageAboveText(sb.ImageAboveText); err != nil {
 			return err
 		}
@@ -76,8 +78,4 @@ func (sb SplitButton) Create(builder *Builder) error {
 
 		return nil
 	})
-}
-
-func (w SplitButton) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.AlwaysConsumeSpace, w.ContextMenuItems, w.OnKeyDown, w.OnKeyPress, w.OnKeyUp, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

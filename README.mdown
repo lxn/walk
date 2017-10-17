@@ -12,7 +12,7 @@ Make sure you have a working Go installation.
 See [Getting Started](http://golang.org/doc/install.html)
 
 ##### Note
-`Go 1.0.x` doesn't work with walk anymore, Make sure you use `Go 1.1.x` or later.
+`Go 1.7.x` doesn't work with walk anymore, Make sure you use `Go 1.8.x` or later.
 
 ##### To Install
 Now run `go get github.com/lxn/walk`
@@ -116,3 +116,16 @@ your executable before the manifest file is in place.
 If you do anyway, the program will not run properly. And worse, Windows will not
 recognize a manifest file, you later drop next to the executable. To fix this,
 rebuild your executable and only launch it with a manifest file in place.
+
+Program Crashes
+===============
+By default Go uses os threads with small stack sizes of 128KB. If your walk app crashes, it may be due
+to a stack overflow. Until a [better solution is found](https://github.com/golang/go/issues/20975),
+you can work around this by adding
+
+    import _ "runtime/cgo"
+
+somewhere in your program. If you don't have `gcc` installed and on your `PATH`,
+you can alternatively add `-linkmode internal` to the `-ldflags` of your `go build` command like so:
+
+    go build -ldflags="-H windowsgui -linkmode internal"

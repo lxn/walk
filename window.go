@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"image/color"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -48,6 +47,10 @@ type Window interface {
 	// coordinates, for a child Window the coordinates are relative to its
 	// parent.
 	Bounds() Rectangle
+
+	// BoundsChanged returns an *Event that you can attach to for handling bounds
+	// changed events for the Window.
+	BoundsChanged() *Event
 
 	// BringToTop moves the Window to the top of the keyboard focus order.
 	BringToTop() error
@@ -156,6 +159,10 @@ type Window interface {
 	// Name returns the name of the Window.
 	Name() string
 
+	// RightToLeftReading returns whether the reading order of the Window
+	// is from right to left.
+	RightToLeftReading() bool
+
 	// Screenshot returns an image of the window.
 	Screenshot() (*image.RGBA, error)
 
@@ -207,6 +214,10 @@ type Window interface {
 	// Some windows support automatic state persistence. See Settings for
 	// details.
 	SetName(name string)
+
+	// SetRightToLeftReading sets whether the reading order of the Window
+	// is from right to left.
+	SetRightToLeftReading(rtl bool) error
 
 	// SetSize sets the outer Size of the Window, including decorations.
 	SetSize(value Size) error
@@ -293,6 +304,7 @@ type WindowBase struct {
 	mouseUpPublisher        MouseEventPublisher
 	mouseMovePublisher      MouseEventPublisher
 	mouseWheelPublisher     MouseEventPublisher
+	boundsChangedPublisher  EventPublisher
 	sizeChangedPublisher    EventPublisher
 	maxSize                 Size
 	minSize                 Size
@@ -326,7 +338,15 @@ func MustRegisterWindowClass(className string) {
 	MustRegisterWindowClassWithWndProcPtr(className, defaultWndProcPtr)
 }
 
+func MustRegisterWindowClassWithStyle(className string, style uint32) {
+	MustRegisterWindowClassWithWndProcPtrAndStyle(className, defaultWndProcPtr, style)
+}
+
 func MustRegisterWindowClassWithWndProcPtr(className string, wndProcPtr uintptr) {
+	MustRegisterWindowClassWithWndProcPtrAndStyle(className, wndProcPtr, 0)
+}
+
+func MustRegisterWindowClassWithWndProcPtrAndStyle(className string, wndProcPtr uintptr, style uint32) {
 	if registeredWindowClasses[className] {
 		panic("window class already registered")
 	}
@@ -354,6 +374,7 @@ func MustRegisterWindowClassWithWndProcPtr(className string, wndProcPtr uintptr)
 	wc.HCursor = hCursor
 	wc.HbrBackground = win.COLOR_BTNFACE + 1
 	wc.LpszClassName = syscall.StringToUTF16Ptr(className)
+	wc.Style = style
 
 	if atom := win.RegisterClassEx(&wc); atom == 0 {
 		panic("RegisterClassEx")
@@ -384,21 +405,25 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
-	wb.hWnd = win.CreateWindowEx(
-		exStyle,
-		syscall.StringToUTF16Ptr(className),
-		nil,
-		style|win.WS_CLIPSIBLINGS,
-		win.CW_USEDEFAULT,
-		win.CW_USEDEFAULT,
-		win.CW_USEDEFAULT,
-		win.CW_USEDEFAULT,
-		hwndParent,
-		0,
-		0,
-		nil)
-	if wb.hWnd == 0 {
-		return lastError("CreateWindowEx")
+	if hwnd := window.Handle(); hwnd == 0 {
+		wb.hWnd = win.CreateWindowEx(
+			exStyle,
+			syscall.StringToUTF16Ptr(className),
+			nil,
+			style|win.WS_CLIPSIBLINGS,
+			win.CW_USEDEFAULT,
+			win.CW_USEDEFAULT,
+			win.CW_USEDEFAULT,
+			win.CW_USEDEFAULT,
+			hwndParent,
+			0,
+			0,
+			nil)
+		if wb.hWnd == 0 {
+			return lastError("CreateWindowEx")
+		}
+	} else {
+		wb.hWnd = hwnd
 	}
 
 	succeeded := false
@@ -515,20 +540,36 @@ func (wb *WindowBase) Property(name string) Property {
 }
 
 func (wb *WindowBase) hasStyleBits(bits uint32) bool {
-	style := uint32(win.GetWindowLong(wb.hWnd, win.GWL_STYLE))
+	return hasWindowLongBits(wb.hWnd, win.GWL_STYLE, bits)
+}
 
-	return style&bits == bits
+func (wb *WindowBase) hasExtendedStyleBits(bits uint32) bool {
+	return hasWindowLongBits(wb.hWnd, win.GWL_EXSTYLE, bits)
+}
+
+func hasWindowLongBits(hwnd win.HWND, index int32, bits uint32) bool {
+	value := uint32(win.GetWindowLong(hwnd, index))
+
+	return value&bits == bits
 }
 
 func (wb *WindowBase) setAndClearStyleBits(set, clear uint32) error {
-	style := uint32(win.GetWindowLong(wb.hWnd, win.GWL_STYLE))
-	if style == 0 {
+	return setAndClearWindowLongBits(wb.hWnd, win.GWL_STYLE, set, clear)
+}
+
+func (wb *WindowBase) setAndClearExtendedStyleBits(set, clear uint32) error {
+	return setAndClearWindowLongBits(wb.hWnd, win.GWL_EXSTYLE, set, clear)
+}
+
+func setAndClearWindowLongBits(hwnd win.HWND, index int32, set, clear uint32) error {
+	value := uint32(win.GetWindowLong(hwnd, index))
+	if value == 0 {
 		return lastError("GetWindowLong")
 	}
 
-	if newStyle := style&^clear | set; newStyle != style {
+	if newValue := value&^clear | set; newValue != value {
 		win.SetLastError(0)
-		if win.SetWindowLong(wb.hWnd, win.GWL_STYLE, int32(newStyle)) == 0 {
+		if win.SetWindowLong(hwnd, index, int32(newValue)) == 0 {
 			return lastError("SetWindowLong")
 		}
 	}
@@ -537,6 +578,14 @@ func (wb *WindowBase) setAndClearStyleBits(set, clear uint32) error {
 }
 
 func (wb *WindowBase) ensureStyleBits(bits uint32, set bool) error {
+	return ensureWindowLongBits(wb.hWnd, win.GWL_STYLE, bits, set)
+}
+
+func (wb *WindowBase) ensureExtendedStyleBits(bits uint32, set bool) error {
+	return ensureWindowLongBits(wb.hWnd, win.GWL_EXSTYLE, bits, set)
+}
+
+func ensureWindowLongBits(hwnd win.HWND, index int32, bits uint32, set bool) error {
 	var setBits uint32
 	var clearBits uint32
 	if set {
@@ -544,7 +593,7 @@ func (wb *WindowBase) ensureStyleBits(bits uint32, set bool) error {
 	} else {
 		clearBits = bits
 	}
-	return wb.setAndClearStyleBits(setBits, clearBits)
+	return setAndClearWindowLongBits(hwnd, index, setBits, clearBits)
 }
 
 // Handle returns the window handle of the Window.
@@ -625,6 +674,10 @@ func (wb *WindowBase) Dispose() {
 		d.Dispose()
 	}
 
+	if wb.background != nil {
+		wb.background.detachWindow(wb)
+	}
+
 	hWnd := wb.hWnd
 	if hWnd != 0 {
 		wb.disposingPublisher.Publish()
@@ -682,10 +735,28 @@ func (wb *WindowBase) Background() Brush {
 }
 
 // SetBackground sets the background Brush of the *WindowBase.
-func (wb *WindowBase) SetBackground(value Brush) {
-	wb.background = value
+func (wb *WindowBase) SetBackground(background Brush) {
+	if wb.background != nil {
+		wb.background.detachWindow(wb)
+	}
+
+	wb.background = background
+
+	if background != nil {
+		background.attachWindow(wb)
+	}
 
 	wb.Invalidate()
+
+	// Sliders need some extra encouragement...
+	walkDescendants(wb, func(w Window) bool {
+		if s, ok := w.(*Slider); ok {
+			s.SetRange(s.MinValue(), s.MaxValue()+1)
+			s.SetRange(s.MinValue(), s.MaxValue()-1)
+		}
+
+		return true
+	})
 }
 
 // Cursor returns the Cursor of the *WindowBase.
@@ -825,9 +896,15 @@ func (wb *WindowBase) Visible() bool {
 
 // SetVisible sets if the *WindowBase is visible.
 func (wb *WindowBase) SetVisible(visible bool) {
+	old := wb.Visible()
+
 	setWindowVisible(wb.hWnd, visible)
 
 	wb.visible = visible
+
+	if visible == old {
+		return
+	}
 
 	if widget, ok := wb.window.(Widget); ok {
 		widget.AsWidgetBase().updateParentLayout()
@@ -935,14 +1012,12 @@ func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
 var dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
 
 func (wb *WindowBase) dialogBaseUnits() Size {
-	// The window may use a font different from that in WindowBase,
-	// like e.g. NumberEdit does, so we try to use the right one.
-	window := windowFromHandle(wb.hWnd)
-
 	hdc := win.GetDC(wb.hWnd)
 	defer win.ReleaseDC(wb.hWnd, hdc)
 
-	hFont := window.Font().handleForDPI(0)
+	// The window may use a font different from that in WindowBase,
+	// like e.g. NumberEdit does, so we try to use the right one.
+	hFont := wb.window.Font().handleForDPI(0)
 	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(hFont))
 	defer win.SelectObject(hdc, win.HGDIOBJ(hFontOld))
 
@@ -1116,40 +1191,27 @@ func (wb *WindowBase) SetClientSize(value Size) error {
 	return wb.SetSize(wb.sizeFromClientSize(value))
 }
 
+// RightToLeftReading returns whether the reading order of the Window
+// is from right to left.
+func (wb *WindowBase) RightToLeftReading() bool {
+	return wb.hasExtendedStyleBits(win.WS_EX_RTLREADING)
+}
+
+// SetRightToLeftReading sets whether the reading order of the Window
+// is from right to left.
+func (wb *WindowBase) SetRightToLeftReading(rtl bool) error {
+	return wb.ensureExtendedStyleBits(win.WS_EX_RTLREADING, rtl)
+}
+
 // Screenshot returns an image of the window.
 func (wb *WindowBase) Screenshot() (*image.RGBA, error) {
-	if hBmp, err := hBitmapFromWindow(wb); err != nil {
+	bmp, err := NewBitmapFromWindow(wb)
+	if err != nil {
 		return nil, err
-	} else {
-
-		var bi win.BITMAPINFO
-		bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
-		hdc := win.GetDC(0)
-		if ret := win.GetDIBits(hdc, hBmp, 0, 0, nil, &bi, win.DIB_RGB_COLORS); ret == 0 {
-			return nil, newError("GetDIBits get bitmapinfo failed")
-		}
-
-		buf := make([]byte, bi.BmiHeader.BiSizeImage)
-		bi.BmiHeader.BiCompression = win.BI_RGB
-		if ret := win.GetDIBits(hdc, hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS); ret == 0 {
-			return nil, newError("GetDIBits failed")
-		}
-
-		width := int(bi.BmiHeader.BiWidth)
-		height := int(bi.BmiHeader.BiHeight)
-		im := image.NewRGBA(image.Rect(0, 0, width, height))
-		n := 0
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				r := buf[n+2]
-				g := buf[n+1]
-				b := buf[n+0]
-				n += 4
-				im.Set(x, height-y, color.RGBA{r, g, b, 255})
-			}
-		}
-		return im, nil
 	}
+	defer bmp.Dispose()
+
+	return bmp.ToImage()
 }
 
 // FocusedWindow returns the Window that has the keyboard input focus.
@@ -1260,6 +1322,12 @@ func (wb *WindowBase) publishMouseWheelEvent(publisher *MouseEventPublisher, wPa
 // changed events for the *WindowBase.
 func (wb *WindowBase) SizeChanged() *Event {
 	return wb.sizeChangedPublisher.Event()
+}
+
+// BoundsChanged returns an *Event that you can attach to for handling bounds
+// changed events for the *WindowBase.
+func (wb *WindowBase) BoundsChanged() *Event {
+	return wb.boundsChangedPublisher.Event()
 }
 
 // Synchronize enqueues func f to be called some time later by the main
@@ -1391,6 +1459,107 @@ func (wb *WindowBase) handleKeyUp(wParam, lParam uintptr) {
 	wb.keyUpPublisher.Publish(Key(wParam))
 }
 
+func (wb *WindowBase) backgroundEffective() (Brush, Window) {
+	wnd := wb.window
+	bg := wnd.Background()
+
+	if widget, ok := wb.window.(Widget); ok {
+		for bg == nullBrushSingleton && widget != nil {
+			if hwndParent := win.GetParent(widget.Handle()); hwndParent != 0 {
+				if parent := windowFromHandle(hwndParent); parent != nil {
+					wnd = parent
+					bg = parent.Background()
+
+					widget, _ = parent.(Widget)
+				}
+			} else {
+				break
+			}
+		}
+	}
+
+	if bg != nil {
+		if pwb, ok := bg.(perWindowBrush); ok {
+			bg = pwb.delegateForWindow(wnd.AsWindowBase())
+		}
+	}
+
+	return bg, wnd
+}
+
+func (wb *WindowBase) prepareDCForBackground(hdc win.HDC, hwnd win.HWND, brushWnd Window) {
+	win.SetBkMode(hdc, win.TRANSPARENT)
+
+	var bgRC win.RECT
+	win.GetWindowRect(brushWnd.Handle(), &bgRC)
+
+	var rc win.RECT
+	win.GetWindowRect(hwnd, &rc)
+
+	win.SetBrushOrgEx(hdc, bgRC.Left-rc.Left, bgRC.Top-rc.Top, nil)
+}
+
+func (wb *WindowBase) handleWMCTLCOLOR(wParam, lParam uintptr) uintptr {
+	hwnd := win.HWND(lParam)
+	hdc := win.HDC(wParam)
+
+	type TextColorer interface {
+		TextColor() Color
+	}
+
+	wnd := windowFromHandle(hwnd)
+	if wnd == nil {
+		switch windowFromHandle(win.GetParent(hwnd)).(type) {
+		case *ComboBox:
+			// nop
+			return 0
+		}
+
+		wnd = wb
+	} else if tc, ok := wnd.(TextColorer); ok {
+		win.SetTextColor(hdc, win.COLORREF(tc.TextColor()))
+	}
+
+	if bg, wnd := wnd.AsWindowBase().backgroundEffective(); bg != nil {
+		wb.prepareDCForBackground(hdc, hwnd, wnd)
+
+		type Colorer interface {
+			Color() Color
+		}
+
+		if c, ok := bg.(Colorer); ok {
+			win.SetBkColor(hdc, win.COLORREF(c.Color()))
+		}
+
+		return uintptr(bg.handle())
+	}
+
+	switch wnd.(type) {
+	case *Label:
+		win.SetBkMode(hdc, win.TRANSPARENT)
+
+		return win.COLOR_BTNSHADOW
+
+	case *LineEdit, *numberLineEdit, *TextEdit:
+		type ReadOnlyer interface {
+			ReadOnly() bool
+		}
+
+		var sysColor int
+		if ro, ok := wnd.(ReadOnlyer); ok && ro.ReadOnly() {
+			sysColor = win.COLOR_BTNFACE
+		} else {
+			sysColor = win.COLOR_WINDOW
+		}
+
+		win.SetBkColor(hdc, win.COLORREF(win.GetSysColor(sysColor)))
+
+		return uintptr(win.GetSysColorBrush(sysColor))
+	}
+
+	return 0
+}
+
 // WndProc is the window procedure of the window.
 //
 // When implementing your own WndProc to add or modify behavior, call the
@@ -1400,17 +1569,26 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	switch msg {
 	case win.WM_ERASEBKGND:
-		if wb.background == nil {
+		if _, ok := window.(Widget); !ok {
+			return 0
+		}
+
+		bg, wnd := wb.backgroundEffective()
+		if bg == nil {
 			break
 		}
 
-		canvas, err := newCanvasFromHDC(win.HDC(wParam))
+		hdc := win.HDC(wParam)
+
+		canvas, err := newCanvasFromHDC(hdc)
 		if err != nil {
 			break
 		}
 		defer canvas.Dispose()
 
-		if err := canvas.FillRectangle(wb.background, wb.ClientBounds()); err != nil {
+		wb.prepareDCForBackground(hdc, hwnd, wnd)
+
+		if err := canvas.FillRectangle(bg, wb.ClientBounds()); err != nil {
 			break
 		}
 
@@ -1468,8 +1646,12 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 		var handle win.HWND
 		if widget, ok := sourceWindow.(Widget); ok {
-			handle = ancestor(widget).Handle()
-		} else {
+			if form := ancestor(widget); form != nil {
+				handle = form.Handle()
+			}
+		}
+
+		if handle == 0 {
 			handle = sourceWindow.Handle()
 		}
 
@@ -1495,6 +1677,9 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	case win.WM_SIZE, win.WM_SIZING:
 		wb.sizeChangedPublisher.Publish()
+
+	case win.WM_WINDOWPOSCHANGED:
+		wb.boundsChangedPublisher.Publish()
 
 	case win.WM_DESTROY:
 		if wb.origWndProcPtr != 0 {

@@ -181,6 +181,10 @@ func (c *Canvas) withFontAndTextColor(font *Font, color Color, f func() error) e
 	})
 }
 
+func (c *Canvas) HDC() win.HDC {
+	return c.hdc
+}
+
 func (c *Canvas) Bounds() Rectangle {
 	return Rectangle{
 		Width:  int(win.GetDeviceCaps(c.hdc, win.HORZRES)),
@@ -293,6 +297,37 @@ func (c *Canvas) DrawRectangle(pen Pen, bounds Rectangle) error {
 
 func (c *Canvas) FillRectangle(brush Brush, bounds Rectangle) error {
 	return c.rectangle(brush, nullPenSingleton, bounds, 1)
+}
+
+func (c *Canvas) GradientFillRectangle(color1, color2 Color, orientation Orientation, bounds Rectangle) error {
+	vertices := [2]win.TRIVERTEX{
+		{
+			X:     int32(bounds.X),
+			Y:     int32(bounds.Y),
+			Red:   uint16(color1.R()) * 256,
+			Green: uint16(color1.G()) * 256,
+			Blue:  uint16(color1.B()) * 256,
+			Alpha: 0,
+		}, {
+			X:     int32(bounds.X + bounds.Width),
+			Y:     int32(bounds.Y + bounds.Height),
+			Red:   uint16(color2.R()) * 256,
+			Green: uint16(color2.G()) * 256,
+			Blue:  uint16(color2.B()) * 256,
+			Alpha: 0,
+		},
+	}
+
+	indices := win.GRADIENT_RECT{
+		UpperLeft:  0,
+		LowerRight: 1,
+	}
+
+	if !win.GradientFill(c.hdc, &vertices[0], 2, unsafe.Pointer(&indices), 1, uint32(orientation)) {
+		return newErr("GradientFill failed")
+	}
+
+	return nil
 }
 
 func (c *Canvas) DrawText(text string, font *Font, color Color, bounds Rectangle, format DrawTextFormat) error {

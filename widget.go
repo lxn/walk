@@ -208,6 +208,18 @@ func (wb *WidgetBase) LayoutFlags() LayoutFlags {
 	return 0
 }
 
+// SetMinMaxSize sets the minimum and maximum outer Size of the *WidgetBase,
+// including decorations.
+//
+// Use walk.Size{} to make the respective limit be ignored.
+func (wb *WidgetBase) SetMinMaxSize(min, max Size) (err error) {
+	err = wb.WindowBase.SetMinMaxSize(min, max)
+
+	wb.updateParentLayout()
+
+	return
+}
+
 // AlwaysConsumeSpace returns if the Widget should consume space even if it is
 // not visible.
 func (wb *WidgetBase) AlwaysConsumeSpace() bool {
@@ -335,11 +347,48 @@ func (wb *WidgetBase) SetToolTipText(s string) error {
 }
 
 func (wb *WidgetBase) updateParentLayout() error {
-	if wb.parent == nil || wb.parent.Layout() == nil || wb.parent.Suspended() {
+	parent := wb.window.(Widget).Parent()
+
+	if parent == nil || parent.Layout() == nil || parent.Suspended() || !parent.Visible() {
 		return nil
 	}
 
-	return wb.parent.Layout().Update(false)
+	layout := parent.Layout()
+
+	if !formResizeScheduled || len(inProgressEventsByForm[appSingleton.activeForm]) == 0 {
+		clientSize := parent.ClientBounds().Size()
+		minSize := layout.MinSize()
+
+		if clientSize.Width < minSize.Width || clientSize.Height < minSize.Height {
+			switch wnd := parent.(type) {
+			case *ScrollView:
+				ifContainerIsScrollViewDoCoolSpecialLayoutStuff(layout)
+				return nil
+
+			case Widget:
+				return wnd.AsWidgetBase().updateParentLayout()
+
+			case Form:
+				if len(inProgressEventsByForm[appSingleton.activeForm]) > 0 {
+					formResizeScheduled = true
+				} else {
+					bounds := wnd.Bounds()
+
+					if wnd.AsFormBase().fixedSize() {
+						bounds.Width, bounds.Height = 0, 0
+					}
+
+					wnd.SetBounds(bounds)
+
+					return nil
+				}
+			}
+		}
+	}
+
+	layout.Update(false)
+
+	return nil
 }
 
 func ancestor(w Widget) Form {

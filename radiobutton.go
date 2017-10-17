@@ -60,6 +60,8 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 
 	rb.Button.init()
 
+	rb.SetBackground(nullBrushSingleton)
+
 	rb.MustRegisterProperty("CheckedValue", NewProperty(
 		func() interface{} {
 			if rb.Checked() {

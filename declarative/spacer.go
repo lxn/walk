@@ -11,15 +11,23 @@ import (
 )
 
 type HSpacer struct {
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
+	// Window
+
+	MaxSize Size
+	MinSize Size
+	Name    string
+
+	// Widget
+
 	Column        int
 	ColumnSpan    int
-	Size          int
+	Row           int
+	RowSpan       int
+	StretchFactor int
+
+	// Spacer
+
+	Size int
 }
 
 func (hs HSpacer) Create(builder *Builder) (err error) {
@@ -37,20 +45,24 @@ func (hs HSpacer) Create(builder *Builder) (err error) {
 	return builder.InitWidget(hs, w, nil)
 }
 
-func (hs HSpacer) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return hs.Name, false, false, nil, "", hs.MinSize, hs.MaxSize, hs.StretchFactor, hs.Row, hs.RowSpan, hs.Column, hs.ColumnSpan, false, nil, nil, nil, nil, nil, nil, nil, nil
-}
-
 type VSpacer struct {
-	Name          string
-	MinSize       Size
-	MaxSize       Size
-	StretchFactor int
-	Row           int
-	RowSpan       int
+	// Window
+
+	MaxSize Size
+	MinSize Size
+	Name    string
+
+	// Widget
+
 	Column        int
 	ColumnSpan    int
-	Size          int
+	Row           int
+	RowSpan       int
+	StretchFactor int
+
+	// Spacer
+
+	Size int
 }
 
 func (vs VSpacer) Create(builder *Builder) (err error) {
@@ -66,8 +78,4 @@ func (vs VSpacer) Create(builder *Builder) (err error) {
 	}
 
 	return builder.InitWidget(vs, w, nil)
-}
-
-func (vs VSpacer) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return vs.Name, false, false, nil, "", vs.MinSize, vs.MaxSize, vs.StretchFactor, vs.Row, vs.RowSpan, vs.Column, vs.ColumnSpan, false, nil, nil, nil, nil, nil, nil, nil, nil
 }

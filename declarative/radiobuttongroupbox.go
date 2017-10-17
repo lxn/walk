@@ -11,21 +11,16 @@ import (
 )
 
 type RadioButtonGroupBox struct {
-	AssignTo           **walk.GroupBox
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	ToolTipText        Property
-	MinSize            Size
-	MaxSize            Size
-	StretchFactor      int
-	Row                int
-	RowSpan            int
-	Column             int
-	ColumnSpan         int
-	AlwaysConsumeSpace bool
+	// Window
+
+	Background         Brush
 	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
 	OnKeyDown          walk.KeyEventHandler
 	OnKeyPress         walk.KeyEventHandler
 	OnKeyUp            walk.KeyEventHandler
@@ -33,15 +28,38 @@ type RadioButtonGroupBox struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
-	Title              string
-	DataMember         string
-	DataBinder         DataBinder
-	Layout             Layout
-	Children           []Widget
-	Buttons            []RadioButton
-	Optional           bool
-	Checkable          bool
-	Checked            Property
+	Persistent         bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
+
+	// Widget
+
+	AlwaysConsumeSpace bool
+	Column             int
+	ColumnSpan         int
+	Row                int
+	RowSpan            int
+	StretchFactor      int
+
+	// Container
+
+	Children   []Widget
+	DataBinder DataBinder
+	Layout     Layout
+
+	// GroupBox
+
+	AssignTo  **walk.GroupBox
+	Checkable bool
+	Checked   Property
+	Title     string
+
+	// RadioButtonGroupBox
+
+	Buttons    []RadioButton
+	DataMember string
+	Optional   bool
 }
 
 func (rbgb RadioButtonGroupBox) Create(builder *Builder) error {
@@ -77,12 +95,4 @@ func (rbgb RadioButtonGroupBox) Create(builder *Builder) error {
 
 		return nil
 	})
-}
-
-func (w RadioButtonGroupBox) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.AlwaysConsumeSpace, w.ContextMenuItems, w.OnKeyDown, w.OnKeyPress, w.OnKeyUp, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
-}
-
-func (rbgb RadioButtonGroupBox) ContainerInfo() (DataBinder, Layout, []Widget) {
-	return rbgb.DataBinder, rbgb.Layout, nil
 }

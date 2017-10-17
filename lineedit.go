@@ -35,6 +35,7 @@ type LineEdit struct {
 	textChangedPublisher     EventPublisher
 	charWidthFont            *Font
 	charWidth                int
+	textColor                Color
 }
 
 func newLineEdit(parent Window) (*LineEdit, error) {
@@ -138,6 +139,35 @@ func (le *LineEdit) TextSelection() (start, end int) {
 
 func (le *LineEdit) SetTextSelection(start, end int) {
 	le.SendMessage(win.EM_SETSEL, uintptr(start), uintptr(end))
+}
+
+func (le *LineEdit) Alignment() Alignment1D {
+	switch win.GetWindowLong(le.hWnd, win.GWL_STYLE) & (win.ES_LEFT | win.ES_CENTER | win.ES_RIGHT) {
+	case win.ES_CENTER:
+		return AlignCenter
+
+	case win.ES_RIGHT:
+		return AlignFar
+	}
+
+	return AlignNear
+}
+
+func (le *LineEdit) SetAlignment(alignment Alignment1D) error {
+	var bit uint32
+
+	switch alignment {
+	case AlignCenter:
+		bit = win.ES_CENTER
+
+	case AlignFar:
+		bit = win.ES_RIGHT
+
+	default:
+		bit = win.ES_LEFT
+	}
+
+	return le.ensureStyleBits(bit, true)
 }
 
 func (le *LineEdit) CaseMode() CaseMode {
@@ -262,6 +292,16 @@ func (le *LineEdit) EditingFinished() *Event {
 
 func (le *LineEdit) TextChanged() *Event {
 	return le.textChangedPublisher.Event()
+}
+
+func (le *LineEdit) TextColor() Color {
+	return le.textColor
+}
+
+func (le *LineEdit) SetTextColor(c Color) {
+	le.textColor = c
+
+	le.Invalidate()
 }
 
 func (le *LineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {

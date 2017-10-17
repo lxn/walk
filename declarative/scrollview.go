@@ -11,21 +11,16 @@ import (
 )
 
 type ScrollView struct {
-	AssignTo           **walk.ScrollView
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	ToolTipText        Property
-	MinSize            Size
-	MaxSize            Size
-	StretchFactor      int
-	Row                int
-	RowSpan            int
-	Column             int
-	ColumnSpan         int
-	AlwaysConsumeSpace bool
+	// Window
+
+	Background         Brush
 	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
 	OnKeyDown          walk.KeyEventHandler
 	OnKeyPress         walk.KeyEventHandler
 	OnKeyUp            walk.KeyEventHandler
@@ -33,9 +28,31 @@ type ScrollView struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
-	DataBinder         DataBinder
-	Layout             Layout
-	Children           []Widget
+	Persistent         bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
+
+	// Widget
+
+	AlwaysConsumeSpace bool
+	Column             int
+	ColumnSpan         int
+	Row                int
+	RowSpan            int
+	StretchFactor      int
+
+	// Container
+
+	Children   []Widget
+	DataBinder DataBinder
+	Layout     Layout
+
+	// ScrollView
+
+	AssignTo        **walk.ScrollView
+	HorizontalFixed bool
+	VerticalFixed   bool
 }
 
 func (sv ScrollView) Create(builder *Builder) error {
@@ -50,6 +67,8 @@ func (sv ScrollView) Create(builder *Builder) error {
 		return nil
 	})
 
+	w.SetScrollbars(!sv.HorizontalFixed, !sv.VerticalFixed)
+
 	return builder.InitWidget(sv, w, func() error {
 		if sv.AssignTo != nil {
 			*sv.AssignTo = w
@@ -57,12 +76,4 @@ func (sv ScrollView) Create(builder *Builder) error {
 
 		return nil
 	})
-}
-
-func (w ScrollView) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.AlwaysConsumeSpace, w.ContextMenuItems, w.OnKeyDown, w.OnKeyPress, w.OnKeyUp, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
-}
-
-func (sv ScrollView) ContainerInfo() (DataBinder, Layout, []Widget) {
-	return sv.DataBinder, sv.Layout, sv.Children
 }

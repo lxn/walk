@@ -30,15 +30,11 @@ type FooModel struct {
 	walk.SorterBase
 	sortColumn int
 	sortOrder  walk.SortOrder
-	evenBitmap *walk.Bitmap
-	oddIcon    *walk.Icon
 	items      []*Foo
 }
 
 func NewFooModel() *FooModel {
 	m := new(FooModel)
-	m.evenBitmap, _ = walk.NewBitmapFromFile("../img/open.png")
-	m.oddIcon, _ = walk.NewIconFromFile("../img/x.ico")
 	m.ResetRows()
 	return m
 }
@@ -86,54 +82,35 @@ func (m *FooModel) SetChecked(row int, checked bool) error {
 func (m *FooModel) Sort(col int, order walk.SortOrder) error {
 	m.sortColumn, m.sortOrder = col, order
 
-	sort.Stable(m)
+	sort.SliceStable(m.items, func(i, j int) bool {
+		a, b := m.items[i], m.items[j]
 
-	return m.SorterBase.Sort(col, order)
-}
+		c := func(ls bool) bool {
+			if m.sortOrder == walk.SortAscending {
+				return ls
+			}
 
-func (m *FooModel) Len() int {
-	return len(m.items)
-}
-
-func (m *FooModel) Less(i, j int) bool {
-	a, b := m.items[i], m.items[j]
-
-	c := func(ls bool) bool {
-		if m.sortOrder == walk.SortAscending {
-			return ls
+			return !ls
 		}
 
-		return !ls
-	}
+		switch m.sortColumn {
+		case 0:
+			return c(a.Index < b.Index)
 
-	switch m.sortColumn {
-	case 0:
-		return c(a.Index < b.Index)
+		case 1:
+			return c(a.Bar < b.Bar)
 
-	case 1:
-		return c(a.Bar < b.Bar)
+		case 2:
+			return c(a.Baz < b.Baz)
 
-	case 2:
-		return c(a.Baz < b.Baz)
+		case 3:
+			return c(a.Quux.Before(b.Quux))
+		}
 
-	case 3:
-		return c(a.Quux.Before(b.Quux))
-	}
+		panic("unreachable")
+	})
 
-	panic("unreachable")
-}
-
-func (m *FooModel) Swap(i, j int) {
-	m.items[i], m.items[j] = m.items[j], m.items[i]
-}
-
-// Called by the TableView to retrieve an item image.
-func (m *FooModel) Image(row int) interface{} {
-	if m.items[row].Index%2 == 0 {
-		return m.evenBitmap
-	}
-
-	return m.oddIcon
+	return m.SorterBase.Sort(col, order)
 }
 
 func (m *FooModel) ResetRows() {
@@ -160,6 +137,10 @@ func (m *FooModel) ResetRows() {
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
+	boldFont, _ := walk.NewFont("Segoe UI", 9, walk.FontBold)
+	goodIcon, _ := walk.Resources.Icon("../img/check.ico")
+	badIcon, _ := walk.Resources.Icon("../img/stop.ico")
+
 	model := NewFooModel()
 
 	var tv *walk.TableView
@@ -181,15 +162,44 @@ func main() {
 			},
 			TableView{
 				AssignTo:              &tv,
-				AlternatingRowBGColor: walk.RGB(255, 255, 224),
+				AlternatingRowBGColor: walk.RGB(239, 239, 239),
 				CheckBoxes:            true,
 				ColumnsOrderable:      true,
 				MultiSelection:        true,
 				Columns: []TableViewColumn{
 					{Title: "#"},
 					{Title: "Bar"},
-					{Title: "Baz", Format: "%.2f", Alignment: AlignFar},
+					{Title: "Baz", Alignment: AlignFar},
 					{Title: "Quux", Format: "2006-01-02 15:04:05", Width: 150},
+				},
+				StyleCell: func(style *walk.CellStyle) {
+					item := model.items[style.Row()]
+					isNew := item.Quux.After(time.Now().Add(-365 * 24 * time.Hour))
+
+					if isNew {
+						style.BackgroundColor = walk.RGB(159, 215, 255)
+					}
+
+					switch style.Col() {
+					case 1:
+						if len(item.Bar) == 5 {
+							style.BackgroundColor = walk.RGB(255, 255, 0)
+						}
+
+					case 2:
+						if item.Baz >= 900.0 {
+							style.TextColor = walk.RGB(0, 191, 0)
+							style.Image = goodIcon
+						} else if item.Baz < 100.0 {
+							style.TextColor = walk.RGB(255, 0, 0)
+							style.Image = badIcon
+						}
+
+					case 3:
+						if isNew {
+							style.Font = boldFont
+						}
+					}
 				},
 				Model: model,
 				OnSelectedIndexesChanged: func() {

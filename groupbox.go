@@ -77,8 +77,11 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	if err != nil {
 		return nil, err
 	}
+	gb.composite.name = "composite"
 
 	win.SetWindowPos(gb.checkBox.hWnd, win.HWND_TOP, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE)
+
+	gb.SetBackground(NullBrush())
 
 	gb.MustRegisterProperty("Title", NewProperty(
 		func() interface{} {
@@ -153,6 +156,22 @@ func (gb *GroupBox) ClientBounds() Rectangle {
 
 	// FIXME: Use appropriate margins
 	return Rectangle{cb.X + 1, cb.Y + 14, cb.Width - 2, cb.Height - 14}
+}
+
+func (gb *GroupBox) Persistent() bool {
+	return gb.composite.Persistent()
+}
+
+func (gb *GroupBox) SetPersistent(value bool) {
+	gb.composite.SetPersistent(value)
+}
+
+func (gb *GroupBox) SaveState() error {
+	return gb.composite.SaveState()
+}
+
+func (gb *GroupBox) RestoreState() error {
+	return gb.composite.RestoreState()
 }
 
 func (gb *GroupBox) applyEnabled(enabled bool) {
@@ -295,6 +314,11 @@ func (gb *GroupBox) MouseUp() *MouseEvent {
 func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if gb.composite != nil {
 		switch msg {
+		case win.WM_CTLCOLORSTATIC:
+			if hBrush := gb.handleWMCTLCOLOR(wParam, lParam); hBrush != 0 {
+				return hBrush
+			}
+
 		case win.WM_COMMAND, win.WM_NOTIFY:
 			gb.composite.WndProc(hwnd, msg, wParam, lParam)
 

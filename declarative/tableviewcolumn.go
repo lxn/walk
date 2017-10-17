@@ -27,6 +27,7 @@ type TableViewColumn struct {
 	Precision  int
 	Width      int
 	Hidden     bool
+	StyleCell  func(style *walk.CellStyle)
 }
 
 func (tvc TableViewColumn) Create(tv *walk.TableView) error {

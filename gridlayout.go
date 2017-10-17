@@ -341,7 +341,16 @@ func (l *GridLayout) LayoutFlags() LayoutFlags {
 			widget := children.At(i)
 
 			if shouldLayoutWidget(widget) {
-				flags |= widget.LayoutFlags()
+				wf := widget.LayoutFlags()
+
+				if wf&GreedyHorz != 0 && widget.MaxSize().Width > 0 {
+					wf &^= GreedyHorz
+				}
+				if wf&GreedyVert != 0 && widget.MaxSize().Height > 0 {
+					wf &^= GreedyVert
+				}
+
+				flags |= wf
 			}
 		}
 	}
@@ -460,11 +469,17 @@ func (l *GridLayout) Update(reset bool) error {
 		return nil
 	}
 
+	if !performingScheduledLayouts && scheduleLayout(l) {
+		return nil
+	}
+
 	if l.resetNeeded {
 		l.resetNeeded = false
 
 		l.cleanup()
 	}
+
+	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
 
 	widths := l.sectionSizes(Horizontal)
 	heights := l.sectionSizes(Vertical)
@@ -495,17 +510,21 @@ func (l *GridLayout) Update(reset bool) error {
 
 		w := 0
 		for i := info.cell.column; i < info.cell.column+info.spanHorz; i++ {
-			w += widths[i]
-			if i > info.cell.column {
-				w += l.spacing
+			if width := widths[i]; width > 0 {
+				w += width
+				if i > info.cell.column {
+					w += l.spacing
+				}
 			}
 		}
 
 		h := 0
 		for i := info.cell.row; i < info.cell.row+info.spanVert; i++ {
-			h += heights[i]
-			if i > info.cell.row {
-				h += l.spacing
+			if height := heights[i]; height > 0 {
+				h += height
+				if i > info.cell.row {
+					h += l.spacing
+				}
 			}
 		}
 
@@ -517,6 +536,16 @@ func (l *GridLayout) Update(reset bool) error {
 			}
 			if lf&GrowableVert == 0 {
 				h = hint.Height
+			}
+		}
+
+		if b := widget.Bounds(); b.X == x && b.Y == y && b.Width == w {
+			if _, ok := widget.(*ComboBox); ok {
+				if b.Height+1 == h {
+					continue
+				}
+			} else if b.Height == h {
+				continue
 			}
 		}
 

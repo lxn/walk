@@ -318,12 +318,18 @@ func (l *BoxLayout) Update(reset bool) error {
 		return nil
 	}
 
+	if !performingScheduledLayouts && scheduleLayout(l) {
+		return nil
+	}
+
 	if l.resetNeeded {
 		l.resetNeeded = false
 
 		// Make GC happy.
 		l.cleanupStretchFactors()
 	}
+
+	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
 
 	// Begin by finding out which widgets we care about.
 	widgets := l.widgets()
@@ -492,6 +498,18 @@ func (l *BoxLayout) Update(reset bool) error {
 			x, y, w, h = p2, p1, s2, s1
 		}
 
+		p1 += s1 + l.spacing
+
+		if b := widget.Bounds(); b.X == x && b.Y == y && b.Width == w {
+			if _, ok := widget.(*ComboBox); ok {
+				if b.Height+1 == h {
+					continue
+				}
+			} else if b.Height == h {
+				continue
+			}
+		}
+
 		if hdwp = win.DeferWindowPos(
 			hdwp,
 			widget.Handle(),
@@ -504,8 +522,6 @@ func (l *BoxLayout) Update(reset bool) error {
 
 			return lastError("DeferWindowPos")
 		}
-
-		p1 += s1 + l.spacing
 	}
 
 	if !win.EndDeferWindowPos(hdwp) {

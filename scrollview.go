@@ -22,11 +22,13 @@ func init() {
 
 type ScrollView struct {
 	WidgetBase
-	composite *Composite
+	composite  *Composite
+	horizontal bool
+	vertical   bool
 }
 
 func NewScrollView(parent Container) (*ScrollView, error) {
-	sv := new(ScrollView)
+	sv := &ScrollView{horizontal: true, vertical: true}
 
 	if err := InitWidget(
 		sv,
@@ -49,9 +51,7 @@ func NewScrollView(parent Container) (*ScrollView, error) {
 		return nil, err
 	}
 
-	sv.composite.SizeChanged().Attach(func() {
-		sv.updateScrollBars()
-	})
+	sv.SetBackground(NullBrush())
 
 	succeeded = true
 
@@ -63,11 +63,79 @@ func (sv *ScrollView) AsContainerBase() *ContainerBase {
 }
 
 func (sv *ScrollView) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
+	var flags LayoutFlags
+
+	h, v := sv.Scrollbars()
+
+	if h {
+		flags |= ShrinkableHorz | GrowableHorz | GreedyHorz
+	}
+
+	if v {
+		flags |= ShrinkableVert | GrowableVert | GreedyVert
+	}
+
+	return flags
 }
 
 func (sv *ScrollView) SizeHint() Size {
-	return sv.MinSizeHint()
+	return sv.sizeHint(true)
+}
+
+func (sv *ScrollView) MinSizeHint() Size {
+	return sv.sizeHint(false)
+}
+
+func (sv *ScrollView) sizeHint(ideal bool) Size {
+	if sv.composite == nil {
+		return Size{}
+	}
+
+	s := sv.composite.MinSizeHint()
+	cb := sv.ClientBounds()
+
+	h, v := sv.Scrollbars()
+
+	if h {
+		if !v {
+			if s.Width > cb.Width {
+				s.Height += int(win.GetSystemMetrics(win.SM_CYHSCROLL))
+			}
+		}
+
+		if !ideal {
+			s.Width = 100
+		}
+	}
+
+	if v {
+		if !h {
+			if s.Height > cb.Height {
+				s.Width += int(win.GetSystemMetrics(win.SM_CXVSCROLL))
+			}
+		}
+
+		if !ideal {
+			s.Height = 100
+		}
+	}
+
+	return s
+}
+
+func (sv *ScrollView) Scrollbars() (horizontal, vertical bool) {
+	horizontal = sv.horizontal
+	vertical = sv.vertical
+
+	return
+}
+
+func (sv *ScrollView) SetScrollbars(horizontal, vertical bool) {
+	sv.horizontal = horizontal
+	sv.vertical = vertical
+
+	sv.ensureStyleBits(win.WS_HSCROLL, horizontal)
+	sv.ensureStyleBits(win.WS_VSCROLL, vertical)
 }
 
 func (sv *ScrollView) SetSuspended(suspend bool) {
@@ -139,14 +207,30 @@ func (sv *ScrollView) MouseUp() *MouseEvent {
 
 func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if sv.composite != nil {
+		avoidBGArtifacts := func() {
+			switch bg, _ := sv.backgroundEffective(); bg.(type) {
+			case nil, *SolidColorBrush, *SystemColorBrush:
+				// nop
+
+			default:
+				sv.composite.Invalidate()
+			}
+		}
+
 		switch msg {
 		case win.WM_HSCROLL:
 			sv.composite.SetX(sv.scroll(win.SB_HORZ, win.LOWORD(uint32(wParam))))
+			avoidBGArtifacts()
 
 		case win.WM_VSCROLL:
 			sv.composite.SetY(sv.scroll(win.SB_VERT, win.LOWORD(uint32(wParam))))
+			avoidBGArtifacts()
 
 		case win.WM_MOUSEWHEEL:
+			if win.GetWindowLong(sv.hWnd, win.GWL_STYLE)&win.WS_VSCROLL == 0 {
+				break
+			}
+
 			var cmd uint16
 			if delta := int16(win.HIWORD(uint32(wParam))); delta < 0 {
 				cmd = win.SB_LINEDOWN
@@ -155,6 +239,7 @@ func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			}
 
 			sv.composite.SetY(sv.scroll(win.SB_VERT, cmd))
+			avoidBGArtifacts()
 
 			return 0
 
@@ -179,15 +264,31 @@ func (sv *ScrollView) updateScrollBars() {
 	si.CbSize = uint32(unsafe.Sizeof(si))
 	si.FMask = win.SIF_PAGE | win.SIF_RANGE
 
-	si.NMax = int32(s.Width - 1)
-	si.NPage = uint32(clb.Width)
-	win.SetScrollInfo(sv.hWnd, win.SB_HORZ, &si, false)
-	sv.composite.SetX(sv.scroll(win.SB_HORZ, win.SB_THUMBPOSITION))
+	h, v := sv.Scrollbars()
 
-	si.NMax = int32(s.Height - 1)
-	si.NPage = uint32(clb.Height)
-	win.SetScrollInfo(sv.hWnd, win.SB_VERT, &si, false)
-	sv.composite.SetY(sv.scroll(win.SB_VERT, win.SB_THUMBPOSITION))
+	sbFlags := win.GetWindowLong(sv.hWnd, win.GWL_STYLE) & (win.WS_HSCROLL | win.WS_VSCROLL)
+
+	if h {
+		si.NMax = int32(s.Width - 1)
+		si.NPage = uint32(clb.Width)
+		win.SetScrollInfo(sv.hWnd, win.SB_HORZ, &si, false)
+		sv.composite.SetX(sv.scroll(win.SB_HORZ, win.SB_THUMBPOSITION))
+	}
+
+	if v {
+		if h {
+			clb = sv.ClientBounds()
+		}
+
+		si.NMax = int32(s.Height - 1)
+		si.NPage = uint32(clb.Height)
+		win.SetScrollInfo(sv.hWnd, win.SB_VERT, &si, false)
+		sv.composite.SetY(sv.scroll(win.SB_VERT, win.SB_THUMBPOSITION))
+	}
+
+	if sbFlags != win.GetWindowLong(sv.hWnd, win.GWL_STYLE)&(win.WS_HSCROLL|win.WS_VSCROLL) {
+		sv.updateParentLayout()
+	}
 }
 
 func (sv *ScrollView) scroll(sb int32, cmd uint16) int {
@@ -229,4 +330,59 @@ func (sv *ScrollView) scroll(sb int32, cmd uint16) int {
 	win.SetScrollInfo(sv.hWnd, sb, &si, true)
 
 	return -int(pos)
+}
+
+func ifContainerIsScrollViewDoCoolSpecialLayoutStuff(layout Layout) bool {
+	if widget, ok := layout.Container().(Widget); ok {
+		if parent := widget.Parent(); parent != nil {
+			if sv, ok := parent.(*ScrollView); ok {
+				min := layout.MinSize()
+				flags := layout.LayoutFlags()
+
+				s := widget.Bounds().Size()
+
+				hsb, vsb := sv.Scrollbars()
+
+				var changeCompositeSize bool
+				if min.Width > s.Width || min.Width < s.Width && (!hsb || (flags&GreedyHorz == 0)) {
+					s.Width = min.Width
+					changeCompositeSize = true
+				}
+				if min.Height > s.Height || min.Height < s.Height && (!vsb || (flags&GreedyVert == 0)) {
+					s.Height = min.Height
+					changeCompositeSize = true
+				}
+
+				if changeCompositeSize {
+					widget.SetBounds(Rectangle{X: 0, Y: 0, Width: s.Width, Height: s.Height})
+					sv.updateScrollBars()
+					return false
+				}
+
+				parent = sv.Parent()
+
+				for parent != nil {
+					if parentLayout := parent.Layout(); parentLayout != nil {
+						flags := parentLayout.LayoutFlags()
+
+						if !hsb && flags&GreedyHorz != 0 || !vsb && flags&GreedyVert != 0 {
+							// Because logic...
+							if win.IsAppThemed() {
+								parentLayout.Update(false)
+							}
+							return true
+						}
+					}
+
+					if widget, ok := parent.(Widget); ok {
+						parent = widget.Parent()
+					} else {
+						break
+					}
+				}
+			}
+		}
+	}
+
+	return false
 }

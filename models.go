@@ -101,13 +101,24 @@ type TableModel interface {
 	// RowChanged returns the event that the model should publish when a row was
 	// changed.
 	RowChanged() *IntEvent
+
+	// RowsInserted returns the event that the model should publish when a
+	// contiguous range of items was inserted. If the model supports sorting, it
+	// is assumed to be sorted before the model publishes the event.
+	RowsInserted() *IntRangeEvent
+
+	// RowsRemoved returns the event that the model should publish when a
+	// contiguous range of items was removed.
+	RowsRemoved() *IntRangeEvent
 }
 
 // TableModelBase implements the RowsReset and RowChanged methods of the
 // TableModel interface.
 type TableModelBase struct {
-	rowsResetPublisher  EventPublisher
-	rowChangedPublisher IntEventPublisher
+	rowsResetPublisher    EventPublisher
+	rowChangedPublisher   IntEventPublisher
+	rowsInsertedPublisher IntRangeEventPublisher
+	rowsRemovedPublisher  IntRangeEventPublisher
 }
 
 func (tmb *TableModelBase) RowsReset() *Event {
@@ -118,12 +129,28 @@ func (tmb *TableModelBase) RowChanged() *IntEvent {
 	return tmb.rowChangedPublisher.Event()
 }
 
+func (tmb *TableModelBase) RowsInserted() *IntRangeEvent {
+	return tmb.rowsInsertedPublisher.Event()
+}
+
+func (tmb *TableModelBase) RowsRemoved() *IntRangeEvent {
+	return tmb.rowsRemovedPublisher.Event()
+}
+
 func (tmb *TableModelBase) PublishRowsReset() {
 	tmb.rowsResetPublisher.Publish()
 }
 
 func (tmb *TableModelBase) PublishRowChanged(row int) {
 	tmb.rowChangedPublisher.Publish(row)
+}
+
+func (tmb *TableModelBase) PublishRowsInserted(from, to int) {
+	tmb.rowsInsertedPublisher.Publish(from, to)
+}
+
+func (tmb *TableModelBase) PublishRowsRemoved(from, to int) {
+	tmb.rowsRemovedPublisher.Publish(from, to)
 }
 
 // ReflectTableModel provides an alternative to the TableModel interface. It
@@ -139,6 +166,15 @@ type ReflectTableModel interface {
 	// RowChanged returns the event that the model should publish when an item
 	// was changed.
 	RowChanged() *IntEvent
+
+	// RowsInserted returns the event that the model should publish when a
+	// contiguous range of items was inserted. If the model supports sorting, it
+	// is assumed to be sorted before the model publishes the event.
+	RowsInserted() *IntRangeEvent
+
+	// RowsRemoved returns the event that the model should publish when a
+	// contiguous range of items was removed.
+	RowsRemoved() *IntRangeEvent
 
 	setValueFunc(value func(row, col int) interface{})
 }
@@ -211,6 +247,39 @@ type ImageProvider interface {
 	// used. It is not supported to use strings together with the other options
 	// in the same model instance.
 	Image(index int) interface{}
+}
+
+// CellStyler is the interface that must be implemented to provide a tabular
+// widget like TableView with cell display style information.
+type CellStyler interface {
+	// StyleCell is called for each cell to pick up cell style information.
+	StyleCell(style *CellStyle)
+}
+
+// CellStyle carries information about the display style of a cell in a tabular widget
+// like TableView.
+type CellStyle struct {
+	row             int
+	col             int
+	BackgroundColor Color
+	TextColor       Color
+	Font            *Font
+
+	// Image is the image to display in the cell.
+	//
+	// Supported types are *walk.Bitmap, *walk.Icon and string. A string will be
+	// interpreted as a file path and the icon associated with the file will be
+	// used. It is not supported to use strings together with the other options
+	// in the same model instance.
+	Image interface{}
+}
+
+func (cs *CellStyle) Row() int {
+	return cs.row
+}
+
+func (cs *CellStyle) Col() int {
+	return cs.col
 }
 
 // ItemChecker is the interface that a model must implement to support check

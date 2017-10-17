@@ -16,10 +16,10 @@ var (
 )
 
 type Property interface {
+	Expression
 	ReadOnly() bool
 	Get() interface{}
 	Set(value interface{}) error
-	Changed() *Event
 	Source() interface{}
 	SetSource(source interface{}) error
 	Validatable() bool
@@ -42,6 +42,10 @@ func NewProperty(get func() interface{}, set func(v interface{}) error, changed 
 
 func (p *property) ReadOnly() bool {
 	return p.set == nil
+}
+
+func (p *property) Value() interface{} {
+	return p.get()
 }
 
 func (p *property) Get() interface{} {
@@ -91,6 +95,13 @@ func (p *property) SetSource(source interface{}) error {
 				})
 			}
 
+		case Expression:
+			p.Set(source.Value())
+
+			p.sourceChangedHandle = source.Changed().Attach(func() {
+				p.Set(source.Value())
+			})
+
 		default:
 			return newError("invalid source type")
 		}
@@ -134,6 +145,10 @@ func NewReadOnlyProperty(get func() interface{}, changed *Event) Property {
 
 func (*readOnlyProperty) ReadOnly() bool {
 	return true
+}
+
+func (rop *readOnlyProperty) Value() interface{} {
+	return rop.get()
 }
 
 func (rop *readOnlyProperty) Get() interface{} {
@@ -182,6 +197,10 @@ func NewBoolProperty(get func() bool, set func(b bool) error, changed *Event) Pr
 
 func (bp *boolProperty) ReadOnly() bool {
 	return bp.set == nil
+}
+
+func (bp *boolProperty) Value() interface{} {
+	return bp.get()
 }
 
 func (bp *boolProperty) Get() interface{} {
@@ -273,6 +292,10 @@ func NewReadOnlyBoolProperty(get func() bool, changed *Event) Property {
 
 func (*readOnlyBoolProperty) ReadOnly() bool {
 	return true
+}
+
+func (robp *readOnlyBoolProperty) Value() interface{} {
+	return robp.get()
 }
 
 func (robp *readOnlyBoolProperty) Get() interface{} {

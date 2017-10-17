@@ -8,24 +8,20 @@ package declarative
 
 import (
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type TextEdit struct {
-	AssignTo           **walk.TextEdit
-	Name               string
-	Enabled            Property
-	Visible            Property
-	Font               Font
-	ToolTipText        Property
-	MinSize            Size
-	MaxSize            Size
-	StretchFactor      int
-	Row                int
-	RowSpan            int
-	Column             int
-	ColumnSpan         int
-	AlwaysConsumeSpace bool
+	// Window
+
+	Background         Brush
 	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
 	OnKeyDown          walk.KeyEventHandler
 	OnKeyPress         walk.KeyEventHandler
 	OnKeyUp            walk.KeyEventHandler
@@ -33,30 +29,66 @@ type TextEdit struct {
 	OnMouseMove        walk.MouseEventHandler
 	OnMouseUp          walk.MouseEventHandler
 	OnSizeChanged      walk.EventHandler
-	Text               Property
-	ReadOnly           Property
-	MaxLength          int
+	Persistent         bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
+
+	// Widget
+
+	AlwaysConsumeSpace bool
+	Column             int
+	ColumnSpan         int
+	Row                int
+	RowSpan            int
+	StretchFactor      int
+
+	// TextEdit
+
+	Alignment     Alignment1D
+	AssignTo      **walk.TextEdit
+	HScroll       bool
+	MaxLength     int
+	OnTextChanged walk.EventHandler
+	ReadOnly      Property
+	Text          Property
+	TextColor     walk.Color
+	VScroll       bool
 }
 
 func (te TextEdit) Create(builder *Builder) error {
-	w, err := walk.NewTextEdit(builder.Parent())
+	var style uint32
+	if te.HScroll {
+		style |= win.WS_HSCROLL
+	}
+	if te.VScroll {
+		style |= win.WS_VSCROLL
+	}
+
+	w, err := walk.NewTextEditWithStyle(builder.Parent(), style)
 	if err != nil {
 		return err
 	}
 
 	return builder.InitWidget(te, w, func() error {
-		if te.AssignTo != nil {
-			*te.AssignTo = w
+		w.SetTextColor(te.TextColor)
+
+		if err := w.SetAlignment(walk.Alignment1D(te.Alignment)); err != nil {
+			return err
 		}
 
 		if te.MaxLength > 0 {
 			w.SetMaxLength(te.MaxLength)
 		}
 
+		if te.OnTextChanged != nil {
+			w.TextChanged().Attach(te.OnTextChanged)
+		}
+
+		if te.AssignTo != nil {
+			*te.AssignTo = w
+		}
+
 		return nil
 	})
-}
-
-func (w TextEdit) WidgetInfo() (name string, disabled, hidden bool, font *Font, toolTipText string, minSize, maxSize Size, stretchFactor, row, rowSpan, column, columnSpan int, alwaysConsumeSpace bool, contextMenuItems []MenuItem, OnKeyDown walk.KeyEventHandler, OnKeyPress walk.KeyEventHandler, OnKeyUp walk.KeyEventHandler, OnMouseDown walk.MouseEventHandler, OnMouseMove walk.MouseEventHandler, OnMouseUp walk.MouseEventHandler, OnSizeChanged walk.EventHandler) {
-	return w.Name, false, false, &w.Font, "", w.MinSize, w.MaxSize, w.StretchFactor, w.Row, w.RowSpan, w.Column, w.ColumnSpan, w.AlwaysConsumeSpace, w.ContextMenuItems, w.OnKeyDown, w.OnKeyPress, w.OnKeyUp, w.OnMouseDown, w.OnMouseMove, w.OnMouseUp, w.OnSizeChanged
 }

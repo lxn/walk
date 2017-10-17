@@ -61,6 +61,15 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 		return nil, err
 	}
 
+	ne.MustRegisterProperty("ReadOnly", NewProperty(
+		func() interface{} {
+			return ne.ReadOnly()
+		},
+		func(v interface{}) error {
+			return ne.SetReadOnly(v.(bool))
+		},
+		ne.edit.readOnlyChangedPublisher.Event()))
+
 	ne.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
 			return ne.Value()
@@ -270,12 +279,49 @@ func (ne *NumberEdit) SetTextSelection(start, end int) {
 	ne.edit.SetTextSelection(start, end)
 }
 
+// ReadOnly returns whether the NumberEdit is in read-only mode.
+func (ne *NumberEdit) ReadOnly() bool {
+	return ne.edit.ReadOnly()
+}
+
+// SetReadOnly sets whether the NumberEdit is in read-only mode.
+func (ne *NumberEdit) SetReadOnly(readOnly bool) error {
+	return ne.edit.SetReadOnly(readOnly)
+}
+
+// Background returns the background Brush of the NumberEdit.
+//
+// By default this is nil.
+func (ne *NumberEdit) Background() Brush {
+	return ne.edit.Background()
+}
+
+// SetBackground sets the background Brush of the NumberEdit.
+func (ne *NumberEdit) SetBackground(bg Brush) {
+	ne.edit.SetBackground(bg)
+}
+
+// TextColor returns the Color used to draw the text of the NumberEdit.
+func (ne *NumberEdit) TextColor() Color {
+	return ne.edit.TextColor()
+}
+
+// TextColor sets the Color used to draw the text of the NumberEdit.
+func (ne *NumberEdit) SetTextColor(c Color) {
+	ne.edit.SetTextColor(c)
+}
+
 // WndProc is the window procedure of the NumberEdit.
 //
 // When implementing your own WndProc to add or modify behavior, call the
 // WndProc of the embedded NumberEdit for messages you don't handle yourself.
 func (ne *NumberEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
+	case win.WM_CTLCOLOREDIT, win.WM_CTLCOLORSTATIC:
+		if hBrush := ne.handleWMCTLCOLOR(wParam, lParam); hBrush != 0 {
+			return hBrush
+		}
+
 	case win.WM_SIZE, win.WM_SIZING:
 		if ne.edit == nil {
 			break
@@ -333,6 +379,14 @@ func newNumberLineEdit(parent Widget) (*numberLineEdit, error) {
 	succeeded = true
 
 	return nle, nil
+}
+
+func (nle *numberLineEdit) TextColor() Color {
+	return nle.LineEdit.TextColor()
+}
+
+func (nle *numberLineEdit) SetTextColor(c Color) {
+	nle.LineEdit.SetTextColor(c)
 }
 
 func (nle *numberLineEdit) setValue(value float64, setText bool) error {
@@ -492,6 +546,10 @@ func (nle *numberLineEdit) incrementValue(delta float64) {
 func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_CHAR:
+		if nle.ReadOnly() {
+			break
+		}
+
 		if AltDown() {
 			return 0
 		}
@@ -573,6 +631,10 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			}
 
 		case KeyDelete:
+			if nle.ReadOnly() {
+				break
+			}
+
 			text := nle.textUTF16()
 			text = text[len(nle.prefix) : len(text)-len(nle.suffix)]
 			start, end := nle.TextSelection()
@@ -583,6 +645,10 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			return 0
 
 		case KeyDown:
+			if nle.ReadOnly() {
+				return 0
+			}
+
 			nle.incrementValue(-nle.increment)
 			return 0
 
@@ -619,6 +685,10 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			}
 
 		case KeyReturn:
+			if nle.ReadOnly() {
+				break
+			}
+
 			if nle.inEditMode {
 				nle.endEdit()
 				nle.selectNumber()
@@ -640,6 +710,10 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			}
 
 		case KeyUp:
+			if nle.ReadOnly() {
+				return 0
+			}
+
 			nle.incrementValue(nle.increment)
 			return 0
 		}
@@ -693,11 +767,19 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 		}
 
 	case win.WM_MOUSEWHEEL:
+		if nle.ReadOnly() {
+			break
+		}
+
 		delta := float64(int16(win.HIWORD(uint32(wParam))))
 		nle.incrementValue(delta / 120 * nle.increment)
 		return 0
 
 	case win.WM_PASTE:
+		if nle.ReadOnly() {
+			break
+		}
+
 		ret := nle.LineEdit.WndProc(hwnd, msg, wParam, lParam)
 		if !nle.tryUpdateValue(true) {
 			nle.setTextFromValue(nle.value)

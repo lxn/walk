@@ -15,29 +15,224 @@ import (
 
 import (
 	"github.com/lxn/win"
+	"image/color"
 )
 
-func withCompatibleDC(f func(hdc win.HDC) error) error {
-	hdc := win.CreateCompatibleDC(0)
-	if hdc == 0 {
-		return newError("CreateCompatibleDC failed")
-	}
-	defer win.DeleteDC(hdc)
-
-	return f(hdc)
+type Bitmap struct {
+	hBmp       win.HBITMAP
+	hPackedDIB win.HGLOBAL
+	size       Size
 }
 
-func hPackedDIBFromHBITMAP(hBmp win.HBITMAP) (win.HGLOBAL, error) {
-	var dib win.DIBSECTION
-	if win.GetObject(win.HGDIOBJ(hBmp), unsafe.Sizeof(dib), unsafe.Pointer(&dib)) == 0 {
-		return 0, newError("GetObject failed")
+func NewBitmap(size Size) (bmp *Bitmap, err error) {
+	var hdr win.BITMAPINFOHEADER
+	hdr.BiSize = uint32(unsafe.Sizeof(hdr))
+	hdr.BiBitCount = 32
+	hdr.BiCompression = win.BI_RGB
+	hdr.BiPlanes = 1
+	hdr.BiWidth = int32(size.Width)
+	hdr.BiHeight = int32(size.Height)
+
+	err = withCompatibleDC(func(hdc win.HDC) error {
+		hBmp := win.CreateDIBSection(hdc, &hdr, win.DIB_RGB_COLORS, nil, 0, 0)
+		switch hBmp {
+		case 0, win.ERROR_INVALID_PARAMETER:
+			return newError("CreateDIBSection failed")
+		}
+
+		bmp, err = newBitmapFromHBITMAP(hBmp)
+		return err
+	})
+
+	return
+}
+
+func NewBitmapFromFile(filePath string) (*Bitmap, error) {
+	var si win.GdiplusStartupInput
+	si.GdiplusVersion = 1
+	if status := win.GdiplusStartup(&si, nil); status != win.Ok {
+		return nil, newError(fmt.Sprintf("GdiplusStartup failed with status '%s'", status))
+	}
+	defer win.GdiplusShutdown()
+
+	var gpBmp *win.GpBitmap
+	if status := win.GdipCreateBitmapFromFile(syscall.StringToUTF16Ptr(filePath), &gpBmp); status != win.Ok {
+		return nil, newError(fmt.Sprintf("GdipCreateBitmapFromFile failed with status '%s' for file '%s'", status, filePath))
+	}
+	defer win.GdipDisposeImage((*win.GpImage)(gpBmp))
+
+	var hBmp win.HBITMAP
+	if status := win.GdipCreateHBITMAPFromBitmap(gpBmp, &hBmp, 0); status != win.Ok {
+		return nil, newError(fmt.Sprintf("GdipCreateHBITMAPFromBitmap failed with status '%s' for file '%s'", status, filePath))
 	}
 
-	bmihSize := uintptr(unsafe.Sizeof(dib.DsBmih))
-	pixelsSize := uintptr(
-		int32(dib.DsBmih.BiBitCount) * dib.DsBmih.BiWidth * dib.DsBmih.BiHeight)
+	return newBitmapFromHBITMAP(hBmp)
+}
 
-	totalSize := bmihSize + pixelsSize
+func NewBitmapFromImage(im image.Image) (*Bitmap, error) {
+	hBmp, err := hBitmapFromImage(im)
+	if err != nil {
+		return nil, err
+	}
+
+	return newBitmapFromHBITMAP(hBmp)
+}
+
+func NewBitmapFromResource(name string) (*Bitmap, error) {
+	return newBitmapFromResource(syscall.StringToUTF16Ptr(name))
+}
+
+func NewBitmapFromResourceId(id int) (*Bitmap, error) {
+	return newBitmapFromResource(win.MAKEINTRESOURCE(uintptr(id)))
+}
+
+func newBitmapFromResource(res *uint16) (bm *Bitmap, err error) {
+	hInst := win.GetModuleHandle(nil)
+	if hInst == 0 {
+		err = lastError("GetModuleHandle")
+		return
+	}
+
+	if hBmp := win.LoadImage(hInst, res, win.IMAGE_BITMAP, 0, 0, win.LR_CREATEDIBSECTION); hBmp == 0 {
+		err = lastError("LoadImage")
+	} else {
+		bm, err = newBitmapFromHBITMAP(win.HBITMAP(hBmp))
+	}
+
+	return
+}
+
+func NewBitmapFromWindow(window Window) (*Bitmap, error) {
+	hBmp, err := hBitmapFromWindow(window)
+	if err != nil {
+		return nil, err
+	}
+
+	return newBitmapFromHBITMAP(hBmp)
+}
+
+func (bmp *Bitmap) ToImage() (*image.RGBA, error) {
+	var bi win.BITMAPINFO
+	bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
+	hdc := win.GetDC(0)
+	if ret := win.GetDIBits(hdc, bmp.hBmp, 0, 0, nil, &bi, win.DIB_RGB_COLORS); ret == 0 {
+		return nil, newError("GetDIBits get bitmapinfo failed")
+	}
+
+	buf := make([]byte, bi.BmiHeader.BiSizeImage)
+	bi.BmiHeader.BiCompression = win.BI_RGB
+	if ret := win.GetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS); ret == 0 {
+		return nil, newError("GetDIBits failed")
+	}
+
+	width := int(bi.BmiHeader.BiWidth)
+	height := int(bi.BmiHeader.BiHeight)
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	n := 0
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			r := buf[n+2]
+			g := buf[n+1]
+			b := buf[n+0]
+			n += int(bi.BmiHeader.BiBitCount) / 8
+			img.Set(x, height-y-1, color.RGBA{r, g, b, 255})
+		}
+	}
+
+	return img, nil
+}
+
+func (bmp *Bitmap) Dispose() {
+	if bmp.hBmp != 0 {
+		win.DeleteObject(win.HGDIOBJ(bmp.hBmp))
+
+		win.GlobalUnlock(bmp.hPackedDIB)
+		win.GlobalFree(bmp.hPackedDIB)
+
+		bmp.hPackedDIB = 0
+		bmp.hBmp = 0
+	}
+}
+
+func (bmp *Bitmap) Size() Size {
+	return bmp.size
+}
+
+func (bmp *Bitmap) handle() win.HBITMAP {
+	return bmp.hBmp
+}
+
+func (bmp *Bitmap) draw(hdc win.HDC, location Point) error {
+	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
+		size := bmp.Size()
+
+		if !win.BitBlt(
+			hdc,
+			int32(location.X),
+			int32(location.Y),
+			int32(size.Width),
+			int32(size.Height),
+			hdcMem,
+			0,
+			0,
+			win.SRCCOPY) {
+
+			return lastError("BitBlt")
+		}
+
+		return nil
+	})
+}
+
+func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds Rectangle) error {
+	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
+		size := bmp.Size()
+
+		if !win.StretchBlt(
+			hdc,
+			int32(bounds.X),
+			int32(bounds.Y),
+			int32(bounds.Width),
+			int32(bounds.Height),
+			hdcMem,
+			0,
+			0,
+			int32(size.Width),
+			int32(size.Height),
+			win.SRCCOPY) {
+
+			return newError("StretchBlt failed")
+		}
+
+		return nil
+	})
+}
+
+func (bmp *Bitmap) withSelectedIntoMemDC(f func(hdcMem win.HDC) error) error {
+	return withCompatibleDC(func(hdcMem win.HDC) error {
+		hBmpOld := win.SelectObject(hdcMem, win.HGDIOBJ(bmp.hBmp))
+		if hBmpOld == 0 {
+			return newError("SelectObject failed")
+		}
+		defer win.SelectObject(hdcMem, hBmpOld)
+
+		return f(hdcMem)
+	})
+}
+
+func newBitmapFromHBITMAP(hBmp win.HBITMAP) (bmp *Bitmap, err error) {
+	var dib win.DIBSECTION
+	if win.GetObject(win.HGDIOBJ(hBmp), unsafe.Sizeof(dib), unsafe.Pointer(&dib)) == 0 {
+		return nil, newError("GetObject failed")
+	}
+
+	bmih := &dib.DsBmih
+
+	bmihSize := uintptr(unsafe.Sizeof(*bmih))
+	pixelsSize := uintptr(int32(bmih.BiBitCount)*bmih.BiWidth*bmih.BiHeight) / 8
+
+	totalSize := uintptr(bmihSize + pixelsSize)
 
 	hPackedDIB := win.GlobalAlloc(win.GHND, totalSize)
 	dest := win.GlobalLock(hPackedDIB)
@@ -48,11 +243,18 @@ func hPackedDIBFromHBITMAP(hBmp win.HBITMAP) (win.HGLOBAL, error) {
 	win.MoveMemory(dest, src, bmihSize)
 
 	dest = unsafe.Pointer(uintptr(dest) + bmihSize)
-	src = unsafe.Pointer(uintptr(src) + bmihSize)
+	src = dib.DsBm.BmBits
 
 	win.MoveMemory(dest, src, pixelsSize)
 
-	return hPackedDIB, nil
+	return &Bitmap{
+		hBmp:       hBmp,
+		hPackedDIB: hPackedDIB,
+		size: Size{
+			int(bmih.BiWidth),
+			int(bmih.BiHeight),
+		},
+	}, nil
 }
 
 func hBitmapFromImage(im image.Image) (win.HBITMAP, error) {
@@ -121,178 +323,16 @@ func hBitmapFromWindow(window Window) (win.HBITMAP, error) {
 	window.SendMessage(win.WM_PRINT, uintptr(hdcMem), uintptr(flags))
 
 	win.SelectObject(hdcMem, hOld)
+
 	return hBmp, nil
 }
 
-type Bitmap struct {
-	hBmp       win.HBITMAP
-	hPackedDIB win.HGLOBAL
-	size       Size
-}
-
-func newBitmapFromHBITMAP(hBmp win.HBITMAP) (bmp *Bitmap, err error) {
-	var dib win.DIBSECTION
-	if win.GetObject(win.HGDIOBJ(hBmp), unsafe.Sizeof(dib), unsafe.Pointer(&dib)) == 0 {
-		return nil, newError("GetObject failed")
+func withCompatibleDC(f func(hdc win.HDC) error) error {
+	hdc := win.CreateCompatibleDC(0)
+	if hdc == 0 {
+		return newError("CreateCompatibleDC failed")
 	}
+	defer win.DeleteDC(hdc)
 
-	bmih := &dib.DsBmih
-
-	bmihSize := uintptr(unsafe.Sizeof(*bmih))
-	pixelsSize := uintptr(int32(bmih.BiBitCount)*bmih.BiWidth*bmih.BiHeight) / 8
-
-	totalSize := uintptr(bmihSize + pixelsSize)
-
-	hPackedDIB := win.GlobalAlloc(win.GHND, totalSize)
-	dest := win.GlobalLock(hPackedDIB)
-	defer win.GlobalUnlock(hPackedDIB)
-
-	src := unsafe.Pointer(&dib.DsBmih)
-
-	win.MoveMemory(dest, src, bmihSize)
-
-	dest = unsafe.Pointer(uintptr(dest) + bmihSize)
-	src = dib.DsBm.BmBits
-
-	win.MoveMemory(dest, src, pixelsSize)
-
-	return &Bitmap{
-		hBmp:       hBmp,
-		hPackedDIB: hPackedDIB,
-		size: Size{
-			int(bmih.BiWidth),
-			int(bmih.BiHeight),
-		},
-	}, nil
-}
-
-func NewBitmap(size Size) (bmp *Bitmap, err error) {
-	var hdr win.BITMAPINFOHEADER
-	hdr.BiSize = uint32(unsafe.Sizeof(hdr))
-	hdr.BiBitCount = 24
-	hdr.BiCompression = win.BI_RGB
-	hdr.BiPlanes = 1
-	hdr.BiWidth = int32(size.Width)
-	hdr.BiHeight = int32(size.Height)
-
-	err = withCompatibleDC(func(hdc win.HDC) error {
-		hBmp := win.CreateDIBSection(hdc, &hdr, win.DIB_RGB_COLORS, nil, 0, 0)
-		switch hBmp {
-		case 0, win.ERROR_INVALID_PARAMETER:
-			return newError("CreateDIBSection failed")
-		}
-
-		bmp, err = newBitmapFromHBITMAP(hBmp)
-		return err
-	})
-
-	return
-}
-
-func NewBitmapFromFile(filePath string) (*Bitmap, error) {
-	var si win.GdiplusStartupInput
-	si.GdiplusVersion = 1
-	if status := win.GdiplusStartup(&si, nil); status != win.Ok {
-		return nil, newError(fmt.Sprintf("GdiplusStartup failed with status '%s'", status))
-	}
-	defer win.GdiplusShutdown()
-
-	var gpBmp *win.GpBitmap
-	if status := win.GdipCreateBitmapFromFile(syscall.StringToUTF16Ptr(filePath), &gpBmp); status != win.Ok {
-		return nil, newError(fmt.Sprintf("GdipCreateBitmapFromFile failed with status '%s' for file '%s'", status, filePath))
-	}
-	defer win.GdipDisposeImage((*win.GpImage)(gpBmp))
-
-	var hBmp win.HBITMAP
-	if status := win.GdipCreateHBITMAPFromBitmap(gpBmp, &hBmp, 0); status != win.Ok {
-		return nil, newError(fmt.Sprintf("GdipCreateHBITMAPFromBitmap failed with status '%s' for file '%s'", status, filePath))
-	}
-
-	return newBitmapFromHBITMAP(hBmp)
-}
-
-func NewBitmapFromImage(im image.Image) (*Bitmap, error) {
-	hBmp, err := hBitmapFromImage(im)
-	if err != nil {
-		return nil, err
-	}
-	return newBitmapFromHBITMAP(hBmp)
-}
-
-func (bmp *Bitmap) withSelectedIntoMemDC(f func(hdcMem win.HDC) error) error {
-	return withCompatibleDC(func(hdcMem win.HDC) error {
-		hBmpOld := win.SelectObject(hdcMem, win.HGDIOBJ(bmp.hBmp))
-		if hBmpOld == 0 {
-			return newError("SelectObject failed")
-		}
-		defer win.SelectObject(hdcMem, hBmpOld)
-
-		return f(hdcMem)
-	})
-}
-
-func (bmp *Bitmap) draw(hdc win.HDC, location Point) error {
-	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
-		size := bmp.Size()
-
-		if !win.BitBlt(
-			hdc,
-			int32(location.X),
-			int32(location.Y),
-			int32(size.Width),
-			int32(size.Height),
-			hdcMem,
-			0,
-			0,
-			win.SRCCOPY) {
-
-			return lastError("BitBlt")
-		}
-
-		return nil
-	})
-}
-
-func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds Rectangle) error {
-	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
-		size := bmp.Size()
-
-		if !win.StretchBlt(
-			hdc,
-			int32(bounds.X),
-			int32(bounds.Y),
-			int32(bounds.Width),
-			int32(bounds.Height),
-			hdcMem,
-			0,
-			0,
-			int32(size.Width),
-			int32(size.Height),
-			win.SRCCOPY) {
-
-			return newError("StretchBlt failed")
-		}
-
-		return nil
-	})
-}
-
-func (bmp *Bitmap) handle() win.HBITMAP {
-	return bmp.hBmp
-}
-
-func (bmp *Bitmap) Dispose() {
-	if bmp.hBmp != 0 {
-		win.DeleteObject(win.HGDIOBJ(bmp.hBmp))
-
-		win.GlobalUnlock(bmp.hPackedDIB)
-		win.GlobalFree(bmp.hPackedDIB)
-
-		bmp.hPackedDIB = 0
-		bmp.hBmp = 0
-	}
-}
-
-func (bmp *Bitmap) Size() Size {
-	return bmp.size
+	return f(hdc)
 }
