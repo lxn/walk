@@ -203,6 +203,14 @@ func (tv *TreeView) ItemAt(x, y int) TreeItem {
 	return nil
 }
 
+func (tv *TreeView) ItemHeight() int {
+	return int(tv.SendMessage(win.TVM_GETITEMHEIGHT, 0, 0))
+}
+
+func (tv *TreeView) SetItemHeight(height int) {
+	tv.SendMessage(win.TVM_SETITEMHEIGHT, uintptr(height), 0)
+}
+
 func (tv *TreeView) resetItems() error {
 	tv.SetSuspended(true)
 	defer tv.SetSuspended(false)
