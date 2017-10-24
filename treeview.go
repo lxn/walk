@@ -112,6 +112,24 @@ func (tv *TreeView) Dispose() {
 	tv.disposeImageListAndCaches()
 }
 
+func (tv *TreeView) SetBackground(bg Brush) {
+	tv.WidgetBase.SetBackground(bg)
+
+	color := Color(win.GetSysColor(win.COLOR_WINDOW))
+
+	if bg != nil {
+		type Colorer interface {
+			Color() Color
+		}
+
+		if c, ok := bg.(Colorer); ok {
+			color = c.Color()
+		}
+	}
+
+	tv.SendMessage(win.TVM_SETBKCOLOR, 0, uintptr(color))
+}
+
 func (tv *TreeView) Model() TreeModel {
 	return tv.model
 }
