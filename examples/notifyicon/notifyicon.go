@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// We load our icon from a file.
-	icon, err := walk.NewIconFromFile("../img/x.ico")
+	icon, err := walk.Resources.Icon("../img/stop.ico")
 	if err != nil {
 		log.Fatal(err)
 	}
