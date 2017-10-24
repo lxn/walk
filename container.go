@@ -297,8 +297,8 @@ func (cb *ContainerBase) SetSuspended(suspend bool) {
 
 func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case win.WM_CTLCOLORSTATIC:
-		if hBrush := cb.handleWMCTLCOLORSTATIC(wParam, lParam); hBrush != 0 {
+	case win.WM_CTLCOLOREDIT, win.WM_CTLCOLORSTATIC:
+		if hBrush := cb.handleWMCTLCOLOR(wParam, lParam); hBrush != 0 {
 			return hBrush
 		}
 

@@ -52,6 +52,7 @@ type TextEdit struct {
 	OnTextChanged walk.EventHandler
 	ReadOnly      Property
 	Text          Property
+	TextColor     walk.Color
 	VScroll       bool
 }
 
@@ -70,6 +71,8 @@ func (te TextEdit) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(te, w, func() error {
+		w.SetTextColor(te.TextColor)
+
 		if err := w.SetAlignment(walk.Alignment1D(te.Alignment)); err != nil {
 			return err
 		}

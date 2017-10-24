@@ -289,12 +289,39 @@ func (ne *NumberEdit) SetReadOnly(readOnly bool) error {
 	return ne.edit.SetReadOnly(readOnly)
 }
 
+// Background returns the background Brush of the NumberEdit.
+//
+// By default this is nil.
+func (ne *NumberEdit) Background() Brush {
+	return ne.edit.Background()
+}
+
+// SetBackground sets the background Brush of the NumberEdit.
+func (ne *NumberEdit) SetBackground(bg Brush) {
+	ne.edit.SetBackground(bg)
+}
+
+// TextColor returns the Color used to draw the text of the NumberEdit.
+func (ne *NumberEdit) TextColor() Color {
+	return ne.edit.TextColor()
+}
+
+// TextColor sets the Color used to draw the text of the NumberEdit.
+func (ne *NumberEdit) SetTextColor(c Color) {
+	ne.edit.SetTextColor(c)
+}
+
 // WndProc is the window procedure of the NumberEdit.
 //
 // When implementing your own WndProc to add or modify behavior, call the
 // WndProc of the embedded NumberEdit for messages you don't handle yourself.
 func (ne *NumberEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
+	case win.WM_CTLCOLOREDIT, win.WM_CTLCOLORSTATIC:
+		if hBrush := ne.handleWMCTLCOLOR(wParam, lParam); hBrush != 0 {
+			return hBrush
+		}
+
 	case win.WM_SIZE, win.WM_SIZING:
 		if ne.edit == nil {
 			break
@@ -352,6 +379,14 @@ func newNumberLineEdit(parent Widget) (*numberLineEdit, error) {
 	succeeded = true
 
 	return nle, nil
+}
+
+func (nle *numberLineEdit) TextColor() Color {
+	return nle.LineEdit.TextColor()
+}
+
+func (nle *numberLineEdit) SetTextColor(c Color) {
+	nle.LineEdit.SetTextColor(c)
 }
 
 func (nle *numberLineEdit) setValue(value float64, setText bool) error {
