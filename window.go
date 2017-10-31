@@ -351,12 +351,12 @@ func MustRegisterWindowClassWithWndProcPtrAndStyle(className string, wndProcPtr 
 		panic("GetModuleHandle")
 	}
 
-	hIcon := win.LoadIcon(0, (*uint16)(unsafe.Pointer(uintptr(win.IDI_APPLICATION))))
+	hIcon = win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_APPLICATION))
 	if hIcon == 0 {
 		panic("LoadIcon")
 	}
 
-	hCursor := win.LoadCursor(0, (*uint16)(unsafe.Pointer(uintptr(win.IDC_ARROW))))
+	hCursor := win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_ARROW))
 	if hCursor == 0 {
 		panic("LoadCursor")
 	}
