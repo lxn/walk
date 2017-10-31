@@ -403,11 +403,16 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
+	var windowName *uint16
+	if len(wb.name) != 0 {
+		windowName = syscall.StringToUTF16Ptr(wb.name)
+	}
+
 	if hwnd := window.Handle(); hwnd == 0 {
 		wb.hWnd = win.CreateWindowEx(
 			exStyle,
 			syscall.StringToUTF16Ptr(className),
-			nil,
+			windowName,
 			style|win.WS_CLIPSIBLINGS,
 			win.CW_USEDEFAULT,
 			win.CW_USEDEFAULT,
