@@ -62,6 +62,8 @@ type Form interface {
 	Run() int
 	Starting() *Event
 	Closing() *CloseEvent
+	Activating() *Event
+	Deactivating() *Event
 	Activate() error
 	Show()
 	Hide()
@@ -384,6 +386,14 @@ func (fb *FormBase) Run() int {
 
 func (fb *FormBase) Starting() *Event {
 	return fb.startingPublisher.Event()
+}
+
+func (fb *FormBase) Activating() *Event {
+	return fb.activatingPublisher.Event()
+}
+
+func (fb *FormBase) Deactivating() *Event {
+	return fb.deactivatingPublisher.Event()
 }
 
 func (fb *FormBase) Activate() error {
