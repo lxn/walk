@@ -111,6 +111,7 @@ func (d Dialog) Create(owner walk.Form) error {
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
+		w.SetBounds(w.Bounds())
 		return nil
 	})
 
