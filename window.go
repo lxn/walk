@@ -882,6 +882,12 @@ func (wb *WindowBase) SetVisible(visible bool) {
 
 	wb.visible = visible
 
+	walkDescendants(wb.window, func(w Window) bool {
+		w.AsWindowBase().visibleChangedPublisher.Publish()
+
+		return true
+	})
+
 	if visible == old {
 		return
 	}
