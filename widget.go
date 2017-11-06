@@ -403,5 +403,15 @@ func ancestor(w Widget) Form {
 }
 
 func minSizeEffective(w Widget) Size {
-	return maxSize(w.MinSize(), w.MinSizeHint())
+	s := maxSize(w.MinSize(), w.MinSizeHint())
+
+	max := w.MaxSize()
+	if max.Width > 0 && s.Width > max.Width {
+		s.Width = max.Width
+	}
+	if max.Height > 0 && s.Height > max.Height {
+		s.Height = max.Height
+	}
+
+	return s
 }
