@@ -273,7 +273,7 @@ func (fb *FormBase) onInsertingWidget(index int, widget Widget) error {
 func (fb *FormBase) onInsertedWidget(index int, widget Widget) error {
 	err := fb.clientComposite.onInsertedWidget(index, widget)
 	if err == nil {
-		if layout := fb.Layout(); layout != nil {
+		if layout := fb.Layout(); layout != nil && !fb.Suspended() {
 			minClientSize := fb.Layout().MinSize()
 			clientSize := fb.clientComposite.Size()
 
@@ -619,6 +619,10 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		return fb.clientComposite.WndProc(hwnd, msg, wParam, lParam)
 
 	case win.WM_GETMINMAXINFO:
+		if fb.Suspended() {
+			break
+		}
+
 		mmi := (*win.MINMAXINFO)(unsafe.Pointer(lParam))
 
 		layout := fb.clientComposite.Layout()
