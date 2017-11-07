@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	icon1, err := walk.NewIconFromFile("../img/x.ico")
+	icon1, err := walk.NewIconFromFile("../img/check.ico")
 	if err != nil {
 		log.Fatal(err)
 	}
