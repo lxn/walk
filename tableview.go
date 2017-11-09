@@ -171,6 +171,12 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 		},
 		tv.CurrentIndexChanged()))
 
+	tv.MustRegisterProperty("SelectedCount", NewReadOnlyProperty(
+		func() interface{} {
+			return len(tv.selectedIndexes)
+		},
+		tv.SelectedIndexesChanged()))
+
 	succeeded = true
 
 	return tv, nil
