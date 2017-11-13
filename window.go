@@ -351,12 +351,15 @@ func MustRegisterWindowClassWithWndProcPtrAndStyle(className string, wndProcPtr 
 		panic("GetModuleHandle")
 	}
 
-	hIcon := win.LoadIcon(0, (*uint16)(unsafe.Pointer(uintptr(win.IDI_APPLICATION))))
+	hIcon := win.LoadIcon(hInst, win.MAKEINTRESOURCE(7)) // rsrc uses 7 for app icon
+	if hIcon == 0 {
+		hIcon = win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_APPLICATION))
+	}
 	if hIcon == 0 {
 		panic("LoadIcon")
 	}
 
-	hCursor := win.LoadCursor(0, (*uint16)(unsafe.Pointer(uintptr(win.IDC_ARROW))))
+	hCursor := win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_ARROW))
 	if hCursor == 0 {
 		panic("LoadCursor")
 	}
@@ -400,11 +403,16 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
+	var windowName *uint16
+	if len(wb.name) != 0 {
+		windowName = syscall.StringToUTF16Ptr(wb.name)
+	}
+
 	if hwnd := window.Handle(); hwnd == 0 {
 		wb.hWnd = win.CreateWindowEx(
 			exStyle,
 			syscall.StringToUTF16Ptr(className),
-			nil,
+			windowName,
 			style|win.WS_CLIPSIBLINGS,
 			win.CW_USEDEFAULT,
 			win.CW_USEDEFAULT,

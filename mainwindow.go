@@ -29,7 +29,12 @@ type MainWindow struct {
 }
 
 func NewMainWindow() (*MainWindow, error) {
+	return NewMainWindowWithName("")
+}
+
+func NewMainWindowWithName(name string) (*MainWindow, error) {
 	mw := new(MainWindow)
+	mw.SetName(name)
 
 	if err := InitWindow(
 		mw,
