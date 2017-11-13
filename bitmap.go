@@ -111,6 +111,15 @@ func NewBitmapFromWindow(window Window) (*Bitmap, error) {
 	return newBitmapFromHBITMAP(hBmp)
 }
 
+func NewBitmapFromIcon(icon *Icon, size Size) (*Bitmap, error) {
+	hBmp, err := hBitmapFromIcon(icon, size)
+	if err != nil {
+		return nil, err
+	}
+
+	return newBitmapFromHBITMAP(hBmp)
+}
+
 func (bmp *Bitmap) ToImage() (*image.RGBA, error) {
 	var bi win.BITMAPINFO
 	bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
@@ -323,6 +332,47 @@ func hBitmapFromWindow(window Window) (win.HBITMAP, error) {
 	window.SendMessage(win.WM_PRINT, uintptr(hdcMem), uintptr(flags))
 
 	win.SelectObject(hdcMem, hOld)
+
+	return hBmp, nil
+}
+
+func hBitmapFromIcon(icon *Icon, size Size) (win.HBITMAP, error) {
+	hdc := win.GetDC(0)
+	defer win.ReleaseDC(0, hdc)
+
+	hdcMem := win.CreateCompatibleDC(hdc)
+	if hdcMem == 0 {
+		return 0, newError("CreateCompatibleDC failed")
+	}
+	defer win.DeleteDC(hdcMem)
+
+	var bi win.BITMAPV5HEADER
+	bi.BiSize = uint32(unsafe.Sizeof(bi))
+	bi.BiWidth = int32(size.Width)
+	bi.BiHeight = int32(size.Height)
+	bi.BiPlanes = 1
+	bi.BiBitCount = 32
+	bi.BiCompression = win.BI_RGB
+	// The following mask specification specifies a supported 32 BPP
+	// alpha format for Windows XP.
+	bi.BV4RedMask = 0x00FF0000
+	bi.BV4GreenMask = 0x0000FF00
+	bi.BV4BlueMask = 0x000000FF
+	bi.BV4AlphaMask = 0xFF000000
+
+	hBmp := win.CreateDIBSection(hdcMem, &bi.BITMAPINFOHEADER, win.DIB_RGB_COLORS, nil, 0, 0)
+	switch hBmp {
+	case 0, win.ERROR_INVALID_PARAMETER:
+		return 0, newError("CreateDIBSection failed")
+	}
+
+	hOld := win.SelectObject(hdcMem, win.HGDIOBJ(hBmp))
+	defer win.SelectObject(hdcMem, hOld)
+
+	err := icon.drawStretched(hdcMem, Rectangle{Width: size.Width, Height: size.Height})
+	if err != nil {
+		return 0, err
+	}
 
 	return hBmp, nil
 }
