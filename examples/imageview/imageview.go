@@ -12,16 +12,66 @@ import (
 func main() {
 	walk.Resources.SetRootDirPath("../img")
 
+	bg := SolidColorBrush{Color: walk.RGB(127, 191, 255)}
+
 	MainWindow{
-		Title:   "Walk ImageView Example",
-		MinSize: Size{300, 200},
-		Layout:  HBox{},
+		Title:  "Walk ImageView Example",
+		Size:   Size{400, 600},
+		Layout: Grid{Columns: 2},
 		Children: []Widget{
-			ImageView{
-				Image: "check.ico",
+			Label{
+				Text: "ImageViewModeIdeal",
 			},
 			ImageView{
-				Image: "plus.png",
+				Background: bg,
+				Image:      "check.ico",
+				Margin:     10,
+				Mode:       ImageViewModeIdeal,
+			},
+			Label{
+				Text: "ImageViewModeCorner",
+			},
+			ImageView{
+				Background: bg,
+				Image:      "check.ico",
+				Margin:     10,
+				Mode:       ImageViewModeCorner,
+			},
+			Label{
+				Text: "ImageViewModeCenter",
+			},
+			ImageView{
+				Background: bg,
+				Image:      "check.ico",
+				Margin:     10,
+				Mode:       ImageViewModeCenter,
+			},
+			Label{
+				Text: "ImageViewModeShrink",
+			},
+			ImageView{
+				Background: bg,
+				Image:      "check.ico",
+				Margin:     10,
+				Mode:       ImageViewModeShrink,
+			},
+			Label{
+				Text: "ImageViewModeZoom",
+			},
+			ImageView{
+				Background: bg,
+				Image:      "check.ico",
+				Margin:     10,
+				Mode:       ImageViewModeZoom,
+			},
+			Label{
+				Text: "ImageViewModeStretch",
+			},
+			ImageView{
+				Background: bg,
+				Image:      "check.ico",
+				Margin:     10,
+				Mode:       ImageViewModeStretch,
 			},
 		},
 	}.Run()
