@@ -173,32 +173,14 @@ func (bmp *Bitmap) handle() win.HBITMAP {
 }
 
 func (bmp *Bitmap) draw(hdc win.HDC, location Point) error {
-	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
-		size := bmp.Size()
-
-		if !win.BitBlt(
-			hdc,
-			int32(location.X),
-			int32(location.Y),
-			int32(size.Width),
-			int32(size.Height),
-			hdcMem,
-			0,
-			0,
-			win.SRCCOPY) {
-
-			return lastError("BitBlt")
-		}
-
-		return nil
-	})
+	return bmp.drawStretched(hdc, Rectangle{X: location.X, Y: location.Y, Width: bmp.size.Width, Height: bmp.size.Height})
 }
 
 func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds Rectangle) error {
 	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
 		size := bmp.Size()
 
-		if !win.StretchBlt(
+		if !win.AlphaBlend(
 			hdc,
 			int32(bounds.X),
 			int32(bounds.Y),
@@ -209,9 +191,9 @@ func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds Rectangle) error {
 			0,
 			int32(size.Width),
 			int32(size.Height),
-			win.SRCCOPY) {
+			win.BLENDFUNCTION{AlphaFormat: win.AC_SRC_ALPHA, SourceConstantAlpha: 255}) {
 
-			return newError("StretchBlt failed")
+			return newError("AlphaBlend failed")
 		}
 
 		return nil
