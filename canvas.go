@@ -242,6 +242,14 @@ func (c *Canvas) DrawImageStretched(image Image, bounds Rectangle) error {
 	return image.drawStretched(c.hdc, bounds)
 }
 
+func (c *Canvas) DrawBitmapWithOpacity(bmp *Bitmap, bounds Rectangle, opacity byte) error {
+	if bmp == nil {
+		return newError("bmp cannot be nil")
+	}
+
+	return bmp.alphaBlend(c.hdc, bounds, opacity)
+}
+
 func (c *Canvas) DrawLine(pen Pen, from, to Point) error {
 	if !win.MoveToEx(c.hdc, from.X, from.Y, nil) {
 		return newError("MoveToEx failed")
