@@ -131,6 +131,8 @@ func (mw *MyMainWindow) openImage() error {
 		}
 	}()
 
+	imageView.SetMode(walk.ImageViewModeShrink)
+
 	if err := imageView.SetImage(img); err != nil {
 		return err
 	}
