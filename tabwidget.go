@@ -322,10 +322,7 @@ func (tw *TabWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 	return tw.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-var (
-	tabWidgetTabWndProcPtr = syscall.NewCallback(tabWidgetTabWndProc)
-	tabWidgetBitmap        *Bitmap
-)
+var tabWidgetTabWndProcPtr = syscall.NewCallback(tabWidgetTabWndProc)
 
 func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	tw := (*TabWidget)(unsafe.Pointer(win.GetWindowLongPtr(hwnd, win.GWLP_USERDATA)))
@@ -345,19 +342,13 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 		cb := tw.ClientBounds()
 
-		var err error
-		if tabWidgetBitmap == nil {
-			if tabWidgetBitmap, err = NewBitmap(cb.Size()); err != nil {
-				break
-			}
-		} else if tabWidgetBitmap.size.Width < cb.Width || tabWidgetBitmap.size.Height < cb.Height {
-			tabWidgetBitmap.Dispose()
-			if tabWidgetBitmap, err = NewBitmap(maxSize(tabWidgetBitmap.size, cb.Size())); err != nil {
-				break
-			}
+		bitmap, err := NewBitmap(cb.Size())
+		if err != nil {
+			break
 		}
+		defer bitmap.Dispose()
 
-		canvas, err := NewCanvasFromImage(tabWidgetBitmap)
+		canvas, err := NewCanvasFromImage(bitmap)
 		if err != nil {
 			break
 		}
