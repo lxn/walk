@@ -24,7 +24,17 @@ type Bitmap struct {
 	size       Size
 }
 
-func NewBitmap(size Size) (bmp *Bitmap, err error) {
+func NewBitmap(size Size) (*Bitmap, error) {
+	return newBitmap(size, false)
+}
+
+func NewBitmapWithTransparentPixels(size Size) (*Bitmap, error) {
+	return newBitmap(size, true)
+}
+
+func newBitmap(size Size, transparent bool) (bmp *Bitmap, err error) {
+	bufSize := size.Width * size.Height * 4
+
 	var hdr win.BITMAPINFOHEADER
 	hdr.BiSize = uint32(unsafe.Sizeof(hdr))
 	hdr.BiBitCount = 32
@@ -32,12 +42,26 @@ func NewBitmap(size Size) (bmp *Bitmap, err error) {
 	hdr.BiPlanes = 1
 	hdr.BiWidth = int32(size.Width)
 	hdr.BiHeight = int32(size.Height)
+	hdr.BiSizeImage = uint32(bufSize)
 
 	err = withCompatibleDC(func(hdc win.HDC) error {
-		hBmp := win.CreateDIBSection(hdc, &hdr, win.DIB_RGB_COLORS, nil, 0, 0)
+		var bitsPtr unsafe.Pointer
+
+		hBmp := win.CreateDIBSection(hdc, &hdr, win.DIB_RGB_COLORS, &bitsPtr, 0, 0)
 		switch hBmp {
 		case 0, win.ERROR_INVALID_PARAMETER:
 			return newError("CreateDIBSection failed")
+		}
+
+		if transparent {
+			win.GdiFlush()
+
+			bits := (*[1 << 24]byte)(bitsPtr)
+
+			for i := 0; i < bufSize; i += 4 {
+				// Mark pixel as not drawn to by GDI.
+				bits[i+3] = 0x01
+			}
 		}
 
 		bmp, err = newBitmapFromHBITMAP(hBmp)
@@ -152,6 +176,39 @@ func (bmp *Bitmap) ToImage() (*image.RGBA, error) {
 	return img, nil
 }
 
+func (bmp *Bitmap) postProcess() {
+	var bi win.BITMAPINFO
+	bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
+	hdc := win.GetDC(0)
+	if ret := win.GetDIBits(hdc, bmp.hBmp, 0, 0, nil, &bi, win.DIB_RGB_COLORS); ret == 0 {
+		return
+	}
+
+	buf := make([]byte, bi.BmiHeader.BiSizeImage)
+	bi.BmiHeader.BiCompression = win.BI_RGB
+	if ret := win.GetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS); ret == 0 {
+		return
+	}
+
+	win.GdiFlush()
+
+	for i := 0; i < len(buf); i += 4 {
+		switch buf[i+3] {
+		case 0x00:
+			// The pixel has been drawn to by GDI, so we make it fully opaque.
+			buf[i+3] = 0xff
+
+		case 0x01:
+			// The pixel has not been drawn to by GDI, so we make it fully transparent.
+			buf[i+3] = 0x00
+		}
+	}
+
+	if 0 == win.SetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS) {
+		return
+	}
+}
+
 func (bmp *Bitmap) Dispose() {
 	if bmp.hBmp != 0 {
 		win.DeleteObject(win.HGDIOBJ(bmp.hBmp))
@@ -181,20 +238,24 @@ func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds Rectangle) error {
 }
 
 func (bmp *Bitmap) alphaBlend(hdc win.HDC, bounds Rectangle, opacity byte) error {
-	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
-		size := bmp.Size()
+	size := bmp.Size()
 
+	return bmp.alphaBlendPart(hdc, bounds, Rectangle{0, 0, size.Width, size.Height}, opacity)
+}
+
+func (bmp *Bitmap) alphaBlendPart(hdc win.HDC, dst, src Rectangle, opacity byte) error {
+	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
 		if !win.AlphaBlend(
 			hdc,
-			int32(bounds.X),
-			int32(bounds.Y),
-			int32(bounds.Width),
-			int32(bounds.Height),
+			int32(dst.X),
+			int32(dst.Y),
+			int32(dst.Width),
+			int32(dst.Height),
 			hdcMem,
-			0,
-			0,
-			int32(size.Width),
-			int32(size.Height),
+			int32(src.X),
+			int32(src.Y),
+			int32(src.Width),
+			int32(src.Height),
 			win.BLENDFUNCTION{AlphaFormat: win.AC_SRC_ALPHA, SourceConstantAlpha: opacity}) {
 
 			return newError("AlphaBlend failed")
