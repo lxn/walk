@@ -24,7 +24,17 @@ type Bitmap struct {
 	size       Size
 }
 
-func NewBitmap(size Size) (bmp *Bitmap, err error) {
+func NewBitmap(size Size) (*Bitmap, error) {
+	return newBitmap(size, false)
+}
+
+func NewBitmapWithTransparentPixels(size Size) (*Bitmap, error) {
+	return newBitmap(size, true)
+}
+
+func newBitmap(size Size, transparent bool) (bmp *Bitmap, err error) {
+	bufSize := size.Width * size.Height * 4
+
 	var hdr win.BITMAPINFOHEADER
 	hdr.BiSize = uint32(unsafe.Sizeof(hdr))
 	hdr.BiBitCount = 32
@@ -32,12 +42,26 @@ func NewBitmap(size Size) (bmp *Bitmap, err error) {
 	hdr.BiPlanes = 1
 	hdr.BiWidth = int32(size.Width)
 	hdr.BiHeight = int32(size.Height)
+	hdr.BiSizeImage = uint32(bufSize)
 
 	err = withCompatibleDC(func(hdc win.HDC) error {
-		hBmp := win.CreateDIBSection(hdc, &hdr, win.DIB_RGB_COLORS, nil, 0, 0)
+		var bitsPtr unsafe.Pointer
+
+		hBmp := win.CreateDIBSection(hdc, &hdr, win.DIB_RGB_COLORS, &bitsPtr, 0, 0)
 		switch hBmp {
 		case 0, win.ERROR_INVALID_PARAMETER:
 			return newError("CreateDIBSection failed")
+		}
+
+		if transparent {
+			win.GdiFlush()
+
+			bits := (*[1 << 24]byte)(bitsPtr)
+
+			for i := 0; i < bufSize; i += 4 {
+				// Mark pixel as not drawn to by GDI.
+				bits[i+3] = 0x01
+			}
 		}
 
 		bmp, err = newBitmapFromHBITMAP(hBmp)
@@ -150,6 +174,39 @@ func (bmp *Bitmap) ToImage() (*image.RGBA, error) {
 	}
 
 	return img, nil
+}
+
+func (bmp *Bitmap) postProcess() {
+	var bi win.BITMAPINFO
+	bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
+	hdc := win.GetDC(0)
+	if ret := win.GetDIBits(hdc, bmp.hBmp, 0, 0, nil, &bi, win.DIB_RGB_COLORS); ret == 0 {
+		return
+	}
+
+	buf := make([]byte, bi.BmiHeader.BiSizeImage)
+	bi.BmiHeader.BiCompression = win.BI_RGB
+	if ret := win.GetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS); ret == 0 {
+		return
+	}
+
+	win.GdiFlush()
+
+	for i := 0; i < len(buf); i += 4 {
+		switch buf[i+3] {
+		case 0x00:
+			// The pixel has been drawn to by GDI, so we make it fully opaque.
+			buf[i+3] = 0xff
+
+		case 0x01:
+			// The pixel has not been drawn to by GDI, so we make it fully transparent.
+			buf[i+3] = 0x00
+		}
+	}
+
+	if 0 == win.SetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS) {
+		return
+	}
 }
 
 func (bmp *Bitmap) Dispose() {

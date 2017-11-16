@@ -52,9 +52,10 @@ type Canvas struct {
 	hwnd                win.HWND
 	dpix                int
 	dpiy                int
-	doNotDispose        bool
+	bitmap              *Bitmap
 	recordingMetafile   *Metafile
 	measureTextMetafile *Metafile
+	doNotDispose        bool
 }
 
 func NewCanvasFromImage(image Image) (*Canvas, error) {
@@ -78,7 +79,7 @@ func NewCanvasFromImage(image Image) (*Canvas, error) {
 
 		succeeded = true
 
-		return (&Canvas{hdc: hdc}).init()
+		return (&Canvas{hdc: hdc, bitmap: img}).init()
 
 	case *Metafile:
 		c, err := newCanvasFromHDC(img.hdc)
@@ -133,8 +134,9 @@ func (c *Canvas) init() (*Canvas, error) {
 
 func (c *Canvas) Dispose() {
 	if !c.doNotDispose && c.hdc != 0 {
-		if c.hwnd == 0 {
+		if c.bitmap != nil {
 			win.DeleteDC(c.hdc)
+			c.bitmap.postProcess()
 		} else {
 			win.ReleaseDC(c.hwnd, c.hdc)
 		}
