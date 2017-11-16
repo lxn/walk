@@ -317,6 +317,32 @@ func (c *Canvas) FillRectangle(brush Brush, bounds Rectangle) error {
 	return c.rectangle(brush, nullPenSingleton, bounds, 1)
 }
 
+func (c *Canvas) roundedRectangle(brush Brush, pen Pen, bounds Rectangle, ellipseSize Size, sizeCorrection int) error {
+	return c.withBrushAndPen(brush, pen, func() error {
+		if !win.RoundRect(
+			c.hdc,
+			int32(bounds.X),
+			int32(bounds.Y),
+			int32(bounds.X+bounds.Width+sizeCorrection),
+			int32(bounds.Y+bounds.Height+sizeCorrection),
+			int32(ellipseSize.Width),
+			int32(ellipseSize.Height)) {
+
+			return newError("RoundRect failed")
+		}
+
+		return nil
+	})
+}
+
+func (c *Canvas) DrawRoundedRectangle(pen Pen, bounds Rectangle, ellipseSize Size) error {
+	return c.roundedRectangle(nullBrushSingleton, pen, bounds, ellipseSize, 0)
+}
+
+func (c *Canvas) FillRoundedRectangle(brush Brush, bounds Rectangle, ellipseSize Size) error {
+	return c.roundedRectangle(brush, nullPenSingleton, bounds, ellipseSize, 1)
+}
+
 func (c *Canvas) GradientFillRectangle(color1, color2 Color, orientation Orientation, bounds Rectangle) error {
 	vertices := [2]win.TRIVERTEX{
 		{
