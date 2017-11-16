@@ -252,6 +252,14 @@ func (c *Canvas) DrawBitmapWithOpacity(bmp *Bitmap, bounds Rectangle, opacity by
 	return bmp.alphaBlend(c.hdc, bounds, opacity)
 }
 
+func (c *Canvas) DrawBitmapPartWithOpacity(bmp *Bitmap, dst, src Rectangle, opacity byte) error {
+	if bmp == nil {
+		return newError("bmp cannot be nil")
+	}
+
+	return bmp.alphaBlendPart(c.hdc, dst, src, opacity)
+}
+
 func (c *Canvas) DrawLine(pen Pen, from, to Point) error {
 	if !win.MoveToEx(c.hdc, from.X, from.Y, nil) {
 		return newError("MoveToEx failed")

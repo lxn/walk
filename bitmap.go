@@ -238,20 +238,24 @@ func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds Rectangle) error {
 }
 
 func (bmp *Bitmap) alphaBlend(hdc win.HDC, bounds Rectangle, opacity byte) error {
-	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
-		size := bmp.Size()
+	size := bmp.Size()
 
+	return bmp.alphaBlendPart(hdc, bounds, Rectangle{0, 0, size.Width, size.Height}, opacity)
+}
+
+func (bmp *Bitmap) alphaBlendPart(hdc win.HDC, dst, src Rectangle, opacity byte) error {
+	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
 		if !win.AlphaBlend(
 			hdc,
-			int32(bounds.X),
-			int32(bounds.Y),
-			int32(bounds.Width),
-			int32(bounds.Height),
+			int32(dst.X),
+			int32(dst.Y),
+			int32(dst.Width),
+			int32(dst.Height),
 			hdcMem,
-			0,
-			0,
-			int32(size.Width),
-			int32(size.Height),
+			int32(src.X),
+			int32(src.Y),
+			int32(src.Width),
+			int32(src.Height),
 			win.BLENDFUNCTION{AlphaFormat: win.AC_SRC_ALPHA, SourceConstantAlpha: opacity}) {
 
 			return newError("AlphaBlend failed")
