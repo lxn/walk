@@ -10,7 +10,7 @@ import (
 	"github.com/lxn/win"
 )
 
-var validationErrorGlowEffect = NewBorderGlowEffect(RGB(255, 0, 0))
+var validationErrorGlowEffect, _ = NewBorderGlowEffect(RGB(255, 0, 0))
 
 type ToolTipErrorPresenter struct {
 	toolTip                     *ToolTip

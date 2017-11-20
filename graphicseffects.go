@@ -7,132 +7,145 @@
 package walk
 
 import (
-	"github.com/lxn/win"
-	"log"
 	"math"
-	"unsafe"
 )
 
 var (
 	borderGlowAlpha = []float64{0.4, 0.2, 0.15, 0.1, 0.15}
 
-	defaultDropShadowEffect = NewDropShadowEffect(RGB(63, 63, 63))
+	defaultDropShadowEffect, _ = NewDropShadowEffect(RGB(63, 63, 63))
 )
 
 type WidgetGraphicsEffect interface {
-	Draw(widget Widget, renderTarget *win.ID2D1RenderTarget) error
+	Draw(widget Widget, canvas *Canvas) error
+}
+
+type widgetGraphicsEffectBase struct {
+	color  Color
+	bitmap *Bitmap
+}
+
+func (wgeb *widgetGraphicsEffectBase) create(color Color) error {
+	bitmap, err := NewBitmapWithTransparentPixels(Size{12, 12})
+	if err != nil {
+		return err
+	}
+
+	canvas, err := NewCanvasFromImage(bitmap)
+	if err != nil {
+		return err
+	}
+	defer canvas.Dispose()
+
+	var succeeded bool
+	defer func() {
+		if !succeeded {
+			bitmap.Dispose()
+		}
+	}()
+
+	for i := 1; i <= 5; i++ {
+		bmp, err := NewBitmapWithTransparentPixels(Size{i*2 + 2, i*2 + 2})
+		if err != nil {
+			return err
+		}
+		defer bmp.Dispose()
+
+		bmpCanvas, err := NewCanvasFromImage(bmp)
+		if err != nil {
+			return err
+		}
+		defer bmpCanvas.Dispose()
+
+		color := RGB(
+			byte(math.Min(1.0, float64(color.R())/255.0-0.1+0.1*float64(i))*255.0),
+			byte(math.Min(1.0, float64(color.G())/255.0-0.1+0.1*float64(i))*255.0),
+			byte(math.Min(1.0, float64(color.B())/255.0-0.1+0.1*float64(i))*255.0),
+		)
+
+		brush, err := NewSolidColorBrush(color)
+		if err != nil {
+			return err
+		}
+		defer brush.Dispose()
+
+		if err := bmpCanvas.FillRoundedRectangle(brush, Rectangle{0, 0, i*2 + 2, i*2 + 2}, Size{i * 2, i * 2}); err != nil {
+			return err
+		}
+
+		bmpCanvas.Dispose()
+
+		opacity := byte(borderGlowAlpha[i-1] * 255.0)
+
+		canvas.DrawBitmapWithOpacity(bmp, Rectangle{5 - i, 5 - i, i*2 + 2, i*2 + 2}, opacity)
+	}
+
+	succeeded = true
+
+	wgeb.color = color
+	wgeb.bitmap = bitmap
+
+	return nil
+}
+
+func (wgeb *widgetGraphicsEffectBase) Dispose() {
+	if wgeb.bitmap != nil {
+		wgeb.bitmap.Dispose()
+		wgeb.bitmap = nil
+	}
 }
 
 type BorderGlowEffect struct {
-	color Color
+	widgetGraphicsEffectBase
 }
 
-func NewBorderGlowEffect(color Color) *BorderGlowEffect {
-	return &BorderGlowEffect{color: color}
-}
+func NewBorderGlowEffect(color Color) (*BorderGlowEffect, error) {
+	bge := new(BorderGlowEffect)
 
-var (
-	id2d1Factory *win.ID2D1Factory
-)
-
-func init() {
-	var factory unsafe.Pointer
-
-	if !win.SUCCEEDED(win.D2D1CreateFactory(
-		win.D2D1_FACTORY_TYPE_SINGLE_THREADED,
-		&win.IID_ID2D1Factory,
-		&win.D2D1_FACTORY_OPTIONS{DebugLevel: win.D2D1_DEBUG_LEVEL_NONE},
-		&factory)) {
-		log.Println("D2D1CreateFactory failed")
+	if err := bge.create(color); err != nil {
+		return nil, err
 	}
 
-	id2d1Factory = (*win.ID2D1Factory)(factory)
+	return bge, nil
 }
 
-func (bge *BorderGlowEffect) Draw(widget Widget, renderTarget *win.ID2D1RenderTarget) error {
-	bounds := widget.Bounds()
+func (bge *BorderGlowEffect) Draw(widget Widget, canvas *Canvas) error {
+	b := widget.Bounds()
 
-	for i := 1; i <= 5; i++ {
-		width := float32(i)
-
-		color := win.D2D1_COLOR_F{
-			R: float32(math.Min(1.0, float64(bge.color.R())/255.0-0.1+0.1*float64(width))),
-			G: float32(math.Min(1.0, float64(bge.color.G())/255.0-0.1+0.1*float64(width))),
-			B: float32(math.Min(1.0, float64(bge.color.B())/255.0-0.1+0.1*float64(width))),
-			A: float32(borderGlowAlpha[i-1]),
-		}
-
-		var scBrush *win.ID2D1SolidColorBrush
-		if hr := renderTarget.CreateSolidColorBrush(&color, nil, &scBrush); !win.SUCCEEDED(hr) {
-			return errorFromHRESULT("ID2D1RenderTarget.CreateSolidColorBrush", hr)
-		}
-		defer scBrush.Release()
-
-		rr := win.D2D1_ROUNDED_RECT{
-			Rect: win.D2D1_RECT_F{
-				Left:   float32(bounds.X) - width,
-				Top:    float32(bounds.Y) - width,
-				Right:  float32(bounds.X+bounds.Width) + width,
-				Bottom: float32(bounds.Y+bounds.Height) + width,
-			},
-			RadiusX: width,
-			RadiusY: width,
-		}
-
-		brush := (*win.ID2D1Brush)(unsafe.Pointer(scBrush))
-
-		// DrawRoundedRectangle does not work, because syscall does not support float args,
-		// so we have to fill the whole thing...
-		renderTarget.FillRoundedRectangle(&rr, brush)
-	}
+	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X - 5, b.Y - 5, 5, 5}, Rectangle{0, 0, 5, 5})
+	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X, b.Y - 5, b.Width, 5}, Rectangle{5 + 1, 0, 1, 5})
+	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X + b.Width, b.Y - 5, 5, 5}, Rectangle{5 + 2, 0, 5, 5})
+	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X + b.Width, b.Y, 5, b.Height}, Rectangle{5 + 2, 5 + 1, 5, 1})
+	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X + b.Width, b.Y + b.Height, 5, 5}, Rectangle{5 + 2, 5 + 2, 5, 5})
+	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X, b.Y + b.Height, b.Width, 5}, Rectangle{5 + 1, 5 + 2, 1, 5})
+	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X - 5, b.Y + b.Height, 5, 5}, Rectangle{0, 5 + 2, 5, 5})
+	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X - 5, b.Y, 5, b.Height}, Rectangle{0, 5 + 1, 5, 1})
 
 	return nil
 }
 
 type DropShadowEffect struct {
-	color Color
+	widgetGraphicsEffectBase
 }
 
-func NewDropShadowEffect(color Color) *DropShadowEffect {
-	return &DropShadowEffect{color: color}
-}
+func NewDropShadowEffect(color Color) (*DropShadowEffect, error) {
+	dse := new(DropShadowEffect)
 
-func (dse *DropShadowEffect) Draw(widget Widget, renderTarget *win.ID2D1RenderTarget) error {
-	bounds := widget.Bounds()
-
-	for i := 1; i <= 5; i++ {
-		width := float32(i)
-
-		color := win.D2D1_COLOR_F{
-			R: float32(math.Min(1.0, float64(dse.color.R())/255.0-0.1+0.1*float64(width))),
-			G: float32(math.Min(1.0, float64(dse.color.G())/255.0-0.1+0.1*float64(width))),
-			B: float32(math.Min(1.0, float64(dse.color.B())/255.0-0.1+0.1*float64(width))),
-			A: float32(borderGlowAlpha[i-1]),
-		}
-
-		var scBrush *win.ID2D1SolidColorBrush
-		if hr := renderTarget.CreateSolidColorBrush(&color, nil, &scBrush); !win.SUCCEEDED(hr) {
-			return errorFromHRESULT("ID2D1RenderTarget.CreateSolidColorBrush", hr)
-		}
-		defer scBrush.Release()
-
-		rr := win.D2D1_ROUNDED_RECT{
-			Rect: win.D2D1_RECT_F{
-				Left:   float32(bounds.X+10) - width,
-				Top:    float32(bounds.Y+10) - width,
-				Right:  float32(bounds.X+bounds.Width) + width,
-				Bottom: float32(bounds.Y+bounds.Height) + width,
-			},
-			RadiusX: width,
-			RadiusY: width,
-		}
-
-		brush := (*win.ID2D1Brush)(unsafe.Pointer(scBrush))
-
-		// DrawRoundedRectangle does not work, because syscall does not support float args,
-		// so we have to fill the whole thing...
-		renderTarget.FillRoundedRectangle(&rr, brush)
+	if err := dse.create(color); err != nil {
+		return nil, err
 	}
+
+	return dse, nil
+}
+
+func (dse *DropShadowEffect) Draw(widget Widget, canvas *Canvas) error {
+	b := widget.Bounds()
+
+	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + b.Width, b.Y + 10 - 5, 5, 5}, Rectangle{5 + 2, 0, 5, 5})
+	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + b.Width, b.Y + 10, 5, b.Height - 10}, Rectangle{5 + 2, 5 + 1, 5, 1})
+	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + b.Width, b.Y + b.Height, 5, 5}, Rectangle{5 + 2, 5 + 2, 5, 5})
+	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + 10, b.Y + b.Height, b.Width - 10, 5}, Rectangle{5 + 1, 5 + 2, 1, 5})
+	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + 10 - 5, b.Y + b.Height, 5, 5}, Rectangle{0, 5 + 2, 5, 5})
 
 	return nil
 }

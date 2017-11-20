@@ -11,7 +11,6 @@ import (
 )
 
 import (
-	"fmt"
 	"github.com/lxn/win"
 )
 
@@ -149,12 +148,11 @@ type applyFocusEffecter interface {
 
 type ContainerBase struct {
 	WidgetBase
-	layout       Layout
-	children     *WidgetList
-	dataBinder   *DataBinder
-	renderTarget *win.ID2D1RenderTarget
-	focusEffect  WidgetGraphicsEffect
-	persistent   bool
+	layout      Layout
+	children    *WidgetList
+	dataBinder  *DataBinder
+	focusEffect WidgetGraphicsEffect
+	persistent  bool
 }
 
 func (cb *ContainerBase) AsWidgetBase() *WidgetBase {
@@ -332,112 +330,17 @@ func (cb *ContainerBase) SetSuspended(suspend bool) {
 	}
 }
 
-func (cb *ContainerBase) Dispose() {
-	if cb.renderTarget != nil {
-		cb.renderTarget.Release()
-		cb.renderTarget = nil
-	}
-
-	cb.WidgetBase.Dispose()
-}
-
-func (cb *ContainerBase) createRenderTarget(hdc win.HDC) error {
-	if cb.renderTarget != nil {
-		cb.renderTarget.Release()
-		cb.renderTarget = nil
-	}
-
-	if false {
-		props := win.D2D1_RENDER_TARGET_PROPERTIES{
-			Type: win.D2D1_RENDER_TARGET_TYPE_DEFAULT,
-			PixelFormat: win.D2D1_PIXEL_FORMAT{
-				Format:    win.DXGI_FORMAT_UNKNOWN,
-				AlphaMode: win.D2D1_ALPHA_MODE_UNKNOWN,
-			},
-			DpiX:     0.0,
-			DpiY:     0.0,
-			Usage:    win.D2D1_RENDER_TARGET_USAGE_NONE,
-			MinLevel: win.D2D1_FEATURE_LEVEL_DEFAULT,
-		}
-
-		b := cb.ClientBounds()
-
-		fmt.Printf("createRenderTarget - b: %#v\n", b)
-
-		hwndRTProps := win.D2D1_HWND_RENDER_TARGET_PROPERTIES{
-			Hwnd: cb.hWnd,
-			PixelSize: win.D2D1_SIZE_U{
-				Width:  uint32(b.Width),
-				Height: uint32(b.Height),
-			},
-			PresentOptions: win.D2D1_PRESENT_OPTIONS_RETAIN_CONTENTS,
-		}
-
-		var hwndRT *win.ID2D1HwndRenderTarget
-
-		if hr := id2d1Factory.CreateHwndRenderTarget(&props, &hwndRTProps, &hwndRT); !win.SUCCEEDED(hr) {
-			return errorFromHRESULT("ID2D1Factory.CreateHwndRenderTarget", hr)
-		}
-
-		cb.renderTarget = (*win.ID2D1RenderTarget)(unsafe.Pointer(hwndRT))
-	} else {
-		dpiX := float32(win.GetDeviceCaps(hdc, win.LOGPIXELSX))
-		dpiY := float32(win.GetDeviceCaps(hdc, win.LOGPIXELSY))
-
-		props := win.D2D1_RENDER_TARGET_PROPERTIES{
-			Type: win.D2D1_RENDER_TARGET_TYPE_DEFAULT,
-			PixelFormat: win.D2D1_PIXEL_FORMAT{
-				Format:    win.DXGI_FORMAT_B8G8R8A8_UNORM,
-				AlphaMode: win.D2D1_ALPHA_MODE_PREMULTIPLIED,
-			},
-			DpiX:     dpiX,
-			DpiY:     dpiY,
-			Usage:    win.D2D1_RENDER_TARGET_USAGE_GDI_COMPATIBLE,
-			MinLevel: win.D2D1_FEATURE_LEVEL_DEFAULT,
-		}
-
-		var dcRT *win.ID2D1DCRenderTarget
-
-		if hr := id2d1Factory.CreateDCRenderTarget(&props, &dcRT); !win.SUCCEEDED(hr) {
-			return errorFromHRESULT("ID2D1Factory.CreateDCRenderTarget", hr)
-		}
-
-		rc := cb.ClientBounds().toRECT()
-		if hr := dcRT.BindDC(hdc, &rc); !win.SUCCEEDED(hr) {
-			return errorFromHRESULT("ID2D1DCRenderTarget.BindDC", hr)
-		}
-
-		cb.renderTarget = (*win.ID2D1RenderTarget)(unsafe.Pointer(dcRT))
-	}
-
-	return nil
-}
-
 func (cb *ContainerBase) doPaint() error {
 	var ps win.PAINTSTRUCT
 
 	hdc := win.BeginPaint(cb.hWnd, &ps)
 	defer win.EndPaint(cb.hWnd, &ps)
 
-	if cb.renderTarget == nil {
-		if err := cb.createRenderTarget(hdc); err != nil {
-			return err
-		}
+	canvas, err := newCanvasFromHDC(hdc)
+	if err != nil {
+		return err
 	}
-
-	dcRT := (*win.ID2D1DCRenderTarget)(unsafe.Pointer(cb.renderTarget))
-
-	rc := cb.ClientBounds().toRECT()
-	dcRT.BindDC(hdc, &rc)
-
-	cb.renderTarget.BeginDraw()
-	defer func() {
-		if hr := cb.renderTarget.EndDraw(nil, nil); uint32(hr) == win.D2DERR_RECREATE_TARGET {
-			fmt.Println("D2DERR_RECREATE_TARGET")
-			cb.renderTarget.Release()
-			cb.renderTarget = nil
-		}
-	}()
+	defer canvas.Dispose()
 
 	if focusEffect := cb.window.(Container).FocusEffect(); focusEffect != nil {
 		hwndFocused := win.GetFocus()
@@ -460,7 +363,7 @@ func (cb *ContainerBase) doPaint() error {
 				b := widget.Bounds().toRECT()
 				win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
 
-				if err := focusEffect.Draw(widget, cb.renderTarget); err != nil {
+				if err := focusEffect.Draw(widget, canvas); err != nil {
 					return err
 				}
 			}
@@ -485,7 +388,7 @@ func (cb *ContainerBase) doPaint() error {
 			b := widget.Bounds().toRECT()
 			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
 
-			if err := effect.Draw(widget, cb.renderTarget); err != nil {
+			if err := effect.Draw(widget, canvas); err != nil {
 				return err
 			}
 		}
@@ -586,20 +489,6 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 		if cb.background == nullBrushSingleton {
 			cb.Invalidate()
 		}
-
-		//if msg == win.WM_SIZE && cb.renderTarget != nil {
-		//	hwndRT := (*win.ID2D1HwndRenderTarget)(unsafe.Pointer(cb.renderTarget))
-		//
-		//	s := win.D2D1_SIZE_U{
-		//		Width:  uint32(win.GET_X_LPARAM(lParam)),
-		//		Height: uint32(win.GET_Y_LPARAM(lParam)),
-		//	}
-		//
-		//	// We ignore any error here.
-		//	hwndRT.Resize(&s)
-		//
-		//	cb.Invalidate()
-		//}
 	}
 
 	return cb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
