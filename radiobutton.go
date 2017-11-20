@@ -62,6 +62,8 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 
 	rb.SetBackground(nullBrushSingleton)
 
+	rb.GraphicsEffects().Add(DefaultDropShadowEffect)
+
 	rb.MustRegisterProperty("CheckedValue", NewProperty(
 		func() interface{} {
 			if rb.Checked() {

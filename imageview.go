@@ -52,6 +52,8 @@ func NewImageView(parent Container) (*ImageView, error) {
 	iv.SetInvalidatesOnResize(true)
 	iv.SetPaintMode(PaintNoErase)
 
+	iv.GraphicsEffects().Add(DefaultDropShadowEffect)
+
 	iv.MustRegisterProperty("Image", NewProperty(
 		func() interface{} {
 			return iv.Image()

@@ -43,6 +43,8 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 
 	cb.SetBackground(nullBrushSingleton)
 
+	cb.GraphicsEffects().Add(DefaultDropShadowEffect)
+
 	cb.MustRegisterProperty("CheckState", NewProperty(
 		func() interface{} {
 			return cb.CheckState()

@@ -50,6 +50,8 @@ func newLineEdit(parent Window) (*LineEdit, error) {
 		return nil, err
 	}
 
+	le.GraphicsEffects().Add(DefaultDropShadowEffect)
+
 	le.MustRegisterProperty("ReadOnly", NewProperty(
 		func() interface{} {
 			return le.ReadOnly()

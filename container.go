@@ -342,7 +342,7 @@ func (cb *ContainerBase) doPaint() error {
 	}
 	defer canvas.Dispose()
 
-	if focusEffect := cb.window.(Container).FocusEffect(); focusEffect != nil {
+	if focusEffect := cb.window.(Container).FocusEffect(); focusEffect != nil && focusEffect.Enabled() {
 		hwndFocused := win.GetFocus()
 		var widget Widget
 		if wnd := windowFromHandle(hwndFocused); wnd != nil {
@@ -356,16 +356,11 @@ func (cb *ContainerBase) doPaint() error {
 		}
 
 		if widget != nil && widget.Parent() != nil && widget.Parent().Handle() == cb.hWnd {
-			switch widget.(type) {
-			case *LinkLabel, *WebView:
+			b := widget.Bounds().toRECT()
+			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
 
-			default:
-				b := widget.Bounds().toRECT()
-				win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
-
-				if err := focusEffect.Draw(widget, canvas); err != nil {
-					return err
-				}
+			if err := focusEffect.Draw(widget, canvas); err != nil {
+				return err
 			}
 		}
 	}
@@ -384,11 +379,15 @@ func (cb *ContainerBase) doPaint() error {
 			continue
 		}
 
-		for _, effect := range widget.GraphicsEffects().items {
+		for _, item := range widget.GraphicsEffects().items {
+			if !item.effect.Enabled() {
+				continue
+			}
+
 			b := widget.Bounds().toRECT()
 			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
 
-			if err := effect.Draw(widget, canvas); err != nil {
+			if err := item.effect.Draw(widget, canvas); err != nil {
 				return err
 			}
 		}
@@ -510,14 +509,6 @@ func (cb *ContainerBase) onInsertedWidget(index int, widget Widget) (err error) 
 	}
 
 	widget.(applyFonter).applyFont(cb.Font())
-
-	switch widget.(type) {
-	case Container, *Label, *LinkLabel, *Separator, *Spacer, *splitterHandle, *TabWidget:
-		// nop
-
-	default:
-		widget.GraphicsEffects().Add(defaultDropShadowEffect)
-	}
 
 	return
 }

@@ -125,6 +125,8 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 
 	tv.currentIndex = -1
 
+	tv.GraphicsEffects().Add(DefaultDropShadowEffect)
+
 	tv.MustRegisterProperty("ColumnsOrderable", NewBoolProperty(
 		func() bool {
 			return tv.ColumnsOrderable()

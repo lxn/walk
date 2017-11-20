@@ -28,6 +28,8 @@ func NewToolButton(parent Container) (*ToolButton, error) {
 
 	tb.Button.init()
 
+	tb.GraphicsEffects().Add(DefaultDropShadowEffect)
+
 	return tb, nil
 }
 

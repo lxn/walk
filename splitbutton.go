@@ -40,6 +40,8 @@ func NewSplitButton(parent Container) (*SplitButton, error) {
 
 	sb.menu = menu
 
+	sb.GraphicsEffects().Add(DefaultDropShadowEffect)
+
 	return sb, nil
 }
 

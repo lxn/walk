@@ -57,6 +57,8 @@ func NewListBoxWithStyle(parent Container, style uint32) (*ListBox, error) {
 		}
 	}()
 
+	lb.GraphicsEffects().Add(DefaultDropShadowEffect)
+
 	lb.MustRegisterProperty("CurrentIndex", NewProperty(
 		func() interface{} {
 			return lb.CurrentIndex()

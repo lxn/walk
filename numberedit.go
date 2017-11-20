@@ -61,6 +61,8 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 		return nil, err
 	}
 
+	ne.GraphicsEffects().Add(DefaultDropShadowEffect)
+
 	ne.MustRegisterProperty("ReadOnly", NewProperty(
 		func() interface{} {
 			return ne.ReadOnly()

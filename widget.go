@@ -375,6 +375,10 @@ func (wb *WidgetBase) onClearedGraphicsEffects() error {
 	return nil
 }
 
+func (wb *WidgetBase) onGraphicsEffectEnabledChanged(effect WidgetGraphicsEffect) {
+	wb.invalidateBorderInParent()
+}
+
 func (wb *WidgetBase) invalidateBorderInParent() {
 	if wb.parent != nil && wb.parent.Layout() != nil {
 		//if _, ok := wb.parent.(*Splitter); ok {
