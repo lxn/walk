@@ -252,6 +252,10 @@ func (c *Canvas) DrawBitmapWithOpacity(bmp *Bitmap, bounds Rectangle, opacity by
 	return bmp.alphaBlend(c.hdc, bounds, opacity)
 }
 
+func (c *Canvas) DrawBitmapPart(bmp *Bitmap, dst, src Rectangle) error {
+	return c.DrawBitmapPartWithOpacity(bmp, dst, src, 0xff)
+}
+
 func (c *Canvas) DrawBitmapPartWithOpacity(bmp *Bitmap, dst, src Rectangle, opacity byte) error {
 	if bmp == nil {
 		return newError("bmp cannot be nil")

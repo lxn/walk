@@ -238,9 +238,7 @@ func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds Rectangle) error {
 }
 
 func (bmp *Bitmap) alphaBlend(hdc win.HDC, bounds Rectangle, opacity byte) error {
-	size := bmp.Size()
-
-	return bmp.alphaBlendPart(hdc, bounds, Rectangle{0, 0, size.Width, size.Height}, opacity)
+	return bmp.alphaBlendPart(hdc, bounds, Rectangle{0, 0, bmp.size.Width, bmp.size.Height}, opacity)
 }
 
 func (bmp *Bitmap) alphaBlendPart(hdc win.HDC, dst, src Rectangle, opacity byte) error {
