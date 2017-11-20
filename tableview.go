@@ -671,6 +671,13 @@ func (tv *TableView) SetCurrentIndex(value int) error {
 	var lvi win.LVITEM
 
 	lvi.StateMask = win.LVIS_FOCUSED | win.LVIS_SELECTED
+
+	if tv.MultiSelection() {
+		if win.FALSE == tv.SendMessage(win.LVM_SETITEMSTATE, ^uintptr(0), uintptr(unsafe.Pointer(&lvi))) {
+			return newError("SendMessage(LVM_SETITEMSTATE)")
+		}
+	}
+
 	if value > -1 {
 		lvi.State = win.LVIS_FOCUSED | win.LVIS_SELECTED
 	}
