@@ -32,7 +32,8 @@ func NewPushButton(parent Container) (*PushButton, error) {
 
 	pb.Button.init()
 
-	pb.GraphicsEffects().Add(DefaultDropShadowEffect)
+	pb.GraphicsEffects().Add(InteractionEffect)
+	pb.GraphicsEffects().Add(FocusEffect)
 
 	return pb, nil
 }

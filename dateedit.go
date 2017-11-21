@@ -35,7 +35,8 @@ func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
 		return nil, err
 	}
 
-	de.GraphicsEffects().Add(DefaultDropShadowEffect)
+	de.GraphicsEffects().Add(InteractionEffect)
+	de.GraphicsEffects().Add(FocusEffect)
 
 	de.MustRegisterProperty("Date", NewProperty(
 		func() interface{} {

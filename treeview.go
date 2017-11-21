@@ -67,7 +67,8 @@ func NewTreeView(parent Container) (*TreeView, error) {
 		return nil, err
 	}
 
-	tv.GraphicsEffects().Add(DefaultDropShadowEffect)
+	tv.GraphicsEffects().Add(InteractionEffect)
+	tv.GraphicsEffects().Add(FocusEffect)
 
 	tv.MustRegisterProperty("CurrentItem", NewReadOnlyProperty(
 		func() interface{} {

@@ -136,7 +136,7 @@ func (s *Splitter) setOrientation(value Orientation) error {
 	return layout.SetOrientation(value)
 }
 
-func (s *Splitter) applyFocusEffect(effect WidgetGraphicsEffect) {
+func (s *Splitter) updateMarginsForFocusEffect() {
 	var margins Margins
 	var parentLayout Layout
 
@@ -148,7 +148,17 @@ func (s *Splitter) applyFocusEffect(effect WidgetGraphicsEffect) {
 		}
 	}
 
-	if effect != nil {
+	var affected bool
+	if FocusEffect != nil {
+		for _, w := range s.children.items {
+			if w.GraphicsEffects().Contains(FocusEffect) {
+				affected = true
+				break
+			}
+		}
+	}
+
+	if affected {
 		var marginsNeeded bool
 		for _, w := range s.children.items {
 			switch w.(type) {
@@ -285,6 +295,14 @@ func (s *Splitter) onInsertingWidget(index int, widget Widget) (err error) {
 }
 
 func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
+	defer func() {
+		if err != nil {
+			return
+		}
+
+		s.updateMarginsForFocusEffect()
+	}()
+
 	_, isHandle := widget.(*splitterHandle)
 	if isHandle {
 		if s.Orientation() == Horizontal {
@@ -463,6 +481,14 @@ func (s *Splitter) onRemovingWidget(index int, widget Widget) (err error) {
 }
 
 func (s *Splitter) onRemovedWidget(index int, widget Widget) (err error) {
+	defer func() {
+		if err != nil {
+			return
+		}
+
+		s.updateMarginsForFocusEffect()
+	}()
+
 	_, isHandle := widget.(*splitterHandle)
 	if isHandle && s.children.Len()%2 == 1 {
 		return newError("cannot remove splitter handle")

@@ -138,21 +138,14 @@ type Container interface {
 	SetLayout(value Layout) error
 	DataBinder() *DataBinder
 	SetDataBinder(dbm *DataBinder)
-	FocusEffect() WidgetGraphicsEffect
-	SetFocusEffect(effect WidgetGraphicsEffect)
-}
-
-type applyFocusEffecter interface {
-	applyFocusEffect(effect WidgetGraphicsEffect)
 }
 
 type ContainerBase struct {
 	WidgetBase
-	layout      Layout
-	children    *WidgetList
-	dataBinder  *DataBinder
-	focusEffect WidgetGraphicsEffect
-	persistent  bool
+	layout     Layout
+	children   *WidgetList
+	dataBinder *DataBinder
+	persistent bool
 }
 
 func (cb *ContainerBase) AsWidgetBase() *WidgetBase {
@@ -256,34 +249,6 @@ func (cb *ContainerBase) SetDataBinder(db *DataBinder) {
 	}
 }
 
-func (cb *ContainerBase) FocusEffect() WidgetGraphicsEffect {
-	if cb.focusEffect == nil {
-		if parent := cb.Parent(); parent != nil {
-			return parent.FocusEffect()
-		}
-	}
-
-	return cb.focusEffect
-}
-
-func (cb *ContainerBase) SetFocusEffect(effect WidgetGraphicsEffect) {
-	if cb.focusEffect == effect {
-		return
-	}
-
-	cb.focusEffect = effect
-
-	walkDescendants(cb.window, func(wnd Window) bool {
-		if afe, ok := wnd.(applyFocusEffecter); ok {
-			afe.applyFocusEffect(effect)
-		}
-
-		return true
-	})
-
-	cb.Invalidate()
-}
-
 func (cb *ContainerBase) forEachPersistableChild(f func(p Persistable) error) error {
 	if cb.children == nil {
 		return nil
@@ -342,7 +307,37 @@ func (cb *ContainerBase) doPaint() error {
 	}
 	defer canvas.Dispose()
 
-	if focusEffect := cb.window.(Container).FocusEffect(); focusEffect != nil && focusEffect.Enabled() {
+	for _, widget := range cb.children.items {
+		for _, effect := range widget.GraphicsEffects().items {
+			switch effect {
+			case InteractionEffect:
+				type ReadOnlyer interface {
+					ReadOnly() bool
+				}
+				if ro, ok := widget.(ReadOnlyer); ok {
+					if ro.ReadOnly() {
+						continue
+					}
+				}
+
+				if hwnd := widget.Handle(); !win.IsWindowEnabled(hwnd) || !win.IsWindowVisible(hwnd) {
+					continue
+				}
+
+			case FocusEffect:
+				continue
+			}
+
+			b := widget.Bounds().toRECT()
+			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
+
+			if err := effect.Draw(widget, canvas); err != nil {
+				return err
+			}
+		}
+	}
+
+	if FocusEffect != nil {
 		hwndFocused := win.GetFocus()
 		var widget Widget
 		if wnd := windowFromHandle(hwndFocused); wnd != nil {
@@ -356,39 +351,15 @@ func (cb *ContainerBase) doPaint() error {
 		}
 
 		if widget != nil && widget.Parent() != nil && widget.Parent().Handle() == cb.hWnd {
-			b := widget.Bounds().toRECT()
-			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
+			for _, effect := range widget.GraphicsEffects().items {
+				if effect == FocusEffect {
+					b := widget.Bounds().toRECT()
+					win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
 
-			if err := focusEffect.Draw(widget, canvas); err != nil {
-				return err
-			}
-		}
-	}
-
-	for _, widget := range cb.children.items {
-		type ReadOnlyer interface {
-			ReadOnly() bool
-		}
-		if ro, ok := widget.(ReadOnlyer); ok {
-			if ro.ReadOnly() {
-				continue
-			}
-		}
-
-		if hwnd := widget.Handle(); !win.IsWindowEnabled(hwnd) || !win.IsWindowVisible(hwnd) {
-			continue
-		}
-
-		for _, item := range widget.GraphicsEffects().items {
-			if !item.effect.Enabled() {
-				continue
-			}
-
-			b := widget.Bounds().toRECT()
-			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
-
-			if err := item.effect.Draw(widget, canvas); err != nil {
-				return err
+					if err := FocusEffect.Draw(widget, canvas); err != nil {
+						return err
+					}
+				}
 			}
 		}
 	}
@@ -403,14 +374,7 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 			return hBrush
 		}
 
-	//case win.WM_ERASEBKGND:
-	//	return 1
-
 	case win.WM_PAINT:
-		//if _, ok := cb.window.(*Splitter); ok {
-		//	break
-		//}
-
 		if err := cb.doPaint(); err != nil {
 			panic(err)
 		}

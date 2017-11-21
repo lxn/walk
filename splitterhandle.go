@@ -76,30 +76,18 @@ func (sh *splitterHandle) SizeHint() Size {
 func (sh *splitterHandle) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_ERASEBKGND:
-		splitter := sh.Parent().(*Splitter)
-
-		if sh.Background() == nullBrushSingleton && splitter.FocusEffect() != nil {
-			//i := splitter.children.Index(sh)
-			//
-			//if splitter.children.At(i - 1).Focused() || splitter.children.At(i + 1).Focused() {
+		if sh.Background() == nullBrushSingleton {
 			return 1
-			//}
 		}
 
 	case win.WM_PAINT:
-		splitter := sh.Parent().(*Splitter)
-
-		if sh.Background() == nullBrushSingleton && splitter.FocusEffect() != nil {
-			//i := splitter.children.Index(sh)
-			//
-			//if splitter.children.At(i - 1).Focused() || splitter.children.At(i + 1).Focused() {
+		if sh.Background() == nullBrushSingleton {
 			var ps win.PAINTSTRUCT
 
 			win.BeginPaint(hwnd, &ps)
 			defer win.EndPaint(hwnd, &ps)
 
 			return 0
-			//}
 		}
 	}
 

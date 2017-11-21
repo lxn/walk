@@ -240,14 +240,6 @@ func (fb *FormBase) SetDataBinder(db *DataBinder) {
 	fb.clientComposite.SetDataBinder(db)
 }
 
-func (fb *FormBase) FocusEffect() WidgetGraphicsEffect {
-	return fb.clientComposite.focusEffect
-}
-
-func (fb *FormBase) SetFocusEffect(effect WidgetGraphicsEffect) {
-	fb.clientComposite.SetFocusEffect(effect)
-}
-
 func (fb *FormBase) Suspended() bool {
 	return fb.clientComposite.Suspended()
 }

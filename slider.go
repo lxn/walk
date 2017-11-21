@@ -45,7 +45,8 @@ func NewSliderWithOrientation(parent Container, orientation Orientation) (*Slide
 
 	sl.SetBackground(nullBrushSingleton)
 
-	sl.GraphicsEffects().Add(DefaultDropShadowEffect)
+	sl.GraphicsEffects().Add(InteractionEffect)
+	sl.GraphicsEffects().Add(FocusEffect)
 
 	sl.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {

@@ -120,7 +120,8 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		event = cb.TextChanged()
 	}
 
-	cb.GraphicsEffects().Add(DefaultDropShadowEffect)
+	cb.GraphicsEffects().Add(InteractionEffect)
+	cb.GraphicsEffects().Add(FocusEffect)
 
 	cb.MustRegisterProperty("CurrentIndex", NewProperty(
 		func() interface{} {

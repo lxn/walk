@@ -26,8 +26,6 @@ func NewProgressBar(parent Container) (*ProgressBar, error) {
 		return nil, err
 	}
 
-	pb.GraphicsEffects().Add(DefaultDropShadowEffect)
-
 	return pb, nil
 }
 

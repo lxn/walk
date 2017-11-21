@@ -206,6 +206,12 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 			return err
 		}
 
+		if field := b.widgetValue.FieldByName("GraphicsEffects"); field.IsValid() {
+			for _, effect := range field.Interface().([]walk.WidgetGraphicsEffect) {
+				widget.GraphicsEffects().Add(effect)
+			}
+		}
+
 		if p := widget.Parent(); p != nil {
 			type SetStretchFactorer interface {
 				SetStretchFactor(widget walk.Widget, factor int) error

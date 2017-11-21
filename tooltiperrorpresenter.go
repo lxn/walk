@@ -10,7 +10,7 @@ import (
 	"github.com/lxn/win"
 )
 
-var ValidationErrorGlowEffect, _ = NewBorderGlowEffect(RGB(255, 0, 0), true)
+var ValidationErrorEffect WidgetGraphicsEffect
 
 type ToolTipErrorPresenter struct {
 	toolTip                     *ToolTip
@@ -88,7 +88,7 @@ func (ttep *ToolTipErrorPresenter) PresentError(err error, widget Widget) {
 			}
 
 			if !found && wt == ttep.curWidget || wt != widget || err == nil {
-				wt.GraphicsEffects().Remove(ValidationErrorGlowEffect)
+				wt.GraphicsEffects().Remove(ValidationErrorEffect)
 			}
 
 			return true
@@ -111,8 +111,8 @@ func (ttep *ToolTipErrorPresenter) PresentError(err error, widget Widget) {
 		if widget != ttep.curWidget {
 			ttep.track(widget)
 
-			if effects := widget.GraphicsEffects(); !effects.Contains(ValidationErrorGlowEffect) {
-				effects.Add(ValidationErrorGlowEffect)
+			if effects := widget.GraphicsEffects(); !effects.Contains(ValidationErrorEffect) {
+				effects.Add(ValidationErrorEffect)
 			}
 		}
 	}

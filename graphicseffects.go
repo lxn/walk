@@ -13,24 +13,20 @@ import (
 var (
 	borderGlowAlpha = []float64{0.4, 0.2, 0.15, 0.1, 0.15}
 
-	DefaultDropShadowEffect, _ = NewDropShadowEffect(RGB(63, 63, 63), false)
+	InteractionEffect WidgetGraphicsEffect
+	FocusEffect       WidgetGraphicsEffect
 )
 
 type WidgetGraphicsEffect interface {
 	Draw(widget Widget, canvas *Canvas) error
-	Enabled() bool
-	SetEnabled(enabled bool)
-	EnabledChanged() *Event
 }
 
 type widgetGraphicsEffectBase struct {
-	color                   Color
-	bitmap                  *Bitmap
-	enabledChangedPublisher EventPublisher
-	enabled                 bool
+	color  Color
+	bitmap *Bitmap
 }
 
-func (wgeb *widgetGraphicsEffectBase) create(color Color, enabled bool) error {
+func (wgeb *widgetGraphicsEffectBase) create(color Color) error {
 	bitmap, err := NewBitmapWithTransparentPixels(Size{12, 12})
 	if err != nil {
 		return err
@@ -89,27 +85,8 @@ func (wgeb *widgetGraphicsEffectBase) create(color Color, enabled bool) error {
 
 	wgeb.color = color
 	wgeb.bitmap = bitmap
-	wgeb.enabled = enabled
 
 	return nil
-}
-
-func (wgeb *widgetGraphicsEffectBase) Enabled() bool {
-	return wgeb.enabled
-}
-
-func (wgeb *widgetGraphicsEffectBase) SetEnabled(enabled bool) {
-	if enabled == wgeb.enabled {
-		return
-	}
-
-	wgeb.enabled = enabled
-
-	wgeb.enabledChangedPublisher.Publish()
-}
-
-func (wgeb *widgetGraphicsEffectBase) EnabledChanged() *Event {
-	return wgeb.enabledChangedPublisher.Event()
 }
 
 func (wgeb *widgetGraphicsEffectBase) Dispose() {
@@ -123,10 +100,10 @@ type BorderGlowEffect struct {
 	widgetGraphicsEffectBase
 }
 
-func NewBorderGlowEffect(color Color, enabled bool) (*BorderGlowEffect, error) {
+func NewBorderGlowEffect(color Color) (*BorderGlowEffect, error) {
 	bge := new(BorderGlowEffect)
 
-	if err := bge.create(color, enabled); err != nil {
+	if err := bge.create(color); err != nil {
 		return nil, err
 	}
 
@@ -152,10 +129,10 @@ type DropShadowEffect struct {
 	widgetGraphicsEffectBase
 }
 
-func NewDropShadowEffect(color Color, enabled bool) (*DropShadowEffect, error) {
+func NewDropShadowEffect(color Color) (*DropShadowEffect, error) {
 	dse := new(DropShadowEffect)
 
-	if err := dse.create(color, enabled); err != nil {
+	if err := dse.create(color); err != nil {
 		return nil, err
 	}
 
@@ -178,29 +155,27 @@ type widgetGraphicsEffectListObserver interface {
 	onInsertedGraphicsEffect(index int, effect WidgetGraphicsEffect) error
 	onRemovedGraphicsEffect(index int, effect WidgetGraphicsEffect) error
 	onClearedGraphicsEffects() error
-	onGraphicsEffectEnabledChanged(effect WidgetGraphicsEffect)
 }
 
 type WidgetGraphicsEffectList struct {
-	items    []widgetGraphicsEffectListItem
+	items    []WidgetGraphicsEffect
 	observer widgetGraphicsEffectListObserver
-}
-
-type widgetGraphicsEffectListItem struct {
-	effect               WidgetGraphicsEffect
-	enabledChangedHandle int
 }
 
 func newWidgetGraphicsEffectList(observer widgetGraphicsEffectListObserver) *WidgetGraphicsEffectList {
 	return &WidgetGraphicsEffectList{observer: observer}
 }
 
-func (l *WidgetGraphicsEffectList) Add(item WidgetGraphicsEffect) error {
-	return l.Insert(len(l.items), item)
+func (l *WidgetGraphicsEffectList) Add(effect WidgetGraphicsEffect) error {
+	if effect == nil {
+		return newErr("effect == nil")
+	}
+
+	return l.Insert(len(l.items), effect)
 }
 
 func (l *WidgetGraphicsEffectList) At(index int) WidgetGraphicsEffect {
-	return l.items[index].effect
+	return l.items[index]
 }
 
 func (l *WidgetGraphicsEffectList) Clear() error {
@@ -220,7 +195,7 @@ func (l *WidgetGraphicsEffectList) Clear() error {
 
 func (l *WidgetGraphicsEffectList) Index(effect WidgetGraphicsEffect) int {
 	for i, item := range l.items {
-		if item.effect == effect {
+		if item == effect {
 			return i
 		}
 	}
@@ -233,14 +208,9 @@ func (l *WidgetGraphicsEffectList) Contains(effect WidgetGraphicsEffect) bool {
 }
 
 func (l *WidgetGraphicsEffectList) insertIntoSlice(index int, effect WidgetGraphicsEffect) {
-	l.items = append(l.items, widgetGraphicsEffectListItem{nil, 0})
+	l.items = append(l.items, nil)
 	copy(l.items[index+1:], l.items[index:])
-	l.items[index] = widgetGraphicsEffectListItem{
-		effect: effect,
-		enabledChangedHandle: effect.EnabledChanged().Attach(func() {
-			l.observer.onGraphicsEffectEnabledChanged(effect)
-		}),
-	}
+	l.items[index] = effect
 }
 
 func (l *WidgetGraphicsEffectList) Insert(index int, effect WidgetGraphicsEffect) error {
@@ -250,9 +220,6 @@ func (l *WidgetGraphicsEffectList) Insert(index int, effect WidgetGraphicsEffect
 
 	if observer != nil {
 		if err := observer.onInsertedGraphicsEffect(index, effect); err != nil {
-			item := l.items[index]
-			item.effect.EnabledChanged().Detach(item.enabledChangedHandle)
-
 			l.items = append(l.items[:index], l.items[index+1:]...)
 			return err
 		}
@@ -278,13 +245,11 @@ func (l *WidgetGraphicsEffectList) RemoveAt(index int) error {
 	observer := l.observer
 	item := l.items[index]
 
-	item.effect.EnabledChanged().Detach(item.enabledChangedHandle)
-
 	l.items = append(l.items[:index], l.items[index+1:]...)
 
 	if observer != nil {
-		if err := observer.onRemovedGraphicsEffect(index, item.effect); err != nil {
-			l.insertIntoSlice(index, item.effect)
+		if err := observer.onRemovedGraphicsEffect(index, item); err != nil {
+			l.insertIntoSlice(index, item)
 			return err
 		}
 	}

@@ -38,7 +38,8 @@ func NewTextEditWithStyle(parent Container, style uint32) (*TextEdit, error) {
 		return nil, err
 	}
 
-	te.GraphicsEffects().Add(DefaultDropShadowEffect)
+	te.GraphicsEffects().Add(InteractionEffect)
+	te.GraphicsEffects().Add(FocusEffect)
 
 	te.MustRegisterProperty("ReadOnly", NewProperty(
 		func() interface{} {

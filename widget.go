@@ -375,10 +375,6 @@ func (wb *WidgetBase) onClearedGraphicsEffects() error {
 	return nil
 }
 
-func (wb *WidgetBase) onGraphicsEffectEnabledChanged(effect WidgetGraphicsEffect) {
-	wb.invalidateBorderInParent()
-}
-
 func (wb *WidgetBase) invalidateBorderInParent() {
 	if wb.parent != nil && wb.parent.Layout() != nil {
 		//if _, ok := wb.parent.(*Splitter); ok {
@@ -446,7 +442,7 @@ func (wb *WidgetBase) updateParentLayout() error {
 
 	layout.Update(false)
 
-	if parent.FocusEffect() != nil {
+	if FocusEffect != nil {
 		if focusedWnd := windowFromHandle(win.GetFocus()); focusedWnd != nil && win.GetParent(focusedWnd.Handle()) == parent.Handle() {
 			focusedWnd.(Widget).AsWidgetBase().invalidateBorderInParent()
 		}

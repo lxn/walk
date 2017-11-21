@@ -148,15 +148,3 @@ func (tp *TabPage) SetTitle(value string) error {
 
 	return tp.tabWidget.onPageChanged(tp)
 }
-
-func (tp *TabPage) FocusEffect() WidgetGraphicsEffect {
-	if tp.focusEffect == nil {
-		if tw := tp.tabWidget; tw != nil {
-			if parent := tw.Parent(); parent != nil {
-				return parent.FocusEffect()
-			}
-		}
-	}
-
-	return tp.focusEffect
-}
