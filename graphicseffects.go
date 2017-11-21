@@ -103,7 +103,7 @@ func (wgeb *widgetGraphicsEffectBase) SetEnabled(enabled bool) {
 		return
 	}
 
-	wgeb.enabled = true
+	wgeb.enabled = enabled
 
 	wgeb.enabledChangedPublisher.Publish()
 }
