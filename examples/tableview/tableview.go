@@ -202,9 +202,13 @@ func main() {
 							bounds := style.Bounds()
 							bounds.X += 2
 							bounds.Y += 2
-							bounds.Width = (bounds.Width - 4) / 5 * len(item.Bar)
+							bounds.Width = int((float64(bounds.Width) - 4) / 5 * float64(len(item.Bar)))
 							bounds.Height -= 4
 							canvas.DrawBitmapPartWithOpacity(barBitmap, bounds, walk.Rectangle{0, 0, 100 / 5 * len(item.Bar), 1}, 127)
+
+							bounds.X += 4
+							bounds.Y += 2
+							canvas.DrawText(item.Bar, tv.Font(), 0, bounds, walk.TextLeft)
 						}
 
 					case 2:
