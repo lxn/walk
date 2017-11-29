@@ -141,6 +141,22 @@ func main() {
 	goodIcon, _ := walk.Resources.Icon("../img/check.ico")
 	badIcon, _ := walk.Resources.Icon("../img/stop.ico")
 
+	barBitmap, err := walk.NewBitmap(walk.Size{100, 1})
+	if err != nil {
+		panic(err)
+	}
+	defer barBitmap.Dispose()
+
+	canvas, err := walk.NewCanvasFromImage(barBitmap)
+	if err != nil {
+		panic(err)
+	}
+	defer barBitmap.Dispose()
+
+	canvas.GradientFillRectangle(walk.RGB(255, 0, 0), walk.RGB(0, 255, 0), walk.Horizontal, walk.Rectangle{0, 0, 100, 1})
+
+	canvas.Dispose()
+
 	model := NewFooModel()
 
 	var tv *walk.TableView
@@ -182,8 +198,13 @@ func main() {
 
 					switch style.Col() {
 					case 1:
-						if len(item.Bar) == 5 {
-							style.BackgroundColor = walk.RGB(255, 255, 0)
+						if canvas := style.Canvas(); canvas != nil {
+							bounds := style.Bounds()
+							bounds.X += 2
+							bounds.Y += 2
+							bounds.Width = (bounds.Width - 4) / 5 * len(item.Bar)
+							bounds.Height -= 4
+							canvas.DrawBitmapPartWithOpacity(barBitmap, bounds, walk.Rectangle{0, 0, 100 / 5 * len(item.Bar), 1}, 127)
 						}
 
 					case 2:
