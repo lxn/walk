@@ -190,10 +190,13 @@ func main() {
 				},
 				StyleCell: func(style *walk.CellStyle) {
 					item := model.items[style.Row()]
-					isNew := item.Quux.After(time.Now().Add(-365 * 24 * time.Hour))
 
-					if isNew {
-						style.BackgroundColor = walk.RGB(159, 215, 255)
+					if item.checked {
+						if style.Row()%2 == 0 {
+							style.BackgroundColor = walk.RGB(159, 215, 255)
+						} else {
+							style.BackgroundColor = walk.RGB(143, 199, 239)
+						}
 					}
 
 					switch style.Col() {
@@ -221,7 +224,7 @@ func main() {
 						}
 
 					case 3:
-						if isNew {
+						if item.Quux.After(time.Now().Add(-365 * 24 * time.Hour)) {
 							style.Font = boldFont
 						}
 					}
