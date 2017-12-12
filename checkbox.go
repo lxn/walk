@@ -102,6 +102,14 @@ func (cb *CheckBox) SizeHint() Size {
 	return cb.MinSizeHint()
 }
 
+func (cb *CheckBox) TextOnLeftSide() bool {
+	return cb.hasStyleBits(win.BS_LEFTTEXT)
+}
+
+func (cb *CheckBox) SetTextOnLeftSide(textLeft bool) error {
+	return cb.ensureStyleBits(win.BS_LEFTTEXT, textLeft)
+}
+
 func (cb *CheckBox) setChecked(checked bool) {
 	cb.Button.setChecked(checked)
 
