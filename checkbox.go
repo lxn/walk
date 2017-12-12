@@ -7,9 +7,10 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"strconv"
 	"syscall"
+
+	"github.com/lxn/win"
 )
 
 type CheckState int
@@ -142,11 +143,11 @@ func (cb *CheckBox) CheckStateChanged() *Event {
 }
 
 func (cb *CheckBox) SaveState() error {
-	return cb.putState(strconv.Itoa(int(cb.CheckState())))
+	return cb.WriteState(strconv.Itoa(int(cb.CheckState())))
 }
 
 func (cb *CheckBox) RestoreState() error {
-	s, err := cb.getState()
+	s, err := cb.ReadState()
 	if err != nil {
 		return err
 	}

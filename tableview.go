@@ -953,12 +953,12 @@ func (tv *TableView) SaveState() error {
 		return err
 	}
 
-	return tv.putState(string(state))
+	return tv.WriteState(string(state))
 }
 
 // RestoreState restores the UI state of the *TableView from the settings.
 func (tv *TableView) RestoreState() error {
-	state, err := tv.getState()
+	state, err := tv.ReadState()
 	if err != nil {
 		return err
 	}

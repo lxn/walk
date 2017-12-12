@@ -14,8 +14,9 @@ import (
 )
 
 import (
-	"github.com/lxn/win"
 	"strconv"
+
+	"github.com/lxn/win"
 )
 
 type CloseReason byte
@@ -519,7 +520,7 @@ func (fb *FormBase) SaveState() error {
 		wp.RcNormalPosition.Left, wp.RcNormalPosition.Top,
 		wp.RcNormalPosition.Right, wp.RcNormalPosition.Bottom)
 
-	if err := fb.putState(state); err != nil {
+	if err := fb.WriteState(state); err != nil {
 		return err
 	}
 
@@ -535,7 +536,7 @@ func (fb *FormBase) RestoreState() error {
 		fb.isInRestoreState = false
 	}()
 
-	state, err := fb.getState()
+	state, err := fb.ReadState()
 	if err != nil {
 		return err
 	}

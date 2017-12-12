@@ -7,8 +7,9 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"strconv"
+
+	"github.com/lxn/win"
 )
 
 type Slider struct {
@@ -109,11 +110,11 @@ func (sl *Slider) SetPersistent(value bool) {
 }
 
 func (sl *Slider) SaveState() error {
-	return sl.putState(strconv.Itoa(sl.Value()))
+	return sl.WriteState(strconv.Itoa(sl.Value()))
 }
 
 func (sl *Slider) RestoreState() error {
-	s, err := sl.getState()
+	s, err := sl.ReadState()
 	if err != nil {
 		return err
 	}

@@ -204,7 +204,7 @@ func (s *Splitter) SaveState() error {
 		buf.WriteString(strconv.FormatInt(int64(layout.hwnd2Item[s.children.At(i).Handle()].size), 10))
 	}
 
-	s.putState(buf.String())
+	s.WriteState(buf.String())
 
 	for _, widget := range s.children.items {
 		if persistable, ok := widget.(Persistable); ok {
@@ -223,7 +223,7 @@ func (s *Splitter) RestoreState() error {
 		return nil
 	}
 
-	state, err := s.getState()
+	state, err := s.ReadState()
 	if err != nil {
 		return err
 	}
