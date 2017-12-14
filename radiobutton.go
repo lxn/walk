@@ -112,6 +112,14 @@ func (rb *RadioButton) SizeHint() Size {
 	return rb.MinSizeHint()
 }
 
+func (rb *RadioButton) TextOnLeftSide() bool {
+	return rb.hasStyleBits(win.BS_LEFTTEXT)
+}
+
+func (rb *RadioButton) SetTextOnLeftSide(textLeft bool) error {
+	return rb.ensureStyleBits(win.BS_LEFTTEXT, textLeft)
+}
+
 func (rb *RadioButton) Group() *RadioButtonGroup {
 	return rb.group
 }

@@ -189,7 +189,7 @@ func (tw *TabWidget) SetPersistent(value bool) {
 }
 
 func (tw *TabWidget) SaveState() error {
-	tw.putState(strconv.Itoa(tw.CurrentIndex()))
+	tw.WriteState(strconv.Itoa(tw.CurrentIndex()))
 
 	for _, page := range tw.pages.items {
 		if err := page.SaveState(); err != nil {
@@ -201,7 +201,7 @@ func (tw *TabWidget) SaveState() error {
 }
 
 func (tw *TabWidget) RestoreState() error {
-	state, err := tw.getState()
+	state, err := tw.ReadState()
 	if err != nil {
 		return err
 	}

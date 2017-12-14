@@ -14,8 +14,9 @@ import (
 )
 
 import (
-	"github.com/lxn/win"
 	"image/color"
+
+	"github.com/lxn/win"
 )
 
 type Bitmap struct {

@@ -8,8 +8,9 @@ package walk
 
 import (
 	"fmt"
-	"github.com/lxn/win"
 	"strconv"
+
+	"github.com/lxn/win"
 )
 
 type clickable interface {
@@ -177,11 +178,11 @@ func (b *Button) SetPersistent(value bool) {
 }
 
 func (b *Button) SaveState() error {
-	return b.putState(fmt.Sprintf("%t", b.Checked()))
+	return b.WriteState(fmt.Sprintf("%t", b.Checked()))
 }
 
 func (b *Button) RestoreState() error {
-	s, err := b.getState()
+	s, err := b.ReadState()
 	if err != nil {
 		return err
 	}

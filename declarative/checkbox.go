@@ -55,6 +55,7 @@ type CheckBox struct {
 	AssignTo            **walk.CheckBox
 	CheckState          Property
 	OnCheckStateChanged walk.EventHandler
+	TextOnLeftSide      bool
 	Tristate            bool
 }
 
@@ -66,6 +67,10 @@ func (cb CheckBox) Create(builder *Builder) error {
 
 	return builder.InitWidget(cb, w, func() error {
 		w.SetPersistent(cb.Persistent)
+
+		if err := w.SetTextOnLeftSide(cb.TextOnLeftSide); err != nil {
+			return err
+		}
 
 		if err := w.SetTristate(cb.Tristate); err != nil {
 			return err
