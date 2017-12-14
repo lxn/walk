@@ -53,6 +53,7 @@ type ListBox struct {
 	AssignTo                 **walk.ListBox
 	DataMember               string
 	Format                   string
+	CurrentIndex int
 	Model                    interface{}
 	MultiSelection           bool
 	OnCurrentIndexChanged    walk.EventHandler
@@ -80,6 +81,7 @@ func (lb ListBox) Create(builder *Builder) error {
 	return builder.InitWidget(lb, w, func() error {
 		w.SetFormat(lb.Format)
 		w.SetPrecision(lb.Precision)
+		w.SetCurrentIndex(lb.CurrentIndex)
 
 		if err := w.SetDataMember(lb.DataMember); err != nil {
 			return err
