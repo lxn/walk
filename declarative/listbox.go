@@ -53,7 +53,7 @@ type ListBox struct {
 	AssignTo                 **walk.ListBox
 	DataMember               string
 	Format                   string
-	CurrentIndex int
+	CurrentIndex             int
 	Model                    interface{}
 	MultiSelection           bool
 	OnCurrentIndexChanged    walk.EventHandler
