@@ -311,7 +311,19 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 			}
 		}
 
-		b.parent = wc
+		type DelegateContainerer interface {
+			DelegateContainer() walk.Container
+		}
+
+		if dc, ok := wc.(DelegateContainerer); ok {
+			if parent := dc.DelegateContainer(); parent != nil {
+				b.parent = parent
+			} else {
+				b.parent = wc
+			}
+		} else {
+			b.parent = wc
+		}
 		defer func() {
 			b.parent = oldParent
 		}()
