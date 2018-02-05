@@ -24,8 +24,9 @@ import (
 )
 
 var (
-	defaultTVRowBGColor Color = Color(win.GetSysColor(win.COLOR_WINDOW))
-	white                     = win.COLORREF(RGB(255, 255, 255))
+	defaultTVRowBGColor = Color(win.GetSysColor(win.COLOR_WINDOW))
+	white               = win.COLORREF(RGB(255, 255, 255))
+	checkmark           = string([]byte{0xE2, 0x9C, 0x94})
 )
 
 const (
@@ -1381,6 +1382,11 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				case time.Time:
 					if val.Year() > 1601 {
 						text = val.Format(tv.columns.items[col].format)
+					}
+
+				case bool:
+					if val {
+						text = checkmark
 					}
 
 				case *big.Rat:
