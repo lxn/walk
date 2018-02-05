@@ -287,6 +287,12 @@ func (s *Splitter) SetFixed(widget Widget, fixed bool) error {
 
 	item.fixed = fixed
 
+	if b := widget.Bounds(); fixed && b.Width == 0 || b.Height == 0 {
+		b.Width, b.Height = 100, 100
+		widget.SetBounds(b)
+		item.size = 100
+	}
+
 	return nil
 }
 
