@@ -237,7 +237,7 @@ func (db *DataBinder) Reset() error {
 				f64 = float64(v)
 
 			default:
-				return newError(fmt.Sprintf("Field '%s': Can't convert %t to float64.", prop.Source().(string), field.Get()))
+				return newError(fmt.Sprintf("Field '%s': Can't convert %T to float64.", prop.Source().(string), field.Get()))
 			}
 
 			if err := prop.Set(f64); err != nil {
