@@ -77,7 +77,7 @@ func comboBoxEditWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 }
 
 func NewComboBox(parent Container) (*ComboBox, error) {
-	cb, err := newComboBoxWithStyle(parent, win.CBS_DROPDOWN)
+	cb, err := newComboBoxWithStyle(parent, win.CBS_AUTOHSCROLL|win.CBS_DROPDOWN)
 	if err != nil {
 		return nil, err
 	}
