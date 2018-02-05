@@ -54,15 +54,16 @@ type DateEdit struct {
 	Format        string
 	MaxDate       time.Time
 	MinDate       time.Time
-	NoneOption    bool
+	NoneOption    bool // Deprecated: use Optional instead
 	OnDateChanged walk.EventHandler
+	Optional      bool
 }
 
 func (de DateEdit) Create(builder *Builder) error {
 	var w *walk.DateEdit
 	var err error
 
-	if de.NoneOption {
+	if de.Optional || de.NoneOption {
 		w, err = walk.NewDateEditWithNoneOption(builder.Parent())
 	} else {
 		w, err = walk.NewDateEdit(builder.Parent())
