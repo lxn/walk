@@ -1019,15 +1019,24 @@ func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
 	return nil
 }
 
-var dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+var (
+	dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+	fontInfo2DialogBaseUnits      = make(map[fontInfo]Size)
+)
 
 func (wb *WindowBase) dialogBaseUnits() Size {
+	// The window may use a font different from that in WindowBase,
+	// like e.g. NumberEdit does, so we try to use the right one.
+	font := wb.window.Font()
+	fi := fontInfo{family: font.Family(), pointSize: font.PointSize(), style: font.Style()}
+	if s, ok := fontInfo2DialogBaseUnits[fi]; ok {
+		return s
+	}
+
 	hdc := win.GetDC(wb.hWnd)
 	defer win.ReleaseDC(wb.hWnd, hdc)
 
-	// The window may use a font different from that in WindowBase,
-	// like e.g. NumberEdit does, so we try to use the right one.
-	hFont := wb.window.Font().handleForDPI(0)
+	hFont := font.handleForDPI(0)
 	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(hFont))
 	defer win.SelectObject(hdc, win.HGDIOBJ(hFontOld))
 
@@ -1045,11 +1054,14 @@ func (wb *WindowBase) dialogBaseUnits() Size {
 		newError("GetTextExtentPoint32 failed")
 	}
 
-	return Size{int((size.CX/26 + 1) / 2), int(tm.TmHeight)}
+	s := Size{int((size.CX/26 + 1) / 2), int(tm.TmHeight)}
+
+	fontInfo2DialogBaseUnits[fi] = s
+
+	return s
 }
 
 func (wb *WindowBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
-	// FIXME: Cache dialog base units on font change.
 	base := wb.dialogBaseUnits()
 
 	return Size{
