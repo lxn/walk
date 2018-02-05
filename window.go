@@ -13,9 +13,7 @@ import (
 	"strings"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -815,8 +813,20 @@ type applyFonter interface {
 	applyFont(font *Font)
 }
 
+type ApplyFonter interface {
+	ApplyFont(font *Font)
+}
+
 func (wb *WindowBase) applyFont(font *Font) {
 	setWindowFont(wb.hWnd, font)
+
+	if af, ok := wb.window.(ApplyFonter); ok {
+		af.ApplyFont(font)
+	}
+}
+
+func SetWindowFont(hwnd win.HWND, font *Font) {
+	win.SendMessage(hwnd, win.WM_SETFONT, uintptr(font.handleForDPI(0)), 1)
 }
 
 func setWindowFont(hwnd win.HWND, font *Font) {
