@@ -17,13 +17,17 @@ type Label struct {
 }
 
 func NewLabel(parent Container) (*Label, error) {
+	return NewLabelWithStyle(parent, 0)
+}
+
+func NewLabelWithStyle(parent Container, style uint32) (*Label, error) {
 	l := new(Label)
 
 	if err := InitWidget(
 		l,
 		parent,
 		"STATIC",
-		win.WS_VISIBLE|win.SS_CENTERIMAGE,
+		win.WS_VISIBLE|win.SS_CENTERIMAGE|style,
 		0); err != nil {
 		return nil, err
 	}
