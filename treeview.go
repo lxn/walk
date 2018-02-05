@@ -533,7 +533,13 @@ func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 			if nmtvdi.Item.Mask&win.TVIF_TEXT != 0 {
 				info := tv.item2Info[item]
-				info.utf16Text = syscall.StringToUTF16Ptr(item.Text())
+				var text string
+				rc := win.RECT{Left: int32(nmtvdi.Item.HItem)}
+				if 0 != tv.SendMessage(win.TVM_GETITEMRECT, 0, uintptr(unsafe.Pointer(&rc))) {
+					// Only retrieve text if the item is visible. Why isn't Windows doing this for us?
+					text = item.Text()
+				}
+				info.utf16Text = syscall.StringToUTF16Ptr(text)
 				nmtvdi.Item.PszText = uintptr(unsafe.Pointer(info.utf16Text))
 			}
 			if nmtvdi.Item.Mask&win.TVIF_CHILDREN != 0 {
