@@ -145,6 +145,14 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 		}
 	}
 
+	if val := b.widgetValue.FieldByName("Font"); val.IsValid() {
+		if f, err := val.Interface().(Font).Create(); err != nil {
+			return err
+		} else if f != nil {
+			w.SetFont(f)
+		}
+	}
+
 	if err := w.SetMinMaxSize(b.size("MinSize").toW(), b.size("MaxSize").toW()); err != nil {
 		return err
 	}
@@ -356,15 +364,6 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	}
 
 	b.parent = oldParent
-
-	// Widget continued
-	if val := b.widgetValue.FieldByName("Font"); val.IsValid() {
-		if f, err := val.Interface().(Font).Create(); err != nil {
-			return err
-		} else if f != nil {
-			w.SetFont(f)
-		}
-	}
 
 	if b.level == 1 {
 		if err := b.initProperties(); err != nil {
