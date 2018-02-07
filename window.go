@@ -1324,10 +1324,24 @@ func (wb *WindowBase) MouseWheel() *MouseEvent {
 	return wb.mouseWheelPublisher.Event()
 }
 
-func (wb *WindowBase) publishMouseEvent(publisher *MouseEventPublisher, wParam, lParam uintptr) {
+func (wb *WindowBase) publishMouseEvent(publisher *MouseEventPublisher, msg uint32, wParam, lParam uintptr) {
 	x := int(win.GET_X_LPARAM(lParam))
 	y := int(win.GET_Y_LPARAM(lParam))
-	button := MouseButton(wParam&win.MK_LBUTTON | wParam&win.MK_RBUTTON | wParam&win.MK_MBUTTON)
+
+	var button MouseButton
+	switch msg {
+	case win.WM_LBUTTONUP:
+		button = LeftButton
+
+	case win.WM_RBUTTONUP:
+		button = RightButton
+
+	case win.WM_MBUTTONUP:
+		button = MiddleButton
+
+	default:
+		button = MouseButton(wParam&win.MK_LBUTTON | wParam&win.MK_RBUTTON | wParam&win.MK_MBUTTON)
+	}
 
 	publisher.Publish(x, y, button)
 }
@@ -1629,7 +1643,7 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			// be generated for PushButton.)
 			win.SetCapture(wb.hWnd)
 		}
-		wb.publishMouseEvent(&wb.mouseDownPublisher, wParam, lParam)
+		wb.publishMouseEvent(&wb.mouseDownPublisher, msg, wParam, lParam)
 
 	case win.WM_LBUTTONUP, win.WM_MBUTTONUP, win.WM_RBUTTONUP:
 		if msg == win.WM_LBUTTONUP && wb.origWndProcPtr == 0 {
@@ -1638,10 +1652,10 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 				lastError("ReleaseCapture")
 			}
 		}
-		wb.publishMouseEvent(&wb.mouseUpPublisher, wParam, lParam)
+		wb.publishMouseEvent(&wb.mouseUpPublisher, msg, wParam, lParam)
 
 	case win.WM_MOUSEMOVE:
-		wb.publishMouseEvent(&wb.mouseMovePublisher, wParam, lParam)
+		wb.publishMouseEvent(&wb.mouseMovePublisher, msg, wParam, lParam)
 
 	case win.WM_MOUSEWHEEL:
 		wb.publishMouseWheelEvent(&wb.mouseWheelPublisher, wParam, lParam)
