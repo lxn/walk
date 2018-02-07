@@ -110,7 +110,7 @@ type BarPage struct {
 }
 
 func newBarPage(parent walk.Container) (Page, error) {
-	p := new(FooPage)
+	p := new(BarPage)
 
 	if err := (Composite{
 		AssignTo: &p.Composite,
@@ -137,7 +137,7 @@ type BazPage struct {
 }
 
 func newBazPage(parent walk.Container) (Page, error) {
-	p := new(FooPage)
+	p := new(BazPage)
 
 	if err := (Composite{
 		AssignTo: &p.Composite,
