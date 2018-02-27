@@ -52,9 +52,10 @@ type Canvas struct {
 	hwnd                win.HWND
 	dpix                int
 	dpiy                int
-	doNotDispose        bool
+	bitmap              *Bitmap
 	recordingMetafile   *Metafile
 	measureTextMetafile *Metafile
+	doNotDispose        bool
 }
 
 func NewCanvasFromImage(image Image) (*Canvas, error) {
@@ -78,7 +79,7 @@ func NewCanvasFromImage(image Image) (*Canvas, error) {
 
 		succeeded = true
 
-		return (&Canvas{hdc: hdc}).init()
+		return (&Canvas{hdc: hdc, bitmap: img}).init()
 
 	case *Metafile:
 		c, err := newCanvasFromHDC(img.hdc)
@@ -133,8 +134,9 @@ func (c *Canvas) init() (*Canvas, error) {
 
 func (c *Canvas) Dispose() {
 	if !c.doNotDispose && c.hdc != 0 {
-		if c.hwnd == 0 {
+		if c.bitmap != nil {
 			win.DeleteDC(c.hdc)
+			c.bitmap.postProcess()
 		} else {
 			win.ReleaseDC(c.hwnd, c.hdc)
 		}
@@ -242,6 +244,26 @@ func (c *Canvas) DrawImageStretched(image Image, bounds Rectangle) error {
 	return image.drawStretched(c.hdc, bounds)
 }
 
+func (c *Canvas) DrawBitmapWithOpacity(bmp *Bitmap, bounds Rectangle, opacity byte) error {
+	if bmp == nil {
+		return newError("bmp cannot be nil")
+	}
+
+	return bmp.alphaBlend(c.hdc, bounds, opacity)
+}
+
+func (c *Canvas) DrawBitmapPart(bmp *Bitmap, dst, src Rectangle) error {
+	return c.DrawBitmapPartWithOpacity(bmp, dst, src, 0xff)
+}
+
+func (c *Canvas) DrawBitmapPartWithOpacity(bmp *Bitmap, dst, src Rectangle, opacity byte) error {
+	if bmp == nil {
+		return newError("bmp cannot be nil")
+	}
+
+	return bmp.alphaBlendPart(c.hdc, dst, src, opacity)
+}
+
 func (c *Canvas) DrawLine(pen Pen, from, to Point) error {
 	if !win.MoveToEx(c.hdc, from.X, from.Y, nil) {
 		return newError("MoveToEx failed")
@@ -297,6 +319,32 @@ func (c *Canvas) DrawRectangle(pen Pen, bounds Rectangle) error {
 
 func (c *Canvas) FillRectangle(brush Brush, bounds Rectangle) error {
 	return c.rectangle(brush, nullPenSingleton, bounds, 1)
+}
+
+func (c *Canvas) roundedRectangle(brush Brush, pen Pen, bounds Rectangle, ellipseSize Size, sizeCorrection int) error {
+	return c.withBrushAndPen(brush, pen, func() error {
+		if !win.RoundRect(
+			c.hdc,
+			int32(bounds.X),
+			int32(bounds.Y),
+			int32(bounds.X+bounds.Width+sizeCorrection),
+			int32(bounds.Y+bounds.Height+sizeCorrection),
+			int32(ellipseSize.Width),
+			int32(ellipseSize.Height)) {
+
+			return newError("RoundRect failed")
+		}
+
+		return nil
+	})
+}
+
+func (c *Canvas) DrawRoundedRectangle(pen Pen, bounds Rectangle, ellipseSize Size) error {
+	return c.roundedRectangle(nullBrushSingleton, pen, bounds, ellipseSize, 0)
+}
+
+func (c *Canvas) FillRoundedRectangle(brush Brush, bounds Rectangle, ellipseSize Size) error {
+	return c.roundedRectangle(brush, nullPenSingleton, bounds, ellipseSize, 1)
 }
 
 func (c *Canvas) GradientFillRectangle(color1, color2 Color, orientation Orientation, bounds Rectangle) error {

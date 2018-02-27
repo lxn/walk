@@ -325,15 +325,16 @@ func itemsFromReflectModelDataSource(dataSource interface{}, requiredInterfaceNa
 		}
 	}
 
-	if t := reflect.TypeOf(items); t == nil ||
-		t.Kind() != reflect.Slice ||
-		t.Elem().Kind() != reflect.Ptr ||
-		t.Elem().Elem().Kind() != reflect.Struct {
+	if t := reflect.TypeOf(items); t != nil &&
+		t.Kind() == reflect.Slice &&
+		(t.Elem().Kind() == reflect.Struct ||
+			(t.Elem().Kind() == reflect.Interface || t.Elem().Kind() == reflect.Ptr) &&
+				t.Elem().Elem().Kind() == reflect.Struct) {
 
-		return nil, newError(fmt.Sprintf("dataSource must be a slice of pointers to struct or must implement %s.", requiredInterfaceName))
+		return items, nil
 	}
 
-	return items, nil
+	return nil, newError(fmt.Sprintf("dataSource must be a slice of struct or interface or pointer to struct or must implement %s.", requiredInterfaceName))
 }
 
 func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member string, index int) interface{} {

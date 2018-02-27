@@ -50,6 +50,9 @@ type Widget interface {
 	// Form returns the root ancestor Form of the Widget.
 	Form() Form
 
+	// GraphicsEffects returns a list of WidgetGraphicsEffects that are applied to the Widget.
+	GraphicsEffects() *WidgetGraphicsEffectList
+
 	// LayoutFlags returns a combination of LayoutFlags that specify how the
 	// Widget wants to be treated by Layout implementations.
 	LayoutFlags() LayoutFlags
@@ -84,6 +87,7 @@ type WidgetBase struct {
 	parent                      Container
 	toolTipTextProperty         Property
 	toolTipTextChangedPublisher EventPublisher
+	graphicsEffects             *WidgetGraphicsEffectList
 	alwaysConsumeSpace          bool
 }
 
@@ -114,6 +118,8 @@ func InitWidget(widget Widget, parent Window, className string, style, exStyle u
 }
 
 func (wb *WidgetBase) init(widget Widget) error {
+	wb.graphicsEffects = newWidgetGraphicsEffectList(wb)
+
 	if err := globalToolTip.AddTool(wb); err != nil {
 		return err
 	}
@@ -346,6 +352,54 @@ func (wb *WidgetBase) SetToolTipText(s string) error {
 	return nil
 }
 
+// GraphicsEffects returns a list of WidgetGraphicsEffects that are applied to the WidgetBase.
+func (wb *WidgetBase) GraphicsEffects() *WidgetGraphicsEffectList {
+	return wb.graphicsEffects
+}
+
+func (wb *WidgetBase) onInsertedGraphicsEffect(index int, effect WidgetGraphicsEffect) error {
+	wb.invalidateBorderInParent()
+
+	return nil
+}
+
+func (wb *WidgetBase) onRemovedGraphicsEffect(index int, effect WidgetGraphicsEffect) error {
+	wb.invalidateBorderInParent()
+
+	return nil
+}
+
+func (wb *WidgetBase) onClearedGraphicsEffects() error {
+	wb.invalidateBorderInParent()
+
+	return nil
+}
+
+func (wb *WidgetBase) invalidateBorderInParent() {
+	if wb.parent != nil && wb.parent.Layout() != nil {
+		//if _, ok := wb.parent.(*Splitter); ok {
+		//	return
+		//}
+
+		b := wb.Bounds().toRECT()
+		s := int32(wb.parent.Layout().Spacing())
+
+		hwnd := wb.parent.Handle()
+
+		rc := win.RECT{Left: b.Left - s, Top: b.Top - s, Right: b.Left, Bottom: b.Bottom + s}
+		win.InvalidateRect(hwnd, &rc, true)
+
+		rc = win.RECT{Left: b.Right, Top: b.Top - s, Right: b.Right + s, Bottom: b.Bottom + s}
+		win.InvalidateRect(hwnd, &rc, true)
+
+		rc = win.RECT{Left: b.Left, Top: b.Top - s, Right: b.Right, Bottom: b.Top}
+		win.InvalidateRect(hwnd, &rc, true)
+
+		rc = win.RECT{Left: b.Left, Top: b.Bottom, Right: b.Right, Bottom: b.Bottom + s}
+		win.InvalidateRect(hwnd, &rc, true)
+	}
+}
+
 func (wb *WidgetBase) updateParentLayout() error {
 	parent := wb.window.(Widget).Parent()
 
@@ -387,6 +441,12 @@ func (wb *WidgetBase) updateParentLayout() error {
 	}
 
 	layout.Update(false)
+
+	if FocusEffect != nil {
+		if focusedWnd := windowFromHandle(win.GetFocus()); focusedWnd != nil && win.GetParent(focusedWnd.Handle()) == parent.Handle() {
+			focusedWnd.(Widget).AsWidgetBase().invalidateBorderInParent()
+		}
+	}
 
 	return nil
 }

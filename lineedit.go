@@ -50,6 +50,9 @@ func newLineEdit(parent Window) (*LineEdit, error) {
 		return nil, err
 	}
 
+	le.GraphicsEffects().Add(InteractionEffect)
+	le.GraphicsEffects().Add(FocusEffect)
+
 	le.MustRegisterProperty("ReadOnly", NewProperty(
 		func() interface{} {
 			return le.ReadOnly()
@@ -224,6 +227,10 @@ func (le *LineEdit) ReadOnly() bool {
 func (le *LineEdit) SetReadOnly(readOnly bool) error {
 	if 0 == le.SendMessage(win.EM_SETREADONLY, uintptr(win.BoolToBOOL(readOnly)), 0) {
 		return newError("SendMessage(EM_SETREADONLY)")
+	}
+
+	if readOnly != le.ReadOnly() {
+		le.invalidateBorderInParent()
 	}
 
 	le.readOnlyChangedPublisher.Publish()

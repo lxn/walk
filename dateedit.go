@@ -13,9 +13,7 @@ import (
 	"unsafe"
 )
 
-import (
-	"github.com/lxn/win"
-)
+import "github.com/lxn/win"
 
 type DateEdit struct {
 	WidgetBase
@@ -34,6 +32,13 @@ func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
 		0); err != nil {
 		return nil, err
 	}
+
+	if style&win.DTS_SHOWNONE != 0 {
+		de.setSystemTime(nil)
+	}
+
+	de.GraphicsEffects().Add(InteractionEffect)
+	de.GraphicsEffects().Add(FocusEffect)
 
 	de.MustRegisterProperty("Date", NewProperty(
 		func() interface{} {
@@ -140,8 +145,6 @@ func (de *DateEdit) setSystemTime(st *win.SYSTEMTIME) error {
 		return newError("SendMessage(DTM_SETSYSTEMTIME)")
 	}
 
-	de.dateChangedPublisher.Publish()
-
 	return nil
 }
 
@@ -212,11 +215,7 @@ func (de *DateEdit) SetRange(min, max time.Time) error {
 
 func (de *DateEdit) Date() time.Time {
 	st, err := de.systemTime()
-	if err != nil {
-		return time.Time{}
-	}
-
-	if st == nil {
+	if err != nil || st == nil {
 		return time.Time{}
 	}
 
@@ -224,7 +223,21 @@ func (de *DateEdit) Date() time.Time {
 }
 
 func (de *DateEdit) SetDate(date time.Time) error {
-	return de.setSystemTime(de.timeToSystemTime(date))
+	stNew := de.timeToSystemTime(date)
+	stOld, err := de.systemTime()
+	if err != nil {
+		return err
+	} else if stNew == stOld || stNew != nil && stOld != nil && *stNew == *stOld {
+		return nil
+	}
+
+	if err := de.setSystemTime(stNew); err != nil {
+		return err
+	}
+
+	de.dateChangedPublisher.Publish()
+
+	return nil
 }
 
 func (de *DateEdit) DateChanged() *Event {

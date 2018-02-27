@@ -24,8 +24,9 @@ import (
 )
 
 var (
-	defaultTVRowBGColor Color = Color(win.GetSysColor(win.COLOR_WINDOW))
-	white                     = win.COLORREF(RGB(255, 255, 255))
+	defaultTVRowBGColor = Color(win.GetSysColor(win.COLOR_WINDOW))
+	white               = win.COLORREF(RGB(255, 255, 255))
+	checkmark           = string([]byte{0xE2, 0x9C, 0x94})
 )
 
 const (
@@ -125,6 +126,9 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 
 	tv.currentIndex = -1
 
+	tv.GraphicsEffects().Add(InteractionEffect)
+	tv.GraphicsEffects().Add(FocusEffect)
+
 	tv.MustRegisterProperty("ColumnsOrderable", NewBoolProperty(
 		func() bool {
 			return tv.ColumnsOrderable()
@@ -170,6 +174,12 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 			return tv.CurrentIndex() != -1
 		},
 		tv.CurrentIndexChanged()))
+
+	tv.MustRegisterProperty("SelectedCount", NewReadOnlyProperty(
+		func() interface{} {
+			return len(tv.selectedIndexes)
+		},
+		tv.SelectedIndexesChanged()))
 
 	succeeded = true
 
@@ -665,6 +675,13 @@ func (tv *TableView) SetCurrentIndex(value int) error {
 	var lvi win.LVITEM
 
 	lvi.StateMask = win.LVIS_FOCUSED | win.LVIS_SELECTED
+
+	if tv.MultiSelection() {
+		if win.FALSE == tv.SendMessage(win.LVM_SETITEMSTATE, ^uintptr(0), uintptr(unsafe.Pointer(&lvi))) {
+			return newError("SendMessage(LVM_SETITEMSTATE)")
+		}
+	}
+
 	if value > -1 {
 		lvi.State = win.LVIS_FOCUSED | win.LVIS_SELECTED
 	}
@@ -937,12 +954,12 @@ func (tv *TableView) SaveState() error {
 		return err
 	}
 
-	return tv.putState(string(state))
+	return tv.WriteState(string(state))
 }
 
 // RestoreState restores the UI state of the *TableView from the settings.
 func (tv *TableView) RestoreState() error {
-	state, err := tv.getState()
+	state, err := tv.ReadState()
 	if err != nil {
 		return err
 	}
@@ -1367,6 +1384,11 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 						text = val.Format(tv.columns.items[col].format)
 					}
 
+				case bool:
+					if val {
+						text = checkmark
+					}
+
 				case *big.Rat:
 					prec := tv.columns.items[col].precision
 					if prec == 0 {
@@ -1395,6 +1417,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				if styler := tv.styler; styler != nil && image == nil {
 					tv.style.row = row
 					tv.style.col = col
+					tv.style.bounds = Rectangle{}
 					tv.style.Image = nil
 
 					styler.StyleCell(&tv.style)
@@ -1441,10 +1464,37 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 				case win.CDDS_ITEMPREPAINT:
 					tv.customDrawItemHot = nmlvcd.Nmcd.UItemState&win.CDIS_HOT != 0
 
-					if tv.alternatingRowBGColor != 0 && row%2 == 1 {
-						tv.style.BackgroundColor = tv.alternatingRowBGColor
-						nmlvcd.ClrTextBk = win.COLORREF(tv.alternatingRowBGColor)
+					if tv.alternatingRowBGColor != 0 {
+						if row%2 == 1 {
+							tv.style.BackgroundColor = tv.alternatingRowBGColor
+						} else {
+							tv.style.BackgroundColor = defaultTVRowBGColor
+						}
 					}
+
+					if tv.styler != nil {
+						tv.style.row = row
+						tv.style.col = -1
+
+						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc)
+						tv.style.hdc = 0
+						tv.style.TextColor = RGB(0, 0, 0)
+						tv.style.Font = nil
+						tv.style.Image = nil
+
+						tv.styler.StyleCell(&tv.style)
+					}
+
+					if tv.style.BackgroundColor != defaultTVRowBGColor {
+						if brush, _ := NewSolidColorBrush(tv.style.BackgroundColor); brush != nil {
+							defer brush.Dispose()
+
+							canvas, _ := newCanvasFromHDC(nmlvcd.Nmcd.Hdc)
+							canvas.FillRectangle(brush, rectangleFromRECT(nmlvcd.Nmcd.Rc))
+						}
+					}
+
+					nmlvcd.ClrTextBk = win.COLORREF(tv.style.BackgroundColor)
 
 					return win.CDRF_NOTIFYSUBITEMDRAW
 
@@ -1461,41 +1511,29 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 							}
 						}
 
+						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc)
+						tv.style.hdc = nmlvcd.Nmcd.Hdc
 						tv.style.TextColor = RGB(0, 0, 0)
 						tv.style.Font = nil
 						tv.style.Image = nil
 
 						tv.styler.StyleCell(&tv.style)
 
+						defer func() {
+							tv.style.bounds = Rectangle{}
+							if tv.style.canvas != nil {
+								tv.style.canvas.Dispose()
+								tv.style.canvas = nil
+							}
+							tv.style.hdc = 0
+						}()
+
+						if tv.style.canvas != nil {
+							return win.CDRF_SKIPDEFAULT
+						}
+
 						nmlvcd.ClrTextBk = win.COLORREF(tv.style.BackgroundColor)
 						nmlvcd.ClrText = win.COLORREF(tv.style.TextColor)
-
-						if (tv.style.Image != nil || nmlvcd.ISubItem == 0) &&
-							tv.style.BackgroundColor != defaultTVRowBGColor &&
-							!tv.customDrawItemHot &&
-							win.IsAppThemed() &&
-							int(tv.SendMessage(win.LVM_GETSELECTEDCOLUMN, 0, 0)) != col &&
-							tv.SendMessage(win.LVM_GETITEMSTATE, uintptr(row), win.LVIS_SELECTED) == 0 {
-
-							canvas, _ := newCanvasFromHDC(nmlvcd.Nmcd.Hdc)
-							brush, _ := NewSolidColorBrush(tv.style.BackgroundColor)
-							defer brush.Dispose()
-
-							bounds := rectangleFromRECT(nmlvcd.Nmcd.Rc)
-							if nmlvcd.ISubItem == 0 {
-								if tv.CheckBoxes() {
-									bounds.X -= 20
-									bounds.Width = 36
-								} else {
-									bounds.X -= 4
-									bounds.Width = 20
-								}
-							} else {
-								bounds.Width = 18
-							}
-
-							canvas.FillRectangle(brush, bounds)
-						}
 
 						if font := tv.style.Font; font != nil {
 							win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(0)))

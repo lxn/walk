@@ -38,6 +38,7 @@ type CheckBox struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -54,6 +55,7 @@ type CheckBox struct {
 	AssignTo            **walk.CheckBox
 	CheckState          Property
 	OnCheckStateChanged walk.EventHandler
+	TextOnLeftSide      bool
 	Tristate            bool
 }
 
@@ -66,8 +68,16 @@ func (cb CheckBox) Create(builder *Builder) error {
 	return builder.InitWidget(cb, w, func() error {
 		w.SetPersistent(cb.Persistent)
 
+		if err := w.SetTextOnLeftSide(cb.TextOnLeftSide); err != nil {
+			return err
+		}
+
 		if err := w.SetTristate(cb.Tristate); err != nil {
 			return err
+		}
+
+		if cb.Tristate && cb.CheckState == nil {
+			w.SetCheckState(walk.CheckIndeterminate)
 		}
 
 		if cb.OnClicked != nil {

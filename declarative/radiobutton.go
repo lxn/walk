@@ -38,6 +38,7 @@ type RadioButton struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -49,8 +50,9 @@ type RadioButton struct {
 
 	// RadioButton
 
-	AssignTo **walk.RadioButton
-	Value    interface{}
+	AssignTo       **walk.RadioButton
+	TextOnLeftSide bool
+	Value          interface{}
 }
 
 func (rb RadioButton) Create(builder *Builder) error {
@@ -61,6 +63,10 @@ func (rb RadioButton) Create(builder *Builder) error {
 
 	return builder.InitWidget(rb, w, func() error {
 		w.SetValue(rb.Value)
+
+		if err := w.SetTextOnLeftSide(rb.TextOnLeftSide); err != nil {
+			return err
+		}
 
 		if rb.OnClicked != nil {
 			w.Clicked().Attach(rb.OnClicked)

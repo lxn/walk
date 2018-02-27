@@ -48,6 +48,9 @@ func (db *DataBinder) AutoSubmit() bool {
 
 func (db *DataBinder) SetAutoSubmit(autoSubmit bool) {
 	db.autoSubmit = autoSubmit
+	if autoSubmit {
+		db.canSubmit = true
+	}
 }
 
 func (db *DataBinder) AutoSubmitDelay() time.Duration {
@@ -234,7 +237,7 @@ func (db *DataBinder) Reset() error {
 				f64 = float64(v)
 
 			default:
-				return newError(fmt.Sprintf("Field '%s': Can't convert %t to float64.", prop.Source().(string), field.Get()))
+				return newError(fmt.Sprintf("Field '%s': Can't convert %T to float64.", prop.Source().(string), field.Get()))
 			}
 
 			if err := prop.Set(f64); err != nil {
@@ -369,7 +372,7 @@ func reflectValueFromPath(root reflect.Value, path string) (reflect.Value, error
 		name, path = nextPathPart(path)
 
 		var p reflect.Value
-		for v.Kind() == reflect.Ptr {
+		for v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr {
 			p = v
 			v = v.Elem()
 		}

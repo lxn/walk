@@ -16,6 +16,10 @@ import (
 )
 
 func main() {
+	walk.FocusEffect, _ = walk.NewBorderGlowEffect(walk.RGB(0, 63, 255))
+	walk.InteractionEffect, _ = walk.NewDropShadowEffect(walk.RGB(63, 63, 63))
+	walk.ValidationErrorEffect, _ = walk.NewBorderGlowEffect(walk.RGB(255, 0, 0))
+
 	var mw *walk.MainWindow
 	var outTE *walk.TextEdit
 

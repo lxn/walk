@@ -145,6 +145,14 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 		}
 	}
 
+	if val := b.widgetValue.FieldByName("Font"); val.IsValid() {
+		if f, err := val.Interface().(Font).Create(); err != nil {
+			return err
+		} else if f != nil {
+			w.SetFont(f)
+		}
+	}
+
 	if err := w.SetMinMaxSize(b.size("MinSize").toW(), b.size("MaxSize").toW()); err != nil {
 		return err
 	}
@@ -204,6 +212,12 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	if widget, ok := w.(walk.Widget); ok {
 		if err := widget.SetAlwaysConsumeSpace(b.bool("AlwaysConsumeSpace")); err != nil {
 			return err
+		}
+
+		if field := b.widgetValue.FieldByName("GraphicsEffects"); field.IsValid() {
+			for _, effect := range field.Interface().([]walk.WidgetGraphicsEffect) {
+				widget.GraphicsEffects().Add(effect)
+			}
 		}
 
 		if p := widget.Parent(); p != nil {
@@ -297,7 +311,19 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 			}
 		}
 
-		b.parent = wc
+		type DelegateContainerer interface {
+			DelegateContainer() walk.Container
+		}
+
+		if dc, ok := wc.(DelegateContainerer); ok {
+			if parent := dc.DelegateContainer(); parent != nil {
+				b.parent = parent
+			} else {
+				b.parent = wc
+			}
+		} else {
+			b.parent = wc
+		}
 		defer func() {
 			b.parent = oldParent
 		}()
@@ -350,15 +376,6 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	}
 
 	b.parent = oldParent
-
-	// Widget continued
-	if val := b.widgetValue.FieldByName("Font"); val.IsValid() {
-		if f, err := val.Interface().(Font).Create(); err != nil {
-			return err
-		} else if f != nil {
-			w.SetFont(f)
-		}
-	}
 
 	if b.level == 1 {
 		if err := b.initProperties(); err != nil {

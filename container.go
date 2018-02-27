@@ -295,12 +295,91 @@ func (cb *ContainerBase) SetSuspended(suspend bool) {
 	}
 }
 
+func (cb *ContainerBase) doPaint() error {
+	var ps win.PAINTSTRUCT
+
+	hdc := win.BeginPaint(cb.hWnd, &ps)
+	defer win.EndPaint(cb.hWnd, &ps)
+
+	canvas, err := newCanvasFromHDC(hdc)
+	if err != nil {
+		return err
+	}
+	defer canvas.Dispose()
+
+	for _, widget := range cb.children.items {
+		for _, effect := range widget.GraphicsEffects().items {
+			switch effect {
+			case InteractionEffect:
+				type ReadOnlyer interface {
+					ReadOnly() bool
+				}
+				if ro, ok := widget.(ReadOnlyer); ok {
+					if ro.ReadOnly() {
+						continue
+					}
+				}
+
+				if hwnd := widget.Handle(); !win.IsWindowEnabled(hwnd) || !win.IsWindowVisible(hwnd) {
+					continue
+				}
+
+			case FocusEffect:
+				continue
+			}
+
+			b := widget.Bounds().toRECT()
+			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
+
+			if err := effect.Draw(widget, canvas); err != nil {
+				return err
+			}
+		}
+	}
+
+	if FocusEffect != nil {
+		hwndFocused := win.GetFocus()
+		var widget Widget
+		if wnd := windowFromHandle(hwndFocused); wnd != nil {
+			widget, _ = wnd.(Widget)
+		}
+		for hwndFocused != 0 && (widget == nil || widget.Parent() == nil) {
+			hwndFocused = win.GetParent(hwndFocused)
+			if wnd := windowFromHandle(hwndFocused); wnd != nil {
+				widget, _ = wnd.(Widget)
+			}
+		}
+
+		if widget != nil && widget.Parent() != nil && widget.Parent().Handle() == cb.hWnd {
+			for _, effect := range widget.GraphicsEffects().items {
+				if effect == FocusEffect {
+					b := widget.Bounds().toRECT()
+					win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
+
+					if err := FocusEffect.Draw(widget, canvas); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_CTLCOLOREDIT, win.WM_CTLCOLORSTATIC:
 		if hBrush := cb.handleWMCTLCOLOR(wParam, lParam); hBrush != 0 {
 			return hBrush
 		}
+
+	case win.WM_PAINT:
+		if err := cb.doPaint(); err != nil {
+			panic(err)
+		}
+
+		return 0
 
 	case win.WM_COMMAND:
 		if lParam == 0 {
@@ -368,6 +447,10 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 	case win.WM_SIZE, win.WM_SIZING:
 		if cb.layout != nil {
 			cb.layout.Update(false)
+		}
+
+		if cb.background == nullBrushSingleton {
+			cb.Invalidate()
 		}
 	}
 

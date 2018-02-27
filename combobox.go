@@ -68,13 +68,16 @@ func comboBoxEditWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 		if wParam != win.VK_RETURN || 0 == cb.SendMessage(win.CB_GETDROPPEDSTATE, 0, 0) {
 			cb.handleKeyUp(wParam, lParam)
 		}
+
+	case win.WM_SETFOCUS, win.WM_KILLFOCUS:
+		cb.invalidateBorderInParent()
 	}
 
 	return win.CallWindowProc(cb.editOrigWndProcPtr, hwnd, msg, wParam, lParam)
 }
 
 func NewComboBox(parent Container) (*ComboBox, error) {
-	cb, err := newComboBoxWithStyle(parent, win.CBS_DROPDOWN)
+	cb, err := newComboBoxWithStyle(parent, win.CBS_AUTOHSCROLL|win.CBS_DROPDOWN)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +119,9 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 	} else {
 		event = cb.TextChanged()
 	}
+
+	cb.GraphicsEffects().Add(InteractionEffect)
+	cb.GraphicsEffects().Add(FocusEffect)
 
 	cb.MustRegisterProperty("CurrentIndex", NewProperty(
 		func() interface{} {

@@ -14,8 +14,9 @@ import (
 )
 
 import (
-	"github.com/lxn/win"
 	"strconv"
+
+	"github.com/lxn/win"
 )
 
 type CloseReason byte
@@ -62,6 +63,8 @@ type Form interface {
 	Run() int
 	Starting() *Event
 	Closing() *CloseEvent
+	Activating() *Event
+	Deactivating() *Event
 	Activate() error
 	Show()
 	Hide()
@@ -349,6 +352,19 @@ func (fb *FormBase) SetRightToLeftLayout(rtl bool) error {
 func (fb *FormBase) Run() int {
 	if fb.owner != nil {
 		win.EnableWindow(fb.owner.Handle(), false)
+
+		invalidateDescendentBorders := func() {
+			walkDescendants(fb.owner, func(wnd Window) bool {
+				if widget, ok := wnd.(Widget); ok {
+					widget.AsWidgetBase().invalidateBorderInParent()
+				}
+
+				return true
+			})
+		}
+
+		invalidateDescendentBorders()
+		defer invalidateDescendentBorders()
 	}
 
 	if layout := fb.Layout(); layout != nil {
@@ -384,6 +400,14 @@ func (fb *FormBase) Run() int {
 
 func (fb *FormBase) Starting() *Event {
 	return fb.startingPublisher.Event()
+}
+
+func (fb *FormBase) Activating() *Event {
+	return fb.activatingPublisher.Event()
+}
+
+func (fb *FormBase) Deactivating() *Event {
+	return fb.deactivatingPublisher.Event()
 }
 
 func (fb *FormBase) Activate() error {
@@ -496,7 +520,7 @@ func (fb *FormBase) SaveState() error {
 		wp.RcNormalPosition.Left, wp.RcNormalPosition.Top,
 		wp.RcNormalPosition.Right, wp.RcNormalPosition.Bottom)
 
-	if err := fb.putState(state); err != nil {
+	if err := fb.WriteState(state); err != nil {
 		return err
 	}
 
@@ -512,7 +536,7 @@ func (fb *FormBase) RestoreState() error {
 		fb.isInRestoreState = false
 	}()
 
-	state, err := fb.getState()
+	state, err := fb.ReadState()
 	if err != nil {
 		return err
 	}

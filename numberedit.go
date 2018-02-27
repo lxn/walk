@@ -61,6 +61,9 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 		return nil, err
 	}
 
+	ne.GraphicsEffects().Add(InteractionEffect)
+	ne.GraphicsEffects().Add(FocusEffect)
+
 	ne.MustRegisterProperty("ReadOnly", NewProperty(
 		func() interface{} {
 			return ne.ReadOnly()
@@ -286,6 +289,10 @@ func (ne *NumberEdit) ReadOnly() bool {
 
 // SetReadOnly sets whether the NumberEdit is in read-only mode.
 func (ne *NumberEdit) SetReadOnly(readOnly bool) error {
+	if readOnly != ne.ReadOnly() {
+		ne.invalidateBorderInParent()
+	}
+
 	return ne.edit.SetReadOnly(readOnly)
 }
 
@@ -736,6 +743,7 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 		}
 
 	case win.WM_KILLFOCUS:
+		nle.onFocusChanged()
 		nle.endEdit()
 
 	case win.WM_LBUTTONDOWN:
@@ -788,6 +796,7 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 		return ret
 
 	case win.WM_SETFOCUS:
+		nle.onFocusChanged()
 		nle.selectNumber()
 
 	case win.EM_SETSEL:
@@ -810,6 +819,16 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 	}
 
 	return nle.LineEdit.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (nle *numberLineEdit) onFocusChanged() {
+	if ne := windowFromHandle(win.GetParent(nle.hWnd)); ne != nil {
+		if wnd := windowFromHandle(win.GetParent(ne.Handle())); wnd != nil {
+			if _, ok := wnd.(Container); ok {
+				ne.(Widget).AsWidgetBase().invalidateBorderInParent()
+			}
+		}
+	}
 }
 
 func (ne *NumberEdit) SetToolTipText(s string) error {
