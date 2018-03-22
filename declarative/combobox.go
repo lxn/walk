@@ -58,6 +58,8 @@ type ComboBox struct {
 	MaxLength             int
 	Model                 interface{}
 	OnCurrentIndexChanged walk.EventHandler
+	OnEditingFinished     walk.EventHandler
+	OnTextChanged         walk.EventHandler
 	Precision             int
 	Value                 Property
 }
@@ -98,6 +100,12 @@ func (cb ComboBox) Create(builder *Builder) error {
 
 		if cb.OnCurrentIndexChanged != nil {
 			w.CurrentIndexChanged().Attach(cb.OnCurrentIndexChanged)
+		}
+		if cb.OnEditingFinished != nil {
+			w.EditingFinished().Attach(cb.OnEditingFinished)
+		}
+		if cb.OnTextChanged != nil {
+			w.TextChanged().Attach(cb.OnTextChanged)
 		}
 
 		if cb.AssignTo != nil {

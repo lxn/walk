@@ -35,7 +35,9 @@ type ComboBox struct {
 	maxLength                    int
 	currentIndexChangedPublisher EventPublisher
 	textChangedPublisher         EventPublisher
+	editingFinishedPublisher     EventPublisher
 	editOrigWndProcPtr           uintptr
+	editing                      bool
 }
 
 var comboBoxEditWndProcPtr = syscall.NewCallback(comboBoxEditWndProc)
@@ -45,12 +47,14 @@ func comboBoxEditWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 	switch msg {
 	case win.WM_GETDLGCODE:
-		if form := ancestor(cb); form != nil {
-			if dlg, ok := form.(dialogish); ok {
-				if dlg.DefaultButton() != nil {
-					// If the ComboBox lives in a Dialog that has a
-					// DefaultButton, we won't swallow the return key.
-					break
+		if !cb.editing {
+			if form := ancestor(cb); form != nil {
+				if dlg, ok := form.(dialogish); ok {
+					if dlg.DefaultButton() != nil {
+						// If the ComboBox lives in a Dialog that has a
+						// DefaultButton, we won't swallow the return key.
+						break
+					}
 				}
 			}
 		}
@@ -64,6 +68,11 @@ func comboBoxEditWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 			cb.handleKeyDown(wParam, lParam)
 		}
 
+		if cb.editing && wParam == win.VK_RETURN {
+			cb.editing = false
+			cb.editingFinishedPublisher.Publish()
+		}
+
 	case win.WM_KEYUP:
 		if wParam != win.VK_RETURN || 0 == cb.SendMessage(win.CB_GETDROPPEDSTATE, 0, 0) {
 			cb.handleKeyUp(wParam, lParam)
@@ -71,6 +80,11 @@ func comboBoxEditWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 	case win.WM_SETFOCUS, win.WM_KILLFOCUS:
 		cb.invalidateBorderInParent()
+
+		if cb.editing && msg == win.WM_KILLFOCUS {
+			cb.editing = false
+			cb.editingFinishedPublisher.Publish()
+		}
 	}
 
 	return win.CallWindowProc(cb.editOrigWndProcPtr, hwnd, msg, wParam, lParam)
@@ -562,6 +576,10 @@ func (cb *ComboBox) TextChanged() *Event {
 	return cb.textChangedPublisher.Event()
 }
 
+func (cb *ComboBox) EditingFinished() *Event {
+	return cb.editingFinishedPublisher.Event()
+}
+
 func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_COMMAND:
@@ -570,6 +588,7 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		switch code {
 		case win.CBN_EDITCHANGE:
+			cb.editing = true
 			cb.selChangeIndex = -1
 			cb.textChangedPublisher.Publish()
 
