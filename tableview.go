@@ -898,7 +898,7 @@ func (tv *TableView) SetCurrentIndex(index int) error {
 
 	tv.currentIndex = index
 
-	if index == -1 {
+	if index == -1 || tv.itemStateChangedEventDelay == 0 {
 		tv.currentIndexChangedPublisher.Publish()
 	}
 
