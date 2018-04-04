@@ -53,6 +53,7 @@ type TableView struct {
 	Columns                    []TableViewColumn
 	ColumnsOrderable           Property
 	ColumnsSizable             Property
+	HeaderHidden               bool
 	ItemStateChangedEventDelay int
 	LastColumnStretched        bool
 	Model                      interface{}
@@ -156,6 +157,9 @@ func (tv TableView) Create(builder *Builder) error {
 			return err
 		}
 		if err := w.SetMultiSelection(tv.MultiSelection); err != nil {
+			return err
+		}
+		if err := w.SetHeaderHidden(tv.HeaderHidden); err != nil {
 			return err
 		}
 

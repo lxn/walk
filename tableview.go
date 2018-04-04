@@ -382,6 +382,38 @@ func (tv *TableView) SetColumnsSizable(b bool) error {
 	return nil
 }
 
+// HeaderHidden returns whether the column header is hidden.
+func (tv *TableView) HeaderHidden() bool {
+	style := win.GetWindowLong(tv.hwndNormal, win.GWL_STYLE)
+
+	return style&win.LVS_NOCOLUMNHEADER != 0
+}
+
+// SetHeaderHidden sets whether the column header is hidden.
+func (tv *TableView) SetHeaderHidden(hidden bool) error {
+	updateStyle := func(hwnd win.HWND) error {
+		style := win.GetWindowLong(hwnd, win.GWL_STYLE)
+
+		if hidden {
+			style |= win.LVS_NOCOLUMNHEADER
+		} else {
+			style &^= win.LVS_NOCOLUMNHEADER
+		}
+
+		if 0 == win.SetWindowLong(hwnd, win.GWL_STYLE, style) {
+			return lastError("SetWindowLong(GWL_STYLE)")
+		}
+
+		return nil
+	}
+
+	if err := updateStyle(tv.hwndFrozen); err != nil {
+		return err
+	}
+
+	return updateStyle(tv.hwndNormal)
+}
+
 // SortableByHeaderClick returns if the user can change sorting by clicking the header.
 func (tv *TableView) SortableByHeaderClick() bool {
 	return !hasWindowLongBits(tv.hwndFrozen, win.GWL_STYLE, win.LVS_NOSORTHEADER) ||
