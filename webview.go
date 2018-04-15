@@ -24,30 +24,30 @@ func init() {
 
 type WebView struct {
 	WidgetBase
-	clientSite                         webViewIOleClientSite // IMPORTANT: Must remain first member after WidgetBase
-	browserObject                      *win.IOleObject
-	urlChangedPublisher                EventPublisher
-	shortcutsEnabled                   bool
-	shortcutsEnabledChangedPublisher   EventPublisher
-	contextMenuEnabled                 bool
-	contextMenuEnabledChangedPublisher EventPublisher
-	beforeNavigate2EventPublisher      WvBeforeNavigate2EventPublisher
-	navigateComplete2EventPublisher    WvNavigateComplete2EventPublisher
-	downloadBeginEventPublisher        WvDownloadBeginEventPublisher
-	downloadCompleteEventPublisher     WvDownloadCompleteEventPublisher
-	documentCompleteEventPublisher     WvDocumentCompleteEventPublisher
-	navigateErrorEventPublisher        WvNavigateErrorEventPublisher
-	newWindow3EventPublisher           WvNewWindow3EventPublisher
-	onQuitEventPublisher               WvOnQuitEventPublisher
-	windowClosingEventPublisher        WvWindowClosingEventPublisher
-	onStatusBarEventPublisher          WvOnStatusBarEventPublisher
-	onTheaterModeEventPublisher        WvOnTheaterModeEventPublisher
-	onToolBarEventPublisher            WvOnToolBarEventPublisher
-	onVisibleEventPublisher            WvOnVisibleEventPublisher
-	commandStateChangeEventPublisher   WvCommandStateChangeEventPublisher
-	progressChangeEventPublisher       WvProgressChangeEventPublisher
-	statusTextChangeEventPublisher     WvStatusTextChangeEventPublisher
-	titleChangeEventPublisher          WvTitleChangeEventPublisher
+	clientSite                               webViewIOleClientSite // IMPORTANT: Must remain first member after WidgetBase
+	browserObject                            *win.IOleObject
+	urlChangedPublisher                      EventPublisher
+	shortcutsEnabled                         bool
+	shortcutsEnabledChangedPublisher         EventPublisher
+	nativeContextMenuEnabled                 bool
+	nativeContextMenuEnabledChangedPublisher EventPublisher
+	navigatingEventPublisher                 WebViewNavigatingEventPublisher
+	navigatedEventPublisher                  WebViewNavigatedEventPublisher
+	downloadingEventPublisher                WebViewDownloadingEventPublisher
+	downloadedEventPublisher                 WebViewDownloadedEventPublisher
+	documentCompletedEventPublisher          WebViewDocumentCompletedEventPublisher
+	navigatedErrorEventPublisher             WebViewNavigatedErrorEventPublisher
+	newWindowEventPublisher                  WebViewNewWindowEventPublisher
+	quittingEventPublisher                   WebViewQuittingEventPublisher
+	windowClosingEventPublisher              WebViewWindowClosingEventPublisher
+	statusBarVisibleChangedEventPublisher    WebViewStatusBarVisibleChangedEventPublisher
+	theaterModeChangedEventPublisher         WebViewTheaterModeChangedEventPublisher
+	toolBarVisibleChangedEventPublisher      WebViewToolBarVisibleChangedEventPublisher
+	browserVisibleChangedEventPublisher      WebViewBrowserVisibleChangedEventPublisher
+	commandStateChangedEventPublisher        WebViewCommandStateChangedEventPublisher
+	progressChangedEventPublisher            WebViewProgressChangedEventPublisher
+	statusTextChangedEventPublisher          WebViewStatusTextChangedEventPublisher
+	titleChangedEventPublisher               WebViewTitleChangedEventPublisher
 }
 
 func NewWebView(parent Container) (*WebView, error) {
@@ -81,8 +81,8 @@ func NewWebView(parent Container) (*WebView, error) {
 				},
 			},
 		},
-		shortcutsEnabled:   false,
-		contextMenuEnabled: false,
+		shortcutsEnabled:         false,
+		nativeContextMenuEnabled: false,
 	}
 
 	if err := InitWidget(
@@ -170,25 +170,23 @@ func NewWebView(parent Container) (*WebView, error) {
 
 	wv.MustRegisterProperty("ShortcutsEnabled", NewProperty(
 		func() interface{} {
-			return wv.shortcutsEnabled
+			return wv.ShortcutsEnabled()
 		},
 		func(v interface{}) error {
-			wv.shortcutsEnabled = v.(bool)
-			wv.shortcutsEnabledChangedPublisher.Publish()
+			wv.SetShortcutsEnabled(v.(bool))
 			return nil
 		},
 		wv.shortcutsEnabledChangedPublisher.Event()))
 
-	wv.MustRegisterProperty("ContextMenuEnabled", NewProperty(
+	wv.MustRegisterProperty("NativeContextMenuEnabled", NewProperty(
 		func() interface{} {
-			return wv.contextMenuEnabled
+			return wv.NativeContextMenuEnabled()
 		},
 		func(v interface{}) error {
-			wv.contextMenuEnabled = v.(bool)
-			wv.contextMenuEnabledChangedPublisher.Publish()
+			wv.SetNativeContextMenuEnabled(v.(bool))
 			return nil
 		},
-		wv.contextMenuEnabledChangedPublisher.Event()))
+		wv.nativeContextMenuEnabledChangedPublisher.Event()))
 
 	succeeded = true
 
@@ -250,80 +248,98 @@ func (wv *WebView) URLChanged() *Event {
 	return wv.urlChangedPublisher.Event()
 }
 
+func (wv *WebView) ShortcutsEnabled() bool {
+	return wv.shortcutsEnabled
+}
+
+func (wv *WebView) SetShortcutsEnabled(value bool) {
+	wv.shortcutsEnabled = value
+	wv.shortcutsEnabledChangedPublisher.Publish()
+}
+
 func (wv *WebView) ShortcutsEnabledChanged() *Event {
 	return wv.shortcutsEnabledChangedPublisher.Event()
 }
 
-func (wv *WebView) ContextMenuEnabledChanged() *Event {
-	return wv.contextMenuEnabledChangedPublisher.Event()
+func (wv *WebView) NativeContextMenuEnabled() bool {
+	return wv.nativeContextMenuEnabled
 }
 
-func (wv *WebView) BeforeNavigate2() *WvBeforeNavigate2Event {
-	return wv.beforeNavigate2EventPublisher.Event()
+func (wv *WebView) SetNativeContextMenuEnabled(value bool) {
+	wv.nativeContextMenuEnabled = value
+	wv.nativeContextMenuEnabledChangedPublisher.Publish()
 }
 
-func (wv *WebView) NavigateComplete2() *WvNavigateComplete2Event {
-	return wv.navigateComplete2EventPublisher.Event()
+func (wv *WebView) NativeContextMenuEnabledChanged() *Event {
+	return wv.nativeContextMenuEnabledChangedPublisher.Event()
 }
 
-func (wv *WebView) DownloadBegin() *WvDownloadBeginEvent {
-	return wv.downloadBeginEventPublisher.Event()
+func (wv *WebView) Navigating() *WebViewNavigatingEvent {
+	return wv.navigatingEventPublisher.Event()
 }
 
-func (wv *WebView) DownloadComplete() *WvDownloadCompleteEvent {
-	return wv.downloadCompleteEventPublisher.Event()
+func (wv *WebView) Navigated() *WebViewNavigatedEvent {
+	return wv.navigatedEventPublisher.Event()
 }
 
-func (wv *WebView) DocumentComplete() *WvDocumentCompleteEvent {
-	return wv.documentCompleteEventPublisher.Event()
+func (wv *WebView) Downloading() *WebViewDownloadingEvent {
+	return wv.downloadingEventPublisher.Event()
 }
 
-func (wv *WebView) NavigateError() *WvNavigateErrorEvent {
-	return wv.navigateErrorEventPublisher.Event()
+func (wv *WebView) Downloaded() *WebViewDownloadedEvent {
+	return wv.downloadedEventPublisher.Event()
 }
 
-func (wv *WebView) NewWindow3() *WvNewWindow3Event {
-	return wv.newWindow3EventPublisher.Event()
+func (wv *WebView) DocumentCompleted() *WebViewDocumentCompletedEvent {
+	return wv.documentCompletedEventPublisher.Event()
 }
 
-func (wv *WebView) OnQuit() *WvOnQuitEvent {
-	return wv.onQuitEventPublisher.Event()
+func (wv *WebView) NavigatedError() *WebViewNavigatedErrorEvent {
+	return wv.navigatedErrorEventPublisher.Event()
 }
 
-func (wv *WebView) WindowClosing() *WvWindowClosingEvent {
+func (wv *WebView) NewWindow() *WebViewNewWindowEvent {
+	return wv.newWindowEventPublisher.Event()
+}
+
+func (wv *WebView) Quitting() *WebViewQuittingEvent {
+	return wv.quittingEventPublisher.Event()
+}
+
+func (wv *WebView) WindowClosing() *WebViewWindowClosingEvent {
 	return wv.windowClosingEventPublisher.Event()
 }
 
-func (wv *WebView) OnStatusBar() *WvOnStatusBarEvent {
-	return wv.onStatusBarEventPublisher.Event()
+func (wv *WebView) StatusBarVisibleChanged() *WebViewStatusBarVisibleChangedEvent {
+	return wv.statusBarVisibleChangedEventPublisher.Event()
 }
 
-func (wv *WebView) OnTheaterMode() *WvOnTheaterModeEvent {
-	return wv.onTheaterModeEventPublisher.Event()
+func (wv *WebView) TheaterModeChanged() *WebViewTheaterModeChangedEvent {
+	return wv.theaterModeChangedEventPublisher.Event()
 }
 
-func (wv *WebView) OnToolBar() *WvOnToolBarEvent {
-	return wv.onToolBarEventPublisher.Event()
+func (wv *WebView) ToolBarVisibleChanged() *WebViewToolBarVisibleChangedEvent {
+	return wv.toolBarVisibleChangedEventPublisher.Event()
 }
 
-func (wv *WebView) OnVisible() *WvOnVisibleEvent {
-	return wv.onVisibleEventPublisher.Event()
+func (wv *WebView) BrowserVisibleChanged() *WebViewBrowserVisibleChangedEvent {
+	return wv.browserVisibleChangedEventPublisher.Event()
 }
 
-func (wv *WebView) CommandStateChange() *WvCommandStateChangeEvent {
-	return wv.commandStateChangeEventPublisher.Event()
+func (wv *WebView) CommandStateChanged() *WebViewCommandStateChangedEvent {
+	return wv.commandStateChangedEventPublisher.Event()
 }
 
-func (wv *WebView) ProgressChange() *WvProgressChangeEvent {
-	return wv.progressChangeEventPublisher.Event()
+func (wv *WebView) ProgressChanged() *WebViewProgressChangedEvent {
+	return wv.progressChangedEventPublisher.Event()
 }
 
-func (wv *WebView) StatusTextChange() *WvStatusTextChangeEvent {
-	return wv.statusTextChangeEventPublisher.Event()
+func (wv *WebView) StatusTextChanged() *WebViewStatusTextChangedEvent {
+	return wv.statusTextChangedEventPublisher.Event()
 }
 
-func (wv *WebView) TitleChange() *WvTitleChangeEvent {
-	return wv.titleChangeEventPublisher.Event()
+func (wv *WebView) TitleChanged() *WebViewTitleChangedEvent {
+	return wv.titleChangedEventPublisher.Event()
 }
 
 func (wv *WebView) Refresh() error {
@@ -377,7 +393,7 @@ func (wv *WebView) withInPlaceActiveObject(f func(activeObject *win.IOleInPlaceA
 	return nil
 }
 
-func (wv *WebView) TranslateAccelerator(msg *win.MSG) bool {
+func (wv *WebView) translateAccelerator(msg *win.MSG) bool {
 	if wv.shortcutsEnabled {
 		hr := wv.inPlaceActiveObjectTranslateAccelerator(msg)
 		return hr == win.S_OK

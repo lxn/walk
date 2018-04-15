@@ -45,30 +45,30 @@ type WebView struct {
 
 	// WebView
 
-	AssignTo             **walk.WebView
-	OnURLChanged         walk.EventHandler
-	URL                  Property
-	OnShortcutsEnabled   walk.EventHandler
-	ShortcutsEnabled     Property
-	OnContextMenuEnabled walk.EventHandler
-	ContextMenuEnabled   Property
-	BeforeNavigate2      walk.WvBeforeNavigate2EventHandler
-	NavigateComplete2    walk.WvNavigateComplete2EventHandler
-	DownloadBegin        walk.WvDownloadBeginEventHandler
-	DownloadComplete     walk.WvDownloadCompleteEventHandler
-	DocumentComplete     walk.WvDocumentCompleteEventHandler
-	NavigateError        walk.WvNavigateErrorEventHandler
-	NewWindow3           walk.WvNewWindow3EventHandler
-	OnQuit               walk.WvOnQuitEventHandler
-	WindowClosing        walk.WvWindowClosingEventHandler
-	OnStatusBar          walk.WvOnStatusBarEventHandler
-	OnTheaterMode        walk.WvOnTheaterModeEventHandler
-	OnToolBar            walk.WvOnToolBarEventHandler
-	OnVisible            walk.WvOnVisibleEventHandler
-	CommandStateChange   walk.WvCommandStateChangeEventHandler
-	ProgressChange       walk.WvProgressChangeEventHandler
-	StatusTextChange     walk.WvStatusTextChangeEventHandler
-	TitleChange          walk.WvTitleChangeEventHandler
+	AssignTo                   **walk.WebView
+	NativeContextMenuEnabled   Property
+	OnBrowserVisibleChanged    walk.WebViewBrowserVisibleChangedEventHandler
+	OnCommandStateChanged      walk.WebViewCommandStateChangedEventHandler
+	OnDocumentCompleted        walk.WebViewDocumentCompletedEventHandler
+	OnDownloaded               walk.EventHandler
+	OnDownloading              walk.EventHandler
+	OnNativeContextMenuEnabled walk.EventHandler
+	OnNavigated                walk.WebViewNavigatedEventHandler
+	OnNavigatedError           walk.WebViewNavigatedErrorEventHandler
+	OnNavigating               walk.WebViewNavigatingEventHandler
+	OnNewWindow                walk.WebViewNewWindowEventHandler
+	OnProgressChanged          walk.WebViewProgressChangedEventHandler
+	OnShortcutsEnabled         walk.EventHandler
+	OnStatusBarVisibleChanged  walk.WebViewStatusBarVisibleChangedEventHandler
+	OnStatusTextChanged        walk.WebViewStatusTextChangedEventHandler
+	OnTheaterModeChanged       walk.WebViewTheaterModeChangedEventHandler
+	OnTitleChanged             walk.WebViewTitleChangedEventHandler
+	OnToolBarVisibleChanged    walk.WebViewToolBarVisibleChangedEventHandler
+	OnURLChanged               walk.EventHandler
+	OnQuitting                 walk.EventHandler
+	OnWindowClosing            walk.WebViewWindowClosingEventHandler
+	URL                        Property
+	ShortcutsEnabled           Property
 }
 
 func (wv WebView) Create(builder *Builder) error {
@@ -78,65 +78,65 @@ func (wv WebView) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(wv, w, func() error {
+		if wv.OnBrowserVisibleChanged != nil {
+			w.BrowserVisibleChanged().Attach(wv.OnBrowserVisibleChanged)
+		}
+		if wv.OnCommandStateChanged != nil {
+			w.CommandStateChanged().Attach(wv.OnCommandStateChanged)
+		}
+		if wv.OnDocumentCompleted != nil {
+			w.DocumentCompleted().Attach(wv.OnDocumentCompleted)
+		}
+		if wv.OnDownloaded != nil {
+			w.Downloaded().Attach(wv.OnDownloaded)
+		}
+		if wv.OnDownloading != nil {
+			w.Downloading().Attach(wv.OnDownloading)
+		}
+		if wv.OnNativeContextMenuEnabled != nil {
+			w.NativeContextMenuEnabledChanged().Attach(wv.OnNativeContextMenuEnabled)
+		}
+		if wv.OnNavigated != nil {
+			w.Navigated().Attach(wv.OnNavigated)
+		}
+		if wv.OnNavigatedError != nil {
+			w.NavigatedError().Attach(wv.OnNavigatedError)
+		}
+		if wv.OnNavigating != nil {
+			w.Navigating().Attach(wv.OnNavigating)
+		}
+		if wv.OnNewWindow != nil {
+			w.NewWindow().Attach(wv.OnNewWindow)
+		}
+		if wv.OnProgressChanged != nil {
+			w.ProgressChanged().Attach(wv.OnProgressChanged)
+		}
 		if wv.OnURLChanged != nil {
 			w.URLChanged().Attach(wv.OnURLChanged)
 		}
 		if wv.OnShortcutsEnabled != nil {
 			w.ShortcutsEnabledChanged().Attach(wv.OnShortcutsEnabled)
 		}
-		if wv.OnContextMenuEnabled != nil {
-			w.ContextMenuEnabledChanged().Attach(wv.OnContextMenuEnabled)
+		if wv.OnStatusBarVisibleChanged != nil {
+			w.StatusBarVisibleChanged().Attach(wv.OnStatusBarVisibleChanged)
 		}
-		if wv.BeforeNavigate2 != nil {
-			w.BeforeNavigate2().Attach(wv.BeforeNavigate2)
+		if wv.OnStatusTextChanged != nil {
+			w.StatusTextChanged().Attach(wv.OnStatusTextChanged)
 		}
-		if wv.NavigateComplete2 != nil {
-			w.NavigateComplete2().Attach(wv.NavigateComplete2)
+		if wv.OnTitleChanged != nil {
+			w.TitleChanged().Attach(wv.OnTitleChanged)
 		}
-		if wv.DownloadBegin != nil {
-			w.DownloadBegin().Attach(wv.DownloadBegin)
+		if wv.OnTheaterModeChanged != nil {
+			w.TheaterModeChanged().Attach(wv.OnTheaterModeChanged)
 		}
-		if wv.DownloadComplete != nil {
-			w.DownloadComplete().Attach(wv.DownloadComplete)
+		if wv.OnToolBarVisibleChanged != nil {
+			w.ToolBarVisibleChanged().Attach(wv.OnToolBarVisibleChanged)
 		}
-		if wv.DocumentComplete != nil {
-			w.DocumentComplete().Attach(wv.DocumentComplete)
+		if wv.OnQuitting != nil {
+			w.Quitting().Attach(wv.OnQuitting)
 		}
-		if wv.NavigateError != nil {
-			w.NavigateError().Attach(wv.NavigateError)
-		}
-		if wv.NewWindow3 != nil {
-			w.NewWindow3().Attach(wv.NewWindow3)
-		}
-		if wv.OnQuit != nil {
-			w.OnQuit().Attach(wv.OnQuit)
-		}
-		if wv.WindowClosing != nil {
-			w.WindowClosing().Attach(wv.WindowClosing)
-		}
-		if wv.OnStatusBar != nil {
-			w.OnStatusBar().Attach(wv.OnStatusBar)
-		}
-		if wv.OnTheaterMode != nil {
-			w.OnTheaterMode().Attach(wv.OnTheaterMode)
-		}
-		if wv.OnToolBar != nil {
-			w.OnToolBar().Attach(wv.OnToolBar)
-		}
-		if wv.OnVisible != nil {
-			w.OnVisible().Attach(wv.OnVisible)
-		}
-		if wv.CommandStateChange != nil {
-			w.CommandStateChange().Attach(wv.CommandStateChange)
-		}
-		if wv.ProgressChange != nil {
-			w.ProgressChange().Attach(wv.ProgressChange)
-		}
-		if wv.StatusTextChange != nil {
-			w.StatusTextChange().Attach(wv.StatusTextChange)
-		}
-		if wv.TitleChange != nil {
-			w.TitleChange().Attach(wv.TitleChange)
+		if wv.OnWindowClosing != nil {
+			w.WindowClosing().Attach(wv.OnWindowClosing)
 		}
 
 		if wv.AssignTo != nil {

@@ -141,28 +141,39 @@ func webView_DWebBrowserEvents2_Invoke(
 	switch dispIdMember {
 	case win.DISPID_BEFORENAVIGATE2:
 		rgvargPtr := (*[7]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.beforeNavigate2EventPublisher.Publish(
-			(*rgvargPtr)[6].PDispVal(),
-			(*rgvargPtr)[5].PVarVal(),
-			(*rgvargPtr)[4].PVarVal(),
-			(*rgvargPtr)[3].PVarVal(),
-			(*rgvargPtr)[2].PVarVal(),
-			(*rgvargPtr)[1].PVarVal(),
-			(*rgvargPtr)[0].PBoolVal())
+		arg := &WebViewNavigatingArg{
+			pDisp:           (*rgvargPtr)[6].MustPDispatch(),
+			url:             (*rgvargPtr)[5].MustPVariant(),
+			flags:           (*rgvargPtr)[4].MustPVariant(),
+			targetFrameName: (*rgvargPtr)[3].MustPVariant(),
+			postData:        (*rgvargPtr)[2].MustPVariant(),
+			headers:         (*rgvargPtr)[1].MustPVariant(),
+			cancel:          (*rgvargPtr)[0].MustPBool(),
+		}
+		wv.navigatingEventPublisher.Publish(arg)
 
 	case win.DISPID_NAVIGATECOMPLETE2:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.navigateComplete2EventPublisher.Publish((*rgvargPtr)[1].PDispVal(), (*rgvargPtr)[0].PVarVal())
+		arg := &WebViewNavigatedEventArg{
+			pDisp: (*rgvargPtr)[1].MustPDispatch(),
+			url:   (*rgvargPtr)[0].MustPVariant(),
+		}
+		wv.navigatedEventPublisher.Publish(arg)
+
 		wv.urlChangedPublisher.Publish()
 
 	case win.DISPID_DOWNLOADBEGIN:
-		wv.downloadBeginEventPublisher.Publish()
+		wv.downloadingEventPublisher.Publish()
 
 	case win.DISPID_DOWNLOADCOMPLETE:
-		wv.downloadCompleteEventPublisher.Publish()
+		wv.downloadedEventPublisher.Publish()
 
 	case win.DISPID_DOCUMENTCOMPLETE:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
+		arg := &WebViewDocumentCompletedEventArg{
+			pDisp: (*rgvargPtr)[1].MustPDispatch(),
+			url:   (*rgvargPtr)[0].MustPVariant(),
+		}
 
 		// FIXME: Horrible hack to avoid glitch where the document is not displayed.
 		time.AfterFunc(time.Millisecond*100, func() {
@@ -174,64 +185,99 @@ func webView_DWebBrowserEvents2_Invoke(
 				wv.SetBounds(b)
 			})
 		})
-		wv.documentCompleteEventPublisher.Publish((*rgvargPtr)[1].PDispVal(), (*rgvargPtr)[0].PVarVal())
+
+		wv.documentCompletedEventPublisher.Publish(arg)
 
 	case win.DISPID_NAVIGATEERROR:
 		rgvargPtr := (*[5]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.navigateErrorEventPublisher.Publish(
-			(*rgvargPtr)[4].PDispVal(),
-			(*rgvargPtr)[3].PVarVal(),
-			(*rgvargPtr)[2].PVarVal(),
-			(*rgvargPtr)[1].PVarVal(),
-			(*rgvargPtr)[0].PBoolVal())
+		arg := &WebViewNavigatedErrorEventArg{
+			pDisp:           (*rgvargPtr)[4].MustPDispatch(),
+			url:             (*rgvargPtr)[3].MustPVariant(),
+			targetFrameName: (*rgvargPtr)[2].MustPVariant(),
+			statusCode:      (*rgvargPtr)[1].MustPVariant(),
+			cancel:          (*rgvargPtr)[0].MustPBool(),
+		}
+		wv.navigatedErrorEventPublisher.Publish(arg)
 
 	case win.DISPID_NEWWINDOW3:
 		rgvargPtr := (*[5]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.newWindow3EventPublisher.Publish(
-			(*rgvargPtr)[4].PPDispVal(),
-			(*rgvargPtr)[3].PBoolVal(),
-			(*rgvargPtr)[2].ULVal(),
-			(*rgvargPtr)[1].BstrVal(),
-			(*rgvargPtr)[0].BstrVal())
+		arg := &WebViewNewWindowEventArg{
+			ppDisp:         (*rgvargPtr)[4].MustPPDispatch(),
+			cancel:         (*rgvargPtr)[3].MustPBool(),
+			dwFlags:        (*rgvargPtr)[2].MustULong(),
+			bstrUrlContext: (*rgvargPtr)[1].MustBSTR(),
+			bstrUrl:        (*rgvargPtr)[0].MustBSTR(),
+		}
+		wv.newWindowEventPublisher.Publish(arg)
 
 	case win.DISPID_ONQUIT:
-		wv.onQuitEventPublisher.Publish()
+		wv.quittingEventPublisher.Publish()
 
 	case win.DISPID_WINDOWCLOSING:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.windowClosingEventPublisher.Publish((*rgvargPtr)[1].BoolVal(), (*rgvargPtr)[0].PBoolVal())
+		arg := &WebViewWindowClosingEventArg{
+			bIsChildWindow: (*rgvargPtr)[1].MustBool(),
+			cancel:         (*rgvargPtr)[0].MustPBool(),
+		}
+		wv.windowClosingEventPublisher.Publish(arg)
 
 	case win.DISPID_ONSTATUSBAR:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.onStatusBarEventPublisher.Publish((*rgvargPtr)[0].BoolVal())
+		arg := &WebViewStatusBarVisibleChangedEventArg{
+			statusBar: (*rgvargPtr)[0].MustBool(),
+		}
+		wv.statusBarVisibleChangedEventPublisher.Publish(arg)
 
 	case win.DISPID_ONTHEATERMODE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.onTheaterModeEventPublisher.Publish((*rgvargPtr)[0].BoolVal())
+		arg := &WebViewTheaterModeChangedEventArg{
+			theaterMode: (*rgvargPtr)[0].MustBool(),
+		}
+		wv.theaterModeChangedEventPublisher.Publish(arg)
 
 	case win.DISPID_ONTOOLBAR:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.onToolBarEventPublisher.Publish((*rgvargPtr)[0].BoolVal())
+		arg := &WebViewToolBarVisibleChangedEventArg{
+			toolBar: (*rgvargPtr)[0].MustBool(),
+		}
+		wv.toolBarVisibleChangedEventPublisher.Publish(arg)
 
 	case win.DISPID_ONVISIBLE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.onVisibleEventPublisher.Publish((*rgvargPtr)[0].BoolVal())
+		arg := &WebViewBrowserVisibleChangedEventArg{
+			vVisible: (*rgvargPtr)[0].MustBool(),
+		}
+		wv.browserVisibleChangedEventPublisher.Publish(arg)
 
 	case win.DISPID_COMMANDSTATECHANGE:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.commandStateChangeEventPublisher.Publish((*rgvargPtr)[1].LVal(), (*rgvargPtr)[0].BoolVal())
+		arg := &WebViewCommandStateChangedEventArg{
+			command: (*rgvargPtr)[1].MustLong(),
+			enable:  (*rgvargPtr)[0].MustBool(),
+		}
+		wv.commandStateChangedEventPublisher.Publish(arg)
 
 	case win.DISPID_PROGRESSCHANGE:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.progressChangeEventPublisher.Publish((*rgvargPtr)[1].LVal(), (*rgvargPtr)[0].LVal())
+		arg := &WebViewProgressChangedEventArg{
+			nProgress:    (*rgvargPtr)[1].MustLong(),
+			nProgressMax: (*rgvargPtr)[0].MustLong(),
+		}
+		wv.progressChangedEventPublisher.Publish(arg)
 
 	case win.DISPID_STATUSTEXTCHANGE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.statusTextChangeEventPublisher.Publish((*rgvargPtr)[0].BstrVal())
+		arg := &WebViewStatusTextChangedEventArg{
+			sText: (*rgvargPtr)[0].MustBSTR(),
+		}
+		wv.statusTextChangedEventPublisher.Publish(arg)
 
 	case win.DISPID_TITLECHANGE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		wv.titleChangeEventPublisher.Publish((*rgvargPtr)[0].BstrVal())
+		arg := &WebViewTitleChangedEventArg{
+			sText: (*rgvargPtr)[0].MustBSTR(),
+		}
+		wv.titleChangedEventPublisher.Publish(arg)
 	}
 
 	return win.DISP_E_MEMBERNOTFOUND

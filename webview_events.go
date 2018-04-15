@@ -10,20 +10,78 @@ import (
 	"github.com/lxn/win"
 )
 
-type WvBeforeNavigate2EventHandler func(
-	pDisp *win.IDispatch,
-	url *win.VARIANT,
-	flags *win.VARIANT,
-	targetFrameName *win.VARIANT,
-	postData *win.VARIANT,
-	headers *win.VARIANT,
-	cancel *win.VARIANT_BOOL)
-
-type WvBeforeNavigate2Event struct {
-	handlers []WvBeforeNavigate2EventHandler
+type WebViewNavigatingArg struct {
+	pDisp           *win.IDispatch
+	url             *win.VARIANT
+	flags           *win.VARIANT
+	targetFrameName *win.VARIANT
+	postData        *win.VARIANT
+	headers         *win.VARIANT
+	cancel          *win.VARIANT_BOOL
 }
 
-func (e *WvBeforeNavigate2Event) Attach(handler WvBeforeNavigate2EventHandler) int {
+func (arg *WebViewNavigatingArg) Url() string {
+	url := arg.url
+	if url != nil && url.MustBSTR() != nil {
+		return win.BSTRToString(url.MustBSTR())
+	}
+	return ""
+}
+
+func (arg *WebViewNavigatingArg) Flags() int32 {
+	flags := arg.flags
+	if flags != nil {
+		return flags.MustLong()
+	}
+	return 0
+}
+
+func (arg *WebViewNavigatingArg) Headers() string {
+	headers := arg.headers
+	if headers != nil && headers.MustBSTR() != nil {
+		return win.BSTRToString(headers.MustBSTR())
+	}
+	return ""
+}
+
+func (arg *WebViewNavigatingArg) TargetFrameName() string {
+	targetFrameName := arg.targetFrameName
+	if targetFrameName != nil && targetFrameName.MustBSTR() != nil {
+		return win.BSTRToString(targetFrameName.MustBSTR())
+	}
+	return ""
+}
+
+func (arg *WebViewNavigatingArg) Cancel() bool {
+	cancel := arg.cancel
+	if cancel != nil {
+		if *cancel != win.VARIANT_FALSE {
+			return true
+		} else {
+			return false
+		}
+	}
+	return false
+}
+
+func (arg *WebViewNavigatingArg) SetCancel(value bool) {
+	cancel := arg.cancel
+	if cancel != nil {
+		if value {
+			*cancel = win.VARIANT_TRUE
+		} else {
+			*cancel = win.VARIANT_FALSE
+		}
+	}
+}
+
+type WebViewNavigatingEventHandler func(arg *WebViewNavigatingArg)
+
+type WebViewNavigatingEvent struct {
+	handlers []WebViewNavigatingEventHandler
+}
+
+func (e *WebViewNavigatingEvent) Attach(handler WebViewNavigatingEventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -35,47 +93,46 @@ func (e *WvBeforeNavigate2Event) Attach(handler WvBeforeNavigate2EventHandler) i
 	return len(e.handlers) - 1
 }
 
-func (e *WvBeforeNavigate2Event) Detach(handle int) {
+func (e *WebViewNavigatingEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvBeforeNavigate2EventPublisher struct {
-	event WvBeforeNavigate2Event
+type WebViewNavigatingEventPublisher struct {
+	event WebViewNavigatingEvent
 }
 
-func (p *WvBeforeNavigate2EventPublisher) Event() *WvBeforeNavigate2Event {
+func (p *WebViewNavigatingEventPublisher) Event() *WebViewNavigatingEvent {
 	return &p.event
 }
 
-func (p *WvBeforeNavigate2EventPublisher) Publish(
-	pDisp *win.IDispatch,
-	url *win.VARIANT,
-	flags *win.VARIANT,
-	targetFrameName *win.VARIANT,
-	postData *win.VARIANT,
-	headers *win.VARIANT,
-	cancel *win.VARIANT_BOOL) {
+func (p *WebViewNavigatingEventPublisher) Publish(arg *WebViewNavigatingArg) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(
-				pDisp,
-				url,
-				flags,
-				targetFrameName,
-				postData,
-				headers,
-				cancel)
+			handler(arg)
 		}
 	}
 }
 
-type WvNavigateComplete2EventHandler func(pDisp *win.IDispatch, url *win.VARIANT)
-
-type WvNavigateComplete2Event struct {
-	handlers []WvNavigateComplete2EventHandler
+type WebViewNavigatedEventArg struct {
+	pDisp *win.IDispatch
+	url   *win.VARIANT
 }
 
-func (e *WvNavigateComplete2Event) Attach(handler WvNavigateComplete2EventHandler) int {
+func (arg *WebViewNavigatedEventArg) Url() string {
+	url := arg.url
+	if url != nil && url.MustBSTR() != nil {
+		return win.BSTRToString(url.MustBSTR())
+	}
+	return ""
+}
+
+type WebViewNavigatedEventHandler func(arg *WebViewNavigatedEventArg)
+
+type WebViewNavigatedEvent struct {
+	handlers []WebViewNavigatedEventHandler
+}
+
+func (e *WebViewNavigatedEvent) Attach(handler WebViewNavigatedEventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -87,33 +144,31 @@ func (e *WvNavigateComplete2Event) Attach(handler WvNavigateComplete2EventHandle
 	return len(e.handlers) - 1
 }
 
-func (e *WvNavigateComplete2Event) Detach(handle int) {
+func (e *WebViewNavigatedEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvNavigateComplete2EventPublisher struct {
-	event WvNavigateComplete2Event
+type WebViewNavigatedEventPublisher struct {
+	event WebViewNavigatedEvent
 }
 
-func (p *WvNavigateComplete2EventPublisher) Event() *WvNavigateComplete2Event {
+func (p *WebViewNavigatedEventPublisher) Event() *WebViewNavigatedEvent {
 	return &p.event
 }
 
-func (p *WvNavigateComplete2EventPublisher) Publish(pDisp *win.IDispatch, url *win.VARIANT) {
+func (p *WebViewNavigatedEventPublisher) Publish(arg *WebViewNavigatedEventArg) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(pDisp, url)
+			handler(arg)
 		}
 	}
 }
 
-type WvDownloadBeginEventHandler func()
-
-type WvDownloadBeginEvent struct {
-	handlers []WvDownloadBeginEventHandler
+type WebViewDownloadingEvent struct {
+	handlers []EventHandler
 }
 
-func (e *WvDownloadBeginEvent) Attach(handler WvDownloadBeginEventHandler) int {
+func (e *WebViewDownloadingEvent) Attach(handler EventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -125,239 +180,19 @@ func (e *WvDownloadBeginEvent) Attach(handler WvDownloadBeginEventHandler) int {
 	return len(e.handlers) - 1
 }
 
-func (e *WvDownloadBeginEvent) Detach(handle int) {
+func (e *WebViewDownloadingEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvDownloadBeginEventPublisher struct {
-	event WvDownloadBeginEvent
+type WebViewDownloadingEventPublisher struct {
+	event WebViewDownloadingEvent
 }
 
-func (p *WvDownloadBeginEventPublisher) Event() *WvDownloadBeginEvent {
+func (p *WebViewDownloadingEventPublisher) Event() *WebViewDownloadingEvent {
 	return &p.event
 }
 
-func (p *WvDownloadBeginEventPublisher) Publish() {
-	for _, handler := range p.event.handlers {
-		if handler != nil {
-			handler()
-		}
-	}
-}
-
-type WvDownloadCompleteEventHandler func()
-
-type WvDownloadCompleteEvent struct {
-	handlers []WvDownloadCompleteEventHandler
-}
-
-func (e *WvDownloadCompleteEvent) Attach(handler WvDownloadCompleteEventHandler) int {
-	for i, h := range e.handlers {
-		if h == nil {
-			e.handlers[i] = handler
-			return i
-		}
-	}
-
-	e.handlers = append(e.handlers, handler)
-	return len(e.handlers) - 1
-}
-
-func (e *WvDownloadCompleteEvent) Detach(handle int) {
-	e.handlers[handle] = nil
-}
-
-type WvDownloadCompleteEventPublisher struct {
-	event WvDownloadCompleteEvent
-}
-
-func (p *WvDownloadCompleteEventPublisher) Event() *WvDownloadCompleteEvent {
-	return &p.event
-}
-
-func (p *WvDownloadCompleteEventPublisher) Publish() {
-	for _, handler := range p.event.handlers {
-		if handler != nil {
-			handler()
-		}
-	}
-}
-
-type WvDocumentCompleteEventHandler func(pDisp *win.IDispatch, url *win.VARIANT)
-
-type WvDocumentCompleteEvent struct {
-	handlers []WvDocumentCompleteEventHandler
-}
-
-func (e *WvDocumentCompleteEvent) Attach(handler WvDocumentCompleteEventHandler) int {
-	for i, h := range e.handlers {
-		if h == nil {
-			e.handlers[i] = handler
-			return i
-		}
-	}
-
-	e.handlers = append(e.handlers, handler)
-	return len(e.handlers) - 1
-}
-
-func (e *WvDocumentCompleteEvent) Detach(handle int) {
-	e.handlers[handle] = nil
-}
-
-type WvDocumentCompleteEventPublisher struct {
-	event WvDocumentCompleteEvent
-}
-
-func (p *WvDocumentCompleteEventPublisher) Event() *WvDocumentCompleteEvent {
-	return &p.event
-}
-
-func (p *WvDocumentCompleteEventPublisher) Publish(pDisp *win.IDispatch, url *win.VARIANT) {
-	for _, handler := range p.event.handlers {
-		if handler != nil {
-			handler(pDisp, url)
-		}
-	}
-}
-
-type WvNavigateErrorEventHandler func(
-	pDisp *win.IDispatch,
-	url *win.VARIANT,
-	targetFrameName *win.VARIANT,
-	statusCode *win.VARIANT,
-	cancel *win.VARIANT_BOOL)
-
-type WvNavigateErrorEvent struct {
-	handlers []WvNavigateErrorEventHandler
-}
-
-func (e *WvNavigateErrorEvent) Attach(handler WvNavigateErrorEventHandler) int {
-	for i, h := range e.handlers {
-		if h == nil {
-			e.handlers[i] = handler
-			return i
-		}
-	}
-
-	e.handlers = append(e.handlers, handler)
-	return len(e.handlers) - 1
-}
-
-func (e *WvNavigateErrorEvent) Detach(handle int) {
-	e.handlers[handle] = nil
-}
-
-type WvNavigateErrorEventPublisher struct {
-	event WvNavigateErrorEvent
-}
-
-func (p *WvNavigateErrorEventPublisher) Event() *WvNavigateErrorEvent {
-	return &p.event
-}
-
-func (p *WvNavigateErrorEventPublisher) Publish(
-	pDisp *win.IDispatch,
-	url *win.VARIANT,
-	targetFrameName *win.VARIANT,
-	statusCode *win.VARIANT,
-	cancel *win.VARIANT_BOOL) {
-	for _, handler := range p.event.handlers {
-		if handler != nil {
-			handler(
-				pDisp,
-				url,
-				targetFrameName,
-				statusCode,
-				cancel)
-		}
-	}
-}
-
-type WvNewWindow3EventHandler func(
-	ppDisp **win.IDispatch,
-	cancel *win.VARIANT_BOOL,
-	dwFlags uint32,
-	bstrUrlContext *uint16,
-	bstrUrl *uint16)
-
-type WvNewWindow3Event struct {
-	handlers []WvNewWindow3EventHandler
-}
-
-func (e *WvNewWindow3Event) Attach(handler WvNewWindow3EventHandler) int {
-	for i, h := range e.handlers {
-		if h == nil {
-			e.handlers[i] = handler
-			return i
-		}
-	}
-
-	e.handlers = append(e.handlers, handler)
-	return len(e.handlers) - 1
-}
-
-func (e *WvNewWindow3Event) Detach(handle int) {
-	e.handlers[handle] = nil
-}
-
-type WvNewWindow3EventPublisher struct {
-	event WvNewWindow3Event
-}
-
-func (p *WvNewWindow3EventPublisher) Event() *WvNewWindow3Event {
-	return &p.event
-}
-
-func (p *WvNewWindow3EventPublisher) Publish(
-	ppDisp **win.IDispatch,
-	cancel *win.VARIANT_BOOL,
-	dwFlags uint32,
-	bstrUrlContext *uint16,
-	bstrUrl *uint16) {
-	for _, handler := range p.event.handlers {
-		if handler != nil {
-			handler(
-				ppDisp,
-				cancel,
-				dwFlags,
-				bstrUrlContext,
-				bstrUrl)
-		}
-	}
-}
-
-type WvOnQuitEventHandler func()
-
-type WvOnQuitEvent struct {
-	handlers []WvOnQuitEventHandler
-}
-
-func (e *WvOnQuitEvent) Attach(handler WvOnQuitEventHandler) int {
-	for i, h := range e.handlers {
-		if h == nil {
-			e.handlers[i] = handler
-			return i
-		}
-	}
-
-	e.handlers = append(e.handlers, handler)
-	return len(e.handlers) - 1
-}
-
-func (e *WvOnQuitEvent) Detach(handle int) {
-	e.handlers[handle] = nil
-}
-
-type WvOnQuitEventPublisher struct {
-	event WvOnQuitEvent
-}
-
-func (p *WvOnQuitEventPublisher) Event() *WvOnQuitEvent {
-	return &p.event
-}
-
-func (p *WvOnQuitEventPublisher) Publish() {
+func (p *WebViewDownloadingEventPublisher) Publish() {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
 			handler()
@@ -365,13 +200,11 @@ func (p *WvOnQuitEventPublisher) Publish() {
 	}
 }
 
-type WvWindowClosingEventHandler func(bIsChildWindow win.VARIANT_BOOL, cancel *win.VARIANT_BOOL)
-
-type WvWindowClosingEvent struct {
-	handlers []WvWindowClosingEventHandler
+type WebViewDownloadedEvent struct {
+	handlers []EventHandler
 }
 
-func (e *WvWindowClosingEvent) Attach(handler WvWindowClosingEventHandler) int {
+func (e *WebViewDownloadedEvent) Attach(handler EventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -383,33 +216,46 @@ func (e *WvWindowClosingEvent) Attach(handler WvWindowClosingEventHandler) int {
 	return len(e.handlers) - 1
 }
 
-func (e *WvWindowClosingEvent) Detach(handle int) {
+func (e *WebViewDownloadedEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvWindowClosingEventPublisher struct {
-	event WvWindowClosingEvent
+type WebViewDownloadedEventPublisher struct {
+	event WebViewDownloadedEvent
 }
 
-func (p *WvWindowClosingEventPublisher) Event() *WvWindowClosingEvent {
+func (p *WebViewDownloadedEventPublisher) Event() *WebViewDownloadedEvent {
 	return &p.event
 }
 
-func (p *WvWindowClosingEventPublisher) Publish(bIsChildWindow win.VARIANT_BOOL, cancel *win.VARIANT_BOOL) {
+func (p *WebViewDownloadedEventPublisher) Publish() {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(bIsChildWindow, cancel)
+			handler()
 		}
 	}
 }
 
-type WvOnStatusBarEventHandler func(statusBar win.VARIANT_BOOL)
-
-type WvOnStatusBarEvent struct {
-	handlers []WvOnStatusBarEventHandler
+type WebViewDocumentCompletedEventArg struct {
+	pDisp *win.IDispatch
+	url   *win.VARIANT
 }
 
-func (e *WvOnStatusBarEvent) Attach(handler WvOnStatusBarEventHandler) int {
+func (arg *WebViewDocumentCompletedEventArg) Url() string {
+	url := arg.url
+	if url != nil && url.MustBSTR() != nil {
+		return win.BSTRToString(url.MustBSTR())
+	}
+	return ""
+}
+
+type WebViewDocumentCompletedEventHandler func(arg *WebViewDocumentCompletedEventArg)
+
+type WebViewDocumentCompletedEvent struct {
+	handlers []WebViewDocumentCompletedEventHandler
+}
+
+func (e *WebViewDocumentCompletedEvent) Attach(handler WebViewDocumentCompletedEventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -421,33 +267,88 @@ func (e *WvOnStatusBarEvent) Attach(handler WvOnStatusBarEventHandler) int {
 	return len(e.handlers) - 1
 }
 
-func (e *WvOnStatusBarEvent) Detach(handle int) {
+func (e *WebViewDocumentCompletedEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvOnStatusBarEventPublisher struct {
-	event WvOnStatusBarEvent
+type WebViewDocumentCompletedEventPublisher struct {
+	event WebViewDocumentCompletedEvent
 }
 
-func (p *WvOnStatusBarEventPublisher) Event() *WvOnStatusBarEvent {
+func (p WebViewDocumentCompletedEventPublisher) Event() *WebViewDocumentCompletedEvent {
 	return &p.event
 }
 
-func (p *WvOnStatusBarEventPublisher) Publish(statusBar win.VARIANT_BOOL) {
+func (p *WebViewDocumentCompletedEventPublisher) Publish(arg *WebViewDocumentCompletedEventArg) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(statusBar)
+			handler(arg)
 		}
 	}
 }
 
-type WvOnTheaterModeEventHandler func(theaterMode win.VARIANT_BOOL)
-
-type WvOnTheaterModeEvent struct {
-	handlers []WvOnTheaterModeEventHandler
+type WebViewNavigatedErrorEventArg struct {
+	pDisp           *win.IDispatch
+	url             *win.VARIANT
+	targetFrameName *win.VARIANT
+	statusCode      *win.VARIANT
+	cancel          *win.VARIANT_BOOL
 }
 
-func (e *WvOnTheaterModeEvent) Attach(handler WvOnTheaterModeEventHandler) int {
+func (arg *WebViewNavigatedErrorEventArg) Url() string {
+	url := arg.url
+	if url != nil && url.MustBSTR() != nil {
+		return win.BSTRToString(url.MustBSTR())
+	}
+	return ""
+}
+
+func (arg *WebViewNavigatedErrorEventArg) TargetFrameName() string {
+	targetFrameName := arg.targetFrameName
+	if targetFrameName != nil && targetFrameName.MustBSTR() != nil {
+		return win.BSTRToString(targetFrameName.MustBSTR())
+	}
+	return ""
+}
+
+func (arg *WebViewNavigatedErrorEventArg) StatusCode() int32 {
+	statusCode := arg.statusCode
+	if statusCode != nil {
+		return statusCode.MustLong()
+	}
+	return 0
+}
+
+func (arg *WebViewNavigatedErrorEventArg) Cancel() bool {
+	cancel := arg.cancel
+	if cancel != nil {
+		if *cancel != win.VARIANT_FALSE {
+			return true
+		} else {
+			return false
+		}
+	}
+	return false
+}
+
+func (arg *WebViewNavigatedErrorEventArg) SetCancel(value bool) {
+	cancel := arg.cancel
+	if cancel != nil {
+		if value {
+			*cancel = win.VARIANT_TRUE
+		} else {
+			*cancel = win.VARIANT_FALSE
+		}
+	}
+}
+
+type WebViewNavigatedErrorEventHandler func(arg *WebViewNavigatedErrorEventArg)
+
+type WebViewNavigatedErrorEvent struct {
+	handlers []WebViewNavigatedErrorEventHandler
+}
+
+func (e *WebViewNavigatedErrorEvent) Attach(handler WebViewNavigatedErrorEventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -459,33 +360,84 @@ func (e *WvOnTheaterModeEvent) Attach(handler WvOnTheaterModeEventHandler) int {
 	return len(e.handlers) - 1
 }
 
-func (e *WvOnTheaterModeEvent) Detach(handle int) {
+func (e *WebViewNavigatedErrorEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvOnTheaterModeEventPublisher struct {
-	event WvOnTheaterModeEvent
+type WebViewNavigatedErrorEventPublisher struct {
+	event WebViewNavigatedErrorEvent
 }
 
-func (p *WvOnTheaterModeEventPublisher) Event() *WvOnTheaterModeEvent {
+func (p *WebViewNavigatedErrorEventPublisher) Event() *WebViewNavigatedErrorEvent {
 	return &p.event
 }
 
-func (p *WvOnTheaterModeEventPublisher) Publish(theaterMode win.VARIANT_BOOL) {
+func (p *WebViewNavigatedErrorEventPublisher) Publish(arg *WebViewNavigatedErrorEventArg) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(theaterMode)
+			handler(arg)
 		}
 	}
 }
 
-type WvOnToolBarEventHandler func(toolBar win.VARIANT_BOOL)
-
-type WvOnToolBarEvent struct {
-	handlers []WvOnToolBarEventHandler
+type WebViewNewWindowEventArg struct {
+	ppDisp         **win.IDispatch
+	cancel         *win.VARIANT_BOOL
+	dwFlags        uint32
+	bstrUrlContext *uint16
+	bstrUrl        *uint16
 }
 
-func (e *WvOnToolBarEvent) Attach(handler WvOnToolBarEventHandler) int {
+func (arg *WebViewNewWindowEventArg) Cancel() bool {
+	cancel := arg.cancel
+	if cancel != nil {
+		if *cancel != win.VARIANT_FALSE {
+			return true
+		} else {
+			return false
+		}
+	}
+	return false
+}
+
+func (arg *WebViewNewWindowEventArg) SetCancel(value bool) {
+	cancel := arg.cancel
+	if cancel != nil {
+		if value {
+			*cancel = win.VARIANT_TRUE
+		} else {
+			*cancel = win.VARIANT_FALSE
+		}
+	}
+}
+
+func (arg *WebViewNewWindowEventArg) Flags() uint32 {
+	return arg.dwFlags
+}
+
+func (arg *WebViewNewWindowEventArg) UrlContext() string {
+	bstrUrlContext := arg.bstrUrlContext
+	if bstrUrlContext != nil {
+		return win.BSTRToString(bstrUrlContext)
+	}
+	return ""
+}
+
+func (arg *WebViewNewWindowEventArg) Url() string {
+	bstrUrl := arg.bstrUrl
+	if bstrUrl != nil {
+		return win.BSTRToString(bstrUrl)
+	}
+	return ""
+}
+
+type WebViewNewWindowEventHandler func(arg *WebViewNewWindowEventArg)
+
+type WebViewNewWindowEvent struct {
+	handlers []WebViewNewWindowEventHandler
+}
+
+func (e *WebViewNewWindowEvent) Attach(handler WebViewNewWindowEventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -497,33 +449,31 @@ func (e *WvOnToolBarEvent) Attach(handler WvOnToolBarEventHandler) int {
 	return len(e.handlers) - 1
 }
 
-func (e *WvOnToolBarEvent) Detach(handle int) {
+func (e *WebViewNewWindowEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvOnToolBarEventPublisher struct {
-	event WvOnToolBarEvent
+type WebViewNewWindowEventPublisher struct {
+	event WebViewNewWindowEvent
 }
 
-func (p *WvOnToolBarEventPublisher) Event() *WvOnToolBarEvent {
+func (p *WebViewNewWindowEventPublisher) Event() *WebViewNewWindowEvent {
 	return &p.event
 }
 
-func (p *WvOnToolBarEventPublisher) Publish(toolBar win.VARIANT_BOOL) {
+func (p *WebViewNewWindowEventPublisher) Publish(arg *WebViewNewWindowEventArg) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(toolBar)
+			handler(arg)
 		}
 	}
 }
 
-type WvOnVisibleEventHandler func(vVisible win.VARIANT_BOOL)
-
-type WvOnVisibleEvent struct {
-	handlers []WvOnVisibleEventHandler
+type WebViewQuittingEvent struct {
+	handlers []EventHandler
 }
 
-func (e *WvOnVisibleEvent) Attach(handler WvOnVisibleEventHandler) int {
+func (e *WebViewQuittingEvent) Attach(handler EventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -535,33 +485,71 @@ func (e *WvOnVisibleEvent) Attach(handler WvOnVisibleEventHandler) int {
 	return len(e.handlers) - 1
 }
 
-func (e *WvOnVisibleEvent) Detach(handle int) {
+func (e *WebViewQuittingEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvOnVisibleEventPublisher struct {
-	event WvOnVisibleEvent
+type WebViewQuittingEventPublisher struct {
+	event WebViewQuittingEvent
 }
 
-func (p *WvOnVisibleEventPublisher) Event() *WvOnVisibleEvent {
+func (p *WebViewQuittingEventPublisher) Event() *WebViewQuittingEvent {
 	return &p.event
 }
 
-func (p *WvOnVisibleEventPublisher) Publish(vVisible win.VARIANT_BOOL) {
+func (p *WebViewQuittingEventPublisher) Publish() {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(vVisible)
+			handler()
 		}
 	}
 }
 
-type WvCommandStateChangeEventHandler func(command int32, enable win.VARIANT_BOOL)
-
-type WvCommandStateChangeEvent struct {
-	handlers []WvCommandStateChangeEventHandler
+type WebViewWindowClosingEventArg struct {
+	bIsChildWindow win.VARIANT_BOOL
+	cancel         *win.VARIANT_BOOL
 }
 
-func (e *WvCommandStateChangeEvent) Attach(handler WvCommandStateChangeEventHandler) int {
+func (arg *WebViewWindowClosingEventArg) IsChildWindow() bool {
+	bIsChildWindow := arg.bIsChildWindow
+	if bIsChildWindow != win.VARIANT_FALSE {
+		return true
+	} else {
+		return false
+	}
+	return false
+}
+
+func (arg *WebViewWindowClosingEventArg) Cancel() bool {
+	cancel := arg.cancel
+	if cancel != nil {
+		if *cancel != win.VARIANT_FALSE {
+			return true
+		} else {
+			return false
+		}
+	}
+	return false
+}
+
+func (arg *WebViewWindowClosingEventArg) SetCancel(value bool) {
+	cancel := arg.cancel
+	if cancel != nil {
+		if value {
+			*cancel = win.VARIANT_TRUE
+		} else {
+			*cancel = win.VARIANT_FALSE
+		}
+	}
+}
+
+type WebViewWindowClosingEventHandler func(arg *WebViewWindowClosingEventArg)
+
+type WebViewWindowClosingEvent struct {
+	handlers []WebViewWindowClosingEventHandler
+}
+
+func (e *WebViewWindowClosingEvent) Attach(handler WebViewWindowClosingEventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -573,33 +561,47 @@ func (e *WvCommandStateChangeEvent) Attach(handler WvCommandStateChangeEventHand
 	return len(e.handlers) - 1
 }
 
-func (e *WvCommandStateChangeEvent) Detach(handle int) {
+func (e *WebViewWindowClosingEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvCommandStateChangeEventPublisher struct {
-	event WvCommandStateChangeEvent
+type WebViewWindowClosingEventPublisher struct {
+	event WebViewWindowClosingEvent
 }
 
-func (p *WvCommandStateChangeEventPublisher) Event() *WvCommandStateChangeEvent {
+func (p *WebViewWindowClosingEventPublisher) Event() *WebViewWindowClosingEvent {
 	return &p.event
 }
 
-func (p *WvCommandStateChangeEventPublisher) Publish(command int32, enable win.VARIANT_BOOL) {
+func (p *WebViewWindowClosingEventPublisher) Publish(arg *WebViewWindowClosingEventArg) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(command, enable)
+			handler(arg)
 		}
 	}
 }
 
-type WvProgressChangeEventHandler func(nProgress int32, nProgressMax int32)
-
-type WvProgressChangeEvent struct {
-	handlers []WvProgressChangeEventHandler
+type WebViewStatusBarVisibleChangedEventArg struct {
+	statusBar win.VARIANT_BOOL
 }
 
-func (e *WvProgressChangeEvent) Attach(handler WvProgressChangeEventHandler) int {
+func (arg *WebViewStatusBarVisibleChangedEventArg) Visible() bool {
+	statusBar := arg.statusBar
+	if statusBar != win.VARIANT_FALSE {
+		return true
+	} else {
+		return false
+	}
+	return false
+}
+
+type WebViewStatusBarVisibleChangedEventHandler func(arg *WebViewStatusBarVisibleChangedEventArg)
+
+type WebViewStatusBarVisibleChangedEvent struct {
+	handlers []WebViewStatusBarVisibleChangedEventHandler
+}
+
+func (e *WebViewStatusBarVisibleChangedEvent) Attach(handler WebViewStatusBarVisibleChangedEventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -611,33 +613,47 @@ func (e *WvProgressChangeEvent) Attach(handler WvProgressChangeEventHandler) int
 	return len(e.handlers) - 1
 }
 
-func (e *WvProgressChangeEvent) Detach(handle int) {
+func (e *WebViewStatusBarVisibleChangedEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvProgressChangeEventPublisher struct {
-	event WvProgressChangeEvent
+type WebViewStatusBarVisibleChangedEventPublisher struct {
+	event WebViewStatusBarVisibleChangedEvent
 }
 
-func (p *WvProgressChangeEventPublisher) Event() *WvProgressChangeEvent {
+func (p *WebViewStatusBarVisibleChangedEventPublisher) Event() *WebViewStatusBarVisibleChangedEvent {
 	return &p.event
 }
 
-func (p *WvProgressChangeEventPublisher) Publish(nProgress int32, nProgressMax int32) {
+func (p *WebViewStatusBarVisibleChangedEventPublisher) Publish(arg *WebViewStatusBarVisibleChangedEventArg) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(nProgress, nProgressMax)
+			handler(arg)
 		}
 	}
 }
 
-type WvStatusTextChangeEventHandler func(sText *uint16)
-
-type WvStatusTextChangeEvent struct {
-	handlers []WvStatusTextChangeEventHandler
+type WebViewTheaterModeChangedEventArg struct {
+	theaterMode win.VARIANT_BOOL
 }
 
-func (e *WvStatusTextChangeEvent) Attach(handler WvStatusTextChangeEventHandler) int {
+func (arg *WebViewTheaterModeChangedEventArg) IsTheaterMode() bool {
+	theaterMode := arg.theaterMode
+	if theaterMode != win.VARIANT_FALSE {
+		return true
+	} else {
+		return false
+	}
+	return false
+}
+
+type WebViewTheaterModeChangedEventHandler func(arg *WebViewTheaterModeChangedEventArg)
+
+type WebViewTheaterModeChangedEvent struct {
+	handlers []WebViewTheaterModeChangedEventHandler
+}
+
+func (e *WebViewTheaterModeChangedEvent) Attach(handler WebViewTheaterModeChangedEventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -649,33 +665,47 @@ func (e *WvStatusTextChangeEvent) Attach(handler WvStatusTextChangeEventHandler)
 	return len(e.handlers) - 1
 }
 
-func (e *WvStatusTextChangeEvent) Detach(handle int) {
+func (e *WebViewTheaterModeChangedEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvStatusTextChangeEventPublisher struct {
-	event WvStatusTextChangeEvent
+type WebViewTheaterModeChangedEventPublisher struct {
+	event WebViewTheaterModeChangedEvent
 }
 
-func (p *WvStatusTextChangeEventPublisher) Event() *WvStatusTextChangeEvent {
+func (p *WebViewTheaterModeChangedEventPublisher) Event() *WebViewTheaterModeChangedEvent {
 	return &p.event
 }
 
-func (p *WvStatusTextChangeEventPublisher) Publish(sText *uint16) {
+func (p *WebViewTheaterModeChangedEventPublisher) Publish(arg *WebViewTheaterModeChangedEventArg) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(sText)
+			handler(arg)
 		}
 	}
 }
 
-type WvTitleChangeEventHandler func(sText *uint16)
-
-type WvTitleChangeEvent struct {
-	handlers []WvTitleChangeEventHandler
+type WebViewToolBarVisibleChangedEventArg struct {
+	toolBar win.VARIANT_BOOL
 }
 
-func (e *WvTitleChangeEvent) Attach(handler WvTitleChangeEventHandler) int {
+func (arg *WebViewToolBarVisibleChangedEventArg) Visible() bool {
+	toolBar := arg.toolBar
+	if toolBar != win.VARIANT_FALSE {
+		return true
+	} else {
+		return false
+	}
+	return false
+}
+
+type WebViewToolBarVisibleChangedEventHandler func(arg *WebViewToolBarVisibleChangedEventArg)
+
+type WebViewToolBarVisibleChangedEvent struct {
+	handlers []WebViewToolBarVisibleChangedEventHandler
+}
+
+func (e *WebViewToolBarVisibleChangedEvent) Attach(handler WebViewToolBarVisibleChangedEventHandler) int {
 	for i, h := range e.handlers {
 		if h == nil {
 			e.handlers[i] = handler
@@ -687,22 +717,282 @@ func (e *WvTitleChangeEvent) Attach(handler WvTitleChangeEventHandler) int {
 	return len(e.handlers) - 1
 }
 
-func (e *WvTitleChangeEvent) Detach(handle int) {
+func (e *WebViewToolBarVisibleChangedEvent) Detach(handle int) {
 	e.handlers[handle] = nil
 }
 
-type WvTitleChangeEventPublisher struct {
-	event WvTitleChangeEvent
+type WebViewToolBarVisibleChangedEventPublisher struct {
+	event WebViewToolBarVisibleChangedEvent
 }
 
-func (p *WvTitleChangeEventPublisher) Event() *WvTitleChangeEvent {
+func (p *WebViewToolBarVisibleChangedEventPublisher) Event() *WebViewToolBarVisibleChangedEvent {
 	return &p.event
 }
 
-func (p *WvTitleChangeEventPublisher) Publish(sText *uint16) {
+func (p *WebViewToolBarVisibleChangedEventPublisher) Publish(arg *WebViewToolBarVisibleChangedEventArg) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(sText)
+			handler(arg)
+		}
+	}
+}
+
+type WebViewBrowserVisibleChangedEventArg struct {
+	vVisible win.VARIANT_BOOL
+}
+
+func (arg *WebViewBrowserVisibleChangedEventArg) Visible() bool {
+	vVisible := arg.vVisible
+	if vVisible != win.VARIANT_FALSE {
+		return true
+	} else {
+		return false
+	}
+	return false
+}
+
+type WebViewBrowserVisibleChangedEventHandler func(arg *WebViewBrowserVisibleChangedEventArg)
+
+type WebViewBrowserVisibleChangedEvent struct {
+	handlers []WebViewBrowserVisibleChangedEventHandler
+}
+
+func (e *WebViewBrowserVisibleChangedEvent) Attach(handler WebViewBrowserVisibleChangedEventHandler) int {
+	for i, h := range e.handlers {
+		if h == nil {
+			e.handlers[i] = handler
+			return i
+		}
+	}
+
+	e.handlers = append(e.handlers, handler)
+	return len(e.handlers) - 1
+}
+
+func (e *WebViewBrowserVisibleChangedEvent) Detach(handle int) {
+	e.handlers[handle] = nil
+}
+
+type WebViewBrowserVisibleChangedEventPublisher struct {
+	event WebViewBrowserVisibleChangedEvent
+}
+
+func (p *WebViewBrowserVisibleChangedEventPublisher) Event() *WebViewBrowserVisibleChangedEvent {
+	return &p.event
+}
+
+func (p *WebViewBrowserVisibleChangedEventPublisher) Publish(arg *WebViewBrowserVisibleChangedEventArg) {
+	for _, handler := range p.event.handlers {
+		if handler != nil {
+			handler(arg)
+		}
+	}
+}
+
+type WebViewCommandStateChangedEventArg struct {
+	command int32
+	enable  win.VARIANT_BOOL
+}
+
+func (arg *WebViewCommandStateChangedEventArg) Command() int32 {
+	return arg.command
+}
+
+func (arg *WebViewCommandStateChangedEventArg) Enabled() bool {
+	enable := arg.enable
+	if enable != win.VARIANT_FALSE {
+		return true
+	} else {
+		return false
+	}
+	return false
+}
+
+type WebViewCommandStateChangedEventHandler func(arg *WebViewCommandStateChangedEventArg)
+
+type WebViewCommandStateChangedEvent struct {
+	handlers []WebViewCommandStateChangedEventHandler
+}
+
+func (e *WebViewCommandStateChangedEvent) Attach(handler WebViewCommandStateChangedEventHandler) int {
+	for i, h := range e.handlers {
+		if h == nil {
+			e.handlers[i] = handler
+			return i
+		}
+	}
+
+	e.handlers = append(e.handlers, handler)
+	return len(e.handlers) - 1
+}
+
+func (e *WebViewCommandStateChangedEvent) Detach(handle int) {
+	e.handlers[handle] = nil
+}
+
+type WebViewCommandStateChangedEventPublisher struct {
+	event WebViewCommandStateChangedEvent
+}
+
+func (p *WebViewCommandStateChangedEventPublisher) Event() *WebViewCommandStateChangedEvent {
+	return &p.event
+}
+
+func (p *WebViewCommandStateChangedEventPublisher) Publish(arg *WebViewCommandStateChangedEventArg) {
+	for _, handler := range p.event.handlers {
+		if handler != nil {
+			handler(arg)
+		}
+	}
+}
+
+type WebViewProgressChangedEventArg struct {
+	nProgress    int32
+	nProgressMax int32
+}
+
+func (arg *WebViewProgressChangedEventArg) Progress() int32 {
+	return arg.nProgress
+}
+
+func (arg *WebViewProgressChangedEventArg) ProgressMax() int32 {
+	return arg.nProgressMax
+}
+
+type WebViewProgressChangedEventHandler func(arg *WebViewProgressChangedEventArg)
+
+type WebViewProgressChangedEvent struct {
+	handlers []WebViewProgressChangedEventHandler
+}
+
+func (e *WebViewProgressChangedEvent) Attach(handler WebViewProgressChangedEventHandler) int {
+	for i, h := range e.handlers {
+		if h == nil {
+			e.handlers[i] = handler
+			return i
+		}
+	}
+
+	e.handlers = append(e.handlers, handler)
+	return len(e.handlers) - 1
+}
+
+func (e *WebViewProgressChangedEvent) Detach(handle int) {
+	e.handlers[handle] = nil
+}
+
+type WebViewProgressChangedEventPublisher struct {
+	event WebViewProgressChangedEvent
+}
+
+func (p *WebViewProgressChangedEventPublisher) Event() *WebViewProgressChangedEvent {
+	return &p.event
+}
+
+func (p *WebViewProgressChangedEventPublisher) Publish(arg *WebViewProgressChangedEventArg) {
+	for _, handler := range p.event.handlers {
+		if handler != nil {
+			handler(arg)
+		}
+	}
+}
+
+type WebViewStatusTextChangedEventArg struct {
+	sText *uint16
+}
+
+func (arg *WebViewStatusTextChangedEventArg) StatusText() string {
+	sText := arg.sText
+	if sText != nil {
+		return win.BSTRToString(sText)
+	}
+	return ""
+}
+
+type WebViewStatusTextChangedEventHandler func(arg *WebViewStatusTextChangedEventArg)
+
+type WebViewStatusTextChangedEvent struct {
+	handlers []WebViewStatusTextChangedEventHandler
+}
+
+func (e *WebViewStatusTextChangedEvent) Attach(handler WebViewStatusTextChangedEventHandler) int {
+	for i, h := range e.handlers {
+		if h == nil {
+			e.handlers[i] = handler
+			return i
+		}
+	}
+
+	e.handlers = append(e.handlers, handler)
+	return len(e.handlers) - 1
+}
+
+func (e *WebViewStatusTextChangedEvent) Detach(handle int) {
+	e.handlers[handle] = nil
+}
+
+type WebViewStatusTextChangedEventPublisher struct {
+	event WebViewStatusTextChangedEvent
+}
+
+func (p *WebViewStatusTextChangedEventPublisher) Event() *WebViewStatusTextChangedEvent {
+	return &p.event
+}
+
+func (p *WebViewStatusTextChangedEventPublisher) Publish(arg *WebViewStatusTextChangedEventArg) {
+	for _, handler := range p.event.handlers {
+		if handler != nil {
+			handler(arg)
+		}
+	}
+}
+
+type WebViewTitleChangedEventArg struct {
+	sText *uint16
+}
+
+func (arg *WebViewTitleChangedEventArg) Title() string {
+	sText := arg.sText
+	if sText != nil {
+		return win.BSTRToString(sText)
+	}
+	return ""
+}
+
+type WebViewTitleChangedEventHandler func(arg *WebViewTitleChangedEventArg)
+
+type WebViewTitleChangedEvent struct {
+	handlers []WebViewTitleChangedEventHandler
+}
+
+func (e *WebViewTitleChangedEvent) Attach(handler WebViewTitleChangedEventHandler) int {
+	for i, h := range e.handlers {
+		if h == nil {
+			e.handlers[i] = handler
+			return i
+		}
+	}
+
+	e.handlers = append(e.handlers, handler)
+	return len(e.handlers) - 1
+}
+
+func (e *WebViewTitleChangedEvent) Detach(handle int) {
+	e.handlers[handle] = nil
+}
+
+type WebViewTitleChangedEventPublisher struct {
+	event WebViewTitleChangedEvent
+}
+
+func (p *WebViewTitleChangedEventPublisher) Event() *WebViewTitleChangedEvent {
+	return &p.event
+}
+
+func (p *WebViewTitleChangedEventPublisher) Publish(arg *WebViewTitleChangedEventArg) {
+	for _, handler := range p.event.handlers {
+		if handler != nil {
+			handler(arg)
 		}
 	}
 }

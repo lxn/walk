@@ -77,7 +77,7 @@ func webView_IDocHostUIHandler_ShowContextMenu(docHostUIHandler *webViewIDocHost
 	webView := (*WebView)(unsafe.Pointer(ptr))
 
 	// show context menu
-	if webView.contextMenuEnabled {
+	if webView.NativeContextMenuEnabled() {
 		return win.S_FALSE
 	}
 

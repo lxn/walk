@@ -413,7 +413,7 @@ func (fb *FormBase) webViewTranslateAccelerator(msg *win.MSG) bool {
 		if webView, ok := child.(*WebView); ok {
 			webViewHWnd := webView.Handle()
 			if webViewHWnd == msg.HWnd || win.IsChild(webViewHWnd, msg.HWnd) {
-				ret = webView.TranslateAccelerator(msg)
+				ret = webView.translateAccelerator(msg)
 				break
 			}
 		}
