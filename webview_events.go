@@ -10,7 +10,7 @@ import (
 	"github.com/lxn/win"
 )
 
-type WebViewNavigatingArg struct {
+type WebViewNavigatingEventData struct {
 	pDisp           *win.IDispatch
 	url             *win.VARIANT
 	flags           *win.VARIANT
@@ -20,40 +20,40 @@ type WebViewNavigatingArg struct {
 	cancel          *win.VARIANT_BOOL
 }
 
-func (arg *WebViewNavigatingArg) Url() string {
-	url := arg.url
+func (eventData *WebViewNavigatingEventData) Url() string {
+	url := eventData.url
 	if url != nil && url.MustBSTR() != nil {
 		return win.BSTRToString(url.MustBSTR())
 	}
 	return ""
 }
 
-func (arg *WebViewNavigatingArg) Flags() int32 {
-	flags := arg.flags
+func (eventData *WebViewNavigatingEventData) Flags() int32 {
+	flags := eventData.flags
 	if flags != nil {
 		return flags.MustLong()
 	}
 	return 0
 }
 
-func (arg *WebViewNavigatingArg) Headers() string {
-	headers := arg.headers
+func (eventData *WebViewNavigatingEventData) Headers() string {
+	headers := eventData.headers
 	if headers != nil && headers.MustBSTR() != nil {
 		return win.BSTRToString(headers.MustBSTR())
 	}
 	return ""
 }
 
-func (arg *WebViewNavigatingArg) TargetFrameName() string {
-	targetFrameName := arg.targetFrameName
+func (eventData *WebViewNavigatingEventData) TargetFrameName() string {
+	targetFrameName := eventData.targetFrameName
 	if targetFrameName != nil && targetFrameName.MustBSTR() != nil {
 		return win.BSTRToString(targetFrameName.MustBSTR())
 	}
 	return ""
 }
 
-func (arg *WebViewNavigatingArg) Canceled() bool {
-	cancel := arg.cancel
+func (eventData *WebViewNavigatingEventData) Canceled() bool {
+	cancel := eventData.cancel
 	if cancel != nil {
 		if *cancel != win.VARIANT_FALSE {
 			return true
@@ -64,8 +64,8 @@ func (arg *WebViewNavigatingArg) Canceled() bool {
 	return false
 }
 
-func (arg *WebViewNavigatingArg) SetCanceled(value bool) {
-	cancel := arg.cancel
+func (eventData *WebViewNavigatingEventData) SetCanceled(value bool) {
+	cancel := eventData.cancel
 	if cancel != nil {
 		if value {
 			*cancel = win.VARIANT_TRUE
@@ -75,7 +75,7 @@ func (arg *WebViewNavigatingArg) SetCanceled(value bool) {
 	}
 }
 
-type WebViewNavigatingEventHandler func(arg *WebViewNavigatingArg)
+type WebViewNavigatingEventHandler func(eventData *WebViewNavigatingEventData)
 
 type WebViewNavigatingEvent struct {
 	handlers []WebViewNavigatingEventHandler
@@ -105,15 +105,15 @@ func (p *WebViewNavigatingEventPublisher) Event() *WebViewNavigatingEvent {
 	return &p.event
 }
 
-func (p *WebViewNavigatingEventPublisher) Publish(arg *WebViewNavigatingArg) {
+func (p *WebViewNavigatingEventPublisher) Publish(eventData *WebViewNavigatingEventData) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(arg)
+			handler(eventData)
 		}
 	}
 }
 
-type WebViewNavigatedErrorEventArg struct {
+type WebViewNavigatedErrorEventData struct {
 	pDisp           *win.IDispatch
 	url             *win.VARIANT
 	targetFrameName *win.VARIANT
@@ -121,32 +121,32 @@ type WebViewNavigatedErrorEventArg struct {
 	cancel          *win.VARIANT_BOOL
 }
 
-func (arg *WebViewNavigatedErrorEventArg) Url() string {
-	url := arg.url
+func (eventData *WebViewNavigatedErrorEventData) Url() string {
+	url := eventData.url
 	if url != nil && url.MustBSTR() != nil {
 		return win.BSTRToString(url.MustBSTR())
 	}
 	return ""
 }
 
-func (arg *WebViewNavigatedErrorEventArg) TargetFrameName() string {
-	targetFrameName := arg.targetFrameName
+func (eventData *WebViewNavigatedErrorEventData) TargetFrameName() string {
+	targetFrameName := eventData.targetFrameName
 	if targetFrameName != nil && targetFrameName.MustBSTR() != nil {
 		return win.BSTRToString(targetFrameName.MustBSTR())
 	}
 	return ""
 }
 
-func (arg *WebViewNavigatedErrorEventArg) StatusCode() int32 {
-	statusCode := arg.statusCode
+func (eventData *WebViewNavigatedErrorEventData) StatusCode() int32 {
+	statusCode := eventData.statusCode
 	if statusCode != nil {
 		return statusCode.MustLong()
 	}
 	return 0
 }
 
-func (arg *WebViewNavigatedErrorEventArg) Canceled() bool {
-	cancel := arg.cancel
+func (eventData *WebViewNavigatedErrorEventData) Canceled() bool {
+	cancel := eventData.cancel
 	if cancel != nil {
 		if *cancel != win.VARIANT_FALSE {
 			return true
@@ -157,8 +157,8 @@ func (arg *WebViewNavigatedErrorEventArg) Canceled() bool {
 	return false
 }
 
-func (arg *WebViewNavigatedErrorEventArg) SetCanceled(value bool) {
-	cancel := arg.cancel
+func (eventData *WebViewNavigatedErrorEventData) SetCanceled(value bool) {
+	cancel := eventData.cancel
 	if cancel != nil {
 		if value {
 			*cancel = win.VARIANT_TRUE
@@ -168,7 +168,7 @@ func (arg *WebViewNavigatedErrorEventArg) SetCanceled(value bool) {
 	}
 }
 
-type WebViewNavigatedErrorEventHandler func(arg *WebViewNavigatedErrorEventArg)
+type WebViewNavigatedErrorEventHandler func(eventData *WebViewNavigatedErrorEventData)
 
 type WebViewNavigatedErrorEvent struct {
 	handlers []WebViewNavigatedErrorEventHandler
@@ -198,15 +198,15 @@ func (p *WebViewNavigatedErrorEventPublisher) Event() *WebViewNavigatedErrorEven
 	return &p.event
 }
 
-func (p *WebViewNavigatedErrorEventPublisher) Publish(arg *WebViewNavigatedErrorEventArg) {
+func (p *WebViewNavigatedErrorEventPublisher) Publish(eventData *WebViewNavigatedErrorEventData) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(arg)
+			handler(eventData)
 		}
 	}
 }
 
-type WebViewNewWindowEventArg struct {
+type WebViewNewWindowEventData struct {
 	ppDisp         **win.IDispatch
 	cancel         *win.VARIANT_BOOL
 	dwFlags        uint32
@@ -214,8 +214,8 @@ type WebViewNewWindowEventArg struct {
 	bstrUrl        *uint16
 }
 
-func (arg *WebViewNewWindowEventArg) Canceled() bool {
-	cancel := arg.cancel
+func (eventData *WebViewNewWindowEventData) Canceled() bool {
+	cancel := eventData.cancel
 	if cancel != nil {
 		if *cancel != win.VARIANT_FALSE {
 			return true
@@ -226,8 +226,8 @@ func (arg *WebViewNewWindowEventArg) Canceled() bool {
 	return false
 }
 
-func (arg *WebViewNewWindowEventArg) SetCanceled(value bool) {
-	cancel := arg.cancel
+func (eventData *WebViewNewWindowEventData) SetCanceled(value bool) {
+	cancel := eventData.cancel
 	if cancel != nil {
 		if value {
 			*cancel = win.VARIANT_TRUE
@@ -237,27 +237,27 @@ func (arg *WebViewNewWindowEventArg) SetCanceled(value bool) {
 	}
 }
 
-func (arg *WebViewNewWindowEventArg) Flags() uint32 {
-	return arg.dwFlags
+func (eventData *WebViewNewWindowEventData) Flags() uint32 {
+	return eventData.dwFlags
 }
 
-func (arg *WebViewNewWindowEventArg) UrlContext() string {
-	bstrUrlContext := arg.bstrUrlContext
+func (eventData *WebViewNewWindowEventData) UrlContext() string {
+	bstrUrlContext := eventData.bstrUrlContext
 	if bstrUrlContext != nil {
 		return win.BSTRToString(bstrUrlContext)
 	}
 	return ""
 }
 
-func (arg *WebViewNewWindowEventArg) Url() string {
-	bstrUrl := arg.bstrUrl
+func (eventData *WebViewNewWindowEventData) Url() string {
+	bstrUrl := eventData.bstrUrl
 	if bstrUrl != nil {
 		return win.BSTRToString(bstrUrl)
 	}
 	return ""
 }
 
-type WebViewNewWindowEventHandler func(arg *WebViewNewWindowEventArg)
+type WebViewNewWindowEventHandler func(eventData *WebViewNewWindowEventData)
 
 type WebViewNewWindowEvent struct {
 	handlers []WebViewNewWindowEventHandler
@@ -287,21 +287,21 @@ func (p *WebViewNewWindowEventPublisher) Event() *WebViewNewWindowEvent {
 	return &p.event
 }
 
-func (p *WebViewNewWindowEventPublisher) Publish(arg *WebViewNewWindowEventArg) {
+func (p *WebViewNewWindowEventPublisher) Publish(eventData *WebViewNewWindowEventData) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(arg)
+			handler(eventData)
 		}
 	}
 }
 
-type WebViewWindowClosingEventArg struct {
+type WebViewWindowClosingEventData struct {
 	bIsChildWindow win.VARIANT_BOOL
 	cancel         *win.VARIANT_BOOL
 }
 
-func (arg *WebViewWindowClosingEventArg) IsChildWindow() bool {
-	bIsChildWindow := arg.bIsChildWindow
+func (eventData *WebViewWindowClosingEventData) IsChildWindow() bool {
+	bIsChildWindow := eventData.bIsChildWindow
 	if bIsChildWindow != win.VARIANT_FALSE {
 		return true
 	} else {
@@ -310,8 +310,8 @@ func (arg *WebViewWindowClosingEventArg) IsChildWindow() bool {
 	return false
 }
 
-func (arg *WebViewWindowClosingEventArg) Canceled() bool {
-	cancel := arg.cancel
+func (eventData *WebViewWindowClosingEventData) Canceled() bool {
+	cancel := eventData.cancel
 	if cancel != nil {
 		if *cancel != win.VARIANT_FALSE {
 			return true
@@ -322,8 +322,8 @@ func (arg *WebViewWindowClosingEventArg) Canceled() bool {
 	return false
 }
 
-func (arg *WebViewWindowClosingEventArg) SetCanceled(value bool) {
-	cancel := arg.cancel
+func (eventData *WebViewWindowClosingEventData) SetCanceled(value bool) {
+	cancel := eventData.cancel
 	if cancel != nil {
 		if value {
 			*cancel = win.VARIANT_TRUE
@@ -333,7 +333,7 @@ func (arg *WebViewWindowClosingEventArg) SetCanceled(value bool) {
 	}
 }
 
-type WebViewWindowClosingEventHandler func(arg *WebViewWindowClosingEventArg)
+type WebViewWindowClosingEventHandler func(eventData *WebViewWindowClosingEventData)
 
 type WebViewWindowClosingEvent struct {
 	handlers []WebViewWindowClosingEventHandler
@@ -363,25 +363,25 @@ func (p *WebViewWindowClosingEventPublisher) Event() *WebViewWindowClosingEvent 
 	return &p.event
 }
 
-func (p *WebViewWindowClosingEventPublisher) Publish(arg *WebViewWindowClosingEventArg) {
+func (p *WebViewWindowClosingEventPublisher) Publish(eventData *WebViewWindowClosingEventData) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(arg)
+			handler(eventData)
 		}
 	}
 }
 
-type WebViewCommandStateChangedEventArg struct {
+type WebViewCommandStateChangedEventData struct {
 	command int32
 	enable  win.VARIANT_BOOL
 }
 
-func (arg *WebViewCommandStateChangedEventArg) Command() int32 {
-	return arg.command
+func (eventData *WebViewCommandStateChangedEventData) Command() int32 {
+	return eventData.command
 }
 
-func (arg *WebViewCommandStateChangedEventArg) Enabled() bool {
-	enable := arg.enable
+func (eventData *WebViewCommandStateChangedEventData) Enabled() bool {
+	enable := eventData.enable
 	if enable != win.VARIANT_FALSE {
 		return true
 	} else {
@@ -390,7 +390,7 @@ func (arg *WebViewCommandStateChangedEventArg) Enabled() bool {
 	return false
 }
 
-type WebViewCommandStateChangedEventHandler func(arg *WebViewCommandStateChangedEventArg)
+type WebViewCommandStateChangedEventHandler func(eventData *WebViewCommandStateChangedEventData)
 
 type WebViewCommandStateChangedEvent struct {
 	handlers []WebViewCommandStateChangedEventHandler
@@ -420,10 +420,10 @@ func (p *WebViewCommandStateChangedEventPublisher) Event() *WebViewCommandStateC
 	return &p.event
 }
 
-func (p *WebViewCommandStateChangedEventPublisher) Publish(arg *WebViewCommandStateChangedEventArg) {
+func (p *WebViewCommandStateChangedEventPublisher) Publish(eventData *WebViewCommandStateChangedEventData) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
-			handler(arg)
+			handler(eventData)
 		}
 	}
 }

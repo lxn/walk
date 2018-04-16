@@ -141,7 +141,7 @@ func webView_DWebBrowserEvents2_Invoke(
 	switch dispIdMember {
 	case win.DISPID_BEFORENAVIGATE2:
 		rgvargPtr := (*[7]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewNavigatingArg{
+		eventData := &WebViewNavigatingEventData{
 			pDisp:           (*rgvargPtr)[6].MustPDispatch(),
 			url:             (*rgvargPtr)[5].MustPVariant(),
 			flags:           (*rgvargPtr)[4].MustPVariant(),
@@ -150,7 +150,7 @@ func webView_DWebBrowserEvents2_Invoke(
 			headers:         (*rgvargPtr)[1].MustPVariant(),
 			cancel:          (*rgvargPtr)[0].MustPBool(),
 		}
-		wv.navigatingEventPublisher.Publish(arg)
+		wv.navigatingEventPublisher.Publish(eventData)
 
 	case win.DISPID_NAVIGATECOMPLETE2:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -192,36 +192,36 @@ func webView_DWebBrowserEvents2_Invoke(
 
 	case win.DISPID_NAVIGATEERROR:
 		rgvargPtr := (*[5]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewNavigatedErrorEventArg{
+		eventData := &WebViewNavigatedErrorEventData{
 			pDisp:           (*rgvargPtr)[4].MustPDispatch(),
 			url:             (*rgvargPtr)[3].MustPVariant(),
 			targetFrameName: (*rgvargPtr)[2].MustPVariant(),
 			statusCode:      (*rgvargPtr)[1].MustPVariant(),
 			cancel:          (*rgvargPtr)[0].MustPBool(),
 		}
-		wv.navigatedErrorEventPublisher.Publish(arg)
+		wv.navigatedErrorEventPublisher.Publish(eventData)
 
 	case win.DISPID_NEWWINDOW3:
 		rgvargPtr := (*[5]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewNewWindowEventArg{
+		eventData := &WebViewNewWindowEventData{
 			ppDisp:         (*rgvargPtr)[4].MustPPDispatch(),
 			cancel:         (*rgvargPtr)[3].MustPBool(),
 			dwFlags:        (*rgvargPtr)[2].MustULong(),
 			bstrUrlContext: (*rgvargPtr)[1].MustBSTR(),
 			bstrUrl:        (*rgvargPtr)[0].MustBSTR(),
 		}
-		wv.newWindowEventPublisher.Publish(arg)
+		wv.newWindowEventPublisher.Publish(eventData)
 
 	case win.DISPID_ONQUIT:
 		wv.quittingEventPublisher.Publish()
 
 	case win.DISPID_WINDOWCLOSING:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewWindowClosingEventArg{
+		eventData := &WebViewWindowClosingEventData{
 			bIsChildWindow: (*rgvargPtr)[1].MustBool(),
 			cancel:         (*rgvargPtr)[0].MustPBool(),
 		}
-		wv.windowClosingEventPublisher.Publish(arg)
+		wv.windowClosingEventPublisher.Publish(eventData)
 
 	case win.DISPID_ONSTATUSBAR:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -265,11 +265,11 @@ func webView_DWebBrowserEvents2_Invoke(
 
 	case win.DISPID_COMMANDSTATECHANGE:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewCommandStateChangedEventArg{
+		eventData := &WebViewCommandStateChangedEventData{
 			command: (*rgvargPtr)[1].MustLong(),
 			enable:  (*rgvargPtr)[0].MustBool(),
 		}
-		wv.commandStateChangedEventPublisher.Publish(arg)
+		wv.commandStateChangedEventPublisher.Publish(eventData)
 
 	case win.DISPID_PROGRESSCHANGE:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))

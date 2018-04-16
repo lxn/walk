@@ -86,15 +86,15 @@ func NewMainWin() (*MainWin, error) {
 	return mainWin, err
 }
 
-func (mainWin *MainWin) webView_OnNavigating(arg *walk.WebViewNavigatingArg) {
+func (mainWin *MainWin) webView_OnNavigating(eventData *walk.WebViewNavigatingEventData) {
 	fmt.Printf("webView_OnNavigating\r\n")
-	fmt.Printf("Url = %+v\r\n", arg.Url())
-	fmt.Printf("Flags = %+v\r\n", arg.Flags())
-	fmt.Printf("Headers = %+v\r\n", arg.Headers())
-	fmt.Printf("TargetFrameName = %+v\r\n", arg.TargetFrameName())
-	fmt.Printf("Canceled = %+v\r\n", arg.Canceled())
+	fmt.Printf("Url = %+v\r\n", eventData.Url())
+	fmt.Printf("Flags = %+v\r\n", eventData.Flags())
+	fmt.Printf("Headers = %+v\r\n", eventData.Headers())
+	fmt.Printf("TargetFrameName = %+v\r\n", eventData.TargetFrameName())
+	fmt.Printf("Canceled = %+v\r\n", eventData.Canceled())
 	// if you want to cancel
-	//arg.SetCanceled(true)
+	//eventData.SetCanceled(true)
 }
 
 func (mainWin *MainWin) webView_OnNavigated(url string) {
@@ -115,36 +115,36 @@ func (mainWin *MainWin) webView_OnDocumentCompleted(url string) {
 	fmt.Printf("url = %+v\r\n", url)
 }
 
-func (mainWin *MainWin) webView_OnNavigatedError(arg *walk.WebViewNavigatedErrorEventArg) {
+func (mainWin *MainWin) webView_OnNavigatedError(eventData *walk.WebViewNavigatedErrorEventData) {
 	fmt.Printf("webView_OnNavigatedError\r\n")
-	fmt.Printf("Url = %+v\r\n", arg.Url())
-	fmt.Printf("TargetFrameName = %+v\r\n", arg.TargetFrameName())
-	fmt.Printf("StatusCode = %+v\r\n", arg.StatusCode())
-	fmt.Printf("Canceled = %+v\r\n", arg.Canceled())
+	fmt.Printf("Url = %+v\r\n", eventData.Url())
+	fmt.Printf("TargetFrameName = %+v\r\n", eventData.TargetFrameName())
+	fmt.Printf("StatusCode = %+v\r\n", eventData.StatusCode())
+	fmt.Printf("Canceled = %+v\r\n", eventData.Canceled())
 	// if you want to cancel
-	//arg.SetCanceled(true)
+	//eventData.SetCanceled(true)
 }
 
-func (mainWin *MainWin) webView_OnNewWindow(arg *walk.WebViewNewWindowEventArg) {
+func (mainWin *MainWin) webView_OnNewWindow(eventData *walk.WebViewNewWindowEventData) {
 	fmt.Printf("webView_OnNewWindow\r\n")
-	fmt.Printf("Canceled = %+v\r\n", arg.Canceled())
-	fmt.Printf("Flags = %+v\r\n", arg.Flags())
-	fmt.Printf("UrlContext = %+v\r\n", arg.UrlContext())
-	fmt.Printf("Url = %+v\r\n", arg.Url())
+	fmt.Printf("Canceled = %+v\r\n", eventData.Canceled())
+	fmt.Printf("Flags = %+v\r\n", eventData.Flags())
+	fmt.Printf("UrlContext = %+v\r\n", eventData.UrlContext())
+	fmt.Printf("Url = %+v\r\n", eventData.Url())
 	// if you want to cancel
-	//arg.SetCancel(true)
+	//eventData.SetCancel(true)
 }
 
 func (mainWin *MainWin) webView_OnQuitting() {
 	fmt.Printf("webView_OnQuitting\r\n")
 }
 
-func (mainWin *MainWin) webView_OnWindowClosing(arg *walk.WebViewWindowClosingEventArg) {
+func (mainWin *MainWin) webView_OnWindowClosing(eventData *walk.WebViewWindowClosingEventData) {
 	fmt.Printf("webView_OnWindowClosing\r\n")
-	fmt.Printf("IsChildWindow = %+v\r\n", arg.IsChildWindow())
-	fmt.Printf("Canceled = %+v\r\n", arg.Canceled())
+	fmt.Printf("IsChildWindow = %+v\r\n", eventData.IsChildWindow())
+	fmt.Printf("Canceled = %+v\r\n", eventData.Canceled())
 	// if you want to cancel
-	//arg.SetCancel(true)
+	//eventData.SetCancel(true)
 }
 
 func (mainWin *MainWin) webView_OnStatusBarVisibleChanged() {
@@ -167,10 +167,10 @@ func (mainWin *MainWin) webView_OnBrowserVisibleChanged() {
 	fmt.Printf("BrowserVisible = %+v\r\n", mainWin.wv.BrowserVisible())
 }
 
-func (mainWin *MainWin) webView_OnCommandStateChanged(arg *walk.WebViewCommandStateChangedEventArg) {
+func (mainWin *MainWin) webView_OnCommandStateChanged(eventData *walk.WebViewCommandStateChangedEventData) {
 	fmt.Printf("webView_OnCommandStateChanged\r\n")
-	fmt.Printf("Command = %+v\r\n", arg.Command())
-	fmt.Printf("Enabled = %+v\r\n", arg.Enabled())
+	fmt.Printf("Command = %+v\r\n", eventData.Command())
+	fmt.Printf("Enabled = %+v\r\n", eventData.Enabled())
 }
 
 func (mainWin *MainWin) webView_OnProgressChanged() {
