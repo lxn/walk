@@ -154,11 +154,12 @@ func webView_DWebBrowserEvents2_Invoke(
 
 	case win.DISPID_NAVIGATECOMPLETE2:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewNavigatedEventArg{
-			pDisp: (*rgvargPtr)[1].MustPDispatch(),
-			url:   (*rgvargPtr)[0].MustPVariant(),
+		url := (*rgvargPtr)[0].MustPVariant()
+		urlStr := ""
+		if url != nil && url.MustBSTR() != nil {
+			urlStr = win.BSTRToString(url.MustBSTR())
 		}
-		wv.navigatedEventPublisher.Publish(arg)
+		wv.navigatedEventPublisher.Publish(urlStr)
 
 		wv.urlChangedPublisher.Publish()
 
@@ -170,9 +171,10 @@ func webView_DWebBrowserEvents2_Invoke(
 
 	case win.DISPID_DOCUMENTCOMPLETE:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewDocumentCompletedEventArg{
-			pDisp: (*rgvargPtr)[1].MustPDispatch(),
-			url:   (*rgvargPtr)[0].MustPVariant(),
+		url := (*rgvargPtr)[0].MustPVariant()
+		urlStr := ""
+		if url != nil && url.MustBSTR() != nil {
+			urlStr = win.BSTRToString(url.MustBSTR())
 		}
 
 		// FIXME: Horrible hack to avoid glitch where the document is not displayed.
@@ -186,7 +188,7 @@ func webView_DWebBrowserEvents2_Invoke(
 			})
 		})
 
-		wv.documentCompletedEventPublisher.Publish(arg)
+		wv.documentCompletedEventPublisher.Publish(urlStr)
 
 	case win.DISPID_NAVIGATEERROR:
 		rgvargPtr := (*[5]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -223,31 +225,43 @@ func webView_DWebBrowserEvents2_Invoke(
 
 	case win.DISPID_ONSTATUSBAR:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewStatusBarVisibleChangedEventArg{
-			statusBar: (*rgvargPtr)[0].MustBool(),
+		statusBar := (*rgvargPtr)[0].MustBool()
+		if statusBar != win.VARIANT_FALSE {
+			wv.statusBarVisible = true
+		} else {
+			wv.statusBarVisible = false
 		}
-		wv.statusBarVisibleChangedEventPublisher.Publish(arg)
+		wv.statusBarVisibleChangedEventPublisher.Publish()
 
 	case win.DISPID_ONTHEATERMODE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewTheaterModeChangedEventArg{
-			theaterMode: (*rgvargPtr)[0].MustBool(),
+		theaterMode := (*rgvargPtr)[0].MustBool()
+		if theaterMode != win.VARIANT_FALSE {
+			wv.isTheaterMode = true
+		} else {
+			wv.isTheaterMode = false
 		}
-		wv.theaterModeChangedEventPublisher.Publish(arg)
+		wv.theaterModeChangedEventPublisher.Publish()
 
 	case win.DISPID_ONTOOLBAR:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewToolBarVisibleChangedEventArg{
-			toolBar: (*rgvargPtr)[0].MustBool(),
+		toolBar := (*rgvargPtr)[0].MustBool()
+		if toolBar != win.VARIANT_FALSE {
+			wv.toolBarVisible = true
+		} else {
+			wv.toolBarVisible = false
 		}
-		wv.toolBarVisibleChangedEventPublisher.Publish(arg)
+		wv.toolBarVisibleChangedEventPublisher.Publish()
 
 	case win.DISPID_ONVISIBLE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewBrowserVisibleChangedEventArg{
-			vVisible: (*rgvargPtr)[0].MustBool(),
+		vVisible := (*rgvargPtr)[0].MustBool()
+		if vVisible != win.VARIANT_FALSE {
+			wv.browserVisible = true
+		} else {
+			wv.browserVisible = false
 		}
-		wv.browserVisibleChangedEventPublisher.Publish(arg)
+		wv.browserVisibleChangedEventPublisher.Publish()
 
 	case win.DISPID_COMMANDSTATECHANGE:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -259,25 +273,29 @@ func webView_DWebBrowserEvents2_Invoke(
 
 	case win.DISPID_PROGRESSCHANGE:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewProgressChangedEventArg{
-			nProgress:    (*rgvargPtr)[1].MustLong(),
-			nProgressMax: (*rgvargPtr)[0].MustLong(),
-		}
-		wv.progressChangedEventPublisher.Publish(arg)
+		wv.progressValue = (*rgvargPtr)[1].MustLong()
+		wv.progressMax = (*rgvargPtr)[0].MustLong()
+		wv.progressChangedEventPublisher.Publish()
 
 	case win.DISPID_STATUSTEXTCHANGE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewStatusTextChangedEventArg{
-			sText: (*rgvargPtr)[0].MustBSTR(),
+		sText := (*rgvargPtr)[0].MustBSTR()
+		if sText != nil {
+			wv.statusText = win.BSTRToString(sText)
+		} else {
+			wv.statusText = ""
 		}
-		wv.statusTextChangedEventPublisher.Publish(arg)
+		wv.statusTextChangedEventPublisher.Publish()
 
 	case win.DISPID_TITLECHANGE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		arg := &WebViewTitleChangedEventArg{
-			sText: (*rgvargPtr)[0].MustBSTR(),
+		sText := (*rgvargPtr)[0].MustBSTR()
+		if sText != nil {
+			wv.documentTitle = win.BSTRToString(sText)
+		} else {
+			wv.documentTitle = ""
 		}
-		wv.titleChangedEventPublisher.Publish(arg)
+		wv.documentTitleChangedEventPublisher.Publish()
 	}
 
 	return win.DISP_E_MEMBERNOTFOUND

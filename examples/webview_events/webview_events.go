@@ -56,6 +56,7 @@ func NewMainWin() (*MainWin, error) {
 				OnNavigating:              mainWin.webView_OnNavigating,
 				OnNavigated:               mainWin.webView_OnNavigated,
 				OnDownloading:             mainWin.webView_OnDownloading,
+				OnDownloaded:              mainWin.webView_OnDownloaded,
 				OnDocumentCompleted:       mainWin.webView_OnDocumentCompleted,
 				OnNavigatedError:          mainWin.webView_OnNavigatedError,
 				OnNewWindow:               mainWin.webView_OnNewWindow,
@@ -68,7 +69,7 @@ func NewMainWin() (*MainWin, error) {
 				OnCommandStateChanged:     mainWin.webView_OnCommandStateChanged,
 				OnProgressChanged:         mainWin.webView_OnProgressChanged,
 				OnStatusTextChanged:       mainWin.webView_OnStatusTextChanged,
-				OnTitleChanged:            mainWin.webView_OnTitleChanged,
+				OnDocumentTitleChanged:    mainWin.webView_OnDocumentTitleChanged,
 			},
 		},
 		Functions: map[string]func(args ...interface{}) (interface{}, error){
@@ -91,14 +92,14 @@ func (mainWin *MainWin) webView_OnNavigating(arg *walk.WebViewNavigatingArg) {
 	fmt.Printf("Flags = %+v\r\n", arg.Flags())
 	fmt.Printf("Headers = %+v\r\n", arg.Headers())
 	fmt.Printf("TargetFrameName = %+v\r\n", arg.TargetFrameName())
-	fmt.Printf("Cancel = %+v\r\n", arg.Cancel())
+	fmt.Printf("Canceled = %+v\r\n", arg.Canceled())
 	// if you want to cancel
-	//arg.SetCancel(true)
+	//arg.SetCanceled(true)
 }
 
-func (mainWin *MainWin) webView_OnNavigated(arg *walk.WebViewNavigatedEventArg) {
+func (mainWin *MainWin) webView_OnNavigated(url string) {
 	fmt.Printf("webView_OnNavigated\r\n")
-	fmt.Printf("Url = %+v\r\n", arg.Url())
+	fmt.Printf("url = %+v\r\n", url)
 }
 
 func (mainWin *MainWin) webView_OnDownloading() {
@@ -109,9 +110,9 @@ func (mainWin *MainWin) webView_OnDownloaded() {
 	fmt.Printf("webView_OnDownloaded\r\n")
 }
 
-func (mainWin *MainWin) webView_OnDocumentCompleted(arg *walk.WebViewDocumentCompletedEventArg) {
+func (mainWin *MainWin) webView_OnDocumentCompleted(url string) {
 	fmt.Printf("webView_OnDocumentCompleted\r\n")
-	fmt.Printf("Url = %+v\r\n", arg.Url())
+	fmt.Printf("url = %+v\r\n", url)
 }
 
 func (mainWin *MainWin) webView_OnNavigatedError(arg *walk.WebViewNavigatedErrorEventArg) {
@@ -119,14 +120,14 @@ func (mainWin *MainWin) webView_OnNavigatedError(arg *walk.WebViewNavigatedError
 	fmt.Printf("Url = %+v\r\n", arg.Url())
 	fmt.Printf("TargetFrameName = %+v\r\n", arg.TargetFrameName())
 	fmt.Printf("StatusCode = %+v\r\n", arg.StatusCode())
-	fmt.Printf("Cancel = %+v\r\n", arg.Cancel())
+	fmt.Printf("Canceled = %+v\r\n", arg.Canceled())
 	// if you want to cancel
-	//arg.SetCancel(true)
+	//arg.SetCanceled(true)
 }
 
 func (mainWin *MainWin) webView_OnNewWindow(arg *walk.WebViewNewWindowEventArg) {
 	fmt.Printf("webView_OnNewWindow\r\n")
-	fmt.Printf("Cancel = %+v\r\n", arg.Cancel())
+	fmt.Printf("Canceled = %+v\r\n", arg.Canceled())
 	fmt.Printf("Flags = %+v\r\n", arg.Flags())
 	fmt.Printf("UrlContext = %+v\r\n", arg.UrlContext())
 	fmt.Printf("Url = %+v\r\n", arg.Url())
@@ -141,29 +142,29 @@ func (mainWin *MainWin) webView_OnQuitting() {
 func (mainWin *MainWin) webView_OnWindowClosing(arg *walk.WebViewWindowClosingEventArg) {
 	fmt.Printf("webView_OnWindowClosing\r\n")
 	fmt.Printf("IsChildWindow = %+v\r\n", arg.IsChildWindow())
-	fmt.Printf("Cancel = %+v\r\n", arg.Cancel())
+	fmt.Printf("Canceled = %+v\r\n", arg.Canceled())
 	// if you want to cancel
 	//arg.SetCancel(true)
 }
 
-func (mainWin *MainWin) webView_OnStatusBarVisibleChanged(arg *walk.WebViewStatusBarVisibleChangedEventArg) {
+func (mainWin *MainWin) webView_OnStatusBarVisibleChanged() {
 	fmt.Printf("webView_OnStatusBarVisibleChanged\r\n")
-	fmt.Printf("Visible = %+v\r\n", arg.Visible())
+	fmt.Printf("StatusBarVisible = %+v\r\n", mainWin.wv.StatusBarVisible())
 }
 
-func (mainWin *MainWin) webView_OnTheaterModeChanged(arg *walk.WebViewTheaterModeChangedEventArg) {
+func (mainWin *MainWin) webView_OnTheaterModeChanged() {
 	fmt.Printf("webView_OnTheaterModeChanged\r\n")
-	fmt.Printf("IsTheaterMode = %+v\r\n", arg.IsTheaterMode())
+	fmt.Printf("IsTheaterMode = %+v\r\n", mainWin.wv.IsTheaterMode())
 }
 
-func (mainWin *MainWin) webView_OnToolBarVisibleChanged(arg *walk.WebViewToolBarVisibleChangedEventArg) {
+func (mainWin *MainWin) webView_OnToolBarVisibleChanged() {
 	fmt.Printf("webView_OnToolBarVisibleChanged\r\n")
-	fmt.Printf("Visible = %+v\r\n", arg.Visible())
+	fmt.Printf("ToolBarVisible = %+v\r\n", mainWin.wv.ToolBarVisible())
 }
 
-func (mainWin *MainWin) webView_OnBrowserVisibleChanged(arg *walk.WebViewBrowserVisibleChangedEventArg) {
+func (mainWin *MainWin) webView_OnBrowserVisibleChanged() {
 	fmt.Printf("webView_OnBrowserVisibleChanged\r\n")
-	fmt.Printf("Visible = %+v\r\n", arg.Visible())
+	fmt.Printf("BrowserVisible = %+v\r\n", mainWin.wv.BrowserVisible())
 }
 
 func (mainWin *MainWin) webView_OnCommandStateChanged(arg *walk.WebViewCommandStateChangedEventArg) {
@@ -172,18 +173,18 @@ func (mainWin *MainWin) webView_OnCommandStateChanged(arg *walk.WebViewCommandSt
 	fmt.Printf("Enabled = %+v\r\n", arg.Enabled())
 }
 
-func (mainWin *MainWin) webView_OnProgressChanged(arg *walk.WebViewProgressChangedEventArg) {
+func (mainWin *MainWin) webView_OnProgressChanged() {
 	fmt.Printf("webView_OnProgressChanged\r\n")
-	fmt.Printf("Progress = %+v\r\n", arg.Progress())
-	fmt.Printf("ProgressMax = %+v\r\n", arg.ProgressMax())
+	fmt.Printf("ProgressValue = %+v\r\n", mainWin.wv.ProgressValue())
+	fmt.Printf("ProgressMax = %+v\r\n", mainWin.wv.ProgressMax())
 }
 
-func (mainWin *MainWin) webView_OnStatusTextChanged(arg *walk.WebViewStatusTextChangedEventArg) {
+func (mainWin *MainWin) webView_OnStatusTextChanged() {
 	fmt.Printf("webView_OnStatusTextChanged\r\n")
-	fmt.Printf("StatusText = %+v\r\n", arg.StatusText())
+	fmt.Printf("StatusText = %+v\r\n", mainWin.wv.StatusText())
 }
 
-func (mainWin *MainWin) webView_OnTitleChanged(arg *walk.WebViewTitleChangedEventArg) {
-	fmt.Printf("webView_OnTitleChanged\r\n")
-	fmt.Printf("Title = %+v\r\n", arg.Title())
+func (mainWin *MainWin) webView_OnDocumentTitleChanged() {
+	fmt.Printf("webView_OnDocumentTitleChanged\r\n")
+	fmt.Printf("DocumentTitle = %+v\r\n", mainWin.wv.DocumentTitle())
 }

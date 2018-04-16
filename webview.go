@@ -32,22 +32,30 @@ type WebView struct {
 	nativeContextMenuEnabled                 bool
 	nativeContextMenuEnabledChangedPublisher EventPublisher
 	navigatingEventPublisher                 WebViewNavigatingEventPublisher
-	navigatedEventPublisher                  WebViewNavigatedEventPublisher
-	downloadingEventPublisher                WebViewDownloadingEventPublisher
-	downloadedEventPublisher                 WebViewDownloadedEventPublisher
-	documentCompletedEventPublisher          WebViewDocumentCompletedEventPublisher
+	navigatedEventPublisher                  StringEventPublisher
+	downloadingEventPublisher                EventPublisher
+	downloadedEventPublisher                 EventPublisher
+	documentCompletedEventPublisher          StringEventPublisher
 	navigatedErrorEventPublisher             WebViewNavigatedErrorEventPublisher
 	newWindowEventPublisher                  WebViewNewWindowEventPublisher
-	quittingEventPublisher                   WebViewQuittingEventPublisher
+	quittingEventPublisher                   EventPublisher
 	windowClosingEventPublisher              WebViewWindowClosingEventPublisher
-	statusBarVisibleChangedEventPublisher    WebViewStatusBarVisibleChangedEventPublisher
-	theaterModeChangedEventPublisher         WebViewTheaterModeChangedEventPublisher
-	toolBarVisibleChangedEventPublisher      WebViewToolBarVisibleChangedEventPublisher
-	browserVisibleChangedEventPublisher      WebViewBrowserVisibleChangedEventPublisher
+	statusBarVisible                         bool
+	statusBarVisibleChangedEventPublisher    EventPublisher
+	isTheaterMode                            bool
+	theaterModeChangedEventPublisher         EventPublisher
+	toolBarVisible                           bool
+	toolBarVisibleChangedEventPublisher      EventPublisher
+	browserVisible                           bool
+	browserVisibleChangedEventPublisher      EventPublisher
 	commandStateChangedEventPublisher        WebViewCommandStateChangedEventPublisher
-	progressChangedEventPublisher            WebViewProgressChangedEventPublisher
-	statusTextChangedEventPublisher          WebViewStatusTextChangedEventPublisher
-	titleChangedEventPublisher               WebViewTitleChangedEventPublisher
+	progressValue                            int32
+	progressMax                              int32
+	progressChangedEventPublisher            EventPublisher
+	statusText                               string
+	statusTextChangedEventPublisher          EventPublisher
+	documentTitle                            string
+	documentTitleChangedEventPublisher       EventPublisher
 }
 
 func NewWebView(parent Container) (*WebView, error) {
@@ -278,19 +286,19 @@ func (wv *WebView) Navigating() *WebViewNavigatingEvent {
 	return wv.navigatingEventPublisher.Event()
 }
 
-func (wv *WebView) Navigated() *WebViewNavigatedEvent {
+func (wv *WebView) Navigated() *StringEvent {
 	return wv.navigatedEventPublisher.Event()
 }
 
-func (wv *WebView) Downloading() *WebViewDownloadingEvent {
+func (wv *WebView) Downloading() *Event {
 	return wv.downloadingEventPublisher.Event()
 }
 
-func (wv *WebView) Downloaded() *WebViewDownloadedEvent {
+func (wv *WebView) Downloaded() *Event {
 	return wv.downloadedEventPublisher.Event()
 }
 
-func (wv *WebView) DocumentCompleted() *WebViewDocumentCompletedEvent {
+func (wv *WebView) DocumentCompleted() *StringEvent {
 	return wv.documentCompletedEventPublisher.Event()
 }
 
@@ -302,7 +310,7 @@ func (wv *WebView) NewWindow() *WebViewNewWindowEvent {
 	return wv.newWindowEventPublisher.Event()
 }
 
-func (wv *WebView) Quitting() *WebViewQuittingEvent {
+func (wv *WebView) Quitting() *Event {
 	return wv.quittingEventPublisher.Event()
 }
 
@@ -310,19 +318,35 @@ func (wv *WebView) WindowClosing() *WebViewWindowClosingEvent {
 	return wv.windowClosingEventPublisher.Event()
 }
 
-func (wv *WebView) StatusBarVisibleChanged() *WebViewStatusBarVisibleChangedEvent {
+func (wv *WebView) StatusBarVisible() bool {
+	return wv.statusBarVisible
+}
+
+func (wv *WebView) StatusBarVisibleChanged() *Event {
 	return wv.statusBarVisibleChangedEventPublisher.Event()
 }
 
-func (wv *WebView) TheaterModeChanged() *WebViewTheaterModeChangedEvent {
+func (wv *WebView) IsTheaterMode() bool {
+	return wv.isTheaterMode
+}
+
+func (wv *WebView) TheaterModeChanged() *Event {
 	return wv.theaterModeChangedEventPublisher.Event()
 }
 
-func (wv *WebView) ToolBarVisibleChanged() *WebViewToolBarVisibleChangedEvent {
+func (wv *WebView) ToolBarVisible() bool {
+	return wv.toolBarVisible
+}
+
+func (wv *WebView) ToolBarVisibleChanged() *Event {
 	return wv.toolBarVisibleChangedEventPublisher.Event()
 }
 
-func (wv *WebView) BrowserVisibleChanged() *WebViewBrowserVisibleChangedEvent {
+func (wv *WebView) BrowserVisible() bool {
+	return wv.browserVisible
+}
+
+func (wv *WebView) BrowserVisibleChanged() *Event {
 	return wv.browserVisibleChangedEventPublisher.Event()
 }
 
@@ -330,16 +354,32 @@ func (wv *WebView) CommandStateChanged() *WebViewCommandStateChangedEvent {
 	return wv.commandStateChangedEventPublisher.Event()
 }
 
-func (wv *WebView) ProgressChanged() *WebViewProgressChangedEvent {
+func (wv *WebView) ProgressValue() int32 {
+	return wv.progressValue
+}
+
+func (wv *WebView) ProgressMax() int32 {
+	return wv.progressMax
+}
+
+func (wv *WebView) ProgressChanged() *Event {
 	return wv.progressChangedEventPublisher.Event()
 }
 
-func (wv *WebView) StatusTextChanged() *WebViewStatusTextChangedEvent {
+func (wv *WebView) StatusText() string {
+	return wv.statusText
+}
+
+func (wv *WebView) StatusTextChanged() *Event {
 	return wv.statusTextChangedEventPublisher.Event()
 }
 
-func (wv *WebView) TitleChanged() *WebViewTitleChangedEvent {
-	return wv.titleChangedEventPublisher.Event()
+func (wv *WebView) DocumentTitle() string {
+	return wv.documentTitle
+}
+
+func (wv *WebView) DocumentTitleChanged() *Event {
+	return wv.documentTitleChangedEventPublisher.Event()
 }
 
 func (wv *WebView) Refresh() error {

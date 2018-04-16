@@ -47,28 +47,28 @@ type WebView struct {
 
 	AssignTo                   **walk.WebView
 	NativeContextMenuEnabled   Property
-	OnBrowserVisibleChanged    walk.WebViewBrowserVisibleChangedEventHandler
+	OnBrowserVisibleChanged    walk.EventHandler
 	OnCommandStateChanged      walk.WebViewCommandStateChangedEventHandler
-	OnDocumentCompleted        walk.WebViewDocumentCompletedEventHandler
+	OnDocumentCompleted        walk.StringEventHandler
+	OnDocumentTitleChanged     walk.EventHandler
 	OnDownloaded               walk.EventHandler
 	OnDownloading              walk.EventHandler
 	OnNativeContextMenuEnabled walk.EventHandler
-	OnNavigated                walk.WebViewNavigatedEventHandler
+	OnNavigated                walk.StringEventHandler
 	OnNavigatedError           walk.WebViewNavigatedErrorEventHandler
 	OnNavigating               walk.WebViewNavigatingEventHandler
 	OnNewWindow                walk.WebViewNewWindowEventHandler
-	OnProgressChanged          walk.WebViewProgressChangedEventHandler
-	OnShortcutsEnabled         walk.EventHandler
-	OnStatusBarVisibleChanged  walk.WebViewStatusBarVisibleChangedEventHandler
-	OnStatusTextChanged        walk.WebViewStatusTextChangedEventHandler
-	OnTheaterModeChanged       walk.WebViewTheaterModeChangedEventHandler
-	OnTitleChanged             walk.WebViewTitleChangedEventHandler
-	OnToolBarVisibleChanged    walk.WebViewToolBarVisibleChangedEventHandler
-	OnURLChanged               walk.EventHandler
+	OnProgressChanged          walk.EventHandler
 	OnQuitting                 walk.EventHandler
+	OnShortcutsEnabled         walk.EventHandler
+	OnStatusBarVisibleChanged  walk.EventHandler
+	OnStatusTextChanged        walk.EventHandler
+	OnTheaterModeChanged       walk.EventHandler
+	OnToolBarVisibleChanged    walk.EventHandler
+	OnURLChanged               walk.EventHandler
 	OnWindowClosing            walk.WebViewWindowClosingEventHandler
-	URL                        Property
 	ShortcutsEnabled           Property
+	URL                        Property
 }
 
 func (wv WebView) Create(builder *Builder) error {
@@ -86,6 +86,9 @@ func (wv WebView) Create(builder *Builder) error {
 		}
 		if wv.OnDocumentCompleted != nil {
 			w.DocumentCompleted().Attach(wv.OnDocumentCompleted)
+		}
+		if wv.OnDocumentTitleChanged != nil {
+			w.DocumentTitleChanged().Attach(wv.OnDocumentTitleChanged)
 		}
 		if wv.OnDownloaded != nil {
 			w.Downloaded().Attach(wv.OnDownloaded)
@@ -122,9 +125,6 @@ func (wv WebView) Create(builder *Builder) error {
 		}
 		if wv.OnStatusTextChanged != nil {
 			w.StatusTextChanged().Attach(wv.OnStatusTextChanged)
-		}
-		if wv.OnTitleChanged != nil {
-			w.TitleChanged().Attach(wv.OnTitleChanged)
 		}
 		if wv.OnTheaterModeChanged != nil {
 			w.TheaterModeChanged().Attach(wv.OnTheaterModeChanged)
