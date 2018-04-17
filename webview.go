@@ -24,9 +24,38 @@ func init() {
 
 type WebView struct {
 	WidgetBase
-	clientSite          webViewIOleClientSite // IMPORTANT: Must remain first member after WidgetBase
-	browserObject       *win.IOleObject
-	urlChangedPublisher EventPublisher
+	clientSite                               webViewIOleClientSite // IMPORTANT: Must remain first member after WidgetBase
+	browserObject                            *win.IOleObject
+	urlChangedPublisher                      EventPublisher
+	shortcutsEnabled                         bool
+	shortcutsEnabledChangedPublisher         EventPublisher
+	nativeContextMenuEnabled                 bool
+	nativeContextMenuEnabledChangedPublisher EventPublisher
+	navigatingEventPublisher                 WebViewNavigatingEventPublisher
+	navigatedEventPublisher                  StringEventPublisher
+	downloadingEventPublisher                EventPublisher
+	downloadedEventPublisher                 EventPublisher
+	documentCompletedEventPublisher          StringEventPublisher
+	navigatedErrorEventPublisher             WebViewNavigatedErrorEventPublisher
+	newWindowEventPublisher                  WebViewNewWindowEventPublisher
+	quittingEventPublisher                   EventPublisher
+	windowClosingEventPublisher              WebViewWindowClosingEventPublisher
+	statusBarVisible                         bool
+	statusBarVisibleChangedEventPublisher    EventPublisher
+	isTheaterMode                            bool
+	theaterModeChangedEventPublisher         EventPublisher
+	toolBarVisible                           bool
+	toolBarVisibleChangedEventPublisher      EventPublisher
+	browserVisible                           bool
+	browserVisibleChangedEventPublisher      EventPublisher
+	commandStateChangedEventPublisher        WebViewCommandStateChangedEventPublisher
+	progressValue                            int32
+	progressMax                              int32
+	progressChangedEventPublisher            EventPublisher
+	statusText                               string
+	statusTextChangedEventPublisher          EventPublisher
+	documentTitle                            string
+	documentTitleChangedEventPublisher       EventPublisher
 }
 
 func NewWebView(parent Container) (*WebView, error) {
@@ -60,6 +89,8 @@ func NewWebView(parent Container) (*WebView, error) {
 				},
 			},
 		},
+		shortcutsEnabled:         false,
+		nativeContextMenuEnabled: false,
 	}
 
 	if err := InitWidget(
@@ -145,6 +176,26 @@ func NewWebView(parent Container) (*WebView, error) {
 		},
 		wv.urlChangedPublisher.Event()))
 
+	wv.MustRegisterProperty("ShortcutsEnabled", NewProperty(
+		func() interface{} {
+			return wv.ShortcutsEnabled()
+		},
+		func(v interface{}) error {
+			wv.SetShortcutsEnabled(v.(bool))
+			return nil
+		},
+		wv.shortcutsEnabledChangedPublisher.Event()))
+
+	wv.MustRegisterProperty("NativeContextMenuEnabled", NewProperty(
+		func() interface{} {
+			return wv.NativeContextMenuEnabled()
+		},
+		func(v interface{}) error {
+			wv.SetNativeContextMenuEnabled(v.(bool))
+			return nil
+		},
+		wv.nativeContextMenuEnabledChangedPublisher.Event()))
+
 	succeeded = true
 
 	return wv, nil
@@ -205,6 +256,132 @@ func (wv *WebView) URLChanged() *Event {
 	return wv.urlChangedPublisher.Event()
 }
 
+func (wv *WebView) ShortcutsEnabled() bool {
+	return wv.shortcutsEnabled
+}
+
+func (wv *WebView) SetShortcutsEnabled(value bool) {
+	wv.shortcutsEnabled = value
+	wv.shortcutsEnabledChangedPublisher.Publish()
+}
+
+func (wv *WebView) ShortcutsEnabledChanged() *Event {
+	return wv.shortcutsEnabledChangedPublisher.Event()
+}
+
+func (wv *WebView) NativeContextMenuEnabled() bool {
+	return wv.nativeContextMenuEnabled
+}
+
+func (wv *WebView) SetNativeContextMenuEnabled(value bool) {
+	wv.nativeContextMenuEnabled = value
+	wv.nativeContextMenuEnabledChangedPublisher.Publish()
+}
+
+func (wv *WebView) NativeContextMenuEnabledChanged() *Event {
+	return wv.nativeContextMenuEnabledChangedPublisher.Event()
+}
+
+func (wv *WebView) Navigating() *WebViewNavigatingEvent {
+	return wv.navigatingEventPublisher.Event()
+}
+
+func (wv *WebView) Navigated() *StringEvent {
+	return wv.navigatedEventPublisher.Event()
+}
+
+func (wv *WebView) Downloading() *Event {
+	return wv.downloadingEventPublisher.Event()
+}
+
+func (wv *WebView) Downloaded() *Event {
+	return wv.downloadedEventPublisher.Event()
+}
+
+func (wv *WebView) DocumentCompleted() *StringEvent {
+	return wv.documentCompletedEventPublisher.Event()
+}
+
+func (wv *WebView) NavigatedError() *WebViewNavigatedErrorEvent {
+	return wv.navigatedErrorEventPublisher.Event()
+}
+
+func (wv *WebView) NewWindow() *WebViewNewWindowEvent {
+	return wv.newWindowEventPublisher.Event()
+}
+
+func (wv *WebView) Quitting() *Event {
+	return wv.quittingEventPublisher.Event()
+}
+
+func (wv *WebView) WindowClosing() *WebViewWindowClosingEvent {
+	return wv.windowClosingEventPublisher.Event()
+}
+
+func (wv *WebView) StatusBarVisible() bool {
+	return wv.statusBarVisible
+}
+
+func (wv *WebView) StatusBarVisibleChanged() *Event {
+	return wv.statusBarVisibleChangedEventPublisher.Event()
+}
+
+func (wv *WebView) IsTheaterMode() bool {
+	return wv.isTheaterMode
+}
+
+func (wv *WebView) TheaterModeChanged() *Event {
+	return wv.theaterModeChangedEventPublisher.Event()
+}
+
+func (wv *WebView) ToolBarVisible() bool {
+	return wv.toolBarVisible
+}
+
+func (wv *WebView) ToolBarVisibleChanged() *Event {
+	return wv.toolBarVisibleChangedEventPublisher.Event()
+}
+
+func (wv *WebView) BrowserVisible() bool {
+	return wv.browserVisible
+}
+
+func (wv *WebView) BrowserVisibleChanged() *Event {
+	return wv.browserVisibleChangedEventPublisher.Event()
+}
+
+func (wv *WebView) CommandStateChanged() *WebViewCommandStateChangedEvent {
+	return wv.commandStateChangedEventPublisher.Event()
+}
+
+func (wv *WebView) ProgressValue() int32 {
+	return wv.progressValue
+}
+
+func (wv *WebView) ProgressMax() int32 {
+	return wv.progressMax
+}
+
+func (wv *WebView) ProgressChanged() *Event {
+	return wv.progressChangedEventPublisher.Event()
+}
+
+func (wv *WebView) StatusText() string {
+	return wv.statusText
+}
+
+func (wv *WebView) StatusTextChanged() *Event {
+	return wv.statusTextChangedEventPublisher.Event()
+}
+
+func (wv *WebView) DocumentTitle() string {
+	return wv.documentTitle
+}
+
+func (wv *WebView) DocumentTitleChanged() *Event {
+	return wv.documentTitleChangedEventPublisher.Event()
+}
+
 func (wv *WebView) Refresh() error {
 	return wv.withWebBrowser2(func(webBrowser2 *win.IWebBrowser2) error {
 		if hr := webBrowser2.Refresh(); win.FAILED(hr) {
@@ -238,6 +415,60 @@ func (wv *WebView) onResize() {
 
 		return nil
 	})
+}
+
+func (wv *WebView) withInPlaceActiveObject(f func(activeObject *win.IOleInPlaceActiveObject) error) error {
+	if wv.browserObject == nil {
+		return nil
+	}
+	wv.withWebBrowser2(func(webBrowser2 *win.IWebBrowser2) error {
+		var activeObjectPtr unsafe.Pointer
+		if hr := webBrowser2.QueryInterface(&win.IID_IOleInPlaceActiveObject, &activeObjectPtr); win.FAILED(hr) {
+			return errorFromHRESULT("WebBowser2.QueryInterface", hr)
+		}
+		activeObject := (*win.IOleInPlaceActiveObject)(activeObjectPtr)
+		defer activeObject.Release()
+		return f(activeObject)
+	})
+	return nil
+}
+
+func (wv *WebView) translateAccelerator(msg *win.MSG) bool {
+	if wv.shortcutsEnabled {
+		hr := wv.inPlaceActiveObjectTranslateAccelerator(msg)
+		return hr == win.S_OK
+	}
+	return false
+}
+
+func (wv *WebView) inPlaceActiveObjectTranslateAccelerator(msg *win.MSG) win.HRESULT {
+	var ret win.HRESULT
+	ret = win.S_FALSE
+	wv.withInPlaceActiveObject(func(activeObject *win.IOleInPlaceActiveObject) error {
+		hr := activeObject.TranslateAccelerator(msg)
+		if hr == win.S_OK {
+			ret = win.S_OK
+		}
+		return nil
+	})
+	return ret
+}
+
+func (wv *WebView) inPlaceActiveObjectSetFocus() win.HRESULT {
+	var ret win.HRESULT
+	ret = win.S_FALSE
+	wv.withInPlaceActiveObject(func(activeObject *win.IOleInPlaceActiveObject) error {
+		var hWndActive win.HWND
+		hr := activeObject.GetWindow(&hWndActive)
+		if hr != win.S_OK {
+			return nil
+		}
+		win.SetFocus(hWndActive)
+		ret = win.S_OK
+
+		return nil
+	})
+	return ret
 }
 
 func (wv *WebView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
