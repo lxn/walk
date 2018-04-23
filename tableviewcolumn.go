@@ -428,9 +428,9 @@ func (tvc *TableViewColumn) sendMessage(msg uint32, wp, lp uintptr) uintptr {
 
 	var hwnd win.HWND
 	if tvc.frozen {
-		hwnd = tvc.tv.hwndFrozen
+		hwnd = tvc.tv.hwndFrozenLV
 	} else {
-		hwnd = tvc.tv.hwndNormal
+		hwnd = tvc.tv.hwndNormalLV
 	}
 
 	return win.SendMessage(hwnd, msg, wp, lp)

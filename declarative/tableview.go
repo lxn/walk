@@ -53,8 +53,10 @@ type TableView struct {
 	Columns                    []TableViewColumn
 	ColumnsOrderable           Property
 	ColumnsSizable             Property
-	HeaderHidden               bool
+	CustomHeaderHeight         int
+	CustomRowHeight            int
 	ItemStateChangedEventDelay int
+	HeaderHidden               bool
 	LastColumnStretched        bool
 	Model                      interface{}
 	MultiSelection             bool
@@ -92,7 +94,7 @@ func (tv TableView) Create(builder *Builder) error {
 	if tv.NotSortableByHeaderClick {
 		w, err = walk.NewTableViewWithStyle(builder.Parent(), win.LVS_NOSORTHEADER)
 	} else {
-		w, err = walk.NewTableView(builder.Parent())
+		w, err = walk.NewTableViewWithCfg(builder.Parent(), &walk.TableViewCfg{CustomHeaderHeight: tv.CustomHeaderHeight, CustomRowHeight: tv.CustomRowHeight})
 	}
 	if err != nil {
 		return err

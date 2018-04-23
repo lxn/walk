@@ -30,6 +30,7 @@ var (
 	checkmark                   = string([]byte{0xE2, 0x9C, 0x94})
 	tableViewFrozenLVWndProcPtr = syscall.NewCallback(tableViewFrozenLVWndProc)
 	tableViewNormalLVWndProcPtr = syscall.NewCallback(tableViewNormalLVWndProc)
+	tableViewHdrWndProcPtr      = syscall.NewCallback(tableViewHdrWndProc)
 )
 
 const (
@@ -37,16 +38,26 @@ const (
 	tableViewSelectedIndexesChangedTimerId
 )
 
+type TableViewCfg struct {
+	Style              uint32
+	CustomHeaderHeight int
+	CustomRowHeight    int
+}
+
 // TableView is a model based widget for record centric, tabular data.
 //
 // TableView is implemented as a virtual mode list view to support quite large
 // amounts of data.
 type TableView struct {
 	WidgetBase
-	hwndFrozen                         win.HWND
+	hwndFrozenLV                       win.HWND
+	hwndFrozenHdr                      win.HWND
 	frozenLVOrigWndProcPtr             uintptr
-	hwndNormal                         win.HWND
+	frozenHdrOrigWndProcPtr            uintptr
+	hwndNormalLV                       win.HWND
+	hwndNormalHdr                      win.HWND
 	normalLVOrigWndProcPtr             uintptr
+	normalHdrOrigWndProcPtr            uintptr
 	columns                            *TableViewColumnList
 	model                              TableModel
 	providedModel                      interface{}
@@ -54,6 +65,7 @@ type TableView struct {
 	imageProvider                      ImageProvider
 	styler                             CellStyler
 	style                              CellStyle
+	itemFont                           *Font
 	customDrawItemHot                  bool
 	hIml                               win.HIMAGELIST
 	usingSysIml                        bool
@@ -76,7 +88,6 @@ type TableView struct {
 	publishNextSelClear                bool
 	inSetSelectedIndexes               bool
 	lastColumnStretched                bool
-	inEraseBkgnd                       bool
 	persistent                         bool
 	itemStateChangedEventDelay         int
 	alternatingRowBGColor              Color
@@ -85,10 +96,13 @@ type TableView struct {
 	sortedColumnIndex                  int
 	sortOrder                          SortOrder
 	formActivatingHandle               int
+	customHeaderHeight                 int
+	customRowHeight                    int
 	scrolling                          bool
 	inSetCurrentIndex                  bool
 	inMouseEvent                       bool
 	hasFrozenColumn                    bool
+	inEraseBkgnd                       bool
 }
 
 // NewTableView creates and returns a *TableView as child of the specified
@@ -100,11 +114,19 @@ func NewTableView(parent Container) (*TableView, error) {
 // NewTableViewWithStyle creates and returns a *TableView as child of the specified
 // Container and with the provided additional style bits set.
 func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
+	return NewTableViewWithCfg(parent, &TableViewCfg{Style: style})
+}
+
+// NewTableViewWithCfg creates and returns a *TableView as child of the specified
+// Container and with the provided additional configuration.
+func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error) {
 	tv := &TableView{
 		alternatingRowBGColor: defaultTVRowBGColor,
 		imageUintptr2Index:    make(map[uintptr]int32),
 		filePath2IconIndex:    make(map[string]int32),
 		formActivatingHandle:  -1,
+		customHeaderHeight:    cfg.CustomHeaderHeight,
+		customRowHeight:       cfg.CustomRowHeight,
 	}
 
 	tv.columns = newTableViewColumnList(tv)
@@ -125,11 +147,16 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 		}
 	}()
 
-	if tv.hwndFrozen = win.CreateWindowEx(
+	var rowHeightStyle uint32
+	if cfg.CustomRowHeight > 0 {
+		rowHeightStyle = win.LVS_OWNERDRAWFIXED
+	}
+
+	if tv.hwndFrozenLV = win.CreateWindowEx(
 		0,
 		syscall.StringToUTF16Ptr("SysListView32"),
 		nil,
-		win.WS_CHILD|win.WS_CLIPSIBLINGS|win.WS_TABSTOP|win.WS_VISIBLE|win.LVS_OWNERDATA|win.LVS_REPORT|style,
+		win.WS_CHILD|win.WS_CLIPSIBLINGS|win.WS_TABSTOP|win.WS_VISIBLE|win.LVS_OWNERDATA|win.LVS_REPORT|cfg.Style|rowHeightStyle,
 		win.CW_USEDEFAULT,
 		win.CW_USEDEFAULT,
 		win.CW_USEDEFAULT,
@@ -138,20 +165,26 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 		0,
 		0,
 		nil,
-	); tv.hwndFrozen == 0 {
+	); tv.hwndFrozenLV == 0 {
 		return nil, newErr("creating frozen lv failed")
 	}
 
-	tv.frozenLVOrigWndProcPtr = win.SetWindowLongPtr(tv.hwndFrozen, win.GWLP_WNDPROC, tableViewFrozenLVWndProcPtr)
+	tv.frozenLVOrigWndProcPtr = win.SetWindowLongPtr(tv.hwndFrozenLV, win.GWLP_WNDPROC, tableViewFrozenLVWndProcPtr)
 	if tv.frozenLVOrigWndProcPtr == 0 {
 		return nil, lastError("SetWindowLongPtr")
 	}
 
-	if tv.hwndNormal = win.CreateWindowEx(
+	tv.hwndFrozenHdr = win.HWND(win.SendMessage(tv.hwndFrozenLV, win.LVM_GETHEADER, 0, 0))
+	tv.frozenHdrOrigWndProcPtr = win.SetWindowLongPtr(tv.hwndFrozenHdr, win.GWLP_WNDPROC, tableViewHdrWndProcPtr)
+	if tv.frozenHdrOrigWndProcPtr == 0 {
+		return nil, lastError("SetWindowLongPtr")
+	}
+
+	if tv.hwndNormalLV = win.CreateWindowEx(
 		0,
 		syscall.StringToUTF16Ptr("SysListView32"),
 		nil,
-		win.WS_CHILD|win.WS_CLIPSIBLINGS|win.WS_TABSTOP|win.WS_VISIBLE|win.LVS_OWNERDATA|win.LVS_REPORT|style,
+		win.WS_CHILD|win.WS_CLIPSIBLINGS|win.WS_TABSTOP|win.WS_VISIBLE|win.LVS_OWNERDATA|win.LVS_REPORT|cfg.Style|rowHeightStyle,
 		win.CW_USEDEFAULT,
 		win.CW_USEDEFAULT,
 		win.CW_USEDEFAULT,
@@ -160,31 +193,37 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 		0,
 		0,
 		nil,
-	); tv.hwndNormal == 0 {
+	); tv.hwndNormalLV == 0 {
 		return nil, newErr("creating normal lv failed")
 	}
 
-	tv.normalLVOrigWndProcPtr = win.SetWindowLongPtr(tv.hwndNormal, win.GWLP_WNDPROC, tableViewNormalLVWndProcPtr)
+	tv.normalLVOrigWndProcPtr = win.SetWindowLongPtr(tv.hwndNormalLV, win.GWLP_WNDPROC, tableViewNormalLVWndProcPtr)
 	if tv.normalLVOrigWndProcPtr == 0 {
+		return nil, lastError("SetWindowLongPtr")
+	}
+
+	tv.hwndNormalHdr = win.HWND(win.SendMessage(tv.hwndNormalLV, win.LVM_GETHEADER, 0, 0))
+	tv.normalHdrOrigWndProcPtr = win.SetWindowLongPtr(tv.hwndNormalHdr, win.GWLP_WNDPROC, tableViewHdrWndProcPtr)
+	if tv.normalHdrOrigWndProcPtr == 0 {
 		return nil, lastError("SetWindowLongPtr")
 	}
 
 	tv.SetPersistent(true)
 
-	exStyle := win.SendMessage(tv.hwndFrozen, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	exStyle := win.SendMessage(tv.hwndFrozenLV, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	exStyle |= win.LVS_EX_DOUBLEBUFFER | win.LVS_EX_FULLROWSELECT | win.LVS_EX_HEADERDRAGDROP | win.LVS_EX_LABELTIP | win.LVS_EX_SUBITEMIMAGES
-	win.SendMessage(tv.hwndFrozen, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
-	win.SendMessage(tv.hwndNormal, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	win.SendMessage(tv.hwndFrozenLV, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	win.SendMessage(tv.hwndNormalLV, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 
-	if hr := win.SetWindowTheme(tv.hwndFrozen, syscall.StringToUTF16Ptr("Explorer"), nil); win.FAILED(hr) {
+	if hr := win.SetWindowTheme(tv.hwndFrozenLV, syscall.StringToUTF16Ptr("Explorer"), nil); win.FAILED(hr) {
 		return nil, errorFromHRESULT("SetWindowTheme", hr)
 	}
-	if hr := win.SetWindowTheme(tv.hwndNormal, syscall.StringToUTF16Ptr("Explorer"), nil); win.FAILED(hr) {
+	if hr := win.SetWindowTheme(tv.hwndNormalLV, syscall.StringToUTF16Ptr("Explorer"), nil); win.FAILED(hr) {
 		return nil, errorFromHRESULT("SetWindowTheme", hr)
 	}
 
-	win.SendMessage(tv.hwndFrozen, win.WM_CHANGEUISTATE, uintptr(win.MAKELONG(win.UIS_SET, win.UISF_HIDEFOCUS)), 0)
-	win.SendMessage(tv.hwndNormal, win.WM_CHANGEUISTATE, uintptr(win.MAKELONG(win.UIS_SET, win.UISF_HIDEFOCUS)), 0)
+	win.SendMessage(tv.hwndFrozenLV, win.WM_CHANGEUISTATE, uintptr(win.MAKELONG(win.UIS_SET, win.UISF_HIDEFOCUS)), 0)
+	win.SendMessage(tv.hwndNormalLV, win.WM_CHANGEUISTATE, uintptr(win.MAKELONG(win.UIS_SET, win.UISF_HIDEFOCUS)), 0)
 
 	tv.currentIndex = -1
 
@@ -264,14 +303,14 @@ func (tv *TableView) Dispose() {
 		}
 	}
 
-	if tv.hwndFrozen != 0 {
-		win.DestroyWindow(tv.hwndFrozen)
-		tv.hwndFrozen = 0
+	if tv.hwndFrozenLV != 0 {
+		win.DestroyWindow(tv.hwndFrozenLV)
+		tv.hwndFrozenLV = 0
 	}
 
-	if tv.hwndNormal != 0 {
-		win.DestroyWindow(tv.hwndNormal)
-		tv.hwndNormal = 0
+	if tv.hwndNormalLV != 0 {
+		win.DestroyWindow(tv.hwndNormalLV)
+		tv.hwndNormalLV = 0
 	}
 
 	if tv.formActivatingHandle > -1 {
@@ -304,8 +343,8 @@ func (tv *TableView) SizeHint() Size {
 func (tv *TableView) applyEnabled(enabled bool) {
 	tv.WidgetBase.applyEnabled(enabled)
 
-	win.EnableWindow(tv.hwndFrozen, enabled)
-	win.EnableWindow(tv.hwndNormal, enabled)
+	win.EnableWindow(tv.hwndFrozenLV, enabled)
+	win.EnableWindow(tv.hwndNormalLV, enabled)
 }
 
 func (tv *TableView) applyFont(font *Font) {
@@ -313,28 +352,28 @@ func (tv *TableView) applyFont(font *Font) {
 
 	hFont := uintptr(font.handleForDPI(0))
 
-	win.SendMessage(tv.hwndFrozen, win.WM_SETFONT, hFont, 0)
-	win.SendMessage(tv.hwndNormal, win.WM_SETFONT, hFont, 0)
+	win.SendMessage(tv.hwndFrozenLV, win.WM_SETFONT, hFont, 0)
+	win.SendMessage(tv.hwndNormalLV, win.WM_SETFONT, hFont, 0)
 }
 
 // ColumnsOrderable returns if the user can reorder columns by dragging and
 // dropping column headers.
 func (tv *TableView) ColumnsOrderable() bool {
-	exStyle := win.SendMessage(tv.hwndNormal, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	exStyle := win.SendMessage(tv.hwndNormalLV, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	return exStyle&win.LVS_EX_HEADERDRAGDROP > 0
 }
 
 // SetColumnsOrderable sets if the user can reorder columns by dragging and
 // dropping column headers.
 func (tv *TableView) SetColumnsOrderable(enabled bool) {
-	exStyle := win.SendMessage(tv.hwndNormal, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	exStyle := win.SendMessage(tv.hwndNormalLV, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
 	if enabled {
 		exStyle |= win.LVS_EX_HEADERDRAGDROP
 	} else {
 		exStyle &^= win.LVS_EX_HEADERDRAGDROP
 	}
-	win.SendMessage(tv.hwndFrozen, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
-	win.SendMessage(tv.hwndNormal, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	win.SendMessage(tv.hwndFrozenLV, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	win.SendMessage(tv.hwndNormalLV, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 
 	tv.columnsOrderableChangedPublisher.Publish()
 }
@@ -342,9 +381,7 @@ func (tv *TableView) SetColumnsOrderable(enabled bool) {
 // ColumnsSizable returns if the user can change column widths by dragging
 // dividers in the header.
 func (tv *TableView) ColumnsSizable() bool {
-	headerHWnd := win.HWND(win.SendMessage(tv.hwndNormal, win.LVM_GETHEADER, 0, 0))
-
-	style := win.GetWindowLong(headerHWnd, win.GWL_STYLE)
+	style := win.GetWindowLong(tv.hwndNormalHdr, win.GWL_STYLE)
 
 	return style&win.HDS_NOSIZING == 0
 }
@@ -352,9 +389,7 @@ func (tv *TableView) ColumnsSizable() bool {
 // SetColumnsSizable sets if the user can change column widths by dragging
 // dividers in the header.
 func (tv *TableView) SetColumnsSizable(b bool) error {
-	updateStyle := func(hwnd win.HWND) error {
-		headerHWnd := win.HWND(win.SendMessage(hwnd, win.LVM_GETHEADER, 0, 0))
-
+	updateStyle := func(headerHWnd win.HWND) error {
 		style := win.GetWindowLong(headerHWnd, win.GWL_STYLE)
 
 		if b {
@@ -370,10 +405,10 @@ func (tv *TableView) SetColumnsSizable(b bool) error {
 		return nil
 	}
 
-	if err := updateStyle(tv.hwndFrozen); err != nil {
+	if err := updateStyle(tv.hwndFrozenHdr); err != nil {
 		return err
 	}
-	if err := updateStyle(tv.hwndNormal); err != nil {
+	if err := updateStyle(tv.hwndNormalHdr); err != nil {
 		return err
 	}
 
@@ -382,9 +417,15 @@ func (tv *TableView) SetColumnsSizable(b bool) error {
 	return nil
 }
 
+// SortableByHeaderClick returns if the user can change sorting by clicking the header.
+func (tv *TableView) SortableByHeaderClick() bool {
+	return !hasWindowLongBits(tv.hwndFrozenLV, win.GWL_STYLE, win.LVS_NOSORTHEADER) ||
+		!hasWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.LVS_NOSORTHEADER)
+}
+
 // HeaderHidden returns whether the column header is hidden.
 func (tv *TableView) HeaderHidden() bool {
-	style := win.GetWindowLong(tv.hwndNormal, win.GWL_STYLE)
+	style := win.GetWindowLong(tv.hwndNormalLV, win.GWL_STYLE)
 
 	return style&win.LVS_NOCOLUMNHEADER != 0
 }
@@ -407,17 +448,11 @@ func (tv *TableView) SetHeaderHidden(hidden bool) error {
 		return nil
 	}
 
-	if err := updateStyle(tv.hwndFrozen); err != nil {
+	if err := updateStyle(tv.hwndFrozenLV); err != nil {
 		return err
 	}
 
-	return updateStyle(tv.hwndNormal)
-}
-
-// SortableByHeaderClick returns if the user can change sorting by clicking the header.
-func (tv *TableView) SortableByHeaderClick() bool {
-	return !hasWindowLongBits(tv.hwndFrozen, win.GWL_STYLE, win.LVS_NOSORTHEADER) ||
-		!hasWindowLongBits(tv.hwndNormal, win.GWL_STYLE, win.LVS_NOSORTHEADER)
+	return updateStyle(tv.hwndNormalLV)
 }
 
 // AlternatingRowBGColor returns the alternating row background color.
@@ -449,13 +484,13 @@ func (tv *TableView) VisibleColumnsInDisplayOrder() []*TableViewColumn {
 	normalCount := len(visibleCols) - frozenCount
 
 	if frozenCount > 0 {
-		if win.FALSE == win.SendMessage(tv.hwndFrozen, win.LVM_GETCOLUMNORDERARRAY, uintptr(frozenCount), uintptr(unsafe.Pointer(&indices[0]))) {
+		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_GETCOLUMNORDERARRAY, uintptr(frozenCount), uintptr(unsafe.Pointer(&indices[0]))) {
 			newError("LVM_GETCOLUMNORDERARRAY")
 			return nil
 		}
 	}
 	if normalCount > 0 {
-		if win.FALSE == win.SendMessage(tv.hwndNormal, win.LVM_GETCOLUMNORDERARRAY, uintptr(normalCount), uintptr(unsafe.Pointer(&indices[frozenCount]))) {
+		if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_GETCOLUMNORDERARRAY, uintptr(normalCount), uintptr(unsafe.Pointer(&indices[frozenCount]))) {
 			newError("LVM_GETCOLUMNORDERARRAY")
 			return nil
 		}
@@ -475,12 +510,12 @@ func (tv *TableView) VisibleColumnsInDisplayOrder() []*TableViewColumn {
 
 // RowsPerPage returns the number of fully visible rows.
 func (tv *TableView) RowsPerPage() int {
-	return int(win.SendMessage(tv.hwndNormal, win.LVM_GETCOUNTPERPAGE, 0, 0))
+	return int(win.SendMessage(tv.hwndNormalLV, win.LVM_GETCOUNTPERPAGE, 0, 0))
 }
 
 func (tv *TableView) Invalidate() error {
-	win.InvalidateRect(tv.hwndFrozen, nil, true)
-	win.InvalidateRect(tv.hwndNormal, nil, true)
+	win.InvalidateRect(tv.hwndFrozenLV, nil, true)
+	win.InvalidateRect(tv.hwndNormalLV, nil, true)
 
 	return tv.WidgetBase.Invalidate()
 }
@@ -496,10 +531,10 @@ func (tv *TableView) UpdateItem(index int) error {
 
 		return tv.Invalidate()
 	} else {
-		if win.FALSE == win.SendMessage(tv.hwndFrozen, win.LVM_UPDATE, uintptr(index), 0) {
+		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_UPDATE, uintptr(index), 0) {
 			return newError("LVM_UPDATE")
 		}
-		if win.FALSE == win.SendMessage(tv.hwndNormal, win.LVM_UPDATE, uintptr(index), 0) {
+		if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_UPDATE, uintptr(index), 0) {
 			return newError("LVM_UPDATE")
 		}
 	}
@@ -670,10 +705,10 @@ func (tv *TableView) setItemCount() error {
 		count = tv.model.RowCount()
 	}
 
-	if 0 == win.SendMessage(tv.hwndFrozen, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOSCROLL) {
+	if 0 == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOSCROLL) {
 		return newError("SendMessage(LVM_SETITEMCOUNT)")
 	}
-	if 0 == win.SendMessage(tv.hwndNormal, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOSCROLL) {
+	if 0 == win.SendMessage(tv.hwndNormalLV, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOSCROLL) {
 		return newError("SendMessage(LVM_SETITEMCOUNT)")
 	}
 
@@ -684,9 +719,9 @@ func (tv *TableView) setItemCount() error {
 func (tv *TableView) CheckBoxes() bool {
 	var hwnd win.HWND
 	if tv.hasFrozenColumn {
-		hwnd = tv.hwndFrozen
+		hwnd = tv.hwndFrozenLV
 	} else {
-		hwnd = tv.hwndNormal
+		hwnd = tv.hwndNormalLV
 	}
 
 	return win.SendMessage(hwnd, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)&win.LVS_EX_CHECKBOXES > 0
@@ -696,9 +731,9 @@ func (tv *TableView) CheckBoxes() bool {
 func (tv *TableView) SetCheckBoxes(checkBoxes bool) {
 	var hwnd, hwndOther win.HWND
 	if tv.hasFrozenColumn {
-		hwnd, hwndOther = tv.hwndFrozen, tv.hwndNormal
+		hwnd, hwndOther = tv.hwndFrozenLV, tv.hwndNormalLV
 	} else {
-		hwnd, hwndOther = tv.hwndNormal, tv.hwndFrozen
+		hwnd, hwndOther = tv.hwndNormalLV, tv.hwndFrozenLV
 	}
 
 	exStyle := win.SendMessage(hwnd, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
@@ -804,9 +839,6 @@ func (tv *TableView) visibleColumns() []*TableViewColumn {
 // }
 
 func (tv *TableView) setSortIcon(index int, order SortOrder) error {
-	frozenHeaderHwnd := win.HWND(win.SendMessage(tv.hwndFrozen, win.LVM_GETHEADER, 0, 0))
-	normalHeaderHwnd := win.HWND(win.SendMessage(tv.hwndNormal, win.LVM_GETHEADER, 0, 0))
-
 	idx := int(tv.toLVColIdx(index))
 
 	frozenCount := tv.visibleFrozenColumnCount()
@@ -819,9 +851,9 @@ func (tv *TableView) setSortIcon(index int, order SortOrder) error {
 		var headerHwnd win.HWND
 		var offset int
 		if col.frozen {
-			headerHwnd = frozenHeaderHwnd
+			headerHwnd = tv.hwndFrozenHdr
 		} else {
-			headerHwnd = normalHeaderHwnd
+			headerHwnd = tv.hwndNormalHdr
 			offset = -frozenCount
 		}
 
@@ -892,10 +924,10 @@ func (tv *TableView) SetCurrentIndex(index int) error {
 	lvi.StateMask = win.LVIS_FOCUSED | win.LVIS_SELECTED
 
 	if tv.MultiSelection() {
-		if win.FALSE == win.SendMessage(tv.hwndFrozen, win.LVM_SETITEMSTATE, ^uintptr(0), uintptr(unsafe.Pointer(&lvi))) {
+		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETITEMSTATE, ^uintptr(0), uintptr(unsafe.Pointer(&lvi))) {
 			return newError("SendMessage(LVM_SETITEMSTATE)")
 		}
-		if win.FALSE == win.SendMessage(tv.hwndNormal, win.LVM_SETITEMSTATE, ^uintptr(0), uintptr(unsafe.Pointer(&lvi))) {
+		if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_SETITEMSTATE, ^uintptr(0), uintptr(unsafe.Pointer(&lvi))) {
 			return newError("SendMessage(LVM_SETITEMSTATE)")
 		}
 	}
@@ -904,26 +936,26 @@ func (tv *TableView) SetCurrentIndex(index int) error {
 		lvi.State = win.LVIS_FOCUSED | win.LVIS_SELECTED
 	}
 
-	if win.FALSE == win.SendMessage(tv.hwndFrozen, win.LVM_SETITEMSTATE, uintptr(index), uintptr(unsafe.Pointer(&lvi))) {
+	if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETITEMSTATE, uintptr(index), uintptr(unsafe.Pointer(&lvi))) {
 		return newError("SendMessage(LVM_SETITEMSTATE)")
 	}
-	if win.FALSE == win.SendMessage(tv.hwndNormal, win.LVM_SETITEMSTATE, uintptr(index), uintptr(unsafe.Pointer(&lvi))) {
+	if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_SETITEMSTATE, uintptr(index), uintptr(unsafe.Pointer(&lvi))) {
 		return newError("SendMessage(LVM_SETITEMSTATE)")
 	}
 
 	if index != -1 {
-		if win.FALSE == win.SendMessage(tv.hwndFrozen, win.LVM_ENSUREVISIBLE, uintptr(index), uintptr(0)) {
+		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_ENSUREVISIBLE, uintptr(index), uintptr(0)) {
 			return newError("SendMessage(LVM_ENSUREVISIBLE)")
 		}
 		// Windows bug? Sometimes a second LVM_ENSUREVISIBLE is required.
-		if win.FALSE == win.SendMessage(tv.hwndFrozen, win.LVM_ENSUREVISIBLE, uintptr(index), uintptr(0)) {
+		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_ENSUREVISIBLE, uintptr(index), uintptr(0)) {
 			return newError("SendMessage(LVM_ENSUREVISIBLE)")
 		}
-		if win.FALSE == win.SendMessage(tv.hwndNormal, win.LVM_ENSUREVISIBLE, uintptr(index), uintptr(0)) {
+		if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_ENSUREVISIBLE, uintptr(index), uintptr(0)) {
 			return newError("SendMessage(LVM_ENSUREVISIBLE)")
 		}
 		// Windows bug? Sometimes a second LVM_ENSUREVISIBLE is required.
-		if win.FALSE == win.SendMessage(tv.hwndNormal, win.LVM_ENSUREVISIBLE, uintptr(index), uintptr(0)) {
+		if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_ENSUREVISIBLE, uintptr(index), uintptr(0)) {
 			return newError("SendMessage(LVM_ENSUREVISIBLE)")
 		}
 	}
@@ -951,7 +983,7 @@ func (tv *TableView) CurrentIndexChanged() *Event {
 //
 // By default only a single item can be selected at once.
 func (tv *TableView) MultiSelection() bool {
-	style := uint(win.GetWindowLong(tv.hwndNormal, win.GWL_STYLE))
+	style := uint(win.GetWindowLong(tv.hwndNormalLV, win.GWL_STYLE))
 	if style == 0 {
 		lastError("GetWindowLong")
 		return false
@@ -962,11 +994,11 @@ func (tv *TableView) MultiSelection() bool {
 
 // SetMultiSelection sets whether multiple items can be selected at once.
 func (tv *TableView) SetMultiSelection(multiSel bool) error {
-	if err := ensureWindowLongBits(tv.hwndFrozen, win.GWL_STYLE, win.LVS_SINGLESEL, !multiSel); err != nil {
+	if err := ensureWindowLongBits(tv.hwndFrozenLV, win.GWL_STYLE, win.LVS_SINGLESEL, !multiSel); err != nil {
 		return err
 	}
 
-	return ensureWindowLongBits(tv.hwndNormal, win.GWL_STYLE, win.LVS_SINGLESEL, !multiSel)
+	return ensureWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.LVS_SINGLESEL, !multiSel)
 }
 
 // SelectedIndexes returns the indexes of the currently selected items.
@@ -991,19 +1023,19 @@ func (tv *TableView) SetSelectedIndexes(indexes []int) error {
 	lvi := &win.LVITEM{StateMask: win.LVIS_FOCUSED | win.LVIS_SELECTED}
 	lp := uintptr(unsafe.Pointer(lvi))
 
-	if win.FALSE == win.SendMessage(tv.hwndFrozen, win.LVM_SETITEMSTATE, ^uintptr(0), lp) {
+	if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETITEMSTATE, ^uintptr(0), lp) {
 		return newError("SendMessage(LVM_SETITEMSTATE)")
 	}
-	if win.FALSE == win.SendMessage(tv.hwndNormal, win.LVM_SETITEMSTATE, ^uintptr(0), lp) {
+	if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_SETITEMSTATE, ^uintptr(0), lp) {
 		return newError("SendMessage(LVM_SETITEMSTATE)")
 	}
 
 	lvi.State = win.LVIS_FOCUSED | win.LVIS_SELECTED
 	for _, i := range indexes {
-		if win.FALSE == win.SendMessage(tv.hwndFrozen, win.LVM_SETITEMSTATE, uintptr(i), lp) {
+		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETITEMSTATE, uintptr(i), lp) {
 			return newError("SendMessage(LVM_SETITEMSTATE)")
 		}
-		if win.FALSE == win.SendMessage(tv.hwndNormal, win.LVM_SETITEMSTATE, uintptr(i), lp) {
+		if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_SETITEMSTATE, uintptr(i), lp) {
 			return newError("SendMessage(LVM_SETITEMSTATE)")
 		}
 	}
@@ -1020,12 +1052,12 @@ func (tv *TableView) SetSelectedIndexes(indexes []int) error {
 }
 
 func (tv *TableView) updateSelectedIndexes() {
-	count := int(win.SendMessage(tv.hwndNormal, win.LVM_GETSELECTEDCOUNT, 0, 0))
+	count := int(win.SendMessage(tv.hwndNormalLV, win.LVM_GETSELECTEDCOUNT, 0, 0))
 	indexes := make([]int, count)
 
 	j := -1
 	for i := 0; i < count; i++ {
-		j = int(win.SendMessage(tv.hwndNormal, win.LVM_GETNEXTITEM, uintptr(j), win.LVNI_SELECTED))
+		j = int(win.SendMessage(tv.hwndNormalLV, win.LVM_GETNEXTITEM, uintptr(j), win.LVNI_SELECTED))
 		indexes[i] = j
 	}
 
@@ -1119,7 +1151,7 @@ func (tv *TableView) StretchLastColumn() error {
 		return nil
 	}
 
-	if 0 == win.SendMessage(tv.hwndNormal, win.LVM_SETCOLUMNWIDTH, uintptr(colCount-1), win.LVSCW_AUTOSIZE_USEHEADER) {
+	if 0 == win.SendMessage(tv.hwndNormalLV, win.LVM_SETCOLUMNWIDTH, uintptr(colCount-1), win.LVSCW_AUTOSIZE_USEHEADER) {
 		return newError("LVM_SETCOLUMNWIDTH failed")
 	}
 
@@ -1182,14 +1214,14 @@ func (tv *TableView) SaveState() error {
 	if frozenCount > 0 {
 		lp = uintptr(unsafe.Pointer(&indices[0]))
 
-		if 0 == win.SendMessage(tv.hwndFrozen, win.LVM_GETCOLUMNORDERARRAY, uintptr(frozenCount), lp) {
+		if 0 == win.SendMessage(tv.hwndFrozenLV, win.LVM_GETCOLUMNORDERARRAY, uintptr(frozenCount), lp) {
 			return newError("LVM_GETCOLUMNORDERARRAY")
 		}
 	}
 	if normalCount > 0 {
 		lp = uintptr(unsafe.Pointer(&indices[frozenCount]))
 
-		if 0 == win.SendMessage(tv.hwndNormal, win.LVM_GETCOLUMNORDERARRAY, uintptr(normalCount), lp) {
+		if 0 == win.SendMessage(tv.hwndNormalLV, win.LVM_GETCOLUMNORDERARRAY, uintptr(normalCount), lp) {
 			return newError("LVM_GETCOLUMNORDERARRAY")
 		}
 	}
@@ -1301,14 +1333,14 @@ func (tv *TableView) RestoreState() error {
 	if frozenCount > 0 {
 		lp = uintptr(unsafe.Pointer(&indices[0]))
 
-		if 0 == win.SendMessage(tv.hwndFrozen, win.LVM_SETCOLUMNORDERARRAY, uintptr(frozenCount), lp) {
+		if 0 == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETCOLUMNORDERARRAY, uintptr(frozenCount), lp) {
 			return newError("LVM_SETCOLUMNORDERARRAY")
 		}
 	}
 	if normalCount > 0 {
 		lp = uintptr(unsafe.Pointer(&indices[frozenCount]))
 
-		if 0 == win.SendMessage(tv.hwndNormal, win.LVM_SETCOLUMNORDERARRAY, uintptr(normalCount), lp) {
+		if 0 == win.SendMessage(tv.hwndNormalLV, win.LVM_SETCOLUMNORDERARRAY, uintptr(normalCount), lp) {
 			return newError("LVM_SETCOLUMNORDERARRAY")
 		}
 	}
@@ -1343,10 +1375,10 @@ func (tv *TableView) toggleItemChecked(index int) error {
 		return wrapError(err)
 	}
 
-	if win.FALSE == win.SendMessage(tv.hwndFrozen, win.LVM_UPDATE, uintptr(index), 0) {
+	if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_UPDATE, uintptr(index), 0) {
 		return newError("SendMessage(LVM_UPDATE)")
 	}
-	if win.FALSE == win.SendMessage(tv.hwndNormal, win.LVM_UPDATE, uintptr(index), 0) {
+	if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_UPDATE, uintptr(index), 0) {
 		return newError("SendMessage(LVM_UPDATE)")
 	}
 
@@ -1365,9 +1397,9 @@ func (tv *TableView) applyImageListForImage(image interface{}) {
 func (tv *TableView) applyImageList() {
 	var hwnd, hwndOther win.HWND
 	if tv.hasFrozenColumn {
-		hwnd, hwndOther = tv.hwndFrozen, tv.hwndNormal
+		hwnd, hwndOther = tv.hwndFrozenLV, tv.hwndNormalLV
 	} else {
-		hwnd, hwndOther = tv.hwndNormal, tv.hwndFrozen
+		hwnd, hwndOther = tv.hwndNormalLV, tv.hwndFrozenLV
 	}
 
 	win.SendMessage(hwnd, win.LVM_SETIMAGELIST, win.LVSIL_SMALL, uintptr(tv.hIml))
@@ -1376,8 +1408,8 @@ func (tv *TableView) applyImageList() {
 
 func (tv *TableView) disposeImageListAndCaches() {
 	if tv.hIml != 0 && !tv.usingSysIml {
-		win.SendMessage(tv.hwndFrozen, win.LVM_SETIMAGELIST, win.LVSIL_SMALL, 0)
-		win.SendMessage(tv.hwndNormal, win.LVM_SETIMAGELIST, win.LVSIL_SMALL, 0)
+		win.SendMessage(tv.hwndFrozenLV, win.LVM_SETIMAGELIST, win.LVSIL_SMALL, 0)
+		win.SendMessage(tv.hwndNormalLV, win.LVM_SETIMAGELIST, win.LVSIL_SMALL, 0)
 
 		win.ImageList_Destroy(tv.hIml)
 	}
@@ -1397,10 +1429,10 @@ func tableViewFrozenLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr
 
 	switch msg {
 	case win.WM_SETFOCUS:
-		win.SetFocus(tv.hwndNormal)
+		win.SetFocus(tv.hwndNormalLV)
 
 	case win.WM_MOUSEWHEEL:
-		tableViewNormalLVWndProc(tv.hwndNormal, msg, wp, lp)
+		tableViewNormalLVWndProc(tv.hwndNormalLV, msg, wp, lp)
 	}
 
 	return tv.lvWndProc(tv.frozenLVOrigWndProcPtr, hwnd, msg, wp, lp)
@@ -1414,13 +1446,13 @@ func tableViewNormalLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr
 
 	switch msg {
 	case win.WM_LBUTTONDOWN, win.WM_RBUTTONDOWN:
-		win.SetFocus(tv.hwndFrozen)
+		win.SetFocus(tv.hwndFrozenLV)
 
 	case win.WM_SETFOCUS:
 		tv.WndProc(tv.hWnd, msg, wp, lp)
 
 	case win.WM_KILLFOCUS:
-		win.SendMessage(tv.hwndFrozen, msg, wp, lp)
+		win.SendMessage(tv.hwndFrozenLV, msg, wp, lp)
 		tv.WndProc(tv.hWnd, msg, wp, lp)
 	}
 
@@ -1429,10 +1461,10 @@ func tableViewNormalLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr
 
 func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 	var hwndOther win.HWND
-	if hwnd == tv.hwndFrozen {
-		hwndOther = tv.hwndNormal
+	if hwnd == tv.hwndFrozenLV {
+		hwndOther = tv.hwndNormalLV
 	} else {
-		hwndOther = tv.hwndFrozen
+		hwndOther = tv.hwndFrozenLV
 	}
 
 	switch msg {
@@ -1466,7 +1498,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 					}
 				} else {
 					// We keep the current item, if in single item selection mode without check boxes.
-					win.SetFocus(tv.hwndFrozen)
+					win.SetFocus(tv.hwndFrozenLV)
 					return 0
 				}
 			}
@@ -1514,12 +1546,20 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 		}
 
 	case win.WM_NOTIFY:
-		switch ((*win.NMHDR)(unsafe.Pointer(lp))).Code {
+		nmh := ((*win.NMHDR)(unsafe.Pointer(lp)))
+		switch nmh.HwndFrom {
+		case tv.hwndFrozenHdr, tv.hwndNormalHdr:
+			if nmh.Code == win.NM_CUSTOMDRAW {
+				return tableViewHdrWndProc(nmh.HwndFrom, msg, wp, lp)
+			}
+		}
+
+		switch nmh.Code {
 		case win.LVN_GETDISPINFO:
 			di := (*win.NMLVDISPINFO)(unsafe.Pointer(lp))
 
 			row := int(di.Item.IItem)
-			col := tv.fromLVColIdx(hwnd == tv.hwndFrozen, di.Item.ISubItem)
+			col := tv.fromLVColIdx(hwnd == tv.hwndFrozenLV, di.Item.ISubItem)
 			if col == -1 {
 				break
 			}
@@ -1620,7 +1660,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 
 			if nmlvcd.IIconPhase == 0 {
 				row := int(nmlvcd.Nmcd.DwItemSpec)
-				col := tv.fromLVColIdx(hwnd == tv.hwndFrozen, nmlvcd.ISubItem)
+				col := tv.fromLVColIdx(hwnd == tv.hwndFrozenLV, nmlvcd.ISubItem)
 				if col == -1 {
 					break
 				}
@@ -1646,11 +1686,13 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 
 						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc)
 						tv.style.hdc = 0
-						tv.style.TextColor = RGB(0, 0, 0)
+						tv.style.TextColor = Color(nmlvcd.ClrText)
 						tv.style.Font = nil
 						tv.style.Image = nil
 
 						tv.styler.StyleCell(&tv.style)
+
+						tv.itemFont = tv.style.Font
 					}
 
 					if tv.style.BackgroundColor != defaultTVRowBGColor {
@@ -1662,11 +1704,18 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						}
 					}
 
+					nmlvcd.ClrText = win.COLORREF(tv.style.TextColor)
 					nmlvcd.ClrTextBk = win.COLORREF(tv.style.BackgroundColor)
 
 					return win.CDRF_NOTIFYSUBITEMDRAW
 
 				case win.CDDS_ITEMPREPAINT | win.CDDS_SUBITEM:
+					if tv.itemFont != nil {
+						win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(tv.itemFont.handleForDPI(0)))
+					}
+					return win.CDRF_NEWFONT | win.CDRF_SKIPPOSTPAINT | win.CDRF_NOTIFYPOSTPAINT
+
+				case win.CDDS_ITEMPOSTPAINT | win.CDDS_SUBITEM:
 					if tv.styler != nil {
 						tv.style.row = row
 						tv.style.col = col
@@ -1681,7 +1730,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 
 						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc)
 						tv.style.hdc = nmlvcd.Nmcd.Hdc
-						tv.style.TextColor = RGB(0, 0, 0)
+						tv.style.TextColor = Color(nmlvcd.ClrText)
 						tv.style.Font = nil
 						tv.style.Image = nil
 
@@ -1734,7 +1783,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 		case win.LVN_COLUMNCLICK:
 			nmlv := (*win.NMLISTVIEW)(unsafe.Pointer(lp))
 
-			col := tv.fromLVColIdx(hwnd == tv.hwndFrozen, nmlv.ISubItem)
+			col := tv.fromLVColIdx(hwnd == tv.hwndFrozenLV, nmlv.ISubItem)
 
 			if sorter, ok := tv.model.(Sorter); ok && sorter.ColumnSortable(col) {
 				prevCol := sorter.SortedColumn()
@@ -1820,15 +1869,91 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 	return win.CallWindowProc(origWndProcPtr, hwnd, msg, wp, lp)
 }
 
+func tableViewHdrWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
+	tv, ok := windowFromHandle(win.GetParent(win.GetParent(hwnd))).(*TableView)
+	if !ok {
+		return 0
+	}
+
+	var origWndProcPtr uintptr
+	if hwnd == tv.hwndFrozenHdr {
+		origWndProcPtr = tv.frozenHdrOrigWndProcPtr
+	} else {
+		origWndProcPtr = tv.normalHdrOrigWndProcPtr
+	}
+
+	switch msg {
+	case win.WM_NOTIFY:
+		switch ((*win.NMHDR)(unsafe.Pointer(lp))).Code {
+		case win.NM_CUSTOMDRAW:
+			if tv.customHeaderHeight == 0 {
+				break
+			}
+
+			nmcd := (*win.NMCUSTOMDRAW)(unsafe.Pointer(lp))
+
+			switch nmcd.DwDrawStage {
+			case win.CDDS_PREPAINT:
+				return win.CDRF_NOTIFYITEMDRAW
+
+			case win.CDDS_ITEMPREPAINT:
+				return win.CDRF_NOTIFYPOSTPAINT
+
+			case win.CDDS_ITEMPOSTPAINT:
+				col := tv.fromLVColIdx(hwnd == tv.hwndFrozenHdr, int32(nmcd.DwItemSpec))
+				if tv.styler != nil && col > -1 {
+					tv.style.row = -1
+					tv.style.col = col
+
+					tv.style.bounds = rectangleFromRECT(nmcd.Rc)
+					tv.style.hdc = nmcd.Hdc
+					tv.style.TextColor = RGB(0, 0, 0)
+					tv.style.Font = nil
+
+					tv.styler.StyleCell(&tv.style)
+
+					defer func() {
+						tv.style.bounds = Rectangle{}
+						if tv.style.canvas != nil {
+							tv.style.canvas.Dispose()
+							tv.style.canvas = nil
+						}
+						tv.style.hdc = 0
+					}()
+				}
+
+				return win.CDRF_DODEFAULT
+			}
+
+			return win.CDRF_DODEFAULT
+		}
+
+	case win.HDM_LAYOUT:
+		if tv.customHeaderHeight == 0 {
+			break
+		}
+
+		result := win.CallWindowProc(origWndProcPtr, hwnd, msg, wp, lp)
+
+		hdl := (*win.HDLAYOUT)(unsafe.Pointer(lp))
+		hdl.Prc.Top = int32(tv.customHeaderHeight)
+		hdl.Pwpos.Cy = int32(tv.customHeaderHeight)
+
+		return result
+	}
+
+	return win.CallWindowProc(origWndProcPtr, hwnd, msg, wp, lp)
+}
+
 func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 	switch msg {
 	case win.WM_NOTIFY:
 		nmh := (*win.NMHDR)(unsafe.Pointer(lp))
 		switch nmh.HwndFrom {
-		case tv.hwndFrozen:
+		case tv.hwndFrozenLV:
 			return tableViewFrozenLVWndProc(nmh.HwndFrom, msg, wp, lp)
 
-		case tv.hwndNormal:
+		case tv.hwndNormalLV:
 			return tableViewNormalLVWndProc(nmh.HwndFrom, msg, wp, lp)
 		}
 
@@ -1836,8 +1961,8 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr 
 		if tv.formActivatingHandle == -1 {
 			if form := tv.Form(); form != nil {
 				tv.formActivatingHandle = form.Activating().Attach(func() {
-					if tv.hwndNormal == win.GetFocus() {
-						win.SetFocus(tv.hwndFrozen)
+					if tv.hwndNormalLV == win.GetFocus() {
+						win.SetFocus(tv.hwndFrozenLV)
 					}
 				})
 			}
@@ -1860,16 +1985,29 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr 
 			tv.selectedIndexesChangedPublisher.Publish()
 		}
 
+	case win.WM_MEASUREITEM:
+		mis := (*win.MEASUREITEMSTRUCT)(unsafe.Pointer(lp))
+		mis.ItemHeight = uint32(tv.customRowHeight)
+
+		ensureWindowLongBits(tv.hwndFrozenLV, win.GWL_STYLE, win.LVS_OWNERDRAWFIXED, false)
+		ensureWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.LVS_OWNERDRAWFIXED, false)
+
 	case win.WM_DESTROY:
 		// As we subclass all windows of system classes, we prevented the
 		// clean-up code in the WM_NCDESTROY handlers of some windows from
 		// being called. To fix this, we restore the original window
 		// procedures here.
+		if tv.frozenHdrOrigWndProcPtr != 0 {
+			win.SetWindowLongPtr(tv.hwndFrozenHdr, win.GWLP_WNDPROC, tv.frozenHdrOrigWndProcPtr)
+		}
 		if tv.frozenLVOrigWndProcPtr != 0 {
-			win.SetWindowLongPtr(tv.hwndFrozen, win.GWLP_WNDPROC, tv.frozenLVOrigWndProcPtr)
+			win.SetWindowLongPtr(tv.hwndFrozenLV, win.GWLP_WNDPROC, tv.frozenLVOrigWndProcPtr)
+		}
+		if tv.normalHdrOrigWndProcPtr != 0 {
+			win.SetWindowLongPtr(tv.hwndNormalHdr, win.GWLP_WNDPROC, tv.normalHdrOrigWndProcPtr)
 		}
 		if tv.normalLVOrigWndProcPtr != 0 {
-			win.SetWindowLongPtr(tv.hwndNormal, win.GWLP_WNDPROC, tv.normalLVOrigWndProcPtr)
+			win.SetWindowLongPtr(tv.hwndNormalLV, win.GWLP_WNDPROC, tv.normalLVOrigWndProcPtr)
 		}
 	}
 
@@ -1886,12 +2024,12 @@ func (tv *TableView) updateLVSizes() {
 		}
 	}
 
-	win.MoveWindow(tv.hwndNormal, int32(width), 0, int32(cb.Width-width), int32(cb.Height), true)
+	win.MoveWindow(tv.hwndNormalLV, int32(width), 0, int32(cb.Width-width), int32(cb.Height), true)
 
 	var sbh int
-	if hasWindowLongBits(tv.hwndNormal, win.GWL_STYLE, win.WS_HSCROLL) {
+	if hasWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.WS_HSCROLL) {
 		sbh = int(win.GetSystemMetrics(win.SM_CYHSCROLL))
 	}
 
-	win.MoveWindow(tv.hwndFrozen, 0, 0, int32(width), int32(cb.Height-sbh), true)
+	win.MoveWindow(tv.hwndFrozenLV, 0, 0, int32(width), int32(cb.Height-sbh), true)
 }
