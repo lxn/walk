@@ -99,7 +99,7 @@ func (*RadioButton) LayoutFlags() LayoutFlags {
 
 func (rb *RadioButton) MinSizeHint() Size {
 	defaultSize := rb.dialogBaseUnitsToPixels(Size{50, 10})
-	textSize := rb.calculateTextSizeImpl("n" + windowText(rb.hWnd))
+	textSize := rb.calculateTextSizeImpl("n" + rb.text())
 
 	// FIXME: Use GetThemePartSize instead of GetSystemMetrics?
 	w := textSize.Width + int(win.GetSystemMetrics(win.SM_CXMENUCHECK))

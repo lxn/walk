@@ -326,11 +326,11 @@ func (fb *FormBase) SetBackground(background Brush) {
 }
 
 func (fb *FormBase) Title() string {
-	return windowText(fb.hWnd)
+	return fb.text()
 }
 
 func (fb *FormBase) SetTitle(value string) error {
-	return setWindowText(fb.hWnd, value)
+	return fb.setText(value)
 }
 
 func (fb *FormBase) TitleChanged() *Event {

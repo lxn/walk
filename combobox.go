@@ -550,11 +550,11 @@ func (cb *ComboBox) CurrentIndexChanged() *Event {
 }
 
 func (cb *ComboBox) Text() string {
-	return windowText(cb.hWnd)
+	return cb.text()
 }
 
 func (cb *ComboBox) SetText(value string) error {
-	if err := setWindowText(cb.hWnd, value); err != nil {
+	if err := cb.setText(value); err != nil {
 		return err
 	}
 

@@ -59,7 +59,7 @@ func (l *Label) SizeHint() Size {
 }
 
 func (l *Label) Text() string {
-	return windowText(l.hWnd)
+	return l.text()
 }
 
 func (l *Label) SetText(value string) error {
@@ -67,7 +67,7 @@ func (l *Label) SetText(value string) error {
 		return nil
 	}
 
-	if err := setWindowText(l.hWnd, value); err != nil {
+	if err := l.setText(value); err != nil {
 		return err
 	}
 

@@ -279,6 +279,12 @@ type Window interface {
 	Y() int
 }
 
+type calcTextSizeInfo struct {
+	font fontInfo
+	text string
+	size Size
+}
+
 // WindowBase implements many operations common to all Windows.
 type WindowBase struct {
 	window                  Window
@@ -313,6 +319,7 @@ type WindowBase struct {
 	visibleChangedPublisher EventPublisher
 	focusedProperty         Property
 	focusedChangedPublisher EventPublisher
+	calcTextSizeInfoPrev    *calcTextSizeInfo
 }
 
 var (
@@ -876,6 +883,23 @@ func (wb *WindowBase) Invalidate() error {
 	return nil
 }
 
+func (wb *WindowBase) text() string {
+	return windowText(wb.hWnd)
+}
+
+func (wb *WindowBase) setText(text string) error {
+	if err := setWindowText(wb.hWnd, text); err != nil {
+		return err
+	}
+
+	if wb.calcTextSizeInfoPrev != nil {
+		wb.calcTextSizeInfoPrev.font.family = ""
+		wb.calcTextSizeInfoPrev.text = text
+	}
+
+	return nil
+}
+
 func windowText(hwnd win.HWND) string {
 	textLength := win.SendMessage(hwnd, win.WM_GETTEXTLENGTH, 0, 0)
 	buf := make([]uint16, textLength+1)
@@ -1071,6 +1095,16 @@ func (wb *WindowBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
 }
 
 func (wb *WindowBase) calculateTextSizeImpl(text string) Size {
+	font := wb.window.Font()
+
+	if wb.calcTextSizeInfoPrev != nil &&
+		font.family == wb.calcTextSizeInfoPrev.font.family &&
+		font.pointSize == wb.calcTextSizeInfoPrev.font.pointSize &&
+		font.style == wb.calcTextSizeInfoPrev.font.style &&
+		text == wb.calcTextSizeInfoPrev.text {
+		return wb.calcTextSizeInfoPrev.size
+	}
+
 	hdc := win.GetDC(wb.hWnd)
 	if hdc == 0 {
 		newError("GetDC failed")
@@ -1078,7 +1112,7 @@ func (wb *WindowBase) calculateTextSizeImpl(text string) Size {
 	}
 	defer win.ReleaseDC(wb.hWnd, hdc)
 
-	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(wb.window.Font().handleForDPI(0)))
+	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(0)))
 	defer win.SelectObject(hdc, hFontOld)
 
 	var size Size
@@ -1097,11 +1131,31 @@ func (wb *WindowBase) calculateTextSizeImpl(text string) Size {
 		size.Height += int(s.CY)
 	}
 
+	if wb.calcTextSizeInfoPrev == nil {
+		wb.calcTextSizeInfoPrev = new(calcTextSizeInfo)
+	}
+
+	wb.calcTextSizeInfoPrev.font.family = font.family
+	wb.calcTextSizeInfoPrev.font.pointSize = font.pointSize
+	wb.calcTextSizeInfoPrev.font.style = font.style
+	wb.calcTextSizeInfoPrev.text = text
+	wb.calcTextSizeInfoPrev.size = size
+
 	return size
 }
 
 func (wb *WindowBase) calculateTextSize() Size {
-	return wb.calculateTextSizeImpl(windowText(wb.hWnd))
+	var text string
+	if wb.calcTextSizeInfoPrev != nil {
+		// setText copied the new text here for us.
+		text = wb.calcTextSizeInfoPrev.text
+	}
+
+	if text == "" {
+		text = wb.text()
+	}
+
+	return wb.calculateTextSizeImpl(text)
 }
 
 // Size returns the outer Size of the *WindowBase, including decorations.
