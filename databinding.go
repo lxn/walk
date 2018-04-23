@@ -33,6 +33,7 @@ type DataBinder struct {
 	autoSubmitDelay           time.Duration
 	autoSubmitTimer           *time.Timer
 	autoSubmit                bool
+	autoSubmitSuspended       bool
 	canSubmit                 bool
 	inReset                   bool
 	dirty                     bool
@@ -59,6 +60,26 @@ func (db *DataBinder) AutoSubmitDelay() time.Duration {
 
 func (db *DataBinder) SetAutoSubmitDelay(delay time.Duration) {
 	db.autoSubmitDelay = delay
+}
+
+func (db *DataBinder) AutoSubmitSuspended() bool {
+	return db.autoSubmitSuspended
+}
+
+func (db *DataBinder) SetAutoSubmitSuspended(suspended bool) {
+	if suspended == db.autoSubmitSuspended {
+		return
+	}
+
+	db.autoSubmitSuspended = suspended
+
+	if suspended {
+		if db.autoSubmitTimer != nil {
+			db.autoSubmitTimer.Stop()
+		}
+	} else {
+		db.Submit()
+	}
 }
 
 func (db *DataBinder) Submitted() *Event {
@@ -111,7 +132,7 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 			db.property2ChangedHandle[prop] = prop.Changed().Attach(func() {
 				db.dirty = true
 
-				if db.autoSubmit {
+				if db.autoSubmit && !db.autoSubmitSuspended {
 					if db.autoSubmitDelay > 0 {
 						if db.autoSubmitTimer == nil {
 							db.autoSubmitTimer = time.AfterFunc(db.autoSubmitDelay, func() {
