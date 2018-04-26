@@ -82,6 +82,10 @@ func (cb ComboBox) Create(builder *Builder) error {
 		return err
 	}
 
+	if cb.AssignTo != nil {
+		*cb.AssignTo = w
+	}
+
 	return builder.InitWidget(cb, w, func() error {
 		w.SetFormat(cb.Format)
 		w.SetPrecision(cb.Precision)
@@ -106,10 +110,6 @@ func (cb ComboBox) Create(builder *Builder) error {
 		}
 		if cb.OnTextChanged != nil {
 			w.TextChanged().Attach(cb.OnTextChanged)
-		}
-
-		if cb.AssignTo != nil {
-			*cb.AssignTo = w
 		}
 
 		return nil

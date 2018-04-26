@@ -58,6 +58,10 @@ func (tw TabWidget) Create(builder *Builder) error {
 		return err
 	}
 
+	if tw.AssignTo != nil {
+		*tw.AssignTo = w
+	}
+
 	return builder.InitWidget(tw, w, func() error {
 		for _, tp := range tw.Pages {
 			var wp *walk.TabPage
@@ -80,10 +84,6 @@ func (tw TabWidget) Create(builder *Builder) error {
 
 		if tw.OnCurrentIndexChanged != nil {
 			w.CurrentIndexChanged().Attach(tw.OnCurrentIndexChanged)
-		}
-
-		if tw.AssignTo != nil {
-			*tw.AssignTo = w
 		}
 
 		return nil

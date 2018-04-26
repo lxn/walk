@@ -100,6 +100,10 @@ func (tv TableView) Create(builder *Builder) error {
 		return err
 	}
 
+	if tv.AssignTo != nil {
+		*tv.AssignTo = w
+	}
+
 	return builder.InitWidget(tv, w, func() error {
 		for i := range tv.Columns {
 			if err := tv.Columns[i].Create(w); err != nil {
@@ -173,10 +177,6 @@ func (tv TableView) Create(builder *Builder) error {
 		}
 		if tv.OnItemActivated != nil {
 			w.ItemActivated().Attach(tv.OnItemActivated)
-		}
-
-		if tv.AssignTo != nil {
-			*tv.AssignTo = w
 		}
 
 		return nil

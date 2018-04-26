@@ -60,6 +60,10 @@ func (s HSplitter) Create(builder *Builder) error {
 		return err
 	}
 
+	if s.AssignTo != nil {
+		*s.AssignTo = w
+	}
+
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
@@ -71,10 +75,6 @@ func (s HSplitter) Create(builder *Builder) error {
 			if err := w.SetHandleWidth(s.HandleWidth); err != nil {
 				return err
 			}
-		}
-
-		if s.AssignTo != nil {
-			*s.AssignTo = w
 		}
 
 		return nil
@@ -130,6 +130,10 @@ func (s VSplitter) Create(builder *Builder) error {
 		return err
 	}
 
+	if s.AssignTo != nil {
+		*s.AssignTo = w
+	}
+
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
@@ -141,10 +145,6 @@ func (s VSplitter) Create(builder *Builder) error {
 			if err := w.SetHandleWidth(s.HandleWidth); err != nil {
 				return err
 			}
-		}
-
-		if s.AssignTo != nil {
-			*s.AssignTo = w
 		}
 
 		return nil

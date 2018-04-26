@@ -61,6 +61,10 @@ func (pb PushButton) Create(builder *Builder) error {
 		return err
 	}
 
+	if pb.AssignTo != nil {
+		*pb.AssignTo = w
+	}
+
 	return builder.InitWidget(pb, w, func() error {
 		if err := w.SetImageAboveText(pb.ImageAboveText); err != nil {
 			return err
@@ -68,10 +72,6 @@ func (pb PushButton) Create(builder *Builder) error {
 
 		if pb.OnClicked != nil {
 			w.Clicked().Attach(pb.OnClicked)
-		}
-
-		if pb.AssignTo != nil {
-			*pb.AssignTo = w
 		}
 
 		return nil

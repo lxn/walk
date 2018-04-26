@@ -77,6 +77,10 @@ func (wv WebView) Create(builder *Builder) error {
 		return err
 	}
 
+	if wv.AssignTo != nil {
+		*wv.AssignTo = w
+	}
+
 	return builder.InitWidget(wv, w, func() error {
 		if wv.OnBrowserVisibleChanged != nil {
 			w.BrowserVisibleChanged().Attach(wv.OnBrowserVisibleChanged)
@@ -137,10 +141,6 @@ func (wv WebView) Create(builder *Builder) error {
 		}
 		if wv.OnWindowClosing != nil {
 			w.WindowClosing().Attach(wv.OnWindowClosing)
-		}
-
-		if wv.AssignTo != nil {
-			*wv.AssignTo = w
 		}
 
 		return nil

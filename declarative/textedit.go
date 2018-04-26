@@ -71,6 +71,10 @@ func (te TextEdit) Create(builder *Builder) error {
 		return err
 	}
 
+	if te.AssignTo != nil {
+		*te.AssignTo = w
+	}
+
 	return builder.InitWidget(te, w, func() error {
 		w.SetTextColor(te.TextColor)
 
@@ -84,10 +88,6 @@ func (te TextEdit) Create(builder *Builder) error {
 
 		if te.OnTextChanged != nil {
 			w.TextChanged().Attach(te.OnTextChanged)
-		}
-
-		if te.AssignTo != nil {
-			*te.AssignTo = w
 		}
 
 		return nil

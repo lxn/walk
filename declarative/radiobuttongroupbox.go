@@ -69,6 +69,10 @@ func (rbgb RadioButtonGroupBox) Create(builder *Builder) error {
 		return err
 	}
 
+	if rbgb.AssignTo != nil {
+		*rbgb.AssignTo = w
+	}
+
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
@@ -88,10 +92,6 @@ func (rbgb RadioButtonGroupBox) Create(builder *Builder) error {
 			Buttons:    rbgb.Buttons,
 		}).Create(builder); err != nil {
 			return err
-		}
-
-		if rbgb.AssignTo != nil {
-			*rbgb.AssignTo = w
 		}
 
 		return nil

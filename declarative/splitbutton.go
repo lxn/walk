@@ -62,6 +62,10 @@ func (sb SplitButton) Create(builder *Builder) error {
 		return err
 	}
 
+	if sb.AssignTo != nil {
+		*sb.AssignTo = w
+	}
+
 	builder.deferBuildMenuActions(w.Menu(), sb.MenuItems)
 
 	return builder.InitWidget(sb, w, func() error {
@@ -71,10 +75,6 @@ func (sb SplitButton) Create(builder *Builder) error {
 
 		if sb.OnClicked != nil {
 			w.Clicked().Attach(sb.OnClicked)
-		}
-
-		if sb.AssignTo != nil {
-			*sb.AssignTo = w
 		}
 
 		return nil

@@ -11,8 +11,9 @@ import (
 )
 
 import (
-	"github.com/lxn/walk"
 	"strconv"
+
+	"github.com/lxn/walk"
 )
 
 type Shortcut struct {
@@ -33,6 +34,10 @@ type Action struct {
 
 func (a Action) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, error) {
 	action := walk.NewAction()
+
+	if a.AssignTo != nil {
+		*a.AssignTo = action
+	}
 
 	if err := action.SetText(a.Text); err != nil {
 		return nil, err
@@ -64,10 +69,6 @@ func (a Action) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, e
 		if err := menu.Actions().Add(action); err != nil {
 			return nil, err
 		}
-	}
-
-	if a.AssignTo != nil {
-		*a.AssignTo = action
 	}
 
 	return action, nil
