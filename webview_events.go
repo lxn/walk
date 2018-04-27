@@ -7,6 +7,10 @@
 package walk
 
 import (
+	"unsafe"
+)
+
+import (
 	"github.com/lxn/win"
 )
 
@@ -34,6 +38,23 @@ func (eventData *WebViewNavigatingEventData) Flags() int32 {
 		return flags.MustLong()
 	}
 	return 0
+}
+
+func (eventData *WebViewNavigatingEventData) PostData() string {
+	postData := eventData.postData
+	if postData != nil {
+		pvar := postData.MustPVariant()
+		if pvar != nil && pvar.Vt == win.VT_ARRAY|win.VT_UI1 {
+			psa := pvar.MustPSafeArray()
+			if psa != nil && psa.CDims == 1 && psa.CbElements == 1 {
+				postDataSize := psa.Rgsabound[0].CElements * psa.CbElements
+				byteAryPtr := (*[200000000]byte)(unsafe.Pointer(psa.PvData))
+				byteArySlice := (*byteAryPtr)[0 : postDataSize-1]
+				return string(byteArySlice)
+			}
+		}
+	}
+	return ""
 }
 
 func (eventData *WebViewNavigatingEventData) Headers() string {
@@ -364,63 +385,6 @@ func (p *WebViewWindowClosingEventPublisher) Event() *WebViewWindowClosingEvent 
 }
 
 func (p *WebViewWindowClosingEventPublisher) Publish(eventData *WebViewWindowClosingEventData) {
-	for _, handler := range p.event.handlers {
-		if handler != nil {
-			handler(eventData)
-		}
-	}
-}
-
-type WebViewCommandStateChangedEventData struct {
-	command int32
-	enable  win.VARIANT_BOOL
-}
-
-func (eventData *WebViewCommandStateChangedEventData) Command() int32 {
-	return eventData.command
-}
-
-func (eventData *WebViewCommandStateChangedEventData) Enabled() bool {
-	enable := eventData.enable
-	if enable != win.VARIANT_FALSE {
-		return true
-	} else {
-		return false
-	}
-	return false
-}
-
-type WebViewCommandStateChangedEventHandler func(eventData *WebViewCommandStateChangedEventData)
-
-type WebViewCommandStateChangedEvent struct {
-	handlers []WebViewCommandStateChangedEventHandler
-}
-
-func (e *WebViewCommandStateChangedEvent) Attach(handler WebViewCommandStateChangedEventHandler) int {
-	for i, h := range e.handlers {
-		if h == nil {
-			e.handlers[i] = handler
-			return i
-		}
-	}
-
-	e.handlers = append(e.handlers, handler)
-	return len(e.handlers) - 1
-}
-
-func (e *WebViewCommandStateChangedEvent) Detach(handle int) {
-	e.handlers[handle] = nil
-}
-
-type WebViewCommandStateChangedEventPublisher struct {
-	event WebViewCommandStateChangedEvent
-}
-
-func (p *WebViewCommandStateChangedEventPublisher) Event() *WebViewCommandStateChangedEvent {
-	return &p.event
-}
-
-func (p *WebViewCommandStateChangedEventPublisher) Publish(eventData *WebViewCommandStateChangedEventData) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
 			handler(eventData)
