@@ -407,18 +407,32 @@ func (fb *FormBase) Run() int {
 
 func (fb *FormBase) webViewTranslateAccelerator(msg *win.MSG) bool {
 	ret := false
-	children := fb.Children()
-	for i := 0; i < children.Len(); i++ {
-		child := children.At(i)
-		if webView, ok := child.(*WebView); ok {
-			webViewHWnd := webView.Handle()
-			if webViewHWnd == msg.HWnd || win.IsChild(webViewHWnd, msg.HWnd) {
-				ret = webView.translateAccelerator(msg)
-				break
-			}
+	webViews := fb.findWebViews(fb)
+	for _, webView := range webViews {
+		webViewHWnd := webView.Handle()
+		if webViewHWnd == msg.HWnd || win.IsChild(webViewHWnd, msg.HWnd) {
+			ret = webView.translateAccelerator(msg)
 		}
 	}
 	return ret
+}
+
+func (fb *FormBase) findWebViews(container Container) []*WebView {
+	webViews := make([]*WebView, 0)
+	children := container.Children()
+	for i := 0; i < children.Len(); i++ {
+		child := children.At(i)
+		if containerInner, ok := child.(Container); ok {
+			webViewsInner := fb.findWebViews(containerInner)
+			for _, webViewInner := range webViewsInner {
+				webViews = append(webViews, webViewInner)
+			}
+		}
+		if webView, ok := child.(*WebView); ok {
+			webViews = append(webViews, webView)
+		}
+	}
+	return webViews
 }
 
 func (fb *FormBase) Starting() *Event {
