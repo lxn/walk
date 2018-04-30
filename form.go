@@ -407,17 +407,18 @@ func (fb *FormBase) Run() int {
 
 func (fb *FormBase) webViewTranslateAccelerator(msg *win.MSG) bool {
 	ret := false
-	children := fb.Children()
-	for i := 0; i < children.Len(); i++ {
-		child := children.At(i)
-		if webView, ok := child.(*WebView); ok {
+	walkDescendants(fb.window, func(w Window) bool {
+		if webView, ok := w.(*WebView); ok {
 			webViewHWnd := webView.Handle()
 			if webViewHWnd == msg.HWnd || win.IsChild(webViewHWnd, msg.HWnd) {
-				ret = webView.translateAccelerator(msg)
-				break
+				_ret := webView.translateAccelerator(msg)
+				if _ret {
+					ret = _ret
+				}
 			}
 		}
-	}
+		return true
+	})
 	return ret
 }
 
