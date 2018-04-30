@@ -66,7 +66,9 @@ func NewMainWin() (*MainWin, error) {
 				OnTheaterModeChanged:      mainWin.webView_OnTheaterModeChanged,
 				OnToolBarVisibleChanged:   mainWin.webView_OnToolBarVisibleChanged,
 				OnBrowserVisibleChanged:   mainWin.webView_OnBrowserVisibleChanged,
-				OnCommandStateChanged:     mainWin.webView_OnCommandStateChanged,
+				OnCanGoBackChanged:        mainWin.webView_OnCanGoBackChanged,
+				OnCanGoForwardChanged:     mainWin.webView_OnCanGoForwardChanged,
+				OnToolBarEnabledChanged:   mainWin.webView_OnToolBarEnabledChanged,
 				OnProgressChanged:         mainWin.webView_OnProgressChanged,
 				OnStatusTextChanged:       mainWin.webView_OnStatusTextChanged,
 				OnDocumentTitleChanged:    mainWin.webView_OnDocumentTitleChanged,
@@ -90,6 +92,7 @@ func (mainWin *MainWin) webView_OnNavigating(eventData *walk.WebViewNavigatingEv
 	fmt.Printf("webView_OnNavigating\r\n")
 	fmt.Printf("Url = %+v\r\n", eventData.Url())
 	fmt.Printf("Flags = %+v\r\n", eventData.Flags())
+	fmt.Printf("PostData = %+v\r\n", eventData.PostData())
 	fmt.Printf("Headers = %+v\r\n", eventData.Headers())
 	fmt.Printf("TargetFrameName = %+v\r\n", eventData.TargetFrameName())
 	fmt.Printf("Canceled = %+v\r\n", eventData.Canceled())
@@ -167,10 +170,19 @@ func (mainWin *MainWin) webView_OnBrowserVisibleChanged() {
 	fmt.Printf("BrowserVisible = %+v\r\n", mainWin.wv.BrowserVisible())
 }
 
-func (mainWin *MainWin) webView_OnCommandStateChanged(eventData *walk.WebViewCommandStateChangedEventData) {
-	fmt.Printf("webView_OnCommandStateChanged\r\n")
-	fmt.Printf("Command = %+v\r\n", eventData.Command())
-	fmt.Printf("Enabled = %+v\r\n", eventData.Enabled())
+func (mainWin *MainWin) webView_OnCanGoBackChanged() {
+	fmt.Printf("webView_OnCanGoBackChanged\r\n")
+	fmt.Printf("CanGoBack = %+v\r\n", mainWin.wv.CanGoBack())
+}
+
+func (mainWin *MainWin) webView_OnCanGoForwardChanged() {
+	fmt.Printf("webView_OnCanGoForwardChanged\r\n")
+	fmt.Printf("CanGoForward = %+v\r\n", mainWin.wv.CanGoForward())
+}
+
+func (mainWin *MainWin) webView_OnToolBarEnabledChanged() {
+	fmt.Printf("webView_OnToolBarEnabledChanged\r\n")
+	fmt.Printf("ToolBarEnabled = %+v\r\n", mainWin.wv.ToolBarEnabled())
 }
 
 func (mainWin *MainWin) webView_OnProgressChanged() {

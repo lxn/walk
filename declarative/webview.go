@@ -45,30 +45,32 @@ type WebView struct {
 
 	// WebView
 
-	AssignTo                   **walk.WebView
-	NativeContextMenuEnabled   Property
-	OnBrowserVisibleChanged    walk.EventHandler
-	OnCommandStateChanged      walk.WebViewCommandStateChangedEventHandler
-	OnDocumentCompleted        walk.StringEventHandler
-	OnDocumentTitleChanged     walk.EventHandler
-	OnDownloaded               walk.EventHandler
-	OnDownloading              walk.EventHandler
-	OnNativeContextMenuEnabled walk.EventHandler
-	OnNavigated                walk.StringEventHandler
-	OnNavigatedError           walk.WebViewNavigatedErrorEventHandler
-	OnNavigating               walk.WebViewNavigatingEventHandler
-	OnNewWindow                walk.WebViewNewWindowEventHandler
-	OnProgressChanged          walk.EventHandler
-	OnQuitting                 walk.EventHandler
-	OnShortcutsEnabled         walk.EventHandler
-	OnStatusBarVisibleChanged  walk.EventHandler
-	OnStatusTextChanged        walk.EventHandler
-	OnTheaterModeChanged       walk.EventHandler
-	OnToolBarVisibleChanged    walk.EventHandler
-	OnURLChanged               walk.EventHandler
-	OnWindowClosing            walk.WebViewWindowClosingEventHandler
-	ShortcutsEnabled           Property
-	URL                        Property
+	AssignTo                          **walk.WebView
+	NativeContextMenuEnabled          Property
+	OnBrowserVisibleChanged           walk.EventHandler
+	OnCanGoBackChanged                walk.EventHandler
+	OnCanGoForwardChanged             walk.EventHandler
+	OnDocumentCompleted               walk.StringEventHandler
+	OnDocumentTitleChanged            walk.EventHandler
+	OnDownloaded                      walk.EventHandler
+	OnDownloading                     walk.EventHandler
+	OnNativeContextMenuEnabledChanged walk.EventHandler
+	OnNavigated                       walk.StringEventHandler
+	OnNavigatedError                  walk.WebViewNavigatedErrorEventHandler
+	OnNavigating                      walk.WebViewNavigatingEventHandler
+	OnNewWindow                       walk.WebViewNewWindowEventHandler
+	OnProgressChanged                 walk.EventHandler
+	OnQuitting                        walk.EventHandler
+	OnShortcutsEnabledChanged         walk.EventHandler
+	OnStatusBarVisibleChanged         walk.EventHandler
+	OnStatusTextChanged               walk.EventHandler
+	OnTheaterModeChanged              walk.EventHandler
+	OnToolBarEnabledChanged           walk.EventHandler
+	OnToolBarVisibleChanged           walk.EventHandler
+	OnURLChanged                      walk.EventHandler
+	OnWindowClosing                   walk.WebViewWindowClosingEventHandler
+	ShortcutsEnabled                  Property
+	URL                               Property
 }
 
 func (wv WebView) Create(builder *Builder) error {
@@ -85,8 +87,11 @@ func (wv WebView) Create(builder *Builder) error {
 		if wv.OnBrowserVisibleChanged != nil {
 			w.BrowserVisibleChanged().Attach(wv.OnBrowserVisibleChanged)
 		}
-		if wv.OnCommandStateChanged != nil {
-			w.CommandStateChanged().Attach(wv.OnCommandStateChanged)
+		if wv.OnCanGoBackChanged != nil {
+			w.CanGoBackChanged().Attach(wv.OnCanGoBackChanged)
+		}
+		if wv.OnCanGoForwardChanged != nil {
+			w.CanGoForwardChanged().Attach(wv.OnCanGoForwardChanged)
 		}
 		if wv.OnDocumentCompleted != nil {
 			w.DocumentCompleted().Attach(wv.OnDocumentCompleted)
@@ -100,8 +105,8 @@ func (wv WebView) Create(builder *Builder) error {
 		if wv.OnDownloading != nil {
 			w.Downloading().Attach(wv.OnDownloading)
 		}
-		if wv.OnNativeContextMenuEnabled != nil {
-			w.NativeContextMenuEnabledChanged().Attach(wv.OnNativeContextMenuEnabled)
+		if wv.OnNativeContextMenuEnabledChanged != nil {
+			w.NativeContextMenuEnabledChanged().Attach(wv.OnNativeContextMenuEnabledChanged)
 		}
 		if wv.OnNavigated != nil {
 			w.Navigated().Attach(wv.OnNavigated)
@@ -121,8 +126,8 @@ func (wv WebView) Create(builder *Builder) error {
 		if wv.OnURLChanged != nil {
 			w.URLChanged().Attach(wv.OnURLChanged)
 		}
-		if wv.OnShortcutsEnabled != nil {
-			w.ShortcutsEnabledChanged().Attach(wv.OnShortcutsEnabled)
+		if wv.OnShortcutsEnabledChanged != nil {
+			w.ShortcutsEnabledChanged().Attach(wv.OnShortcutsEnabledChanged)
 		}
 		if wv.OnStatusBarVisibleChanged != nil {
 			w.StatusBarVisibleChanged().Attach(wv.OnStatusBarVisibleChanged)
@@ -132,6 +137,9 @@ func (wv WebView) Create(builder *Builder) error {
 		}
 		if wv.OnTheaterModeChanged != nil {
 			w.TheaterModeChanged().Attach(wv.OnTheaterModeChanged)
+		}
+		if wv.OnToolBarEnabledChanged != nil {
+			w.ToolBarEnabledChanged().Attach(wv.OnToolBarEnabledChanged)
 		}
 		if wv.OnToolBarVisibleChanged != nil {
 			w.ToolBarVisibleChanged().Attach(wv.OnToolBarVisibleChanged)

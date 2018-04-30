@@ -150,7 +150,7 @@ func webView_DWebBrowserEvents2_Invoke(
 			headers:         (*rgvargPtr)[1].MustPVariant(),
 			cancel:          (*rgvargPtr)[0].MustPBool(),
 		}
-		wv.navigatingEventPublisher.Publish(eventData)
+		wv.navigatingPublisher.Publish(eventData)
 
 	case win.DISPID_NAVIGATECOMPLETE2:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -159,15 +159,15 @@ func webView_DWebBrowserEvents2_Invoke(
 		if url != nil && url.MustBSTR() != nil {
 			urlStr = win.BSTRToString(url.MustBSTR())
 		}
-		wv.navigatedEventPublisher.Publish(urlStr)
+		wv.navigatedPublisher.Publish(urlStr)
 
 		wv.urlChangedPublisher.Publish()
 
 	case win.DISPID_DOWNLOADBEGIN:
-		wv.downloadingEventPublisher.Publish()
+		wv.downloadingPublisher.Publish()
 
 	case win.DISPID_DOWNLOADCOMPLETE:
-		wv.downloadedEventPublisher.Publish()
+		wv.downloadedPublisher.Publish()
 
 	case win.DISPID_DOCUMENTCOMPLETE:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -188,7 +188,7 @@ func webView_DWebBrowserEvents2_Invoke(
 			})
 		})
 
-		wv.documentCompletedEventPublisher.Publish(urlStr)
+		wv.documentCompletedPublisher.Publish(urlStr)
 
 	case win.DISPID_NAVIGATEERROR:
 		rgvargPtr := (*[5]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -199,7 +199,7 @@ func webView_DWebBrowserEvents2_Invoke(
 			statusCode:      (*rgvargPtr)[1].MustPVariant(),
 			cancel:          (*rgvargPtr)[0].MustPBool(),
 		}
-		wv.navigatedErrorEventPublisher.Publish(eventData)
+		wv.navigatedErrorPublisher.Publish(eventData)
 
 	case win.DISPID_NEWWINDOW3:
 		rgvargPtr := (*[5]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -210,10 +210,10 @@ func webView_DWebBrowserEvents2_Invoke(
 			bstrUrlContext: (*rgvargPtr)[1].MustBSTR(),
 			bstrUrl:        (*rgvargPtr)[0].MustBSTR(),
 		}
-		wv.newWindowEventPublisher.Publish(eventData)
+		wv.newWindowPublisher.Publish(eventData)
 
 	case win.DISPID_ONQUIT:
-		wv.quittingEventPublisher.Publish()
+		wv.quittingPublisher.Publish()
 
 	case win.DISPID_WINDOWCLOSING:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -221,7 +221,7 @@ func webView_DWebBrowserEvents2_Invoke(
 			bIsChildWindow: (*rgvargPtr)[1].MustBool(),
 			cancel:         (*rgvargPtr)[0].MustPBool(),
 		}
-		wv.windowClosingEventPublisher.Publish(eventData)
+		wv.windowClosingPublisher.Publish(eventData)
 
 	case win.DISPID_ONSTATUSBAR:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -231,7 +231,7 @@ func webView_DWebBrowserEvents2_Invoke(
 		} else {
 			wv.statusBarVisible = false
 		}
-		wv.statusBarVisibleChangedEventPublisher.Publish()
+		wv.statusBarVisibleChangedPublisher.Publish()
 
 	case win.DISPID_ONTHEATERMODE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -241,7 +241,7 @@ func webView_DWebBrowserEvents2_Invoke(
 		} else {
 			wv.isTheaterMode = false
 		}
-		wv.theaterModeChangedEventPublisher.Publish()
+		wv.theaterModeChangedPublisher.Publish()
 
 	case win.DISPID_ONTOOLBAR:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -251,7 +251,7 @@ func webView_DWebBrowserEvents2_Invoke(
 		} else {
 			wv.toolBarVisible = false
 		}
-		wv.toolBarVisibleChangedEventPublisher.Publish()
+		wv.toolBarVisibleChangedPublisher.Publish()
 
 	case win.DISPID_ONVISIBLE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -261,21 +261,32 @@ func webView_DWebBrowserEvents2_Invoke(
 		} else {
 			wv.browserVisible = false
 		}
-		wv.browserVisibleChangedEventPublisher.Publish()
+		wv.browserVisibleChangedPublisher.Publish()
 
 	case win.DISPID_COMMANDSTATECHANGE:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
-		eventData := &WebViewCommandStateChangedEventData{
-			command: (*rgvargPtr)[1].MustLong(),
-			enable:  (*rgvargPtr)[0].MustBool(),
+		command := (*rgvargPtr)[1].MustLong()
+		enable := (*rgvargPtr)[0].MustBool()
+		enableBool := (enable != win.VARIANT_FALSE)
+		switch command {
+		case win.CSC_UPDATECOMMANDS:
+			wv.toolBarEnabled = enableBool
+			wv.toolBarEnabledChangedPublisher.Publish()
+
+		case win.CSC_NAVIGATEFORWARD:
+			wv.canGoForward = enableBool
+			wv.canGoForwardChangedPublisher.Publish()
+
+		case win.CSC_NAVIGATEBACK:
+			wv.canGoBack = enableBool
+			wv.canGoBackChangedPublisher.Publish()
 		}
-		wv.commandStateChangedEventPublisher.Publish(eventData)
 
 	case win.DISPID_PROGRESSCHANGE:
 		rgvargPtr := (*[2]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
 		wv.progressValue = (*rgvargPtr)[1].MustLong()
 		wv.progressMax = (*rgvargPtr)[0].MustLong()
-		wv.progressChangedEventPublisher.Publish()
+		wv.progressChangedPublisher.Publish()
 
 	case win.DISPID_STATUSTEXTCHANGE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -285,7 +296,7 @@ func webView_DWebBrowserEvents2_Invoke(
 		} else {
 			wv.statusText = ""
 		}
-		wv.statusTextChangedEventPublisher.Publish()
+		wv.statusTextChangedPublisher.Publish()
 
 	case win.DISPID_TITLECHANGE:
 		rgvargPtr := (*[1]win.VARIANTARG)(unsafe.Pointer(pDispParams.Rgvarg))
@@ -295,7 +306,7 @@ func webView_DWebBrowserEvents2_Invoke(
 		} else {
 			wv.documentTitle = ""
 		}
-		wv.documentTitleChangedEventPublisher.Publish()
+		wv.documentTitleChangedPublisher.Publish()
 	}
 
 	return win.DISP_E_MEMBERNOTFOUND
