@@ -499,7 +499,7 @@ func (tv *TableView) VisibleColumnsInDisplayOrder() []*TableViewColumn {
 	orderedCols := make([]*TableViewColumn, len(visibleCols))
 
 	for i, j := range indices {
-		if i > frozenCount {
+		if i >= frozenCount {
 			j += int32(frozenCount)
 		}
 		orderedCols[i] = visibleCols[j]
