@@ -47,7 +47,7 @@ func NewLabelWithStyle(parent Container, style uint32) (*Label, error) {
 }
 
 func (*Label) LayoutFlags() LayoutFlags {
-	return GrowableVert
+	return GrowableVert | GrowableHorz
 }
 
 func (l *Label) MinSizeHint() Size {
