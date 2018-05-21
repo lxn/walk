@@ -30,12 +30,13 @@ const (
 
 type LineEdit struct {
 	WidgetBase
-	editingFinishedPublisher EventPublisher
-	readOnlyChangedPublisher EventPublisher
-	textChangedPublisher     EventPublisher
-	charWidthFont            *Font
-	charWidth                int
-	textColor                Color
+	editingFinishedPublisher     EventPublisher
+	readOnlyChangedPublisher     EventPublisher
+	textChangedPublisher         EventPublisher
+	passwordModeChangedPublisher EventPublisher
+	charWidthFont                *Font
+	charWidth                    int
+	textColor                    Color
 }
 
 func newLineEdit(parent Window) (*LineEdit, error) {
@@ -70,6 +71,16 @@ func newLineEdit(parent Window) (*LineEdit, error) {
 			return le.SetText(v.(string))
 		},
 		le.textChangedPublisher.Event()))
+
+	le.MustRegisterProperty("PasswordMode", NewProperty(
+		func() interface{} {
+			return le.PasswordMode()
+		},
+		func(v interface{}) error {
+			le.SetPasswordMode(v.(bool))
+			return nil
+		},
+		le.passwordModeChangedPublisher.Event()))
 
 	return le, nil
 }
@@ -216,8 +227,10 @@ func (le *LineEdit) SetPasswordMode(value bool) {
 	if value {
 		c = uintptr('*')
 	}
-
+	
 	le.SendMessage(win.EM_SETPASSWORDCHAR, c, 0)
+	
+	le.passwordModeChangedPublisher.Publish()
 }
 
 func (le *LineEdit) ReadOnly() bool {
