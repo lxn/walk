@@ -273,8 +273,8 @@ func (l *GridLayout) SetRange(widget Widget, r Rectangle) error {
 	if r.X < 0 || r.Y < 0 {
 		return newError("range.X and range.Y must be >= 0")
 	}
-	if r.Width < 0 || r.Height < 0 {
-		return newError("range.Width and range.Height must be > 1")
+	if r.Width < 1 || r.Height < 1 {
+		return newError("range.Width and range.Height must be >= 1")
 	}
 
 	info := l.widget2Info[widget]
