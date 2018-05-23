@@ -54,11 +54,11 @@ func (lep LineErrorPresenter) Create(builder *Builder) error {
 		return err
 	}
 
-	return builder.InitWidget(lep, w, func() error {
-		if lep.AssignTo != nil {
-			*lep.AssignTo = w
-		}
+	if lep.AssignTo != nil {
+		*lep.AssignTo = w
+	}
 
+	return builder.InitWidget(lep, w, func() error {
 		return nil
 	})
 }

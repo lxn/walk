@@ -72,6 +72,10 @@ func (de DateEdit) Create(builder *Builder) error {
 		return err
 	}
 
+	if de.AssignTo != nil {
+		*de.AssignTo = w
+	}
+
 	return builder.InitWidget(de, w, func() error {
 		if err := w.SetFormat(de.Format); err != nil {
 			return err
@@ -83,10 +87,6 @@ func (de DateEdit) Create(builder *Builder) error {
 
 		if de.OnDateChanged != nil {
 			w.DateChanged().Attach(de.OnDateChanged)
-		}
-
-		if de.AssignTo != nil {
-			*de.AssignTo = w
 		}
 
 		return nil

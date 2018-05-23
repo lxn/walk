@@ -61,6 +61,10 @@ func (rb RadioButton) Create(builder *Builder) error {
 		return err
 	}
 
+	if rb.AssignTo != nil {
+		*rb.AssignTo = w
+	}
+
 	return builder.InitWidget(rb, w, func() error {
 		w.SetValue(rb.Value)
 
@@ -70,10 +74,6 @@ func (rb RadioButton) Create(builder *Builder) error {
 
 		if rb.OnClicked != nil {
 			w.Clicked().Attach(rb.OnClicked)
-		}
-
-		if rb.AssignTo != nil {
-			*rb.AssignTo = w
 		}
 
 		return nil

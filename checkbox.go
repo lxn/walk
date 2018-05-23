@@ -90,7 +90,7 @@ func (cb *CheckBox) MinSizeHint() Size {
 	}
 
 	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 10})
-	textSize := cb.calculateTextSizeImpl("n" + windowText(cb.hWnd))
+	textSize := cb.calculateTextSizeImpl("n" + cb.text())
 
 	w := textSize.Width + checkBoxCheckSize.Width
 	h := maxi(defaultSize.Height, textSize.Height)

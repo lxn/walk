@@ -68,12 +68,12 @@ func (iv ImageView) Create(builder *Builder) error {
 		return err
 	}
 
+	if iv.AssignTo != nil {
+		*iv.AssignTo = w
+	}
+
 	return builder.InitWidget(iv, w, func() error {
 		w.SetMode(walk.ImageViewMode(iv.Mode))
-
-		if iv.AssignTo != nil {
-			*iv.AssignTo = w
-		}
 
 		return nil
 	})

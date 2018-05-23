@@ -71,6 +71,10 @@ func (gc GradientComposite) Create(builder *Builder) error {
 		return err
 	}
 
+	if gc.AssignTo != nil {
+		*gc.AssignTo = w
+	}
+
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
@@ -78,10 +82,6 @@ func (gc GradientComposite) Create(builder *Builder) error {
 	})
 
 	return builder.InitWidget(gc, w, func() error {
-		if gc.AssignTo != nil {
-			*gc.AssignTo = w
-		}
-
 		if gc.Expressions != nil {
 			for name, expr := range gc.Expressions() {
 				builder.expressions[name] = expr

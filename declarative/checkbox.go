@@ -65,6 +65,10 @@ func (cb CheckBox) Create(builder *Builder) error {
 		return err
 	}
 
+	if cb.AssignTo != nil {
+		*cb.AssignTo = w
+	}
+
 	return builder.InitWidget(cb, w, func() error {
 		w.SetPersistent(cb.Persistent)
 
@@ -90,10 +94,6 @@ func (cb CheckBox) Create(builder *Builder) error {
 
 		if cb.OnCheckStateChanged != nil {
 			w.CheckStateChanged().Attach(cb.OnCheckStateChanged)
-		}
-
-		if cb.AssignTo != nil {
-			*cb.AssignTo = w
 		}
 
 		return nil

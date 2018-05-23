@@ -58,6 +58,10 @@ func (pb ProgressBar) Create(builder *Builder) error {
 		return err
 	}
 
+	if pb.AssignTo != nil {
+		*pb.AssignTo = w
+	}
+
 	return builder.InitWidget(pb, w, func() error {
 		if pb.MaxValue > pb.MinValue {
 			w.SetRange(pb.MinValue, pb.MaxValue)
@@ -66,10 +70,6 @@ func (pb ProgressBar) Create(builder *Builder) error {
 
 		if err := w.SetMarqueeMode(pb.MarqueeMode); err != nil {
 			return err
-		}
-
-		if pb.AssignTo != nil {
-			*pb.AssignTo = w
 		}
 
 		return nil

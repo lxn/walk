@@ -7,8 +7,9 @@
 package declarative
 
 import (
-	"github.com/lxn/walk"
 	"time"
+
+	"github.com/lxn/walk"
 )
 
 type DataBinder struct {
@@ -22,6 +23,10 @@ type DataBinder struct {
 
 func (db DataBinder) create() (*walk.DataBinder, error) {
 	b := walk.NewDataBinder()
+
+	if db.AssignTo != nil {
+		*db.AssignTo = b
+	}
 
 	if db.ErrorPresenter != nil {
 		ep, err := db.ErrorPresenter.Create()
@@ -38,10 +43,6 @@ func (db DataBinder) create() (*walk.DataBinder, error) {
 
 	if db.OnSubmitted != nil {
 		b.Submitted().Attach(db.OnSubmitted)
-	}
-
-	if db.AssignTo != nil {
-		*db.AssignTo = b
 	}
 
 	return b, nil

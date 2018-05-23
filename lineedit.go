@@ -128,11 +128,11 @@ func (le *LineEdit) SetMaxLength(value int) {
 }
 
 func (le *LineEdit) Text() string {
-	return windowText(le.hWnd)
+	return le.text()
 }
 
 func (le *LineEdit) SetText(value string) error {
-	return setWindowText(le.hWnd, value)
+	return le.setText(value)
 }
 
 func (le *LineEdit) TextSelection() (start, end int) {

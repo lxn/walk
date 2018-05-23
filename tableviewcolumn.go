@@ -9,9 +9,7 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -25,8 +23,9 @@ type TableViewColumn struct {
 	precision     int
 	title         string
 	titleOverride string
-	visible       bool
 	width         int
+	visible       bool
+	frozen        bool
 }
 
 // NewTableViewColumn returns a new TableViewColumn.
@@ -239,13 +238,61 @@ func (tvc *TableViewColumn) SetVisible(visible bool) (err error) {
 	return tvc.destroy()
 }
 
+// Frozen returns if the column is frozen.
+func (tvc *TableViewColumn) Frozen() bool {
+	return tvc.frozen
+}
+
+// SetFrozen sets if the column is frozen.
+func (tvc *TableViewColumn) SetFrozen(frozen bool) (err error) {
+	if frozen == tvc.frozen {
+		return nil
+	}
+
+	var checkBoxes bool
+	if tvc.tv != nil {
+		checkBoxes = tvc.tv.CheckBoxes()
+	}
+
+	old := tvc.frozen
+	defer func() {
+		if err != nil {
+			tvc.frozen = old
+
+			if tvc.tv != nil {
+				tvc.create()
+			}
+		}
+
+		if tvc.tv != nil {
+			tvc.tv.hasFrozenColumn = tvc.tv.visibleFrozenColumnCount() > 0
+			tvc.tv.SetCheckBoxes(checkBoxes)
+			tvc.tv.applyImageList()
+		}
+	}()
+
+	if tvc.tv != nil {
+		if err = tvc.destroy(); err != nil {
+			return
+		}
+	}
+
+	tvc.frozen = frozen
+
+	if tvc.tv != nil {
+		return tvc.create()
+	}
+
+	return nil
+}
+
 // Width returns the width of the column in pixels.
 func (tvc *TableViewColumn) Width() int {
 	if tvc.tv == nil || !tvc.visible {
 		return tvc.width
 	}
 
-	return int(tvc.tv.SendMessage(win.LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0))
+	return int(tvc.sendMessage(win.LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0))
 }
 
 // SetWidth sets the width of the column in pixels.
@@ -274,6 +321,10 @@ func (tvc *TableViewColumn) indexInListView() int32 {
 	var idx int32
 
 	for _, c := range tvc.tv.columns.items {
+		if c.frozen != tvc.frozen {
+			continue
+		}
+
 		if c == tvc {
 			break
 		}
@@ -308,10 +359,11 @@ func (tvc *TableViewColumn) create() error {
 		lvc.Fmt = 1
 	}
 
-	j := tvc.tv.SendMessage(win.LVM_INSERTCOLUMN, uintptr(index), uintptr(unsafe.Pointer(&lvc)))
-	if int(j) == -1 {
-		return newError("TableView.SetModel: Failed to insert column.")
+	if -1 == int(tvc.sendMessage(win.LVM_INSERTCOLUMN, uintptr(index), uintptr(unsafe.Pointer(&lvc)))) {
+		return newError("LVM_INSERTCOLUMN")
 	}
+
+	tvc.tv.updateLVSizes()
 
 	return nil
 }
@@ -319,11 +371,13 @@ func (tvc *TableViewColumn) create() error {
 func (tvc *TableViewColumn) destroy() error {
 	width := tvc.Width()
 
-	if win.FALSE == tvc.tv.SendMessage(win.LVM_DELETECOLUMN, uintptr(tvc.indexInListView()), 0) {
+	if win.FALSE == tvc.sendMessage(win.LVM_DELETECOLUMN, uintptr(tvc.indexInListView()), 0) {
 		return newError("LVM_DELETECOLUMN")
 	}
 
 	tvc.width = width
+
+	tvc.tv.updateLVSizes()
 
 	return nil
 }
@@ -335,9 +389,11 @@ func (tvc *TableViewColumn) update() error {
 
 	lvc := tvc.getLVCOLUMN()
 
-	if win.FALSE == tvc.tv.SendMessage(win.LVM_SETCOLUMN, uintptr(tvc.indexInListView()), uintptr(unsafe.Pointer(lvc))) {
+	if win.FALSE == tvc.sendMessage(win.LVM_SETCOLUMN, uintptr(tvc.indexInListView()), uintptr(unsafe.Pointer(lvc))) {
 		return newError("LVM_SETCOLUMN")
 	}
+
+	tvc.tv.updateLVSizes()
 
 	return nil
 }
@@ -359,4 +415,23 @@ func (tvc *TableViewColumn) getLVCOLUMN() *win.LVCOLUMN {
 	}
 
 	return &lvc
+}
+
+func (tvc *TableViewColumn) sendMessage(msg uint32, wp, lp uintptr) uintptr {
+	if tvc.tv == nil {
+		return 0
+	}
+
+	tvc.tv.hasFrozenColumn = tvc.tv.visibleFrozenColumnCount() > 0
+	tvc.tv.SetCheckBoxes(tvc.tv.CheckBoxes())
+	tvc.tv.applyImageList()
+
+	var hwnd win.HWND
+	if tvc.frozen {
+		hwnd = tvc.tv.hwndFrozenLV
+	} else {
+		hwnd = tvc.tv.hwndNormalLV
+	}
+
+	return win.SendMessage(hwnd, msg, wp, lp)
 }

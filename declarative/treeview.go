@@ -59,6 +59,10 @@ func (tv TreeView) Create(builder *Builder) error {
 		return err
 	}
 
+	if tv.AssignTo != nil {
+		*tv.AssignTo = w
+	}
+
 	return builder.InitWidget(tv, w, func() error {
 		if tv.ItemHeight > 0 {
 			w.SetItemHeight(tv.ItemHeight)
@@ -78,10 +82,6 @@ func (tv TreeView) Create(builder *Builder) error {
 
 		if tv.OnItemActivated != nil {
 			w.ItemActivated().Attach(tv.OnItemActivated)
-		}
-
-		if tv.AssignTo != nil {
-			*tv.AssignTo = w
 		}
 
 		return nil

@@ -124,7 +124,7 @@ func (b *Button) ImageChanged() *Event {
 }
 
 func (b *Button) Text() string {
-	return windowText(b.hWnd)
+	return b.text()
 }
 
 func (b *Button) SetText(value string) error {
@@ -132,7 +132,7 @@ func (b *Button) SetText(value string) error {
 		return nil
 	}
 
-	if err := setWindowText(b.hWnd, value); err != nil {
+	if err := b.setText(value); err != nil {
 		return err
 	}
 

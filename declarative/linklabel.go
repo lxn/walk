@@ -56,13 +56,13 @@ func (ll LinkLabel) Create(builder *Builder) error {
 		return err
 	}
 
+	if ll.AssignTo != nil {
+		*ll.AssignTo = w
+	}
+
 	return builder.InitWidget(ll, w, func() error {
 		if ll.OnLinkActivated != nil {
 			w.LinkActivated().Attach(ll.OnLinkActivated)
-		}
-
-		if ll.AssignTo != nil {
-			*ll.AssignTo = w
 		}
 
 		return nil

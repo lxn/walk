@@ -62,6 +62,10 @@ func (sv ScrollView) Create(builder *Builder) error {
 		return err
 	}
 
+	if sv.AssignTo != nil {
+		*sv.AssignTo = w
+	}
+
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
@@ -71,10 +75,6 @@ func (sv ScrollView) Create(builder *Builder) error {
 	w.SetScrollbars(!sv.HorizontalFixed, !sv.VerticalFixed)
 
 	return builder.InitWidget(sv, w, func() error {
-		if sv.AssignTo != nil {
-			*sv.AssignTo = w
-		}
-
 		return nil
 	})
 }

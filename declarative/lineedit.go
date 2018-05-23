@@ -72,6 +72,10 @@ func (le LineEdit) Create(builder *Builder) error {
 		return err
 	}
 
+	if le.AssignTo != nil {
+		*le.AssignTo = w
+	}
+
 	return builder.InitWidget(le, w, func() error {
 		w.SetTextColor(le.TextColor)
 
@@ -96,10 +100,6 @@ func (le LineEdit) Create(builder *Builder) error {
 		}
 		if le.OnTextChanged != nil {
 			w.TextChanged().Attach(le.OnTextChanged)
-		}
-
-		if le.AssignTo != nil {
-			*le.AssignTo = w
 		}
 
 		return nil

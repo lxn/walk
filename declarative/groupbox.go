@@ -63,6 +63,10 @@ func (gb GroupBox) Create(builder *Builder) error {
 		return err
 	}
 
+	if gb.AssignTo != nil {
+		*gb.AssignTo = w
+	}
+
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
@@ -75,10 +79,6 @@ func (gb GroupBox) Create(builder *Builder) error {
 		}
 
 		w.SetCheckable(gb.Checkable)
-
-		if gb.AssignTo != nil {
-			*gb.AssignTo = w
-		}
 
 		return nil
 	})

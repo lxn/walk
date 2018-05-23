@@ -62,6 +62,10 @@ func (mw MainWindow) Create() error {
 		return err
 	}
 
+	if mw.AssignTo != nil {
+		*mw.AssignTo = w
+	}
+
 	fi := formInfo{
 		// Window
 		Background:         mw.Background,
@@ -157,9 +161,9 @@ func (mw MainWindow) Create() error {
 			w.DropFiles().Attach(mw.OnDropFiles)
 		}
 
-		if mw.AssignTo != nil {
-			*mw.AssignTo = w
-		}
+		// if mw.AssignTo != nil {
+		// 	*mw.AssignTo = w
+		// }
 
 		if mw.Expressions != nil {
 			for name, expr := range mw.Expressions() {

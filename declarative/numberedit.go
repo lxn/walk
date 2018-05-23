@@ -64,6 +64,10 @@ func (ne NumberEdit) Create(builder *Builder) error {
 		return err
 	}
 
+	if ne.AssignTo != nil {
+		*ne.AssignTo = w
+	}
+
 	return builder.InitWidget(ne, w, func() error {
 		w.SetTextColor(ne.TextColor)
 
@@ -95,10 +99,6 @@ func (ne NumberEdit) Create(builder *Builder) error {
 
 		if ne.OnValueChanged != nil {
 			w.ValueChanged().Attach(ne.OnValueChanged)
-		}
-
-		if ne.AssignTo != nil {
-			*ne.AssignTo = w
 		}
 
 		return nil

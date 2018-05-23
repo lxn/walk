@@ -75,7 +75,7 @@ func (te *TextEdit) SizeHint() Size {
 }
 
 func (te *TextEdit) Text() string {
-	return windowText(te.hWnd)
+	return te.text()
 }
 
 func (te *TextEdit) TextLength() int {
@@ -87,7 +87,7 @@ func (te *TextEdit) SetText(value string) (err error) {
 		return nil
 	}
 
-	err = setWindowText(te.hWnd, value)
+	err = te.setText(value)
 	te.textChangedPublisher.Publish()
 	return
 }

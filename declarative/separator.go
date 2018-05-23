@@ -54,11 +54,11 @@ func (s HSeparator) Create(builder *Builder) error {
 		return err
 	}
 
-	return builder.InitWidget(s, w, func() error {
-		if s.AssignTo != nil {
-			*s.AssignTo = w
-		}
+	if s.AssignTo != nil {
+		*s.AssignTo = w
+	}
 
+	return builder.InitWidget(s, w, func() error {
 		return nil
 	})
 }
@@ -104,11 +104,11 @@ func (s VSeparator) Create(builder *Builder) error {
 		return err
 	}
 
-	return builder.InitWidget(s, w, func() error {
-		if s.AssignTo != nil {
-			*s.AssignTo = w
-		}
+	if s.AssignTo != nil {
+		*s.AssignTo = w
+	}
 
+	return builder.InitWidget(s, w, func() error {
 		return nil
 	})
 }

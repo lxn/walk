@@ -56,12 +56,12 @@ func (l Label) Create(builder *Builder) error {
 		return err
 	}
 
+	if l.AssignTo != nil {
+		*l.AssignTo = w
+	}
+
 	return builder.InitWidget(l, w, func() error {
 		w.SetTextColor(l.TextColor)
-
-		if l.AssignTo != nil {
-			*l.AssignTo = w
-		}
 
 		return nil
 	})

@@ -67,6 +67,10 @@ func (cw CustomWidget) Create(builder *Builder) error {
 		return err
 	}
 
+	if cw.AssignTo != nil {
+		*cw.AssignTo = w
+	}
+
 	return builder.InitWidget(cw, w, func() error {
 		if cw.PaintMode != PaintNormal && cw.ClearsBackground {
 			panic("PaintMode and ClearsBackground are incompatible")
@@ -74,10 +78,6 @@ func (cw CustomWidget) Create(builder *Builder) error {
 		w.SetClearsBackground(cw.ClearsBackground)
 		w.SetInvalidatesOnResize(cw.InvalidatesOnResize)
 		w.SetPaintMode(walk.PaintMode(cw.PaintMode))
-
-		if cw.AssignTo != nil {
-			*cw.AssignTo = w
-		}
 
 		return nil
 	})
