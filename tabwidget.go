@@ -34,6 +34,10 @@ type TabWidget struct {
 }
 
 func NewTabWidget(parent Container) (*TabWidget, error) {
+	return NewTabWidgetWithStyle(parent, 0)
+}
+
+func NewTabWidgetWithStyle(parent Container, style uint32) (*TabWidget, error) {
 	tw := &TabWidget{currentIndex: -1}
 	tw.pages = newTabPageList(tw)
 
@@ -57,7 +61,7 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 
 	tw.hWndTab = win.CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("SysTabControl32"), nil,
-		win.WS_CHILD|win.WS_CLIPSIBLINGS|win.WS_TABSTOP|win.WS_VISIBLE,
+		win.WS_CHILD|win.WS_CLIPSIBLINGS|win.WS_TABSTOP|win.WS_VISIBLE|style,
 		0, 0, 0, 0, tw.hWnd, 0, 0, nil)
 	if tw.hWndTab == 0 {
 		return nil, lastError("CreateWindowEx")
