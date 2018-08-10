@@ -20,10 +20,6 @@ type Font struct {
 }
 
 func (f Font) Create() (*walk.Font, error) {
-	if f.Family == "" && f.PointSize == 0 {
-		return nil, nil
-	}
-
 	var fs walk.FontStyle
 
 	if f.Bold {

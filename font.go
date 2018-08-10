@@ -66,6 +66,13 @@ func NewFont(family string, pointSize int, style FontStyle) (*Font, error) {
 		return nil, newError("invalid style")
 	}
 
+	if family == "" {
+		family = defaultFont.family
+	}
+	if pointSize == 0 {
+		pointSize = defaultFont.pointSize
+	}
+
 	fi := fontInfo{
 		family:    family,
 		pointSize: pointSize,
