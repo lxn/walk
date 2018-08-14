@@ -809,6 +809,24 @@ func (wb *WindowBase) Font() *Font {
 
 // SetFont sets the *Font of the *WindowBase.
 func (wb *WindowBase) SetFont(font *Font) {
+	if font.family == "" || font.pointSize == 0 {
+		var parentFont *Font
+
+		if widget, ok := wb.window.(Widget); ok {
+			widgetBase :=widget.AsWidgetBase()
+			if widget.AsWidgetBase().parent != nil {
+				parentFont = widgetBase.parent.Font()
+			}
+		}
+
+		if font.family == "" && parentFont != nil {
+			font.family = parentFont.family
+		}
+		if font.pointSize == 0 && parentFont != nil {
+			font.pointSize = parentFont.pointSize
+		}
+	}
+
 	if font != wb.font {
 		wb.font = font
 
