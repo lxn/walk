@@ -496,7 +496,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 
 	wb.focusedProperty = NewReadOnlyBoolProperty(
 		func() bool {
-			return wb.Focused()
+			return wb.window.Focused()
 		},
 		wb.focusedChangedPublisher.Event())
 
