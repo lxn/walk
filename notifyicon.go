@@ -8,14 +8,18 @@ package walk
 
 import (
 	"syscall"
+	"time"
 	"unsafe"
 )
 
 import (
 	"github.com/lxn/win"
+	"sync"
 )
 
 const notifyIconWindowClass = `\o/ Walk_NotifyIcon_Class \o/`
+
+var _hover_lock = new(sync.RWMutex)
 
 func init() {
 	MustRegisterWindowClass(notifyIconWindowClass)
@@ -27,6 +31,19 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 	ni := (*NotifyIcon)(unsafe.Pointer(ptr))
 
 	switch lParam {
+	case win.WM_MOUSEMOVE:
+		if !win.GetCursorPos(&(ni._hover_point)) {
+			lastError("GetCursorPos")
+			break
+		}
+		_hover_lock.Lock()
+		if !ni._hover_b {
+			ni._hover_onmousehover()
+			ni._hover_b = true
+			ni._hover_job = time.NewTicker(2 * time.Second)
+			go ni._hover_job_start()
+		}
+		_hover_lock.Unlock()
 	case win.WM_LBUTTONDOWN:
 		ni.publishMouseEvent(&ni.mouseDownPublisher, LeftButton)
 
@@ -72,16 +89,54 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 	return win.DefWindowProc(hwnd, msg, wParam, lParam)
 }
 
+func (ni *NotifyIcon) _hover_job_start() {
+
+Outer:
+	for {
+		select {
+		case <-ni._hover_job.C:
+			if ni._hover_b {
+				var point win.POINT
+				if !win.GetCursorPos(&point) {
+					lastError("GetCursorPos")
+					break Outer
+				}
+				if point.X != ni._hover_point.X || point.Y != ni._hover_point.Y {
+					ni._hover_onmouseleave()
+					ni._hover_b = false
+					break Outer
+				}
+			}
+		}
+	}
+	if ni._hover_job != nil {
+		ni._hover_job.Stop()
+		ni._hover_job.Stop()
+	}
+}
+func (ni *NotifyIcon) _hover_onmouseleave() {
+	ni.publishMouseEvent(&ni.mouseLeavePublisher, 0)
+}
+func (ni *NotifyIcon) _hover_onmousehover() {
+	ni.publishMouseEvent(&ni.mouseHoverPublisher, 0)
+}
+
 // NotifyIcon represents an icon in the taskbar notification area.
 type NotifyIcon struct {
-	id                 uint32
-	hWnd               win.HWND
-	contextMenu        *Menu
-	icon               *Icon
-	toolTip            string
-	visible            bool
-	mouseDownPublisher MouseEventPublisher
-	mouseUpPublisher   MouseEventPublisher
+	id                  uint32
+	hWnd                win.HWND
+	contextMenu         *Menu
+	icon                *Icon
+	toolTip             string
+	visible             bool
+	mouseDownPublisher  MouseEventPublisher
+	mouseUpPublisher    MouseEventPublisher
+	mouseHoverPublisher MouseEventPublisher
+	mouseLeavePublisher MouseEventPublisher
+
+	_hover_b     bool
+	_hover_job   *time.Ticker
+	_hover_point win.POINT
 }
 
 // NewNotifyIcon creates and returns a new NotifyIcon.
@@ -330,4 +385,12 @@ func (ni *NotifyIcon) MouseDown() *MouseEvent {
 // while the cursor is over the NotifyIcon.
 func (ni *NotifyIcon) MouseUp() *MouseEvent {
 	return ni.mouseUpPublisher.Event()
+}
+
+func (ni *NotifyIcon) MouseHover() *MouseEvent {
+	return ni.mouseHoverPublisher.Event()
+}
+
+func (ni *NotifyIcon) MouseLeave() *MouseEvent {
+	return ni.mouseLeavePublisher.Event()
 }
