@@ -82,6 +82,10 @@ func (m *reflectListModel) Value(index int) interface{} {
 	return valueFromSlice(m.dataSource, m.value, m.displayMember, index)
 }
 
+type lessFuncsSetter interface {
+	setLessFuncs(lessFuncs []func(i, j int) bool)
+}
+
 type dataMembersSetter interface {
 	setDataMembers(dataMembers []string)
 }
@@ -89,6 +93,7 @@ type dataMembersSetter interface {
 type reflectTableModel struct {
 	TableModelBase
 	sorterBase  *SorterBase
+	lessFuncs   []func(i, j int) bool
 	dataMembers []string
 	dataSource  interface{}
 	items       interface{}
@@ -154,6 +159,10 @@ func newReflectTableModel(dataSource interface{}) (TableModel, error) {
 	}
 
 	return m, nil
+}
+
+func (m *reflectTableModel) setLessFuncs(lessFuncs []func(i, j int) bool) {
+	m.lessFuncs = lessFuncs
 }
 
 func (m *reflectTableModel) setDataMembers(dataMembers []string) {
@@ -261,6 +270,16 @@ func (m *reflectTableModel) Len() int {
 func (m *reflectTableModel) Less(i, j int) bool {
 	col := m.SortedColumn()
 
+	if lt := m.lessFuncs[col]; lt != nil {
+		ls := lt(i, j)
+
+		if m.SortOrder() == SortAscending {
+			return ls
+		} else {
+			return !ls
+		}
+	}
+
 	return less(m.Value(i, col), m.Value(j, col), m.SortOrder())
 }
 
@@ -360,7 +379,7 @@ func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member str
 		}
 	}
 
-	vv, err := reflectValueFromPath(v, member)
+	_, vv, err := reflectValueFromPath(v, member)
 	if err != nil {
 		return err
 	}

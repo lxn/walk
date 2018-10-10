@@ -29,6 +29,7 @@ type TableViewColumn struct {
 	Hidden     bool
 	Frozen     bool
 	StyleCell  func(style *walk.CellStyle)
+	LessFunc   func(i, j int) bool
 }
 
 func (tvc TableViewColumn) Create(tv *walk.TableView) error {
@@ -59,6 +60,7 @@ func (tvc TableViewColumn) Create(tv *walk.TableView) error {
 	if err := w.SetWidth(tvc.Width); err != nil {
 		return err
 	}
+	w.SetLessFunc(tvc.LessFunc)
 
 	return tv.Columns().Add(w)
 }

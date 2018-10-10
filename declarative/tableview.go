@@ -46,25 +46,26 @@ type TableView struct {
 
 	// TableView
 
-	AlternatingRowBGColor      walk.Color
-	AssignTo                   **walk.TableView
-	CellStyler                 walk.CellStyler
-	CheckBoxes                 bool
-	Columns                    []TableViewColumn
-	ColumnsOrderable           Property
-	ColumnsSizable             Property
-	CustomHeaderHeight         int
-	CustomRowHeight            int
-	ItemStateChangedEventDelay int
-	HeaderHidden               bool
-	LastColumnStretched        bool
-	Model                      interface{}
-	MultiSelection             bool
-	NotSortableByHeaderClick   bool
-	OnCurrentIndexChanged      walk.EventHandler
-	OnItemActivated            walk.EventHandler
-	OnSelectedIndexesChanged   walk.EventHandler
-	StyleCell                  func(style *walk.CellStyle)
+	AlternatingRowBGColor       walk.Color
+	AssignTo                    **walk.TableView
+	CellStyler                  walk.CellStyler
+	CheckBoxes                  bool
+	Columns                     []TableViewColumn
+	ColumnsOrderable            Property
+	ColumnsSizable              Property
+	CustomHeaderHeight          int
+	CustomRowHeight             int
+	ItemStateChangedEventDelay  int
+	HeaderHidden                bool
+	LastColumnStretched         bool
+	Model                       interface{}
+	MultiSelection              bool
+	NotSortableByHeaderClick    bool
+	OnCurrentIndexChanged       walk.EventHandler
+	OnItemActivated             walk.EventHandler
+	OnSelectedIndexesChanged    walk.EventHandler
+	SelectionHiddenWithoutFocus bool
+	StyleCell                   func(style *walk.CellStyle)
 }
 
 type tvStyler struct {
@@ -163,6 +164,9 @@ func (tv TableView) Create(builder *Builder) error {
 			return err
 		}
 		if err := w.SetMultiSelection(tv.MultiSelection); err != nil {
+			return err
+		}
+		if err := w.SetSelectionHiddenWithoutFocus(tv.SelectionHiddenWithoutFocus); err != nil {
 			return err
 		}
 		if err := w.SetHeaderHidden(tv.HeaderHidden); err != nil {

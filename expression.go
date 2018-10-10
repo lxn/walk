@@ -33,7 +33,7 @@ func (re *reflectExpression) Value() interface{} {
 		return nil
 	}
 
-	val, err := reflectValueFromPath(reflect.ValueOf(rootVal), re.path)
+	_, val, err := reflectValueFromPath(reflect.ValueOf(rootVal), re.path)
 	if err != nil {
 		log.Print("walk - reflectExpression.Value - Error: ", err.Error())
 	}
