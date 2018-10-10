@@ -7,9 +7,10 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"math"
 	"strconv"
+
+	"github.com/lxn/win"
 )
 
 type ImageViewMode int
@@ -50,7 +51,6 @@ func NewImageView(parent Container) (*ImageView, error) {
 	}
 
 	iv.SetInvalidatesOnResize(true)
-	iv.SetPaintMode(PaintNoErase)
 
 	iv.MustRegisterProperty("Image", NewProperty(
 		func() interface{} {
