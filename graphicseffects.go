@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	borderGlowAlpha = []float64{0.4, 0.2, 0.15, 0.1, 0.15}
+	borderGlowAlpha = []float64{0.2, 0.1, 0.075, 0.05, 0.075}
 
 	InteractionEffect WidgetGraphicsEffect
 	FocusEffect       WidgetGraphicsEffect
