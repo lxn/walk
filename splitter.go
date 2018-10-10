@@ -33,6 +33,7 @@ type Splitter struct {
 	mouseDownPos  Point
 	draggedHandle *splitterHandle
 	persistent    bool
+	removing      bool
 }
 
 func newSplitter(parent Container, orientation Orientation) (*Splitter, error) {
@@ -496,7 +497,7 @@ func (s *Splitter) onRemovedWidget(index int, widget Widget) (err error) {
 	}()
 
 	_, isHandle := widget.(*splitterHandle)
-	if isHandle && s.children.Len()%2 == 1 {
+	if !s.removing && isHandle && s.children.Len()%2 == 1 {
 		return newError("cannot remove splitter handle")
 	}
 
@@ -512,7 +513,10 @@ func (s *Splitter) onRemovedWidget(index int, widget Widget) (err error) {
 			} else {
 				handleIndex = index - 1
 			}
+
+			s.removing = true
 			err = s.children.RemoveAt(handleIndex)
+			s.removing = false
 		}()
 	}
 

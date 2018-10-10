@@ -20,12 +20,13 @@ type widgetListObserver interface {
 }
 
 type WidgetList struct {
-	items    []Widget
-	observer widgetListObserver
+	items         []Widget
+	observer      widgetListObserver
+	removingIndex int
 }
 
 func newWidgetList(observer widgetListObserver) *WidgetList {
-	return &WidgetList{observer: observer}
+	return &WidgetList{observer: observer, removingIndex: -1}
 }
 
 func (l *WidgetList) Add(item Widget) error {
@@ -129,9 +130,18 @@ func (l *WidgetList) Remove(item Widget) error {
 }
 
 func (l *WidgetList) RemoveAt(index int) error {
+	if index == l.removingIndex {
+		return nil
+	}
+
 	observer := l.observer
 	item := l.items[index]
 	if observer != nil {
+		l.removingIndex = index
+		defer func() {
+			l.removingIndex = -1
+		}()
+
 		if err := observer.onRemovingWidget(index, item); err != nil {
 			return err
 		}
