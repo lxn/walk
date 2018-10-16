@@ -79,6 +79,8 @@ type TableView struct {
 	selectedIndexes                    []int
 	prevIndex                          int
 	currentIndex                       int
+	itemIndexOfLastMouseButtonDown     int
+	hwndItemChanged                    win.HWND
 	currentIndexChangedPublisher       EventPublisher
 	selectedIndexesChangedPublisher    EventPublisher
 	itemActivatedPublisher             EventPublisher
@@ -1134,6 +1136,31 @@ func (tv *TableView) updateSelectedIndexes() {
 	}
 }
 
+func (tv *TableView) copySelectedIndexes(hwndTo, hwndFrom win.HWND) error {
+	count := int(win.SendMessage(hwndFrom, win.LVM_GETSELECTEDCOUNT, 0, 0))
+
+	lvi := &win.LVITEM{StateMask: win.LVIS_FOCUSED | win.LVIS_SELECTED}
+	lp := uintptr(unsafe.Pointer(lvi))
+
+	if win.FALSE == win.SendMessage(hwndTo, win.LVM_SETITEMSTATE, ^uintptr(0), lp) {
+		return newError("SendMessage(LVM_SETITEMSTATE)")
+	}
+
+	lvi.StateMask = win.LVIS_SELECTED
+	lvi.State = win.LVIS_SELECTED
+
+	j := -1
+	for i := 0; i < count; i++ {
+		j = int(win.SendMessage(hwndFrom, win.LVM_GETNEXTITEM, uintptr(j), win.LVNI_SELECTED))
+
+		if win.FALSE == win.SendMessage(hwndTo, win.LVM_SETITEMSTATE, uintptr(j), lp) {
+			return newError("SendMessage(LVM_SETITEMSTATE)")
+		}
+	}
+
+	return nil
+}
+
 // ItemStateChangedEventDelay returns the delay in milliseconds, between the
 // moment the state of an item in the *TableView changes and the moment the
 // associated event is published.
@@ -1596,6 +1623,8 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 		hti.Pt = win.POINT{win.GET_X_LPARAM(lp), win.GET_Y_LPARAM(lp)}
 		win.SendMessage(hwnd, win.LVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
 
+		tv.itemIndexOfLastMouseButtonDown = int(hti.IItem)
+
 		if hti.Flags == win.LVHT_NOWHERE {
 			if tv.MultiSelection() {
 				tv.publishNextSelClear = true
@@ -1627,6 +1656,9 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 				tv.currentIndexChangedPublisher.Publish()
 			}
 		}
+
+	case win.WM_LBUTTONUP, win.WM_RBUTTONUP:
+		tv.itemIndexOfLastMouseButtonDown = -1
 
 	case win.WM_MOUSEMOVE, win.WM_MOUSELEAVE:
 		if tv.inMouseEvent {
@@ -1925,6 +1957,17 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 
 		case win.LVN_ITEMCHANGED:
 			nmlv := (*win.NMLISTVIEW)(unsafe.Pointer(lp))
+
+			if tv.hwndItemChanged != 0 && tv.hwndItemChanged != hwnd {
+				break
+			}
+			tv.hwndItemChanged = hwnd
+			defer func() {
+				tv.hwndItemChanged = 0
+			}()
+
+			tv.copySelectedIndexes(hwndOther, hwnd)
+
 			if nmlv.IItem == -1 && !tv.publishNextSelClear {
 				break
 			}
@@ -1932,7 +1975,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 
 			selectedNow := nmlv.UNewState&win.LVIS_SELECTED > 0
 			selectedBefore := nmlv.UOldState&win.LVIS_SELECTED > 0
-			if selectedNow && !selectedBefore {
+			if tv.itemIndexOfLastMouseButtonDown != -1 && selectedNow && !selectedBefore && ModifiersDown()&(ModControl|ModShift) == 0 {
 				tv.prevIndex = tv.currentIndex
 				tv.currentIndex = int(nmlv.IItem)
 				if tv.itemStateChangedEventDelay > 0 {
@@ -1959,6 +2002,16 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 			}
 
 		case win.LVN_ODSTATECHANGED:
+			if tv.hwndItemChanged != 0 && tv.hwndItemChanged != hwnd {
+				break
+			}
+			tv.hwndItemChanged = hwnd
+			defer func() {
+				tv.hwndItemChanged = 0
+			}()
+
+			tv.copySelectedIndexes(hwndOther, hwnd)
+
 			tv.updateSelectedIndexes()
 
 		case win.LVN_ITEMACTIVATE:
