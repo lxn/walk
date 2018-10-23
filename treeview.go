@@ -16,7 +16,6 @@ import (
 type treeViewItemInfo struct {
 	handle       win.HTREEITEM
 	child2Handle map[TreeItem]win.HTREEITEM
-	utf16Text    *uint16
 }
 
 type TreeView struct {
@@ -337,7 +336,7 @@ func (tv *TreeView) insertItem(index int, item TreeItem) (win.HTREEITEM, error) 
 	if hItem == 0 {
 		return 0, newError("TVM_INSERTITEM failed")
 	}
-	tv.item2Info[item] = &treeViewItemInfo{hItem, make(map[TreeItem]win.HTREEITEM), nil}
+	tv.item2Info[item] = &treeViewItemInfo{hItem, make(map[TreeItem]win.HTREEITEM)}
 	tv.handle2Item[hItem] = item
 
 	if !tv.lazyPopulation {
@@ -512,15 +511,18 @@ func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			item := tv.handle2Item[nmtvdi.Item.HItem]
 
 			if nmtvdi.Item.Mask&win.TVIF_TEXT != 0 {
-				info := tv.item2Info[item]
 				var text string
 				rc := win.RECT{Left: int32(nmtvdi.Item.HItem)}
 				if 0 != tv.SendMessage(win.TVM_GETITEMRECT, 0, uintptr(unsafe.Pointer(&rc))) {
 					// Only retrieve text if the item is visible. Why isn't Windows doing this for us?
 					text = item.Text()
 				}
-				info.utf16Text = syscall.StringToUTF16Ptr(text)
-				nmtvdi.Item.PszText = uintptr(unsafe.Pointer(info.utf16Text))
+
+				utf16 := syscall.StringToUTF16(text)
+				buf := (*[264]uint16)(unsafe.Pointer(nmtvdi.Item.PszText))
+				max := mini(len(utf16), int(nmtvdi.Item.CchTextMax))
+				copy((*buf)[:], utf16[:max])
+				(*buf)[max-1] = 0
 			}
 			if nmtvdi.Item.Mask&win.TVIF_CHILDREN != 0 {
 				nmtvdi.Item.CChildren = int32(item.ChildCount())
