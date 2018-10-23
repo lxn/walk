@@ -9,9 +9,7 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -263,9 +261,7 @@ func (tv *TreeView) clearItems() error {
 }
 
 func (tv *TreeView) insertRoots() error {
-	count := tv.model.RootCount()
-
-	for i := 0; i < count; i++ {
+	for i := tv.model.RootCount() - 1; i >= 0; i-- {
 		if _, err := tv.insertItem(i, tv.model.RootAt(i)); err != nil {
 			return err
 		}
@@ -336,21 +332,7 @@ func (tv *TreeView) insertItem(index int, item TreeItem) (win.HTREEITEM, error) 
 		tvins.HParent = info.handle
 	}
 
-	if index == 0 {
-		tvins.HInsertAfter = win.TVI_LAST
-	} else {
-		var prevItem TreeItem
-		if parent == nil {
-			prevItem = tv.model.RootAt(index - 1)
-		} else {
-			prevItem = parent.ChildAt(index - 1)
-		}
-		info := tv.item2Info[prevItem]
-		if info == nil {
-			return 0, newError("invalid prev item")
-		}
-		tvins.HInsertAfter = info.handle
-	}
+	tvins.HInsertAfter = win.TVI_FIRST
 
 	hItem := win.HTREEITEM(tv.SendMessage(win.TVM_INSERTITEM, 0, uintptr(unsafe.Pointer(&tvins))))
 	if hItem == 0 {
@@ -371,8 +353,7 @@ func (tv *TreeView) insertItem(index int, item TreeItem) (win.HTREEITEM, error) 
 func (tv *TreeView) insertChildren(parent TreeItem) error {
 	info := tv.item2Info[parent]
 
-	count := parent.ChildCount()
-	for i := 0; i < count; i++ {
+	for i := parent.ChildCount() - 1; i >= 0; i-- {
 		child := parent.ChildAt(i)
 
 		if handle, err := tv.insertItem(i, child); err != nil {
