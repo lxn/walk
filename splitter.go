@@ -515,15 +515,20 @@ func (s *Splitter) onRemovedWidget(index int, widget Widget) (err error) {
 			}
 
 			s.removing = true
-			err = s.children.RemoveAt(handleIndex)
+			handle := s.children.items[handleIndex]
+			if err = handle.SetParent(nil); err == nil {
+				s.children.items = append(s.children.items[:index], s.children.items[index+1:]...)
+
+				s.layout.Update(true)
+
+				handle.Dispose()
+			}
+
 			s.removing = false
 		}()
 	}
 
 	err = s.ContainerBase.onRemovedWidget(index, widget)
-	if isHandle && err == nil {
-		widget.Dispose()
-	}
 
 	return
 }
