@@ -76,6 +76,15 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 		},
 		tw.CurrentIndexChanged()))
 
+	tw.MustRegisterProperty("CurrentIndex", NewProperty(
+		func() interface{} {
+			return tw.CurrentIndex()
+		},
+		func(v interface{}) error {
+			return tw.SetCurrentIndex(v.(int))
+		},
+		tw.CurrentIndexChanged()))
+
 	succeeded = true
 
 	return tw, nil
