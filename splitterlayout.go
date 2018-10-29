@@ -7,8 +7,9 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"sort"
+
+	"github.com/lxn/win"
 )
 
 type splitterLayout struct {
@@ -205,6 +206,15 @@ func (l *splitterLayout) reset() {
 	l.cleanupItems()
 
 	children := l.container.Children()
+	var minSizesTotal int
+	for _, w := range children.items {
+		min := minSizeEffective(w)
+		if l.orientation == Horizontal {
+			minSizesTotal += min.Width
+		} else {
+			minSizesTotal += min.Height
+		}
+	}
 	regularSpace := l.spaceForRegularWidgets()
 
 	stretchTotal := 0
@@ -232,6 +242,18 @@ func (l *splitterLayout) reset() {
 		item := l.hwnd2Item[child.Handle()]
 		item.growth = 0
 		item.size = int(float64(l.StretchFactor(child)) / float64(stretchTotal) * float64(regularSpace))
+
+		if minSizesTotal <= regularSpace {
+			var min int
+			if minSize := minSizeEffective(child); l.orientation == Horizontal {
+				min = minSize.Width
+			} else {
+				min = minSize.Height
+			}
+			if item.size < min {
+				item.size = min
+			}
+		}
 	}
 }
 
