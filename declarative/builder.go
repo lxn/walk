@@ -54,6 +54,7 @@ type Builder struct {
 	parent                   walk.Container
 	declWidgets              []declWidget
 	name2Window              map[string]walk.Window
+	name2DataBinder          map[string]*walk.DataBinder
 	deferredFuncs            []func() error
 	knownCompositeConditions map[string]walk.Condition
 	expressions              map[string]walk.Expression
@@ -64,6 +65,7 @@ func NewBuilder(parent walk.Container) *Builder {
 	return &Builder{
 		parent:                   parent,
 		name2Window:              make(map[string]walk.Window),
+		name2DataBinder:          make(map[string]*walk.DataBinder),
 		knownCompositeConditions: make(map[string]walk.Condition),
 		expressions:              make(map[string]walk.Expression),
 		functions:                make(map[string]govaluate.ExpressionFunction),
@@ -359,6 +361,8 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 			} else {
 				db = dataB
 
+				b.name2DataBinder[dataBinder.Name] = db
+
 				if ep := db.ErrorPresenter(); ep != nil {
 					if dep, ok := ep.(walk.Disposable); ok {
 						wc.AddDisposable(dep)
@@ -609,6 +613,8 @@ func (b *Builder) conditionOrProperty(data Property) interface{} {
 					} else {
 						panic(fmt.Errorf(`invalid sub expression: "%s"`, s))
 					}
+				} else if db, ok := b.name2DataBinder[parts[0]]; ok {
+					e.addSubExpression(s, db.Expression(s[len(parts[0])+1:]))
 				} else if expr, ok := b.expressions[parts[0]]; ok {
 					e.addSubExpression(s, walk.NewReflectExpression(expr, s[len(parts[0])+1:]))
 				}

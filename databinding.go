@@ -23,25 +23,33 @@ type ErrorPresenter interface {
 }
 
 type DataBinder struct {
-	dataSource                interface{}
-	boundWidgets              []Widget
-	properties                []Property
-	property2Widget           map[Property]Widget
-	property2ChangedHandle    map[Property]int
-	errorPresenter            ErrorPresenter
-	canSubmitChangedPublisher EventPublisher
-	submittedPublisher        EventPublisher
-	autoSubmitDelay           time.Duration
-	autoSubmitTimer           *time.Timer
-	autoSubmit                bool
-	autoSubmitSuspended       bool
-	canSubmit                 bool
-	inReset                   bool
-	dirty                     bool
+	dataSource                 interface{}
+	boundWidgets               []Widget
+	properties                 []Property
+	property2Widget            map[Property]Widget
+	property2ChangedHandle     map[Property]int
+	rootExpression             Expression
+	path2Expression            map[string]Expression
+	errorPresenter             ErrorPresenter
+	dataSourceChangedPublisher EventPublisher
+	canSubmitChangedPublisher  EventPublisher
+	submittedPublisher         EventPublisher
+	resetPublisher             EventPublisher
+	autoSubmitDelay            time.Duration
+	autoSubmitTimer            *time.Timer
+	autoSubmit                 bool
+	autoSubmitSuspended        bool
+	canSubmit                  bool
+	inReset                    bool
+	dirty                      bool
 }
 
 func NewDataBinder() *DataBinder {
-	return new(DataBinder)
+	db := new(DataBinder)
+
+	db.rootExpression = &dataBinderRootExpression{db}
+
+	return db
 }
 
 func (db *DataBinder) AutoSubmit() bool {
@@ -92,6 +100,10 @@ func (db *DataBinder) DataSource() interface{} {
 }
 
 func (db *DataBinder) SetDataSource(dataSource interface{}) error {
+	if dataSource == db.dataSource {
+		return nil
+	}
+
 	if dataSource != nil {
 		if t := reflect.TypeOf(dataSource); t.Kind() != reflect.Map && (t.Kind() != reflect.Ptr || t.Elem().Kind() != reflect.Struct) {
 			return newError("dataSource must be pointer to struct or map[string]interface{}")
@@ -100,7 +112,25 @@ func (db *DataBinder) SetDataSource(dataSource interface{}) error {
 
 	db.dataSource = dataSource
 
+	db.dataSourceChangedPublisher.Publish()
+
 	return nil
+}
+
+type dataBinderRootExpression struct {
+	db *DataBinder
+}
+
+func (dbre *dataBinderRootExpression) Value() interface{} {
+	return dbre.db.dataSource
+}
+
+func (dbre *dataBinderRootExpression) Changed() *Event {
+	return dbre.db.resetPublisher.Event()
+}
+
+func (db *DataBinder) DataSourceChanged() *Event {
+	return db.dataSourceChangedPublisher.Event()
 }
 
 func (db *DataBinder) BoundWidgets() []Widget {
@@ -164,6 +194,22 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 			})
 		}
 	}
+}
+
+func (db *DataBinder) Expression(path string) Expression {
+	if db.path2Expression == nil {
+		db.path2Expression = make(map[string]Expression)
+	}
+
+	if prop, ok := db.path2Expression[path]; ok {
+		return prop
+	}
+
+	expr := NewReflectExpression(db.rootExpression, path)
+
+	db.path2Expression[path] = expr
+
+	return expr
 }
 
 func (db *DataBinder) validateProperties() {
@@ -279,7 +325,13 @@ func (db *DataBinder) Reset() error {
 
 	db.dirty = false
 
+	db.resetPublisher.Publish()
+
 	return nil
+}
+
+func (db *DataBinder) ResetFinished() *Event {
+	return db.resetPublisher.Event()
 }
 
 func (db *DataBinder) Submit() error {
