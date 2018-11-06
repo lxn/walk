@@ -27,7 +27,9 @@ func init() {
 // NumberEdit is a widget that is suited to edit numeric values.
 type NumberEdit struct {
 	WidgetBase
-	edit *numberLineEdit
+	edit                   *numberLineEdit
+	prefixChangedPublisher EventPublisher
+	suffixChangedPublisher EventPublisher
 }
 
 // NewNumberEdit returns a new NumberEdit widget as child of parent.
@@ -64,6 +66,15 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 	ne.GraphicsEffects().Add(InteractionEffect)
 	ne.GraphicsEffects().Add(FocusEffect)
 
+	ne.MustRegisterProperty("Prefix", NewProperty(
+		func() interface{} {
+			return ne.Prefix()
+		},
+		func(v interface{}) error {
+			return ne.SetPrefix(v.(string))
+		},
+		ne.prefixChangedPublisher.Event()))
+
 	ne.MustRegisterProperty("ReadOnly", NewProperty(
 		func() interface{} {
 			return ne.ReadOnly()
@@ -72,6 +83,15 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 			return ne.SetReadOnly(v.(bool))
 		},
 		ne.edit.readOnlyChangedPublisher.Event()))
+
+	ne.MustRegisterProperty("Suffix", NewProperty(
+		func() interface{} {
+			return ne.Suffix()
+		},
+		func(v interface{}) error {
+			return ne.SetSuffix(v.(string))
+		},
+		ne.suffixChangedPublisher.Event()))
 
 	ne.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
@@ -150,6 +170,10 @@ func (ne *NumberEdit) Prefix() string {
 
 // SetPrefix sets the text that appears in the NumberEdit before the number.
 func (ne *NumberEdit) SetPrefix(prefix string) error {
+	if prefix == ne.Prefix() {
+		return nil
+	}
+
 	p, err := syscall.UTF16FromString(prefix)
 	if err != nil {
 		return err
@@ -163,7 +187,14 @@ func (ne *NumberEdit) SetPrefix(prefix string) error {
 		return err
 	}
 
+	ne.prefixChangedPublisher.Publish()
+
 	return nil
+}
+
+// PrefixChanged returns the event that is published when the prefix changed.
+func (ne *NumberEdit) PrefixChanged() *Event {
+	return ne.prefixChangedPublisher.Event()
 }
 
 // Suffix returns the text that appears in the NumberEdit after the number.
@@ -173,6 +204,10 @@ func (ne *NumberEdit) Suffix() string {
 
 // SetSuffix sets the text that appears in the NumberEdit after the number.
 func (ne *NumberEdit) SetSuffix(suffix string) error {
+	if suffix == ne.Suffix() {
+		return nil
+	}
+
 	s, err := syscall.UTF16FromString(suffix)
 	if err != nil {
 		return err
@@ -186,7 +221,14 @@ func (ne *NumberEdit) SetSuffix(suffix string) error {
 		return err
 	}
 
+	ne.suffixChangedPublisher.Publish()
+
 	return nil
+}
+
+// SuffixChanged returns the event that is published when the suffix changed.
+func (ne *NumberEdit) SuffixChanged() *Event {
+	return ne.suffixChangedPublisher.Event()
 }
 
 // Increment returns the amount by which the NumberEdit increments or decrements

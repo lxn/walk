@@ -50,10 +50,10 @@ type NumberEdit struct {
 	Increment      float64
 	MaxValue       float64
 	MinValue       float64
-	Prefix         string
+	Prefix         Property
 	OnValueChanged walk.EventHandler
 	ReadOnly       Property
-	Suffix         string
+	Suffix         Property
 	TextColor      walk.Color
 	Value          Property
 }
@@ -72,13 +72,6 @@ func (ne NumberEdit) Create(builder *Builder) error {
 		w.SetTextColor(ne.TextColor)
 
 		if err := w.SetDecimals(ne.Decimals); err != nil {
-			return err
-		}
-
-		if err := w.SetPrefix(ne.Prefix); err != nil {
-			return err
-		}
-		if err := w.SetSuffix(ne.Suffix); err != nil {
 			return err
 		}
 
