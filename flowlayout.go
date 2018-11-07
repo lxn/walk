@@ -179,7 +179,7 @@ func (l *FlowLayout) MinSize() Size {
 		height = maxi(minSize.Height, height)
 	}
 
-	return Size{width + l.margins.HNear + l.margins.HFar, height + l.margins.VNear + l.margins.VFar}
+	return Size{width + l.margins.HNear + l.margins.HFar, height}
 }
 
 func (l *FlowLayout) minSizeForWidth(w int) Size {
@@ -199,7 +199,7 @@ func (l *FlowLayout) minSizeForWidth(w int) Size {
 		height += section.secondaryMinSize
 	}
 
-	return Size{width + l.margins.HNear + l.margins.HFar, height + l.margins.VNear + l.margins.VFar}
+	return Size{width + l.margins.HNear + l.margins.HFar, height}
 }
 
 func (l *FlowLayout) Update(reset bool) error {
@@ -230,7 +230,7 @@ func (l *FlowLayout) Update(reset bool) error {
 	bounds := l.container.ClientBounds()
 	sections := l.sectionsForPrimarySize(bounds.Width)
 
-	for _, section := range sections {
+	for i, section := range sections {
 		var widgets []Widget
 		for _, item := range section.items {
 			widgets = append(widgets, item.widget)
@@ -238,7 +238,15 @@ func (l *FlowLayout) Update(reset bool) error {
 
 		bounds.Height = section.secondaryMinSize
 
-		if err := performBoxLayout(widgets, Horizontal, bounds, l.Margins(), l.Spacing(), l.hwnd2StretchFactor); err != nil {
+		margins := l.margins
+		if i > 0 {
+			margins.VNear = 0
+		}
+		if i < len(sections)-1 {
+			margins.VFar = 0
+		}
+
+		if err := performBoxLayout(widgets, Horizontal, bounds, margins, l.spacing, l.hwnd2StretchFactor); err != nil {
 			return err
 		}
 
@@ -278,6 +286,9 @@ func (l *FlowLayout) sectionsForPrimarySize(primarySize int) []flowLayoutSection
 
 		addItem := func() {
 			section.items = append(section.items, item)
+			if len(section.items) > 1 {
+				section.primarySpaceLeft -= l.spacing
+			}
 			section.primarySpaceLeft -= item.minSize.Width
 			section.secondaryMinSize = maxi(section.secondaryMinSize, item.minSize.Height)
 		}
@@ -295,6 +306,11 @@ func (l *FlowLayout) sectionsForPrimarySize(primarySize int) []flowLayoutSection
 
 	if len(section.items) > 0 {
 		addSection()
+	}
+
+	if len(sections) > 0 {
+		sections[0].secondaryMinSize += l.margins.VNear
+		sections[len(sections)-1].secondaryMinSize += l.margins.VFar
 	}
 
 	return sections

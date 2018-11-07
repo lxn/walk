@@ -8,9 +8,7 @@ package walk
 
 import (
 	"sort"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
