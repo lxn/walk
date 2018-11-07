@@ -127,36 +127,7 @@ func (l *FlowLayout) cleanupStretchFactors() {
 }
 
 func (l *FlowLayout) LayoutFlags() LayoutFlags {
-	if l.container == nil {
-		return 0
-	}
-
-	var flags LayoutFlags
-
-	children := l.container.Children()
-	count := children.Len()
-	if count == 0 {
-		return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert
-	} else {
-		for i := 0; i < count; i++ {
-			widget := children.At(i)
-
-			if shouldLayoutWidget(widget) {
-				wf := widget.LayoutFlags()
-
-				if wf&GreedyHorz != 0 && widget.MaxSize().Width > 0 {
-					wf &^= GreedyHorz
-				}
-				if wf&GreedyVert != 0 && widget.MaxSize().Height > 0 {
-					wf &^= GreedyVert
-				}
-
-				flags |= wf
-			}
-		}
-	}
-
-	return flags
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
 func (l *FlowLayout) MinSize() Size {
