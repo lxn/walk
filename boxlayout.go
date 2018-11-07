@@ -201,28 +201,6 @@ func (l widgetInfoList) Swap(i, j int) {
 	l[i], l[j] = l[j], l[i]
 }
 
-func (l *BoxLayout) widgets() []Widget {
-	children := l.container.Children()
-	widgets := make([]Widget, 0, children.Len())
-
-	for i := 0; i < cap(widgets); i++ {
-		widget := children.At(i)
-
-		if !shouldLayoutWidget(widget) {
-			continue
-		}
-
-		ps := widget.SizeHint()
-		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
-			continue
-		}
-
-		widgets = append(widgets, widget)
-	}
-
-	return widgets
-}
-
 func (l *BoxLayout) LayoutFlags() LayoutFlags {
 	if l.container == nil {
 		return 0
@@ -277,7 +255,7 @@ func (l *BoxLayout) MinSize() Size {
 		return Size{}
 	}
 
-	widgets := l.widgets()
+	widgets := widgetsToLayout(l.container.Children())
 	var s Size
 
 	for _, widget := range widgets {
@@ -325,16 +303,15 @@ func (l *BoxLayout) Update(reset bool) error {
 	if l.resetNeeded {
 		l.resetNeeded = false
 
-		// Make GC happy.
 		l.cleanupStretchFactors()
 	}
 
 	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
 
-	// Begin by finding out which widgets we care about.
-	widgets := l.widgets()
+	return performBoxLayout(widgetsToLayout(l.Container().Children()), l.orientation, l.container.ClientBounds(), l.margins, l.spacing, l.hwnd2StretchFactor)
+}
 
-	// Prepare some useful data.
+func performBoxLayout(widgets []Widget, orientation Orientation, bounds Rectangle, margins Margins, spacing int, hwnd2StretchFactor map[win.HWND]int) error {
 	var greedyNonSpacerCount int
 	var greedySpacerCount int
 	var stretchFactorsTotal [3]int
@@ -348,7 +325,7 @@ func (l *BoxLayout) Update(reset bool) error {
 	sortedWidgetInfo := widgetInfoList(make([]widgetInfo, len(widgets)))
 
 	for i, widget := range widgets {
-		sf := l.hwnd2StretchFactor[widget.Handle()]
+		sf := hwnd2StretchFactor[widget.Handle()]
 		if sf == 0 {
 			sf = 1
 		}
@@ -359,7 +336,7 @@ func (l *BoxLayout) Update(reset bool) error {
 		max := widget.MaxSize()
 		pref := widget.SizeHint()
 
-		if l.orientation == Horizontal {
+		if orientation == Horizontal {
 			growable2[i] = flags&GrowableVert > 0
 
 			minSizes[i] = minSizeEffective(widget).Width
@@ -416,22 +393,21 @@ func (l *BoxLayout) Update(reset bool) error {
 
 	sort.Stable(sortedWidgetInfo)
 
-	cb := l.container.ClientBounds()
 	var start1, start2, space1, space2 int
-	if l.orientation == Horizontal {
-		start1 = cb.X + l.margins.HNear
-		start2 = cb.Y + l.margins.VNear
-		space1 = cb.Width - l.margins.HNear - l.margins.HFar
-		space2 = cb.Height - l.margins.VNear - l.margins.VFar
+	if orientation == Horizontal {
+		start1 = bounds.X + margins.HNear
+		start2 = bounds.Y + margins.VNear
+		space1 = bounds.Width - margins.HNear - margins.HFar
+		space2 = bounds.Height - margins.VNear - margins.VFar
 	} else {
-		start1 = cb.Y + l.margins.VNear
-		start2 = cb.X + l.margins.HNear
-		space1 = cb.Height - l.margins.VNear - l.margins.VFar
-		space2 = cb.Width - l.margins.HNear - l.margins.HFar
+		start1 = bounds.Y + margins.VNear
+		start2 = bounds.X + margins.HNear
+		space1 = bounds.Height - margins.VNear - margins.VFar
+		space2 = bounds.Width - margins.HNear - margins.HFar
 	}
 
 	// Now calculate widget primary axis sizes.
-	spacingRemaining := l.spacing * (len(widgets) - 1)
+	spacingRemaining := spacing * (len(widgets) - 1)
 
 	offsets := [3]int{0, greedyNonSpacerCount, greedyNonSpacerCount + greedySpacerCount}
 	counts := [3]int{greedyNonSpacerCount, greedySpacerCount, len(widgets) - greedyNonSpacerCount - greedySpacerCount}
@@ -462,8 +438,8 @@ func (l *BoxLayout) Update(reset bool) error {
 
 			minSizesRemaining -= min
 			stretchFactorsRemaining -= stretch
-			space1 -= (size + l.spacing)
-			spacingRemaining -= l.spacing
+			space1 -= (size + spacing)
+			spacingRemaining -= spacing
 		}
 	}
 
@@ -490,13 +466,13 @@ func (l *BoxLayout) Update(reset bool) error {
 		p2 := start2 + (space2-s2)/2
 
 		var x, y, w, h int
-		if l.orientation == Horizontal {
+		if orientation == Horizontal {
 			x, y, w, h = p1, p2, s1, s2
 		} else {
 			x, y, w, h = p2, p1, s2, s1
 		}
 
-		p1 += s1 + l.spacing
+		p1 += s1 + spacing
 
 		if b := widget.Bounds(); b.X == x && b.Y == y && b.Width == w {
 			if _, ok := widget.(*ComboBox); ok {

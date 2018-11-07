@@ -101,6 +101,27 @@ type Layout interface {
 	Update(reset bool) error
 }
 
+func widgetsToLayout(allWidgets *WidgetList) []Widget {
+	filteredWidgets := make([]Widget, 0, allWidgets.Len())
+
+	for i := 0; i < cap(filteredWidgets); i++ {
+		widget := allWidgets.At(i)
+
+		if !shouldLayoutWidget(widget) {
+			continue
+		}
+
+		ps := widget.SizeHint()
+		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
+			continue
+		}
+
+		filteredWidgets = append(filteredWidgets, widget)
+	}
+
+	return filteredWidgets
+}
+
 func shouldLayoutWidget(widget Widget) bool {
 	if widget == nil {
 		return false

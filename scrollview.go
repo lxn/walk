@@ -247,7 +247,13 @@ func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			sv.composite.WndProc(hwnd, msg, wParam, lParam)
 
 		case win.WM_SIZE, win.WM_SIZING:
-			s := maxSize(sv.composite.layout.MinSize(), sv.ClientBounds().Size())
+			var minSize Size
+			if fl, ok := sv.composite.layout.(*FlowLayout); ok {
+				minSize = fl.minSizeForWidth(sv.ClientBounds().Width)
+			} else {
+				minSize = sv.composite.layout.MinSize()
+			}
+			s := maxSize(minSize, sv.ClientBounds().Size())
 			sv.composite.SetSize(s)
 			sv.updateScrollBars()
 		}
