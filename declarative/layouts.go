@@ -131,7 +131,6 @@ func (g Grid) Create() (walk.Layout, error) {
 type Flow struct {
 	Margins     Margins
 	Spacing     int
-	PrimarySize int
 	MarginsZero bool
 	SpacingZero bool
 }
@@ -144,10 +143,6 @@ func (f Flow) Create() (walk.Layout, error) {
 	}
 
 	if err := setLayoutSpacing(l, f.Spacing, f.SpacingZero); err != nil {
-		return nil, err
-	}
-
-	if err := l.SetPrimarySize(f.PrimarySize); err != nil {
 		return nil, err
 	}
 

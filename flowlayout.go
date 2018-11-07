@@ -15,7 +15,6 @@ type FlowLayout struct {
 	hwnd2StretchFactor map[win.HWND]int
 	margins            Margins
 	spacing            int
-	primarySize        int
 	resetNeeded        bool
 }
 
@@ -125,24 +124,6 @@ func (l *FlowLayout) cleanupStretchFactors() {
 			delete(l.hwnd2StretchFactor, handle)
 		}
 	}
-}
-
-func (l *FlowLayout) PrimarySize() int {
-	return l.primarySize
-}
-
-func (l *FlowLayout) SetPrimarySize(primarySize int) error {
-	if primarySize != l.primarySize {
-		if primarySize < 0 {
-			return newError("primary size cannot be negative")
-		}
-
-		l.primarySize = primarySize
-
-		l.Update(false)
-	}
-
-	return nil
 }
 
 func (l *FlowLayout) LayoutFlags() LayoutFlags {
