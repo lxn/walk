@@ -24,10 +24,11 @@ type FileDialog struct {
 	InitialDirPath string
 	Filter         string
 	FilterIndex    int
+	Flags          uint32
 	ShowReadOnlyCB bool
 }
 
-func (dlg *FileDialog) Show(owner Form, fun func(ofn *win.OPENFILENAME) bool, flags uint32) (accepted bool, err error) {
+func (dlg *FileDialog) show(owner Form, fun func(ofn *win.OPENFILENAME) bool, flags uint32) (accepted bool, err error) {
 	ofn := new(win.OPENFILENAME)
 
 	ofn.LStructSize = uint32(unsafe.Sizeof(*ofn))
@@ -48,7 +49,7 @@ func (dlg *FileDialog) Show(owner Form, fun func(ofn *win.OPENFILENAME) bool, fl
 
 	ofn.LpstrInitialDir = syscall.StringToUTF16Ptr(dlg.InitialDirPath)
 	ofn.LpstrTitle = syscall.StringToUTF16Ptr(dlg.Title)
-	ofn.Flags = win.OFN_FILEMUSTEXIST | flags
+	ofn.Flags = win.OFN_FILEMUSTEXIST | flags | dlg.Flags
 
 	if !dlg.ShowReadOnlyCB {
 		ofn.Flags |= win.OFN_HIDEREADONLY
@@ -113,15 +114,15 @@ func (dlg *FileDialog) Show(owner Form, fun func(ofn *win.OPENFILENAME) bool, fl
 }
 
 func (dlg *FileDialog) ShowOpen(owner Form) (accepted bool, err error) {
-	return dlg.Show(owner, win.GetOpenFileName, 0)
+	return dlg.show(owner, win.GetOpenFileName, 0)
 }
 
 func (dlg *FileDialog) ShowOpenMultiple(owner Form) (accepted bool, err error) {
-	return dlg.Show(owner, win.GetOpenFileName, win.OFN_ALLOWMULTISELECT|win.OFN_EXPLORER)
+	return dlg.show(owner, win.GetOpenFileName, win.OFN_ALLOWMULTISELECT|win.OFN_EXPLORER)
 }
 
 func (dlg *FileDialog) ShowSave(owner Form) (accepted bool, err error) {
-	return dlg.Show(owner, win.GetSaveFileName, 0)
+	return dlg.show(owner, win.GetSaveFileName, 0)
 }
 
 func (dlg *FileDialog) ShowBrowseFolder(owner Form) (accepted bool, err error) {
