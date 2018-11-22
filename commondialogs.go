@@ -27,7 +27,7 @@ type FileDialog struct {
 	ShowReadOnlyCB bool
 }
 
-func (dlg *FileDialog) show(owner Form, fun func(ofn *win.OPENFILENAME) bool, flags uint32) (accepted bool, err error) {
+func (dlg *FileDialog) Show(owner Form, fun func(ofn *win.OPENFILENAME) bool, flags uint32) (accepted bool, err error) {
 	ofn := new(win.OPENFILENAME)
 
 	ofn.LStructSize = uint32(unsafe.Sizeof(*ofn))
@@ -113,15 +113,15 @@ func (dlg *FileDialog) show(owner Form, fun func(ofn *win.OPENFILENAME) bool, fl
 }
 
 func (dlg *FileDialog) ShowOpen(owner Form) (accepted bool, err error) {
-	return dlg.show(owner, win.GetOpenFileName, 0)
+	return dlg.Show(owner, win.GetOpenFileName, 0)
 }
 
 func (dlg *FileDialog) ShowOpenMultiple(owner Form) (accepted bool, err error) {
-	return dlg.show(owner, win.GetOpenFileName, win.OFN_ALLOWMULTISELECT|win.OFN_EXPLORER)
+	return dlg.Show(owner, win.GetOpenFileName, win.OFN_ALLOWMULTISELECT|win.OFN_EXPLORER)
 }
 
 func (dlg *FileDialog) ShowSave(owner Form) (accepted bool, err error) {
-	return dlg.show(owner, win.GetSaveFileName, 0)
+	return dlg.Show(owner, win.GetSaveFileName, 0)
 }
 
 func (dlg *FileDialog) ShowBrowseFolder(owner Form) (accepted bool, err error) {
