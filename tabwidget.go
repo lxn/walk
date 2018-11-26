@@ -10,9 +10,7 @@ import (
 	"strconv"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -293,7 +291,7 @@ func (tw *TabWidget) onSelChange() {
 		page.SetVisible(false)
 	}
 
-	tw.currentIndex = int(win.SendMessage(tw.hWndTab, win.TCM_GETCURSEL, 0, 0))
+	tw.currentIndex = int(int32(win.SendMessage(tw.hWndTab, win.TCM_GETCURSEL, 0, 0)))
 
 	if tw.currentIndex > -1 && tw.currentIndex < pageCount {
 		page := tw.pages.At(tw.currentIndex)
