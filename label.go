@@ -74,6 +74,35 @@ func (l *Label) SetText(value string) error {
 	return l.updateParentLayout()
 }
 
+func (l *Label) Alignment() Alignment1D {
+	switch win.GetWindowLong(l.hWnd, win.GWL_STYLE) & (win.ES_LEFT | win.ES_CENTER | win.ES_RIGHT) {
+	case win.ES_CENTER:
+		return AlignCenter
+
+	case win.ES_RIGHT:
+		return AlignFar
+	}
+
+	return AlignNear
+}
+
+func (l *Label) SetAlignment(alignment Alignment1D) error {
+	var bit uint32
+
+	switch alignment {
+	case AlignCenter:
+		bit = win.ES_CENTER
+
+	case AlignFar:
+		bit = win.ES_RIGHT
+
+	default:
+		bit = win.ES_LEFT
+	}
+
+	return l.ensureStyleBits(bit, true)
+}
+
 func (l *Label) TextColor() Color {
 	return l.textColor
 }

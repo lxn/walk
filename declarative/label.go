@@ -45,6 +45,7 @@ type Label struct {
 
 	// Label
 
+	Alignment Alignment1D
 	AssignTo  **walk.Label
 	Text      Property
 	TextColor walk.Color
@@ -62,6 +63,10 @@ func (l Label) Create(builder *Builder) error {
 
 	return builder.InitWidget(l, w, func() error {
 		w.SetTextColor(l.TextColor)
+
+		if err := w.SetAlignment(walk.Alignment1D(l.Alignment)); err != nil {
+			return err
+		}
 
 		return nil
 	})
