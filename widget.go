@@ -410,6 +410,24 @@ func (wb *WidgetBase) invalidateBorderInParent() {
 	}
 }
 
+func (wb *WidgetBase) hasComplexBackground() bool {
+	if bg := wb.window.Background(); bg != nil && !bg.simple() {
+		return false
+	}
+
+	var complex bool
+	wb.ForEachAncestor(func(window Window) bool {
+		if bg := window.Background(); bg != nil && !bg.simple() {
+			complex = true
+			return false
+		}
+
+		return true
+	})
+
+	return complex
+}
+
 func (wb *WidgetBase) updateParentLayout() error {
 	parent := wb.window.(Widget).Parent()
 

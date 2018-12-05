@@ -8,9 +8,7 @@ package walk
 
 import (
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -208,11 +206,7 @@ func (sv *ScrollView) MouseUp() *MouseEvent {
 func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if sv.composite != nil {
 		avoidBGArtifacts := func() {
-			switch bg, _ := sv.backgroundEffective(); bg.(type) {
-			case nil, *SolidColorBrush, *SystemColorBrush:
-				// nop
-
-			default:
+			if sv.hasComplexBackground() {
 				sv.composite.Invalidate()
 			}
 		}

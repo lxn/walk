@@ -7,8 +7,9 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"unsafe"
+
+	"github.com/lxn/win"
 )
 
 type HatchStyle int
@@ -65,6 +66,7 @@ type Brush interface {
 	logbrush() *win.LOGBRUSH
 	attachWindow(wb *WindowBase)
 	detachWindow(wb *WindowBase)
+	simple() bool
 }
 
 type perWindowBrush interface {
@@ -141,8 +143,12 @@ func (b *nullBrush) Dispose() {
 	b.brushBase.Dispose()
 }
 
-func (b *nullBrush) logbrush() *win.LOGBRUSH {
+func (*nullBrush) logbrush() *win.LOGBRUSH {
 	return &win.LOGBRUSH{LbStyle: win.BS_NULL}
+}
+
+func (*nullBrush) simple() bool {
+	return true
 }
 
 var nullBrushSingleton Brush = newNullBrush()
@@ -175,7 +181,7 @@ func (b *SystemColorBrush) SystemColor() SystemColor {
 	return b.sysColor
 }
 
-func (b *SystemColorBrush) Dispose() {
+func (*SystemColorBrush) Dispose() {
 	// nop
 }
 
@@ -184,6 +190,10 @@ func (b *SystemColorBrush) logbrush() *win.LOGBRUSH {
 		LbStyle: win.BS_SOLID,
 		LbColor: win.COLORREF(win.GetSysColor(int(b.sysColor))),
 	}
+}
+
+func (*SystemColorBrush) simple() bool {
+	return true
 }
 
 type SolidColorBrush struct {
@@ -208,6 +218,10 @@ func (b *SolidColorBrush) Color() Color {
 
 func (b *SolidColorBrush) logbrush() *win.LOGBRUSH {
 	return &win.LOGBRUSH{LbStyle: win.BS_SOLID, LbColor: win.COLORREF(b.color)}
+}
+
+func (*SolidColorBrush) simple() bool {
+	return true
 }
 
 type HatchBrush struct {
@@ -239,6 +253,10 @@ func (b *HatchBrush) Style() HatchStyle {
 	return b.style
 }
 
+func (b *HatchBrush) simple() bool {
+	return false
+}
+
 type BitmapBrush struct {
 	brushBase
 	bitmap *Bitmap
@@ -263,6 +281,10 @@ func (b *BitmapBrush) logbrush() *win.LOGBRUSH {
 
 func (b *BitmapBrush) Bitmap() *Bitmap {
 	return b.bitmap
+}
+
+func (b *BitmapBrush) simple() bool {
+	return false
 }
 
 type GradientVertex struct {
@@ -321,6 +343,10 @@ func (b *GradientBrush) logbrush() *win.LOGBRUSH {
 	}
 
 	return b.mainDelegate.logbrush()
+}
+
+func (*GradientBrush) simple() bool {
+	return false
 }
 
 func (b *GradientBrush) create(size Size) (*BitmapBrush, error) {
