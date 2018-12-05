@@ -52,7 +52,7 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 			return cb.CheckState()
 		},
 		func(v interface{}) error {
-			cb.SetCheckState(v.(CheckState))
+			cb.SetCheckState(CheckState(assertIntOr(v, 0)))
 
 			return nil
 		},

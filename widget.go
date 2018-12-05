@@ -129,7 +129,7 @@ func (wb *WidgetBase) init(widget Widget) error {
 			return wb.window.(Widget).ToolTipText()
 		},
 		func(v interface{}) error {
-			wb.window.(Widget).SetToolTipText(v.(string))
+			wb.window.(Widget).SetToolTipText(assertStringOr(v, ""))
 			return nil
 		},
 		wb.toolTipTextChangedPublisher.Event())

@@ -65,7 +65,7 @@ func NewListBoxWithStyle(parent Container, style uint32) (*ListBox, error) {
 			return lb.CurrentIndex()
 		},
 		func(v interface{}) error {
-			return lb.SetCurrentIndex(v.(int))
+			return lb.SetCurrentIndex(assertIntOr(v, -1))
 		},
 		lb.CurrentIndexChanged()))
 

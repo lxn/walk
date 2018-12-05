@@ -88,7 +88,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 			return gb.Title()
 		},
 		func(v interface{}) error {
-			return gb.SetTitle(v.(string))
+			return gb.SetTitle(assertStringOr(v, ""))
 		},
 		gb.titleChangedPublisher.Event()))
 

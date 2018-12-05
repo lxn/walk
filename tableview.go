@@ -259,7 +259,7 @@ func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error
 			return tv.CurrentIndex()
 		},
 		func(v interface{}) error {
-			return tv.SetCurrentIndex(v.(int))
+			return tv.SetCurrentIndex(assertIntOr(v, -1))
 		},
 		tv.CurrentIndexChanged()))
 

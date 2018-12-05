@@ -142,7 +142,7 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 			return cb.CurrentIndex()
 		},
 		func(v interface{}) error {
-			return cb.SetCurrentIndex(v.(int))
+			return cb.SetCurrentIndex(assertIntOr(v, -1))
 		},
 		cb.CurrentIndexChanged()))
 
@@ -151,7 +151,7 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 			return cb.Text()
 		},
 		func(v interface{}) error {
-			return cb.SetText(v.(string))
+			return cb.SetText(assertStringOr(v, ""))
 		},
 		event))
 
@@ -183,7 +183,7 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 		},
 		func(v interface{}) error {
 			if cb.Editable() {
-				return cb.SetText(v.(string))
+				return cb.SetText(assertStringOr(v, ""))
 			}
 
 			if cb.bindingValueProvider == nil {

@@ -80,7 +80,7 @@ func (b *Button) init() {
 			return b.Text()
 		},
 		func(v interface{}) error {
-			return b.SetText(v.(string))
+			return b.SetText(assertStringOr(v, ""))
 		},
 		b.textChangedPublisher.Event()))
 }

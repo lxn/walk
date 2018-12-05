@@ -7,8 +7,9 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"strconv"
+
+	"github.com/lxn/win"
 )
 
 const tabPageWindowClass = `\o/ Walk_TabPage_Class \o/`
@@ -49,7 +50,7 @@ func NewTabPage() (*TabPage, error) {
 			return tp.Title()
 		},
 		func(v interface{}) error {
-			return tp.SetTitle(v.(string))
+			return tp.SetTitle(assertStringOr(v, ""))
 		},
 		tp.titleChangedPublisher.Event()))
 

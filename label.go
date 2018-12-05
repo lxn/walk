@@ -39,7 +39,7 @@ func NewLabelWithStyle(parent Container, style uint32) (*Label, error) {
 			return l.Text()
 		},
 		func(v interface{}) error {
-			return l.SetText(v.(string))
+			return l.setText(assertStringOr(v, ""))
 		},
 		l.textChangedPublisher.Event()))
 

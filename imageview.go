@@ -88,7 +88,7 @@ func NewImageView(parent Container) (*ImageView, error) {
 			return iv.Margin()
 		},
 		func(v interface{}) error {
-			return iv.SetMargin(v.(int))
+			return iv.SetMargin(assertIntOr(v, 0))
 		},
 		iv.MarginChanged()))
 

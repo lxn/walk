@@ -54,7 +54,7 @@ func NewSliderWithOrientation(parent Container, orientation Orientation) (*Slide
 			return sl.Value()
 		},
 		func(v interface{}) error {
-			sl.SetValue(v.(int))
+			sl.SetValue(assertIntOr(v, 0))
 			return nil
 		},
 		sl.valueChangedPublisher.Event()))

@@ -45,7 +45,7 @@ func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
 			return de.Date()
 		},
 		func(v interface{}) error {
-			return de.SetDate(v.(time.Time))
+			return de.SetDate(assertTimeOr(v, time.Time{}))
 		},
 		de.dateChangedPublisher.Event()))
 

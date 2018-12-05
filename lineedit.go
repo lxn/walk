@@ -67,7 +67,7 @@ func newLineEdit(parent Window) (*LineEdit, error) {
 			return le.Text()
 		},
 		func(v interface{}) error {
-			return le.SetText(v.(string))
+			return le.SetText(assertStringOr(v, ""))
 		},
 		le.textChangedPublisher.Event()))
 

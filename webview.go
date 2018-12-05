@@ -177,7 +177,7 @@ func NewWebView(parent Container) (*WebView, error) {
 			return url
 		},
 		func(v interface{}) error {
-			return wv.SetURL(v.(string))
+			return wv.SetURL(assertStringOr(v, ""))
 		},
 		wv.urlChangedPublisher.Event()))
 

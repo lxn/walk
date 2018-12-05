@@ -38,7 +38,7 @@ func NewLinkLabel(parent Container) (*LinkLabel, error) {
 			return ll.Text()
 		},
 		func(v interface{}) error {
-			return ll.SetText(v.(string))
+			return ll.SetText(assertStringOr(v, ""))
 		},
 		ll.textChangedPublisher.Event()))
 

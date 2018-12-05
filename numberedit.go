@@ -71,7 +71,7 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 			return ne.Prefix()
 		},
 		func(v interface{}) error {
-			return ne.SetPrefix(v.(string))
+			return ne.SetPrefix(assertStringOr(v, ""))
 		},
 		ne.prefixChangedPublisher.Event()))
 
@@ -89,7 +89,7 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 			return ne.Suffix()
 		},
 		func(v interface{}) error {
-			return ne.SetSuffix(v.(string))
+			return ne.SetSuffix(assertStringOr(v, ""))
 		},
 		ne.suffixChangedPublisher.Event()))
 
@@ -98,7 +98,7 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 			return ne.Value()
 		},
 		func(v interface{}) error {
-			return ne.SetValue(v.(float64))
+			return ne.SetValue(assertFloat64Or(v, 0.0))
 		},
 		ne.edit.valueChangedPublisher.Event()))
 

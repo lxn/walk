@@ -153,7 +153,7 @@ func (fb *FormBase) init(form Form) error {
 			return fb.Title()
 		},
 		func(v interface{}) error {
-			return fb.SetTitle(v.(string))
+			return fb.SetTitle(assertStringOr(v, ""))
 		},
 		fb.titleChangedPublisher.Event()))
 

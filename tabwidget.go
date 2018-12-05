@@ -79,7 +79,7 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 			return tw.CurrentIndex()
 		},
 		func(v interface{}) error {
-			return tw.SetCurrentIndex(v.(int))
+			return tw.SetCurrentIndex(assertIntOr(v, -1))
 		},
 		tw.CurrentIndexChanged()))
 
