@@ -950,7 +950,7 @@ func (wb *WindowBase) SetVisible(visible bool) {
 func setWindowVisible(hwnd win.HWND, visible bool) {
 	var cmd int32
 	if visible {
-		cmd = win.SW_SHOW
+		cmd = win.SW_SHOWNA
 	} else {
 		cmd = win.SW_HIDE
 	}
