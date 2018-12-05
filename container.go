@@ -7,10 +7,9 @@
 package walk
 
 import (
+	"errors"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -98,7 +97,141 @@ type Layout interface {
 	SetSpacing(value int) error
 	LayoutFlags() LayoutFlags
 	MinSize() Size
+	MinSizeForSize(size Size) Size
 	Update(reset bool) error
+}
+
+type HeightForWidther interface {
+	HeightForWidth(width int) int
+}
+
+type minSizeForSize struct {
+	size    Size
+	minSize Size
+}
+
+type layoutResultItem struct {
+	widget Widget
+	bounds Rectangle
+}
+
+func applyLayoutResults(container Container, items []layoutResultItem) error {
+	if applyLayoutResultsProc != 0 {
+		return applyLayoutResultsRun(container, items)
+	}
+
+	return applyLayoutResultsWalk(container, items)
+}
+
+func applyLayoutResultsWalk(container Container, items []layoutResultItem) error {
+	hdwp := win.BeginDeferWindowPos(int32(len(items)))
+	if hdwp == 0 {
+		return lastError("BeginDeferWindowPos")
+	}
+
+	maybeInvalidate := container.AsContainerBase().hasComplexBackground()
+
+	for _, item := range items {
+		widget := item.widget
+		x, y, w, h := item.bounds.X, item.bounds.Y, item.bounds.Width, item.bounds.Height
+
+		b := widget.Bounds()
+
+		if b.X == x && b.Y == y && b.Width == w {
+			if _, ok := widget.(*ComboBox); ok {
+				if b.Height+1 == h {
+					continue
+				}
+			} else if b.Height == h {
+				continue
+			}
+		}
+
+		if maybeInvalidate {
+			if w == b.Width && h == b.Height && (x != b.X || y != b.Y) {
+				widget.Invalidate()
+			}
+		}
+
+		if hdwp = win.DeferWindowPos(
+			hdwp,
+			widget.Handle(),
+			0,
+			int32(x),
+			int32(y),
+			int32(w),
+			int32(h),
+			win.SWP_NOACTIVATE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER); hdwp == 0 {
+
+			return lastError("DeferWindowPos")
+		}
+
+		// FIXME: Is this really necessary?
+		for _, item := range items {
+			if !shouldLayoutWidget(item.widget) || item.widget.GraphicsEffects().Len() == 0 {
+				continue
+			}
+
+			item.widget.AsWidgetBase().invalidateBorderInParent()
+		}
+	}
+
+	if !win.EndDeferWindowPos(hdwp) {
+		return lastError("EndDeferWindowPos")
+	}
+
+	return nil
+}
+
+func applyLayoutResultsRun(container Container, items []layoutResultItem) error {
+	resultItems := make([]applyLayoutResultsItem, 0, len(items))
+
+	for _, item := range items {
+		widget := item.widget
+		x, y, w, h := item.bounds.X, item.bounds.Y, item.bounds.Width, item.bounds.Height
+
+		b := widget.Bounds()
+
+		if b.X == x && b.Y == y && b.Width == w {
+			if _, ok := widget.(*ComboBox); ok {
+				if b.Height+1 == h {
+					continue
+				}
+			} else if b.Height == h {
+				continue
+			}
+		}
+
+		resultItems = append(resultItems, applyLayoutResultsItem{
+			hwnd:                           widget.Handle(),
+			x:                              int32(x),
+			y:                              int32(y),
+			w:                              int32(w),
+			h:                              int32(h),
+			oldBounds:                      b.toRECT(),
+			shouldInvalidateBorderInParent: win.BoolToBOOL(shouldLayoutWidget(item.widget) && item.widget.GraphicsEffects().Len() > 0),
+		})
+	}
+
+	if len(resultItems) == 0 {
+		return nil
+	}
+
+	if !applyLayoutResultsImpl(container.Handle(), win.BoolToBOOL(container.AsContainerBase().hasComplexBackground()), &resultItems[0], int32(len(resultItems))) {
+		return errors.New("ApplyLayoutResults failed")
+	}
+
+	return nil
+}
+
+type applyLayoutResultsItem struct {
+	hwnd                           win.HWND
+	x                              int32
+	y                              int32
+	w                              int32
+	h                              int32
+	oldBounds                      win.RECT
+	shouldInvalidateBorderInParent win.BOOL
 }
 
 func widgetsToLayout(allWidgets *WidgetList) []Widget {
@@ -450,6 +583,13 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 				window.WndProc(hwnd, msg, wParam, lParam)
 				return 0
 			}
+		}
+
+	case win.WM_DRAWITEM:
+		dis := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
+		if window := windowFromHandle(dis.HwndItem); window != nil {
+			// The window that sent the notification shall handle it itself.
+			return window.WndProc(hwnd, msg, wParam, lParam)
 		}
 
 	case win.WM_NOTIFY:

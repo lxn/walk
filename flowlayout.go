@@ -14,6 +14,7 @@ type FlowLayout struct {
 	container          Container
 	hwnd2StretchFactor map[win.HWND]int
 	margins            Margins
+	size2MinSize       map[Size]Size
 	spacing            int
 	resetNeeded        bool
 }
@@ -30,7 +31,7 @@ type flowLayoutSectionItem struct {
 }
 
 func NewFlowLayout() *FlowLayout {
-	return new(FlowLayout)
+	return &FlowLayout{size2MinSize: make(map[Size]Size)}
 }
 
 func (l *FlowLayout) Container() Container {
@@ -135,48 +136,88 @@ func (l *FlowLayout) MinSize() Size {
 		return Size{}
 	}
 
-	children := l.container.Children()
-
-	var width, height int
-	for i := children.Len() - 1; i >= 0; i-- {
-		widget := children.At(i)
-		if !shouldLayoutWidget(widget) {
-			continue
-		}
-
-		minSize := minSizeEffective(widget)
-
-		width = maxi(minSize.Width, width)
-		height = maxi(minSize.Height, height)
-	}
-
-	return Size{width + l.margins.HNear + l.margins.HFar, height}
+	return l.MinSizeForSize(l.container.ClientBounds().Size())
 }
 
-func (l *FlowLayout) minSizeForWidth(w int) Size {
+func (l *FlowLayout) MinSizeForSize(size Size) Size {
 	if l.container == nil {
 		return Size{}
 	}
 
-	sections := l.sectionsForPrimarySize(w)
-
-	var width, height int
-	for i, section := range sections {
-		width = maxi(width, w-section.primarySpaceLeft)
-
-		if i > 0 {
-			height += l.spacing
-		}
-		height += section.secondaryMinSize
+	if min, ok := l.size2MinSize[size]; ok {
+		return min
 	}
 
-	return Size{width + l.margins.HNear + l.margins.HFar, height}
+	bounds := Rectangle{Width: size.Width}
+
+	sections := l.sectionsForPrimarySize(size.Width)
+
+	var s Size
+	var maxPrimary int
+
+	for i, section := range sections {
+		var widgets []Widget
+		var sectionMinWidth int
+		for _, item := range section.items {
+			widgets = append(widgets, item.widget)
+
+			sectionMinWidth += item.minSize.Width
+		}
+		sectionMinWidth += (len(section.items) - 1) * l.spacing
+		maxPrimary = maxi(maxPrimary, sectionMinWidth)
+
+		bounds.Height = section.secondaryMinSize
+
+		margins := l.margins
+		if i > 0 {
+			margins.VNear = 0
+		}
+		if i < len(sections)-1 {
+			margins.VFar = 0
+		}
+
+		layoutItems, err := boxLayoutItems(widgets, Horizontal, bounds, margins, l.spacing, l.hwnd2StretchFactor)
+		if err != nil {
+			return Size{}
+		}
+
+		var maxSecondary int
+
+		for _, item := range layoutItems {
+			min := minSizeEffective(item.widget)
+
+			if hfw, ok := item.widget.(HeightForWidther); ok {
+				item.bounds.Height = hfw.HeightForWidth(item.bounds.Width)
+			} else {
+				item.bounds.Height = min.Height
+			}
+
+			maxSecondary = maxi(maxSecondary, item.bounds.Height)
+		}
+
+		s.Height += maxSecondary
+
+		bounds.Y += maxSecondary + l.spacing
+	}
+
+	s.Width = maxPrimary
+
+	s.Width += l.margins.HNear + l.margins.HFar
+	s.Height += l.margins.VNear + l.margins.VFar + (len(sections)-1)*l.spacing
+
+	if s.Width > 0 && s.Height > 0 {
+		l.size2MinSize[size] = s
+	}
+
+	return s
 }
 
 func (l *FlowLayout) Update(reset bool) error {
 	if l.container == nil {
 		return nil
 	}
+
+	l.size2MinSize = make(map[Size]Size)
 
 	if reset {
 		l.resetNeeded = true
@@ -217,7 +258,30 @@ func (l *FlowLayout) Update(reset bool) error {
 			margins.VFar = 0
 		}
 
-		if err := performBoxLayout(widgets, Horizontal, bounds, margins, l.spacing, l.hwnd2StretchFactor); err != nil {
+		layoutItems, err := boxLayoutItems(widgets, Horizontal, bounds, margins, l.spacing, l.hwnd2StretchFactor)
+		if err != nil {
+			return err
+		}
+
+		var maxSecondary int
+
+		for _, li := range layoutItems {
+			if hfw, ok := li.widget.(HeightForWidther); ok {
+				li.bounds.Height = hfw.HeightForWidth(li.bounds.Width)
+			} else {
+				li.bounds.Height = minSizeEffective(li.widget).Height
+			}
+
+			maxSecondary = maxi(maxSecondary, li.bounds.Height)
+		}
+
+		bounds.Height = maxSecondary + margins.VNear + margins.VFar
+
+		if layoutItems, err = boxLayoutItems(widgets, Horizontal, bounds, margins, l.spacing, l.hwnd2StretchFactor); err != nil {
+			return err
+		}
+
+		if err := applyLayoutResults(l.container, layoutItems); err != nil {
 			return err
 		}
 
@@ -261,13 +325,14 @@ func (l *FlowLayout) sectionsForPrimarySize(primarySize int) []flowLayoutSection
 				section.primarySpaceLeft -= l.spacing
 			}
 			section.primarySpaceLeft -= item.minSize.Width
+
 			section.secondaryMinSize = maxi(section.secondaryMinSize, item.minSize.Height)
 		}
 
 		if section.primarySpaceLeft < item.minSize.Width && len(section.items) == 0 {
 			addItem()
 			addSection()
-		} else if section.primarySpaceLeft < l.spacing+item.minSize.Width {
+		} else if section.primarySpaceLeft < l.spacing+item.minSize.Width && len(section.items) > 0 {
 			addSection()
 			addItem()
 		} else {

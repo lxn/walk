@@ -280,9 +280,10 @@ type Window interface {
 }
 
 type calcTextSizeInfo struct {
-	font fontInfo
-	text string
-	size Size
+	width int
+	font  fontInfo
+	text  string
+	size  Size
 }
 
 // WindowBase implements many operations common to all Windows.
@@ -1153,9 +1154,14 @@ func (wb *WindowBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
 }
 
 func (wb *WindowBase) calculateTextSizeImpl(text string) Size {
+	return wb.calculateTextSizeImplForWidth(text, 0)
+}
+
+func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size {
 	font := wb.window.Font()
 
 	if wb.calcTextSizeInfoPrev != nil &&
+		width == wb.calcTextSizeInfoPrev.width &&
 		font.family == wb.calcTextSizeInfoPrev.font.family &&
 		font.pointSize == wb.calcTextSizeInfoPrev.font.pointSize &&
 		font.style == wb.calcTextSizeInfoPrev.font.style &&
@@ -1163,36 +1169,52 @@ func (wb *WindowBase) calculateTextSizeImpl(text string) Size {
 		return wb.calcTextSizeInfoPrev.size
 	}
 
-	hdc := win.GetDC(wb.hWnd)
-	if hdc == 0 {
-		newError("GetDC failed")
-		return Size{}
-	}
-	defer win.ReleaseDC(wb.hWnd, hdc)
-
-	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(0)))
-	defer win.SelectObject(hdc, hFontOld)
-
 	var size Size
-	lines := strings.Split(text, "\n")
+	if width > 0 {
+		canvas, err := wb.CreateCanvas()
+		if err != nil {
+			return size
+		}
+		defer canvas.Dispose()
 
-	for _, line := range lines {
-		var s win.SIZE
-		str := syscall.StringToUTF16(strings.TrimRight(line, "\r "))
-
-		if !win.GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
-			newError("GetTextExtentPoint32 failed")
-			return Size{}
+		bounds, _, err := canvas.MeasureText(text, font, Rectangle{Width: width, Height: 9999999}, 0)
+		if err != nil {
+			return size
 		}
 
-		size.Width = maxi(size.Width, int(s.CX))
-		size.Height += int(s.CY)
+		size = bounds.Size()
+	} else {
+		hdc := win.GetDC(wb.hWnd)
+		if hdc == 0 {
+			newError("GetDC failed")
+			return Size{}
+		}
+		defer win.ReleaseDC(wb.hWnd, hdc)
+
+		hFontOld := win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(0)))
+		defer win.SelectObject(hdc, hFontOld)
+
+		lines := strings.Split(text, "\n")
+
+		for _, line := range lines {
+			var s win.SIZE
+			str := syscall.StringToUTF16(strings.TrimRight(line, "\r "))
+
+			if !win.GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
+				newError("GetTextExtentPoint32 failed")
+				return Size{}
+			}
+
+			size.Width = maxi(size.Width, int(s.CX))
+			size.Height += int(s.CY)
+		}
 	}
 
 	if wb.calcTextSizeInfoPrev == nil {
 		wb.calcTextSizeInfoPrev = new(calcTextSizeInfo)
 	}
 
+	wb.calcTextSizeInfoPrev.width = width
 	wb.calcTextSizeInfoPrev.font.family = font.family
 	wb.calcTextSizeInfoPrev.font.pointSize = font.pointSize
 	wb.calcTextSizeInfoPrev.font.style = font.style
@@ -1203,6 +1225,10 @@ func (wb *WindowBase) calculateTextSizeImpl(text string) Size {
 }
 
 func (wb *WindowBase) calculateTextSize() Size {
+	return wb.calculateTextSizeForWidth(0)
+}
+
+func (wb *WindowBase) calculateTextSizeForWidth(width int) Size {
 	var text string
 	if wb.calcTextSizeInfoPrev != nil {
 		// setText copied the new text here for us.
@@ -1213,7 +1239,7 @@ func (wb *WindowBase) calculateTextSize() Size {
 		text = wb.text()
 	}
 
-	return wb.calculateTextSizeImpl(text)
+	return wb.calculateTextSizeImplForWidth(text, width)
 }
 
 // Size returns the outer Size of the *WindowBase, including decorations.
@@ -1317,6 +1343,15 @@ func (wb *WindowBase) sizeFromClientSize(clientSize Size) Size {
 	ncs := Size{s.Width - cs.Width, s.Height - cs.Height}
 
 	return Size{clientSize.Width + ncs.Width, clientSize.Height + ncs.Height}
+}
+
+func (wb *WindowBase) clientSizeFromSize(size Size) Size {
+	window := wb.window
+	s := window.Size()
+	cs := window.ClientBounds().Size()
+	ncs := Size{s.Width - cs.Width, s.Height - cs.Height}
+
+	return Size{size.Width - ncs.Width, size.Height - ncs.Height}
 }
 
 // SetClientSize sets the Size of the inner bounding box of the *WindowBase,
@@ -1683,11 +1718,6 @@ func (wb *WindowBase) handleWMCTLCOLOR(wParam, lParam uintptr) uintptr {
 	}
 
 	switch wnd.(type) {
-	case *Label:
-		win.SetBkMode(hdc, win.TRANSPARENT)
-
-		return win.COLOR_BTNSHADOW
-
 	case *LineEdit, *numberLineEdit, *TextEdit:
 		type ReadOnlyer interface {
 			ReadOnly() bool

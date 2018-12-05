@@ -157,6 +157,10 @@ func (le *LineEdit) Alignment() Alignment1D {
 }
 
 func (le *LineEdit) SetAlignment(alignment Alignment1D) error {
+	if alignment == AlignDefault {
+		alignment = AlignNear
+	}
+
 	var bit uint32
 
 	switch alignment {

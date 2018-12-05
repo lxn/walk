@@ -10,10 +10,6 @@ import (
 	"sort"
 )
 
-import (
-	"github.com/lxn/win"
-)
-
 type gridLayoutCell struct {
 	row    int
 	column int
@@ -42,11 +38,13 @@ type GridLayout struct {
 	columnStretchFactors []int
 	widget2Info          map[Widget]*gridLayoutWidgetInfo
 	cells                [][]gridLayoutCell
+	size2MinSize         map[Size]Size
 }
 
 func NewGridLayout() *GridLayout {
 	l := &GridLayout{
-		widget2Info: make(map[Widget]*gridLayoutWidgetInfo),
+		widget2Info:  make(map[Widget]*gridLayoutWidgetInfo),
+		size2MinSize: make(map[Size]Size),
 	}
 
 	return l
@@ -363,8 +361,19 @@ func (l *GridLayout) MinSize() Size {
 		return Size{}
 	}
 
-	widths := make([]int, len(l.cells[0]))
-	heights := make([]int, len(l.cells))
+	return l.MinSizeForSize(l.container.ClientBounds().Size())
+}
+
+func (l *GridLayout) MinSizeForSize(size Size) Size {
+	if l.container == nil || len(l.cells) == 0 {
+		return Size{}
+	}
+
+	if min, ok := l.size2MinSize[size]; ok {
+		return min
+	}
+
+	ws := make([]int, len(l.cells[0]))
 
 	widget2MinSize := make(map[Widget]Size)
 
@@ -376,8 +385,8 @@ func (l *GridLayout) MinSize() Size {
 		widget2MinSize[widget] = minSizeEffective(widget)
 	}
 
-	for row := 0; row < len(heights); row++ {
-		for col := 0; col < len(widths); col++ {
+	for row := 0; row < len(l.cells); row++ {
+		for col := 0; col < len(ws); col++ {
 			widget := l.cells[row][col].widget
 
 			if !shouldLayoutWidget(widget) {
@@ -388,18 +397,38 @@ func (l *GridLayout) MinSize() Size {
 			info := l.widget2Info[widget]
 
 			if info.spanHorz == 1 {
-				widths[col] = maxi(widths[col], min.Width)
-			}
-			if info.spanVert == 1 {
-				heights[row] = maxi(heights[row], min.Height)
+				ws[col] = maxi(ws[col], min.Width)
 			}
 		}
+	}
+
+	widths := l.sectionSizesForSpace(Horizontal, size.Width, nil)
+	heights := l.sectionSizesForSpace(Vertical, size.Height, widths)
+
+	for row := range heights {
+		var maxHeight int
+		for col := range widths {
+			widget := l.cells[row][col].widget
+
+			if !shouldLayoutWidget(widget) {
+				continue
+			}
+
+			if info := l.widget2Info[widget]; info.spanVert == 1 {
+				if hfw, ok := widget.(HeightForWidther); ok {
+					maxHeight = maxi(maxHeight, hfw.HeightForWidth(l.spannedWidth(l.widget2Info[widget], widths)))
+				} else {
+					maxHeight = maxi(maxHeight, widget2MinSize[widget].Height)
+				}
+			}
+		}
+		heights[row] = maxHeight
 	}
 
 	width := l.margins.HNear + l.margins.HFar
 	height := l.margins.VNear + l.margins.VFar
 
-	for i, w := range widths {
+	for i, w := range ws {
 		if w > 0 {
 			if i > 0 {
 				width += l.spacing
@@ -416,7 +445,41 @@ func (l *GridLayout) MinSize() Size {
 		}
 	}
 
+	if width > 0 && height > 0 {
+		l.size2MinSize[size] = Size{width, height}
+	}
+
 	return Size{width, height}
+}
+
+func (l *GridLayout) spannedWidth(info *gridLayoutWidgetInfo, widths []int) int {
+	width := 0
+
+	for i := info.cell.column; i < info.cell.column+info.spanHorz; i++ {
+		if w := widths[i]; w > 0 {
+			width += w
+			if i > info.cell.column {
+				width += l.spacing
+			}
+		}
+	}
+
+	return width
+}
+
+func (l *GridLayout) spannedHeight(info *gridLayoutWidgetInfo, heights []int) int {
+	height := 0
+
+	for i := info.cell.row; i < info.cell.row+info.spanVert; i++ {
+		if h := heights[i]; h > 0 {
+			height += h
+			if i > info.cell.row {
+				height += l.spacing
+			}
+		}
+	}
+
+	return height
 }
 
 type gridLayoutSectionInfo struct {
@@ -461,6 +524,8 @@ func (l *GridLayout) Update(reset bool) error {
 		return nil
 	}
 
+	l.size2MinSize = make(map[Size]Size)
+
 	if reset {
 		l.resetNeeded = true
 	}
@@ -481,13 +546,12 @@ func (l *GridLayout) Update(reset bool) error {
 
 	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
 
-	widths := l.sectionSizes(Horizontal)
-	heights := l.sectionSizes(Vertical)
+	cb := l.container.ClientBounds()
 
-	hdwp := win.BeginDeferWindowPos(int32(l.container.Children().Len()))
-	if hdwp == 0 {
-		return lastError("BeginDeferWindowPos")
-	}
+	widths := l.sectionSizesForSpace(Horizontal, cb.Width, nil)
+	heights := l.sectionSizesForSpace(Vertical, cb.Height, widths)
+
+	items := make([]layoutResultItem, 0, len(l.widget2Info))
 
 	for widget, info := range l.widget2Info {
 		if !shouldLayoutWidget(widget) {
@@ -508,25 +572,8 @@ func (l *GridLayout) Update(reset bool) error {
 			}
 		}
 
-		w := 0
-		for i := info.cell.column; i < info.cell.column+info.spanHorz; i++ {
-			if width := widths[i]; width > 0 {
-				w += width
-				if i > info.cell.column {
-					w += l.spacing
-				}
-			}
-		}
-
-		h := 0
-		for i := info.cell.row; i < info.cell.row+info.spanVert; i++ {
-			if height := heights[i]; height > 0 {
-				h += height
-				if i > info.cell.row {
-					h += l.spacing
-				}
-			}
-		}
+		w := l.spannedWidth(info, widths)
+		h := l.spannedHeight(info, heights)
 
 		if lf := widget.LayoutFlags(); lf&GrowableHorz == 0 || lf&GrowableVert == 0 {
 			s := widget.SizeHint()
@@ -546,50 +593,13 @@ func (l *GridLayout) Update(reset bool) error {
 			}
 		}
 
-		if b := widget.Bounds(); b.X == x && b.Y == y && b.Width == w {
-			if _, ok := widget.(*ComboBox); ok {
-				if b.Height+1 == h {
-					continue
-				}
-			} else if b.Height == h {
-				continue
-			}
-		}
-
-		if widget.GraphicsEffects().Len() > 0 {
-			widget.AsWidgetBase().invalidateBorderInParent()
-		}
-
-		if hdwp = win.DeferWindowPos(
-			hdwp,
-			widget.Handle(),
-			0,
-			int32(x),
-			int32(y),
-			int32(w),
-			int32(h),
-			win.SWP_NOACTIVATE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER); hdwp == 0 {
-
-			return lastError("DeferWindowPos")
-		}
-
-		for widget := range l.widget2Info {
-			if !shouldLayoutWidget(widget) || widget.GraphicsEffects().Len() == 0 {
-				continue
-			}
-
-			widget.AsWidgetBase().invalidateBorderInParent()
-		}
+		items = append(items, layoutResultItem{widget: widget, bounds: Rectangle{X: x, Y: y, Width: w, Height: h}})
 	}
 
-	if !win.EndDeferWindowPos(hdwp) {
-		return lastError("EndDeferWindowPos")
-	}
-
-	return nil
+	return applyLayoutResults(l.container, items)
 }
 
-func (l *GridLayout) sectionSizes(orientation Orientation) []int {
+func (l *GridLayout) sectionSizesForSpace(orientation Orientation, space int, widths []int) []int {
 	var stretchFactors []int
 	if orientation == Horizontal {
 		stretchFactors = l.columnStretchFactors
@@ -654,7 +664,11 @@ func (l *GridLayout) sectionSizes(orientation Orientation) []int {
 				}
 			} else {
 				if info.spanVert == 1 {
-					minSizes[i] = maxi(minSizes[i], minSizeEffective(widget).Height)
+					if hfw, ok := widget.(HeightForWidther); ok {
+						minSizes[i] = maxi(minSizes[i], hfw.HeightForWidth(l.spannedWidth(info, widths)))
+					} else {
+						minSizes[i] = maxi(minSizes[i], minSizeEffective(widget).Height)
+					}
 				}
 
 				if max.Height > 0 {
@@ -695,12 +709,10 @@ func (l *GridLayout) sectionSizes(orientation Orientation) []int {
 
 	sort.Stable(sortedSections)
 
-	cb := l.container.ClientBounds()
-	var space int
 	if orientation == Horizontal {
-		space = cb.Width - l.margins.HNear - l.margins.HFar
+		space -= l.margins.HNear + l.margins.HFar
 	} else {
-		space = cb.Height - l.margins.VNear - l.margins.VFar
+		space -= l.margins.VNear + l.margins.VFar
 	}
 
 	var spacingRemaining int

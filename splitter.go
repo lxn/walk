@@ -85,7 +85,7 @@ func NewVSplitter(parent Container) (*Splitter, error) {
 }
 
 func (s *Splitter) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
+	return s.layout.LayoutFlags()
 }
 
 func (s *Splitter) SizeHint() Size {
@@ -202,7 +202,12 @@ func (s *Splitter) SaveState() error {
 			buf.WriteString(" ")
 		}
 
-		buf.WriteString(strconv.FormatInt(int64(layout.hwnd2Item[s.children.At(i).Handle()].size), 10))
+		item := layout.hwnd2Item[s.children.At(i).Handle()]
+		size := item.oldExplicitSize
+		if size == 0 {
+			size = item.size
+		}
+		buf.WriteString(strconv.FormatInt(int64(size), 10))
 	}
 
 	s.WriteState(buf.String())
@@ -263,7 +268,9 @@ func (s *Splitter) RestoreState() error {
 				size = int(float64(regularSpace) * fraction)
 			}
 
-			layout.hwnd2Item[widget.Handle()].size = size
+			item := layout.hwnd2Item[widget.Handle()]
+			item.size = size
+			item.oldExplicitSize = size
 		}
 
 		if persistable, ok := widget.(Persistable); ok {
@@ -472,8 +479,14 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						}
 
 						layout := s.Layout().(*splitterLayout)
-						layout.hwnd2Item[prev.Handle()].size = sizePrev
-						layout.hwnd2Item[next.Handle()].size = sizeNext
+
+						prevItem := layout.hwnd2Item[prev.Handle()]
+						prevItem.size = sizePrev
+						prevItem.oldExplicitSize = sizePrev
+
+						nextItem := layout.hwnd2Item[next.Handle()]
+						nextItem.size = sizeNext
+						nextItem.oldExplicitSize = sizeNext
 					})
 				}
 			}()

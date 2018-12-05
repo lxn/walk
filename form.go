@@ -8,13 +8,10 @@ package walk
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"syscall"
 	"unsafe"
-)
-
-import (
-	"strconv"
 
 	"github.com/lxn/win"
 )
@@ -26,17 +23,37 @@ const (
 	CloseReasonUser
 )
 
-var syncFuncs struct {
-	m     sync.Mutex
-	funcs []func()
-}
+var (
+	processMessageProc     uintptr
+	applyLayoutResultsProc uintptr
 
-var syncMsgId uint32
-var taskbarButtonCreatedMsgId uint32
+	syncFuncs struct {
+		m     sync.Mutex
+		funcs []func()
+	}
+
+	syncMsgId                 uint32
+	taskbarButtonCreatedMsgId uint32
+)
 
 func init() {
+	if dll, err := syscall.LoadLibrary("run.dll"); err == nil {
+		applyLayoutResultsProc, err = syscall.GetProcAddress(dll, "ApplyLayoutResults")
+		processMessageProc, err = syscall.GetProcAddress(dll, "ProcessMessage")
+	}
+
 	syncMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("WalkSync"))
 	taskbarButtonCreatedMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("TaskbarButtonCreated"))
+}
+
+func applyLayoutResultsImpl(hwndParent win.HWND, maybeInvalidate win.BOOL, items *applyLayoutResultsItem, itemsLen int32) bool {
+	ret, _, _ := syscall.Syscall6(applyLayoutResultsProc, 4, uintptr(hwndParent), uintptr(maybeInvalidate), uintptr(unsafe.Pointer(items)), uintptr(itemsLen), 0, 0)
+	return ret != 0
+}
+
+func processMessage(hwnd win.HWND, msg *win.MSG) bool {
+	ret, _, _ := syscall.Syscall(processMessageProc, 2, uintptr(hwnd), uintptr(unsafe.Pointer(msg)), 0)
+	return ret != 0
 }
 
 func synchronize(f func()) {
@@ -100,6 +117,7 @@ type FormBase struct {
 	progressIndicator     *ProgressIndicator
 	icon                  *Icon
 	prevFocusHWnd         win.HWND
+	proposedSize          Size
 	isInRestoreState      bool
 	started               bool
 	closeReason           CloseReason
@@ -376,30 +394,48 @@ func (fb *FormBase) Run() int {
 	fb.started = true
 	fb.startingPublisher.Publish()
 
+	fb.SetBounds(fb.Bounds())
+
 	var msg win.MSG
 
-	for fb.hWnd != 0 {
-		switch win.GetMessage(&msg, 0, 0, 0) {
-		case 0:
-			return int(msg.WParam)
-
-		case -1:
-			return -1
-		}
-
-		switch msg.Message {
-		case win.WM_KEYDOWN:
-			if fb.webViewTranslateAccelerator(&msg) {
-				// handled accelerator key of webview and its childen (ie IE)
+	if processMessageProc != 0 {
+		for fb.hWnd != 0 {
+			if !processMessage(fb.hWnd, &msg) {
+				return int(msg.WParam)
 			}
-		}
 
-		if !win.IsDialogMessage(fb.hWnd, &msg) {
-			win.TranslateMessage(&msg)
-			win.DispatchMessage(&msg)
-		}
+			if msg.Message == win.WM_KEYDOWN {
+				if fb.webViewTranslateAccelerator(&msg) {
+					// handled accelerator key of webview and its childen (ie IE)
+				}
+			}
 
-		runSynchronized()
+			runSynchronized()
+		}
+	} else {
+		for fb.hWnd != 0 {
+			switch win.GetMessage(&msg, 0, 0, 0) {
+			case 0:
+				return int(msg.WParam)
+
+			case -1:
+				return -1
+			}
+
+			switch msg.Message {
+			case win.WM_KEYDOWN:
+				if fb.webViewTranslateAccelerator(&msg) {
+					// handled accelerator key of webview and its childen (ie IE)
+				}
+			}
+
+			if !win.IsDialogMessage(fb.hWnd, &msg) {
+				win.TranslateMessage(&msg)
+				win.DispatchMessage(&msg)
+			}
+
+			runSynchronized()
+		}
 	}
 
 	return 0
@@ -646,17 +682,16 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		return fb.clientComposite.WndProc(hwnd, msg, wParam, lParam)
 
 	case win.WM_GETMINMAXINFO:
-		if fb.Suspended() {
+		if fb.Suspended() || fb.proposedSize == (Size{}) {
 			break
 		}
 
 		mmi := (*win.MINMAXINFO)(unsafe.Pointer(lParam))
 
-		layout := fb.clientComposite.Layout()
-
 		var min Size
-		if layout != nil {
-			min = fb.sizeFromClientSize(layout.MinSize())
+		if layout := fb.clientComposite.layout; layout != nil {
+			size := fb.clientSizeFromSize(fb.proposedSize)
+			min = fb.sizeFromClientSize(layout.MinSizeForSize(size))
 		}
 
 		mmi.PtMinTrackSize = win.POINT{
@@ -671,7 +706,14 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	case win.WM_SETTEXT:
 		fb.titleChangedPublisher.Publish()
 
-	case win.WM_SIZE, win.WM_SIZING:
+	case win.WM_SIZING:
+		rc := (*win.RECT)(unsafe.Pointer(lParam))
+
+		fb.proposedSize = rectangleFromRECT(*rc).Size()
+
+		fb.clientComposite.SetBounds(fb.window.ClientBounds())
+
+	case win.WM_SIZE:
 		fb.clientComposite.SetBounds(fb.window.ClientBounds())
 
 	case win.WM_SYSCOMMAND:
