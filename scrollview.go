@@ -214,11 +214,15 @@ func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		switch msg {
 		case win.WM_HSCROLL:
 			sv.composite.SetX(sv.scroll(win.SB_HORZ, win.LOWORD(uint32(wParam))))
-			avoidBGArtifacts()
+			if wParam == win.SB_ENDSCROLL {
+				avoidBGArtifacts()
+			}
 
 		case win.WM_VSCROLL:
 			sv.composite.SetY(sv.scroll(win.SB_VERT, win.LOWORD(uint32(wParam))))
-			avoidBGArtifacts()
+			if wParam == win.SB_ENDSCROLL {
+				avoidBGArtifacts()
+			}
 
 		case win.WM_MOUSEWHEEL:
 			if win.GetWindowLong(sv.hWnd, win.GWL_STYLE)&win.WS_VSCROLL == 0 {
