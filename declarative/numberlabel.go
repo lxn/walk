@@ -1,4 +1,4 @@
-// Copyright 2012 The Walk Authors. All rights reserved.
+// Copyright 2018 The Walk Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,7 +10,7 @@ import (
 	"github.com/lxn/walk"
 )
 
-type Label struct {
+type NumberLabel struct {
 	// Window
 
 	Background         Brush
@@ -43,30 +43,35 @@ type Label struct {
 	RowSpan            int
 	StretchFactor      int
 
-	// Label
+	// static
 
-	AssignTo      **walk.Label
-	Text          Property
+	TextColor walk.Color
+
+	// NumberLabel
+
+	AssignTo      **walk.NumberLabel
+	Decimals      Property
+	Suffix        Property
 	TextAlignment Alignment1D
-	TextColor     walk.Color
+	Value         Property
 }
 
-func (l Label) Create(builder *Builder) error {
-	w, err := walk.NewLabel(builder.Parent())
+func (nl NumberLabel) Create(builder *Builder) error {
+	w, err := walk.NewNumberLabel(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	if l.AssignTo != nil {
-		*l.AssignTo = w
+	if nl.AssignTo != nil {
+		*nl.AssignTo = w
 	}
 
-	return builder.InitWidget(l, w, func() error {
-		if err := w.SetTextAlignment(walk.Alignment1D(l.TextAlignment)); err != nil {
+	return builder.InitWidget(nl, w, func() error {
+		if err := w.SetTextAlignment(walk.Alignment1D(nl.TextAlignment)); err != nil {
 			return err
 		}
 
-		w.SetTextColor(l.TextColor)
+		w.SetTextColor(nl.TextColor)
 
 		return nil
 	})

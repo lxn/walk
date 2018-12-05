@@ -1,4 +1,4 @@
-// Copyright 2012 The Walk Authors. All rights reserved.
+// Copyright 2018 The Walk Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,7 +10,7 @@ import (
 	"github.com/lxn/walk"
 )
 
-type Label struct {
+type DateLabel struct {
 	// Window
 
 	Background         Brush
@@ -43,30 +43,34 @@ type Label struct {
 	RowSpan            int
 	StretchFactor      int
 
-	// Label
+	// static
 
-	AssignTo      **walk.Label
-	Text          Property
+	TextColor walk.Color
+
+	// DateLabel
+
+	AssignTo      **walk.DateLabel
+	Date          Property
+	Format        Property
 	TextAlignment Alignment1D
-	TextColor     walk.Color
 }
 
-func (l Label) Create(builder *Builder) error {
-	w, err := walk.NewLabel(builder.Parent())
+func (dl DateLabel) Create(builder *Builder) error {
+	w, err := walk.NewDateLabel(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	if l.AssignTo != nil {
-		*l.AssignTo = w
+	if dl.AssignTo != nil {
+		*dl.AssignTo = w
 	}
 
-	return builder.InitWidget(l, w, func() error {
-		if err := w.SetTextAlignment(walk.Alignment1D(l.TextAlignment)); err != nil {
+	return builder.InitWidget(dl, w, func() error {
+		if err := w.SetTextAlignment(walk.Alignment1D(dl.TextAlignment)); err != nil {
 			return err
 		}
 
-		w.SetTextColor(l.TextColor)
+		w.SetTextColor(dl.TextColor)
 
 		return nil
 	})

@@ -13,9 +13,10 @@ import (
 type Alignment1D uint
 
 const (
-	AlignNear Alignment1D = iota
-	AlignCenter
-	AlignFar
+	AlignDefault = Alignment1D(walk.AlignDefault)
+	AlignNear    = Alignment1D(walk.AlignNear)
+	AlignCenter  = Alignment1D(walk.AlignCenter)
+	AlignFar     = Alignment1D(walk.AlignFar)
 )
 
 type TableViewColumn struct {

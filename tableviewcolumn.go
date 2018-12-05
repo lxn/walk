@@ -45,6 +45,10 @@ func (tvc *TableViewColumn) Alignment() Alignment1D {
 
 // SetAlignment sets the alignment of the TableViewColumn.
 func (tvc *TableViewColumn) SetAlignment(alignment Alignment1D) (err error) {
+	if alignment == AlignDefault {
+		alignment = AlignNear
+	}
+
 	if alignment == tvc.alignment {
 		return nil
 	}

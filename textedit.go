@@ -105,6 +105,10 @@ func (te *TextEdit) Alignment() Alignment1D {
 }
 
 func (te *TextEdit) SetAlignment(alignment Alignment1D) error {
+	if alignment == AlignDefault {
+		alignment = AlignNear
+	}
+
 	var bit uint32
 
 	switch alignment {

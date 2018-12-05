@@ -6,14 +6,9 @@
 
 package walk
 
-import (
-	"github.com/lxn/win"
-)
-
 type Label struct {
-	WidgetBase
+	static
 	textChangedPublisher EventPublisher
-	textColor            Color
 }
 
 func NewLabel(parent Container) (*Label, error) {
@@ -23,23 +18,19 @@ func NewLabel(parent Container) (*Label, error) {
 func NewLabelWithStyle(parent Container, style uint32) (*Label, error) {
 	l := new(Label)
 
-	if err := InitWidget(
-		l,
-		parent,
-		"STATIC",
-		win.WS_VISIBLE|win.SS_CENTERIMAGE|style,
-		0); err != nil {
+	if err := l.init(l, parent); err != nil {
 		return nil, err
 	}
 
-	l.SetBackground(nullBrushSingleton)
+	l.SetTextAlignment(AlignNear)
 
 	l.MustRegisterProperty("Text", NewProperty(
 		func() interface{} {
 			return l.Text()
 		},
 		func(v interface{}) error {
-			return l.setText(assertStringOr(v, ""))
+			_, err := l.setText(assertStringOr(v, ""))
+			return err
 		},
 		l.textChangedPublisher.Event()))
 
@@ -47,54 +38,33 @@ func NewLabelWithStyle(parent Container, style uint32) (*Label, error) {
 }
 
 func (*Label) LayoutFlags() LayoutFlags {
-	return GrowableVert | GrowableHorz
+	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert
 }
 
-func (l *Label) MinSizeHint() Size {
-	return l.calculateTextSize()
+func (l *Label) TextAlignment() Alignment1D {
+	return l.textAlignment1D()
 }
 
-func (l *Label) SizeHint() Size {
-	return l.MinSizeHint()
+func (l *Label) SetTextAlignment(alignment Alignment1D) error {
+	if alignment == AlignDefault {
+		alignment = AlignNear
+	}
+
+	return l.setTextAlignment1D(alignment)
 }
 
 func (l *Label) Text() string {
 	return l.text()
 }
 
-func (l *Label) SetText(value string) error {
-	if value == l.Text() {
+func (l *Label) SetText(text string) error {
+	if changed, err := l.setText(text); err != nil {
+		return err
+	} else if !changed {
 		return nil
 	}
 
-	if err := l.setText(value); err != nil {
-		return err
-	}
+	l.textChangedPublisher.Publish()
 
-	return l.updateParentLayout()
-}
-
-func (l *Label) TextColor() Color {
-	return l.textColor
-}
-
-func (l *Label) SetTextColor(c Color) {
-	l.textColor = c
-
-	l.Invalidate()
-}
-
-func (l *Label) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
-	switch msg {
-	case win.WM_NCHITTEST:
-		return win.HTCLIENT
-
-	case win.WM_SETTEXT:
-		l.textChangedPublisher.Publish()
-
-	case win.WM_SIZE, win.WM_SIZING:
-		l.Invalidate()
-	}
-
-	return l.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+	return nil
 }

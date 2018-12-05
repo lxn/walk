@@ -1,4 +1,4 @@
-// Copyright 2012 The Walk Authors. All rights reserved.
+// Copyright 2018 The Walk Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,7 +10,21 @@ import (
 	"github.com/lxn/walk"
 )
 
-type Label struct {
+type Alignment2D uint
+
+const (
+	AlignHNearVNear     = Alignment2D(walk.AlignHNearVNear)
+	AlignHCenterVNear   = Alignment2D(walk.AlignHCenterVNear)
+	AlignHFarVNear      = Alignment2D(walk.AlignHFarVNear)
+	AlignHNearVCenter   = Alignment2D(walk.AlignHNearVCenter)
+	AlignHCenterVCenter = Alignment2D(walk.AlignHCenterVCenter)
+	AlignHFarVCenter    = Alignment2D(walk.AlignHFarVCenter)
+	AlignHNearVFar      = Alignment2D(walk.AlignHNearVFar)
+	AlignHCenterVFar    = Alignment2D(walk.AlignHCenterVFar)
+	AlignHFarVFar       = Alignment2D(walk.AlignHFarVFar)
+)
+
+type TextLabel struct {
 	// Window
 
 	Background         Brush
@@ -43,30 +57,33 @@ type Label struct {
 	RowSpan            int
 	StretchFactor      int
 
-	// Label
+	// static
 
-	AssignTo      **walk.Label
+	TextColor walk.Color
+
+	// Text
+
+	AssignTo      **walk.TextLabel
+	TextAlignment Alignment2D
 	Text          Property
-	TextAlignment Alignment1D
-	TextColor     walk.Color
 }
 
-func (l Label) Create(builder *Builder) error {
-	w, err := walk.NewLabel(builder.Parent())
+func (tl TextLabel) Create(builder *Builder) error {
+	w, err := walk.NewTextLabel(builder.Parent())
 	if err != nil {
 		return err
 	}
 
-	if l.AssignTo != nil {
-		*l.AssignTo = w
+	if tl.AssignTo != nil {
+		*tl.AssignTo = w
 	}
 
-	return builder.InitWidget(l, w, func() error {
-		if err := w.SetTextAlignment(walk.Alignment1D(l.TextAlignment)); err != nil {
+	return builder.InitWidget(tl, w, func() error {
+		w.SetTextColor(tl.TextColor)
+
+		if err := w.SetTextAlignment(walk.Alignment2D(tl.TextAlignment)); err != nil {
 			return err
 		}
-
-		w.SetTextColor(l.TextColor)
 
 		return nil
 	})
