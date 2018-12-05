@@ -915,6 +915,42 @@ func setWindowText(hwnd win.HWND, text string) error {
 	return nil
 }
 
+func (wb *WindowBase) RestoreState() (err error) {
+	wb.ForEachDescendant(func(widget Widget) bool {
+		if persistable, ok := widget.(Persistable); ok && persistable.Persistent() {
+			if err = persistable.RestoreState(); err != nil {
+				return false
+			}
+		}
+
+		if _, ok := widget.(Container); ok {
+			return false
+		}
+
+		return true
+	})
+
+	return
+}
+
+func (wb *WindowBase) SaveState() (err error) {
+	wb.ForEachDescendant(func(widget Widget) bool {
+		if persistable, ok := widget.(Persistable); ok && persistable.Persistent() {
+			if err = persistable.SaveState(); err != nil {
+				return false
+			}
+		}
+
+		if _, ok := widget.(Container); ok {
+			return false
+		}
+
+		return true
+	})
+
+	return
+}
+
 func forEachDescendant(hwnd win.HWND, lParam uintptr) uintptr {
 	if window := windowFromHandle(hwnd); window != nil && forEachDescendantCallback(window.(Widget)) {
 		return 1
