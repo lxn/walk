@@ -70,6 +70,8 @@ func (l *Label) SetText(value string) error {
 	if err := l.setText(value); err != nil {
 		return err
 	}
+	
+	l.textChangedPublisher.Publish()
 
 	return l.updateParentLayout()
 }
