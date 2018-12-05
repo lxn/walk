@@ -29,8 +29,7 @@ func NewTextLabelWithStyle(parent Container, style uint32) (*TextLabel, error) {
 			return tl.Text()
 		},
 		func(v interface{}) error {
-			_, err := tl.setText(assertStringOr(v, ""))
-			return err
+			return tl.SetText(assertStringOr(v, ""))
 		},
 		tl.textChangedPublisher.Event()))
 
