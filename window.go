@@ -915,6 +915,28 @@ func setWindowText(hwnd win.HWND, text string) error {
 	return nil
 }
 
+func forEachDescendant(hwnd win.HWND, lParam uintptr) uintptr {
+	if window := windowFromHandle(hwnd); window != nil && forEachDescendantCallback(window.(Widget)) {
+		return 1
+	}
+
+	return 0
+}
+
+var (
+	forEachDescendantCallbackPtr = syscall.NewCallback(forEachDescendant)
+	forEachDescendantCallback    func(widget Widget) bool
+)
+
+func (wb *WindowBase) ForEachDescendant(f func(widget Widget) bool) {
+	forEachDescendantCallback = f
+	defer func() {
+		forEachDescendantCallback = nil
+	}()
+
+	win.EnumChildWindows(wb.hWnd, forEachDescendantCallbackPtr, 0)
+}
+
 // Visible returns if the *WindowBase is visible.
 func (wb *WindowBase) Visible() bool {
 	return win.IsWindowVisible(wb.hWnd)
