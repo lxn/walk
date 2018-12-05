@@ -38,6 +38,10 @@ func (re *reflectExpression) Value() interface{} {
 		log.Print("walk - reflectExpression.Value - Error: ", err.Error())
 	}
 
+	if !val.IsValid() {
+		return nil
+	}
+
 	return val.Interface()
 }
 
