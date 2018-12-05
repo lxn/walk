@@ -330,6 +330,20 @@ func (wb *WidgetBase) SetParent(parent Container) (err error) {
 	return nil
 }
 
+func (wb *WidgetBase) ForEachAncestor(f func(window Window) bool) {
+	hwnd := win.GetParent(wb.hWnd)
+
+	for hwnd != 0 {
+		if window := windowFromHandle(hwnd); window != nil {
+			if !f(window) {
+				return
+			}
+		}
+
+		hwnd = win.GetParent(hwnd)
+	}
+}
+
 // SizeHint returns a default Size that should be "overidden" by a concrete
 // Widget type.
 func (wb *WidgetBase) SizeHint() Size {
@@ -377,10 +391,6 @@ func (wb *WidgetBase) onClearedGraphicsEffects() error {
 
 func (wb *WidgetBase) invalidateBorderInParent() {
 	if wb.parent != nil && wb.parent.Layout() != nil {
-		//if _, ok := wb.parent.(*Splitter); ok {
-		//	return
-		//}
-
 		b := wb.Bounds().toRECT()
 		s := int32(wb.parent.Layout().Spacing())
 
