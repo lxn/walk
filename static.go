@@ -170,7 +170,7 @@ func (s *static) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 		bg, wnd := s.backgroundEffective()
 		if bg == nil {
-			break
+			bg = sysColorBtnFaceBrushSingleton
 		}
 
 		s.prepareDCForBackground(dis.HDC, s.hWnd, wnd)

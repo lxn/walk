@@ -32,7 +32,7 @@ type TextLabel struct {
 	Enabled            Property
 	Font               Font
 	MaxSize            Size
-	MinSize            Size
+	MinSize            Size // Set MinSize.Width to a value > 0 to enable dynamic line wrapping.
 	Name               string
 	OnBoundsChanged    walk.EventHandler
 	OnKeyDown          walk.KeyEventHandler

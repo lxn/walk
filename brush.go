@@ -196,6 +196,8 @@ func (*SystemColorBrush) simple() bool {
 	return true
 }
 
+var sysColorBtnFaceBrushSingleton, _ = NewSystemColorBrush(SysColorBtnFace)
+
 type SolidColorBrush struct {
 	brushBase
 	color Color
