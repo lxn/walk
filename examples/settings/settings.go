@@ -50,10 +50,11 @@ func RunMainWindow() error {
 		Name:    "mainWindow", // Name is needed for settings persistence
 		Title:   "Walk Settings Example",
 		MinSize: Size{800, 600},
+		Size:    Size{800, 600},
 		Layout:  VBox{MarginsZero: true},
 		Children: []Widget{
 			TableView{
-				Name: "tableView", // Name is needed for settings persistence
+				Name:                  "tableView", // Name is needed for settings persistence
 				AlternatingRowBGColor: walk.RGB(255, 255, 200),
 				ColumnsOrderable:      true,
 				Columns: []TableViewColumn{

@@ -29,6 +29,7 @@ func main() {
 		AssignTo: &mw,
 		Title:    "Walk Data Binding Example",
 		MinSize:  Size{300, 200},
+		Size:     Size{300, 200},
 		Layout:   VBox{},
 		Children: []Widget{
 			PushButton{

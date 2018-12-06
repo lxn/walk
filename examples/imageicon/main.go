@@ -24,6 +24,7 @@ func main() {
 	if _, err := (MainWindow{
 		AssignTo: &mw,
 		Title:    "Walk Image Icon Example",
+		Size:     Size{320, 240},
 		Layout:   HBox{},
 		Children: []Widget{
 			HSpacer{},

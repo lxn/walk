@@ -121,6 +121,7 @@ func main() {
 			ActionRef{&showAboutBoxAction},
 		},
 		MinSize: Size{300, 200},
+		Size:    Size{300, 200},
 		Layout:  VBox{},
 		Children: []Widget{
 			CheckBox{

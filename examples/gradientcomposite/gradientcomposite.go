@@ -13,6 +13,7 @@ func main() {
 	MainWindow{
 		Title:   "Walk GradientComposite Example",
 		MinSize: Size{400, 0},
+		Size:    Size{400, 0},
 		Background: GradientBrush{
 			Vertexes: []walk.GradientVertex{
 				{X: 0, Y: 0, Color: walk.RGB(255, 255, 127)},
