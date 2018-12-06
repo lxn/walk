@@ -241,6 +241,8 @@ func (s *static) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 		}
 
 		win.MoveWindow(s.hwndStatic, int32(cb.X), int32(cb.Y), int32(cb.Width), int32(cb.Height), true)
+
+		s.Invalidate()
 	}
 
 	return s.WidgetBase.WndProc(hwnd, msg, wp, lp)
