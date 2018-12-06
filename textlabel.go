@@ -36,8 +36,12 @@ func NewTextLabelWithStyle(parent Container, style uint32) (*TextLabel, error) {
 	return tl, nil
 }
 
+func (tl *TextLabel) asStatic() *static {
+	return &tl.static
+}
+
 func (*TextLabel) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert
+	return GrowableHorz | GrowableVert
 }
 
 func (tl *TextLabel) MinSizeHint() Size {

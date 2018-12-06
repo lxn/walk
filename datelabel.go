@@ -51,6 +51,10 @@ func NewDateLabel(parent Container) (*DateLabel, error) {
 	return dl, nil
 }
 
+func (dl *DateLabel) asStatic() *static {
+	return &dl.static
+}
+
 func (dl *DateLabel) TextAlignment() Alignment1D {
 	return dl.textAlignment1D()
 }

@@ -36,8 +36,16 @@ func NewLabelWithStyle(parent Container, style uint32) (*Label, error) {
 	return l, nil
 }
 
-func (*Label) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert
+func (l *Label) asStatic() *static {
+	return &l.static
+}
+
+func (l *Label) LayoutFlags() LayoutFlags {
+	if l.TextAlignment() == AlignNear {
+		return GrowableVert
+	}
+
+	return GrowableHorz | GrowableVert
 }
 
 func (l *Label) TextAlignment() Alignment1D {

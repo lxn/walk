@@ -62,6 +62,10 @@ func NewNumberLabel(parent Container) (*NumberLabel, error) {
 	return nl, nil
 }
 
+func (nl *NumberLabel) asStatic() *static {
+	return &nl.static
+}
+
 func (nl *NumberLabel) TextAlignment() Alignment1D {
 	return nl.textAlignment1D()
 }
