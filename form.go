@@ -529,6 +529,8 @@ func (fb *FormBase) Hide() {
 }
 
 func (fb *FormBase) Show() {
+	fb.proposedSize = fb.minSize
+
 	if p, ok := fb.window.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
 		p.RestoreState()
 	}
