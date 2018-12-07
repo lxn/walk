@@ -41,10 +41,6 @@ func (l *Label) asStatic() *static {
 }
 
 func (l *Label) LayoutFlags() LayoutFlags {
-	if l.TextAlignment() == AlignNear {
-		return GrowableVert
-	}
-
 	return GrowableHorz | GrowableVert
 }
 
