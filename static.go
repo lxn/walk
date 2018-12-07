@@ -7,33 +7,80 @@
 package walk
 
 import (
-	"unsafe"
+	"syscall"
 
 	"github.com/lxn/win"
 )
 
+const staticWindowClass = `\o/ Walk_Static_Class \o/`
+
+var staticWndProcPtr = syscall.NewCallback(staticWndProc)
+
+func init() {
+	MustRegisterWindowClass(staticWindowClass)
+}
+
 type static struct {
 	WidgetBase
-	textAlignment Alignment2D
-	textColor     Color
+	hwndStatic           win.HWND
+	origStaticWndProcPtr uintptr
+	textAlignment        Alignment2D
+	textColor            Color
 }
 
 func (s *static) init(widget Widget, parent Container) error {
 	if err := InitWidget(
 		widget,
 		parent,
-		"STATIC",
-		win.WS_VISIBLE|win.SS_OWNERDRAW,
-		0); err != nil {
+		staticWindowClass,
+		win.WS_VISIBLE,
+		win.WS_EX_CONTROLPARENT); err != nil {
 		return err
 	}
+
+	if s.hwndStatic = win.CreateWindowEx(
+		0,
+		syscall.StringToUTF16Ptr("static"),
+		nil,
+		win.WS_CHILD|win.WS_CLIPSIBLINGS|win.WS_VISIBLE|win.SS_LEFT,
+		win.CW_USEDEFAULT,
+		win.CW_USEDEFAULT,
+		win.CW_USEDEFAULT,
+		win.CW_USEDEFAULT,
+		s.hWnd,
+		0,
+		0,
+		nil,
+	); s.hwndStatic == 0 {
+		return newErr("creating static failed")
+	}
+
+	s.origStaticWndProcPtr = win.SetWindowLongPtr(s.hwndStatic, win.GWLP_WNDPROC, staticWndProcPtr)
+	if s.origStaticWndProcPtr == 0 {
+		return lastError("SetWindowLongPtr")
+	}
+
+	s.applyFont(s.Font())
 
 	s.SetBackground(nullBrushSingleton)
 
 	return nil
 }
 
-func (*static) LayoutFlags() LayoutFlags {
+func (s *static) Dispose() {
+	if s.hwndStatic != 0 {
+		win.DestroyWindow(s.hwndStatic)
+		s.hwndStatic = 0
+	}
+
+	s.WidgetBase.Dispose()
+}
+
+func (s *static) LayoutFlags() LayoutFlags {
+	if s.textAlignment1D() == AlignNear {
+		return GrowableVert
+	}
+
 	return GrowableHorz | GrowableVert
 }
 
@@ -45,16 +92,24 @@ func (s *static) SizeHint() Size {
 	return s.MinSizeHint()
 }
 
-func (s *static) HeightForWidth(width int) int {
-	return s.MinSizeHint().Height
+func (s *static) applyEnabled(enabled bool) {
+	s.WidgetBase.applyEnabled(enabled)
+
+	setWindowEnabled(s.hwndStatic, enabled)
+}
+
+func (s *static) applyFont(font *Font) {
+	s.WidgetBase.applyFont(font)
+
+	setWindowFont(s.hwndStatic, font)
 }
 
 func (s *static) textAlignment1D() Alignment1D {
 	switch s.textAlignment {
-	case AlignHCenterVCenter:
+	case AlignHCenterVNear, AlignHCenterVCenter, AlignHCenterVFar:
 		return AlignCenter
 
-	case AlignHFarVCenter:
+	case AlignHFarVNear, AlignHFarVCenter, AlignHFarVFar:
 		return AlignFar
 
 	default:
@@ -84,6 +139,23 @@ func (s *static) setTextAlignment(alignment Alignment2D) error {
 		return nil
 	}
 
+	var styleBit uint32
+
+	switch alignment {
+	case AlignHNearVNear, AlignHNearVCenter, AlignHNearVFar:
+		styleBit |= win.SS_LEFT
+
+	case AlignHCenterVNear, AlignHCenterVCenter, AlignHCenterVFar:
+		styleBit |= win.SS_CENTER
+
+	case AlignHFarVNear, AlignHFarVCenter, AlignHFarVFar:
+		styleBit |= win.SS_RIGHT
+	}
+
+	if err := setAndClearWindowLongBits(s.hwndStatic, win.GWL_STYLE, styleBit, win.SS_LEFT|win.SS_CENTER|win.SS_RIGHT); err != nil {
+		return err
+	}
+
 	s.textAlignment = alignment
 
 	s.Invalidate()
@@ -91,12 +163,16 @@ func (s *static) setTextAlignment(alignment Alignment2D) error {
 	return nil
 }
 
-func (s *static) setText(value string) (changed bool, err error) {
-	if value == s.text() {
+func (s *static) setText(text string) (changed bool, err error) {
+	if text == s.text() {
 		return false, nil
 	}
 
-	if err := s.WidgetBase.setText(value); err != nil {
+	if err := s.WidgetBase.setText(text); err != nil {
+		return false, err
+	}
+
+	if err := setWindowText(s.hwndStatic, text); err != nil {
 		return false, err
 	}
 
@@ -113,24 +189,15 @@ func (s *static) SetTextColor(c Color) {
 	s.Invalidate()
 }
 
-func (s *static) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (s *static) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 	switch msg {
-	case win.WM_NCHITTEST:
-		return win.HTCLIENT
+	case win.WM_CTLCOLORSTATIC:
+		if hBrush := s.handleWMCTLCOLOR(wp, uintptr(s.hWnd)); hBrush != 0 {
+			return hBrush
+		}
 
 	case win.WM_SIZE, win.WM_SIZING:
-		s.Invalidate()
-
-	case win.WM_DRAWITEM:
-		dis := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
-
-		canvas, err := newCanvasFromHDC(dis.HDC)
-		if err != nil {
-			break
-		}
-		canvas.Dispose()
-
-		format := TextWordbreak
+		var format DrawTextFormat
 
 		switch s.textAlignment {
 		case AlignHNearVNear, AlignHNearVCenter, AlignHNearVFar:
@@ -154,37 +221,45 @@ func (s *static) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 			format |= TextBottom
 		}
 
-		bounds := rectangleFromRECT(dis.RcItem)
+		cb := s.ClientBounds()
 
 		if format&TextVCenter != 0 || format&TextBottom != 0 {
-			size := s.calculateTextSizeForWidth(bounds.Width)
-
-			if format&TextVCenter != 0 {
-				bounds.Y += (bounds.Height - size.Height) / 2
+			var size Size
+			if _, ok := s.window.(HeightForWidther); ok {
+				size = s.calculateTextSizeForWidth(cb.Width)
 			} else {
-				bounds.Y += bounds.Height - size.Height
+				size = s.calculateTextSize()
 			}
 
-			bounds.Height = size.Height
+			if format&TextVCenter != 0 {
+				cb.Y += (cb.Height - size.Height) / 2
+			} else {
+				cb.Y += cb.Height - size.Height
+			}
+
+			cb.Height = size.Height
 		}
 
-		bg, wnd := s.backgroundEffective()
-		if bg == nil {
-			bg = sysColorBtnFaceBrushSingleton
-		}
+		win.MoveWindow(s.hwndStatic, int32(cb.X), int32(cb.Y), int32(cb.Width), int32(cb.Height), true)
 
-		s.prepareDCForBackground(dis.HDC, s.hWnd, wnd)
-
-		if err := canvas.FillRectangle(bg, s.ClientBounds()); err != nil {
-			break
-		}
-
-		if err := canvas.DrawText(s.text(), s.Font(), s.textColor, bounds, format); err != nil {
-			break
-		}
-
-		return 1
+		s.Invalidate()
 	}
 
-	return s.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+	return s.WidgetBase.WndProc(hwnd, msg, wp, lp)
+}
+
+func staticWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
+	as, ok := windowFromHandle(win.GetParent(hwnd)).(interface{ asStatic() *static })
+	if !ok {
+		return 0
+	}
+
+	s := as.asStatic()
+
+	switch msg {
+	case win.WM_NCHITTEST:
+		return win.HTCLIENT
+	}
+
+	return win.CallWindowProc(s.origStaticWndProcPtr, hwnd, msg, wp, lp)
 }
