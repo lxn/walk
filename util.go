@@ -109,6 +109,38 @@ func uint16RemoveUint16(s []uint16, v uint16) []uint16 {
 	return ret
 }
 
+func assertFloat64Or(value interface{}, defaultValue float64) float64 {
+	if f, ok := value.(float64); ok {
+		return f
+	}
+
+	return defaultValue
+}
+
+func assertIntOr(value interface{}, defaultValue int) int {
+	if n, ok := value.(int); ok {
+		return n
+	}
+
+	return defaultValue
+}
+
+func assertStringOr(value interface{}, defaultValue string) string {
+	if s, ok := value.(string); ok {
+		return s
+	}
+
+	return defaultValue
+}
+
+func assertTimeOr(value interface{}, defaultValue time.Time) time.Time {
+	if t, ok := value.(time.Time); ok {
+		return t
+	}
+
+	return defaultValue
+}
+
 func ParseFloat(s string) (float64, error) {
 	s = strings.TrimSpace(s)
 

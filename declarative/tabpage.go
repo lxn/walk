@@ -38,6 +38,7 @@ type TabPage struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -62,15 +63,15 @@ func (tp TabPage) Create(builder *Builder) error {
 		return err
 	}
 
+	if tp.AssignTo != nil {
+		*tp.AssignTo = w
+	}
+
 	return builder.InitWidget(tp, w, func() error {
 		if tp.Content != nil && len(tp.Children) == 0 {
 			if err := tp.Content.Create(builder); err != nil {
 				return err
 			}
-		}
-
-		if tp.AssignTo != nil {
-			*tp.AssignTo = w
 		}
 
 		return nil

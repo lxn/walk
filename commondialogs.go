@@ -24,6 +24,7 @@ type FileDialog struct {
 	InitialDirPath string
 	Filter         string
 	FilterIndex    int
+	Flags          uint32
 	ShowReadOnlyCB bool
 }
 
@@ -48,7 +49,7 @@ func (dlg *FileDialog) show(owner Form, fun func(ofn *win.OPENFILENAME) bool, fl
 
 	ofn.LpstrInitialDir = syscall.StringToUTF16Ptr(dlg.InitialDirPath)
 	ofn.LpstrTitle = syscall.StringToUTF16Ptr(dlg.Title)
-	ofn.Flags = win.OFN_FILEMUSTEXIST | flags
+	ofn.Flags = win.OFN_FILEMUSTEXIST | flags | dlg.Flags
 
 	if !dlg.ShowReadOnlyCB {
 		ofn.Flags |= win.OFN_HIDEREADONLY

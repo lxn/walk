@@ -10,9 +10,7 @@ import (
 	"strconv"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -73,6 +71,15 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 	tw.MustRegisterProperty("HasCurrentPage", NewReadOnlyBoolProperty(
 		func() bool {
 			return tw.CurrentIndex() != -1
+		},
+		tw.CurrentIndexChanged()))
+
+	tw.MustRegisterProperty("CurrentIndex", NewProperty(
+		func() interface{} {
+			return tw.CurrentIndex()
+		},
+		func(v interface{}) error {
+			return tw.SetCurrentIndex(assertIntOr(v, -1))
 		},
 		tw.CurrentIndexChanged()))
 
@@ -189,7 +196,7 @@ func (tw *TabWidget) SetPersistent(value bool) {
 }
 
 func (tw *TabWidget) SaveState() error {
-	tw.putState(strconv.Itoa(tw.CurrentIndex()))
+	tw.WriteState(strconv.Itoa(tw.CurrentIndex()))
 
 	for _, page := range tw.pages.items {
 		if err := page.SaveState(); err != nil {
@@ -201,7 +208,7 @@ func (tw *TabWidget) SaveState() error {
 }
 
 func (tw *TabWidget) RestoreState() error {
-	state, err := tw.getState()
+	state, err := tw.ReadState()
 	if err != nil {
 		return err
 	}
@@ -284,7 +291,7 @@ func (tw *TabWidget) onSelChange() {
 		page.SetVisible(false)
 	}
 
-	tw.currentIndex = int(win.SendMessage(tw.hWndTab, win.TCM_GETCURSEL, 0, 0))
+	tw.currentIndex = int(int32(win.SendMessage(tw.hWndTab, win.TCM_GETCURSEL, 0, 0)))
 
 	if tw.currentIndex > -1 && tw.currentIndex < pageCount {
 		page := tw.pages.At(tw.currentIndex)
@@ -322,10 +329,7 @@ func (tw *TabWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 	return tw.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-var (
-	tabWidgetTabWndProcPtr = syscall.NewCallback(tabWidgetTabWndProc)
-	tabWidgetBitmap        *Bitmap
-)
+var tabWidgetTabWndProcPtr = syscall.NewCallback(tabWidgetTabWndProc)
 
 func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	tw := (*TabWidget)(unsafe.Pointer(win.GetWindowLongPtr(hwnd, win.GWLP_USERDATA)))
@@ -345,19 +349,13 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 		cb := tw.ClientBounds()
 
-		var err error
-		if tabWidgetBitmap == nil {
-			if tabWidgetBitmap, err = NewBitmap(cb.Size()); err != nil {
-				break
-			}
-		} else if tabWidgetBitmap.size.Width < cb.Width || tabWidgetBitmap.size.Height < cb.Height {
-			tabWidgetBitmap.Dispose()
-			if tabWidgetBitmap, err = NewBitmap(maxSize(tabWidgetBitmap.size, cb.Size())); err != nil {
-				break
-			}
+		bitmap, err := NewBitmap(cb.Size())
+		if err != nil {
+			break
 		}
+		defer bitmap.Dispose()
 
-		canvas, err := NewCanvasFromImage(tabWidgetBitmap)
+		canvas, err := NewCanvasFromImage(bitmap)
 		if err != nil {
 			break
 		}

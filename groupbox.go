@@ -88,7 +88,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 			return gb.Title()
 		},
 		func(v interface{}) error {
-			return gb.SetTitle(v.(string))
+			return gb.SetTitle(assertStringOr(v, ""))
 		},
 		gb.titleChangedPublisher.Event()))
 
@@ -138,6 +138,23 @@ func (gb *GroupBox) MinSizeHint() Size {
 
 func (gb *GroupBox) SizeHint() Size {
 	return gb.MinSizeHint()
+}
+
+func (gb *GroupBox) HeightForWidth(width int) int {
+	if gb.composite == nil || gb.composite.layout == nil {
+		return 100
+	}
+
+	cmsh := gb.composite.layout.MinSizeForSize(Size{Width: width})
+
+	if gb.Checkable() {
+		s := gb.checkBox.SizeHint()
+
+		cmsh.Width = maxi(cmsh.Width, s.Width)
+		cmsh.Height += s.Height
+	}
+
+	return cmsh.Height + 14
 }
 
 func (gb *GroupBox) ClientBounds() Rectangle {

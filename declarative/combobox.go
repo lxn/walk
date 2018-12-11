@@ -42,6 +42,7 @@ type ComboBox struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -57,6 +58,8 @@ type ComboBox struct {
 	MaxLength             int
 	Model                 interface{}
 	OnCurrentIndexChanged walk.EventHandler
+	OnEditingFinished     walk.EventHandler
+	OnTextChanged         walk.EventHandler
 	Precision             int
 	Value                 Property
 }
@@ -79,6 +82,10 @@ func (cb ComboBox) Create(builder *Builder) error {
 		return err
 	}
 
+	if cb.AssignTo != nil {
+		*cb.AssignTo = w
+	}
+
 	return builder.InitWidget(cb, w, func() error {
 		w.SetFormat(cb.Format)
 		w.SetPrecision(cb.Precision)
@@ -98,9 +105,11 @@ func (cb ComboBox) Create(builder *Builder) error {
 		if cb.OnCurrentIndexChanged != nil {
 			w.CurrentIndexChanged().Attach(cb.OnCurrentIndexChanged)
 		}
-
-		if cb.AssignTo != nil {
-			*cb.AssignTo = w
+		if cb.OnEditingFinished != nil {
+			w.EditingFinished().Attach(cb.OnEditingFinished)
+		}
+		if cb.OnTextChanged != nil {
+			w.TextChanged().Attach(cb.OnTextChanged)
 		}
 
 		return nil

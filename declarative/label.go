@@ -38,15 +38,17 @@ type Label struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
 
 	// Label
 
-	AssignTo  **walk.Label
-	Text      Property
-	TextColor walk.Color
+	AssignTo      **walk.Label
+	Text          Property
+	TextAlignment Alignment1D
+	TextColor     walk.Color
 }
 
 func (l Label) Create(builder *Builder) error {
@@ -55,12 +57,16 @@ func (l Label) Create(builder *Builder) error {
 		return err
 	}
 
-	return builder.InitWidget(l, w, func() error {
-		w.SetTextColor(l.TextColor)
+	if l.AssignTo != nil {
+		*l.AssignTo = w
+	}
 
-		if l.AssignTo != nil {
-			*l.AssignTo = w
+	return builder.InitWidget(l, w, func() error {
+		if err := w.SetTextAlignment(walk.Alignment1D(l.TextAlignment)); err != nil {
+			return err
 		}
+
+		w.SetTextColor(l.TextColor)
 
 		return nil
 	})

@@ -7,10 +7,9 @@
 package walk
 
 import (
+	"errors"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -98,7 +97,162 @@ type Layout interface {
 	SetSpacing(value int) error
 	LayoutFlags() LayoutFlags
 	MinSize() Size
+	MinSizeForSize(size Size) Size
 	Update(reset bool) error
+}
+
+type HeightForWidther interface {
+	HeightForWidth(width int) int
+}
+
+type minSizeForSize struct {
+	size    Size
+	minSize Size
+}
+
+type layoutResultItem struct {
+	widget Widget
+	bounds Rectangle
+}
+
+func applyLayoutResults(container Container, items []layoutResultItem) error {
+	if applyLayoutResultsProc != 0 {
+		return applyLayoutResultsRun(container, items)
+	}
+
+	return applyLayoutResultsWalk(container, items)
+}
+
+func applyLayoutResultsWalk(container Container, items []layoutResultItem) error {
+	hdwp := win.BeginDeferWindowPos(int32(len(items)))
+	if hdwp == 0 {
+		return lastError("BeginDeferWindowPos")
+	}
+
+	maybeInvalidate := container.AsContainerBase().hasComplexBackground()
+
+	for _, item := range items {
+		widget := item.widget
+		x, y, w, h := item.bounds.X, item.bounds.Y, item.bounds.Width, item.bounds.Height
+
+		b := widget.Bounds()
+
+		if b.X == x && b.Y == y && b.Width == w {
+			if _, ok := widget.(*ComboBox); ok {
+				if b.Height+1 == h {
+					continue
+				}
+			} else if b.Height == h {
+				continue
+			}
+		}
+
+		if maybeInvalidate {
+			if w == b.Width && h == b.Height && (x != b.X || y != b.Y) {
+				widget.Invalidate()
+			}
+		}
+
+		if hdwp = win.DeferWindowPos(
+			hdwp,
+			widget.Handle(),
+			0,
+			int32(x),
+			int32(y),
+			int32(w),
+			int32(h),
+			win.SWP_NOACTIVATE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER); hdwp == 0 {
+
+			return lastError("DeferWindowPos")
+		}
+
+		// FIXME: Is this really necessary?
+		for _, item := range items {
+			if !shouldLayoutWidget(item.widget) || item.widget.GraphicsEffects().Len() == 0 {
+				continue
+			}
+
+			item.widget.AsWidgetBase().invalidateBorderInParent()
+		}
+	}
+
+	if !win.EndDeferWindowPos(hdwp) {
+		return lastError("EndDeferWindowPos")
+	}
+
+	return nil
+}
+
+func applyLayoutResultsRun(container Container, items []layoutResultItem) error {
+	resultItems := make([]applyLayoutResultsItem, 0, len(items))
+
+	for _, item := range items {
+		widget := item.widget
+		x, y, w, h := item.bounds.X, item.bounds.Y, item.bounds.Width, item.bounds.Height
+
+		b := widget.Bounds()
+
+		if b.X == x && b.Y == y && b.Width == w {
+			if _, ok := widget.(*ComboBox); ok {
+				if b.Height+1 == h {
+					continue
+				}
+			} else if b.Height == h {
+				continue
+			}
+		}
+
+		resultItems = append(resultItems, applyLayoutResultsItem{
+			hwnd:                           widget.Handle(),
+			x:                              int32(x),
+			y:                              int32(y),
+			w:                              int32(w),
+			h:                              int32(h),
+			oldBounds:                      b.toRECT(),
+			shouldInvalidateBorderInParent: win.BoolToBOOL(shouldLayoutWidget(item.widget) && item.widget.GraphicsEffects().Len() > 0),
+		})
+	}
+
+	if len(resultItems) == 0 {
+		return nil
+	}
+
+	if !applyLayoutResultsImpl(container.Handle(), win.BoolToBOOL(container.AsContainerBase().hasComplexBackground()), &resultItems[0], int32(len(resultItems))) {
+		return errors.New("ApplyLayoutResults failed")
+	}
+
+	return nil
+}
+
+type applyLayoutResultsItem struct {
+	hwnd                           win.HWND
+	x                              int32
+	y                              int32
+	w                              int32
+	h                              int32
+	oldBounds                      win.RECT
+	shouldInvalidateBorderInParent win.BOOL
+}
+
+func widgetsToLayout(allWidgets *WidgetList) []Widget {
+	filteredWidgets := make([]Widget, 0, allWidgets.Len())
+
+	for i := 0; i < cap(filteredWidgets); i++ {
+		widget := allWidgets.At(i)
+
+		if !shouldLayoutWidget(widget) {
+			continue
+		}
+
+		ps := widget.SizeHint()
+		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
+			continue
+		}
+
+		filteredWidgets = append(filteredWidgets, widget)
+	}
+
+	return filteredWidgets
 }
 
 func shouldLayoutWidget(widget Widget) bool {
@@ -295,12 +449,91 @@ func (cb *ContainerBase) SetSuspended(suspend bool) {
 	}
 }
 
+func (cb *ContainerBase) doPaint() error {
+	var ps win.PAINTSTRUCT
+
+	hdc := win.BeginPaint(cb.hWnd, &ps)
+	defer win.EndPaint(cb.hWnd, &ps)
+
+	canvas, err := newCanvasFromHDC(hdc)
+	if err != nil {
+		return err
+	}
+	defer canvas.Dispose()
+
+	for _, widget := range cb.children.items {
+		for _, effect := range widget.GraphicsEffects().items {
+			switch effect {
+			case InteractionEffect:
+				type ReadOnlyer interface {
+					ReadOnly() bool
+				}
+				if ro, ok := widget.(ReadOnlyer); ok {
+					if ro.ReadOnly() {
+						continue
+					}
+				}
+
+				if hwnd := widget.Handle(); !win.IsWindowEnabled(hwnd) || !win.IsWindowVisible(hwnd) {
+					continue
+				}
+
+			case FocusEffect:
+				continue
+			}
+
+			b := widget.Bounds().toRECT()
+			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
+
+			if err := effect.Draw(widget, canvas); err != nil {
+				return err
+			}
+		}
+	}
+
+	if FocusEffect != nil {
+		hwndFocused := win.GetFocus()
+		var widget Widget
+		if wnd := windowFromHandle(hwndFocused); wnd != nil {
+			widget, _ = wnd.(Widget)
+		}
+		for hwndFocused != 0 && (widget == nil || widget.Parent() == nil) {
+			hwndFocused = win.GetParent(hwndFocused)
+			if wnd := windowFromHandle(hwndFocused); wnd != nil {
+				widget, _ = wnd.(Widget)
+			}
+		}
+
+		if widget != nil && widget.Parent() != nil && widget.Parent().Handle() == cb.hWnd {
+			for _, effect := range widget.GraphicsEffects().items {
+				if effect == FocusEffect {
+					b := widget.Bounds().toRECT()
+					win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
+
+					if err := FocusEffect.Draw(widget, canvas); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_CTLCOLOREDIT, win.WM_CTLCOLORSTATIC:
 		if hBrush := cb.handleWMCTLCOLOR(wParam, lParam); hBrush != 0 {
 			return hBrush
 		}
+
+	case win.WM_PAINT:
+		if err := cb.doPaint(); err != nil {
+			panic(err)
+		}
+
+		return 0
 
 	case win.WM_COMMAND:
 		if lParam == 0 {
@@ -352,6 +585,13 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 			}
 		}
 
+	case win.WM_DRAWITEM:
+		dis := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
+		if window := windowFromHandle(dis.HwndItem); window != nil {
+			// The window that sent the notification shall handle it itself.
+			return window.WndProc(hwnd, msg, wParam, lParam)
+		}
+
 	case win.WM_NOTIFY:
 		nmh := (*win.NMHDR)(unsafe.Pointer(lParam))
 		if window := windowFromHandle(nmh.HwndFrom); window != nil {
@@ -368,6 +608,10 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 	case win.WM_SIZE, win.WM_SIZING:
 		if cb.layout != nil {
 			cb.layout.Update(false)
+		}
+
+		if cb.background == nullBrushSingleton {
+			cb.Invalidate()
 		}
 	}
 

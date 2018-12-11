@@ -11,8 +11,9 @@ import (
 )
 
 import (
-	"github.com/lxn/walk"
 	"strconv"
+
+	"github.com/lxn/walk"
 )
 
 type Shortcut struct {
@@ -34,6 +35,10 @@ type Action struct {
 func (a Action) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, error) {
 	action := walk.NewAction()
 
+	if a.AssignTo != nil {
+		*a.AssignTo = action
+	}
+
 	if err := action.SetText(a.Text); err != nil {
 		return nil, err
 	}
@@ -44,31 +49,11 @@ func (a Action) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, e
 		return nil, err
 	}
 
-	if a.Enabled != nil {
-		if b, ok := a.Enabled.(bool); ok {
-			if err := action.SetEnabled(b); err != nil {
-				return nil, err
-			}
-		} else if s := builder.conditionOrProperty(a.Enabled); s != nil {
-			if c, ok := s.(walk.Condition); ok {
-				action.SetEnabledCondition(c)
-			} else {
-				return nil, fmt.Errorf("value of invalid type bound to Action.Enabled: %T", s)
-			}
-		}
+	if err := setActionBoolOrCondition(action.SetEnabled, action.SetEnabledCondition, a.Enabled, "Action.Enabled", builder); err != nil {
+		return nil, err
 	}
-	if a.Visible != nil {
-		if b, ok := a.Visible.(bool); ok {
-			if err := action.SetVisible(b); err != nil {
-				return nil, err
-			}
-		} else if s := builder.conditionOrProperty(a.Visible); s != nil {
-			if c, ok := s.(walk.Condition); ok {
-				action.SetVisibleCondition(c)
-			} else {
-				return nil, fmt.Errorf("value of invalid type bound to Action.Visible: %T", s)
-			}
-		}
+	if err := setActionBoolOrCondition(action.SetVisible, action.SetVisibleCondition, a.Visible, "Action.Visible", builder); err != nil {
+		return nil, err
 	}
 
 	s := a.Shortcut
@@ -84,10 +69,6 @@ func (a Action) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, e
 		if err := menu.Actions().Add(action); err != nil {
 			return nil, err
 		}
-	}
-
-	if a.AssignTo != nil {
-		*a.AssignTo = action
 	}
 
 	return action, nil
@@ -112,6 +93,8 @@ type Menu struct {
 	AssignActionTo **walk.Action
 	Text           string
 	Image          interface{}
+	Enabled        Property
+	Visible        Property
 	Items          []MenuItem
 	OnTriggered    walk.EventHandler
 }
@@ -133,6 +116,13 @@ func (m Menu) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, err
 		return nil, err
 	}
 	if err := setActionImage(action, m.Image); err != nil {
+		return nil, err
+	}
+
+	if err := setActionBoolOrCondition(action.SetEnabled, action.SetEnabledCondition, m.Enabled, "Menu.Enabled", builder); err != nil {
+		return nil, err
+	}
+	if err := setActionBoolOrCondition(action.SetVisible, action.SetVisibleCondition, m.Visible, "Menu.Visible", builder); err != nil {
 		return nil, err
 	}
 
@@ -207,4 +197,22 @@ func setActionImage(action *walk.Action, image interface{}) (err error) {
 	}
 
 	return action.SetImage(bm)
+}
+
+func setActionBoolOrCondition(setBool func(bool) error, setCond func(walk.Condition), value Property, path string, builder *Builder) error {
+	if value != nil {
+		if b, ok := value.(bool); ok {
+			if err := setBool(b); err != nil {
+				return err
+			}
+		} else if s := builder.conditionOrProperty(value); s != nil {
+			if c, ok := s.(walk.Condition); ok {
+				setCond(c)
+			} else {
+				return fmt.Errorf("value of invalid type bound to %s: %T", path, s)
+			}
+		}
+	}
+
+	return nil
 }

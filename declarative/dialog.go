@@ -65,9 +65,12 @@ func (d Dialog) Create(owner walk.Form) error {
 	} else {
 		w, err = walk.NewDialog(owner)
 	}
-
 	if err != nil {
 		return err
+	}
+
+	if d.AssignTo != nil {
+		*d.AssignTo = w
 	}
 
 	fi := formInfo{
@@ -111,6 +114,7 @@ func (d Dialog) Create(owner walk.Form) error {
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
+		w.SetBounds(w.Bounds())
 		return nil
 	})
 
@@ -142,10 +146,6 @@ func (d Dialog) Create(owner walk.Form) error {
 			if err := w.SetCancelButton(*d.CancelButton); err != nil {
 				return err
 			}
-		}
-
-		if d.AssignTo != nil {
-			*d.AssignTo = w
 		}
 
 		if d.Expressions != nil {

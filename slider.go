@@ -7,8 +7,9 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"strconv"
+
+	"github.com/lxn/win"
 )
 
 type Slider struct {
@@ -45,12 +46,15 @@ func NewSliderWithOrientation(parent Container, orientation Orientation) (*Slide
 
 	sl.SetBackground(nullBrushSingleton)
 
+	sl.GraphicsEffects().Add(InteractionEffect)
+	sl.GraphicsEffects().Add(FocusEffect)
+
 	sl.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
 			return sl.Value()
 		},
 		func(v interface{}) error {
-			sl.SetValue(v.(int))
+			sl.SetValue(assertIntOr(v, 0))
 			return nil
 		},
 		sl.valueChangedPublisher.Event()))
@@ -106,11 +110,11 @@ func (sl *Slider) SetPersistent(value bool) {
 }
 
 func (sl *Slider) SaveState() error {
-	return sl.putState(strconv.Itoa(sl.Value()))
+	return sl.WriteState(strconv.Itoa(sl.Value()))
 }
 
 func (sl *Slider) RestoreState() error {
-	s, err := sl.getState()
+	s, err := sl.ReadState()
 	if err != nil {
 		return err
 	}

@@ -7,9 +7,10 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"syscall"
 	"unsafe"
+
+	"github.com/lxn/win"
 )
 
 type LinkLabel struct {
@@ -37,7 +38,7 @@ func NewLinkLabel(parent Container) (*LinkLabel, error) {
 			return ll.Text()
 		},
 		func(v interface{}) error {
-			return ll.SetText(v.(string))
+			return ll.SetText(assertStringOr(v, ""))
 		},
 		ll.textChangedPublisher.Event()))
 
@@ -57,7 +58,7 @@ func (ll *LinkLabel) SizeHint() Size {
 }
 
 func (ll *LinkLabel) Text() string {
-	return windowText(ll.hWnd)
+	return ll.text()
 }
 
 func (ll *LinkLabel) SetText(value string) error {
@@ -65,7 +66,7 @@ func (ll *LinkLabel) SetText(value string) error {
 		return nil
 	}
 
-	if err := setWindowText(ll.hWnd, value); err != nil {
+	if err := ll.setText(value); err != nil {
 		return err
 	}
 

@@ -50,6 +50,9 @@ type Widget interface {
 	// Form returns the root ancestor Form of the Widget.
 	Form() Form
 
+	// GraphicsEffects returns a list of WidgetGraphicsEffects that are applied to the Widget.
+	GraphicsEffects() *WidgetGraphicsEffectList
+
 	// LayoutFlags returns a combination of LayoutFlags that specify how the
 	// Widget wants to be treated by Layout implementations.
 	LayoutFlags() LayoutFlags
@@ -84,6 +87,7 @@ type WidgetBase struct {
 	parent                      Container
 	toolTipTextProperty         Property
 	toolTipTextChangedPublisher EventPublisher
+	graphicsEffects             *WidgetGraphicsEffectList
 	alwaysConsumeSpace          bool
 }
 
@@ -114,6 +118,8 @@ func InitWidget(widget Widget, parent Window, className string, style, exStyle u
 }
 
 func (wb *WidgetBase) init(widget Widget) error {
+	wb.graphicsEffects = newWidgetGraphicsEffectList(wb)
+
 	if err := globalToolTip.AddTool(wb); err != nil {
 		return err
 	}
@@ -123,7 +129,7 @@ func (wb *WidgetBase) init(widget Widget) error {
 			return wb.window.(Widget).ToolTipText()
 		},
 		func(v interface{}) error {
-			wb.window.(Widget).SetToolTipText(v.(string))
+			wb.window.(Widget).SetToolTipText(assertStringOr(v, ""))
 			return nil
 		},
 		wb.toolTipTextChangedPublisher.Event())
@@ -324,6 +330,20 @@ func (wb *WidgetBase) SetParent(parent Container) (err error) {
 	return nil
 }
 
+func (wb *WidgetBase) ForEachAncestor(f func(window Window) bool) {
+	hwnd := win.GetParent(wb.hWnd)
+
+	for hwnd != 0 {
+		if window := windowFromHandle(hwnd); window != nil {
+			if !f(window) {
+				return
+			}
+		}
+
+		hwnd = win.GetParent(hwnd)
+	}
+}
+
 // SizeHint returns a default Size that should be "overidden" by a concrete
 // Widget type.
 func (wb *WidgetBase) SizeHint() Size {
@@ -344,6 +364,68 @@ func (wb *WidgetBase) SetToolTipText(s string) error {
 	wb.toolTipTextChangedPublisher.Publish()
 
 	return nil
+}
+
+// GraphicsEffects returns a list of WidgetGraphicsEffects that are applied to the WidgetBase.
+func (wb *WidgetBase) GraphicsEffects() *WidgetGraphicsEffectList {
+	return wb.graphicsEffects
+}
+
+func (wb *WidgetBase) onInsertedGraphicsEffect(index int, effect WidgetGraphicsEffect) error {
+	wb.invalidateBorderInParent()
+
+	return nil
+}
+
+func (wb *WidgetBase) onRemovedGraphicsEffect(index int, effect WidgetGraphicsEffect) error {
+	wb.invalidateBorderInParent()
+
+	return nil
+}
+
+func (wb *WidgetBase) onClearedGraphicsEffects() error {
+	wb.invalidateBorderInParent()
+
+	return nil
+}
+
+func (wb *WidgetBase) invalidateBorderInParent() {
+	if wb.parent != nil && wb.parent.Layout() != nil {
+		b := wb.Bounds().toRECT()
+		s := int32(wb.parent.Layout().Spacing())
+
+		hwnd := wb.parent.Handle()
+
+		rc := win.RECT{Left: b.Left - s, Top: b.Top - s, Right: b.Left, Bottom: b.Bottom + s}
+		win.InvalidateRect(hwnd, &rc, true)
+
+		rc = win.RECT{Left: b.Right, Top: b.Top - s, Right: b.Right + s, Bottom: b.Bottom + s}
+		win.InvalidateRect(hwnd, &rc, true)
+
+		rc = win.RECT{Left: b.Left, Top: b.Top - s, Right: b.Right, Bottom: b.Top}
+		win.InvalidateRect(hwnd, &rc, true)
+
+		rc = win.RECT{Left: b.Left, Top: b.Bottom, Right: b.Right, Bottom: b.Bottom + s}
+		win.InvalidateRect(hwnd, &rc, true)
+	}
+}
+
+func (wb *WidgetBase) hasComplexBackground() bool {
+	if bg := wb.window.Background(); bg != nil && !bg.simple() {
+		return false
+	}
+
+	var complex bool
+	wb.ForEachAncestor(func(window Window) bool {
+		if bg := window.Background(); bg != nil && !bg.simple() {
+			complex = true
+			return false
+		}
+
+		return true
+	})
+
+	return complex
 }
 
 func (wb *WidgetBase) updateParentLayout() error {
@@ -388,6 +470,12 @@ func (wb *WidgetBase) updateParentLayout() error {
 
 	layout.Update(false)
 
+	if FocusEffect != nil {
+		if focusedWnd := windowFromHandle(win.GetFocus()); focusedWnd != nil && win.GetParent(focusedWnd.Handle()) == parent.Handle() {
+			focusedWnd.(Widget).AsWidgetBase().invalidateBorderInParent()
+		}
+	}
+
 	return nil
 }
 
@@ -403,5 +491,15 @@ func ancestor(w Widget) Form {
 }
 
 func minSizeEffective(w Widget) Size {
-	return maxSize(w.MinSize(), w.MinSizeHint())
+	s := maxSize(w.MinSize(), w.MinSizeHint())
+
+	max := w.MaxSize()
+	if max.Width > 0 && s.Width > max.Width {
+		s.Width = max.Width
+	}
+	if max.Height > 0 && s.Height > max.Height {
+		s.Height = max.Height
+	}
+
+	return s
 }

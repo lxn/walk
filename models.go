@@ -6,6 +6,8 @@
 
 package walk
 
+import "github.com/lxn/win"
+
 // BindingValueProvider is the interface that a model must implement to support
 // data binding with widgets like ComboBox.
 type BindingValueProvider interface {
@@ -261,6 +263,9 @@ type CellStyler interface {
 type CellStyle struct {
 	row             int
 	col             int
+	bounds          Rectangle
+	hdc             win.HDC
+	canvas          *Canvas
 	BackgroundColor Color
 	TextColor       Color
 	Font            *Font
@@ -280,6 +285,18 @@ func (cs *CellStyle) Row() int {
 
 func (cs *CellStyle) Col() int {
 	return cs.col
+}
+
+func (cs *CellStyle) Bounds() Rectangle {
+	return cs.bounds
+}
+
+func (cs *CellStyle) Canvas() *Canvas {
+	if cs.canvas == nil && cs.hdc != 0 {
+		cs.canvas, _ = newCanvasFromHDC(cs.hdc)
+	}
+
+	return cs.canvas
 }
 
 // ItemChecker is the interface that a model must implement to support check

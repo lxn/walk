@@ -8,14 +8,12 @@ package walk
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
-	"strconv"
 )
 
 type CloseReason byte
@@ -25,17 +23,37 @@ const (
 	CloseReasonUser
 )
 
-var syncFuncs struct {
-	m     sync.Mutex
-	funcs []func()
-}
+var (
+	processMessageProc     uintptr
+	applyLayoutResultsProc uintptr
 
-var syncMsgId uint32
-var taskbarButtonCreatedMsgId uint32
+	syncFuncs struct {
+		m     sync.Mutex
+		funcs []func()
+	}
+
+	syncMsgId                 uint32
+	taskbarButtonCreatedMsgId uint32
+)
 
 func init() {
+	if dll, err := syscall.LoadLibrary("run.dll"); err == nil {
+		applyLayoutResultsProc, err = syscall.GetProcAddress(dll, "ApplyLayoutResults")
+		processMessageProc, err = syscall.GetProcAddress(dll, "ProcessMessage")
+	}
+
 	syncMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("WalkSync"))
 	taskbarButtonCreatedMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("TaskbarButtonCreated"))
+}
+
+func applyLayoutResultsImpl(hwndParent win.HWND, maybeInvalidate win.BOOL, items *applyLayoutResultsItem, itemsLen int32) bool {
+	ret, _, _ := syscall.Syscall6(applyLayoutResultsProc, 4, uintptr(hwndParent), uintptr(maybeInvalidate), uintptr(unsafe.Pointer(items)), uintptr(itemsLen), 0, 0)
+	return ret != 0
+}
+
+func processMessage(hwnd win.HWND, msg *win.MSG) bool {
+	ret, _, _ := syscall.Syscall(processMessageProc, 2, uintptr(hwnd), uintptr(unsafe.Pointer(msg)), 0)
+	return ret != 0
 }
 
 func synchronize(f func()) {
@@ -62,6 +80,8 @@ type Form interface {
 	Run() int
 	Starting() *Event
 	Closing() *CloseEvent
+	Activating() *Event
+	Deactivating() *Event
 	Activate() error
 	Show()
 	Hide()
@@ -97,6 +117,7 @@ type FormBase struct {
 	progressIndicator     *ProgressIndicator
 	icon                  *Icon
 	prevFocusHWnd         win.HWND
+	proposedSize          Size
 	isInRestoreState      bool
 	started               bool
 	closeReason           CloseReason
@@ -150,7 +171,7 @@ func (fb *FormBase) init(form Form) error {
 			return fb.Title()
 		},
 		func(v interface{}) error {
-			return fb.SetTitle(v.(string))
+			return fb.SetTitle(assertStringOr(v, ""))
 		},
 		fb.titleChangedPublisher.Event()))
 
@@ -265,7 +286,7 @@ func (fb *FormBase) onInsertingWidget(index int, widget Widget) error {
 func (fb *FormBase) onInsertedWidget(index int, widget Widget) error {
 	err := fb.clientComposite.onInsertedWidget(index, widget)
 	if err == nil {
-		if layout := fb.Layout(); layout != nil {
+		if layout := fb.Layout(); layout != nil && !fb.Suspended() {
 			minClientSize := fb.Layout().MinSize()
 			clientSize := fb.clientComposite.Size()
 
@@ -323,11 +344,11 @@ func (fb *FormBase) SetBackground(background Brush) {
 }
 
 func (fb *FormBase) Title() string {
-	return windowText(fb.hWnd)
+	return fb.text()
 }
 
 func (fb *FormBase) SetTitle(value string) error {
-	return setWindowText(fb.hWnd, value)
+	return fb.setText(value)
 }
 
 func (fb *FormBase) TitleChanged() *Event {
@@ -349,6 +370,19 @@ func (fb *FormBase) SetRightToLeftLayout(rtl bool) error {
 func (fb *FormBase) Run() int {
 	if fb.owner != nil {
 		win.EnableWindow(fb.owner.Handle(), false)
+
+		invalidateDescendentBorders := func() {
+			walkDescendants(fb.owner, func(wnd Window) bool {
+				if widget, ok := wnd.(Widget); ok {
+					widget.AsWidgetBase().invalidateBorderInParent()
+				}
+
+				return true
+			})
+		}
+
+		invalidateDescendentBorders()
+		defer invalidateDescendentBorders()
 	}
 
 	if layout := fb.Layout(); layout != nil {
@@ -360,30 +394,80 @@ func (fb *FormBase) Run() int {
 	fb.started = true
 	fb.startingPublisher.Publish()
 
+	fb.SetBounds(fb.Bounds())
+
 	var msg win.MSG
 
-	for fb.hWnd != 0 {
-		switch win.GetMessage(&msg, 0, 0, 0) {
-		case 0:
-			return int(msg.WParam)
+	if processMessageProc != 0 {
+		for fb.hWnd != 0 {
+			if !processMessage(fb.hWnd, &msg) {
+				return int(msg.WParam)
+			}
 
-		case -1:
-			return -1
+			if msg.Message == win.WM_KEYDOWN {
+				if fb.webViewTranslateAccelerator(&msg) {
+					// handled accelerator key of webview and its childen (ie IE)
+				}
+			}
+
+			runSynchronized()
 		}
+	} else {
+		for fb.hWnd != 0 {
+			switch win.GetMessage(&msg, 0, 0, 0) {
+			case 0:
+				return int(msg.WParam)
 
-		if !win.IsDialogMessage(fb.hWnd, &msg) {
-			win.TranslateMessage(&msg)
-			win.DispatchMessage(&msg)
+			case -1:
+				return -1
+			}
+
+			switch msg.Message {
+			case win.WM_KEYDOWN:
+				if fb.webViewTranslateAccelerator(&msg) {
+					// handled accelerator key of webview and its childen (ie IE)
+				}
+			}
+
+			if !win.IsDialogMessage(fb.hWnd, &msg) {
+				win.TranslateMessage(&msg)
+				win.DispatchMessage(&msg)
+			}
+
+			runSynchronized()
 		}
-
-		runSynchronized()
 	}
 
 	return 0
 }
 
+func (fb *FormBase) webViewTranslateAccelerator(msg *win.MSG) bool {
+	ret := false
+	walkDescendants(fb.window, func(w Window) bool {
+		if webView, ok := w.(*WebView); ok {
+			webViewHWnd := webView.Handle()
+			if webViewHWnd == msg.HWnd || win.IsChild(webViewHWnd, msg.HWnd) {
+				_ret := webView.translateAccelerator(msg)
+				if _ret {
+					ret = _ret
+				}
+			}
+		}
+		return true
+	})
+	return ret
+}
+
 func (fb *FormBase) Starting() *Event {
 	return fb.startingPublisher.Event()
+}
+
+func (fb *FormBase) Activating() *Event {
+	return fb.activatingPublisher.Event()
+}
+
+func (fb *FormBase) Deactivating() *Event {
+	return fb.deactivatingPublisher.Event()
 }
 
 func (fb *FormBase) Activate() error {
@@ -445,6 +529,8 @@ func (fb *FormBase) Hide() {
 }
 
 func (fb *FormBase) Show() {
+	fb.proposedSize = fb.minSize
+
 	if p, ok := fb.window.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
 		p.RestoreState()
 	}
@@ -496,7 +582,7 @@ func (fb *FormBase) SaveState() error {
 		wp.RcNormalPosition.Left, wp.RcNormalPosition.Top,
 		wp.RcNormalPosition.Right, wp.RcNormalPosition.Bottom)
 
-	if err := fb.putState(state); err != nil {
+	if err := fb.WriteState(state); err != nil {
 		return err
 	}
 
@@ -512,7 +598,7 @@ func (fb *FormBase) RestoreState() error {
 		fb.isInRestoreState = false
 	}()
 
-	state, err := fb.getState()
+	state, err := fb.ReadState()
 	if err != nil {
 		return err
 	}
@@ -598,13 +684,16 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		return fb.clientComposite.WndProc(hwnd, msg, wParam, lParam)
 
 	case win.WM_GETMINMAXINFO:
+		if fb.Suspended() || fb.proposedSize == (Size{}) {
+			break
+		}
+
 		mmi := (*win.MINMAXINFO)(unsafe.Pointer(lParam))
 
-		layout := fb.clientComposite.Layout()
-
 		var min Size
-		if layout != nil {
-			min = fb.sizeFromClientSize(layout.MinSize())
+		if layout := fb.clientComposite.layout; layout != nil {
+			size := fb.clientSizeFromSize(fb.proposedSize)
+			min = fb.sizeFromClientSize(layout.MinSizeForSize(size))
 		}
 
 		mmi.PtMinTrackSize = win.POINT{
@@ -619,7 +708,14 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	case win.WM_SETTEXT:
 		fb.titleChangedPublisher.Publish()
 
-	case win.WM_SIZE, win.WM_SIZING:
+	case win.WM_SIZING:
+		rc := (*win.RECT)(unsafe.Pointer(lParam))
+
+		fb.proposedSize = rectangleFromRECT(*rc).Size()
+
+		fb.clientComposite.SetBounds(fb.window.ClientBounds())
+
+	case win.WM_SIZE:
 		fb.clientComposite.SetBounds(fb.window.ClientBounds())
 
 	case win.WM_SYSCOMMAND:

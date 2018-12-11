@@ -10,6 +10,8 @@ import (
 	"github.com/lxn/win"
 )
 
+var ValidationErrorEffect WidgetGraphicsEffect
+
 type ToolTipErrorPresenter struct {
 	toolTip                     *ToolTip
 	curWidget                   Widget
@@ -85,6 +87,10 @@ func (ttep *ToolTipErrorPresenter) PresentError(err error, widget Widget) {
 				}
 			}
 
+			if !found && wt == ttep.curWidget || wt != widget || err == nil {
+				wt.GraphicsEffects().Remove(ValidationErrorEffect)
+			}
+
 			return true
 		})
 	}
@@ -104,6 +110,10 @@ func (ttep *ToolTipErrorPresenter) PresentError(err error, widget Widget) {
 
 		if widget != ttep.curWidget {
 			ttep.track(widget)
+
+			if effects := widget.GraphicsEffects(); !effects.Contains(ValidationErrorEffect) {
+				effects.Add(ValidationErrorEffect)
+			}
 		}
 	}
 }

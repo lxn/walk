@@ -47,6 +47,7 @@ type ToolBar struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -65,6 +66,10 @@ func (tb ToolBar) Create(builder *Builder) error {
 	w, err := walk.NewToolBarWithOrientationAndButtonStyle(builder.Parent(), walk.Orientation(tb.Orientation), walk.ToolBarButtonStyle(tb.ButtonStyle))
 	if err != nil {
 		return err
+	}
+
+	if tb.AssignTo != nil {
+		*tb.AssignTo = w
 	}
 
 	return builder.InitWidget(tb, w, func() error {
@@ -88,10 +93,6 @@ func (tb ToolBar) Create(builder *Builder) error {
 			if err := addToActionList(w.Actions(), tb.Actions); err != nil {
 				return err
 			}
-		}
-
-		if tb.AssignTo != nil {
-			*tb.AssignTo = w
 		}
 
 		return nil

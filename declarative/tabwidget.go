@@ -38,6 +38,7 @@ type TabWidget struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -55,6 +56,10 @@ func (tw TabWidget) Create(builder *Builder) error {
 	w, err := walk.NewTabWidget(builder.Parent())
 	if err != nil {
 		return err
+	}
+
+	if tw.AssignTo != nil {
+		*tw.AssignTo = w
 	}
 
 	return builder.InitWidget(tw, w, func() error {
@@ -79,10 +84,6 @@ func (tw TabWidget) Create(builder *Builder) error {
 
 		if tw.OnCurrentIndexChanged != nil {
 			w.CurrentIndexChanged().Attach(tw.OnCurrentIndexChanged)
-		}
-
-		if tw.AssignTo != nil {
-			*tw.AssignTo = w
 		}
 
 		return nil

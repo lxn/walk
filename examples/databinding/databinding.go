@@ -16,6 +16,10 @@ import (
 )
 
 func main() {
+	walk.FocusEffect, _ = walk.NewBorderGlowEffect(walk.RGB(0, 63, 255))
+	walk.InteractionEffect, _ = walk.NewDropShadowEffect(walk.RGB(63, 63, 63))
+	walk.ValidationErrorEffect, _ = walk.NewBorderGlowEffect(walk.RGB(255, 0, 0))
+
 	var mw *walk.MainWindow
 	var outTE *walk.TextEdit
 
@@ -113,11 +117,12 @@ func RunAnimalDialog(owner walk.Form, animal *Animal) (int, error) {
 
 	return Dialog{
 		AssignTo:      &dlg,
-		Title:         "Animal Details",
+		Title:         Bind("'Animal Details' + (animal.Name == '' ? '' : ' - ' + animal.Name)"),
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		DataBinder: DataBinder{
 			AssignTo:       &db,
+			Name:           "animal",
 			DataSource:     animal,
 			ErrorPresenter: ToolTipErrorPresenter{},
 		},

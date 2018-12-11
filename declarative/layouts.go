@@ -127,3 +127,24 @@ func (g Grid) Create() (walk.Layout, error) {
 
 	return l, nil
 }
+
+type Flow struct {
+	Margins     Margins
+	Spacing     int
+	MarginsZero bool
+	SpacingZero bool
+}
+
+func (f Flow) Create() (walk.Layout, error) {
+	l := walk.NewFlowLayout()
+
+	if err := setLayoutMargins(l, f.Margins, f.MarginsZero); err != nil {
+		return nil, err
+	}
+
+	if err := setLayoutSpacing(l, f.Spacing, f.SpacingZero); err != nil {
+		return nil, err
+	}
+
+	return l, nil
+}

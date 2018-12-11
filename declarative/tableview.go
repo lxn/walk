@@ -39,28 +39,33 @@ type TableView struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
 
 	// TableView
 
-	AlternatingRowBGColor      walk.Color
-	AssignTo                   **walk.TableView
-	CellStyler                 walk.CellStyler
-	CheckBoxes                 bool
-	Columns                    []TableViewColumn
-	ColumnsOrderable           Property
-	ColumnsSizable             Property
-	ItemStateChangedEventDelay int
-	LastColumnStretched        bool
-	Model                      interface{}
-	MultiSelection             bool
-	NotSortableByHeaderClick   bool
-	OnCurrentIndexChanged      walk.EventHandler
-	OnItemActivated            walk.EventHandler
-	OnSelectedIndexesChanged   walk.EventHandler
-	StyleCell                  func(style *walk.CellStyle)
+	AlternatingRowBGColor       walk.Color
+	AssignTo                    **walk.TableView
+	CellStyler                  walk.CellStyler
+	CheckBoxes                  bool
+	Columns                     []TableViewColumn
+	ColumnsOrderable            Property
+	ColumnsSizable              Property
+	CustomHeaderHeight          int
+	CustomRowHeight             int
+	ItemStateChangedEventDelay  int
+	HeaderHidden                bool
+	LastColumnStretched         bool
+	Model                       interface{}
+	MultiSelection              bool
+	NotSortableByHeaderClick    bool
+	OnCurrentIndexChanged       walk.EventHandler
+	OnItemActivated             walk.EventHandler
+	OnSelectedIndexesChanged    walk.EventHandler
+	SelectionHiddenWithoutFocus bool
+	StyleCell                   func(style *walk.CellStyle)
 }
 
 type tvStyler struct {
@@ -90,10 +95,14 @@ func (tv TableView) Create(builder *Builder) error {
 	if tv.NotSortableByHeaderClick {
 		w, err = walk.NewTableViewWithStyle(builder.Parent(), win.LVS_NOSORTHEADER)
 	} else {
-		w, err = walk.NewTableView(builder.Parent())
+		w, err = walk.NewTableViewWithCfg(builder.Parent(), &walk.TableViewCfg{CustomHeaderHeight: tv.CustomHeaderHeight, CustomRowHeight: tv.CustomRowHeight})
 	}
 	if err != nil {
 		return err
+	}
+
+	if tv.AssignTo != nil {
+		*tv.AssignTo = w
 	}
 
 	return builder.InitWidget(tv, w, func() error {
@@ -157,6 +166,12 @@ func (tv TableView) Create(builder *Builder) error {
 		if err := w.SetMultiSelection(tv.MultiSelection); err != nil {
 			return err
 		}
+		if err := w.SetSelectionHiddenWithoutFocus(tv.SelectionHiddenWithoutFocus); err != nil {
+			return err
+		}
+		if err := w.SetHeaderHidden(tv.HeaderHidden); err != nil {
+			return err
+		}
 
 		if tv.OnCurrentIndexChanged != nil {
 			w.CurrentIndexChanged().Attach(tv.OnCurrentIndexChanged)
@@ -166,10 +181,6 @@ func (tv TableView) Create(builder *Builder) error {
 		}
 		if tv.OnItemActivated != nil {
 			w.ItemActivated().Attach(tv.OnItemActivated)
-		}
-
-		if tv.AssignTo != nil {
-			*tv.AssignTo = w
 		}
 
 		return nil

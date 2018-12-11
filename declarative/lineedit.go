@@ -46,6 +46,7 @@ type LineEdit struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -69,6 +70,10 @@ func (le LineEdit) Create(builder *Builder) error {
 	w, err := walk.NewLineEdit(builder.Parent())
 	if err != nil {
 		return err
+	}
+
+	if le.AssignTo != nil {
+		*le.AssignTo = w
 	}
 
 	return builder.InitWidget(le, w, func() error {
@@ -95,10 +100,6 @@ func (le LineEdit) Create(builder *Builder) error {
 		}
 		if le.OnTextChanged != nil {
 			w.TextChanged().Attach(le.OnTextChanged)
-		}
-
-		if le.AssignTo != nil {
-			*le.AssignTo = w
 		}
 
 		return nil

@@ -38,6 +38,7 @@ type Slider struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -59,16 +60,16 @@ func (sl Slider) Create(builder *Builder) error {
 		return err
 	}
 
+	if sl.AssignTo != nil {
+		*sl.AssignTo = w
+	}
+
 	return builder.InitWidget(sl, w, func() error {
 		w.SetPersistent(sl.Persistent)
 		w.SetTracking(sl.Tracking)
 
 		if sl.MaxValue > sl.MinValue {
 			w.SetRange(sl.MinValue, sl.MaxValue)
-		}
-
-		if sl.AssignTo != nil {
-			*sl.AssignTo = w
 		}
 
 		if sl.OnValueChanged != nil {

@@ -40,6 +40,9 @@ func NewSplitButton(parent Container) (*SplitButton, error) {
 
 	sb.menu = menu
 
+	sb.GraphicsEffects().Add(InteractionEffect)
+	sb.GraphicsEffects().Add(FocusEffect)
+
 	return sb, nil
 }
 

@@ -39,6 +39,7 @@ type Composite struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -67,6 +68,10 @@ func (c Composite) Create(builder *Builder) error {
 		return err
 	}
 
+	if c.AssignTo != nil {
+		*c.AssignTo = w
+	}
+
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
@@ -74,10 +79,6 @@ func (c Composite) Create(builder *Builder) error {
 	})
 
 	return builder.InitWidget(c, w, func() error {
-		if c.AssignTo != nil {
-			*c.AssignTo = w
-		}
-
 		if c.Expressions != nil {
 			for name, expr := range c.Expressions() {
 				builder.expressions[name] = expr

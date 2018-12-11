@@ -33,6 +33,7 @@ type Splitter struct {
 	mouseDownPos  Point
 	draggedHandle *splitterHandle
 	persistent    bool
+	removing      bool
 }
 
 func newSplitter(parent Container, orientation Orientation) (*Splitter, error) {
@@ -41,7 +42,7 @@ func newSplitter(parent Container, orientation Orientation) (*Splitter, error) {
 		ContainerBase: ContainerBase{
 			layout: layout,
 		},
-		handleWidth: 4,
+		handleWidth: 5,
 	}
 	s.children = newWidgetList(s)
 	layout.container = s
@@ -61,6 +62,8 @@ func newSplitter(parent Container, orientation Orientation) (*Splitter, error) {
 			s.Dispose()
 		}
 	}()
+
+	s.SetBackground(NullBrush())
 
 	if err := s.setOrientation(orientation); err != nil {
 		return nil, err
@@ -82,7 +85,7 @@ func NewVSplitter(parent Container) (*Splitter, error) {
 }
 
 func (s *Splitter) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
+	return s.layout.LayoutFlags()
 }
 
 func (s *Splitter) SizeHint() Size {
@@ -134,6 +137,52 @@ func (s *Splitter) setOrientation(value Orientation) error {
 	return layout.SetOrientation(value)
 }
 
+func (s *Splitter) updateMarginsForFocusEffect() {
+	var margins Margins
+	var parentLayout Layout
+
+	if s.parent != nil {
+		if parentLayout = s.parent.Layout(); parentLayout != nil {
+			if m := parentLayout.Margins(); m.HNear < 9 || m.HFar < 9 || m.VNear < 9 || m.VFar < 9 {
+				parentLayout = nil
+			}
+		}
+	}
+
+	var affected bool
+	if FocusEffect != nil {
+		for _, w := range s.children.items {
+			if w.GraphicsEffects().Contains(FocusEffect) {
+				affected = true
+				break
+			}
+		}
+	}
+
+	if affected {
+		var marginsNeeded bool
+		for _, w := range s.children.items {
+			switch w.(type) {
+			case *splitterHandle, *TabWidget, Container:
+
+			default:
+				marginsNeeded = true
+				break
+			}
+		}
+
+		if marginsNeeded {
+			margins = Margins{5, 5, 5, 5}
+		}
+	}
+
+	if parentLayout != nil {
+		parentLayout.SetMargins(Margins{9 - margins.HNear, 9 - margins.VNear, 9 - margins.HFar, 9 - margins.VFar})
+	}
+
+	s.layout.SetMargins(margins)
+}
+
 func (s *Splitter) Persistent() bool {
 	return s.persistent
 }
@@ -153,10 +202,15 @@ func (s *Splitter) SaveState() error {
 			buf.WriteString(" ")
 		}
 
-		buf.WriteString(strconv.FormatInt(int64(layout.hwnd2Item[s.children.At(i).Handle()].size), 10))
+		item := layout.hwnd2Item[s.children.At(i).Handle()]
+		size := item.oldExplicitSize
+		if size == 0 {
+			size = item.size
+		}
+		buf.WriteString(strconv.FormatInt(int64(size), 10))
 	}
 
-	s.putState(buf.String())
+	s.WriteState(buf.String())
 
 	for _, widget := range s.children.items {
 		if persistable, ok := widget.(Persistable); ok {
@@ -175,7 +229,7 @@ func (s *Splitter) RestoreState() error {
 		return nil
 	}
 
-	state, err := s.getState()
+	state, err := s.ReadState()
 	if err != nil {
 		return err
 	}
@@ -214,7 +268,9 @@ func (s *Splitter) RestoreState() error {
 				size = int(float64(regularSpace) * fraction)
 			}
 
-			layout.hwnd2Item[widget.Handle()].size = size
+			item := layout.hwnd2Item[widget.Handle()]
+			item.size = size
+			item.oldExplicitSize = size
 		}
 
 		if persistable, ok := widget.(Persistable); ok {
@@ -239,6 +295,12 @@ func (s *Splitter) SetFixed(widget Widget, fixed bool) error {
 
 	item.fixed = fixed
 
+	if b := widget.Bounds(); fixed && b.Width == 0 || b.Height == 0 {
+		b.Width, b.Height = 100, 100
+		widget.SetBounds(b)
+		item.size = 100
+	}
+
 	return nil
 }
 
@@ -247,6 +309,14 @@ func (s *Splitter) onInsertingWidget(index int, widget Widget) (err error) {
 }
 
 func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
+	defer func() {
+		if err != nil {
+			return
+		}
+
+		s.updateMarginsForFocusEffect()
+	}()
+
 	_, isHandle := widget.(*splitterHandle)
 	if isHandle {
 		if s.Orientation() == Horizontal {
@@ -362,12 +432,15 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						}
 
 						dragHandle := s.draggedHandle
-						s.draggedHandle = nil
-						dragHandle.SetBackground(nil)
 
 						handleIndex := s.children.Index(dragHandle)
 						prev := s.children.At(handleIndex - 1)
 						next := s.children.At(handleIndex + 1)
+
+						s.draggedHandle = nil
+						dragHandle.SetBackground(NullBrush())
+						prev.AsWidgetBase().invalidateBorderInParent()
+						next.AsWidgetBase().invalidateBorderInParent()
 
 						prev.SetSuspended(true)
 						defer prev.Invalidate()
@@ -406,8 +479,14 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						}
 
 						layout := s.Layout().(*splitterLayout)
-						layout.hwnd2Item[prev.Handle()].size = sizePrev
-						layout.hwnd2Item[next.Handle()].size = sizeNext
+
+						prevItem := layout.hwnd2Item[prev.Handle()]
+						prevItem.size = sizePrev
+						prevItem.oldExplicitSize = sizePrev
+
+						nextItem := layout.hwnd2Item[next.Handle()]
+						nextItem.size = sizeNext
+						nextItem.oldExplicitSize = sizeNext
 					})
 				}
 			}()
@@ -422,8 +501,16 @@ func (s *Splitter) onRemovingWidget(index int, widget Widget) (err error) {
 }
 
 func (s *Splitter) onRemovedWidget(index int, widget Widget) (err error) {
+	defer func() {
+		if err != nil {
+			return
+		}
+
+		s.updateMarginsForFocusEffect()
+	}()
+
 	_, isHandle := widget.(*splitterHandle)
-	if isHandle && s.children.Len()%2 == 1 {
+	if !s.removing && isHandle && s.children.Len()%2 == 1 {
 		return newError("cannot remove splitter handle")
 	}
 
@@ -439,14 +526,22 @@ func (s *Splitter) onRemovedWidget(index int, widget Widget) (err error) {
 			} else {
 				handleIndex = index - 1
 			}
-			err = s.children.RemoveAt(handleIndex)
+
+			s.removing = true
+			handle := s.children.items[handleIndex]
+			if err = handle.SetParent(nil); err == nil {
+				s.children.items = append(s.children.items[:index], s.children.items[index+1:]...)
+
+				s.layout.Update(true)
+
+				handle.Dispose()
+			}
+
+			s.removing = false
 		}()
 	}
 
 	err = s.ContainerBase.onRemovedWidget(index, widget)
-	if isHandle && err == nil {
-		widget.Dispose()
-	}
 
 	return
 }

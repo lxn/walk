@@ -10,6 +10,17 @@ import (
 	"github.com/lxn/walk"
 )
 
+type ImageViewMode int
+
+const (
+	ImageViewModeIdeal   = ImageViewMode(walk.ImageViewModeIdeal)
+	ImageViewModeCorner  = ImageViewMode(walk.ImageViewModeCorner)
+	ImageViewModeCenter  = ImageViewMode(walk.ImageViewModeCenter)
+	ImageViewModeShrink  = ImageViewMode(walk.ImageViewModeShrink)
+	ImageViewModeZoom    = ImageViewMode(walk.ImageViewModeZoom)
+	ImageViewModeStretch = ImageViewMode(walk.ImageViewModeStretch)
+)
+
 type ImageView struct {
 	// Window
 
@@ -38,6 +49,7 @@ type ImageView struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -47,6 +59,7 @@ type ImageView struct {
 	AssignTo **walk.ImageView
 	Image    Property
 	Margin   Property
+	Mode     ImageViewMode
 }
 
 func (iv ImageView) Create(builder *Builder) error {
@@ -55,10 +68,12 @@ func (iv ImageView) Create(builder *Builder) error {
 		return err
 	}
 
+	if iv.AssignTo != nil {
+		*iv.AssignTo = w
+	}
+
 	return builder.InitWidget(iv, w, func() error {
-		if iv.AssignTo != nil {
-			*iv.AssignTo = w
-		}
+		w.SetMode(walk.ImageViewMode(iv.Mode))
 
 		return nil
 	})

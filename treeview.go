@@ -9,16 +9,13 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
 type treeViewItemInfo struct {
 	handle       win.HTREEITEM
 	child2Handle map[TreeItem]win.HTREEITEM
-	utf16Text    *uint16
 }
 
 type TreeView struct {
@@ -58,14 +55,16 @@ func NewTreeView(parent Container) (*TreeView, error) {
 		}
 	}()
 
-	// FIXME: This is Vista and later only
-	//if hr := win.HRESULT(tv.SendMessage(win.TVM_SETEXTENDEDSTYLE, win.TVS_EX_DOUBLEBUFFER, win.TVS_EX_DOUBLEBUFFER)); win.FAILED(hr) {
-	//	return nil, errorFromHRESULT("TVM_SETEXTENDEDSTYLE", hr)
-	//}
+	if hr := win.HRESULT(tv.SendMessage(win.TVM_SETEXTENDEDSTYLE, win.TVS_EX_DOUBLEBUFFER, win.TVS_EX_DOUBLEBUFFER)); win.FAILED(hr) {
+		return nil, errorFromHRESULT("TVM_SETEXTENDEDSTYLE", hr)
+	}
 
 	if err := tv.setTheme("Explorer"); err != nil {
 		return nil, err
 	}
+
+	tv.GraphicsEffects().Add(InteractionEffect)
+	tv.GraphicsEffects().Add(FocusEffect)
 
 	tv.MustRegisterProperty("CurrentItem", NewReadOnlyProperty(
 		func() interface{} {
@@ -260,9 +259,7 @@ func (tv *TreeView) clearItems() error {
 }
 
 func (tv *TreeView) insertRoots() error {
-	count := tv.model.RootCount()
-
-	for i := 0; i < count; i++ {
+	for i := tv.model.RootCount() - 1; i >= 0; i-- {
 		if _, err := tv.insertItem(i, tv.model.RootAt(i)); err != nil {
 			return err
 		}
@@ -333,27 +330,13 @@ func (tv *TreeView) insertItem(index int, item TreeItem) (win.HTREEITEM, error) 
 		tvins.HParent = info.handle
 	}
 
-	if index == 0 {
-		tvins.HInsertAfter = win.TVI_LAST
-	} else {
-		var prevItem TreeItem
-		if parent == nil {
-			prevItem = tv.model.RootAt(index - 1)
-		} else {
-			prevItem = parent.ChildAt(index - 1)
-		}
-		info := tv.item2Info[prevItem]
-		if info == nil {
-			return 0, newError("invalid prev item")
-		}
-		tvins.HInsertAfter = info.handle
-	}
+	tvins.HInsertAfter = win.TVI_FIRST
 
 	hItem := win.HTREEITEM(tv.SendMessage(win.TVM_INSERTITEM, 0, uintptr(unsafe.Pointer(&tvins))))
 	if hItem == 0 {
 		return 0, newError("TVM_INSERTITEM failed")
 	}
-	tv.item2Info[item] = &treeViewItemInfo{hItem, make(map[TreeItem]win.HTREEITEM), nil}
+	tv.item2Info[item] = &treeViewItemInfo{hItem, make(map[TreeItem]win.HTREEITEM)}
 	tv.handle2Item[hItem] = item
 
 	if !tv.lazyPopulation {
@@ -368,8 +351,7 @@ func (tv *TreeView) insertItem(index int, item TreeItem) (win.HTREEITEM, error) 
 func (tv *TreeView) insertChildren(parent TreeItem) error {
 	info := tv.item2Info[parent]
 
-	count := parent.ChildCount()
-	for i := 0; i < count; i++ {
+	for i := parent.ChildCount() - 1; i >= 0; i-- {
 		child := parent.ChildAt(i)
 
 		if handle, err := tv.insertItem(i, child); err != nil {
@@ -529,9 +511,18 @@ func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			item := tv.handle2Item[nmtvdi.Item.HItem]
 
 			if nmtvdi.Item.Mask&win.TVIF_TEXT != 0 {
-				info := tv.item2Info[item]
-				info.utf16Text = syscall.StringToUTF16Ptr(item.Text())
-				nmtvdi.Item.PszText = uintptr(unsafe.Pointer(info.utf16Text))
+				var text string
+				rc := win.RECT{Left: int32(nmtvdi.Item.HItem)}
+				if 0 != tv.SendMessage(win.TVM_GETITEMRECT, 0, uintptr(unsafe.Pointer(&rc))) {
+					// Only retrieve text if the item is visible. Why isn't Windows doing this for us?
+					text = item.Text()
+				}
+
+				utf16 := syscall.StringToUTF16(text)
+				buf := (*[264]uint16)(unsafe.Pointer(nmtvdi.Item.PszText))
+				max := mini(len(utf16), int(nmtvdi.Item.CchTextMax))
+				copy((*buf)[:], utf16[:max])
+				(*buf)[max-1] = 0
 			}
 			if nmtvdi.Item.Mask&win.TVIF_CHILDREN != 0 {
 				nmtvdi.Item.CChildren = int32(item.ChildCount())

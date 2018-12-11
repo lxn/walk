@@ -7,22 +7,26 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"sort"
+
+	"github.com/lxn/win"
 )
 
 type splitterLayout struct {
 	container   Container
 	orientation Orientation
+	margins     Margins
 	hwnd2Item   map[win.HWND]*splitterLayoutItem
 	resetNeeded bool
 }
 
 type splitterLayoutItem struct {
-	size          int
-	stretchFactor int
-	growth        int
-	fixed         bool
+	size            int
+	oldExplicitSize int
+	stretchFactor   int
+	growth          int
+	fixed           bool
+	keepSize        bool
 }
 
 func newSplitterLayout(orientation Orientation) *splitterLayout {
@@ -53,15 +57,17 @@ func (l *splitterLayout) SetContainer(value Container) {
 }
 
 func (l *splitterLayout) Margins() Margins {
-	return Margins{}
+	return l.margins
 }
 
 func (l *splitterLayout) SetMargins(value Margins) error {
-	return newError("not supported")
+	l.margins = value
+
+	return l.Update(false)
 }
 
 func (l *splitterLayout) Spacing() int {
-	return 0
+	return l.container.(*Splitter).handleWidth
 }
 
 func (l *splitterLayout) SetSpacing(value int) error {
@@ -138,11 +144,24 @@ func (l *splitterLayout) cleanupItems() {
 }
 
 func (l *splitterLayout) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
+	if l.container == nil {
+		return 0
+	}
+
+	return boxLayoutFlags(l.orientation, l.container.Children())
 }
 
 func (l *splitterLayout) MinSize() Size {
-	var s Size
+	if l.container == nil {
+		return Size{}
+	}
+
+	return l.MinSizeForSize(l.container.ClientBounds().Size())
+}
+
+func (l *splitterLayout) MinSizeForSize(size Size) Size {
+	margins := Size{l.margins.HNear + l.margins.HFar, l.margins.VNear + l.margins.VFar}
+	s := margins
 
 	anyNonFixed := l.anyNonFixed()
 
@@ -163,10 +182,10 @@ func (l *splitterLayout) MinSize() Size {
 
 		if l.orientation == Horizontal {
 			s.Width += cur.Width
-			s.Height = maxi(s.Height, cur.Height)
+			s.Height = maxi(s.Height, margins.Height+cur.Height)
 		} else {
 			s.Height += cur.Height
-			s.Width = maxi(s.Width, cur.Width)
+			s.Width = maxi(s.Width, margins.Width+cur.Width)
 		}
 	}
 
@@ -185,13 +204,13 @@ func (l *splitterLayout) anyNonFixed() bool {
 
 func (l *splitterLayout) spaceForRegularWidgets() int {
 	splitter := l.container.(*Splitter)
-	cb := splitter.ClientBounds().Size()
+	s := splitter.ClientBounds().Size()
 
 	var space int
 	if l.orientation == Horizontal {
-		space = cb.Width
+		space = s.Width - l.margins.HNear - l.margins.HFar
 	} else {
-		space = cb.Height
+		space = s.Height - l.margins.VNear - l.margins.VFar
 	}
 
 	return space - (splitter.Children().Len()/2)*splitter.handleWidth
@@ -201,6 +220,22 @@ func (l *splitterLayout) reset() {
 	l.cleanupItems()
 
 	children := l.container.Children()
+	minSizes := make([]int, children.Len())
+	var minSizesTotal int
+	for i, w := range children.items {
+		if i%2 == 1 {
+			continue
+		}
+
+		min := minSizeEffective(w)
+		if l.orientation == Horizontal {
+			minSizes[i] = min.Width
+			minSizesTotal += min.Width
+		} else {
+			minSizes[i] = min.Height
+			minSizesTotal += min.Height
+		}
+	}
 	regularSpace := l.spaceForRegularWidgets()
 
 	stretchTotal := 0
@@ -227,7 +262,28 @@ func (l *splitterLayout) reset() {
 
 		item := l.hwnd2Item[child.Handle()]
 		item.growth = 0
-		item.size = int(float64(l.StretchFactor(child)) / float64(stretchTotal) * float64(regularSpace))
+		item.keepSize = false
+		if item.oldExplicitSize > 0 {
+			item.size = item.oldExplicitSize
+		} else {
+			item.size = int(float64(l.StretchFactor(child)) / float64(stretchTotal) * float64(regularSpace))
+		}
+
+		min := minSizes[i]
+		if minSizesTotal <= regularSpace {
+			if item.size < min {
+				item.size = min
+			}
+		}
+
+		if item.size >= min {
+			flags := child.LayoutFlags()
+
+			if l.orientation == Horizontal && flags&GrowableHorz == 0 || l.orientation == Vertical && flags&GrowableVert == 0 {
+				item.size = min
+				item.keepSize = true
+			}
+		}
 	}
 }
 
@@ -256,6 +312,10 @@ func (l *splitterLayout) Update(reset bool) error {
 	handleWidth := splitter.HandleWidth()
 	sizes := make([]int, len(widgets))
 	cb := splitter.ClientBounds()
+	cb.X += l.margins.HNear
+	cb.Y += l.margins.HFar
+	cb.Width -= l.margins.HNear + l.margins.HFar
+	cb.Height -= l.margins.VNear + l.margins.VFar
 	space1 := l.spaceForRegularWidgets()
 
 	var space2 int
@@ -325,7 +385,16 @@ func (l *splitterLayout) Update(reset bool) error {
 				}
 			})
 
-			wi := wis[0]
+			var wi *WidgetItem
+			for _, wItem := range wis {
+				if !wItem.item.keepSize {
+					wi = &wItem
+					break
+				}
+			}
+			if wi == nil {
+				break
+			}
 
 			if diff > 0 {
 				if wi.max > 0 && wi.item.size >= wi.max {
@@ -349,25 +418,33 @@ func (l *splitterLayout) Update(reset bool) error {
 		}
 	}
 
+	maybeInvalidate := l.container.AsContainerBase().hasComplexBackground()
+
 	hdwp := win.BeginDeferWindowPos(int32(len(widgets)))
 	if hdwp == 0 {
 		return lastError("BeginDeferWindowPos")
 	}
 
-	p1 := 0
+	var p1 int
+	if l.orientation == Horizontal {
+		p1 = l.margins.HNear
+	} else {
+		p1 = l.margins.VNear
+	}
 	for i, widget := range widgets {
-		var s1 int
-		if i == len(widgets)-1 {
-			s1 = space1 + len(widgets)/2*handleWidth - p1
-		} else {
-			s1 = sizes[i]
-		}
+		s1 := sizes[i]
 
 		var x, y, w, h int
 		if l.orientation == Horizontal {
-			x, y, w, h = p1, 0, s1, space2
+			x, y, w, h = p1, l.margins.VNear, s1, space2
 		} else {
-			x, y, w, h = 0, p1, space2, s1
+			x, y, w, h = l.margins.HNear, p1, space2, s1
+		}
+
+		if maybeInvalidate {
+			if b := widget.Bounds(); w == b.Width && h == b.Height && (x != b.X || y != b.Y) {
+				widget.Invalidate()
+			}
 		}
 
 		if hdwp = win.DeferWindowPos(

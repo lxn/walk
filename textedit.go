@@ -38,6 +38,9 @@ func NewTextEditWithStyle(parent Container, style uint32) (*TextEdit, error) {
 		return nil, err
 	}
 
+	te.GraphicsEffects().Add(InteractionEffect)
+	te.GraphicsEffects().Add(FocusEffect)
+
 	te.MustRegisterProperty("ReadOnly", NewProperty(
 		func() interface{} {
 			return te.ReadOnly()
@@ -52,7 +55,7 @@ func NewTextEditWithStyle(parent Container, style uint32) (*TextEdit, error) {
 			return te.Text()
 		},
 		func(v interface{}) error {
-			return te.SetText(v.(string))
+			return te.SetText(assertStringOr(v, ""))
 		},
 		te.textChangedPublisher.Event()))
 
@@ -72,7 +75,7 @@ func (te *TextEdit) SizeHint() Size {
 }
 
 func (te *TextEdit) Text() string {
-	return windowText(te.hWnd)
+	return te.text()
 }
 
 func (te *TextEdit) TextLength() int {
@@ -84,7 +87,7 @@ func (te *TextEdit) SetText(value string) (err error) {
 		return nil
 	}
 
-	err = setWindowText(te.hWnd, value)
+	err = te.setText(value)
 	te.textChangedPublisher.Publish()
 	return
 }
@@ -102,6 +105,10 @@ func (te *TextEdit) Alignment() Alignment1D {
 }
 
 func (te *TextEdit) SetAlignment(alignment Alignment1D) error {
+	if alignment == AlignDefault {
+		alignment = AlignNear
+	}
+
 	var bit uint32
 
 	switch alignment {

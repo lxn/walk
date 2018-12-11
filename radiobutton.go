@@ -62,6 +62,9 @@ func NewRadioButton(parent Container) (*RadioButton, error) {
 
 	rb.SetBackground(nullBrushSingleton)
 
+	rb.GraphicsEffects().Add(InteractionEffect)
+	rb.GraphicsEffects().Add(FocusEffect)
+
 	rb.MustRegisterProperty("CheckedValue", NewProperty(
 		func() interface{} {
 			if rb.Checked() {
@@ -96,7 +99,7 @@ func (*RadioButton) LayoutFlags() LayoutFlags {
 
 func (rb *RadioButton) MinSizeHint() Size {
 	defaultSize := rb.dialogBaseUnitsToPixels(Size{50, 10})
-	textSize := rb.calculateTextSizeImpl("n" + windowText(rb.hWnd))
+	textSize := rb.calculateTextSizeImpl("n" + rb.text())
 
 	// FIXME: Use GetThemePartSize instead of GetSystemMetrics?
 	w := textSize.Width + int(win.GetSystemMetrics(win.SM_CXMENUCHECK))
@@ -107,6 +110,14 @@ func (rb *RadioButton) MinSizeHint() Size {
 
 func (rb *RadioButton) SizeHint() Size {
 	return rb.MinSizeHint()
+}
+
+func (rb *RadioButton) TextOnLeftSide() bool {
+	return rb.hasStyleBits(win.BS_LEFTTEXT)
+}
+
+func (rb *RadioButton) SetTextOnLeftSide(textLeft bool) error {
+	return rb.ensureStyleBits(win.BS_LEFTTEXT, textLeft)
 }
 
 func (rb *RadioButton) Group() *RadioButtonGroup {

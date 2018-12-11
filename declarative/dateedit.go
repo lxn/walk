@@ -42,6 +42,7 @@ type DateEdit struct {
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -53,21 +54,26 @@ type DateEdit struct {
 	Format        string
 	MaxDate       time.Time
 	MinDate       time.Time
-	NoneOption    bool
+	NoneOption    bool // Deprecated: use Optional instead
 	OnDateChanged walk.EventHandler
+	Optional      bool
 }
 
 func (de DateEdit) Create(builder *Builder) error {
 	var w *walk.DateEdit
 	var err error
 
-	if de.NoneOption {
+	if de.Optional || de.NoneOption {
 		w, err = walk.NewDateEditWithNoneOption(builder.Parent())
 	} else {
 		w, err = walk.NewDateEdit(builder.Parent())
 	}
 	if err != nil {
 		return err
+	}
+
+	if de.AssignTo != nil {
+		*de.AssignTo = w
 	}
 
 	return builder.InitWidget(de, w, func() error {
@@ -81,10 +87,6 @@ func (de DateEdit) Create(builder *Builder) error {
 
 		if de.OnDateChanged != nil {
 			w.DateChanged().Attach(de.OnDateChanged)
-		}
-
-		if de.AssignTo != nil {
-			*de.AssignTo = w
 		}
 
 		return nil

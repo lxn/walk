@@ -7,9 +7,10 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"strconv"
 	"syscall"
+
+	"github.com/lxn/win"
 )
 
 type CheckState int
@@ -43,12 +44,15 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 
 	cb.SetBackground(nullBrushSingleton)
 
+	cb.GraphicsEffects().Add(InteractionEffect)
+	cb.GraphicsEffects().Add(FocusEffect)
+
 	cb.MustRegisterProperty("CheckState", NewProperty(
 		func() interface{} {
 			return cb.CheckState()
 		},
 		func(v interface{}) error {
-			cb.SetCheckState(v.(CheckState))
+			cb.SetCheckState(CheckState(assertIntOr(v, 0)))
 
 			return nil
 		},
@@ -86,7 +90,7 @@ func (cb *CheckBox) MinSizeHint() Size {
 	}
 
 	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 10})
-	textSize := cb.calculateTextSizeImpl("n" + windowText(cb.hWnd))
+	textSize := cb.calculateTextSizeImpl("n" + cb.text())
 
 	w := textSize.Width + checkBoxCheckSize.Width
 	h := maxi(defaultSize.Height, textSize.Height)
@@ -96,6 +100,14 @@ func (cb *CheckBox) MinSizeHint() Size {
 
 func (cb *CheckBox) SizeHint() Size {
 	return cb.MinSizeHint()
+}
+
+func (cb *CheckBox) TextOnLeftSide() bool {
+	return cb.hasStyleBits(win.BS_LEFTTEXT)
+}
+
+func (cb *CheckBox) SetTextOnLeftSide(textLeft bool) error {
+	return cb.ensureStyleBits(win.BS_LEFTTEXT, textLeft)
 }
 
 func (cb *CheckBox) setChecked(checked bool) {
@@ -139,11 +151,11 @@ func (cb *CheckBox) CheckStateChanged() *Event {
 }
 
 func (cb *CheckBox) SaveState() error {
-	return cb.putState(strconv.Itoa(int(cb.CheckState())))
+	return cb.WriteState(strconv.Itoa(int(cb.CheckState())))
 }
 
 func (cb *CheckBox) RestoreState() error {
-	s, err := cb.getState()
+	s, err := cb.ReadState()
 	if err != nil {
 		return err
 	}

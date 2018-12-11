@@ -13,9 +13,7 @@ import (
 	"strings"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -286,6 +284,13 @@ type Window interface {
 	SwitchToThisWindow()
 }
 
+type calcTextSizeInfo struct {
+	width int
+	font  fontInfo
+	text  string
+	size  Size
+}
+
 // WindowBase implements many operations common to all Windows.
 type WindowBase struct {
 	window                  Window
@@ -320,6 +325,7 @@ type WindowBase struct {
 	visibleChangedPublisher EventPublisher
 	focusedProperty         Property
 	focusedChangedPublisher EventPublisher
+	calcTextSizeInfoPrev    *calcTextSizeInfo
 }
 
 var (
@@ -356,12 +362,15 @@ func MustRegisterWindowClassWithWndProcPtrAndStyle(className string, wndProcPtr 
 		panic("GetModuleHandle")
 	}
 
-	hIcon := win.LoadIcon(0, (*uint16)(unsafe.Pointer(uintptr(win.IDI_APPLICATION))))
+	hIcon := win.LoadIcon(hInst, win.MAKEINTRESOURCE(7)) // rsrc uses 7 for app icon
+	if hIcon == 0 {
+		hIcon = win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_APPLICATION))
+	}
 	if hIcon == 0 {
 		panic("LoadIcon")
 	}
 
-	hCursor := win.LoadCursor(0, (*uint16)(unsafe.Pointer(uintptr(win.IDC_ARROW))))
+	hCursor := win.LoadCursor(0, win.MAKEINTRESOURCE(win.IDC_ARROW))
 	if hCursor == 0 {
 		panic("LoadCursor")
 	}
@@ -405,11 +414,16 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
+	var windowName *uint16
+	if len(wb.name) != 0 {
+		windowName = syscall.StringToUTF16Ptr(wb.name)
+	}
+
 	if hwnd := window.Handle(); hwnd == 0 {
 		wb.hWnd = win.CreateWindowEx(
 			exStyle,
 			syscall.StringToUTF16Ptr(className),
-			nil,
+			windowName,
 			style|win.WS_CLIPSIBLINGS,
 			win.CW_USEDEFAULT,
 			win.CW_USEDEFAULT,
@@ -483,7 +497,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 
 	wb.focusedProperty = NewReadOnlyBoolProperty(
 		func() bool {
-			return wb.Focused()
+			return wb.window.Focused()
 		},
 		wb.focusedChangedPublisher.Event())
 
@@ -782,6 +796,10 @@ func (wb *WindowBase) SetEnabled(enabled bool) {
 
 	wb.window.(applyEnableder).applyEnabled(wb.window.Enabled())
 
+	if widget, ok := wb.window.(Widget); ok {
+		widget.AsWidgetBase().invalidateBorderInParent()
+	}
+
 	wb.enabledChangedPublisher.Publish()
 }
 
@@ -823,8 +841,20 @@ type applyFonter interface {
 	applyFont(font *Font)
 }
 
+type ApplyFonter interface {
+	ApplyFont(font *Font)
+}
+
 func (wb *WindowBase) applyFont(font *Font) {
 	setWindowFont(wb.hWnd, font)
+
+	if af, ok := wb.window.(ApplyFonter); ok {
+		af.ApplyFont(font)
+	}
+}
+
+func SetWindowFont(hwnd win.HWND, font *Font) {
+	win.SendMessage(hwnd, win.WM_SETFONT, uintptr(font.handleForDPI(0)), 1)
 }
 
 func setWindowFont(hwnd win.HWND, font *Font) {
@@ -874,6 +904,23 @@ func (wb *WindowBase) Invalidate() error {
 	return nil
 }
 
+func (wb *WindowBase) text() string {
+	return windowText(wb.hWnd)
+}
+
+func (wb *WindowBase) setText(text string) error {
+	if err := setWindowText(wb.hWnd, text); err != nil {
+		return err
+	}
+
+	if wb.calcTextSizeInfoPrev != nil {
+		wb.calcTextSizeInfoPrev.font.family = ""
+		wb.calcTextSizeInfoPrev.text = text
+	}
+
+	return nil
+}
+
 func windowText(hwnd win.HWND) string {
 	textLength := win.SendMessage(hwnd, win.WM_GETTEXTLENGTH, 0, 0)
 	buf := make([]uint16, textLength+1)
@@ -889,6 +936,64 @@ func setWindowText(hwnd win.HWND, text string) error {
 	return nil
 }
 
+func (wb *WindowBase) RestoreState() (err error) {
+	wb.ForEachDescendant(func(widget Widget) bool {
+		if persistable, ok := widget.(Persistable); ok && persistable.Persistent() {
+			if err = persistable.RestoreState(); err != nil {
+				return false
+			}
+		}
+
+		if _, ok := widget.(Container); ok {
+			return false
+		}
+
+		return true
+	})
+
+	return
+}
+
+func (wb *WindowBase) SaveState() (err error) {
+	wb.ForEachDescendant(func(widget Widget) bool {
+		if persistable, ok := widget.(Persistable); ok && persistable.Persistent() {
+			if err = persistable.SaveState(); err != nil {
+				return false
+			}
+		}
+
+		if _, ok := widget.(Container); ok {
+			return false
+		}
+
+		return true
+	})
+
+	return
+}
+
+func forEachDescendant(hwnd win.HWND, lParam uintptr) uintptr {
+	if window := windowFromHandle(hwnd); window != nil && forEachDescendantCallback(window.(Widget)) {
+		return 1
+	}
+
+	return 0
+}
+
+var (
+	forEachDescendantCallbackPtr = syscall.NewCallback(forEachDescendant)
+	forEachDescendantCallback    func(widget Widget) bool
+)
+
+func (wb *WindowBase) ForEachDescendant(f func(widget Widget) bool) {
+	forEachDescendantCallback = f
+	defer func() {
+		forEachDescendantCallback = nil
+	}()
+
+	win.EnumChildWindows(wb.hWnd, forEachDescendantCallbackPtr, 0)
+}
+
 // Visible returns if the *WindowBase is visible.
 func (wb *WindowBase) Visible() bool {
 	return win.IsWindowVisible(wb.hWnd)
@@ -902,12 +1007,20 @@ func (wb *WindowBase) SetVisible(visible bool) {
 
 	wb.visible = visible
 
+	walkDescendants(wb.window, func(w Window) bool {
+		w.AsWindowBase().visibleChangedPublisher.Publish()
+
+		return true
+	})
+
 	if visible == old {
 		return
 	}
 
 	if widget, ok := wb.window.(Widget); ok {
-		widget.AsWidgetBase().updateParentLayout()
+		wb := widget.AsWidgetBase()
+		wb.invalidateBorderInParent()
+		wb.updateParentLayout()
 	}
 
 	wb.visibleChangedPublisher.Publish()
@@ -916,7 +1029,7 @@ func (wb *WindowBase) SetVisible(visible bool) {
 func setWindowVisible(hwnd win.HWND, visible bool) {
 	var cmd int32
 	if visible {
-		cmd = win.SW_SHOW
+		cmd = win.SW_SHOWNA
 	} else {
 		cmd = win.SW_HIDE
 	}
@@ -1009,15 +1122,24 @@ func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
 	return nil
 }
 
-var dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+var (
+	dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+	fontInfo2DialogBaseUnits      = make(map[fontInfo]Size)
+)
 
 func (wb *WindowBase) dialogBaseUnits() Size {
+	// The window may use a font different from that in WindowBase,
+	// like e.g. NumberEdit does, so we try to use the right one.
+	font := wb.window.Font()
+	fi := fontInfo{family: font.Family(), pointSize: font.PointSize(), style: font.Style()}
+	if s, ok := fontInfo2DialogBaseUnits[fi]; ok {
+		return s
+	}
+
 	hdc := win.GetDC(wb.hWnd)
 	defer win.ReleaseDC(wb.hWnd, hdc)
 
-	// The window may use a font different from that in WindowBase,
-	// like e.g. NumberEdit does, so we try to use the right one.
-	hFont := wb.window.Font().handleForDPI(0)
+	hFont := font.handleForDPI(0)
 	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(hFont))
 	defer win.SelectObject(hdc, win.HGDIOBJ(hFontOld))
 
@@ -1035,11 +1157,14 @@ func (wb *WindowBase) dialogBaseUnits() Size {
 		newError("GetTextExtentPoint32 failed")
 	}
 
-	return Size{int((size.CX/26 + 1) / 2), int(tm.TmHeight)}
+	s := Size{int((size.CX/26 + 1) / 2), int(tm.TmHeight)}
+
+	fontInfo2DialogBaseUnits[fi] = s
+
+	return s
 }
 
 func (wb *WindowBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
-	// FIXME: Cache dialog base units on font change.
 	base := wb.dialogBaseUnits()
 
 	return Size{
@@ -1049,37 +1174,92 @@ func (wb *WindowBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
 }
 
 func (wb *WindowBase) calculateTextSizeImpl(text string) Size {
-	hdc := win.GetDC(wb.hWnd)
-	if hdc == 0 {
-		newError("GetDC failed")
-		return Size{}
-	}
-	defer win.ReleaseDC(wb.hWnd, hdc)
+	return wb.calculateTextSizeImplForWidth(text, 0)
+}
 
-	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(wb.window.Font().handleForDPI(0)))
-	defer win.SelectObject(hdc, hFontOld)
+func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size {
+	font := wb.window.Font()
+
+	if wb.calcTextSizeInfoPrev != nil &&
+		width == wb.calcTextSizeInfoPrev.width &&
+		font.family == wb.calcTextSizeInfoPrev.font.family &&
+		font.pointSize == wb.calcTextSizeInfoPrev.font.pointSize &&
+		font.style == wb.calcTextSizeInfoPrev.font.style &&
+		text == wb.calcTextSizeInfoPrev.text {
+		return wb.calcTextSizeInfoPrev.size
+	}
 
 	var size Size
-	lines := strings.Split(text, "\n")
+	if width > 0 {
+		canvas, err := wb.CreateCanvas()
+		if err != nil {
+			return size
+		}
+		defer canvas.Dispose()
 
-	for _, line := range lines {
-		var s win.SIZE
-		str := syscall.StringToUTF16(strings.TrimRight(line, "\r "))
-
-		if !win.GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
-			newError("GetTextExtentPoint32 failed")
-			return Size{}
+		bounds, _, err := canvas.MeasureText(text, font, Rectangle{Width: width, Height: 9999999}, 0)
+		if err != nil {
+			return size
 		}
 
-		size.Width = maxi(size.Width, int(s.CX))
-		size.Height += int(s.CY)
+		size = bounds.Size()
+	} else {
+		hdc := win.GetDC(wb.hWnd)
+		if hdc == 0 {
+			newError("GetDC failed")
+			return Size{}
+		}
+		defer win.ReleaseDC(wb.hWnd, hdc)
+
+		hFontOld := win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(0)))
+		defer win.SelectObject(hdc, hFontOld)
+
+		lines := strings.Split(text, "\n")
+
+		for _, line := range lines {
+			var s win.SIZE
+			str := syscall.StringToUTF16(strings.TrimRight(line, "\r "))
+
+			if !win.GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
+				newError("GetTextExtentPoint32 failed")
+				return Size{}
+			}
+
+			size.Width = maxi(size.Width, int(s.CX))
+			size.Height += int(s.CY)
+		}
 	}
+
+	if wb.calcTextSizeInfoPrev == nil {
+		wb.calcTextSizeInfoPrev = new(calcTextSizeInfo)
+	}
+
+	wb.calcTextSizeInfoPrev.width = width
+	wb.calcTextSizeInfoPrev.font.family = font.family
+	wb.calcTextSizeInfoPrev.font.pointSize = font.pointSize
+	wb.calcTextSizeInfoPrev.font.style = font.style
+	wb.calcTextSizeInfoPrev.text = text
+	wb.calcTextSizeInfoPrev.size = size
 
 	return size
 }
 
 func (wb *WindowBase) calculateTextSize() Size {
-	return wb.calculateTextSizeImpl(windowText(wb.hWnd))
+	return wb.calculateTextSizeForWidth(0)
+}
+
+func (wb *WindowBase) calculateTextSizeForWidth(width int) Size {
+	var text string
+	if wb.calcTextSizeInfoPrev != nil {
+		// setText copied the new text here for us.
+		text = wb.calcTextSizeInfoPrev.text
+	}
+
+	if text == "" {
+		text = wb.text()
+	}
+
+	return wb.calculateTextSizeImplForWidth(text, width)
 }
 
 // Size returns the outer Size of the *WindowBase, including decorations.
@@ -1183,6 +1363,15 @@ func (wb *WindowBase) sizeFromClientSize(clientSize Size) Size {
 	ncs := Size{s.Width - cs.Width, s.Height - cs.Height}
 
 	return Size{clientSize.Width + ncs.Width, clientSize.Height + ncs.Height}
+}
+
+func (wb *WindowBase) clientSizeFromSize(size Size) Size {
+	window := wb.window
+	s := window.Size()
+	cs := window.ClientBounds().Size()
+	ncs := Size{s.Width - cs.Width, s.Height - cs.Height}
+
+	return Size{size.Width - ncs.Width, size.Height - ncs.Height}
 }
 
 // SetClientSize sets the Size of the inner bounding box of the *WindowBase,
@@ -1302,10 +1491,24 @@ func (wb *WindowBase) MouseWheel() *MouseEvent {
 	return wb.mouseWheelPublisher.Event()
 }
 
-func (wb *WindowBase) publishMouseEvent(publisher *MouseEventPublisher, wParam, lParam uintptr) {
+func (wb *WindowBase) publishMouseEvent(publisher *MouseEventPublisher, msg uint32, wParam, lParam uintptr) {
 	x := int(win.GET_X_LPARAM(lParam))
 	y := int(win.GET_Y_LPARAM(lParam))
-	button := MouseButton(wParam&win.MK_LBUTTON | wParam&win.MK_RBUTTON | wParam&win.MK_MBUTTON)
+
+	var button MouseButton
+	switch msg {
+	case win.WM_LBUTTONUP:
+		button = LeftButton
+
+	case win.WM_RBUTTONUP:
+		button = RightButton
+
+	case win.WM_MBUTTONUP:
+		button = MiddleButton
+
+	default:
+		button = MouseButton(wParam&win.MK_LBUTTON | wParam&win.MK_RBUTTON | wParam&win.MK_MBUTTON)
+	}
 
 	publisher.Publish(x, y, button)
 }
@@ -1338,7 +1541,7 @@ func (wb *WindowBase) Synchronize(f func()) {
 	win.PostMessage(wb.hWnd, syncMsgId, 0, 0)
 }
 
-func (wb *WindowBase) getState() (string, error) {
+func (wb *WindowBase) ReadState() (string, error) {
 	settings := appSingleton.settings
 	if settings == nil {
 		return "", newError("App().Settings() must not be nil")
@@ -1348,7 +1551,7 @@ func (wb *WindowBase) getState() (string, error) {
 	return state, nil
 }
 
-func (wb *WindowBase) putState(state string) error {
+func (wb *WindowBase) WriteState(state string) error {
 	settings := appSingleton.settings
 	if settings == nil {
 		return newError("App().Settings() must not be nil")
@@ -1535,11 +1738,6 @@ func (wb *WindowBase) handleWMCTLCOLOR(wParam, lParam uintptr) uintptr {
 	}
 
 	switch wnd.(type) {
-	case *Label:
-		win.SetBkMode(hdc, win.TRANSPARENT)
-
-		return win.COLOR_BTNSHADOW
-
 	case *LineEdit, *numberLineEdit, *TextEdit:
 		type ReadOnlyer interface {
 			ReadOnly() bool
@@ -1607,7 +1805,7 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			// be generated for PushButton.)
 			win.SetCapture(wb.hWnd)
 		}
-		wb.publishMouseEvent(&wb.mouseDownPublisher, wParam, lParam)
+		wb.publishMouseEvent(&wb.mouseDownPublisher, msg, wParam, lParam)
 
 	case win.WM_LBUTTONUP, win.WM_MBUTTONUP, win.WM_RBUTTONUP:
 		if msg == win.WM_LBUTTONUP && wb.origWndProcPtr == 0 {
@@ -1616,15 +1814,33 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 				lastError("ReleaseCapture")
 			}
 		}
-		wb.publishMouseEvent(&wb.mouseUpPublisher, wParam, lParam)
+		wb.publishMouseEvent(&wb.mouseUpPublisher, msg, wParam, lParam)
 
 	case win.WM_MOUSEMOVE:
-		wb.publishMouseEvent(&wb.mouseMovePublisher, wParam, lParam)
+		wb.publishMouseEvent(&wb.mouseMovePublisher, msg, wParam, lParam)
 
 	case win.WM_MOUSEWHEEL:
 		wb.publishMouseWheelEvent(&wb.mouseWheelPublisher, wParam, lParam)
 
 	case win.WM_SETFOCUS, win.WM_KILLFOCUS:
+		switch wnd := wb.window.(type) {
+		case *splitterHandle:
+			// nop
+
+		case Widget:
+			parent := wnd.Parent()
+			if parent == nil {
+				hwndParent := win.GetParent(wnd.Handle())
+				for parent == nil && hwndParent != 0 {
+					hwndParent = win.GetParent(hwndParent)
+					if wnd := windowFromHandle(hwndParent); wnd != nil {
+						parent, _ = wnd.(Container)
+					}
+				}
+			}
+			wnd.AsWidgetBase().invalidateBorderInParent()
+		}
+
 		wb.focusedChangedPublisher.Publish()
 
 	case win.WM_SETCURSOR:
@@ -1676,6 +1892,12 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		wb.dropFilesPublisher.Publish(win.HDROP(wParam))
 
 	case win.WM_SIZE, win.WM_SIZING:
+		if msg == win.WM_SIZE {
+			if widget, ok := wb.window.(Widget); ok {
+				widget.AsWidgetBase().invalidateBorderInParent()
+			}
+		}
+
 		wb.sizeChangedPublisher.Publish()
 
 	case win.WM_WINDOWPOSCHANGED:

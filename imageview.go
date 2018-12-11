@@ -7,12 +7,22 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"math"
 	"strconv"
+
+	"github.com/lxn/win"
 )
 
-var imageViewBackgroundBrush, _ = NewSystemColorBrush(win.COLOR_APPWORKSPACE)
+type ImageViewMode int
+
+const (
+	ImageViewModeIdeal ImageViewMode = iota
+	ImageViewModeCorner
+	ImageViewModeCenter
+	ImageViewModeShrink
+	ImageViewModeZoom
+	ImageViewModeStretch
+)
 
 type ImageView struct {
 	*CustomWidget
@@ -20,6 +30,7 @@ type ImageView struct {
 	imageChangedPublisher  EventPublisher
 	margin                 int
 	marginChangedPublisher EventPublisher
+	mode                   ImageViewMode
 }
 
 func NewImageView(parent Container) (*ImageView, error) {
@@ -34,10 +45,12 @@ func NewImageView(parent Container) (*ImageView, error) {
 
 	iv.CustomWidget = cw
 
-	iv.window = iv
+	if err := InitWrapperWindow(iv); err != nil {
+		iv.Dispose()
+		return nil, err
+	}
 
 	iv.SetInvalidatesOnResize(true)
-	iv.SetPaintMode(PaintNoErase)
 
 	iv.MustRegisterProperty("Image", NewProperty(
 		func() interface{} {
@@ -75,11 +88,54 @@ func NewImageView(parent Container) (*ImageView, error) {
 			return iv.Margin()
 		},
 		func(v interface{}) error {
-			return iv.SetMargin(v.(int))
+			return iv.SetMargin(assertIntOr(v, 0))
 		},
 		iv.MarginChanged()))
 
 	return iv, nil
+}
+
+func (iv *ImageView) LayoutFlags() LayoutFlags {
+	if iv.mode == ImageViewModeIdeal {
+		return 0
+	}
+
+	return iv.CustomWidget.LayoutFlags()
+}
+
+func (iv *ImageView) MinSizeHint() Size {
+	if iv.mode == ImageViewModeIdeal {
+		return iv.SizeHint()
+	}
+
+	return Size{iv.margin*2 + 1, iv.margin*2 + 1}
+}
+
+func (iv *ImageView) SizeHint() Size {
+	if iv.mode == ImageViewModeIdeal && iv.image != nil {
+		s := iv.image.Size()
+		s.Width += iv.margin * 2
+		s.Height += iv.margin * 2
+		return s
+	}
+
+	return iv.CustomWidget.SizeHint()
+}
+
+func (iv *ImageView) Mode() ImageViewMode {
+	return iv.mode
+}
+
+func (iv *ImageView) SetMode(mode ImageViewMode) {
+	if mode == iv.mode {
+		return
+	}
+
+	iv.mode = mode
+
+	iv.Invalidate()
+
+	iv.updateParentLayout()
 }
 
 func (iv *ImageView) Image() Image {
@@ -97,6 +153,10 @@ func (iv *ImageView) SetImage(value Image) error {
 	iv.SetClearsBackground(isMetafile)
 
 	err := iv.Invalidate()
+
+	if iv.mode == ImageViewModeIdeal {
+		iv.updateParentLayout()
+	}
 
 	iv.imageChangedPublisher.Publish()
 
@@ -136,27 +196,54 @@ func (iv *ImageView) drawImage(canvas *Canvas, updateBounds Rectangle) error {
 
 	cb := iv.ClientBounds()
 
-	canvas.FillRectangle(imageViewBackgroundBrush, cb)
-
 	cb.Width -= iv.margin * 2
 	cb.Height -= iv.margin * 2
 
 	s := iv.image.Size()
 
-	var scale float64
-	if s.Width > cb.Width || s.Height > cb.Height {
-		sx := float64(cb.Width) / float64(s.Width)
-		sy := float64(cb.Height) / float64(s.Height)
+	switch iv.mode {
+	case ImageViewModeShrink, ImageViewModeZoom, ImageViewModeStretch:
+		var bounds Rectangle
 
-		scale = math.Min(sx, sy)
-	} else {
-		scale = 1.0
+		if iv.mode == ImageViewModeStretch {
+			bounds.X = iv.margin
+			bounds.Y = iv.margin
+			bounds.Width = cb.Width
+			bounds.Height = cb.Height
+		} else {
+			var scale float64
+			if iv.mode == ImageViewModeZoom || s.Width > cb.Width || s.Height > cb.Height {
+				sx := float64(cb.Width) / float64(s.Width)
+				sy := float64(cb.Height) / float64(s.Height)
+
+				scale = math.Min(sx, sy)
+			} else {
+				scale = 1.0
+			}
+
+			bounds.Width = int(float64(s.Width) * scale)
+			bounds.Height = int(float64(s.Height) * scale)
+			bounds.X = iv.margin + (cb.Width-bounds.Width)/2
+			bounds.Y = iv.margin + (cb.Height-bounds.Height)/2
+		}
+
+		return canvas.DrawImageStretched(iv.image, bounds)
+
+	case ImageViewModeCorner, ImageViewModeCenter:
+		win.IntersectClipRect(canvas.hdc, int32(iv.margin), int32(iv.margin), int32(cb.Width+iv.margin), int32(cb.Height+iv.margin))
 	}
 
-	w := int(float64(s.Width) * scale)
-	h := int(float64(s.Height) * scale)
-	x := iv.margin + (cb.Width-w)/2
-	y := iv.margin + (cb.Height-h)/2
+	var pos Point
 
-	return canvas.DrawImageStretched(iv.image, Rectangle{X: x, Y: y, Width: w, Height: h})
+	switch iv.mode {
+	case ImageViewModeIdeal, ImageViewModeCorner:
+		pos.X = iv.margin
+		pos.Y = iv.margin
+
+	case ImageViewModeCenter:
+		pos.X = iv.margin + (cb.Width-s.Width)/2
+		pos.Y = iv.margin + (cb.Height-s.Height)/2
+	}
+
+	return canvas.DrawImage(iv.image, pos)
 }
