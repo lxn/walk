@@ -46,7 +46,7 @@ type MainWindow struct {
 
 	// MainWindow
 
-	AssignTo	        **walk.MainWindow
+	AssignTo            **walk.MainWindow
 	Expressions         func() map[string]walk.Expression
 	Functions           map[string]func(args ...interface{}) (interface{}, error)
 	MenuItems           []MenuItem
