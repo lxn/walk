@@ -46,16 +46,16 @@ type MainWindow struct {
 
 	// MainWindow
 
-	AssignTo			**walk.MainWindow
-	Expressions			func() map[string]walk.Expression
-	Functions			map[string]func(args ...interface{}) (interface{}, error)
-	MenuItems			[]MenuItem
-	OnDeviceArrival		walk.DeviceArrivalEventHandler
-	OnDeviceRemove		walk.DeviceRemoveEventHandler
-	OnDropFiles			walk.DropFilesEventHandler
-	StatusBarItems		[]StatusBarItem
-	ToolBar				ToolBar
-	ToolBarItems		[]MenuItem // Deprecated: use ToolBar instead
+	AssignTo	        **walk.MainWindow
+	Expressions         func() map[string]walk.Expression
+	Functions           map[string]func(args ...interface{}) (interface{}, error)
+	MenuItems           []MenuItem
+	OnDeviceArrival     walk.DeviceArrivalEventHandler
+	OnDeviceRemove      walk.DeviceRemoveEventHandler
+	OnDropFiles         walk.DropFilesEventHandler
+	StatusBarItems      []StatusBarItem
+	ToolBar             ToolBar
+	ToolBarItems        []MenuItem // Deprecated: use ToolBar instead
 }
 
 func (mw MainWindow) Create() error {
