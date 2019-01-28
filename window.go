@@ -296,6 +296,7 @@ type WindowBase struct {
 	contextMenu             *Menu
 	disposables             []Disposable
 	disposingPublisher      EventPublisher
+	devicechangePublisher	DeviceChangeEventPublisher
 	dropFilesPublisher      DropFilesEventPublisher
 	keyDownPublisher        KeyEventPublisher
 	keyPressPublisher       KeyEventPublisher
@@ -1443,6 +1444,12 @@ func (wb *WindowBase) KeyUp() *KeyEvent {
 	return wb.keyUpPublisher.Event()
 }
 
+// DeviceChange returns a *DeviceChangeEvent that you can attach to for handling
+// device change events for the *WindowBase.
+func (wb *WindowBase) DeviceChange() *DeviceChangeEvent {
+	return wb.devicechangePublisher.Event(wb.hWnd)
+}
+
 // DropFiles returns a *DropFilesEvent that you can attach to for handling
 // drop file events for the *WindowBase.
 func (wb *WindowBase) DropFiles() *DropFilesEvent {
@@ -1867,6 +1874,9 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	case win.WM_KEYUP:
 		wb.handleKeyUp(wParam, lParam)
+
+	case win.WM_DEVICECHANGE:
+		wb.devicechangePublisher.Publish((int)(wParam))
 
 	case win.WM_DROPFILES:
 		wb.dropFilesPublisher.Publish(win.HDROP(wParam))
