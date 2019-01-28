@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	DBT_DEVICEARRIVAL 			= 0x8000
-	DBT_DEVICEREMOVECOMPLETE 	= 0x8004
+	DBT_DEVICEARRIVAL           = 0x8000
+	DBT_DEVICEREMOVECOMPLETE    = 0x8004
 )
 
 type DeviceArrivalEventHandler func()
