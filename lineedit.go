@@ -215,9 +215,9 @@ func (le *LineEdit) PasswordMode() bool {
 	return le.SendMessage(win.EM_GETPASSWORDCHAR, 0, 0) != 0
 }
 
-func (le *LineEdit) SetPasswordMode(value bool) {
-	var c uintptr
-	if value {
+func (le *LineEdit) SetPasswordMode(value rune) {
+	c := uintptr(value)
+	if value == -1 {
 		c = uintptr('*')
 	}
 
