@@ -326,7 +326,7 @@ func (ni *NotifyIcon) MouseDown() *MouseEvent {
 	return ni.mouseDownPublisher.Event()
 }
 
-// MouseDown returns the event that is published when a mouse button is released
+// MouseUp returns the event that is published when a mouse button is released
 // while the cursor is over the NotifyIcon.
 func (ni *NotifyIcon) MouseUp() *MouseEvent {
 	return ni.mouseUpPublisher.Event()

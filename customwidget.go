@@ -56,12 +56,12 @@ func (cw *CustomWidget) SizeHint() Size {
 	return Size{100, 100}
 }
 
-// deprecated, use PaintMode
+// ClearsBackground: deprecated, use PaintMode
 func (cw *CustomWidget) ClearsBackground() bool {
 	return cw.paintMode != PaintNormal
 }
 
-// deprecated, use SetPaintMode
+// SetClearsBackground: deprecated, use SetPaintMode
 func (cw *CustomWidget) SetClearsBackground(value bool) {
 	if value != cw.ClearsBackground() {
 		if value {

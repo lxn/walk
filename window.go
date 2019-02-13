@@ -646,7 +646,7 @@ func (wb *WindowBase) path() string {
 	return buf.String()
 }
 
-// WindowBase simply returns the receiver.
+// AsWindowBase: simply returns the receiver.
 func (wb *WindowBase) AsWindowBase() *WindowBase {
 	return wb
 }
