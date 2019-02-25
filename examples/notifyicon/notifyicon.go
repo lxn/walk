@@ -27,7 +27,7 @@ func main() {
 	}
 
 	// Create the notify icon and make sure we clean it up on exit.
-	ni, err := walk.NewNotifyIcon()
+	ni, err := walk.NewNotifyIcon(mw)
 	if err != nil {
 		log.Fatal(err)
 	}
