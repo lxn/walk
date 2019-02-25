@@ -396,6 +396,21 @@ func (fb *FormBase) Run() int {
 
 	fb.SetBounds(fb.Bounds())
 
+	// Some widgets perform weird scrolling stunts, when initially focused.
+	// We try to fix that here and hope for the best.
+	if hwnd := win.GetFocus(); hwnd != 0 {
+		if window := windowFromHandle(hwnd); window != nil {
+			fb.ForEachDescendant(func(widget Widget) bool {
+				if widget.Handle() != hwnd && widget.SetFocus() == nil {
+					window.SetFocus()
+					return false
+				}
+
+				return true
+			})
+		}
+	}
+
 	var msg win.MSG
 
 	if processMessageProc != 0 {
