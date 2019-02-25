@@ -1704,44 +1704,48 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 			}
 
 			if di.Item.Mask&win.LVIF_TEXT > 0 {
+				value := tv.model.Value(row, col)
 				var text string
-				switch val := tv.model.Value(row, col).(type) {
-				case string:
-					text = val
+				if format := tv.columns.items[col].formatFunc; format != nil {
+					text = format(value)
+				} else {
+					switch val := value.(type) {
+					case string:
+						text = val
 
-				case float32:
-					prec := tv.columns.items[col].precision
-					if prec == 0 {
-						prec = 2
-					}
-					text = FormatFloatGrouped(float64(val), prec)
+					case float32:
+						prec := tv.columns.items[col].precision
+						if prec == 0 {
+							prec = 2
+						}
+						text = FormatFloatGrouped(float64(val), prec)
 
-				case float64:
-					prec := tv.columns.items[col].precision
-					if prec == 0 {
-						prec = 2
-					}
-					text = FormatFloatGrouped(val, prec)
+					case float64:
+						prec := tv.columns.items[col].precision
+						if prec == 0 {
+							prec = 2
+						}
+						text = FormatFloatGrouped(val, prec)
 
-				case time.Time:
-					if val.Year() > 1601 {
-						text = val.Format(tv.columns.items[col].format)
-					}
+					case time.Time:
+						if val.Year() > 1601 {
+							text = val.Format(tv.columns.items[col].format)
+						}
 
-				case bool:
-					if val {
-						text = checkmark
-					}
+					case bool:
+						if val {
+							text = checkmark
+						}
 
-				case *big.Rat:
-					prec := tv.columns.items[col].precision
-					if prec == 0 {
-						prec = 2
-					}
-					text = formatBigRatGrouped(val, prec)
+					case *big.Rat:
+						prec := tv.columns.items[col].precision
+						if prec == 0 {
+							prec = 2
+						}
+						text = formatBigRatGrouped(val, prec)
 
-				default:
-					text = fmt.Sprintf(tv.columns.items[col].format, val)
+					default:
+						text = fmt.Sprintf(tv.columns.items[col].format, val)
 				}
 
 				utf16 := syscall.StringToUTF16(text)

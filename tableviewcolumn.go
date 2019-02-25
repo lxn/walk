@@ -25,6 +25,7 @@ type TableViewColumn struct {
 	titleOverride string
 	width         int
 	lessFunc      func(i, j int) bool
+	formatFunc    func(value interface{}) string
 	visible       bool
 	frozen        bool
 }
@@ -330,6 +331,16 @@ func (tvc *TableViewColumn) LessFunc() func(i, j int) bool {
 // This function is used to provide custom sorting for models based on ReflectTableModel only.
 func (tvc *TableViewColumn) SetLessFunc(lessFunc func(i, j int) bool) {
 	tvc.lessFunc = lessFunc
+}
+
+// FormatFunc returns the custom format func of this TableViewColumn.
+func (tvc *TableViewColumn) FormatFunc() func(value interface{}) string {
+	return tvc.formatFunc
+}
+
+// FormatFunc sets the custom format func of this TableViewColumn.
+func (tvc *TableViewColumn) SetFormatFunc(formatFunc func(value interface{}) string) {
+	tvc.formatFunc = formatFunc
 }
 
 func (tvc *TableViewColumn) indexInListView() int32 {
