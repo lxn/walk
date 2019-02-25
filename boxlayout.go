@@ -162,12 +162,12 @@ func (l *BoxLayout) cleanupStretchFactors() {
 }
 
 type widgetInfo struct {
-	index   int
-	minSize int
-	maxSize int
-	stretch int
-	greedy  bool
-	widget  Widget
+	index      int
+	minSize    int
+	maxSize    int
+	stretch    int
+	greedy     bool
+	widgetBase *WidgetBase
 }
 
 type widgetInfoList []widgetInfo
@@ -177,8 +177,8 @@ func (l widgetInfoList) Len() int {
 }
 
 func (l widgetInfoList) Less(i, j int) bool {
-	_, iIsSpacer := l[i].widget.(*Spacer)
-	_, jIsSpacer := l[j].widget.(*Spacer)
+	_, iIsSpacer := l[i].widgetBase.window.(*Spacer)
+	_, jIsSpacer := l[j].widgetBase.window.(*Spacer)
 
 	if l[i].greedy == l[j].greedy {
 		if iIsSpacer == jIsSpacer {
@@ -419,7 +419,7 @@ func boxLayoutItems(widgets []Widget, orientation Orientation, bounds Rectangle,
 		sortedWidgetInfo[i].minSize = minSizes[i]
 		sortedWidgetInfo[i].maxSize = maxSizes[i]
 		sortedWidgetInfo[i].stretch = sf
-		sortedWidgetInfo[i].widget = widget
+		sortedWidgetInfo[i].widgetBase = widget.AsWidgetBase()
 
 		minSizesRemaining += minSizes[i]
 

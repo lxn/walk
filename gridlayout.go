@@ -11,9 +11,9 @@ import (
 )
 
 type gridLayoutCell struct {
-	row    int
-	column int
-	widget Widget
+	row        int
+	column     int
+	widgetBase *WidgetBase
 }
 
 type gridLayoutSection struct {
@@ -36,15 +36,15 @@ type GridLayout struct {
 	resetNeeded          bool
 	rowStretchFactors    []int
 	columnStretchFactors []int
-	widget2Info          map[Widget]*gridLayoutWidgetInfo
+	widgetBase2Info      map[*WidgetBase]*gridLayoutWidgetInfo
 	cells                [][]gridLayoutCell
 	size2MinSize         map[Size]Size
 }
 
 func NewGridLayout() *GridLayout {
 	l := &GridLayout{
-		widget2Info:  make(map[Widget]*gridLayoutWidgetInfo),
-		size2MinSize: make(map[Size]Size),
+		widgetBase2Info: make(map[*WidgetBase]*gridLayoutWidgetInfo),
+		size2MinSize:    make(map[Size]Size),
 	}
 
 	return l
@@ -148,8 +148,8 @@ func (l *GridLayout) ensureSufficientSize(rows, columns int) {
 	}
 
 	// FIXME: Not sure if this works.
-	for widget, info := range l.widget2Info {
-		l.widget2Info[widget].cell = &l.cells[info.cell.row][info.cell.column]
+	for wb, info := range l.widgetBase2Info {
+		l.widgetBase2Info[wb].cell = &l.cells[info.cell.row][info.cell.column]
 	}
 }
 
@@ -235,9 +235,14 @@ func rangeFromGridLayoutWidgetInfo(info *gridLayoutWidgetInfo) Rectangle {
 }
 
 func (l *GridLayout) setWidgetOnCells(widget Widget, r Rectangle) {
+	var wb *WidgetBase
+	if widget != nil {
+		wb = widget.AsWidgetBase()
+	}
+
 	for row := r.Y; row < r.Y+r.Height; row++ {
 		for col := r.X; col < r.X+r.Width; col++ {
-			l.cells[row][col].widget = widget
+			l.cells[row][col].widgetBase = wb
 		}
 	}
 }
@@ -247,7 +252,7 @@ func (l *GridLayout) Range(widget Widget) (r Rectangle, ok bool) {
 		return Rectangle{}, false
 	}
 
-	info := l.widget2Info[widget]
+	info := l.widgetBase2Info[widget.AsWidgetBase()]
 
 	if info == nil ||
 		l.container == nil ||
@@ -275,7 +280,9 @@ func (l *GridLayout) SetRange(widget Widget, r Rectangle) error {
 		return newError("range.Width and range.Height must be >= 1")
 	}
 
-	info := l.widget2Info[widget]
+	wb := widget.AsWidgetBase()
+
+	info := l.widgetBase2Info[wb]
 	if info == nil {
 		info = new(gridLayoutWidgetInfo)
 	} else {
@@ -290,7 +297,7 @@ func (l *GridLayout) SetRange(widget Widget, r Rectangle) error {
 
 	if info.cell == nil {
 		// We have to do this _after_ calling ensureSufficientSize().
-		l.widget2Info[widget] = info
+		l.widgetBase2Info[wb] = info
 	}
 
 	info.cell = cell
@@ -305,10 +312,10 @@ func (l *GridLayout) SetRange(widget Widget, r Rectangle) error {
 func (l *GridLayout) cleanup() {
 	// Make sure only children of our container occupy the precious cells.
 	children := l.container.Children()
-	for widget, info := range l.widget2Info {
-		if !children.containsHandle(widget.Handle()) {
+	for wb, info := range l.widgetBase2Info {
+		if !children.containsHandle(wb.window.Handle()) {
 			l.setWidgetOnCells(nil, rangeFromGridLayoutWidgetInfo(info))
-			delete(l.widget2Info, widget)
+			delete(l.widgetBase2Info, wb)
 		}
 	}
 }
@@ -377,7 +384,9 @@ func (l *GridLayout) MinSizeForSize(size Size) Size {
 
 	widget2MinSize := make(map[Widget]Size)
 
-	for widget, _ := range l.widget2Info {
+	for wb, _ := range l.widgetBase2Info {
+		widget := wb.window.(Widget)
+
 		if !shouldLayoutWidget(widget) {
 			continue
 		}
@@ -387,14 +396,19 @@ func (l *GridLayout) MinSizeForSize(size Size) Size {
 
 	for row := 0; row < len(l.cells); row++ {
 		for col := 0; col < len(ws); col++ {
-			widget := l.cells[row][col].widget
+			wb := l.cells[row][col].widgetBase
+			if wb == nil {
+				continue
+			}
+
+			widget := wb.window.(Widget)
 
 			if !shouldLayoutWidget(widget) {
 				continue
 			}
 
 			min := widget2MinSize[widget]
-			info := l.widget2Info[widget]
+			info := l.widgetBase2Info[wb]
 
 			if info.spanHorz == 1 {
 				ws[col] = maxi(ws[col], min.Width)
@@ -408,15 +422,20 @@ func (l *GridLayout) MinSizeForSize(size Size) Size {
 	for row := range heights {
 		var maxHeight int
 		for col := range widths {
-			widget := l.cells[row][col].widget
+			wb := l.cells[row][col].widgetBase
+			if wb == nil {
+				continue
+			}
+
+			widget := wb.window.(Widget)
 
 			if !shouldLayoutWidget(widget) {
 				continue
 			}
 
-			if info := l.widget2Info[widget]; info.spanVert == 1 {
+			if info := l.widgetBase2Info[wb]; info.spanVert == 1 {
 				if hfw, ok := widget.(HeightForWidther); ok {
-					maxHeight = maxi(maxHeight, hfw.HeightForWidth(l.spannedWidth(l.widget2Info[widget], widths)))
+					maxHeight = maxi(maxHeight, hfw.HeightForWidth(l.spannedWidth(info, widths)))
 				} else {
 					maxHeight = maxi(maxHeight, widget2MinSize[widget].Height)
 				}
@@ -551,9 +570,11 @@ func (l *GridLayout) Update(reset bool) error {
 	widths := l.sectionSizesForSpace(Horizontal, cb.Width, nil)
 	heights := l.sectionSizesForSpace(Vertical, cb.Height, widths)
 
-	items := make([]layoutResultItem, 0, len(l.widget2Info))
+	items := make([]layoutResultItem, 0, len(l.widgetBase2Info))
 
-	for widget, info := range l.widget2Info {
+	for wb, info := range l.widgetBase2Info {
+		widget := wb.window.(Widget)
+
 		if !shouldLayoutWidget(widget) {
 			continue
 		}
@@ -625,18 +646,24 @@ func (l *GridLayout) sectionSizesForSpace(orientation Orientation, space int, wi
 		}
 
 		for j := 0; j < otherAxisCount; j++ {
-			var widget Widget
+			var wb *WidgetBase
 			if orientation == Horizontal {
-				widget = l.cells[j][i].widget
+				wb = l.cells[j][i].widgetBase
 			} else {
-				widget = l.cells[i][j].widget
+				wb = l.cells[i][j].widgetBase
 			}
+
+			if wb == nil {
+				continue
+			}
+
+			widget := wb.window.(Widget)
 
 			if !shouldLayoutWidget(widget) {
 				continue
 			}
 
-			info := l.widget2Info[widget]
+			info := l.widgetBase2Info[wb]
 			flags := widget.LayoutFlags()
 
 			max := widget.MaxSize()
