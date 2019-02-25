@@ -30,13 +30,23 @@ type ListModel interface {
 	// ItemChanged returns the event that the model should publish when an item
 	// was changed.
 	ItemChanged() *IntEvent
+
+	// ItemsInserted returns the event that the model should publish when a
+	// contiguous range of items was inserted.
+	ItemsInserted() *IntRangeEvent
+
+	// ItemsRemoved returns the event that the model should publish when a
+	// contiguous range of items was removed.
+	ItemsRemoved() *IntRangeEvent
 }
 
 // ListModelBase implements the ItemsReset and ItemChanged methods of the
 // ListModel interface.
 type ListModelBase struct {
-	itemsResetPublisher  EventPublisher
-	itemChangedPublisher IntEventPublisher
+	itemsResetPublisher    EventPublisher
+	itemChangedPublisher   IntEventPublisher
+	itemsInsertedPublisher IntRangeEventPublisher
+	itemsRemovedPublisher  IntRangeEventPublisher
 }
 
 func (lmb *ListModelBase) ItemsReset() *Event {
@@ -47,12 +57,28 @@ func (lmb *ListModelBase) ItemChanged() *IntEvent {
 	return lmb.itemChangedPublisher.Event()
 }
 
+func (lmb *ListModelBase) ItemsInserted() *IntRangeEvent {
+	return lmb.itemsInsertedPublisher.Event()
+}
+
+func (lmb *ListModelBase) ItemsRemoved() *IntRangeEvent {
+	return lmb.itemsRemovedPublisher.Event()
+}
+
 func (lmb *ListModelBase) PublishItemsReset() {
 	lmb.itemsResetPublisher.Publish()
 }
 
 func (lmb *ListModelBase) PublishItemChanged(index int) {
 	lmb.itemChangedPublisher.Publish(index)
+}
+
+func (lmb *ListModelBase) PublishItemsInserted(from, to int) {
+	lmb.itemsInsertedPublisher.Publish(from, to)
+}
+
+func (lmb *ListModelBase) PublishItemsRemoved(from, to int) {
+	lmb.itemsRemovedPublisher.Publish(from, to)
 }
 
 // ReflectListModel provides an alternative to the ListModel interface. It
@@ -68,6 +94,14 @@ type ReflectListModel interface {
 	// ItemChanged returns the event that the model should publish when an item
 	// was changed.
 	ItemChanged() *IntEvent
+
+	// ItemsInserted returns the event that the model should publish when a
+	// contiguous range of items was inserted.
+	ItemsInserted() *IntRangeEvent
+
+	// ItemsRemoved returns the event that the model should publish when a
+	// contiguous range of items was removed.
+	ItemsRemoved() *IntRangeEvent
 
 	setValueFunc(value func(index int) interface{})
 }

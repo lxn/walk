@@ -57,6 +57,14 @@ func newReflectListModel(dataSource interface{}) (ListModel, error) {
 
 			m.PublishItemsReset()
 		})
+
+		rlm.ItemsInserted().Attach(func(from, to int) {
+			m.PublishItemsInserted(from, to)
+		})
+
+		rlm.ItemsRemoved().Attach(func(from, to int) {
+			m.PublishItemsRemoved(from, to)
+		})
 	}
 
 	return m, nil

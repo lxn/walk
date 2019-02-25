@@ -9,12 +9,12 @@ package walk
 import (
 	"fmt"
 	"math/big"
+	"reflect"
+	"strconv"
 	"syscall"
 	"time"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -29,6 +29,8 @@ type ComboBox struct {
 	precision                    int
 	itemsResetHandlerHandle      int
 	itemChangedHandlerHandle     int
+	itemsInsertedHandlerHandle   int
+	itemsRemovedHandlerHandle    int
 	maxItemTextWidth             int
 	prevCurIndex                 int
 	selChangeIndex               int
@@ -38,6 +40,7 @@ type ComboBox struct {
 	editingFinishedPublisher     EventPublisher
 	editOrigWndProcPtr           uintptr
 	editing                      bool
+	persistent                   bool
 }
 
 var comboBoxEditWndProcPtr = syscall.NewCallback(comboBoxEditWndProc)
@@ -154,6 +157,18 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 			return cb.SetText(assertStringOr(v, ""))
 		},
 		event))
+
+	cb.MustRegisterProperty("CurrentItem", NewReadOnlyProperty(
+		func() interface{} {
+			if rlm, ok := cb.providedModel.(ReflectListModel); ok {
+				if i := cb.CurrentIndex(); i > -1 {
+					return reflect.ValueOf(rlm.Items()).Index(i).Interface()
+				}
+			}
+
+			return nil
+		},
+		cb.CurrentIndexChanged()))
 
 	cb.MustRegisterProperty("HasCurrentItem", NewReadOnlyBoolProperty(
 		func() bool {
@@ -281,6 +296,14 @@ func (cb *ComboBox) insertItemAt(index int) error {
 	return nil
 }
 
+func (cb *ComboBox) removeItem(index int) error {
+	if win.CB_ERR == cb.SendMessage(win.CB_DELETESTRING, uintptr(index), 0) {
+		return newError("SendMessage(CB_DELETESTRING")
+	}
+
+	return nil
+}
+
 func (cb *ComboBox) resetItems() error {
 	cb.SetSuspended(true)
 	defer cb.SetSuspended(false)
@@ -328,11 +351,25 @@ func (cb *ComboBox) attachModel() {
 		cb.SetCurrentIndex(cb.prevCurIndex)
 	}
 	cb.itemChangedHandlerHandle = cb.model.ItemChanged().Attach(itemChangedHandler)
+
+	cb.itemsInsertedHandlerHandle = cb.model.ItemsInserted().Attach(func(from, to int) {
+		for i := from; i <= to; i++ {
+			cb.insertItemAt(i)
+		}
+	})
+
+	cb.itemsRemovedHandlerHandle = cb.model.ItemsRemoved().Attach(func(from, to int) {
+		for i := to; i >= from; i-- {
+			cb.removeItem(i)
+		}
+	})
 }
 
 func (cb *ComboBox) detachModel() {
 	cb.model.ItemsReset().Detach(cb.itemsResetHandlerHandle)
 	cb.model.ItemChanged().Detach(cb.itemChangedHandlerHandle)
+	cb.model.ItemsInserted().Detach(cb.itemsInsertedHandlerHandle)
+	cb.model.ItemsRemoved().Detach(cb.itemsRemovedHandlerHandle)
 }
 
 // Model returns the model of the ComboBox.
@@ -578,6 +615,36 @@ func (cb *ComboBox) TextChanged() *Event {
 
 func (cb *ComboBox) EditingFinished() *Event {
 	return cb.editingFinishedPublisher.Event()
+}
+
+func (cb *ComboBox) Persistent() bool {
+	return cb.persistent
+}
+
+func (cb *ComboBox) SetPersistent(value bool) {
+	cb.persistent = value
+}
+
+func (cb *ComboBox) SaveState() error {
+	cb.WriteState(strconv.Itoa(cb.CurrentIndex()))
+
+	return nil
+}
+
+func (cb *ComboBox) RestoreState() error {
+	state, err := cb.ReadState()
+	if err != nil {
+		return err
+	}
+	if state == "" {
+		return nil
+	}
+
+	if i, err := strconv.Atoi(state); err == nil {
+		cb.SetCurrentIndex(i)
+	}
+
+	return nil
 }
 
 func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {

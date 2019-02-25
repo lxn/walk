@@ -87,6 +87,7 @@ func (cb ComboBox) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(cb, w, func() error {
+		w.SetPersistent(cb.Persistent)
 		w.SetFormat(cb.Format)
 		w.SetPrecision(cb.Precision)
 		w.SetMaxLength(cb.MaxLength)
