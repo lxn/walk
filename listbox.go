@@ -27,6 +27,8 @@ type ListBox struct {
 	prevCurIndex                    int
 	itemsResetHandlerHandle         int
 	itemChangedHandlerHandle        int
+	itemsInsertedHandlerHandle      int
+	itemsRemovedHandlerHandle       int
 	maxItemTextWidth                int
 	currentIndexChangedPublisher    EventPublisher
 	selectedIndexesChangedPublisher EventPublisher
@@ -125,6 +127,14 @@ func (lb *ListBox) insertItemAt(index int) error {
 	return nil
 }
 
+func (lb *ListBox) removeItem(index int) error {
+	if win.LB_ERR == int(lb.SendMessage(win.LB_DELETESTRING, uintptr(index), 0)) {
+		return newError("SendMessage(LB_DELETESTRING)")
+	}
+
+	return nil
+}
+
 // reread all the items from list model
 func (lb *ListBox) resetItems() error {
 	lb.SetSuspended(true)
@@ -171,11 +181,25 @@ func (lb *ListBox) attachModel() {
 		lb.SetCurrentIndex(lb.prevCurIndex)
 	}
 	lb.itemChangedHandlerHandle = lb.model.ItemChanged().Attach(itemChangedHandler)
+
+	lb.itemsInsertedHandlerHandle = lb.model.ItemsInserted().Attach(func(from, to int) {
+		for i := from; i <= to; i++ {
+			lb.insertItemAt(i)
+		}
+	})
+
+	lb.itemsRemovedHandlerHandle = lb.model.ItemsRemoved().Attach(func(from, to int) {
+		for i := to; i >= from; i-- {
+			lb.removeItem(i)
+		}
+	})
 }
 
 func (lb *ListBox) detachModel() {
 	lb.model.ItemsReset().Detach(lb.itemsResetHandlerHandle)
 	lb.model.ItemChanged().Detach(lb.itemChangedHandlerHandle)
+	lb.model.ItemsInserted().Detach(lb.itemsInsertedHandlerHandle)
+	lb.model.ItemsRemoved().Detach(lb.itemsRemovedHandlerHandle)
 }
 
 // Model returns the model of the ListBox.
