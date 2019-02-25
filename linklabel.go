@@ -196,7 +196,7 @@ func (lll *LinkLabelLink) hasState(state uint32) (bool, error) {
 	}
 
 	if win.TRUE != lll.ll.SendMessage(win.LM_GETITEM, 0, uintptr(unsafe.Pointer(&li))) {
-		return false, newErr("LM_GETITEM")
+		return false, newError("LM_GETITEM")
 	}
 
 	return li.State&state == state, nil
@@ -216,7 +216,7 @@ func (lll *LinkLabelLink) setState(state uint32, set bool) error {
 	li.ILink = int32(lll.index)
 
 	if win.TRUE != lll.ll.SendMessage(win.LM_SETITEM, 0, uintptr(unsafe.Pointer(&li))) {
-		return newErr("LM_SETITEM")
+		return newError("LM_SETITEM")
 	}
 
 	return nil

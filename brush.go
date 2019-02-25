@@ -312,11 +312,11 @@ type GradientBrush struct {
 
 func NewGradientBrush(vertexes []GradientVertex, triangles []GradientTriangle) (*GradientBrush, error) {
 	if len(vertexes) < 3 {
-		return nil, newErr("at least 3 vertexes are required")
+		return nil, newError("at least 3 vertexes are required")
 	}
 
 	if len(triangles) < 1 {
-		return nil, newErr("at least 1 triangle is required")
+		return nil, newError("at least 1 triangle is required")
 	}
 
 	var size Size
@@ -395,7 +395,7 @@ func (b *GradientBrush) create(size Size) (*BitmapBrush, error) {
 	}
 
 	if !win.GradientFill(canvas.hdc, &vertexes[0], uint32(len(vertexes)), unsafe.Pointer(&triangles[0]), uint32(len(triangles)), win.GRADIENT_FILL_TRIANGLE) {
-		return nil, newErr("GradientFill failed")
+		return nil, newError("GradientFill failed")
 	}
 
 	disposables.Spare()

@@ -372,7 +372,7 @@ func (c *Canvas) GradientFillRectangle(color1, color2 Color, orientation Orienta
 	}
 
 	if !win.GradientFill(c.hdc, &vertices[0], 2, unsafe.Pointer(&indices), 1, uint32(orientation)) {
-		return newErr("GradientFill failed")
+		return newError("GradientFill failed")
 	}
 
 	return nil

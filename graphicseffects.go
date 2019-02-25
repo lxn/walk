@@ -168,7 +168,7 @@ func newWidgetGraphicsEffectList(observer widgetGraphicsEffectListObserver) *Wid
 
 func (l *WidgetGraphicsEffectList) Add(effect WidgetGraphicsEffect) error {
 	if effect == nil {
-		return newErr("effect == nil")
+		return newError("effect == nil")
 	}
 
 	return l.Insert(len(l.items), effect)
