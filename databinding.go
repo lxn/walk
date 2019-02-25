@@ -100,7 +100,8 @@ func (db *DataBinder) DataSource() interface{} {
 }
 
 func (db *DataBinder) SetDataSource(dataSource interface{}) error {
-	if dataSource == db.dataSource {
+	if kind := reflect.ValueOf(dataSource).Kind(); kind != reflect.Func && kind != reflect.Map && kind != reflect.Slice &&
+		kind == reflect.ValueOf(db.dataSource).Kind() && dataSource == db.dataSource {
 		return nil
 	}
 
@@ -446,6 +447,7 @@ func dataFieldFromPath(root reflect.Value, path string) (DataField, error) {
 }
 
 func reflectValueFromPath(root reflect.Value, path string) (parent, value reflect.Value, err error) {
+	fullPath := path
 	value = root
 
 	for path != "" {
@@ -496,7 +498,7 @@ func reflectValueFromPath(root reflect.Value, path string) (parent, value reflec
 					fun = value.MethodByName(name)
 				}
 				if !fun.IsValid() {
-					return parent, value, fmt.Errorf("bad member: '%s'", path, ".")
+					return parent, value, fmt.Errorf("bad member: '%s', path: '%s'", path, fullPath)
 				}
 			}
 
