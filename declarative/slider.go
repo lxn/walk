@@ -50,12 +50,16 @@ type Slider struct {
 	MinValue       int
 	Orientation    Orientation
 	OnValueChanged walk.EventHandler
+	ToolTipsHidden bool
 	Tracking       bool
 	Value          Property
 }
 
 func (sl Slider) Create(builder *Builder) error {
-	w, err := walk.NewSliderWithOrientation(builder.Parent(), walk.Orientation(sl.Orientation))
+	w, err := walk.NewSliderWithCfg(builder.Parent(), &walk.SliderCfg{
+		Orientation:    walk.Orientation(sl.Orientation),
+		ToolTipsHidden: sl.ToolTipsHidden,
+	})
 	if err != nil {
 		return err
 	}

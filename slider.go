@@ -20,19 +20,31 @@ type Slider struct {
 	persistent            bool
 }
 
+type SliderCfg struct {
+	Orientation    Orientation
+	ToolTipsHidden bool
+}
+
 func NewSlider(parent Container) (*Slider, error) {
 	return NewSliderWithOrientation(parent, Horizontal)
 }
 
 func NewSliderWithOrientation(parent Container, orientation Orientation) (*Slider, error) {
+	return NewSliderWithCfg(parent, &SliderCfg{Orientation: orientation})
+}
+
+func NewSliderWithCfg(parent Container, cfg *SliderCfg) (*Slider, error) {
 	sl := new(Slider)
 
-	var style uint32 = win.WS_TABSTOP | win.WS_VISIBLE | win.TBS_TOOLTIPS
-	if orientation == Vertical {
+	var style uint32 = win.WS_TABSTOP | win.WS_VISIBLE
+	if cfg.Orientation == Vertical {
 		style |= win.TBS_VERT
 		sl.layoutFlags = ShrinkableVert | GrowableVert | GreedyVert
 	} else {
 		sl.layoutFlags = ShrinkableHorz | GrowableHorz | GreedyHorz
+	}
+	if !cfg.ToolTipsHidden {
+		style |= win.TBS_TOOLTIPS
 	}
 
 	if err := InitWidget(
