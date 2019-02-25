@@ -24,9 +24,6 @@ const (
 )
 
 var (
-	processMessageProc     uintptr
-	applyLayoutResultsProc uintptr
-
 	syncFuncs struct {
 		m     sync.Mutex
 		funcs []func()
@@ -37,23 +34,8 @@ var (
 )
 
 func init() {
-	if dll, err := syscall.LoadLibrary("run.dll"); err == nil {
-		applyLayoutResultsProc, err = syscall.GetProcAddress(dll, "ApplyLayoutResults")
-		processMessageProc, err = syscall.GetProcAddress(dll, "ProcessMessage")
-	}
-
 	syncMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("WalkSync"))
 	taskbarButtonCreatedMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("TaskbarButtonCreated"))
-}
-
-func applyLayoutResultsImpl(hwndParent win.HWND, maybeInvalidate win.BOOL, items *applyLayoutResultsItem, itemsLen int32) bool {
-	ret, _, _ := syscall.Syscall6(applyLayoutResultsProc, 4, uintptr(hwndParent), uintptr(maybeInvalidate), uintptr(unsafe.Pointer(items)), uintptr(itemsLen), 0, 0)
-	return ret != 0
-}
-
-func processMessage(hwnd win.HWND, msg *win.MSG) bool {
-	ret, _, _ := syscall.Syscall(processMessageProc, 2, uintptr(hwnd), uintptr(unsafe.Pointer(msg)), 0)
-	return ret != 0
 }
 
 func synchronize(f func()) {
@@ -413,44 +395,28 @@ func (fb *FormBase) Run() int {
 
 	var msg win.MSG
 
-	if processMessageProc != 0 {
-		for fb.hWnd != 0 {
-			if !processMessage(fb.hWnd, &msg) {
-				return int(msg.WParam)
-			}
+	for fb.hWnd != 0 {
+		switch win.GetMessage(&msg, 0, 0, 0) {
+		case 0:
+			return int(msg.WParam)
 
-			if msg.Message == win.WM_KEYDOWN {
-				if fb.webViewTranslateAccelerator(&msg) {
-					// handled accelerator key of webview and its childen (ie IE)
-				}
-			}
-
-			runSynchronized()
+		case -1:
+			return -1
 		}
-	} else {
-		for fb.hWnd != 0 {
-			switch win.GetMessage(&msg, 0, 0, 0) {
-			case 0:
-				return int(msg.WParam)
 
-			case -1:
-				return -1
+		switch msg.Message {
+		case win.WM_KEYDOWN:
+			if fb.webViewTranslateAccelerator(&msg) {
+				// handled accelerator key of webview and its childen (ie IE)
 			}
-
-			switch msg.Message {
-			case win.WM_KEYDOWN:
-				if fb.webViewTranslateAccelerator(&msg) {
-					// handled accelerator key of webview and its childen (ie IE)
-				}
-			}
-
-			if !win.IsDialogMessage(fb.hWnd, &msg) {
-				win.TranslateMessage(&msg)
-				win.DispatchMessage(&msg)
-			}
-
-			runSynchronized()
 		}
+
+		if !win.IsDialogMessage(fb.hWnd, &msg) {
+			win.TranslateMessage(&msg)
+			win.DispatchMessage(&msg)
+		}
+
+		runSynchronized()
 	}
 
 	return 0
