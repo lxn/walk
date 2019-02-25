@@ -8,13 +8,13 @@ package walk
 
 import (
 	"bytes"
+	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -27,9 +27,11 @@ func init() {
 // NumberEdit is a widget that is suited to edit numeric values.
 type NumberEdit struct {
 	WidgetBase
-	edit                   *numberLineEdit
-	prefixChangedPublisher EventPublisher
-	suffixChangedPublisher EventPublisher
+	edit                     *numberLineEdit
+	maxValueChangedPublisher EventPublisher
+	minValueChangedPublisher EventPublisher
+	prefixChangedPublisher   EventPublisher
+	suffixChangedPublisher   EventPublisher
 }
 
 // NewNumberEdit returns a new NumberEdit widget as child of parent.
@@ -59,12 +61,32 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 
 	ne.edit.applyFont(ne.Font())
 
+	ne.SetRange(-math.MaxFloat64, math.MaxFloat64)
+
 	if err = ne.SetValue(0); err != nil {
 		return nil, err
 	}
 
 	ne.GraphicsEffects().Add(InteractionEffect)
 	ne.GraphicsEffects().Add(FocusEffect)
+
+	ne.MustRegisterProperty("MaxValue", NewProperty(
+		func() interface{} {
+			return ne.MaxValue()
+		},
+		func(v interface{}) error {
+			return ne.SetRange(ne.MinValue(), assertFloat64Or(v, 0.0))
+		},
+		ne.minValueChangedPublisher.Event()))
+
+	ne.MustRegisterProperty("MinValue", NewProperty(
+		func() interface{} {
+			return ne.MinValue()
+		},
+		func(v interface{}) error {
+			return ne.SetRange(assertFloat64Or(v, 0.0), ne.MaxValue())
+		},
+		ne.maxValueChangedPublisher.Event()))
 
 	ne.MustRegisterProperty("Prefix", NewProperty(
 		func() interface{} {
@@ -262,8 +284,11 @@ func (ne *NumberEdit) MaxValue() float64 {
 // If the current value is out of this range, it will be adjusted.
 func (ne *NumberEdit) SetRange(min, max float64) error {
 	if min > max {
-		return newError("invalid range")
+		return newError(fmt.Sprintf("invalid range - min: %f, max: %f", min, max))
 	}
+
+	minChanged := min != ne.edit.minValue
+	maxChanged := max != ne.edit.maxValue
 
 	ne.edit.minValue = min
 	ne.edit.maxValue = max
@@ -277,6 +302,13 @@ func (ne *NumberEdit) SetRange(min, max float64) error {
 				return err
 			}
 		}
+	}
+
+	if minChanged {
+		ne.minValueChangedPublisher.Publish()
+	}
+	if maxChanged {
+		ne.maxValueChangedPublisher.Publish()
 	}
 
 	return nil
