@@ -429,6 +429,10 @@ func (wb *WidgetBase) hasComplexBackground() bool {
 }
 
 func (wb *WidgetBase) updateParentLayout() error {
+	return wb.updateParentLayoutWithReset(false)
+}
+
+func (wb *WidgetBase) updateParentLayoutWithReset(reset bool) error {
 	parent := wb.window.(Widget).Parent()
 
 	if parent == nil || parent.Layout() == nil || parent.Suspended() || !parent.Visible() {
@@ -448,7 +452,7 @@ func (wb *WidgetBase) updateParentLayout() error {
 				return nil
 
 			case Widget:
-				return wnd.AsWidgetBase().updateParentLayout()
+				return wnd.AsWidgetBase().updateParentLayoutWithReset(reset)
 
 			case Form:
 				if len(inProgressEventsByForm[appSingleton.activeForm]) > 0 {
@@ -468,7 +472,7 @@ func (wb *WidgetBase) updateParentLayout() error {
 		}
 	}
 
-	layout.Update(false)
+	layout.Update(reset)
 
 	if FocusEffect != nil {
 		if focusedWnd := windowFromHandle(win.GetFocus()); focusedWnd != nil && win.GetParent(focusedWnd.Handle()) == parent.Handle() {

@@ -116,9 +116,9 @@ type layoutResultItem struct {
 }
 
 func applyLayoutResults(container Container, items []layoutResultItem) error {
-	if applyLayoutResultsProc != 0 {
-		return applyLayoutResultsRun(container, items)
-	}
+	// if applyLayoutResultsProc != 0 {
+	// 	return applyLayoutResultsRun(container, items)
+	// }
 
 	return applyLayoutResultsWalk(container, items)
 }
@@ -167,13 +167,13 @@ func applyLayoutResultsWalk(container Container, items []layoutResultItem) error
 		}
 
 		// FIXME: Is this really necessary?
-		for _, item := range items {
-			if !shouldLayoutWidget(item.widget) || item.widget.GraphicsEffects().Len() == 0 {
-				continue
-			}
-
-			item.widget.AsWidgetBase().invalidateBorderInParent()
+		// for _, item := range items {
+		if /*!shouldLayoutWidget(item.widget) ||*/ item.widget.GraphicsEffects().Len() == 0 {
+			continue
 		}
+
+		item.widget.AsWidgetBase().invalidateBorderInParent()
+		// }
 	}
 
 	if !win.EndDeferWindowPos(hdwp) {
@@ -209,7 +209,7 @@ func applyLayoutResultsRun(container Container, items []layoutResultItem) error 
 			w:                              int32(w),
 			h:                              int32(h),
 			oldBounds:                      b.toRECT(),
-			shouldInvalidateBorderInParent: win.BoolToBOOL(shouldLayoutWidget(item.widget) && item.widget.GraphicsEffects().Len() > 0),
+			shouldInvalidateBorderInParent: win.BoolToBOOL( /*shouldLayoutWidget(item.widget) &&*/ item.widget.GraphicsEffects().Len() > 0),
 		})
 	}
 
@@ -263,6 +263,24 @@ func shouldLayoutWidget(widget Widget) bool {
 	_, isSpacer := widget.(*Spacer)
 
 	return isSpacer || widget.AsWindowBase().visible || widget.AlwaysConsumeSpace()
+}
+
+func anyVisibleWidgetInHierarchy(root *WidgetBase) bool {
+	if root == nil || !root.visible {
+		return false
+	}
+
+	if container, ok := root.window.(Container); ok {
+		for _, child := range container.Children().items {
+			if anyVisibleWidgetInHierarchy(child) {
+				return true
+			}
+		}
+	} else if _, ok := root.window.(*Spacer); !ok {
+		return true
+	}
+
+	return false
 }
 
 func DescendantByName(container Container, name string) Widget {
@@ -408,8 +426,8 @@ func (cb *ContainerBase) forEachPersistableChild(f func(p Persistable) error) er
 		return nil
 	}
 
-	for _, child := range cb.children.items {
-		if persistable, ok := child.(Persistable); ok && persistable.Persistent() {
+	for _, wb := range cb.children.items {
+		if persistable, ok := wb.window.(Persistable); ok && persistable.Persistent() {
 			if err := f(persistable); err != nil {
 				return err
 			}
@@ -461,7 +479,9 @@ func (cb *ContainerBase) doPaint() error {
 	}
 	defer canvas.Dispose()
 
-	for _, widget := range cb.children.items {
+	for _, wb := range cb.children.items {
+		widget := wb.window.(Widget)
+
 		for _, effect := range widget.GraphicsEffects().items {
 			switch effect {
 			case InteractionEffect:

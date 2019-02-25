@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"log"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -482,7 +483,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 
 	wb.visibleProperty = NewBoolProperty(
 		func() bool {
-			return window.Visible()
+			return window.AsWindowBase().visible
 		},
 		func(b bool) error {
 			wb.window.SetVisible(b)
@@ -515,20 +516,32 @@ func InitWrapperWindow(window Window) error {
 
 	wb.window = window
 
-	if widget, ok := window.(Widget); ok {
-		widgetBase := widget.AsWidgetBase()
+	if container, ok := window.(Container); ok {
+		children := container.Children()
 
-		if widgetBase.parent != nil {
-			children := widgetBase.parent.Children().items
+		if wlo, ok := window.(widgetListObserver); ok {
+			children.observer = wlo
+		}
 
-			for i, w := range children {
-				if w.AsWidgetBase() == widgetBase {
-					children[i] = widget
-					break
-				}
-			}
+		for _, child := range children.items {
+			child.parent = container
 		}
 	}
+
+	// if widget, ok := window.(Widget); ok {
+	// 	widgetBase := widget.AsWidgetBase()
+
+	// 	if widgetBase.parent != nil {
+	// 		children := widgetBase.parent.Children().items
+
+	// 		for i, wb := range children {
+	// 			if wb == widgetBase {
+	// 				children[i] = widget.AsWidgetBase()
+	// 				break
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	return nil
 }
@@ -1000,7 +1013,7 @@ func (wb *WindowBase) SetVisible(visible bool) {
 	if widget, ok := wb.window.(Widget); ok {
 		wb := widget.AsWidgetBase()
 		wb.invalidateBorderInParent()
-		wb.updateParentLayout()
+		wb.updateParentLayoutWithReset(true)
 	}
 
 	wb.visibleChangedPublisher.Publish()
@@ -1654,6 +1667,9 @@ func (wb *WindowBase) backgroundEffective() (Brush, Window) {
 					bg = parent.Background()
 
 					widget, _ = parent.(Widget)
+				} else {
+					log.Printf("*WindowBase.backgroundEffective - breaing out of infinite loop - bg: %T, wnd: %T %s %d", bg, wnd, wnd.Name(), wnd.Handle())
+					break
 				}
 			} else {
 				break

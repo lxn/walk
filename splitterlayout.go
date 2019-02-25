@@ -18,15 +18,18 @@ type splitterLayout struct {
 	margins     Margins
 	hwnd2Item   map[win.HWND]*splitterLayoutItem
 	resetNeeded bool
+	suspended   bool
 }
 
 type splitterLayoutItem struct {
-	size            int
-	oldExplicitSize int
-	stretchFactor   int
-	growth          int
-	fixed           bool
-	keepSize        bool
+	size                 int
+	oldExplicitSize      int
+	stretchFactor        int
+	growth               int
+	visibleChangedHandle int
+	fixed                bool
+	keepSize             bool
+	wasVisible           bool
 }
 
 func newSplitterLayout(orientation Orientation) *splitterLayout {
@@ -165,7 +168,13 @@ func (l *splitterLayout) MinSizeForSize(size Size) Size {
 
 	anyNonFixed := l.anyNonFixed()
 
-	for _, widget := range l.container.Children().items {
+	for _, wb := range l.container.Children().items {
+		if !anyVisibleWidgetInHierarchy(wb) {
+			continue
+		}
+
+		widget := wb.window.(Widget)
+
 		var cur Size
 
 		if anyNonFixed && l.Fixed(widget) {
@@ -213,21 +222,69 @@ func (l *splitterLayout) spaceForRegularWidgets() int {
 		space = s.Height - l.margins.VNear - l.margins.VFar
 	}
 
-	return space - (splitter.Children().Len()/2)*splitter.handleWidth
+	for _, widget := range l.container.Children().items {
+		if _, isHandle := widget.window.(*splitterHandle); isHandle && widget.visible {
+			space -= splitter.handleWidth
+		}
+	}
+
+	return space
 }
 
 func (l *splitterLayout) reset() {
 	l.cleanupItems()
 
 	children := l.container.Children()
-	minSizes := make([]int, children.Len())
-	var minSizesTotal int
-	for i, w := range children.items {
-		if i%2 == 1 {
+
+	var anyVisible bool
+
+	for i, wb := range children.items {
+		item := l.hwnd2Item[wb.hWnd]
+
+		visible := anyVisibleWidgetInHierarchy(wb)
+		if !anyVisible && visible {
+			anyVisible = true
+		}
+
+		if item == nil || visible == item.wasVisible {
 			continue
 		}
 
-		min := minSizeEffective(w)
+		item.wasVisible = visible
+
+		if _, isHandle := wb.window.(*splitterHandle); !isHandle {
+			var handleIndex int
+
+			if i == 0 {
+				if len(children.items) > 1 {
+					handleIndex = i + 1
+				} else {
+					handleIndex = -1
+				}
+			} else {
+				handleIndex = i - 1
+			}
+
+			if handleIndex > -1 {
+				children.items[handleIndex].SetVisible(visible)
+			}
+		}
+	}
+
+	if l.container.AsWindowBase().visible != anyVisible {
+		l.suspended = true
+		l.container.SetVisible(anyVisible)
+		l.suspended = false
+	}
+
+	minSizes := make([]int, children.Len())
+	var minSizesTotal int
+	for i, wb := range children.items {
+		if i%2 == 1 || !anyVisibleWidgetInHierarchy(wb) {
+			continue
+		}
+
+		min := minSizeEffective(wb.window.(Widget))
 		if l.orientation == Horizontal {
 			minSizes[i] = min.Width
 			minSizesTotal += min.Width
@@ -239,34 +296,31 @@ func (l *splitterLayout) reset() {
 	regularSpace := l.spaceForRegularWidgets()
 
 	stretchTotal := 0
-	for i := children.Len() - 1; i >= 0; i-- {
-		if i%2 == 1 {
+	for i, wb := range children.items {
+		if i%2 == 1 || !anyVisibleWidgetInHierarchy(wb) {
 			continue
 		}
 
-		child := children.At(i)
-
-		if item := l.hwnd2Item[child.Handle()]; item == nil {
-			l.hwnd2Item[child.Handle()] = &splitterLayoutItem{stretchFactor: 1}
+		if item := l.hwnd2Item[wb.hWnd]; item == nil {
+			l.hwnd2Item[wb.hWnd] = &splitterLayoutItem{stretchFactor: 1}
 		}
 
-		stretchTotal += l.StretchFactor(child)
+		stretchTotal += l.StretchFactor(wb.window.(Widget))
 	}
 
-	for i := children.Len() - 1; i >= 0; i-- {
-		if i%2 == 1 {
+	for i, wb := range children.items {
+		if i%2 == 1 || !anyVisibleWidgetInHierarchy(wb) {
 			continue
 		}
 
-		child := children.At(i)
-
-		item := l.hwnd2Item[child.Handle()]
+		widget := wb.window.(Widget)
+		item := l.hwnd2Item[wb.hWnd]
 		item.growth = 0
 		item.keepSize = false
 		if item.oldExplicitSize > 0 {
 			item.size = item.oldExplicitSize
 		} else {
-			item.size = int(float64(l.StretchFactor(child)) / float64(stretchTotal) * float64(regularSpace))
+			item.size = int(float64(l.StretchFactor(widget)) / float64(stretchTotal) * float64(regularSpace))
 		}
 
 		min := minSizes[i]
@@ -277,7 +331,7 @@ func (l *splitterLayout) reset() {
 		}
 
 		if item.size >= min {
-			flags := child.LayoutFlags()
+			flags := widget.LayoutFlags()
 
 			if l.orientation == Horizontal && flags&GrowableHorz == 0 || l.orientation == Vertical && flags&GrowableVert == 0 {
 				item.size = min
@@ -327,7 +381,13 @@ func (l *splitterLayout) Update(reset bool) error {
 
 	anyNonFixed := l.anyNonFixed()
 	var totalRegularSize int
-	for i, widget := range widgets {
+	for i, wb := range widgets {
+		if !anyVisibleWidgetInHierarchy(wb) {
+			continue
+		}
+
+		widget := wb.window.(Widget)
+
 		if i%2 == 0 {
 			size := l.hwnd2Item[widget.Handle()].size
 			totalRegularSize += size
@@ -349,7 +409,13 @@ func (l *splitterLayout) Update(reset bool) error {
 
 		var wis []WidgetItem
 
-		for i, widget := range widgets {
+		for i, wb := range widgets {
+			if !anyVisibleWidgetInHierarchy(wb) {
+				continue
+			}
+
+			widget := wb.window.(Widget)
+
 			if i%2 == 0 {
 				if item := l.hwnd2Item[widget.Handle()]; !anyNonFixed || !item.fixed {
 					var min, max int
@@ -431,7 +497,13 @@ func (l *splitterLayout) Update(reset bool) error {
 	} else {
 		p1 = l.margins.VNear
 	}
-	for i, widget := range widgets {
+	for i, wb := range widgets {
+		if !anyVisibleWidgetInHierarchy(wb) {
+			continue
+		}
+
+		widget := wb.window.(Widget)
+
 		s1 := sizes[i]
 
 		var x, y, w, h int

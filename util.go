@@ -265,15 +265,15 @@ func walkDescendants(window Window, f func(w Window) bool) {
 		return
 	}
 
-	var children []Widget
+	var children []*WidgetBase
 
 	switch w := window.(type) {
 	case *NumberEdit:
-		children = append(children, w.edit)
+		children = append(children, w.edit.AsWidgetBase())
 
 	case *TabWidget:
 		for _, p := range w.Pages().items {
-			children = append(children, p)
+			children = append(children, p.AsWidgetBase())
 		}
 
 	case Container:
@@ -284,8 +284,8 @@ func walkDescendants(window Window, f func(w Window) bool) {
 		}
 	}
 
-	for _, w := range children {
-		walkDescendants(w, f)
+	for _, wb := range children {
+		walkDescendants(wb.window.(Widget), f)
 	}
 }
 
