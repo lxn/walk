@@ -171,7 +171,7 @@ func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error
 		0,
 		nil,
 	); tv.hwndFrozenLV == 0 {
-		return nil, newErr("creating frozen lv failed")
+		return nil, newError("creating frozen lv failed")
 	}
 
 	tv.frozenLVOrigWndProcPtr = win.SetWindowLongPtr(tv.hwndFrozenLV, win.GWLP_WNDPROC, tableViewFrozenLVWndProcPtr)
@@ -199,7 +199,7 @@ func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error
 		0,
 		nil,
 	); tv.hwndNormalLV == 0 {
-		return nil, newErr("creating normal lv failed")
+		return nil, newError("creating normal lv failed")
 	}
 
 	tv.normalLVOrigWndProcPtr = win.SetWindowLongPtr(tv.hwndNormalLV, win.GWLP_WNDPROC, tableViewNormalLVWndProcPtr)
@@ -699,6 +699,11 @@ func (tv *TableView) SetModel(mdl interface{}) error {
 		}
 
 		if sorter, ok := tv.model.(Sorter); ok {
+			if tv.sortedColumnIndex >= tv.visibleColumnCount() {
+				tv.sortedColumnIndex = maxi(-1, mini(0, tv.visibleColumnCount()-1))
+				tv.sortOrder = SortAscending
+			}
+
 			sorter.Sort(tv.sortedColumnIndex, tv.sortOrder)
 		}
 	}
@@ -1384,7 +1389,6 @@ func (tv *TableView) RestoreState() error {
 			if lastSeen, err := time.Parse("2006-02-01", tvcs.LastSeenDate); err != nil {
 				tvcs.LastSeenDate = ""
 			} else if name2tvc[tvcs.Name] == nil && lastSeen.Add(time.Hour*24*90).Before(time.Now()) {
-				fmt.Printf("lastSeen: %s, lastSeen.Add(time.Hour*24*90): %s\n", lastSeen.Format("2006-02-01"), lastSeen.Add(time.Hour*24*90).Format("2006-02-01"))
 				continue
 			}
 		}
@@ -1479,6 +1483,7 @@ func (tv *TableView) RestoreState() error {
 			for i := range tvs.Columns {
 				if sorter.ColumnSortable(i) {
 					tv.sortedColumnIndex = i
+					break
 				}
 			}
 		}
@@ -1549,10 +1554,7 @@ func (tv *TableView) maybePublishFocusChanged(hwnd win.HWND, msg uint32, wp uint
 }
 
 func tableViewFrozenLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
-	tv, ok := windowFromHandle(win.GetParent(hwnd)).(*TableView)
-	if !ok {
-		return 0
-	}
+	tv := (*TableView)(unsafe.Pointer(windowFromHandle(win.GetParent(hwnd)).AsWindowBase()))
 
 	ensureWindowLongBits(hwnd, win.GWL_STYLE, win.WS_HSCROLL|win.WS_VSCROLL, false)
 
@@ -1572,10 +1574,7 @@ func tableViewFrozenLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr
 }
 
 func tableViewNormalLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
-	tv, ok := windowFromHandle(win.GetParent(hwnd)).(*TableView)
-	if !ok {
-		return 0
-	}
+	tv := (*TableView)(unsafe.Pointer(windowFromHandle(win.GetParent(hwnd)).AsWindowBase()))
 
 	switch msg {
 	case win.WM_LBUTTONDOWN, win.WM_RBUTTONDOWN:
@@ -2078,10 +2077,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 }
 
 func tableViewHdrWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
-	tv, ok := windowFromHandle(win.GetParent(win.GetParent(hwnd))).(*TableView)
-	if !ok {
-		return 0
-	}
+	tv := (*TableView)(unsafe.Pointer(windowFromHandle(win.GetParent(win.GetParent(hwnd))).AsWindowBase()))
 
 	var origWndProcPtr uintptr
 	if hwnd == tv.hwndFrozenHdr {
