@@ -34,6 +34,8 @@ func newBoxLayout(orientation Orientation) *BoxLayout {
 		orientation:        orientation,
 		hwnd2StretchFactor: make(map[win.HWND]int),
 		size2MinSize:       make(map[Size]Size),
+		margins:            Margins{9, 9, 9, 9},
+		spacing:            6,
 	}
 }
 
