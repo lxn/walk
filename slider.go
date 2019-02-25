@@ -39,9 +39,9 @@ func NewSliderWithCfg(parent Container, cfg *SliderCfg) (*Slider, error) {
 	var style uint32 = win.WS_TABSTOP | win.WS_VISIBLE
 	if cfg.Orientation == Vertical {
 		style |= win.TBS_VERT
-		sl.layoutFlags = ShrinkableVert | GrowableVert | GreedyVert
+		sl.layoutFlags = ShrinkableVert | GrowableVert
 	} else {
-		sl.layoutFlags = ShrinkableHorz | GrowableHorz | GreedyHorz
+		sl.layoutFlags = ShrinkableHorz | GrowableHorz
 	}
 	if !cfg.ToolTipsHidden {
 		style |= win.TBS_TOOLTIPS
