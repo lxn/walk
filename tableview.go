@@ -1746,6 +1746,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 
 					default:
 						text = fmt.Sprintf(tv.columns.items[col].format, val)
+					}
 				}
 
 				utf16 := syscall.StringToUTF16(text)
