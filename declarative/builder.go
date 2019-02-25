@@ -683,6 +683,10 @@ func (se subExpressions) Get(name string) (interface{}, error) {
 	return nil, fmt.Errorf(`invalid sub expression: "%s"`, name)
 }
 
+func (e *expression) String() string {
+	return e.text
+}
+
 func (e *expression) Value() interface{} {
 	val, err := e.expr.Eval(e.subExprsByPath)
 	if err != nil {
