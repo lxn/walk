@@ -27,6 +27,8 @@ type Action struct {
 	text                          string
 	toolTip                       string
 	image                         *Bitmap
+	checkedCondition              Condition
+	checkedConditionChangedHandle int
 	enabledCondition              Condition
 	enabledConditionChangedHandle int
 	visibleCondition              Condition
@@ -114,6 +116,16 @@ func (a *Action) Checked() bool {
 }
 
 func (a *Action) SetChecked(value bool) (err error) {
+	if a.checkedCondition != nil {
+		if bp, ok := a.checkedCondition.(*boolProperty); ok {
+			if err := bp.Set(value); err != nil {
+				return err
+			}
+		} else {
+			return newError("CheckedCondition != nil")
+		}
+	}
+
 	if value != a.checked {
 		old := a.checked
 
@@ -126,6 +138,32 @@ func (a *Action) SetChecked(value bool) (err error) {
 	}
 
 	return
+}
+
+func (a *Action) CheckedCondition() Condition {
+	return a.checkedCondition
+}
+
+func (a *Action) SetCheckedCondition(c Condition) {
+	if a.checkedCondition != nil {
+		a.checkedCondition.Changed().Detach(a.checkedConditionChangedHandle)
+	}
+
+	a.checkedCondition = c
+
+	if c != nil {
+		a.checked = c.Satisfied()
+
+		a.checkedConditionChangedHandle = c.Changed().Attach(func() {
+			if a.checked != c.Satisfied() {
+				a.checked = !a.checked
+
+				a.raiseChanged()
+			}
+		})
+	}
+
+	a.raiseChanged()
 }
 
 func (a *Action) Enabled() bool {
@@ -341,6 +379,10 @@ func (a *Action) Triggered() *Event {
 }
 
 func (a *Action) raiseTriggered() {
+	if a.Checkable() {
+		a.SetChecked(!a.Checked())
+	}
+
 	a.triggeredPublisher.Publish()
 }
 

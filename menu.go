@@ -10,9 +10,7 @@ import (
 	"fmt"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -83,9 +81,9 @@ func (m *Menu) initMenuItemInfoFromAction(mii *win.MENUITEMINFO, action *Action)
 		mii.HbmpItem = action.image.handle()
 	}
 	if action.IsSeparator() {
-		mii.FType = win.MFT_SEPARATOR
+		mii.FType |= win.MFT_SEPARATOR
 	} else {
-		mii.FType = win.MFT_STRING
+		mii.FType |= win.MFT_STRING
 		var text string
 		if s := action.shortcut; s.Key != 0 {
 			text = fmt.Sprintf("%s\t%s", action.text, s.String())
@@ -109,6 +107,9 @@ func (m *Menu) initMenuItemInfoFromAction(mii *win.MENUITEMINFO, action *Action)
 	if action.Checked() {
 		mii.FState |= win.MFS_CHECKED
 	}
+	if action.Exclusive() {
+		mii.FType |= win.MFT_RADIOCHECK
+	}
 
 	menu := action.menu
 	if menu != nil {
@@ -128,6 +129,30 @@ func (m *Menu) onActionChanged(action *Action) error {
 
 	if !win.SetMenuItemInfo(m.hMenu, uint32(m.actions.indexInObserver(action)), true, &mii) {
 		return newError("SetMenuItemInfo failed")
+	}
+
+	if action.Exclusive() && action.Checked() {
+		var first, last int
+
+		index := m.actions.Index(action)
+
+		for i := index; i >= 0; i-- {
+			first = i
+			if !m.actions.At(i).Exclusive() {
+				break
+			}
+		}
+
+		for i := index; i < m.actions.Len(); i++ {
+			last = i
+			if !m.actions.At(i).Exclusive() {
+				break
+			}
+		}
+
+		if !win.CheckMenuRadioItem(m.hMenu, uint32(first), uint32(last), uint32(index), win.MF_BYPOSITION) {
+			return newError("CheckMenuRadioItem failed")
+		}
 	}
 
 	return nil
