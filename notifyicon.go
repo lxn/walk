@@ -15,12 +15,6 @@ import (
 	"github.com/lxn/win"
 )
 
-const notifyIconWindowClass = `\o/ Walk_NotifyIcon_Class \o/`
-
-func init() {
-	MustRegisterWindowClass(notifyIconWindowClass)
-}
-
 func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (result uintptr) {
 	// Retrieve our *NotifyIcon from the message window.
 	ptr := win.GetWindowLongPtr(hwnd, win.GWLP_USERDATA)
@@ -87,28 +81,10 @@ type NotifyIcon struct {
 // NewNotifyIcon creates and returns a new NotifyIcon.
 //
 // The NotifyIcon is initially not visible.
-func NewNotifyIcon() (*NotifyIcon, error) {
-	// Create the message-only window for the NotifyIcon.
-	hWnd := win.CreateWindowEx(
-		0,
-		syscall.StringToUTF16Ptr(notifyIconWindowClass),
-		nil,
-		0,
-		0,
-		0,
-		0,
-		0,
-		win.HWND_MESSAGE,
-		0,
-		0,
-		nil)
-	if hWnd == 0 {
-		return nil, lastError("CreateWindowEx")
-	}
-
+func NewNotifyIcon(mw *MainWindow) (*NotifyIcon, error) {
 	// Add our notify icon to the status area and make sure it is hidden.
 	nid := win.NOTIFYICONDATA{
-		HWnd:             hWnd,
+		HWnd:             mw.hWnd,
 		UFlags:           win.NIF_MESSAGE | win.NIF_STATE,
 		DwState:          win.NIS_HIDDEN,
 		DwStateMask:      win.NIS_HIDDEN,
@@ -135,12 +111,12 @@ func NewNotifyIcon() (*NotifyIcon, error) {
 
 	ni := &NotifyIcon{
 		id:          nid.UID,
-		hWnd:        hWnd,
+		hWnd:        mw.hWnd,
 		contextMenu: menu,
 	}
 
 	// Set our *NotifyIcon as user data for the message window.
-	win.SetWindowLongPtr(hWnd, win.GWLP_USERDATA, uintptr(unsafe.Pointer(ni)))
+	win.SetWindowLongPtr(mw.hWnd, win.GWLP_USERDATA, uintptr(unsafe.Pointer(ni)))
 
 	return ni, nil
 }
