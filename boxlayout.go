@@ -208,7 +208,9 @@ func (l *BoxLayout) LayoutFlags() LayoutFlags {
 		return 0
 	}
 
-	return boxLayoutFlags(l.orientation, l.container.Children())
+	flags := boxLayoutFlags(l.orientation, l.container.Children())
+
+	return flags
 }
 
 func (l *BoxLayout) MinSize() Size {
@@ -324,6 +326,12 @@ func boxLayoutFlags(orientation Orientation, children *WidgetList) LayoutFlags {
 
 			if _, ok := widget.(*splitterHandle); ok || !shouldLayoutWidget(widget) {
 				continue
+			}
+
+			if s, ok := widget.(*Spacer); ok {
+				if s.greedyLocallyOnly {
+					continue
+				}
 			}
 
 			f := widget.LayoutFlags()

@@ -345,18 +345,20 @@ func (l *GridLayout) LayoutFlags() LayoutFlags {
 		for i := 0; i < count; i++ {
 			widget := children.At(i)
 
-			if shouldLayoutWidget(widget) {
-				wf := widget.LayoutFlags()
-
-				if wf&GreedyHorz != 0 && widget.MaxSize().Width > 0 {
-					wf &^= GreedyHorz
-				}
-				if wf&GreedyVert != 0 && widget.MaxSize().Height > 0 {
-					wf &^= GreedyVert
-				}
-
-				flags |= wf
+			if s, ok := widget.(*Spacer); ok && s.greedyLocallyOnly || !shouldLayoutWidget(widget) {
+				continue
 			}
+
+			wf := widget.LayoutFlags()
+
+			if wf&GreedyHorz != 0 && widget.MaxSize().Width > 0 {
+				wf &^= GreedyHorz
+			}
+			if wf&GreedyVert != 0 && widget.MaxSize().Height > 0 {
+				wf &^= GreedyVert
+			}
+
+			flags |= wf
 		}
 	}
 
