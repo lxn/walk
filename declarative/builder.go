@@ -211,6 +211,9 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	column := b.int("Column")
 	columnSpan := b.int("ColumnSpan")
 
+	rowBackup := row
+	columnBackup := column
+
 	if widget, ok := w.(walk.Widget); ok {
 		if err := widget.SetAlwaysConsumeSpace(b.bool("AlwaysConsumeSpace")); err != nil {
 			return err
@@ -332,10 +335,13 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 
 		if layout != nil {
 			if g, ok := layout.(Grid); ok {
+				rowBackup = b.row
+				columnBackup = b.col
+
 				rows := b.rows
 				columns := b.columns
 				defer func() {
-					b.rows, b.columns, b.row, b.col = rows, columns, row, column+columnSpan
+					b.rows, b.columns, b.row, b.col = rows, columns, rowBackup+rowSpan, columnBackup+columnSpan
 				}()
 
 				b.rows = g.Rows
