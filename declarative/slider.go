@@ -72,8 +72,12 @@ func (sl Slider) Create(builder *Builder) error {
 
 	return builder.InitWidget(sl, w, func() error {
 		w.SetPersistent(sl.Persistent)
-		w.SetLineSize(sl.LineSize)
-		w.SetPageSize(sl.PageSize)
+		if sl.LineSize > 0 {
+			w.SetLineSize(sl.LineSize)
+		}
+		if sl.PageSize > 0 {
+			w.SetPageSize(sl.PageSize)
+		}
 		w.SetTracking(sl.Tracking)
 
 		if sl.MaxValue > sl.MinValue {
