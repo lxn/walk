@@ -208,9 +208,7 @@ func (l *BoxLayout) LayoutFlags() LayoutFlags {
 		return 0
 	}
 
-	flags := boxLayoutFlags(l.orientation, l.container.Children())
-
-	return flags
+	return boxLayoutFlags(l.orientation, l.container.Children())
 }
 
 func (l *BoxLayout) MinSize() Size {
