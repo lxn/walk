@@ -141,6 +141,22 @@ func (sl *Slider) RestoreState() error {
 	return nil
 }
 
+func (sl *Slider) LineSize() int {
+	return int(sl.SendMessage(win.TBM_GETLINESIZE, 0, 0))
+}
+
+func (sl *Slider) SetLineSize(lineSize int) {
+	sl.SendMessage(win.TBM_SETLINESIZE, 0, uintptr(lineSize))
+}
+
+func (sl *Slider) PageSize() int {
+	return int(sl.SendMessage(win.TBM_GETPAGESIZE, 0, 0))
+}
+
+func (sl *Slider) SetPageSize(pageSize int) {
+	sl.SendMessage(win.TBM_SETPAGESIZE, 0, uintptr(pageSize))
+}
+
 func (sl *Slider) Tracking() bool {
 	return sl.tracking
 }

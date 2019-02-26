@@ -46,10 +46,12 @@ type Slider struct {
 	// Slider
 
 	AssignTo       **walk.Slider
+	LineSize       int
 	MaxValue       int
 	MinValue       int
 	Orientation    Orientation
 	OnValueChanged walk.EventHandler
+	PageSize       int
 	ToolTipsHidden bool
 	Tracking       bool
 	Value          Property
@@ -70,6 +72,8 @@ func (sl Slider) Create(builder *Builder) error {
 
 	return builder.InitWidget(sl, w, func() error {
 		w.SetPersistent(sl.Persistent)
+		w.SetLineSize(sl.LineSize)
+		w.SetPageSize(sl.PageSize)
 		w.SetTracking(sl.Tracking)
 
 		if sl.MaxValue > sl.MinValue {
