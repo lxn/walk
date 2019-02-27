@@ -1684,6 +1684,11 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 			tv.toggleItemChecked(tv.currentIndex)
 		}
 
+		tv.handleKeyDown(wp, lp)
+
+	case win.WM_KEYUP:
+		tv.handleKeyUp(wp, lp)
+
 	case win.WM_NOTIFY:
 		nmh := ((*win.NMHDR)(unsafe.Pointer(lp)))
 		switch nmh.HwndFrom {
