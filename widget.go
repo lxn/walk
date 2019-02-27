@@ -40,6 +40,9 @@ const (
 type Widget interface {
 	Window
 
+	// Alignment returns the alignment of the Widget.
+	Alignment() Alignment2D
+
 	// AlwaysConsumeSpace returns if the Widget should consume space even if it
 	// is not visible.
 	AlwaysConsumeSpace() bool
@@ -63,6 +66,9 @@ type Widget interface {
 
 	// Parent returns the Container of the Widget.
 	Parent() Container
+
+	// SetAlignment sets the alignment of the widget.
+	SetAlignment(alignment Alignment2D) error
 
 	// SetAlwaysConsumeSpace sets if the Widget should consume space even if it
 	// is not visible.
@@ -88,6 +94,7 @@ type WidgetBase struct {
 	toolTipTextProperty         Property
 	toolTipTextChangedPublisher EventPublisher
 	graphicsEffects             *WidgetGraphicsEffectList
+	alignment                   Alignment2D
 	alwaysConsumeSpace          bool
 }
 
@@ -206,6 +213,26 @@ func (wb *WidgetBase) applyFont(font *Font) {
 // Form returns the root ancestor Form of the Widget.
 func (wb *WidgetBase) Form() Form {
 	return ancestor(wb)
+}
+
+// Alignment return the alignment ot the *WidgetBase.
+func (wb *WidgetBase) Alignment() Alignment2D {
+	return wb.alignment
+}
+
+// SetAlignment sets the alignment of the *WidgetBase.
+func (wb *WidgetBase) SetAlignment(alignment Alignment2D) error {
+	if alignment != wb.alignment {
+		if alignment < AlignHVDefault || alignment > AlignHFarVFar {
+			return newError("invalid Alignment value")
+		}
+
+		wb.alignment = alignment
+
+		wb.updateParentLayout()
+	}
+
+	return nil
 }
 
 // LayoutFlags returns a combination of LayoutFlags that specify how the

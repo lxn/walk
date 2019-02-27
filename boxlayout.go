@@ -534,9 +534,14 @@ func boxLayoutItems(widgets []Widget, orientation Orientation, alignment Alignme
 			s2 = prefSizes2[i]
 		}
 
+		align := widget.Alignment()
+		if align == AlignHVDefault {
+			align = alignment
+		}
+
 		var x, y, w, h, p2 int
 		if orientation == Horizontal {
-			switch alignment {
+			switch align {
 			case AlignHNearVNear, AlignHNearVCenter, AlignHNearVFar:
 				// nop
 
@@ -547,7 +552,7 @@ func boxLayoutItems(widgets []Widget, orientation Orientation, alignment Alignme
 				p1 += halfExcessShare
 			}
 
-			switch alignment {
+			switch align {
 			case AlignHNearVNear, AlignHCenterVNear, AlignHFarVNear:
 				p2 = start2
 
@@ -560,7 +565,7 @@ func boxLayoutItems(widgets []Widget, orientation Orientation, alignment Alignme
 
 			x, y, w, h = p1, p2, s1, s2
 		} else {
-			switch alignment {
+			switch align {
 			case AlignHNearVNear, AlignHCenterVNear, AlignHFarVNear:
 				// nop
 
@@ -571,7 +576,7 @@ func boxLayoutItems(widgets []Widget, orientation Orientation, alignment Alignme
 				p1 += halfExcessShare
 			}
 
-			switch alignment {
+			switch align {
 			case AlignHNearVNear, AlignHNearVCenter, AlignHNearVFar:
 				p2 = start2
 
@@ -586,7 +591,7 @@ func boxLayoutItems(widgets []Widget, orientation Orientation, alignment Alignme
 		}
 
 		if orientation == Horizontal {
-			switch alignment {
+			switch align {
 			case AlignHNearVNear, AlignHNearVCenter, AlignHNearVFar:
 				p1 += excessShare
 
@@ -598,7 +603,7 @@ func boxLayoutItems(widgets []Widget, orientation Orientation, alignment Alignme
 			}
 
 		} else {
-			switch alignment {
+			switch align {
 			case AlignHNearVNear, AlignHCenterVNear, AlignHFarVNear:
 				p1 += excessShare
 

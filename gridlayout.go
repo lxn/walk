@@ -638,8 +638,13 @@ func (l *GridLayout) Update(reset bool) error {
 			}
 		}
 
+		alignment := widget.Alignment()
+		if alignment == AlignHVDefault {
+			alignment = l.alignment
+		}
+
 		if w != width {
-			switch l.alignment {
+			switch alignment {
 			case AlignHCenterVNear, AlignHCenterVCenter, AlignHCenterVFar:
 				x += (width - w) / 2
 
@@ -649,7 +654,7 @@ func (l *GridLayout) Update(reset bool) error {
 		}
 
 		if h != height {
-			switch l.alignment {
+			switch alignment {
 			case AlignHNearVCenter, AlignHCenterVCenter, AlignHFarVCenter:
 				y += (height - h) / 2
 

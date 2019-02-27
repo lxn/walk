@@ -215,6 +215,10 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	columnBackup := column
 
 	if widget, ok := w.(walk.Widget); ok {
+		if err := widget.SetAlignment(walk.Alignment2D(b.alignment())); err != nil {
+			return err
+		}
+
 		if err := widget.SetAlwaysConsumeSpace(b.bool("AlwaysConsumeSpace")); err != nil {
 			return err
 		}
@@ -421,6 +425,16 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	succeeded = true
 
 	return nil
+}
+
+func (b *Builder) alignment() Alignment2D {
+	fieldValue := b.widgetValue.FieldByName("Alignment")
+
+	if fieldValue.IsValid() {
+		return fieldValue.Interface().(Alignment2D)
+	}
+
+	return AlignHVDefault
 }
 
 func (b *Builder) bool(fieldName string) bool {

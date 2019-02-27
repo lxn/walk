@@ -36,6 +36,7 @@ type TableView struct {
 
 	// Widget
 
+	Alignment          Alignment2D
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
