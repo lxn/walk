@@ -16,6 +16,7 @@ type FlowLayout struct {
 	margins            Margins
 	size2MinSize       map[Size]Size
 	spacing            int
+	alignment          Alignment2D
 	resetNeeded        bool
 }
 
@@ -79,6 +80,24 @@ func (l *FlowLayout) SetSpacing(value int) error {
 		}
 
 		l.spacing = value
+
+		l.Update(false)
+	}
+
+	return nil
+}
+
+func (l *FlowLayout) Alignment() Alignment2D {
+	return l.alignment
+}
+
+func (l *FlowLayout) SetAlignment(alignment Alignment2D) error {
+	if alignment != l.alignment {
+		if alignment < AlignHVDefault || alignment > AlignHFarVFar {
+			return newError("invalid Alignment value")
+		}
+
+		l.alignment = alignment
 
 		l.Update(false)
 	}
@@ -176,7 +195,7 @@ func (l *FlowLayout) MinSizeForSize(size Size) Size {
 			margins.VFar = 0
 		}
 
-		layoutItems, err := boxLayoutItems(widgets, Horizontal, bounds, margins, l.spacing, l.hwnd2StretchFactor)
+		layoutItems, err := boxLayoutItems(widgets, Horizontal, l.alignment, bounds, margins, l.spacing, l.hwnd2StretchFactor)
 		if err != nil {
 			return Size{}
 		}
@@ -258,7 +277,7 @@ func (l *FlowLayout) Update(reset bool) error {
 			margins.VFar = 0
 		}
 
-		layoutItems, err := boxLayoutItems(widgets, Horizontal, bounds, margins, l.spacing, l.hwnd2StretchFactor)
+		layoutItems, err := boxLayoutItems(widgets, Horizontal, l.alignment, bounds, margins, l.spacing, l.hwnd2StretchFactor)
 		if err != nil {
 			return err
 		}
@@ -277,7 +296,7 @@ func (l *FlowLayout) Update(reset bool) error {
 
 		bounds.Height = maxSecondary + margins.VNear + margins.VFar
 
-		if layoutItems, err = boxLayoutItems(widgets, Horizontal, bounds, margins, l.spacing, l.hwnd2StretchFactor); err != nil {
+		if layoutItems, err = boxLayoutItems(widgets, Horizontal, l.alignment, bounds, margins, l.spacing, l.hwnd2StretchFactor); err != nil {
 			return err
 		}
 

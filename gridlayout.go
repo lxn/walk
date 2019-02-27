@@ -33,6 +33,7 @@ type GridLayout struct {
 	container            Container
 	margins              Margins
 	spacing              int
+	alignment            Alignment2D
 	resetNeeded          bool
 	rowStretchFactors    []int
 	columnStretchFactors []int
@@ -95,6 +96,24 @@ func (l *GridLayout) SetSpacing(value int) error {
 		}
 
 		l.spacing = value
+
+		l.Update(false)
+	}
+
+	return nil
+}
+
+func (l *GridLayout) Alignment() Alignment2D {
+	return l.alignment
+}
+
+func (l *GridLayout) SetAlignment(alignment Alignment2D) error {
+	if alignment != l.alignment {
+		if alignment < AlignHVDefault || alignment > AlignHFarVFar {
+			return newError("invalid Alignment value")
+		}
+
+		l.alignment = alignment
 
 		l.Update(false)
 	}
@@ -595,8 +614,11 @@ func (l *GridLayout) Update(reset bool) error {
 			}
 		}
 
-		w := l.spannedWidth(info, widths)
-		h := l.spannedHeight(info, heights)
+		width := l.spannedWidth(info, widths)
+		height := l.spannedHeight(info, heights)
+
+		w := width
+		h := height
 
 		if lf := widget.LayoutFlags(); lf&GrowableHorz == 0 || lf&GrowableVert == 0 {
 			s := widget.SizeHint()
@@ -613,6 +635,26 @@ func (l *GridLayout) Update(reset bool) error {
 			}
 			if lf&GrowableVert == 0 {
 				h = s.Height
+			}
+		}
+
+		if w != width {
+			switch l.alignment {
+			case AlignHCenterVNear, AlignHCenterVCenter, AlignHCenterVFar:
+				x += (width - w) / 2
+
+			case AlignHFarVNear, AlignHFarVCenter, AlignHFarVFar:
+				x += width - w
+			}
+		}
+
+		if h != height {
+			switch l.alignment {
+			case AlignHNearVCenter, AlignHCenterVCenter, AlignHFarVCenter:
+				y += (height - h) / 2
+
+			case AlignHNearVFar, AlignHCenterVFar, AlignHFarVFar:
+				y += height - h
 			}
 		}
 

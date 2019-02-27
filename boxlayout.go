@@ -24,6 +24,7 @@ type BoxLayout struct {
 	margins            Margins
 	spacing            int
 	orientation        Orientation
+	alignment          Alignment2D
 	hwnd2StretchFactor map[win.HWND]int
 	size2MinSize       map[Size]Size
 	resetNeeded        bool
@@ -97,6 +98,24 @@ func (l *BoxLayout) SetOrientation(value Orientation) error {
 		}
 
 		l.orientation = value
+
+		l.Update(false)
+	}
+
+	return nil
+}
+
+func (l *BoxLayout) Alignment() Alignment2D {
+	return l.alignment
+}
+
+func (l *BoxLayout) SetAlignment(alignment Alignment2D) error {
+	if alignment != l.alignment {
+		if alignment < AlignHVDefault || alignment > AlignHFarVFar {
+			return newError("invalid Alignment value")
+		}
+
+		l.alignment = alignment
 
 		l.Update(false)
 	}
@@ -230,7 +249,7 @@ func (l *BoxLayout) MinSizeForSize(size Size) Size {
 
 	bounds := Rectangle{Width: size.Width, Height: size.Height}
 
-	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, bounds, l.margins, l.spacing, l.hwnd2StretchFactor)
+	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, bounds, l.margins, l.spacing, l.hwnd2StretchFactor)
 	if err != nil {
 		return Size{}
 	}
@@ -302,7 +321,7 @@ func (l *BoxLayout) Update(reset bool) error {
 
 	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
 
-	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.container.ClientBounds(), l.margins, l.spacing, l.hwnd2StretchFactor)
+	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, l.container.ClientBounds(), l.margins, l.spacing, l.hwnd2StretchFactor)
 	if err != nil {
 		return err
 	}
@@ -360,7 +379,11 @@ func boxLayoutFlags(orientation Orientation, children *WidgetList) LayoutFlags {
 	return flags
 }
 
-func boxLayoutItems(widgets []Widget, orientation Orientation, bounds Rectangle, margins Margins, spacing int, hwnd2StretchFactor map[win.HWND]int) ([]layoutResultItem, error) {
+func boxLayoutItems(widgets []Widget, orientation Orientation, alignment Alignment2D, bounds Rectangle, margins Margins, spacing int, hwnd2StretchFactor map[win.HWND]int) ([]layoutResultItem, error) {
+	if len(widgets) == 0 {
+		return nil, nil
+	}
+
 	var greedyNonSpacerCount int
 	var greedySpacerCount int
 	var stretchFactorsTotal [3]int
@@ -498,10 +521,10 @@ func boxLayoutItems(widgets []Widget, orientation Orientation, bounds Rectangle,
 	results := make([]layoutResultItem, 0, len(widgets))
 
 	excessTotal := space1 - minSizesRemaining - spacingRemaining
-	excessShare := excessTotal / (len(widgets) + 1)
+	excessShare := excessTotal / len(widgets)
+	halfExcessShare := excessTotal / (len(widgets) * 2)
 	p1 := start1
 	for i, widget := range widgets {
-		p1 += excessShare
 		s1 := sizes[i]
 
 		var s2 int
@@ -511,13 +534,80 @@ func boxLayoutItems(widgets []Widget, orientation Orientation, bounds Rectangle,
 			s2 = prefSizes2[i]
 		}
 
-		p2 := start2 + (space2-s2)/2
-
-		var x, y, w, h int
+		var x, y, w, h, p2 int
 		if orientation == Horizontal {
+			switch alignment {
+			case AlignHNearVNear, AlignHNearVCenter, AlignHNearVFar:
+				// nop
+
+			case AlignHFarVNear, AlignHFarVCenter, AlignHFarVFar:
+				p1 += excessShare
+
+			default:
+				p1 += halfExcessShare
+			}
+
+			switch alignment {
+			case AlignHNearVNear, AlignHCenterVNear, AlignHFarVNear:
+				p2 = start2
+
+			case AlignHNearVFar, AlignHCenterVFar, AlignHFarVFar:
+				p2 = start2 + space2 - s2
+
+			default:
+				p2 = start2 + (space2-s2)/2
+			}
+
 			x, y, w, h = p1, p2, s1, s2
 		} else {
+			switch alignment {
+			case AlignHNearVNear, AlignHCenterVNear, AlignHFarVNear:
+				// nop
+
+			case AlignHNearVFar, AlignHCenterVFar, AlignHFarVFar:
+				p1 += excessShare
+
+			default:
+				p1 += halfExcessShare
+			}
+
+			switch alignment {
+			case AlignHNearVNear, AlignHNearVCenter, AlignHNearVFar:
+				p2 = start2
+
+			case AlignHFarVNear, AlignHFarVCenter, AlignHFarVFar:
+				p2 = start2 + space2 - s2
+
+			default:
+				p2 = start2 + (space2-s2)/2
+			}
+
 			x, y, w, h = p2, p1, s2, s1
+		}
+
+		if orientation == Horizontal {
+			switch alignment {
+			case AlignHNearVNear, AlignHNearVCenter, AlignHNearVFar:
+				p1 += excessShare
+
+			case AlignHFarVNear, AlignHFarVCenter, AlignHFarVFar:
+				// nop
+
+			default:
+				p1 += halfExcessShare
+			}
+
+		} else {
+			switch alignment {
+			case AlignHNearVNear, AlignHCenterVNear, AlignHFarVNear:
+				p1 += excessShare
+
+			case AlignHNearVFar, AlignHCenterVFar, AlignHFarVFar:
+				// nop
+
+			default:
+				p1 += halfExcessShare
+			}
 		}
 
 		p1 += s1 + spacing

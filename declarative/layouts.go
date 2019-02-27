@@ -61,6 +61,7 @@ func setLayoutSpacing(layout walk.Layout, spacing int, spacingZero bool) error {
 
 type HBox struct {
 	Margins     Margins
+	Alignment   Alignment2D
 	Spacing     int
 	MarginsZero bool
 	SpacingZero bool
@@ -77,11 +78,16 @@ func (hb HBox) Create() (walk.Layout, error) {
 		return nil, err
 	}
 
+	if err := l.SetAlignment(walk.Alignment2D(hb.Alignment)); err != nil {
+		return nil, err
+	}
+
 	return l, nil
 }
 
 type VBox struct {
 	Margins     Margins
+	Alignment   Alignment2D
 	Spacing     int
 	MarginsZero bool
 	SpacingZero bool
@@ -98,6 +104,10 @@ func (vb VBox) Create() (walk.Layout, error) {
 		return nil, err
 	}
 
+	if err := l.SetAlignment(walk.Alignment2D(vb.Alignment)); err != nil {
+		return nil, err
+	}
+
 	return l, nil
 }
 
@@ -105,6 +115,7 @@ type Grid struct {
 	Rows        int
 	Columns     int
 	Margins     Margins
+	Alignment   Alignment2D
 	Spacing     int
 	MarginsZero bool
 	SpacingZero bool
@@ -125,11 +136,16 @@ func (g Grid) Create() (walk.Layout, error) {
 		return nil, err
 	}
 
+	if err := l.SetAlignment(walk.Alignment2D(g.Alignment)); err != nil {
+		return nil, err
+	}
+
 	return l, nil
 }
 
 type Flow struct {
 	Margins     Margins
+	Alignment   Alignment2D
 	Spacing     int
 	MarginsZero bool
 	SpacingZero bool
@@ -143,6 +159,10 @@ func (f Flow) Create() (walk.Layout, error) {
 	}
 
 	if err := setLayoutSpacing(l, f.Spacing, f.SpacingZero); err != nil {
+		return nil, err
+	}
+
+	if err := l.SetAlignment(walk.Alignment2D(f.Alignment)); err != nil {
 		return nil, err
 	}
 
