@@ -144,7 +144,7 @@ func (le *LineEdit) SetTextSelection(start, end int) {
 	le.SendMessage(win.EM_SETSEL, uintptr(start), uintptr(end))
 }
 
-func (le *LineEdit) Alignment() Alignment1D {
+func (le *LineEdit) TextAlignment() Alignment1D {
 	switch win.GetWindowLong(le.hWnd, win.GWL_STYLE) & (win.ES_LEFT | win.ES_CENTER | win.ES_RIGHT) {
 	case win.ES_CENTER:
 		return AlignCenter
@@ -156,7 +156,7 @@ func (le *LineEdit) Alignment() Alignment1D {
 	return AlignNear
 }
 
-func (le *LineEdit) SetAlignment(alignment Alignment1D) error {
+func (le *LineEdit) SetTextAlignment(alignment Alignment1D) error {
 	if alignment == AlignDefault {
 		alignment = AlignNear
 	}
