@@ -528,21 +528,6 @@ func InitWrapperWindow(window Window) error {
 		}
 	}
 
-	// if widget, ok := window.(Widget); ok {
-	// 	widgetBase := widget.AsWidgetBase()
-
-	// 	if widgetBase.parent != nil {
-	// 		children := widgetBase.parent.Children().items
-
-	// 		for i, wb := range children {
-	// 			if wb == widgetBase {
-	// 				children[i] = widget.AsWidgetBase()
-	// 				break
-	// 			}
-	// 		}
-	// 	}
-	// }
-
 	return nil
 }
 

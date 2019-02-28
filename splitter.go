@@ -567,8 +567,6 @@ func (s *Splitter) onRemovedWidget(index int, widget Widget) (err error) {
 			handle := s.children.items[handleIndex].window.(*splitterHandle)
 
 			if err = handle.SetParent(nil); err == nil {
-				// s.children.items = append(s.children.items[:index], s.children.items[index+1:]...)
-
 				sl := s.layout.(*splitterLayout)
 
 				for _, item := range sl.hwnd2Item {
