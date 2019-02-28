@@ -64,6 +64,8 @@ func (s *static) init(widget Widget, parent Container) error {
 
 	s.SetBackground(nullBrushSingleton)
 
+	s.SetAlignment(AlignHNearVCenter)
+
 	return nil
 }
 
@@ -78,10 +80,10 @@ func (s *static) Dispose() {
 
 func (s *static) LayoutFlags() LayoutFlags {
 	if s.textAlignment1D() == AlignNear {
-		return GrowableVert
+		return 0
 	}
 
-	return GrowableHorz | GrowableVert
+	return GrowableHorz
 }
 
 func (s *static) MinSizeHint() Size {

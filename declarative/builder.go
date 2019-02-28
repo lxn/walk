@@ -215,8 +215,10 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	columnBackup := column
 
 	if widget, ok := w.(walk.Widget); ok {
-		if err := widget.SetAlignment(walk.Alignment2D(b.alignment())); err != nil {
-			return err
+		if alignment := b.alignment(); alignment != AlignHVDefault {
+			if err := widget.SetAlignment(walk.Alignment2D(alignment)); err != nil {
+				return err
+			}
 		}
 
 		if err := widget.SetAlwaysConsumeSpace(b.bool("AlwaysConsumeSpace")); err != nil {
