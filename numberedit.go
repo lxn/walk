@@ -726,7 +726,7 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			return 0
 
 		case KeyDown:
-			if nle.ReadOnly() {
+			if nle.ReadOnly() || nle.increment <= 0 {
 				return 0
 			}
 
@@ -791,7 +791,7 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			}
 
 		case KeyUp:
-			if nle.ReadOnly() {
+			if nle.ReadOnly() || nle.increment <= 0 {
 				return 0
 			}
 
@@ -849,7 +849,7 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 		}
 
 	case win.WM_MOUSEWHEEL:
-		if nle.ReadOnly() {
+		if nle.ReadOnly() || nle.increment <= 0 {
 			break
 		}
 

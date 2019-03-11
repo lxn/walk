@@ -77,7 +77,7 @@ func (ne NumberEdit) Create(builder *Builder) error {
 		}
 
 		inc := ne.Increment
-		if inc <= 0 {
+		if inc == 0 {
 			inc = 1
 		}
 
