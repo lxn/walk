@@ -133,6 +133,10 @@ func (te *TextEdit) SetMaxLength(value int) {
 	te.SendMessage(win.EM_SETLIMITTEXT, uintptr(value), 0)
 }
 
+func (te *TextEdit) ScrollToCaret() {
+	te.SendMessage(win.EM_SCROLLCARET, 0, 0)
+}
+
 func (te *TextEdit) TextSelection() (start, end int) {
 	te.SendMessage(win.EM_GETSEL, uintptr(unsafe.Pointer(&start)), uintptr(unsafe.Pointer(&end)))
 	return
