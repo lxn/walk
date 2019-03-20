@@ -202,7 +202,7 @@ func (fb *FormBase) SetLayout(value Layout) error {
 
 func (fb *FormBase) SetBounds(bounds Rectangle) error {
 	if layout := fb.Layout(); layout != nil {
-		minSize := fb.sizeFromClientSize(layout.MinSize())
+		minSize := fb.sizeFromClientSize(layout.MinSizeForSize(fb.clientComposite.Size()))
 
 		if bounds.Width < minSize.Width {
 			bounds.Width = minSize.Width
@@ -675,6 +675,10 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		if layout := fb.clientComposite.layout; layout != nil {
 			size := fb.clientSizeFromSize(fb.proposedSize)
 			min = fb.sizeFromClientSize(layout.MinSizeForSize(size))
+
+			if fb.proposedSize.Width < min.Width {
+				min = fb.sizeFromClientSize(layout.MinSizeForSize(min))
+			}
 		}
 
 		mmi.PtMinTrackSize = win.POINT{

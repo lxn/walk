@@ -291,6 +291,14 @@ func (cb *ContainerBase) MinSizeHint() Size {
 	return cb.layout.MinSize()
 }
 
+func (cb *ContainerBase) HeightForWidth(width int) int {
+	if cb.layout == nil {
+		return 0
+	}
+
+	return cb.layout.MinSizeForSize(Size{Width: width}).Height
+}
+
 func (cb *ContainerBase) applyEnabled(enabled bool) {
 	cb.WidgetBase.applyEnabled(enabled)
 

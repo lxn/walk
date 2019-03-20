@@ -131,7 +131,27 @@ func (tw *TabWidget) MinSizeHint() Size {
 	size := Size{b.Width - pb.Width + min.Width, b.Height - pb.Height + min.Height}
 
 	return size
+}
 
+func (tw *TabWidget) HeightForWidth(width int) int {
+	if tw.pages.Len() == 0 {
+		return 0
+	}
+
+	var height int
+	margin := tw.Size()
+	pageSize := tw.pages.At(0).Size()
+
+	margin.Width -= pageSize.Width
+	margin.Height -= pageSize.Height
+
+	for i := tw.pages.Len() - 1; i >= 0; i-- {
+		h := tw.pages.At(i).HeightForWidth(width + margin.Width)
+
+		height = maxi(height, h)
+	}
+
+	return height + margin.Height
 }
 
 func (tw *TabWidget) SizeHint() Size {
