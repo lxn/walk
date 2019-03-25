@@ -245,19 +245,23 @@ func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			sv.composite.WndProc(hwnd, msg, wParam, lParam)
 
 		case win.WM_SIZE, win.WM_SIZING:
-			var minSize Size
-			if fl, ok := sv.composite.layout.(*FlowLayout); ok {
-				minSize = fl.MinSizeForSize(sv.ClientBounds().Size())
-			} else {
-				minSize = sv.composite.layout.MinSize()
-			}
-			s := maxSize(minSize, sv.ClientBounds().Size())
-			sv.composite.SetSize(s)
-			sv.updateScrollBars()
+			sv.updateCompositeSize()
 		}
 	}
 
 	return sv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (sv *ScrollView) updateCompositeSize() {
+	var minSize Size
+	if fl, ok := sv.composite.layout.(*FlowLayout); ok {
+		minSize = fl.MinSizeForSize(sv.ClientBounds().Size())
+	} else {
+		minSize = sv.composite.layout.MinSize()
+	}
+	s := maxSize(minSize, sv.ClientBounds().Size())
+	sv.composite.SetSize(s)
+	sv.updateScrollBars()
 }
 
 func (sv *ScrollView) updateScrollBars() {
