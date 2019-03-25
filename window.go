@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"log"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -1663,7 +1662,6 @@ func (wb *WindowBase) backgroundEffective() (Brush, Window) {
 
 					widget, _ = parent.(Widget)
 				} else {
-					log.Printf("*WindowBase.backgroundEffective - breaing out of infinite loop - bg: %T, wnd: %T %s %d", bg, wnd, wnd.Name(), wnd.Handle())
 					break
 				}
 			} else {
