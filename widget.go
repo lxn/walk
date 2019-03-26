@@ -291,6 +291,8 @@ func (wb *WidgetBase) SetParent(parent Container) (err error) {
 	}
 
 	if parent == nil {
+		wb.SetVisible(false)
+
 		style &^= win.WS_CHILD
 		style |= win.WS_POPUP
 
