@@ -217,7 +217,7 @@ func anyVisibleWidgetInHierarchy(root *WidgetBase) bool {
 		return false
 	}
 
-	if container, ok := root.window.(Container); ok {
+	if container, ok := root.window.(Container); ok && container.Children() != nil {
 		for _, child := range container.Children().items {
 			if anyVisibleWidgetInHierarchy(child) {
 				return true

@@ -160,6 +160,10 @@ func (sv *ScrollView) Children() *WidgetList {
 }
 
 func (sv *ScrollView) Layout() Layout {
+	if sv.composite == nil {
+		return nil
+	}
+
 	return sv.composite.Layout()
 }
 

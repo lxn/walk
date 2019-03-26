@@ -13,9 +13,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -269,7 +267,9 @@ func walkDescendants(window Window, f func(w Window) bool) {
 
 	switch w := window.(type) {
 	case *NumberEdit:
-		children = append(children, w.edit.AsWidgetBase())
+		if w.edit != nil {
+			children = append(children, w.edit.AsWidgetBase())
+		}
 
 	case *TabWidget:
 		for _, p := range w.Pages().items {

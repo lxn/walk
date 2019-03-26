@@ -462,50 +462,68 @@ func (wb *WidgetBase) updateParentLayout() error {
 func (wb *WidgetBase) updateParentLayoutWithReset(reset bool) error {
 	parent := wb.window.(Widget).Parent()
 
-	if parent == nil || parent.Layout() == nil || parent.Suspended() || !parent.Visible() {
+	if parent == nil || parent.Layout() == nil {
 		return nil
 	}
 
 	layout := parent.Layout()
 
-	if !formResizeScheduled || len(inProgressEventsByForm[appSingleton.activeForm]) == 0 {
-		clientSize := parent.ClientBounds().Size()
-		minSize := layout.MinSize()
+	var size2MinSize map[Size]Size
+	switch l := layout.(type) {
+	case *BoxLayout:
+		size2MinSize = l.size2MinSize
 
-		if clientSize.Width < minSize.Width || clientSize.Height < minSize.Height {
-			switch wnd := parent.(type) {
-			case *ScrollView:
-				ifContainerIsScrollViewDoCoolSpecialLayoutStuff(layout)
-				return nil
+	case *GridLayout:
+		size2MinSize = l.size2MinSize
 
-			case Widget:
-				return wnd.AsWidgetBase().updateParentLayoutWithReset(reset)
+	case *FlowLayout:
+		size2MinSize = l.size2MinSize
+	}
+	if size2MinSize != nil {
+		for k := range size2MinSize {
+			delete(size2MinSize, k)
+		}
+	}
 
-			case Form:
-				if len(inProgressEventsByForm[appSingleton.activeForm]) > 0 {
-					formResizeScheduled = true
-				} else {
-					bounds := wnd.Bounds()
+	updateLayoutAndMaybeInvalidateBorder := func() {
+		layout.Update(reset)
 
-					if wnd.AsFormBase().fixedSize() {
-						bounds.Width, bounds.Height = 0, 0
-					}
-
-					wnd.SetBounds(bounds)
-
-					return nil
-				}
+		if FocusEffect != nil {
+			if focusedWnd := windowFromHandle(win.GetFocus()); focusedWnd != nil && win.GetParent(focusedWnd.Handle()) == parent.Handle() {
+				focusedWnd.(Widget).AsWidgetBase().invalidateBorderInParent()
 			}
 		}
 	}
 
-	layout.Update(reset)
+	if !formResizeScheduled || len(inProgressEventsByForm[appSingleton.activeForm]) == 0 {
+		switch wnd := parent.(type) {
+		case *ScrollView:
+			ifContainerIsScrollViewDoCoolSpecialLayoutStuff(layout)
+			wnd.updateCompositeSize()
+			updateLayoutAndMaybeInvalidateBorder()
+			return nil
 
-	if FocusEffect != nil {
-		if focusedWnd := windowFromHandle(win.GetFocus()); focusedWnd != nil && win.GetParent(focusedWnd.Handle()) == parent.Handle() {
-			focusedWnd.(Widget).AsWidgetBase().invalidateBorderInParent()
+		case Widget:
+			return wnd.AsWidgetBase().updateParentLayoutWithReset(reset)
+
+		case Form:
+			if len(inProgressEventsByForm[appSingleton.activeForm]) > 0 {
+				formResizeScheduled = true
+			} else {
+				bounds := wnd.Bounds()
+
+				if wnd.AsFormBase().fixedSize() {
+					bounds.Width, bounds.Height = 0, 0
+				}
+
+				wnd.SetBounds(bounds)
+
+				return nil
+			}
 		}
 	}
+
+	updateLayoutAndMaybeInvalidateBorder()
 
 	return nil
 }
