@@ -230,6 +230,8 @@ func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error
 	win.SendMessage(tv.hwndFrozenLV, win.WM_CHANGEUISTATE, uintptr(win.MAKELONG(win.UIS_SET, win.UISF_HIDEFOCUS)), 0)
 	win.SendMessage(tv.hwndNormalLV, win.WM_CHANGEUISTATE, uintptr(win.MAKELONG(win.UIS_SET, win.UISF_HIDEFOCUS)), 0)
 
+	tv.applyFont(parent.Font())
+
 	tv.currentIndex = -1
 
 	tv.GraphicsEffects().Add(InteractionEffect)
