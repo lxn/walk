@@ -16,87 +16,136 @@ import (
 	"github.com/lxn/win"
 )
 
+var defaultIconSize Size
+
+func init() {
+	defaultIconSize = Size{int(win.GetSystemMetrics(win.SM_CXICON)), int(win.GetSystemMetrics(win.SM_CYICON))}
+}
+
 // Icon is a bitmap that supports transparency and combining multiple
 // variants of an image in different resolutions.
 type Icon struct {
 	hIcon   win.HICON
+	size    Size
 	isStock bool
 }
 
 func IconApplication() *Icon {
-	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_APPLICATION)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_APPLICATION)), defaultIconSize, true}
 }
 
 func IconError() *Icon {
-	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_ERROR)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_ERROR)), defaultIconSize, true}
 }
 
 func IconQuestion() *Icon {
-	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_QUESTION)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_QUESTION)), defaultIconSize, true}
 }
 
 func IconWarning() *Icon {
-	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_WARNING)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_WARNING)), defaultIconSize, true}
 }
 
 func IconInformation() *Icon {
-	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_INFORMATION)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_INFORMATION)), defaultIconSize, true}
 }
 
 func IconWinLogo() *Icon {
-	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_WINLOGO)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_WINLOGO)), defaultIconSize, true}
 }
 
 func IconShield() *Icon {
-	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_SHIELD)), true}
+	return &Icon{win.LoadIcon(0, win.MAKEINTRESOURCE(win.IDI_SHIELD)), defaultIconSize, true}
 }
 
-// NewIconFromFile returns a new Icon, using the specified icon image file.
+// NewIconFromFile returns a new Icon, using the specified icon image file and default size.
 func NewIconFromFile(filePath string) (*Icon, error) {
+	return NewIconFromFileWithSize(filePath, Size{})
+}
+
+// NewIconFromFileWithSize returns a new Icon, using the specified icon image file and size.
+func NewIconFromFileWithSize(filePath string, size Size) (*Icon, error) {
 	absFilePath, err := filepath.Abs(filePath)
 	if err != nil {
 		return nil, wrapError(err)
+	}
+
+	flags := win.LR_LOADFROMFILE
+	if size.Width == 0 || size.Height == 0 {
+		flags |= win.LR_DEFAULTSIZE
 	}
 
 	hIcon := win.HICON(win.LoadImage(
 		0,
 		syscall.StringToUTF16Ptr(absFilePath),
 		win.IMAGE_ICON,
-		0,
-		0,
-		win.LR_DEFAULTSIZE|win.LR_LOADFROMFILE))
+		int32(size.Width),
+		int32(size.Height),
+		uint32(flags)))
 	if hIcon == 0 {
 		return nil, lastError("LoadImage")
 	}
 
-	return &Icon{hIcon: hIcon}, nil
+	if size.Width == 0 || size.Height == 0 {
+		size = defaultIconSize
+	}
+
+	return &Icon{hIcon: hIcon, size: size}, nil
 }
 
-// NewIconFromResource returns a new Icon, using the specified icon resource.
+// NewIconFromResource returns a new Icon of default size, using the specified icon resource.
 func NewIconFromResource(name string) (*Icon, error) {
-	return newIconFromResource(syscall.StringToUTF16Ptr(name))
+	return NewIconFromResourceWithSize(name, Size{})
 }
 
+// NewIconFromResourceWithSize returns a new Icon of size size, using the specified icon resource.
+func NewIconFromResourceWithSize(name string, size Size) (*Icon, error) {
+	return newIconFromResource(syscall.StringToUTF16Ptr(name), size)
+}
+
+// NewIconFromResourceId returns a new Icon of default size, using the specified icon resource.
 func NewIconFromResourceId(id int) (*Icon, error) {
-	return newIconFromResource(win.MAKEINTRESOURCE(uintptr(id)))
+	return NewIconFromResourceIdWithSize(id, Size{})
 }
 
-func newIconFromResource(res *uint16) (ic *Icon, err error) {
+// NewIconFromResourceIdWithSize returns a new Icon of size size, using the specified icon resource.
+func NewIconFromResourceIdWithSize(id int, size Size) (*Icon, error) {
+	return newIconFromResource(win.MAKEINTRESOURCE(uintptr(id)), size)
+}
+
+func newIconFromResource(res *uint16, size Size) (ic *Icon, err error) {
 	hInst := win.GetModuleHandle(nil)
 	if hInst == 0 {
 		err = lastError("GetModuleHandle")
 		return
 	}
 
-	if hIcon := win.LoadIcon(hInst, res); hIcon == 0 {
-		err = lastError("LoadIcon")
-	} else {
-		ic = &Icon{hIcon: hIcon}
+	var flags uint32
+	if size.Width == 0 || size.Height == 0 {
+		flags |= win.LR_DEFAULTSIZE
 	}
+
+	hIcon := win.HICON(win.LoadImage(
+		hInst,
+		res,
+		win.IMAGE_ICON,
+		int32(size.Width),
+		int32(size.Height),
+		flags))
+	if hIcon == 0 {
+		return nil, lastError("LoadImage")
+	}
+
+	if size.Width == 0 || size.Height == 0 {
+		size = defaultIconSize
+	}
+
+	ic = &Icon{hIcon: hIcon, size: size}
 
 	return
 }
 
+// NewIconFromImage returns a new Icon, using the specified image.Image as source.
 func NewIconFromImage(im image.Image) (ic *Icon, err error) {
 	hIcon, err := createAlphaCursorOrIconFromImage(im, image.Pt(0, 0), true)
 	if err != nil {
@@ -105,6 +154,7 @@ func NewIconFromImage(im image.Image) (ic *Icon, err error) {
 	return &Icon{hIcon: hIcon}, nil
 }
 
+// NewIconFromHICON returns a new Icon, using the specified win.HICON as source.
 func NewIconFromHICON(hIcon win.HICON) (ic *Icon, err error) {
 	return &Icon{hIcon: hIcon}, nil
 }
@@ -133,8 +183,9 @@ func (i *Icon) drawStretched(hdc win.HDC, bounds Rectangle) error {
 	return nil
 }
 
+// Size returns the size of the Icon.
 func (i *Icon) Size() Size {
-	return Size{int(win.GetSystemMetrics(win.SM_CXICON)), int(win.GetSystemMetrics(win.SM_CYICON))}
+	return i.size
 }
 
 // create an Alpha Icon or Cursor from an Image
