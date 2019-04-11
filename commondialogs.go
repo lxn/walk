@@ -73,6 +73,8 @@ func (dlg *FileDialog) show(owner Form, fun func(ofn *win.OPENFILENAME) bool, fl
 		return
 	}
 
+	dlg.FilterIndex = int(ofn.NFilterIndex)
+
 	if flags&win.OFN_ALLOWMULTISELECT > 0 {
 		split := func() [][]uint16 {
 			var parts [][]uint16
