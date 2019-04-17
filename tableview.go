@@ -1025,6 +1025,16 @@ func (tv *TableView) CurrentIndexChanged() *Event {
 	return tv.currentIndexChangedPublisher.Event()
 }
 
+// ItemVisible returns whether the item at position index is visible.
+func (tv *TableView) ItemVisible(index int) bool {
+	return 0 != win.SendMessage(tv.hwndNormalLV, win.LVM_ISITEMVISIBLE, uintptr(index), 0)
+}
+
+// EnsureItemVisible ensures the item at position index is visible, scrolling if necessary.
+func (tv *TableView) EnsureItemVisible(index int) {
+	win.SendMessage(tv.hwndNormalLV, win.LVM_ENSUREVISIBLE, uintptr(index), 0)
+}
+
 // SelectionHiddenWithoutFocus returns whether selection indicators are visible when the TableView does not have the keyboard input focus.
 func (tv *TableView) SelectionHiddenWithoutFocus() bool {
 	style := uint(win.GetWindowLong(tv.hwndNormalLV, win.GWL_STYLE))
