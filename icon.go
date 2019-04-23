@@ -154,6 +154,15 @@ func NewIconFromImage(im image.Image) (ic *Icon, err error) {
 	return &Icon{hIcon: hIcon}, nil
 }
 
+// NewIconFromBitmap returns a new Icon, using the specified Bitmap as source.
+func NewIconFromBitmap(bmp *Bitmap) (ic *Icon, err error) {
+	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, Point{}, true)
+	if err != nil {
+		return nil, err
+	}
+	return &Icon{hIcon: hIcon}, nil
+}
+
 // NewIconFromHICON returns a new Icon, using the specified win.HICON as source.
 func NewIconFromHICON(hIcon win.HICON) (ic *Icon, err error) {
 	return &Icon{hIcon: hIcon}, nil
@@ -191,14 +200,19 @@ func (i *Icon) Size() Size {
 // create an Alpha Icon or Cursor from an Image
 // http://support.microsoft.com/kb/318876
 func createAlphaCursorOrIconFromImage(im image.Image, hotspot image.Point, fIcon bool) (win.HICON, error) {
-	hBitmap, err := hBitmapFromImage(im)
+	bmp, err := NewBitmapFromImage(im)
 	if err != nil {
 		return 0, err
 	}
-	defer win.DeleteObject(win.HGDIOBJ(hBitmap))
+	defer bmp.Dispose()
 
+	return createAlphaCursorOrIconFromBitmap(bmp, Point{hotspot.X, hotspot.Y}, fIcon)
+}
+
+func createAlphaCursorOrIconFromBitmap(bmp *Bitmap, hotspot Point, fIcon bool) (win.HICON, error) {
 	// Create an empty mask bitmap.
-	hMonoBitmap := win.CreateBitmap(int32(im.Bounds().Dx()), int32(im.Bounds().Dy()), 1, 1, nil)
+	size := bmp.Size()
+	hMonoBitmap := win.CreateBitmap(int32(size.Width), int32(size.Height), 1, 1, nil)
 	if hMonoBitmap == 0 {
 		return 0, newError("CreateBitmap failed")
 	}
@@ -211,7 +225,7 @@ func createAlphaCursorOrIconFromImage(im image.Image, hotspot image.Point, fIcon
 	ii.XHotspot = uint32(hotspot.X)
 	ii.YHotspot = uint32(hotspot.Y)
 	ii.HbmMask = hMonoBitmap
-	ii.HbmColor = hBitmap
+	ii.HbmColor = bmp.hBmp
 
 	// Create the alpha cursor with the alpha DIB section.
 	hIconOrCursor := win.CreateIconIndirect(&ii)
