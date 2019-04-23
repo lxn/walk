@@ -166,11 +166,12 @@ func (bmp *Bitmap) ToImage() (*image.RGBA, error) {
 	n := 0
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
+			a := buf[n+3]
 			r := buf[n+2]
 			g := buf[n+1]
 			b := buf[n+0]
 			n += int(bi.BmiHeader.BiBitCount) / 8
-			img.Set(x, height-y-1, color.RGBA{r, g, b, 255})
+			img.Set(x, height-y-1, color.RGBA{r, g, b, a})
 		}
 	}
 
