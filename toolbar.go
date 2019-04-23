@@ -356,6 +356,7 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 func (tb *ToolBar) onActionChanged(action *Action) error {
 	tbbi := win.TBBUTTONINFO{
 		DwMask: win.TBIF_IMAGE | win.TBIF_STATE | win.TBIF_STYLE | win.TBIF_TEXT,
+		IImage: win.I_IMAGENONE,
 	}
 
 	tbbi.CbSize = uint32(unsafe.Sizeof(tbbi))
