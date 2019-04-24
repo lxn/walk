@@ -52,6 +52,8 @@ func NewImageView(parent Container) (*ImageView, error) {
 
 	iv.SetInvalidatesOnResize(true)
 
+	iv.SetBackground(NullBrush())
+
 	iv.MustRegisterProperty("Image", NewProperty(
 		func() interface{} {
 			return iv.Image()
