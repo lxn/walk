@@ -393,10 +393,11 @@ func (fb *FormBase) Run() int {
 		}
 	}
 
-	var msg win.MSG
+	msg := (*win.MSG)(unsafe.Pointer(win.GlobalAlloc(0, unsafe.Sizeof(win.MSG{}))))
+	defer win.GlobalFree(win.HGLOBAL(unsafe.Pointer(msg)))
 
 	for fb.hWnd != 0 {
-		switch win.GetMessage(&msg, 0, 0, 0) {
+		switch win.GetMessage(msg, 0, 0, 0) {
 		case 0:
 			return int(msg.WParam)
 
@@ -406,14 +407,14 @@ func (fb *FormBase) Run() int {
 
 		switch msg.Message {
 		case win.WM_KEYDOWN:
-			if fb.webViewTranslateAccelerator(&msg) {
+			if fb.webViewTranslateAccelerator(msg) {
 				// handled accelerator key of webview and its childen (ie IE)
 			}
 		}
 
-		if !win.IsDialogMessage(fb.hWnd, &msg) {
-			win.TranslateMessage(&msg)
-			win.DispatchMessage(&msg)
+		if !win.IsDialogMessage(fb.hWnd, msg) {
+			win.TranslateMessage(msg)
+			win.DispatchMessage(msg)
 		}
 
 		runSynchronized()
