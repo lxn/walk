@@ -368,7 +368,13 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 			if gb.Checkable() {
 				s := gb.checkBox.SizeHint()
-				gb.checkBox.SetBounds(Rectangle{gb.headerHeight * 2 / 3, gb.headerHeight, s.Width, s.Height})
+				var x int
+				if l := gb.Layout(); l != nil {
+					x = l.Margins().HNear
+				} else {
+					x = gb.headerHeight * 2 / 3
+				}
+				gb.checkBox.SetBounds(Rectangle{x, gb.headerHeight, s.Width, s.Height})
 			}
 
 			gbcb := gb.ClientBounds()
