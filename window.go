@@ -185,6 +185,10 @@ type Window interface {
 	// SetCursor sets the Cursor of the Window.
 	SetCursor(value Cursor)
 
+	// SetDoubleBuffering enables or disables double buffering of the
+	// drawing, which may help reduce flicker.
+	SetDoubleBuffering(value bool) error
+
 	// SetEnabled sets if the Window is enabled for user interaction.
 	SetEnabled(value bool)
 
@@ -764,6 +768,12 @@ func (wb *WindowBase) Cursor() Cursor {
 // SetCursor sets the Cursor of the *WindowBase.
 func (wb *WindowBase) SetCursor(value Cursor) {
 	wb.cursor = value
+}
+
+// SetDoubleBuffering enables or disables double buffering of the
+// drawing, which may help reduce flicker.
+func (wb *WindowBase) SetDoubleBuffering(enabled bool) error {
+	return wb.ensureExtendedStyleBits(win.WS_EX_COMPOSITED, enabled)
 }
 
 // Enabled returns if the *WindowBase is enabled for user interaction.
