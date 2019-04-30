@@ -26,7 +26,7 @@ type BoxLayout struct {
 	orientation        Orientation
 	alignment          Alignment2D
 	hwnd2StretchFactor map[win.HWND]int
-	size2MinSize       map[Size]Size
+	sizeAndDPI2MinSize map[sizeAndDPI]Size
 	resetNeeded        bool
 }
 
@@ -34,7 +34,7 @@ func newBoxLayout(orientation Orientation) *BoxLayout {
 	return &BoxLayout{
 		orientation:        orientation,
 		hwnd2StretchFactor: make(map[win.HWND]int),
-		size2MinSize:       make(map[Size]Size),
+		sizeAndDPI2MinSize: make(map[sizeAndDPI]Size),
 		margins:            Margins{9, 9, 9, 9},
 		spacing:            6,
 	}
@@ -243,18 +243,24 @@ func (l *BoxLayout) MinSizeForSize(size Size) Size {
 		return Size{}
 	}
 
-	if min, ok := l.size2MinSize[size]; ok {
+	dpi := l.container.DPI()
+
+	if min, ok := l.sizeAndDPI2MinSize[sizeAndDPI{size, dpi}]; ok {
 		return min
 	}
 
 	bounds := Rectangle{Width: size.Width, Height: size.Height}
 
-	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, bounds, l.margins, l.spacing, l.hwnd2StretchFactor)
+	wb := l.container.AsWindowBase()
+	margins := wb.marginsFrom96DPI(l.margins)
+	spacing := wb.intFrom96DPI(l.spacing)
+
+	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, bounds, margins, spacing, l.hwnd2StretchFactor)
 	if err != nil {
 		return Size{}
 	}
 
-	s := Size{l.margins.HNear + l.margins.HFar, l.margins.VNear + l.margins.VFar}
+	s := Size{margins.HNear + margins.HFar, margins.VNear + margins.VFar}
 
 	var maxSecondary int
 
@@ -280,15 +286,15 @@ func (l *BoxLayout) MinSizeForSize(size Size) Size {
 	}
 
 	if l.orientation == Horizontal {
-		s.Width += (len(items) - 1) * l.spacing
+		s.Width += (len(items) - 1) * spacing
 		s.Height += maxSecondary
 	} else {
-		s.Height += (len(items) - 1) * l.spacing
+		s.Height += (len(items) - 1) * spacing
 		s.Width += maxSecondary
 	}
 
 	if s.Width > 0 && s.Height > 0 {
-		l.size2MinSize[size] = s
+		l.sizeAndDPI2MinSize[sizeAndDPI{size, dpi}] = s
 	}
 
 	return s
@@ -299,7 +305,7 @@ func (l *BoxLayout) Update(reset bool) error {
 		return nil
 	}
 
-	l.size2MinSize = make(map[Size]Size)
+	l.sizeAndDPI2MinSize = make(map[sizeAndDPI]Size)
 
 	if reset {
 		l.resetNeeded = true
@@ -321,12 +327,16 @@ func (l *BoxLayout) Update(reset bool) error {
 
 	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
 
-	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, l.container.ClientBounds(), l.margins, l.spacing, l.hwnd2StretchFactor)
+	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, l.container.ClientBounds(), l.container.AsWindowBase().marginsFrom96DPI(l.margins), l.container.AsWindowBase().intFrom96DPI(l.spacing), l.hwnd2StretchFactor)
 	if err != nil {
 		return err
 	}
 
-	return applyLayoutResults(l.container, items)
+	if err := applyLayoutResults(l.container, items); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func boxLayoutFlags(orientation Orientation, children *WidgetList) LayoutFlags {

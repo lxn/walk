@@ -7,10 +7,6 @@
 package walk
 
 import (
-	"unsafe"
-)
-
-import (
 	"github.com/lxn/win"
 )
 
@@ -40,14 +36,6 @@ func NewPushButton(parent Container) (*PushButton, error) {
 
 func (*PushButton) LayoutFlags() LayoutFlags {
 	return GrowableHorz
-}
-
-func (pb *PushButton) MinSizeHint() Size {
-	var s win.SIZE
-
-	pb.SendMessage(win.BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
-
-	return maxSize(Size{int(s.CX), int(s.CY)}, pb.dialogBaseUnitsToPixels(Size{50, 14}))
 }
 
 func (pb *PushButton) SizeHint() Size {

@@ -9,6 +9,7 @@ package walk
 import (
 	"fmt"
 	"strconv"
+	"unsafe"
 
 	"github.com/lxn/win"
 )
@@ -83,6 +84,14 @@ func (b *Button) init() {
 			return b.SetText(assertStringOr(v, ""))
 		},
 		b.textChangedPublisher.Event()))
+}
+
+func (b *Button) MinSizeHint() Size {
+	var s win.SIZE
+
+	b.SendMessage(win.BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
+
+	return maxSize(Size{int(s.CX), int(s.CY)}, b.dialogBaseUnitsToPixels(Size{50, 14}))
 }
 
 func (b *Button) Image() Image {

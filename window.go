@@ -86,6 +86,9 @@ type Window interface {
 	// of.
 	Disposing() *Event
 
+	// DPI returns the current DPI value of the Window.
+	DPI() int
+
 	// Enabled returns if the Window is enabled for user interaction.
 	Enabled() bool
 
@@ -292,6 +295,7 @@ type calcTextSizeInfo struct {
 	font  fontInfo
 	text  string
 	size  Size
+	dpi   int
 }
 
 // WindowBase implements many operations common to all Windows.
@@ -776,6 +780,87 @@ func (wb *WindowBase) SetDoubleBuffering(enabled bool) error {
 	return wb.ensureExtendedStyleBits(win.WS_EX_COMPOSITED, enabled)
 }
 
+// DPI returns the current DPI value of the WindowBase.
+func (wb *WindowBase) DPI() int {
+	return int(win.GetDpiForWindow(wb.hWnd))
+}
+
+func (wb *WindowBase) intFrom96DPI(value int) int {
+	return wb.scaleInt(value, float64(wb.DPI()) / 96.0)
+}
+
+func (wb *WindowBase) intTo96DPI(value int) int {
+	return wb.scaleInt(value, 96.0 / float64(wb.DPI()))
+}
+
+func (wb *WindowBase) scaleInt(value int, scale float64) int {
+	return int(float64(value) * scale)
+}
+
+func (wb *WindowBase) marginsFrom96DPI(value Margins) Margins {
+	return wb.scaleMargins(value, float64(wb.DPI()) / 96.0)
+}
+
+func (wb *WindowBase) marginsTo96DPI(value Margins) Margins {
+	return wb.scaleMargins(value, 96.0 / float64(wb.DPI()))
+}
+
+func (wb *WindowBase) scaleMargins(value Margins, scale float64) Margins {
+	return Margins{
+		HNear: int(float64(value.HNear) * scale),
+		VNear: int(float64(value.VNear) * scale),
+		HFar: int(float64(value.HFar) * scale),
+		VFar: int(float64(value.VFar) * scale),
+	}
+}
+
+func (wb *WindowBase) pointFrom96DPI(value Point) Point {
+	return wb.scalePoint(value, float64(wb.DPI()) / 96.0)
+}
+
+func (wb *WindowBase) pointTo96DPI(value Point) Point {
+	return wb.scalePoint(value, 96.0 / float64(wb.DPI()))
+}
+
+func (wb *WindowBase) scalePoint(value Point, scale float64) Point {
+	return Point{
+		X: int(float64(value.X) * scale),
+		Y: int(float64(value.Y) * scale),
+	}
+}
+
+func (wb *WindowBase) rectangleFrom96DPI(value Rectangle) Rectangle {
+	return wb.scaleRectangle(value, float64(wb.DPI()) / 96.0)
+}
+
+func (wb *WindowBase) rectangleTo96DPI(value Rectangle) Rectangle {
+	return wb.scaleRectangle(value, 96.0 / float64(wb.DPI()))
+}
+
+func (wb *WindowBase) scaleRectangle(value Rectangle, scale float64) Rectangle {
+	return Rectangle{
+		X: int(float64(value.X) * scale),
+		Y: int(float64(value.Y) * scale),
+		Width: int(float64(value.Width) * scale),
+		Height: int(float64(value.Height) * scale),
+	}
+}
+
+func (wb *WindowBase) sizeFrom96DPI(value Size) Size {
+	return wb.scaleSize(value, float64(wb.DPI()) / 96.0)
+}
+
+func (wb *WindowBase) sizeTo96DPI(value Size) Size {
+	return wb.scaleSize(value, 96.0 / float64(wb.DPI()))
+}
+
+func (wb *WindowBase) scaleSize(value Size, scale float64) Size {
+	return Size{
+		Width: int(float64(value.Width) * scale),
+		Height: int(float64(value.Height) * scale),
+	}
+}
+
 // Enabled returns if the *WindowBase is enabled for user interaction.
 func (wb *WindowBase) Enabled() bool {
 	return wb.enabled
@@ -845,11 +930,19 @@ func (wb *WindowBase) applyFont(font *Font) {
 }
 
 func SetWindowFont(hwnd win.HWND, font *Font) {
-	win.SendMessage(hwnd, win.WM_SETFONT, uintptr(font.handleForDPI(0)), 1)
+	setWindowFont(hwnd, font)
 }
 
 func setWindowFont(hwnd win.HWND, font *Font) {
-	win.SendMessage(hwnd, win.WM_SETFONT, uintptr(font.handleForDPI(0)), 1)
+	dpi := int(win.GetDpiForWindow(hwnd))
+
+	win.SendMessage(hwnd, win.WM_SETFONT, uintptr(font.handleForDPI(dpi)), 1)
+
+	if window := windowFromHandle(hwnd); window != nil {
+		if widget, ok := window.(Widget); ok {
+			widget.AsWidgetBase().updateParentLayoutWithReset(false)
+		}
+	}
 }
 
 // Suspended returns if the *WindowBase is suspended for layout and repainting
@@ -1119,24 +1212,35 @@ func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
 	return nil
 }
 
+type fontInfoAndDPI struct {
+	fontInfo
+	dpi int
+}
+
 var (
 	dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
-	fontInfo2DialogBaseUnits      = make(map[fontInfo]Size)
+	fontInfoAndDPI2DialogBaseUnits      = make(map[fontInfoAndDPI]Size)
 )
 
 func (wb *WindowBase) dialogBaseUnits() Size {
 	// The window may use a font different from that in WindowBase,
 	// like e.g. NumberEdit does, so we try to use the right one.
 	font := wb.window.Font()
-	fi := fontInfo{family: font.Family(), pointSize: font.PointSize(), style: font.Style()}
-	if s, ok := fontInfo2DialogBaseUnits[fi]; ok {
+	fi := fontInfoAndDPI{
+		fontInfo: fontInfo{
+			family: font.Family(),
+			pointSize: font.PointSize(), 
+			style: font.Style(), 
+		},
+		dpi: wb.DPI()}
+	if s, ok := fontInfoAndDPI2DialogBaseUnits[fi]; ok {
 		return s
 	}
 
 	hdc := win.GetDC(wb.hWnd)
 	defer win.ReleaseDC(wb.hWnd, hdc)
 
-	hFont := font.handleForDPI(0)
+	hFont := font.handleForDPI(wb.DPI())
 	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(hFont))
 	defer win.SelectObject(hdc, win.HGDIOBJ(hFontOld))
 
@@ -1156,7 +1260,7 @@ func (wb *WindowBase) dialogBaseUnits() Size {
 
 	s := Size{int((size.CX/26 + 1) / 2), int(tm.TmHeight)}
 
-	fontInfo2DialogBaseUnits[fi] = s
+	fontInfoAndDPI2DialogBaseUnits[fi] = s
 
 	return s
 }
@@ -1177,13 +1281,20 @@ func (wb *WindowBase) calculateTextSizeImpl(text string) Size {
 func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size {
 	font := wb.window.Font()
 
+	dpi := wb.DPI()
+
 	if wb.calcTextSizeInfoPrev != nil &&
 		width == wb.calcTextSizeInfoPrev.width &&
 		font.family == wb.calcTextSizeInfoPrev.font.family &&
 		font.pointSize == wb.calcTextSizeInfoPrev.font.pointSize &&
 		font.style == wb.calcTextSizeInfoPrev.font.style &&
-		text == wb.calcTextSizeInfoPrev.text {
+		text == wb.calcTextSizeInfoPrev.text &&
+		dpi == wb.calcTextSizeInfoPrev.dpi {
 		return wb.calcTextSizeInfoPrev.size
+	}
+
+	if wb.calcTextSizeInfoPrev != nil && dpi != wb.calcTextSizeInfoPrev.dpi {
+		width = int(float64(width) * float64(dpi) / float64(wb.calcTextSizeInfoPrev.dpi))
 	}
 
 	var size Size
@@ -1208,7 +1319,7 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 		}
 		defer win.ReleaseDC(wb.hWnd, hdc)
 
-		hFontOld := win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(0)))
+		hFontOld := win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(dpi)))
 		defer win.SelectObject(hdc, hFontOld)
 
 		lines := strings.Split(text, "\n")
@@ -1237,6 +1348,7 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 	wb.calcTextSizeInfoPrev.font.style = font.style
 	wb.calcTextSizeInfoPrev.text = text
 	wb.calcTextSizeInfoPrev.size = size
+	wb.calcTextSizeInfoPrev.dpi = dpi
 
 	return size
 }

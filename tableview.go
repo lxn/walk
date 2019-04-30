@@ -366,7 +366,7 @@ func (tv *TableView) applyEnabled(enabled bool) {
 func (tv *TableView) applyFont(font *Font) {
 	tv.WidgetBase.applyFont(font)
 
-	hFont := uintptr(font.handleForDPI(0))
+	hFont := uintptr(font.handleForDPI(tv.DPI()))
 
 	win.SendMessage(tv.hwndFrozenLV, win.WM_SETFONT, hFont, 0)
 	win.SendMessage(tv.hwndNormalLV, win.WM_SETFONT, hFont, 0)

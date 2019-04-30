@@ -124,6 +124,15 @@ func (tb *ToolBar) SizeHint() Size {
 
 	return Size{width, height}
 }
+
+func (tb *ToolBar) applyFont(font *Font) {
+	tb.WidgetBase.applyFont(font)
+
+	tb.applyDefaultButtonWidth()
+
+	tb.updateParentLayout()
+}
+
 func (tb *ToolBar) Orientation() Orientation {
 	style := win.GetWindowLong(tb.hWnd, win.GWL_STYLE)
 
@@ -143,8 +152,9 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 		return nil
 	}
 
-	lParam := uintptr(
-		win.MAKELONG(uint16(tb.defaultButtonWidth), uint16(tb.defaultButtonWidth)))
+	width := tb.intFrom96DPI(tb.defaultButtonWidth)
+
+	lParam := uintptr(win.MAKELONG(uint16(width), uint16(width)))
 	if 0 == tb.SendMessage(win.TB_SETBUTTONWIDTH, 0, lParam) {
 		return newError("SendMessage(TB_SETBUTTONWIDTH)")
 	}

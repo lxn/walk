@@ -270,7 +270,6 @@ func (le *LineEdit) sizeHintForLimit(limit int) (size Size) {
 }
 
 func (le *LineEdit) initCharWidth() {
-
 	font := le.Font()
 	if font == le.charWidthFont {
 		return
@@ -285,7 +284,7 @@ func (le *LineEdit) initCharWidth() {
 	}
 	defer win.ReleaseDC(le.hWnd, hdc)
 
-	defer win.SelectObject(hdc, win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(0))))
+	defer win.SelectObject(hdc, win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(le.DPI()))))
 
 	buf := []uint16{'M'}
 

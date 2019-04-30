@@ -101,7 +101,9 @@ func newCanvasFromHWND(hwnd win.HWND) (*Canvas, error) {
 		return nil, newError("GetDC failed")
 	}
 
-	return (&Canvas{hdc: hdc, hwnd: hwnd}).init()
+	dpi := int(win.GetDpiForWindow(hwnd))
+
+	return (&Canvas{hdc: hdc, hwnd: hwnd, dpix: dpi, dpiy: dpi}).init()
 }
 
 func newCanvasFromHDC(hdc win.HDC) (*Canvas, error) {
@@ -113,8 +115,10 @@ func newCanvasFromHDC(hdc win.HDC) (*Canvas, error) {
 }
 
 func (c *Canvas) init() (*Canvas, error) {
-	c.dpix = int(win.GetDeviceCaps(c.hdc, win.LOGPIXELSX))
-	c.dpiy = int(win.GetDeviceCaps(c.hdc, win.LOGPIXELSY))
+	if c.dpix == 0 || c.dpiy == 0 {
+		c.dpix = int(win.GetDeviceCaps(c.hdc, win.LOGPIXELSX))
+		c.dpiy = int(win.GetDeviceCaps(c.hdc, win.LOGPIXELSY))
+	}
 
 	if win.SetBkMode(c.hdc, win.TRANSPARENT) == 0 {
 		return nil, newError("SetBkMode failed")

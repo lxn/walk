@@ -100,6 +100,11 @@ type Layout interface {
 	Update(reset bool) error
 }
 
+type sizeAndDPI struct {
+	size Size
+	dpi  int
+}
+
 type HeightForWidther interface {
 	HeightForWidth(width int) int
 }

@@ -683,8 +683,8 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		}
 
 		mmi.PtMinTrackSize = win.POINT{
-			int32(maxi(min.Width, fb.minSize.Width)),
-			int32(maxi(min.Height, fb.minSize.Height)),
+			int32(fb.intFrom96DPI(maxi(min.Width, fb.minSize.Width))),
+			int32(fb.intFrom96DPI(maxi(min.Height, fb.minSize.Height))),
 		}
 		return 0
 
@@ -703,6 +703,16 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 	case win.WM_SIZE:
 		fb.clientComposite.SetBounds(fb.window.ClientBounds())
+
+	case win.WM_DPICHANGED:
+		wasSuspended := fb.Suspended()
+		fb.SetSuspended(true)
+		defer fb.SetSuspended(wasSuspended)
+
+		rc := (*win.RECT)(unsafe.Pointer(lParam))
+		fb.window.SetBounds(rectangleFromRECT(*rc))
+
+		fb.applyFont(fb.Font())
 
 	case win.WM_SYSCOMMAND:
 		if wParam == win.SC_CLOSE {

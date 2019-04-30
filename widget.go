@@ -470,20 +470,20 @@ func (wb *WidgetBase) updateParentLayoutWithReset(reset bool) error {
 
 	layout := parent.Layout()
 
-	var size2MinSize map[Size]Size
+	var sizeAndDPI2MinSize map[sizeAndDPI]Size
 	switch l := layout.(type) {
 	case *BoxLayout:
-		size2MinSize = l.size2MinSize
+		sizeAndDPI2MinSize = l.sizeAndDPI2MinSize
 
 	case *GridLayout:
-		size2MinSize = l.size2MinSize
+		sizeAndDPI2MinSize = l.sizeAndDPI2MinSize
 
 	case *FlowLayout:
-		size2MinSize = l.size2MinSize
+		sizeAndDPI2MinSize = l.sizeAndDPI2MinSize
 	}
-	if size2MinSize != nil {
-		for k := range size2MinSize {
-			delete(size2MinSize, k)
+	if sizeAndDPI2MinSize != nil {
+		for k := range sizeAndDPI2MinSize {
+			delete(sizeAndDPI2MinSize, k)
 		}
 	}
 

@@ -244,7 +244,7 @@ func (cb *ComboBox) MinSizeHint() Size {
 	}
 
 	// FIXME: Use GetThemePartSize instead of guessing
-	w := maxi(defaultSize.Width, cb.maxItemTextWidth+30)
+	w := maxi(defaultSize.Width, cb.maxItemTextWidth+int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(cb.DPI())))+8)
 	h := defaultSize.Height + 1
 
 	return Size{w, h}
@@ -542,7 +542,7 @@ func (cb *ComboBox) calculateMaxItemTextWidth() int {
 	}
 	defer win.ReleaseDC(cb.hWnd, hdc)
 
-	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(cb.Font().handleForDPI(0)))
+	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(cb.Font().handleForDPI(cb.DPI())))
 	defer win.SelectObject(hdc, hFontOld)
 
 	var maxWidth int
