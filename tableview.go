@@ -1106,23 +1106,38 @@ func (tv *TableView) SetSelectedIndexes(indexes []int) error {
 		return newError("SendMessage(LVM_SETITEMSTATE)")
 	}
 
+	selectAll := false
 	lvi.State = win.LVIS_FOCUSED | win.LVIS_SELECTED
 	for _, i := range indexes {
-		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETITEMSTATE, uintptr(i), lp) {
+		val := uintptr(i)
+		if i == -1 {
+			selectAll = true
+			val = ^uintptr(0)
+		}
+		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETITEMSTATE, val, lp) && i != -1 {
 			return newError("SendMessage(LVM_SETITEMSTATE)")
 		}
-		if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_SETITEMSTATE, uintptr(i), lp) {
+		if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_SETITEMSTATE, val, lp) && i != -1 {
 			return newError("SendMessage(LVM_SETITEMSTATE)")
 		}
 	}
 
-	idxs := make([]int, len(indexes))
+	if !selectAll {
+		idxs := make([]int, len(indexes))
 
-	for i, j := range indexes {
-		idxs[i] = j
+		for i, j := range indexes {
+			idxs[i] = j
+		}
+
+		tv.selectedIndexes = idxs
+	} else {
+		count := int(win.SendMessage(tv.hwndNormalLV, win.LVM_GETSELECTEDCOUNT, 0, 0))
+		idxs := make([]int, count)
+		for i := range idxs {
+			idxs[i] = i
+		}
+		tv.selectedIndexes = idxs
 	}
-
-	tv.selectedIndexes = idxs
 
 	return nil
 }
