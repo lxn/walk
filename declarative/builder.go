@@ -202,6 +202,10 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 		w.SizeChanged().Attach(handler)
 	}
 
+	if db := b.bool("DoubleBuffering"); db {
+		w.SetDoubleBuffering(true)
+	}
+
 	if rtl := b.bool("RightToLeftReading"); rtl {
 		w.SetRightToLeftReading(true)
 	}

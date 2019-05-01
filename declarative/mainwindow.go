@@ -13,6 +13,7 @@ type MainWindow struct {
 
 	Background         Brush
 	ContextMenuItems   []MenuItem
+	DoubleBuffering    bool
 	Enabled            Property
 	Font               Font
 	MaxSize            Size
@@ -70,6 +71,7 @@ func (mw MainWindow) Create() error {
 		// Window
 		Background:         mw.Background,
 		ContextMenuItems:   mw.ContextMenuItems,
+		DoubleBuffering:    mw.DoubleBuffering,
 		Enabled:            mw.Enabled,
 		Font:               mw.Font,
 		MaxSize:            mw.MaxSize,

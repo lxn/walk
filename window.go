@@ -86,6 +86,10 @@ type Window interface {
 	// of.
 	Disposing() *Event
 
+	// DoubleBuffering returns whether double buffering of the
+	// drawing is enabled, which may help reduce flicker.
+	DoubleBuffering() bool
+
 	// DPI returns the current DPI value of the Window.
 	DPI() int
 
@@ -772,6 +776,12 @@ func (wb *WindowBase) Cursor() Cursor {
 // SetCursor sets the Cursor of the *WindowBase.
 func (wb *WindowBase) SetCursor(value Cursor) {
 	wb.cursor = value
+}
+
+// DoubleBuffering returns whether double buffering of the
+// drawing is enabled, which may help reduce flicker.
+func (wb *WindowBase) DoubleBuffering() bool {
+	return wb.hasExtendedStyleBits(win.WS_EX_COMPOSITED)
 }
 
 // SetDoubleBuffering enables or disables double buffering of the
