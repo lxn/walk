@@ -256,6 +256,21 @@ func applyFontToDescendants(window Window, font *Font) {
 	})
 }
 
+func applyDPIToDescendants(window Window, dpi int) {
+	wb := window.AsWindowBase()
+	wb.applyDPI(dpi)
+
+	walkDescendants(window, func(w Window) bool {
+		if w.Handle() == wb.hWnd {
+			return true
+		}
+
+		w.(applyDPIer).applyDPI(dpi)
+
+		return true
+	})
+}
+
 func walkDescendants(window Window, f func(w Window) bool) {
 	window = window.AsWindowBase().window
 

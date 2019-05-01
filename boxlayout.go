@@ -20,24 +20,24 @@ const (
 )
 
 type BoxLayout struct {
-	container          Container
-	margins            Margins
-	spacing            int
+	LayoutBase
 	orientation        Orientation
-	alignment          Alignment2D
 	hwnd2StretchFactor map[win.HWND]int
-	sizeAndDPI2MinSize map[sizeAndDPI]Size
-	resetNeeded        bool
 }
 
 func newBoxLayout(orientation Orientation) *BoxLayout {
-	return &BoxLayout{
+	l := &BoxLayout{
+		LayoutBase: LayoutBase{
+			sizeAndDPI2MinSize: make(map[sizeAndDPI]Size),
+			margins96dpi:       Margins{9, 9, 9, 9},
+			spacing96dpi:       6,
+		},
 		orientation:        orientation,
 		hwnd2StretchFactor: make(map[win.HWND]int),
-		sizeAndDPI2MinSize: make(map[sizeAndDPI]Size),
-		margins:            Margins{9, 9, 9, 9},
-		spacing:            6,
 	}
+	l.layout = l
+
+	return l
 }
 
 func NewHBoxLayout() *BoxLayout {
@@ -46,42 +46,6 @@ func NewHBoxLayout() *BoxLayout {
 
 func NewVBoxLayout() *BoxLayout {
 	return newBoxLayout(Vertical)
-}
-
-func (l *BoxLayout) Container() Container {
-	return l.container
-}
-
-func (l *BoxLayout) SetContainer(value Container) {
-	if value != l.container {
-		if l.container != nil {
-			l.container.SetLayout(nil)
-		}
-
-		l.container = value
-
-		if value != nil && value.Layout() != Layout(l) {
-			value.SetLayout(l)
-
-			l.Update(true)
-		}
-	}
-}
-
-func (l *BoxLayout) Margins() Margins {
-	return l.margins
-}
-
-func (l *BoxLayout) SetMargins(value Margins) error {
-	if value.HNear < 0 || value.VNear < 0 || value.HFar < 0 || value.VFar < 0 {
-		return newError("margins must be positive")
-	}
-
-	l.margins = value
-
-	l.Update(false)
-
-	return nil
 }
 
 func (l *BoxLayout) Orientation() Orientation {
@@ -98,42 +62,6 @@ func (l *BoxLayout) SetOrientation(value Orientation) error {
 		}
 
 		l.orientation = value
-
-		l.Update(false)
-	}
-
-	return nil
-}
-
-func (l *BoxLayout) Alignment() Alignment2D {
-	return l.alignment
-}
-
-func (l *BoxLayout) SetAlignment(alignment Alignment2D) error {
-	if alignment != l.alignment {
-		if alignment < AlignHVDefault || alignment > AlignHFarVFar {
-			return newError("invalid Alignment value")
-		}
-
-		l.alignment = alignment
-
-		l.Update(false)
-	}
-
-	return nil
-}
-
-func (l *BoxLayout) Spacing() int {
-	return l.spacing
-}
-
-func (l *BoxLayout) SetSpacing(value int) error {
-	if value != l.spacing {
-		if value < 0 {
-			return newError("spacing cannot be negative")
-		}
-
-		l.spacing = value
 
 		l.Update(false)
 	}
@@ -251,16 +179,12 @@ func (l *BoxLayout) MinSizeForSize(size Size) Size {
 
 	bounds := Rectangle{Width: size.Width, Height: size.Height}
 
-	wb := l.container.AsWindowBase()
-	margins := wb.marginsFrom96DPI(l.margins)
-	spacing := wb.intFrom96DPI(l.spacing)
-
-	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, bounds, margins, spacing, l.hwnd2StretchFactor)
+	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, bounds, l.margins, l.spacing, l.hwnd2StretchFactor)
 	if err != nil {
 		return Size{}
 	}
 
-	s := Size{margins.HNear + margins.HFar, margins.VNear + margins.VFar}
+	s := Size{l.margins.HNear + l.margins.HFar, l.margins.VNear + l.margins.VFar}
 
 	var maxSecondary int
 
@@ -286,10 +210,10 @@ func (l *BoxLayout) MinSizeForSize(size Size) Size {
 	}
 
 	if l.orientation == Horizontal {
-		s.Width += (len(items) - 1) * spacing
+		s.Width += (len(items) - 1) * l.spacing
 		s.Height += maxSecondary
 	} else {
-		s.Height += (len(items) - 1) * spacing
+		s.Height += (len(items) - 1) * l.spacing
 		s.Width += maxSecondary
 	}
 
@@ -327,7 +251,7 @@ func (l *BoxLayout) Update(reset bool) error {
 
 	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
 
-	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, l.container.ClientBounds(), l.container.AsWindowBase().marginsFrom96DPI(l.margins), l.container.AsWindowBase().intFrom96DPI(l.spacing), l.hwnd2StretchFactor)
+	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, l.container.ClientBounds(), l.margins, l.spacing, l.hwnd2StretchFactor)
 	if err != nil {
 		return err
 	}

@@ -100,6 +100,121 @@ type Layout interface {
 	Update(reset bool) error
 }
 
+type LayoutBase struct {
+	layout             Layout
+	container          Container
+	sizeAndDPI2MinSize map[sizeAndDPI]Size
+	margins96dpi       Margins
+	margins            Margins
+	spacing96dpi       int
+	spacing            int
+	alignment          Alignment2D
+	resetNeeded        bool
+}
+
+func (l *LayoutBase) sizeAndDPIToMinSize() map[sizeAndDPI]Size {
+	return l.sizeAndDPI2MinSize
+}
+
+func (l *LayoutBase) Container() Container {
+	return l.container
+}
+
+func (l *LayoutBase) SetContainer(value Container) {
+	if value == l.container {
+		return
+	}
+
+	if l.container != nil {
+		l.container.SetLayout(nil)
+	}
+
+	l.container = value
+
+	if value != nil && value.Layout() != l.layout {
+		value.SetLayout(l.layout)
+	}
+
+	l.updateMargins()
+	l.updateSpacing()
+
+	l.layout.Update(true)
+}
+
+func (l *LayoutBase) Margins() Margins {
+	return l.margins96dpi
+}
+
+func (l *LayoutBase) SetMargins(value Margins) error {
+	if value == l.margins96dpi {
+		return nil
+	}
+
+	if value.HNear < 0 || value.VNear < 0 || value.HFar < 0 || value.VFar < 0 {
+		return newError("margins must be positive")
+	}
+
+	l.margins96dpi = value
+
+	l.updateMargins()
+
+	l.layout.Update(false)
+
+	return nil
+}
+
+func (l *LayoutBase) Spacing() int {
+	return l.spacing96dpi
+}
+
+func (l *LayoutBase) SetSpacing(value int) error {
+	if value == l.spacing96dpi {
+		return nil
+	}
+
+	if value < 0 {
+		return newError("spacing cannot be negative")
+	}
+
+	l.spacing96dpi = value
+
+	l.updateSpacing()
+
+	l.layout.Update(false)
+
+	return nil
+}
+
+func (l *LayoutBase) updateMargins() {
+	if l.container != nil {
+		l.margins = l.container.AsWindowBase().marginsFrom96DPI(l.margins96dpi)
+	}
+}
+
+func (l *LayoutBase) updateSpacing() {
+	if l.container != nil {
+		l.spacing = l.container.AsWindowBase().intFrom96DPI(l.spacing96dpi)
+	}
+}
+
+func (l *LayoutBase) Alignment() Alignment2D {
+	return l.alignment
+}
+
+func (l *LayoutBase) SetAlignment(alignment Alignment2D) error {
+	if alignment != l.alignment {
+		if alignment < AlignHVDefault || alignment > AlignHFarVFar {
+			return newError("invalid Alignment value")
+		}
+
+		l.alignment = alignment
+
+		l.layout.Update(false)
+	}
+
+	return nil
+}
+
 type sizeAndDPI struct {
 	size Size
 	dpi  int
@@ -314,6 +429,21 @@ func (cb *ContainerBase) applyFont(font *Font) {
 	cb.WidgetBase.applyFont(font)
 
 	applyFontToDescendants(cb.window.(Widget), font)
+}
+
+func (cb *ContainerBase) applyDPI(dpi int) {
+	cb.WidgetBase.applyDPI(dpi)
+
+	applyDPIToDescendants(cb.window.(Widget), dpi)
+
+	if cb.layout != nil {
+		if ums, ok := cb.layout.(interface{updateMargins(); updateSpacing()}); ok {
+			ums.updateMargins()
+			ums.updateSpacing()
+		}
+
+		cb.layout.Update(false)
+	}
 }
 
 func (cb *ContainerBase) Children() *WidgetList {

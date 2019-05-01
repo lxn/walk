@@ -795,6 +795,14 @@ func (wb *WindowBase) DPI() int {
 	return int(win.GetDpiForWindow(wb.hWnd))
 }
 
+type applyDPIer interface {
+	applyDPI(dpi int)
+}
+
+func (wb *WindowBase) applyDPI(dpi int) {
+	wb.window.SetFont(wb.window.Font())
+}
+
 func (wb *WindowBase) intFrom96DPI(value int) int {
 	return wb.scaleInt(value, float64(wb.DPI()) / 96.0)
 }

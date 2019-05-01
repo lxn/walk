@@ -712,7 +712,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		rc := (*win.RECT)(unsafe.Pointer(lParam))
 		fb.window.SetBounds(rectangleFromRECT(*rc))
 
-		fb.applyFont(fb.Font())
+		fb.applyDPI(int(win.HIWORD(uint32(wParam))))
 
 	case win.WM_SYSCOMMAND:
 		if wParam == win.SC_CLOSE {

@@ -30,95 +30,25 @@ type gridLayoutWidgetInfo struct {
 }
 
 type GridLayout struct {
-	container            Container
-	margins              Margins
-	spacing              int
-	alignment            Alignment2D
+	LayoutBase
 	rowStretchFactors    []int
 	columnStretchFactors []int
 	widgetBase2Info      map[*WidgetBase]*gridLayoutWidgetInfo
 	cells                [][]gridLayoutCell
-	sizeAndDPI2MinSize   map[sizeAndDPI]Size
-	resetNeeded          bool
 }
 
 func NewGridLayout() *GridLayout {
 	l := &GridLayout{
-		widgetBase2Info:    make(map[*WidgetBase]*gridLayoutWidgetInfo),
-		sizeAndDPI2MinSize: make(map[sizeAndDPI]Size),
+		LayoutBase: LayoutBase{
+			sizeAndDPI2MinSize: make(map[sizeAndDPI]Size),
+			margins96dpi:       Margins{9, 9, 9, 9},
+			spacing96dpi:       6,
+		},
+		widgetBase2Info: make(map[*WidgetBase]*gridLayoutWidgetInfo),
 	}
+	l.layout = l
 
 	return l
-}
-
-func (l *GridLayout) Container() Container {
-	return l.container
-}
-
-func (l *GridLayout) SetContainer(value Container) {
-	if value != l.container {
-		if l.container != nil {
-			l.container.SetLayout(nil)
-		}
-
-		l.container = value
-
-		if value != nil && value.Layout() != Layout(l) {
-			value.SetLayout(l)
-
-			l.Update(true)
-		}
-	}
-}
-
-func (l *GridLayout) Margins() Margins {
-	return l.margins
-}
-
-func (l *GridLayout) SetMargins(value Margins) error {
-	if value.HNear < 0 || value.VNear < 0 || value.HFar < 0 || value.VFar < 0 {
-		return newError("margins must be positive")
-	}
-
-	l.margins = value
-
-	return nil
-}
-
-func (l *GridLayout) Spacing() int {
-	return l.spacing
-}
-
-func (l *GridLayout) SetSpacing(value int) error {
-	if value != l.spacing {
-		if value < 0 {
-			return newError("spacing cannot be negative")
-		}
-
-		l.spacing = value
-
-		l.Update(false)
-	}
-
-	return nil
-}
-
-func (l *GridLayout) Alignment() Alignment2D {
-	return l.alignment
-}
-
-func (l *GridLayout) SetAlignment(alignment Alignment2D) error {
-	if alignment != l.alignment {
-		if alignment < AlignHVDefault || alignment > AlignHFarVFar {
-			return newError("invalid Alignment value")
-		}
-
-		l.alignment = alignment
-
-		l.Update(false)
-	}
-
-	return nil
 }
 
 func (l *GridLayout) sufficientStretchFactors(stretchFactors []int, required int) []int {
@@ -467,17 +397,13 @@ func (l *GridLayout) MinSizeForSize(size Size) Size {
 		heights[row] = maxHeight
 	}
 
-	margins := l.container.AsWindowBase().marginsFrom96DPI(l.margins)
-
-	width := margins.HNear + margins.HFar
-	height := margins.VNear + margins.VFar
-
-	spacing := l.container.AsWindowBase().intFrom96DPI(l.spacing)
+	width := l.margins.HNear + l.margins.HFar
+	height := l.margins.VNear + l.margins.VFar
 
 	for i, w := range ws {
 		if w > 0 {
 			if i > 0 {
-				width += spacing
+				width += l.spacing
 			}
 			width += w
 		}
@@ -485,7 +411,7 @@ func (l *GridLayout) MinSizeForSize(size Size) Size {
 	for i, h := range heights {
 		if h > 0 {
 			if i > 0 {
-				height += spacing
+				height += l.spacing
 			}
 			height += h
 		}
@@ -500,13 +426,12 @@ func (l *GridLayout) MinSizeForSize(size Size) Size {
 
 func (l *GridLayout) spannedWidth(info *gridLayoutWidgetInfo, widths []int) int {
 	width := 0
-	spacing := l.container.AsWindowBase().intFrom96DPI(l.spacing)
 
 	for i := info.cell.column; i < info.cell.column+info.spanHorz; i++ {
 		if w := widths[i]; w > 0 {
 			width += w
 			if i > info.cell.column {
-				width += spacing
+				width += l.spacing
 			}
 		}
 	}
@@ -516,13 +441,12 @@ func (l *GridLayout) spannedWidth(info *gridLayoutWidgetInfo, widths []int) int 
 
 func (l *GridLayout) spannedHeight(info *gridLayoutWidgetInfo, heights []int) int {
 	height := 0
-	spacing := l.container.AsWindowBase().intFrom96DPI(l.spacing)
 
 	for i := info.cell.row; i < info.cell.row+info.spanVert; i++ {
 		if h := heights[i]; h > 0 {
 			height += h
 			if i > info.cell.row {
-				height += spacing
+				height += l.spacing
 			}
 		}
 	}
@@ -601,9 +525,6 @@ func (l *GridLayout) Update(reset bool) error {
 
 	items := make([]layoutResultItem, 0, len(l.widgetBase2Info))
 
-	margins := l.container.AsWindowBase().marginsFrom96DPI(l.margins)
-	spacing := l.container.AsWindowBase().intFrom96DPI(l.spacing)
-
 	for wb, info := range l.widgetBase2Info {
 		widget := wb.window.(Widget)
 
@@ -611,17 +532,17 @@ func (l *GridLayout) Update(reset bool) error {
 			continue
 		}
 
-		x := margins.HNear
+		x := l.margins.HNear
 		for i := 0; i < info.cell.column; i++ {
 			if w := widths[i]; w > 0 {
-				x += w + spacing
+				x += w + l.spacing
 			}
 		}
 
-		y := margins.VNear
+		y := l.margins.VNear
 		for i := 0; i < info.cell.row; i++ {
 			if h := heights[i]; h > 0 {
-				y += h + spacing
+				y += h + l.spacing
 			}
 		}
 
@@ -800,24 +721,20 @@ func (l *GridLayout) sectionSizesForSpace(orientation Orientation, space int, wi
 
 	sort.Stable(sortedSections)
 
-	margins := l.container.AsWindowBase().marginsFrom96DPI(l.margins)
-
 	if orientation == Horizontal {
-		space -= margins.HNear + margins.HFar
+		space -= l.margins.HNear + l.margins.HFar
 	} else {
-		space -= margins.VNear + margins.VFar
+		space -= l.margins.VNear + l.margins.VFar
 	}
-
-	spacing := l.container.AsWindowBase().intFrom96DPI(l.spacing)
 
 	var spacingRemaining int
 	for _, max := range maxSizes {
 		if max > 0 {
-			spacingRemaining += spacing
+			spacingRemaining += l.spacing
 		}
 	}
 	if spacingRemaining > 0 {
-		spacingRemaining -= spacing
+		spacingRemaining -= l.spacing
 	}
 
 	offsets := [3]int{0, sectionCountWithGreedyNonSpacer, sectionCountWithGreedyNonSpacer + sectionCountWithGreedySpacer}
@@ -851,8 +768,8 @@ func (l *GridLayout) sectionSizesForSpace(orientation Orientation, space int, wi
 			minSizesRemaining -= min
 			stretchFactorsRemaining -= stretch
 
-			space -= (size + spacing)
-			spacingRemaining -= spacing
+			space -= (size + l.spacing)
+			spacingRemaining -= l.spacing
 		}
 	}
 
