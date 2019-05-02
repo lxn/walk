@@ -470,7 +470,7 @@ func (wb *WidgetBase) updateParentLayoutWithReset(reset bool) error {
 
 	layout := parent.Layout()
 
-	if lb, ok := layout.(interface{sizeAndDPIToMinSize() map[sizeAndDPI]Size}); ok {
+	if lb, ok := layout.(interface{ sizeAndDPIToMinSize() map[sizeAndDPI]Size }); ok {
 		sizeAndDPI2MinSize := lb.sizeAndDPIToMinSize()
 
 		for k := range sizeAndDPI2MinSize {

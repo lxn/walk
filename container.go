@@ -437,7 +437,10 @@ func (cb *ContainerBase) applyDPI(dpi int) {
 	applyDPIToDescendants(cb.window.(Widget), dpi)
 
 	if cb.layout != nil {
-		if ums, ok := cb.layout.(interface{updateMargins(); updateSpacing()}); ok {
+		if ums, ok := cb.layout.(interface {
+			updateMargins()
+			updateSpacing()
+		}); ok {
 			ums.updateMargins()
 			ums.updateSpacing()
 		}

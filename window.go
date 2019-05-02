@@ -326,9 +326,6 @@ type WindowBase struct {
 	minSize                 Size
 	background              Brush
 	cursor                  Cursor
-	suspended               bool
-	visible                 bool
-	enabled                 bool
 	name2Property           map[string]Property
 	enabledProperty         Property
 	enabledChangedPublisher EventPublisher
@@ -337,6 +334,10 @@ type WindowBase struct {
 	focusedProperty         Property
 	focusedChangedPublisher EventPublisher
 	calcTextSizeInfoPrev    *calcTextSizeInfo
+	dpi                     int
+	suspended               bool
+	visible                 bool
+	enabled                 bool
 }
 
 var (
@@ -792,7 +793,19 @@ func (wb *WindowBase) SetDoubleBuffering(enabled bool) error {
 
 // DPI returns the current DPI value of the WindowBase.
 func (wb *WindowBase) DPI() int {
-	return int(win.GetDpiForWindow(wb.hWnd))
+	if wb.dpi == 0 {
+		if widget, ok := wb.window.(Widget); ok {
+			if parent := widget.Parent(); parent != nil {
+				wb.dpi = parent.DPI()
+			}
+		}
+
+		if wb.dpi == 0 {
+			wb.dpi = int(win.GetDpiForWindow(wb.hWnd))
+		}
+	}
+
+	return wb.dpi
 }
 
 type applyDPIer interface {
@@ -800,15 +813,17 @@ type applyDPIer interface {
 }
 
 func (wb *WindowBase) applyDPI(dpi int) {
+	wb.dpi = dpi
+
 	wb.window.SetFont(wb.window.Font())
 }
 
 func (wb *WindowBase) intFrom96DPI(value int) int {
-	return wb.scaleInt(value, float64(wb.DPI()) / 96.0)
+	return wb.scaleInt(value, float64(wb.DPI())/96.0)
 }
 
 func (wb *WindowBase) intTo96DPI(value int) int {
-	return wb.scaleInt(value, 96.0 / float64(wb.DPI()))
+	return wb.scaleInt(value, 96.0/float64(wb.DPI()))
 }
 
 func (wb *WindowBase) scaleInt(value int, scale float64) int {
@@ -816,28 +831,28 @@ func (wb *WindowBase) scaleInt(value int, scale float64) int {
 }
 
 func (wb *WindowBase) marginsFrom96DPI(value Margins) Margins {
-	return wb.scaleMargins(value, float64(wb.DPI()) / 96.0)
+	return wb.scaleMargins(value, float64(wb.DPI())/96.0)
 }
 
 func (wb *WindowBase) marginsTo96DPI(value Margins) Margins {
-	return wb.scaleMargins(value, 96.0 / float64(wb.DPI()))
+	return wb.scaleMargins(value, 96.0/float64(wb.DPI()))
 }
 
 func (wb *WindowBase) scaleMargins(value Margins, scale float64) Margins {
 	return Margins{
 		HNear: int(float64(value.HNear) * scale),
 		VNear: int(float64(value.VNear) * scale),
-		HFar: int(float64(value.HFar) * scale),
-		VFar: int(float64(value.VFar) * scale),
+		HFar:  int(float64(value.HFar) * scale),
+		VFar:  int(float64(value.VFar) * scale),
 	}
 }
 
 func (wb *WindowBase) pointFrom96DPI(value Point) Point {
-	return wb.scalePoint(value, float64(wb.DPI()) / 96.0)
+	return wb.scalePoint(value, float64(wb.DPI())/96.0)
 }
 
 func (wb *WindowBase) pointTo96DPI(value Point) Point {
-	return wb.scalePoint(value, 96.0 / float64(wb.DPI()))
+	return wb.scalePoint(value, 96.0/float64(wb.DPI()))
 }
 
 func (wb *WindowBase) scalePoint(value Point, scale float64) Point {
@@ -848,33 +863,33 @@ func (wb *WindowBase) scalePoint(value Point, scale float64) Point {
 }
 
 func (wb *WindowBase) rectangleFrom96DPI(value Rectangle) Rectangle {
-	return wb.scaleRectangle(value, float64(wb.DPI()) / 96.0)
+	return wb.scaleRectangle(value, float64(wb.DPI())/96.0)
 }
 
 func (wb *WindowBase) rectangleTo96DPI(value Rectangle) Rectangle {
-	return wb.scaleRectangle(value, 96.0 / float64(wb.DPI()))
+	return wb.scaleRectangle(value, 96.0/float64(wb.DPI()))
 }
 
 func (wb *WindowBase) scaleRectangle(value Rectangle, scale float64) Rectangle {
 	return Rectangle{
-		X: int(float64(value.X) * scale),
-		Y: int(float64(value.Y) * scale),
-		Width: int(float64(value.Width) * scale),
+		X:      int(float64(value.X) * scale),
+		Y:      int(float64(value.Y) * scale),
+		Width:  int(float64(value.Width) * scale),
 		Height: int(float64(value.Height) * scale),
 	}
 }
 
 func (wb *WindowBase) sizeFrom96DPI(value Size) Size {
-	return wb.scaleSize(value, float64(wb.DPI()) / 96.0)
+	return wb.scaleSize(value, float64(wb.DPI())/96.0)
 }
 
 func (wb *WindowBase) sizeTo96DPI(value Size) Size {
-	return wb.scaleSize(value, 96.0 / float64(wb.DPI()))
+	return wb.scaleSize(value, 96.0/float64(wb.DPI()))
 }
 
 func (wb *WindowBase) scaleSize(value Size, scale float64) Size {
 	return Size{
-		Width: int(float64(value.Width) * scale),
+		Width:  int(float64(value.Width) * scale),
 		Height: int(float64(value.Height) * scale),
 	}
 }
@@ -1236,8 +1251,8 @@ type fontInfoAndDPI struct {
 }
 
 var (
-	dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
-	fontInfoAndDPI2DialogBaseUnits      = make(map[fontInfoAndDPI]Size)
+	dialogBaseUnitsUTF16StringPtr  = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+	fontInfoAndDPI2DialogBaseUnits = make(map[fontInfoAndDPI]Size)
 )
 
 func (wb *WindowBase) dialogBaseUnits() Size {
@@ -1246,9 +1261,9 @@ func (wb *WindowBase) dialogBaseUnits() Size {
 	font := wb.window.Font()
 	fi := fontInfoAndDPI{
 		fontInfo: fontInfo{
-			family: font.Family(),
-			pointSize: font.PointSize(), 
-			style: font.Style(), 
+			family:    font.Family(),
+			pointSize: font.PointSize(),
+			style:     font.Style(),
 		},
 		dpi: wb.DPI()}
 	if s, ok := fontInfoAndDPI2DialogBaseUnits[fi]; ok {
