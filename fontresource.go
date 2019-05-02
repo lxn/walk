@@ -58,7 +58,12 @@ func newFontMemResource(resourceName *uint16) (*FontMemResource, error) {
 // The font must be embedded into resources using corresponding operator in the 
 // application's RC script.
 func NewFontMemResourceByName(name string) (*FontMemResource, error) {
-	return newFontMemResource(syscall.StringToUTF16Ptr(name))
+	lpstr, err := syscall.UTF16PtrFromString(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return newFontMemResource(lpstr)
 }
 
 // NewFontMemResourceById function loads a font resource from the executable's resources 
