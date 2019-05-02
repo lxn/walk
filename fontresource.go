@@ -8,6 +8,7 @@ package walk
 
 import (
 	"github.com/lxn/win"
+	"syscall"
 )
 
 // FontMemResource represents a font resource loaded into memory from 
@@ -16,12 +17,10 @@ type FontMemResource struct {
 	hFontResource win.HANDLE
 }
 
-// NewFontMemResource function loads a font resource from the executable's resources.
-// The font must be embedded into resources using corresponding operator in the 
-// application's RC script.
-func NewFontMemResource(hModule win.HMODULE, resourceName *uint16) (*FontMemResource, error) {
+func newFontMemResource(resourceName *uint16) (*FontMemResource, error) {
+	hModule := win.HMODULE(win.GetModuleHandle(nil))
 	if hModule == win.HMODULE(0) {
-		hModule = win.HMODULE(win.GetModuleHandle(nil))	
+		return nil, lastError("GetModuleHandle")
 	}
 	
 	hres := win.FindResource(hModule, resourceName, win.MAKEINTRESOURCE(8) /*RT_FONT*/)
@@ -52,6 +51,22 @@ func NewFontMemResource(hModule win.HMODULE, resourceName *uint16) (*FontMemReso
 	}
 
 	return &FontMemResource { hFontResource: hFontResource }, nil
+}
+
+// NewFontMemResourceByName function loads a font resource from the executable's resources
+// using the resource name. 
+// The font must be embedded into resources using corresponding operator in the 
+// application's RC script.
+func NewFontMemResourceByName(name string) (*FontMemResource, error) {
+	return newFontMemResource(syscall.StringToUTF16Ptr(name))
+}
+
+// NewFontMemResourceById function loads a font resource from the executable's resources 
+// using the resource ID.
+// The font must be embedded into resources using corresponding operator in the 
+// application's RC script.
+func NewFontMemResourceById(id int) (*FontMemResource, error) {
+	return newFontMemResource(win.MAKEINTRESOURCE(uintptr(id)))
 }
 
 // Dispose removes the font resource from memory
