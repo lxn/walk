@@ -1,0 +1,63 @@
+// Copyright 2010 The Walk Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// +build windows
+
+package walk
+
+import (
+	"github.com/lxn/win"
+)
+
+// FontMemResource represents a font resource loaded into memory from 
+// the application's resources.
+type FontMemResource struct {
+	hFontResource win.HANDLE
+}
+
+// NewFontMemResource function loads a font resource from the executable's resources.
+// The font must be embedded into resources using corresponding operator in the 
+// application's RC script.
+func NewFontMemResource(hModule win.HMODULE, resourceName *uint16) (*FontMemResource, error) {
+	if hModule == win.HMODULE(0) {
+		hModule = win.HMODULE(win.GetModuleHandle(nil))	
+	}
+	
+	hres := win.FindResource(hModule, resourceName, win.MAKEINTRESOURCE(8) /*RT_FONT*/)
+	if hres == win.HRSRC(0) {
+		return nil, lastError("FindResource")
+	}
+
+	size := win.SizeofResource(hModule, hres)
+	if size == 0 {
+		return nil, lastError("SizeofResource")
+	}
+
+	hResLoad := win.LoadResource(hModule, hres)
+	if hResLoad == win.HGLOBAL(0) {
+		return nil, lastError("LoadResource")
+	}
+
+	ptr := win.LockResource(hResLoad)
+	if ptr == 0 {
+		return nil, lastError("LockResource")
+	}
+
+	numFonts := uint32(0)
+	hFontResource := win.AddFontMemResourceEx(ptr, size, nil, &numFonts)
+
+	if hFontResource == win.HANDLE(0) || numFonts == 0 {
+		return nil, lastError("AddFontMemResource")
+	}
+
+	return &FontMemResource { hFontResource: hFontResource }, nil
+}
+
+// Dispose removes the font resource from memory
+func (fmr *FontMemResource) Dispose() {
+	if fmr.hFontResource != 0 {
+		win.RemoveFontMemResourceEx(fmr.hFontResource)
+		fmr.hFontResource = 0
+	}
+}
