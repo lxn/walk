@@ -61,6 +61,8 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 		}
 
 		return 0
+	case win.NIN_BALLOONUSERCLICK:
+		ni.messageClickedPublisher.Publish()
 	}
 
 	return win.DefWindowProc(hwnd, msg, wParam, lParam)
@@ -68,14 +70,15 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 
 // NotifyIcon represents an icon in the taskbar notification area.
 type NotifyIcon struct {
-	id                 uint32
-	hWnd               win.HWND
-	contextMenu        *Menu
-	icon               *Icon
-	toolTip            string
-	visible            bool
-	mouseDownPublisher MouseEventPublisher
-	mouseUpPublisher   MouseEventPublisher
+	id                      uint32
+	hWnd                    win.HWND
+	contextMenu             *Menu
+	icon                    *Icon
+	toolTip                 string
+	visible                 bool
+	mouseDownPublisher      MouseEventPublisher
+	mouseUpPublisher        MouseEventPublisher
+	messageClickedPublisher EventPublisher
 }
 
 // NewNotifyIcon creates and returns a new NotifyIcon.
@@ -327,4 +330,10 @@ func (ni *NotifyIcon) MouseDown() *MouseEvent {
 // while the cursor is over the NotifyIcon.
 func (ni *NotifyIcon) MouseUp() *MouseEvent {
 	return ni.mouseUpPublisher.Event()
+}
+
+// MessageClicked occurs when the user clicks a message shown with ShowMessage or
+// one of its iconed variants.
+func (ni *NotifyIcon) MessageClicked() *Event {
+	return ni.messageClickedPublisher.Event()
 }
