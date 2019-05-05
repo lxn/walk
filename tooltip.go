@@ -15,8 +15,10 @@ import (
 	"github.com/lxn/win"
 )
 
-// see https://msdn.microsoft.com/en-us/library/windows/desktop/bb760416(v=vs.85).aspx
-const maxToolTipTextLen = 80 // including NUL terminator
+// https://msdn.microsoft.com/en-us/library/windows/desktop/bb760416(v=vs.85).aspx says 80,
+// but in reality, that hasn't been enforced for many many Windows versions. So we give it
+// 1024 instead.
+const maxToolTipTextLen = 1024 // including NUL terminator
 
 func init() {
 	var err error
