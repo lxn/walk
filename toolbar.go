@@ -258,6 +258,20 @@ func (tb *ToolBar) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 	case win.WM_MOUSEMOVE, win.WM_MOUSELEAVE, win.WM_LBUTTONDOWN:
 		tb.Invalidate()
 
+		if tb.buttonStyle != ToolBarButtonImageOnly {
+			pt := win.POINT{}
+			win.GetCursorPos(&pt)
+			win.ScreenToClient(hwnd, &pt)
+			idx := int(tb.SendMessage(win.TB_HITTEST, uintptr(0), uintptr(unsafe.Pointer(&pt))))
+
+			if idx >= 0 && idx < tb.actions.Len() {
+				action := tb.actions.At(idx)
+				_ = tb.SetToolTipText(tb.makeToolTipForAction(action))
+			} else {
+				_ = tb.SetToolTipText("")
+			}
+		}
+
 	case win.WM_PAINT:
 		tb.Invalidate()
 
@@ -361,6 +375,18 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 	*text = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(actionText)))
 
 	return
+}
+
+func (tb *ToolBar) makeToolTipForAction(action *Action) string {
+	if action.toolTip == "" {
+		return ""
+	}
+
+	if action.shortcut.Key != 0 {
+		return fmt.Sprintf("%s (%s)", action.toolTip, action.shortcut.String())
+	}
+
+	return action.toolTip
 }
 
 func (tb *ToolBar) onActionChanged(action *Action) error {
