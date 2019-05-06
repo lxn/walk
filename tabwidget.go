@@ -664,7 +664,7 @@ func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
 	index = -1
 	if image != nil {
 		if tw.imageList == nil {
-			if tw.imageList, err = NewImageList(Size{16, 16}, 0); err != nil {
+			if tw.imageList, err = NewImageList(Size{tw.DPI() / 6, tw.DPI() / 6}, 0); err != nil {
 				return
 			}
 
