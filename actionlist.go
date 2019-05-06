@@ -174,3 +174,17 @@ func (l *ActionList) updateSeparatorVisibility() error {
 
 	return nil
 }
+
+func (l *ActionList) AttachShortcuts(w Window) {
+	shortcuts := make(map[Shortcut]*Action, len(l.actions))
+	for _, action := range l.actions {
+		if action.Shortcut().Key != 0 {
+			shortcuts[action.Shortcut()] = action
+		}
+	}
+	w.KeyDown().Attach(func(key Key) {
+		if action, ok := shortcuts[Shortcut{ModifiersDown(), key}]; ok {
+			action.raiseTriggered()
+		}
+	})
+}
