@@ -163,15 +163,8 @@ func (ni *NotifyIcon) showMessage(title, info string, iconType uint32, icon *Ico
 	nid.DwInfoFlags = iconType
 	var oldIcon *Icon
 	if iconType == win.NIIF_USER && icon != nil {
-		if win.GetVersion()&0xff >= 6 {
-			nid.HBalloonIcon = icon.hIcon
-			if ni.icon != nil {
-				nid.HIcon = ni.icon.hIcon
-			}
-		} else {
-			oldIcon = ni.icon
-			nid.HIcon = icon.hIcon
-		}
+		oldIcon = ni.icon
+		nid.HIcon = icon.hIcon
 		nid.UFlags |= win.NIF_ICON
 	}
 	if title16, err := syscall.UTF16FromString(title); err == nil {
