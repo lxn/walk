@@ -152,7 +152,7 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 		return nil
 	}
 
-	width := tb.intFrom96DPI(tb.defaultButtonWidth)
+	width := tb.IntFrom96DPI(tb.defaultButtonWidth)
 
 	lParam := uintptr(win.MAKELONG(uint16(width), uint16(width)))
 	if 0 == tb.SendMessage(win.TB_SETBUTTONWIDTH, 0, lParam) {

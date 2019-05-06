@@ -683,8 +683,8 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		}
 
 		mmi.PtMinTrackSize = win.POINT{
-			int32(fb.intFrom96DPI(maxi(min.Width, fb.minSize.Width))),
-			int32(fb.intFrom96DPI(maxi(min.Height, fb.minSize.Height))),
+			int32(fb.IntFrom96DPI(maxi(min.Width, fb.minSize.Width))),
+			int32(fb.IntFrom96DPI(maxi(min.Height, fb.minSize.Height))),
 		}
 		return 0
 
@@ -712,7 +712,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		rc := (*win.RECT)(unsafe.Pointer(lParam))
 		fb.window.SetBounds(rectangleFromRECT(*rc))
 
-		fb.applyDPI(int(win.HIWORD(uint32(wParam))))
+		fb.ApplyDPI(int(win.HIWORD(uint32(wParam))))
 
 	case win.WM_SYSCOMMAND:
 		if wParam == win.SC_CLOSE {

@@ -187,13 +187,13 @@ func (l *LayoutBase) SetSpacing(value int) error {
 
 func (l *LayoutBase) updateMargins() {
 	if l.container != nil {
-		l.margins = l.container.AsWindowBase().marginsFrom96DPI(l.margins96dpi)
+		l.margins = l.container.AsWindowBase().MarginsFrom96DPI(l.margins96dpi)
 	}
 }
 
 func (l *LayoutBase) updateSpacing() {
 	if l.container != nil {
-		l.spacing = l.container.AsWindowBase().intFrom96DPI(l.spacing96dpi)
+		l.spacing = l.container.AsWindowBase().IntFrom96DPI(l.spacing96dpi)
 	}
 }
 
@@ -431,8 +431,8 @@ func (cb *ContainerBase) applyFont(font *Font) {
 	applyFontToDescendants(cb.window.(Widget), font)
 }
 
-func (cb *ContainerBase) applyDPI(dpi int) {
-	cb.WidgetBase.applyDPI(dpi)
+func (cb *ContainerBase) ApplyDPI(dpi int) {
+	cb.WidgetBase.ApplyDPI(dpi)
 
 	applyDPIToDescendants(cb.window.(Widget), dpi)
 

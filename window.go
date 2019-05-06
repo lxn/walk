@@ -808,21 +808,21 @@ func (wb *WindowBase) DPI() int {
 	return wb.dpi
 }
 
-type applyDPIer interface {
-	applyDPI(dpi int)
+type ApplyDPIer interface {
+	ApplyDPI(dpi int)
 }
 
-func (wb *WindowBase) applyDPI(dpi int) {
+func (wb *WindowBase) ApplyDPI(dpi int) {
 	wb.dpi = dpi
 
 	wb.window.SetFont(wb.window.Font())
 }
 
-func (wb *WindowBase) intFrom96DPI(value int) int {
+func (wb *WindowBase) IntFrom96DPI(value int) int {
 	return wb.scaleInt(value, float64(wb.DPI())/96.0)
 }
 
-func (wb *WindowBase) intTo96DPI(value int) int {
+func (wb *WindowBase) IntTo96DPI(value int) int {
 	return wb.scaleInt(value, 96.0/float64(wb.DPI()))
 }
 
@@ -830,11 +830,11 @@ func (wb *WindowBase) scaleInt(value int, scale float64) int {
 	return int(float64(value) * scale)
 }
 
-func (wb *WindowBase) marginsFrom96DPI(value Margins) Margins {
+func (wb *WindowBase) MarginsFrom96DPI(value Margins) Margins {
 	return wb.scaleMargins(value, float64(wb.DPI())/96.0)
 }
 
-func (wb *WindowBase) marginsTo96DPI(value Margins) Margins {
+func (wb *WindowBase) MarginsTo96DPI(value Margins) Margins {
 	return wb.scaleMargins(value, 96.0/float64(wb.DPI()))
 }
 
@@ -847,11 +847,11 @@ func (wb *WindowBase) scaleMargins(value Margins, scale float64) Margins {
 	}
 }
 
-func (wb *WindowBase) pointFrom96DPI(value Point) Point {
+func (wb *WindowBase) PointFrom96DPI(value Point) Point {
 	return wb.scalePoint(value, float64(wb.DPI())/96.0)
 }
 
-func (wb *WindowBase) pointTo96DPI(value Point) Point {
+func (wb *WindowBase) PointTo96DPI(value Point) Point {
 	return wb.scalePoint(value, 96.0/float64(wb.DPI()))
 }
 
@@ -862,11 +862,11 @@ func (wb *WindowBase) scalePoint(value Point, scale float64) Point {
 	}
 }
 
-func (wb *WindowBase) rectangleFrom96DPI(value Rectangle) Rectangle {
+func (wb *WindowBase) RectangleFrom96DPI(value Rectangle) Rectangle {
 	return wb.scaleRectangle(value, float64(wb.DPI())/96.0)
 }
 
-func (wb *WindowBase) rectangleTo96DPI(value Rectangle) Rectangle {
+func (wb *WindowBase) RectangleTo96DPI(value Rectangle) Rectangle {
 	return wb.scaleRectangle(value, 96.0/float64(wb.DPI()))
 }
 
@@ -879,11 +879,11 @@ func (wb *WindowBase) scaleRectangle(value Rectangle, scale float64) Rectangle {
 	}
 }
 
-func (wb *WindowBase) sizeFrom96DPI(value Size) Size {
+func (wb *WindowBase) SizeFrom96DPI(value Size) Size {
 	return wb.scaleSize(value, float64(wb.DPI())/96.0)
 }
 
-func (wb *WindowBase) sizeTo96DPI(value Size) Size {
+func (wb *WindowBase) SizeTo96DPI(value Size) Size {
 	return wb.scaleSize(value, 96.0/float64(wb.DPI()))
 }
 
