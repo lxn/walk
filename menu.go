@@ -118,7 +118,21 @@ func (m *Menu) initMenuItemInfoFromAction(mii *win.MENUITEMINFO, action *Action)
 	}
 }
 
+func (m *Menu) handleDefaultState(action *Action) {
+	if action.Default() {
+		// Unset other default actions before we set this one. Otherwise insertion fails.
+		win.SetMenuDefaultItem(m.hMenu, ^uint32(0), false)
+		for _, otherAction := range m.actions.actions {
+			if otherAction != action {
+				otherAction.SetDefault(false)
+			}
+		}
+	}
+}
+
 func (m *Menu) onActionChanged(action *Action) error {
+	m.handleDefaultState(action)
+
 	if !action.Visible() {
 		return nil
 	}
@@ -129,6 +143,10 @@ func (m *Menu) onActionChanged(action *Action) error {
 
 	if !win.SetMenuItemInfo(m.hMenu, uint32(m.actions.indexInObserver(action)), true, &mii) {
 		return newError("SetMenuItemInfo failed")
+	}
+
+	if action.Default() {
+		win.SetMenuDefaultItem(m.hMenu, uint32(m.actions.indexInObserver(action)), true)
 	}
 
 	if action.Exclusive() && action.Checked() {
@@ -171,6 +189,8 @@ func (m *Menu) onActionVisibleChanged(action *Action) error {
 }
 
 func (m *Menu) insertAction(action *Action, visibleChanged bool) (err error) {
+	m.handleDefaultState(action)
+
 	if !visibleChanged {
 		action.addChangedHandler(m)
 		defer func() {
@@ -192,6 +212,10 @@ func (m *Menu) insertAction(action *Action, visibleChanged bool) (err error) {
 
 	if !win.InsertMenuItem(m.hMenu, uint32(index), true, &mii) {
 		return newError("InsertMenuItem failed")
+	}
+
+	if action.Default() {
+		win.SetMenuDefaultItem(m.hMenu, uint32(m.actions.indexInObserver(action)), true)
 	}
 
 	menu := action.menu

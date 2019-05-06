@@ -29,6 +29,8 @@ type Action struct {
 	image                         *Bitmap
 	checkedCondition              Condition
 	checkedConditionChangedHandle int
+	defaultCondition              Condition
+	defaultConditionChangedHandle int
 	enabledCondition              Condition
 	enabledConditionChangedHandle int
 	visibleCondition              Condition
@@ -39,6 +41,7 @@ type Action struct {
 	visible                       bool
 	checkable                     bool
 	checked                       bool
+	defawlt                       bool
 	exclusive                     bool
 	id                            uint16
 }
@@ -157,6 +160,61 @@ func (a *Action) SetCheckedCondition(c Condition) {
 		a.checkedConditionChangedHandle = c.Changed().Attach(func() {
 			if a.checked != c.Satisfied() {
 				a.checked = !a.checked
+
+				a.raiseChanged()
+			}
+		})
+	}
+
+	a.raiseChanged()
+}
+
+func (a *Action) Default() bool {
+	return a.defawlt
+}
+
+func (a *Action) SetDefault(value bool) (err error) {
+	if a.defaultCondition != nil {
+		if bp, ok := a.defaultCondition.(*boolProperty); ok {
+			if err := bp.Set(value); err != nil {
+				return err
+			}
+		} else {
+			return newError("DefaultCondition != nil")
+		}
+	}
+
+	if value != a.defawlt {
+		old := a.defawlt
+
+		a.defawlt = value
+
+		if err = a.raiseChanged(); err != nil {
+			a.defawlt = old
+			a.raiseChanged()
+		}
+	}
+
+	return
+}
+
+func (a *Action) DefaultCondition() Condition {
+	return a.defaultCondition
+}
+
+func (a *Action) SetDefaultCondition(c Condition) {
+	if a.defaultCondition != nil {
+		a.defaultCondition.Changed().Detach(a.defaultConditionChangedHandle)
+	}
+
+	a.defaultCondition = c
+
+	if c != nil {
+		a.defawlt = c.Satisfied()
+
+		a.defaultConditionChangedHandle = c.Changed().Attach(func() {
+			if a.defawlt != c.Satisfied() {
+				a.defawlt = !a.defawlt
 
 				a.raiseChanged()
 			}
