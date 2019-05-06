@@ -61,6 +61,8 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 		}
 
 		return 0
+	case win.NIN_BALLOONUSERCLICK:
+		ni.messageClickedPublisher.Publish()
 	}
 
 	return win.DefWindowProc(hwnd, msg, wParam, lParam)
@@ -68,14 +70,15 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 
 // NotifyIcon represents an icon in the taskbar notification area.
 type NotifyIcon struct {
-	id                 uint32
-	hWnd               win.HWND
-	contextMenu        *Menu
-	icon               *Icon
-	toolTip            string
-	visible            bool
-	mouseDownPublisher MouseEventPublisher
-	mouseUpPublisher   MouseEventPublisher
+	id                      uint32
+	hWnd                    win.HWND
+	contextMenu             *Menu
+	icon                    *Icon
+	toolTip                 string
+	visible                 bool
+	mouseDownPublisher      MouseEventPublisher
+	mouseUpPublisher        MouseEventPublisher
+	messageClickedPublisher EventPublisher
 }
 
 // NewNotifyIcon creates and returns a new NotifyIcon.
@@ -90,7 +93,7 @@ func NewNotifyIcon(mw *MainWindow) (*NotifyIcon, error) {
 		DwStateMask:      win.NIS_HIDDEN,
 		UCallbackMessage: notifyIconMessageId,
 	}
-	nid.CbSize = uint32(unsafe.Sizeof(nid))
+	nid.CbSize = uint32(unsafe.Sizeof(nid) - unsafe.Sizeof(win.HICON(0)))
 
 	if !win.Shell_NotifyIcon(win.NIM_ADD, &nid) {
 		return nil, newError("Shell_NotifyIcon")
@@ -126,7 +129,7 @@ func (ni *NotifyIcon) notifyIconData() *win.NOTIFYICONDATA {
 		UID:  ni.id,
 		HWnd: ni.hWnd,
 	}
-	nid.CbSize = uint32(unsafe.Sizeof(*nid))
+	nid.CbSize = uint32(unsafe.Sizeof(*nid) - unsafe.Sizeof(win.HICON(0)))
 
 	return nid
 }
@@ -154,15 +157,35 @@ func (ni *NotifyIcon) Dispose() error {
 	return nil
 }
 
-func (ni *NotifyIcon) showMessage(title, info string, iconType uint32) error {
+func (ni *NotifyIcon) showMessage(title, info string, iconType uint32, icon *Icon) error {
 	nid := ni.notifyIconData()
 	nid.UFlags = win.NIF_INFO
 	nid.DwInfoFlags = iconType
-	copy(nid.SzInfoTitle[:], syscall.StringToUTF16(title))
-	copy(nid.SzInfo[:], syscall.StringToUTF16(info))
-
+	var oldIcon *Icon
+	if iconType == win.NIIF_USER && icon != nil {
+		if win.GetVersion()&0xff >= 6 {
+			nid.HBalloonIcon = icon.hIcon
+			if ni.icon != nil {
+				nid.HIcon = ni.icon.hIcon
+			}
+		} else {
+			oldIcon = ni.icon
+			nid.HIcon = icon.hIcon
+		}
+		nid.UFlags |= win.NIF_ICON
+	}
+	if title16, err := syscall.UTF16FromString(title); err == nil {
+		copy(nid.SzInfoTitle[:], title16)
+	}
+	if info16, err := syscall.UTF16FromString(info); err == nil {
+		copy(nid.SzInfo[:], info16)
+	}
 	if !win.Shell_NotifyIcon(win.NIM_MODIFY, nid) {
 		return newError("Shell_NotifyIcon")
+	}
+	if oldIcon != nil {
+		ni.icon = nil
+		ni.SetIcon(oldIcon)
 	}
 
 	return nil
@@ -172,35 +195,36 @@ func (ni *NotifyIcon) showMessage(title, info string, iconType uint32) error {
 //
 // The NotifyIcon must be visible before calling this method.
 func (ni *NotifyIcon) ShowMessage(title, info string) error {
-	return ni.showMessage(title, info, win.NIIF_NONE)
+	return ni.showMessage(title, info, win.NIIF_NONE, nil)
 }
 
 // ShowInfo displays an info message balloon above the NotifyIcon.
 //
 // The NotifyIcon must be visible before calling this method.
 func (ni *NotifyIcon) ShowInfo(title, info string) error {
-	return ni.showMessage(title, info, win.NIIF_INFO)
+	return ni.showMessage(title, info, win.NIIF_INFO, nil)
 }
 
 // ShowWarning displays a warning message balloon above the NotifyIcon.
 //
 // The NotifyIcon must be visible before calling this method.
 func (ni *NotifyIcon) ShowWarning(title, info string) error {
-	return ni.showMessage(title, info, win.NIIF_WARNING)
+	return ni.showMessage(title, info, win.NIIF_WARNING, nil)
 }
 
 // ShowError displays an error message balloon above the NotifyIcon.
 //
 // The NotifyIcon must be visible before calling this method.
 func (ni *NotifyIcon) ShowError(title, info string) error {
-	return ni.showMessage(title, info, win.NIIF_ERROR)
+	return ni.showMessage(title, info, win.NIIF_ERROR, nil)
 }
 
 // ShowCustom displays a custom icon message balloon above the NotifyIcon.
+// If icon is nil, the main notification icon is used instead of a custom one.
 //
 // The NotifyIcon must be visible before calling this method.
-func (ni *NotifyIcon) ShowCustom(title, info string) error {
-	return ni.showMessage(title, info, win.NIIF_USER)
+func (ni *NotifyIcon) ShowCustom(title, info string, icon *Icon) error {
+	return ni.showMessage(title, info, win.NIIF_USER, icon)
 }
 
 // ContextMenu returns the context menu of the NotifyIcon.
@@ -306,4 +330,10 @@ func (ni *NotifyIcon) MouseDown() *MouseEvent {
 // while the cursor is over the NotifyIcon.
 func (ni *NotifyIcon) MouseUp() *MouseEvent {
 	return ni.mouseUpPublisher.Event()
+}
+
+// MessageClicked occurs when the user clicks a message shown with ShowMessage or
+// one of its iconed variants.
+func (ni *NotifyIcon) MessageClicked() *Event {
+	return ni.messageClickedPublisher.Event()
 }
