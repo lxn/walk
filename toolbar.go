@@ -329,7 +329,7 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 		*style |= win.BTNS_GROUP
 	}
 
-	if tb.buttonStyle != ToolBarButtonImageOnly {
+	if tb.buttonStyle != ToolBarButtonImageOnly && len(action.text) > 0 {
 		*style |= win.BTNS_SHOWTEXT
 	}
 
@@ -358,7 +358,11 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 		actionText = action.Text()
 	}
 
-	*text = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(actionText)))
+	if len(actionText) != 0 {
+		*text = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(actionText)))
+	} else if len(action.toolTip) != 0 {
+		*text = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(action.toolTip)))
+	}
 
 	return
 }
