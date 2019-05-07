@@ -533,9 +533,9 @@ func ancestor(w Widget) Form {
 }
 
 func minSizeEffective(w Widget) Size {
-	s := maxSize(w.MinSize(), w.MinSizeHint())
+	s := maxSize(w.MinSizePixels(), w.MinSizeHint())
 
-	max := w.MaxSize()
+	max := w.MaxSizePixels()
 	if max.Width > 0 && s.Width > max.Width {
 		s.Width = max.Width
 	}

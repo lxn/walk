@@ -421,7 +421,7 @@ func (l *splitterLayout) Update(reset bool) error {
 					var min, max int
 
 					minSize := minSizeEffective(widget)
-					maxSize := widget.MaxSize()
+					maxSize := widget.MaxSizePixels()
 
 					if l.orientation == Horizontal {
 						min = minSize.Width

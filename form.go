@@ -683,8 +683,8 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		}
 
 		mmi.PtMinTrackSize = win.POINT{
-			int32(fb.IntFrom96DPI(maxi(min.Width, fb.minSize.Width))),
-			int32(fb.IntFrom96DPI(maxi(min.Height, fb.minSize.Height))),
+			int32(maxi(min.Width, fb.minSize.Width)),
+			int32(maxi(min.Height, fb.minSize.Height)),
 		}
 		return 0
 

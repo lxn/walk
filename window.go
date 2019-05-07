@@ -154,12 +154,26 @@ type Window interface {
 	// has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 	MaxSize() Size
 
+	// MaxSizePixels returns the maximum allowed outer Size for the Window, including
+	// decorations.
+	//
+	// For child windows, this is only relevant when the parent of the Window
+	// has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
+	MaxSizePixels() Size
+
 	// MinSize returns the minimum allowed outer Size for the Window, including
 	// decorations.
 	//
 	// For child windows, this is only relevant when the parent of the Window
 	// has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 	MinSize() Size
+
+	// MinSizePixels returns the minimum allowed outer Size for the Window, including
+	// decorations.
+	//
+	// For child windows, this is only relevant when the parent of the Window
+	// has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
+	MinSizePixels() Size
 
 	// MouseDown returns a *MouseEvent that you can attach to for handling
 	// mouse down events for the Window.
@@ -239,6 +253,12 @@ type Window interface {
 	//
 	// Use walk.Size{} to make the respective limit be ignored.
 	SetMinMaxSize(min, max Size) error
+
+	// SetMinMaxSizePixels sets the minimum and maximum outer Size of the Window,
+	// including decorations.
+	//
+	// Use walk.Size{} to make the respective limit be ignored.
+	SetMinMaxSizePixels(min, max Size) error
 
 	// SetName sets the name of the Window.
 	//
@@ -871,6 +891,10 @@ type ApplyDPIer interface {
 }
 
 func (wb *WindowBase) ApplyDPI(dpi int) {
+	scale := float64(dpi) / float64(wb.dpi)
+	wb.minSize = wb.scaleSize(wb.minSize, scale)
+	wb.maxSize = wb.scaleSize(wb.maxSize, scale)
+
 	wb.dpi = dpi
 
 	if af, ok := wb.window.(applyFonter); ok {
@@ -1291,6 +1315,15 @@ func (wb *WindowBase) SetBoundsPixels(bounds Rectangle) error {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MinSize() Size {
+	return wb.SizeTo96DPI(wb.MinSizePixels())
+}
+
+// MinSizePixels returns the minimum allowed outer Size for the *WindowBase, including
+// decorations.
+//
+// For child windows, this is only relevant when the parent of the *WindowBase
+// has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
+func (wb *WindowBase) MinSizePixels() Size {
 	return wb.minSize
 }
 
@@ -1300,6 +1333,15 @@ func (wb *WindowBase) MinSize() Size {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MaxSize() Size {
+	return wb.SizeFrom96DPI(wb.MaxSizePixels())
+}
+
+// MaxSizePixels returns the maximum allowed outer Size for the *WindowBase, including
+// decorations.
+//
+// For child windows, this is only relevant when the parent of the *WindowBase
+// has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
+func (wb *WindowBase) MaxSizePixels() Size {
 	return wb.maxSize
 }
 
@@ -1308,6 +1350,14 @@ func (wb *WindowBase) MaxSize() Size {
 //
 // Use walk.Size{} to make the respective limit be ignored.
 func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
+	return wb.SetMinMaxSizePixels(wb.SizeFrom96DPI(min), wb.SizeFrom96DPI(max))
+}
+
+// SetMinMaxSizePixels sets the minimum and maximum outer Size of the *WindowBase,
+// including decorations.
+//
+// Use walk.Size{} to make the respective limit be ignored.
+func (wb *WindowBase) SetMinMaxSizePixels(min, max Size) error {
 	if min.Width < 0 || min.Height < 0 {
 		return newError("min must be positive")
 	}

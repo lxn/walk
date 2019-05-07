@@ -339,7 +339,7 @@ func boxLayoutItems(widgets []Widget, orientation Orientation, alignment Alignme
 
 		flags := widget.LayoutFlags()
 
-		max := widget.MaxSize()
+		max := widget.MaxSizePixels()
 		pref := widget.SizeHint()
 
 		if orientation == Horizontal {

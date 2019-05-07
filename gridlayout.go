@@ -300,10 +300,10 @@ func (l *GridLayout) LayoutFlags() LayoutFlags {
 
 			wf := widget.LayoutFlags()
 
-			if wf&GreedyHorz != 0 && widget.MaxSize().Width > 0 {
+			if wf&GreedyHorz != 0 && widget.MaxSizePixels().Width > 0 {
 				wf &^= GreedyHorz
 			}
-			if wf&GreedyVert != 0 && widget.MaxSize().Height > 0 {
+			if wf&GreedyVert != 0 && widget.MaxSizePixels().Height > 0 {
 				wf &^= GreedyVert
 			}
 
@@ -554,7 +554,7 @@ func (l *GridLayout) Update(reset bool) error {
 
 		if lf := widget.LayoutFlags(); lf&GrowableHorz == 0 || lf&GrowableVert == 0 {
 			s := widget.SizeHint()
-			max := widget.MaxSize()
+			max := widget.MaxSizePixels()
 			if max.Width > 0 && s.Width > max.Width {
 				s.Width = max.Width
 			}
@@ -651,7 +651,7 @@ func (l *GridLayout) sectionSizesForSpace(orientation Orientation, space int, wi
 			info := l.widgetBase2Info[wb]
 			flags := widget.LayoutFlags()
 
-			max := widget.MaxSize()
+			max := widget.MaxSizePixels()
 			pref := widget.SizeHint()
 
 			if orientation == Horizontal {

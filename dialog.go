@@ -158,7 +158,7 @@ func (dlg *Dialog) Show() {
 		var size Size
 		if layout := dlg.Layout(); layout != nil {
 			size = layout.MinSize()
-			min := dlg.MinSize()
+			min := dlg.MinSizePixels()
 			size.Width = maxi(size.Width, min.Width)
 			size.Height = maxi(size.Height, min.Height)
 		} else {
