@@ -408,8 +408,8 @@ func (ne *NumberEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			break
 		}
 
-		cb := ne.ClientBounds()
-		if err := ne.edit.SetBounds(cb); err != nil {
+		cb := ne.ClientBoundsPixels()
+		if err := ne.edit.SetBoundsPixels(cb); err != nil {
 			break
 		}
 	}

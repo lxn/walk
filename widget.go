@@ -151,12 +151,12 @@ func (wb *WidgetBase) AsWidgetBase() *WidgetBase {
 	return wb
 }
 
-// Bounds returns the outer bounding box Rectangle of the WidgetBase, including
+// BoundsPixels returns the outer bounding box Rectangle of the WidgetBase, including
 // decorations.
 //
 // The coordinates are relative to the parent of the Widget.
-func (wb *WidgetBase) Bounds() Rectangle {
-	b := wb.WindowBase.Bounds()
+func (wb *WidgetBase) BoundsPixels() Rectangle {
+	b := wb.WindowBase.BoundsPixels()
 
 	if wb.parent != nil {
 		p := win.POINT{int32(b.X), int32(b.Y)}
@@ -316,7 +316,7 @@ func (wb *WidgetBase) SetParent(parent Container) (err error) {
 		}
 	}
 
-	b := wb.Bounds()
+	b := wb.BoundsPixels()
 
 	if !win.SetWindowPos(
 		wb.hWnd,
@@ -420,7 +420,7 @@ func (wb *WidgetBase) onClearedGraphicsEffects() error {
 
 func (wb *WidgetBase) invalidateBorderInParent() {
 	if wb.parent != nil && wb.parent.Layout() != nil {
-		b := wb.Bounds().toRECT()
+		b := wb.BoundsPixels().toRECT()
 		s := int32(wb.parent.Layout().Spacing())
 
 		hwnd := wb.parent.Handle()
@@ -503,13 +503,13 @@ func (wb *WidgetBase) updateParentLayoutWithReset(reset bool) error {
 			if len(inProgressEventsByForm[appSingleton.activeForm]) > 0 {
 				formResizeScheduled = true
 			} else {
-				bounds := wnd.Bounds()
+				bounds := wnd.BoundsPixels()
 
 				if wnd.AsFormBase().fixedSize() {
 					bounds.Width, bounds.Height = 0, 0
 				}
 
-				wnd.SetBounds(bounds)
+				wnd.SetBoundsPixels(bounds)
 
 				return nil
 			}

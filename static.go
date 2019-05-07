@@ -178,13 +178,13 @@ func (s *static) setText(text string) (changed bool, err error) {
 		return false, err
 	}
 
-	size := s.Bounds().Size()
+	size := s.BoundsPixels().Size()
 
 	if err := s.updateParentLayout(); err != nil {
 		return false, err
 	}
 
-	if s.Bounds().Size() == size && size != (Size{}) {
+	if s.BoundsPixels().Size() == size && size != (Size{}) {
 		s.updateStaticBounds()
 	}
 
@@ -226,7 +226,7 @@ func (s *static) updateStaticBounds() {
 		format |= TextBottom
 	}
 
-	cb := s.ClientBounds()
+	cb := s.ClientBoundsPixels()
 
 	if format&TextVCenter != 0 || format&TextBottom != 0 {
 		var size Size

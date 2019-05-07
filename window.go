@@ -46,6 +46,14 @@ type Window interface {
 	// parent.
 	Bounds() Rectangle
 
+	// BoundsPixels returns the outer bounding box Rectangle of the Window, including
+	// decorations.
+	//
+	// For a Form, like *MainWindow or *Dialog, the Rectangle is in screen
+	// coordinates, for a child Window the coordinates are relative to its
+	// parent.
+	BoundsPixels() Rectangle
+
 	// BoundsChanged returns an *Event that you can attach to for handling bounds
 	// changed events for the Window.
 	BoundsChanged() *Event
@@ -57,13 +65,17 @@ type Window interface {
 	// excluding decorations.
 	ClientBounds() Rectangle
 
+	// ClientBoundsPixels returns the inner bounding box Rectangle of the Window,
+	// excluding decorations.
+	ClientBoundsPixels() Rectangle
+
 	// ContextMenu returns the context menu of the Window.
 	//
 	// By default this is nil.
 	ContextMenu() *Menu
 
 	// CreateCanvas creates and returns a *Canvas that can be used to draw
-	// inside the ClientBounds of the Window.
+	// inside the ClientBoundsPixels of the Window.
 	//
 	// Remember to call the Dispose method on the canvas to release resources,
 	// when you no longer need it.
@@ -113,6 +125,9 @@ type Window interface {
 
 	// Height returns the outer height of the Window, including decorations.
 	Height() int
+
+	// HeightPixels returns the outer height of the Window, including decorations.
+	HeightPixels() int
 
 	// Invalidate schedules a full repaint of the Window.
 	Invalidate() error
@@ -182,9 +197,17 @@ type Window interface {
 	// parent.
 	SetBounds(value Rectangle) error
 
-	// SetClientSize sets the Size of the inner bounding box of the Window,
+	// SetBoundsPixels sets the outer bounding box Rectangle of the Window, including
+	// decorations.
+	//
+	// For a Form, like *MainWindow or *Dialog, the Rectangle is in screen
+	// coordinates, for a child Window the coordinates are relative to its
+	// parent.
+	SetBoundsPixels(value Rectangle) error
+
+	// SetClientSizePixels sets the Size of the inner bounding box of the Window,
 	// excluding decorations.
-	SetClientSize(value Size) error
+	SetClientSizePixels(value Size) error
 
 	// SetContextMenu sets the context menu of the Window.
 	SetContextMenu(value *Menu)
@@ -208,6 +231,9 @@ type Window interface {
 	// SetHeight sets the outer height of the Window, including decorations.
 	SetHeight(value int) error
 
+	// SetHeightPixels sets the outer height of the Window, including decorations.
+	SetHeightPixels(value int) error
+
 	// SetMinMaxSize sets the minimum and maximum outer Size of the Window,
 	// including decorations.
 	//
@@ -228,6 +254,9 @@ type Window interface {
 	// SetSize sets the outer Size of the Window, including decorations.
 	SetSize(value Size) error
 
+	// SetSizePixels sets the outer Size of the Window, including decorations.
+	SetSizePixels(value Size) error
+
 	// SetSuspended sets if the Window is suspended for layout and repainting
 	// purposes.
 	//
@@ -242,18 +271,34 @@ type Window interface {
 	// SetWidth sets the outer width of the Window, including decorations.
 	SetWidth(value int) error
 
+	// SetWidthPixels sets the outer width of the Window, including decorations.
+	SetWidthPixels(value int) error
+
 	// SetX sets the x coordinate of the Window, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Windows.
 	SetX(value int) error
+
+	// SetXPixels sets the x coordinate of the Window, relative to the screen for
+	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
+	// child Windows.
+	SetXPixels(value int) error
 
 	// SetY sets the y coordinate of the Window, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Windows.
 	SetY(value int) error
 
+	// SetYPixels sets the y coordinate of the Window, relative to the screen for
+	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
+	// child Windows.
+	SetYPixels(value int) error
+
 	// Size returns the outer Size of the Window, including decorations.
 	Size() Size
+
+	// SizePixels returns the outer Size of the Window, including decorations.
+	SizePixels() Size
 
 	// SizeChanged returns an *Event that you can attach to for handling size
 	// changed events for the Window.
@@ -277,6 +322,9 @@ type Window interface {
 	// Width returns the outer width of the Window, including decorations.
 	Width() int
 
+	// WidthPixels returns the outer width of the Window, including decorations.
+	WidthPixels() int
+
 	// WndProc is the window procedure of the window.
 	//
 	// When implementing your own WndProc to add or modify behavior, call the
@@ -288,10 +336,20 @@ type Window interface {
 	// child Windows.
 	X() int
 
+	// XPixels returns the x coordinate of the Window, relative to the screen for
+	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
+	// child Windows.
+	XPixels() int
+
 	// Y returns the y coordinate of the Window, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Windows.
 	Y() int
+
+	// YPixels returns the y coordinate of the Window, relative to the screen for
+	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
+	// child Windows.
+	YPixels() int
 }
 
 type calcTextSizeInfo struct {
@@ -815,7 +873,9 @@ type ApplyDPIer interface {
 func (wb *WindowBase) ApplyDPI(dpi int) {
 	wb.dpi = dpi
 
-	wb.window.SetFont(wb.window.Font())
+	if af, ok := wb.window.(applyFonter); ok {
+		af.applyFont(wb.window.Font())
+	}
 }
 
 func (wb *WindowBase) IntFrom96DPI(value int) int {
@@ -1173,6 +1233,23 @@ func (wb *WindowBase) BringToTop() error {
 //
 // The coordinates are relative to the screen.
 func (wb *WindowBase) Bounds() Rectangle {
+	return wb.RectangleTo96DPI(wb.BoundsPixels())
+}
+
+// SetBounds sets the outer bounding box Rectangle of the *WindowBase,
+// including decorations.
+//
+// For a Form, like *MainWindow or *Dialog, the Rectangle is in screen
+// coordinates, for a child Window the coordinates are relative to its parent.
+func (wb *WindowBase) SetBounds(bounds Rectangle) error {
+	return wb.SetBoundsPixels(wb.RectangleFrom96DPI(bounds))
+}
+
+// BoundsPixels returns the outer bounding box Rectangle of the *WindowBase, including
+// decorations.
+//
+// The coordinates are relative to the screen.
+func (wb *WindowBase) BoundsPixels() Rectangle {
 	var r win.RECT
 
 	if !win.GetWindowRect(wb.hWnd, &r) {
@@ -1188,12 +1265,12 @@ func (wb *WindowBase) Bounds() Rectangle {
 	}
 }
 
-// SetBounds sets the outer bounding box Rectangle of the *WindowBase,
+// SetBoundsPixels sets the outer bounding box Rectangle of the *WindowBase,
 // including decorations.
 //
 // For a Form, like *MainWindow or *Dialog, the Rectangle is in screen
 // coordinates, for a child Window the coordinates are relative to its parent.
-func (wb *WindowBase) SetBounds(bounds Rectangle) error {
+func (wb *WindowBase) SetBoundsPixels(bounds Rectangle) error {
 	if !win.MoveWindow(
 		wb.hWnd,
 		int32(bounds.X),
@@ -1406,74 +1483,132 @@ func (wb *WindowBase) calculateTextSizeForWidth(width int) Size {
 
 // Size returns the outer Size of the *WindowBase, including decorations.
 func (wb *WindowBase) Size() Size {
-	return wb.window.Bounds().Size()
+	return wb.SizeTo96DPI(wb.SizePixels())
+}
+
+// SizePixels returns the outer Size of the *WindowBase, including decorations.
+func (wb *WindowBase) SizePixels() Size {
+	return wb.window.BoundsPixels().Size()
 }
 
 // SetSize sets the outer Size of the *WindowBase, including decorations.
 func (wb *WindowBase) SetSize(size Size) error {
-	bounds := wb.window.Bounds()
+	return wb.SetSizePixels(wb.SizeFrom96DPI(size))
+}
 
-	return wb.SetBounds(bounds.SetSize(size))
+// SetSizePixels sets the outer Size of the *WindowBase, including decorations.
+func (wb *WindowBase) SetSizePixels(size Size) error {
+	bounds := wb.window.BoundsPixels()
+
+	return wb.SetBoundsPixels(bounds.SetSize(size))
 }
 
 // X returns the x coordinate of the *WindowBase, relative to the screen for
 // RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Windows.
 func (wb *WindowBase) X() int {
-	return wb.window.Bounds().X
+	return wb.IntTo96DPI(wb.XPixels())
+}
+
+// XPixels returns the x coordinate of the *WindowBase, relative to the screen for
+// RootWidgets like *MainWindow or *Dialog and relative to the parent for
+// child Windows.
+func (wb *WindowBase) XPixels() int {
+	return wb.window.BoundsPixels().X
 }
 
 // SetX sets the x coordinate of the *WindowBase, relative to the screen for
 // RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Windows.
 func (wb *WindowBase) SetX(value int) error {
-	bounds := wb.window.Bounds()
+	return wb.SetXPixels(wb.IntFrom96DPI(value))
+}
+
+// SetXPixels sets the x coordinate of the *WindowBase, relative to the screen for
+// RootWidgets like *MainWindow or *Dialog and relative to the parent for
+// child Windows.
+func (wb *WindowBase) SetXPixels(value int) error {
+	bounds := wb.window.BoundsPixels()
 	bounds.X = value
 
-	return wb.SetBounds(bounds)
+	return wb.SetBoundsPixels(bounds)
 }
 
 // Y returns the y coordinate of the *WindowBase, relative to the screen for
 // RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Windows.
 func (wb *WindowBase) Y() int {
-	return wb.window.Bounds().Y
+	return wb.IntTo96DPI(wb.YPixels())
+}
+
+// YPixels returns the y coordinate of the *WindowBase, relative to the screen for
+// RootWidgets like *MainWindow or *Dialog and relative to the parent for
+// child Windows.
+func (wb *WindowBase) YPixels() int {
+	return wb.window.BoundsPixels().Y
 }
 
 // SetY sets the y coordinate of the *WindowBase, relative to the screen for
 // RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Windows.
 func (wb *WindowBase) SetY(value int) error {
-	bounds := wb.window.Bounds()
+	return wb.SetYPixels(wb.IntFrom96DPI(value))
+}
+
+// SetYPixels sets the y coordinate of the *WindowBase, relative to the screen for
+// RootWidgets like *MainWindow or *Dialog and relative to the parent for
+// child Windows.
+func (wb *WindowBase) SetYPixels(value int) error {
+	bounds := wb.window.BoundsPixels()
 	bounds.Y = value
 
-	return wb.SetBounds(bounds)
+	return wb.SetBoundsPixels(bounds)
 }
 
 // Width returns the outer width of the *WindowBase, including decorations.
 func (wb *WindowBase) Width() int {
-	return wb.window.Bounds().Width
+	return wb.IntTo96DPI(wb.WidthPixels())
+}
+
+// WidthPixels returns the outer width of the *WindowBase, including decorations.
+func (wb *WindowBase) WidthPixels() int {
+	return wb.window.BoundsPixels().Width
 }
 
 // SetWidth sets the outer width of the *WindowBase, including decorations.
 func (wb *WindowBase) SetWidth(value int) error {
-	bounds := wb.window.Bounds()
+	return wb.SetWidthPixels(wb.IntFrom96DPI(value))
+}
+
+// SetWidthPixels sets the outer width of the *WindowBase, including decorations.
+func (wb *WindowBase) SetWidthPixels(value int) error {
+	bounds := wb.window.BoundsPixels()
 	bounds.Width = value
 
-	return wb.SetBounds(bounds)
+	return wb.SetBoundsPixels(bounds)
 }
 
 // Height returns the outer height of the *WindowBase, including decorations.
 func (wb *WindowBase) Height() int {
-	return wb.window.Bounds().Height
+	return wb.IntTo96DPI(wb.HeightPixels())
+}
+
+// HeightPixels returns the outer height of the *WindowBase, including decorations.
+func (wb *WindowBase) HeightPixels() int {
+	return wb.window.BoundsPixels().Height
 }
 
 // SetHeight sets the outer height of the *WindowBase, including decorations.
 func (wb *WindowBase) SetHeight(value int) error {
-	bounds := wb.window.Bounds()
+	return wb.SetHeightPixels(wb.IntFrom96DPI(value))
+}
+
+// SetHeightPixels sets the outer height of the *WindowBase, including decorations.
+func (wb *WindowBase) SetHeightPixels(value int) error {
+	bounds := wb.window.BoundsPixels()
 	bounds.Height = value
 
-	return wb.SetBounds(bounds)
+	return wb.SetBoundsPixels(bounds)
 }
 
 func windowClientBounds(hwnd win.HWND) Rectangle {
@@ -1495,31 +1630,37 @@ func windowClientBounds(hwnd win.HWND) Rectangle {
 // ClientBounds returns the inner bounding box Rectangle of the *WindowBase,
 // excluding decorations.
 func (wb *WindowBase) ClientBounds() Rectangle {
+	return wb.RectangleTo96DPI(wb.ClientBoundsPixels())
+}
+
+// ClientBoundsPixels returns the inner bounding box Rectangle of the *WindowBase,
+// excluding decorations.
+func (wb *WindowBase) ClientBoundsPixels() Rectangle {
 	return windowClientBounds(wb.hWnd)
 }
 
-func (wb *WindowBase) sizeFromClientSize(clientSize Size) Size {
+func (wb *WindowBase) sizeFromClientSizePixels(clientSize Size) Size {
 	window := wb.window
-	s := window.Size()
-	cs := window.ClientBounds().Size()
+	s := window.SizePixels()
+	cs := window.ClientBoundsPixels().Size()
 	ncs := Size{s.Width - cs.Width, s.Height - cs.Height}
 
 	return Size{clientSize.Width + ncs.Width, clientSize.Height + ncs.Height}
 }
 
-func (wb *WindowBase) clientSizeFromSize(size Size) Size {
+func (wb *WindowBase) clientSizeFromSizePixels(size Size) Size {
 	window := wb.window
-	s := window.Size()
-	cs := window.ClientBounds().Size()
+	s := window.SizePixels()
+	cs := window.ClientBoundsPixels().Size()
 	ncs := Size{s.Width - cs.Width, s.Height - cs.Height}
 
 	return Size{size.Width - ncs.Width, size.Height - ncs.Height}
 }
 
-// SetClientSize sets the Size of the inner bounding box of the *WindowBase,
+// SetClientSizePixels sets the Size of the inner bounding box of the *WindowBase,
 // excluding decorations.
-func (wb *WindowBase) SetClientSize(value Size) error {
-	return wb.SetSize(wb.sizeFromClientSize(value))
+func (wb *WindowBase) SetClientSizePixels(value Size) error {
+	return wb.SetSizePixels(wb.sizeFromClientSizePixels(value))
 }
 
 // RightToLeftReading returns whether the reading order of the Window
@@ -1571,7 +1712,7 @@ func (wb *WindowBase) FocusedChanged() *Event {
 }
 
 // CreateCanvas creates and returns a *Canvas that can be used to draw
-// inside the ClientBounds of the *WindowBase.
+// inside the ClientBoundsPixels of the *WindowBase.
 //
 // Remember to call the Dispose method on the canvas to release resources,
 // when you no longer need it.
@@ -1930,7 +2071,7 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 		wb.prepareDCForBackground(hdc, hwnd, wnd)
 
-		if err := canvas.FillRectangle(bg, wb.ClientBounds()); err != nil {
+		if err := canvas.FillRectangle(bg, wb.ClientBoundsPixels()); err != nil {
 			break
 		}
 

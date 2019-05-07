@@ -61,13 +61,13 @@ func performScheduledLayouts() {
 	if formResizeScheduled {
 		formResizeScheduled = false
 
-		bounds := appSingleton.activeForm.Bounds()
+		bounds := appSingleton.activeForm.BoundsPixels()
 
 		if appSingleton.activeForm.AsFormBase().fixedSize() {
 			bounds.Width, bounds.Height = 0, 0
 		}
 
-		appSingleton.activeForm.SetBounds(bounds)
+		appSingleton.activeForm.SetBoundsPixels(bounds)
 	} else {
 		for _, layout := range layouts {
 			if widget, ok := layout.Container().(Widget); ok && widget.Form() != appSingleton.activeForm {
@@ -246,7 +246,7 @@ func applyLayoutResults(container Container, items []layoutResultItem) error {
 		widget := item.widget
 		x, y, w, h := item.bounds.X, item.bounds.Y, item.bounds.Width, item.bounds.Height
 
-		b := widget.Bounds()
+		b := widget.BoundsPixels()
 
 		if b.X == x && b.Y == y && b.Width == w {
 			if _, ok := widget.(*ComboBox); ok {
@@ -595,7 +595,7 @@ func (cb *ContainerBase) doPaint() error {
 				continue
 			}
 
-			b := widget.Bounds().toRECT()
+			b := widget.BoundsPixels().toRECT()
 			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
 
 			if err := effect.Draw(widget, canvas); err != nil {
@@ -620,7 +620,7 @@ func (cb *ContainerBase) doPaint() error {
 		if widget != nil && widget.Parent() != nil && widget.Parent().Handle() == cb.hWnd {
 			for _, effect := range widget.GraphicsEffects().items {
 				if effect == FocusEffect {
-					b := widget.Bounds().toRECT()
+					b := widget.BoundsPixels().toRECT()
 					win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
 
 					if err := FocusEffect.Draw(widget, canvas); err != nil {

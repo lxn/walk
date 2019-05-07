@@ -125,8 +125,8 @@ func (tw *TabWidget) MinSizeHint() Size {
 		min.Height = maxi(min.Height, s.Height)
 	}
 
-	b := tw.Bounds()
-	pb := tw.pages.At(0).Bounds()
+	b := tw.BoundsPixels()
+	pb := tw.pages.At(0).BoundsPixels()
 
 	size := Size{b.Width - pb.Width + min.Width, b.Height - pb.Height + min.Height}
 
@@ -139,8 +139,8 @@ func (tw *TabWidget) HeightForWidth(width int) int {
 	}
 
 	var height int
-	margin := tw.Size()
-	pageSize := tw.pages.At(0).Size()
+	margin := tw.SizePixels()
+	pageSize := tw.pages.At(0).SizePixels()
 
 	margin.Width -= pageSize.Width
 	margin.Height -= pageSize.Height
@@ -171,7 +171,8 @@ func (tw *TabWidget) applyFont(font *Font) {
 
 	setWindowFont(tw.hWndTab, font)
 
-	applyFontToDescendants(tw, font)
+	// FIXME: won't work with ApplyDPI
+	// applyFontToDescendants(tw, font)
 }
 
 func (tw *TabWidget) CurrentIndex() int {
@@ -280,7 +281,7 @@ func (tw *TabWidget) resizePages() {
 	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
 	for _, page := range tw.pages.items {
-		if err := page.SetBounds(
+		if err := page.SetBoundsPixels(
 			Rectangle{
 				int(r.Left - 2),
 				int(r.Top),
@@ -367,7 +368,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 		hdc := win.BeginPaint(hwnd, &ps)
 		defer win.EndPaint(hwnd, &ps)
 
-		cb := tw.ClientBounds()
+		cb := tw.ClientBoundsPixels()
 
 		bitmap, err := NewBitmap(cb.Size())
 		if err != nil {

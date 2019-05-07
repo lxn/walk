@@ -163,7 +163,7 @@ func (l *BoxLayout) MinSize() Size {
 		return Size{}
 	}
 
-	return l.MinSizeForSize(l.container.ClientBounds().Size())
+	return l.MinSizeForSize(l.container.ClientBoundsPixels().Size())
 }
 
 func (l *BoxLayout) MinSizeForSize(size Size) Size {
@@ -251,7 +251,7 @@ func (l *BoxLayout) Update(reset bool) error {
 
 	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
 
-	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, l.container.ClientBounds(), l.margins, l.spacing, l.hwnd2StretchFactor)
+	items, err := boxLayoutItems(widgetsToLayout(l.Container().Children()), l.orientation, l.alignment, l.container.ClientBoundsPixels(), l.margins, l.spacing, l.hwnd2StretchFactor)
 	if err != nil {
 		return err
 	}

@@ -196,7 +196,7 @@ func (iv *ImageView) drawImage(canvas *Canvas, updateBounds Rectangle) error {
 		return nil
 	}
 
-	cb := iv.ClientBounds()
+	cb := iv.ClientBoundsPixels()
 
 	cb.Width -= iv.margin * 2
 	cb.Height -= iv.margin * 2

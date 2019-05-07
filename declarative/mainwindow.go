@@ -103,7 +103,7 @@ func (mw MainWindow) Create() error {
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
-		w.SetBounds(w.Bounds())
+		w.SetBoundsPixels(w.BoundsPixels())
 		return nil
 	})
 
@@ -149,7 +149,7 @@ func (mw MainWindow) Create() error {
 			w.StatusBar().SetVisible(true)
 		}
 
-		if err := w.SetSize(mw.Size.toW()); err != nil {
+		if err := w.SetSizePixels(mw.Size.toW()); err != nil {
 			return err
 		}
 

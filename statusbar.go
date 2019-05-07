@@ -61,6 +61,12 @@ func (sb *StatusBar) SetVisible(visible bool) {
 	sb.Parent().SendMessage(win.WM_SIZE, 0, 0)
 }
 
+func (sb *StatusBar) ApplyDPI(dpi int) {
+	sb.WidgetBase.ApplyDPI(dpi)
+
+	sb.update()
+}
+
 func (sb *StatusBar) update() error {
 	if err := sb.updateParts(); err != nil {
 		return err
@@ -83,7 +89,7 @@ func (sb *StatusBar) updateParts() error {
 	rightEdges := make([]int32, len(items))
 	var right int32
 	for i, item := range items {
-		right += int32(item.width)
+		right += int32(sb.IntFrom96DPI(item.width))
 		rightEdges[i] = right
 	}
 	var rep *int32

@@ -78,7 +78,7 @@ func NewMainWindowWithName(name string) (*MainWindow, error) {
 	mw.statusBar.parent = mw
 	win.SetParent(mw.statusBar.hWnd, mw.hWnd)
 	mw.statusBar.visibleChangedPublisher.event.Attach(func() {
-		mw.SetBounds(mw.Bounds())
+		mw.SetBoundsPixels(mw.BoundsPixels())
 	})
 
 	succeeded = true
@@ -114,18 +114,18 @@ func (mw *MainWindow) StatusBar() *StatusBar {
 	return mw.statusBar
 }
 
-func (mw *MainWindow) ClientBounds() Rectangle {
-	bounds := mw.FormBase.ClientBounds()
+func (mw *MainWindow) ClientBoundsPixels() Rectangle {
+	bounds := mw.FormBase.ClientBoundsPixels()
 
 	if mw.toolBar != nil && mw.toolBar.Actions().Len() > 0 {
-		tlbBounds := mw.toolBar.Bounds()
+		tlbBounds := mw.toolBar.BoundsPixels()
 
 		bounds.Y += tlbBounds.Height
 		bounds.Height -= tlbBounds.Height
 	}
 
 	if mw.statusBar.Visible() {
-		bounds.Height -= mw.statusBar.Height()
+		bounds.Height -= mw.statusBar.HeightPixels()
 	}
 
 	return bounds
@@ -214,13 +214,13 @@ func (mw *MainWindow) SetFullscreen(fullscreen bool) error {
 func (mw *MainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_SIZE, win.WM_SIZING:
-		cb := mw.ClientBounds()
+		cb := mw.ClientBoundsPixels()
 
 		if mw.toolBar != nil {
-			mw.toolBar.SetBounds(Rectangle{0, 0, cb.Width, mw.toolBar.Height()})
+			mw.toolBar.SetBoundsPixels(Rectangle{0, 0, cb.Width, mw.toolBar.HeightPixels()})
 		}
 
-		mw.statusBar.SetBounds(Rectangle{0, cb.Y + cb.Height, cb.Width, mw.statusBar.Height()})
+		mw.statusBar.SetBoundsPixels(Rectangle{0, cb.Y + cb.Height, cb.Width, mw.statusBar.HeightPixels()})
 	}
 
 	return mw.FormBase.WndProc(hwnd, msg, wParam, lParam)

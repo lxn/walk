@@ -258,8 +258,8 @@ func (tb *ToolBar) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 	case win.WM_MOUSEMOVE, win.WM_MOUSELEAVE, win.WM_LBUTTONDOWN:
 		tb.Invalidate()
 
-	case win.WM_PAINT:
-		tb.Invalidate()
+	// case win.WM_PAINT:
+	// 	tb.Invalidate()
 
 	case win.WM_COMMAND:
 		switch win.HIWORD(uint32(wParam)) {

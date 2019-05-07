@@ -200,9 +200,9 @@ func (fb *FormBase) SetLayout(value Layout) error {
 	return fb.clientComposite.SetLayout(value)
 }
 
-func (fb *FormBase) SetBounds(bounds Rectangle) error {
+func (fb *FormBase) SetBoundsPixels(bounds Rectangle) error {
 	if layout := fb.Layout(); layout != nil {
-		minSize := fb.sizeFromClientSize(layout.MinSizeForSize(fb.clientComposite.Size()))
+		minSize := fb.sizeFromClientSizePixels(layout.MinSizeForSize(fb.clientComposite.SizePixels()))
 
 		if bounds.Width < minSize.Width {
 			bounds.Width = minSize.Width
@@ -212,7 +212,7 @@ func (fb *FormBase) SetBounds(bounds Rectangle) error {
 		}
 	}
 
-	if err := fb.WindowBase.SetBounds(bounds); err != nil {
+	if err := fb.WindowBase.SetBoundsPixels(bounds); err != nil {
 		return err
 	}
 
@@ -270,10 +270,10 @@ func (fb *FormBase) onInsertedWidget(index int, widget Widget) error {
 	if err == nil {
 		if layout := fb.Layout(); layout != nil && !fb.Suspended() {
 			minClientSize := fb.Layout().MinSize()
-			clientSize := fb.clientComposite.Size()
+			clientSize := fb.clientComposite.SizePixels()
 
 			if clientSize.Width < minClientSize.Width || clientSize.Height < minClientSize.Height {
-				fb.SetClientSize(minClientSize)
+				fb.SetClientSizePixels(minClientSize)
 			}
 		}
 	}
@@ -376,7 +376,7 @@ func (fb *FormBase) Run() int {
 	fb.started = true
 	fb.startingPublisher.Publish()
 
-	fb.SetBounds(fb.Bounds())
+	fb.SetBoundsPixels(fb.BoundsPixels())
 
 	// Some widgets perform weird scrolling stunts, when initially focused.
 	// We try to fix that here and hope for the best.
@@ -602,7 +602,7 @@ func (fb *FormBase) RestoreState() error {
 	wp.Length = uint32(unsafe.Sizeof(wp))
 
 	if layout := fb.Layout(); layout != nil && fb.fixedSize() {
-		minSize := fb.sizeFromClientSize(layout.MinSize())
+		minSize := fb.sizeFromClientSizePixels(layout.MinSize())
 
 		wp.RcNormalPosition.Right = wp.RcNormalPosition.Left + int32(minSize.Width) - 1
 		wp.RcNormalPosition.Bottom = wp.RcNormalPosition.Top + int32(minSize.Height) - 1
@@ -674,11 +674,11 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		var min Size
 		if layout := fb.clientComposite.layout; layout != nil {
-			size := fb.clientSizeFromSize(fb.proposedSize)
-			min = fb.sizeFromClientSize(layout.MinSizeForSize(size))
+			size := fb.clientSizeFromSizePixels(fb.proposedSize)
+			min = fb.sizeFromClientSizePixels(layout.MinSizeForSize(size))
 
 			if fb.proposedSize.Width < min.Width {
-				min = fb.sizeFromClientSize(layout.MinSizeForSize(min))
+				min = fb.sizeFromClientSizePixels(layout.MinSizeForSize(min))
 			}
 		}
 
@@ -699,20 +699,22 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		fb.proposedSize = rectangleFromRECT(*rc).Size()
 
-		fb.clientComposite.SetBounds(fb.window.ClientBounds())
+		fb.clientComposite.SetBoundsPixels(fb.window.ClientBoundsPixels())
 
 	case win.WM_SIZE:
-		fb.clientComposite.SetBounds(fb.window.ClientBounds())
+		fb.clientComposite.SetBoundsPixels(fb.window.ClientBoundsPixels())
 
 	case win.WM_DPICHANGED:
 		wasSuspended := fb.Suspended()
 		fb.SetSuspended(true)
 		defer fb.SetSuspended(wasSuspended)
 
-		rc := (*win.RECT)(unsafe.Pointer(lParam))
-		fb.window.SetBounds(rectangleFromRECT(*rc))
-
 		fb.ApplyDPI(int(win.HIWORD(uint32(wParam))))
+
+		applyDPIToDescendants(fb.window, int(win.HIWORD(uint32(wParam))))
+
+		rc := (*win.RECT)(unsafe.Pointer(lParam))
+		fb.window.SetBoundsPixels(rectangleFromRECT(*rc))
 
 	case win.WM_SYSCOMMAND:
 		if wParam == win.SC_CLOSE {

@@ -214,8 +214,8 @@ func (lep *LineErrorPresenter) WndProc(hwnd win.HWND, msg uint32, wParam, lParam
 	switch msg {
 	case win.WM_SIZE, win.WM_SIZING:
 		if lep.composite != nil {
-			b := lep.ClientBounds()
-			lep.composite.SetBounds(Rectangle{b.X + 2, b.Y + 2, b.Width - 4, b.Height - 4})
+			b := lep.ClientBoundsPixels()
+			lep.composite.SetBoundsPixels(Rectangle{b.X + 2, b.Y + 2, b.Width - 4, b.Height - 4})
 		}
 	}
 

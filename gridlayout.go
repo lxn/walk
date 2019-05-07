@@ -319,7 +319,7 @@ func (l *GridLayout) MinSize() Size {
 		return Size{}
 	}
 
-	return l.MinSizeForSize(l.container.ClientBounds().Size())
+	return l.MinSizeForSize(l.container.ClientBoundsPixels().Size())
 }
 
 func (l *GridLayout) MinSizeForSize(size Size) Size {
@@ -518,7 +518,7 @@ func (l *GridLayout) Update(reset bool) error {
 
 	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
 
-	cb := l.container.ClientBounds()
+	cb := l.container.ClientBoundsPixels()
 
 	widths := l.sectionSizesForSpace(Horizontal, cb.Width, nil)
 	heights := l.sectionSizesForSpace(Vertical, cb.Height, widths)

@@ -53,7 +53,7 @@ func (tl *TextLabel) MinSizeHint() Size {
 }
 
 func (tl *TextLabel) SizeHint() Size {
-	return tl.calculateTextSizeForWidth(tl.Width())
+	return tl.calculateTextSizeForWidth(tl.WidthPixels())
 }
 
 func (tl *TextLabel) HeightForWidth(width int) int {

@@ -413,7 +413,7 @@ func (b *GradientBrush) attachWindow(wb *WindowBase) {
 	var info *windowBrushInfo
 
 	update := func() {
-		if bb, err := b.create(wb.window.ClientBounds().Size()); err == nil {
+		if bb, err := b.create(wb.window.ClientBoundsPixels().Size()); err == nil {
 			if info.Delegate != nil {
 				info.Delegate.bitmap.Dispose()
 				info.Delegate.Dispose()

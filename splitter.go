@@ -23,6 +23,7 @@ func init() {
 	MustRegisterWindowClass(splitterWindowClass)
 
 	splitterHandleDraggingBrush, _ = NewSolidColorBrush(Color(win.GetSysColor(win.COLOR_BTNSHADOW)))
+	splitterHandleDraggingBrush.wb2info = map[*WindowBase]*windowBrushInfo{nil: nil}
 }
 
 type Splitter struct {
@@ -299,9 +300,9 @@ func (s *Splitter) SetFixed(widget Widget, fixed bool) error {
 
 	item.fixed = fixed
 
-	if b := widget.Bounds(); fixed && b.Width == 0 || b.Height == 0 {
+	if b := widget.BoundsPixels(); fixed && b.Width == 0 || b.Height == 0 {
 		b.Width, b.Height = 100, 100
-		widget.SetBounds(b)
+		widget.SetBoundsPixels(b)
 		item.size = 100
 	}
 
@@ -342,9 +343,9 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 		}
 	} else {
 		layout := s.Layout().(*splitterLayout)
-		item := &splitterLayoutItem{stretchFactor: 1}
+		item := &splitterLayoutItem{stretchFactor: 1, wasVisible: true}
 		layout.hwnd2Item[widget.Handle()] = item
-		item.visibleChangedHandle = widget.AsWidgetBase().Property("Visible").Changed().Attach(func() {
+		item.visibleChangedHandle = widget.VisibleChanged().Attach(func() {
 			if !layout.suspended && widget.AsWidgetBase().visible != item.wasVisible {
 				layout.Update(true)
 			}
@@ -396,18 +397,18 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						}
 
 						handleIndex := s.children.Index(s.draggedHandle)
-						bh := s.draggedHandle.Bounds()
+						bh := s.draggedHandle.BoundsPixels()
 
 						prev := closestVisibleWidget(handleIndex, -1)
-						bp := prev.Bounds()
+						bp := prev.BoundsPixels()
 						msep := minSizeEffective(prev)
 
 						next := closestVisibleWidget(handleIndex, 1)
-						bn := next.Bounds()
+						bn := next.BoundsPixels()
 						msen := minSizeEffective(next)
 
 						if s.Orientation() == Horizontal {
-							xh := s.draggedHandle.X()
+							xh := s.draggedHandle.XPixels()
 
 							xnew := xh + x - s.mouseDownPos.X
 							if xnew < bp.X+msep.Width {
@@ -416,11 +417,11 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 								xnew = bn.X + bn.Width - msen.Width - s.handleWidth
 							}
 
-							if e := s.draggedHandle.SetX(xnew); e != nil {
+							if e := s.draggedHandle.SetXPixels(xnew); e != nil {
 								return
 							}
 						} else {
-							yh := s.draggedHandle.Y()
+							yh := s.draggedHandle.YPixels()
 
 							ynew := yh + y - s.mouseDownPos.Y
 							if ynew < bp.Y+msep.Height {
@@ -429,7 +430,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 								ynew = bn.Y + bn.Height - msen.Height - s.handleWidth
 							}
 
-							if e := s.draggedHandle.SetY(ynew); e != nil {
+							if e := s.draggedHandle.SetYPixels(ynew); e != nil {
 								return
 							}
 						}
@@ -480,9 +481,9 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						defer next.Invalidate()
 						defer next.SetSuspended(false)
 
-						bh := dragHandle.Bounds()
-						bp := prev.Bounds()
-						bn := next.Bounds()
+						bh := dragHandle.BoundsPixels()
+						bp := prev.BoundsPixels()
+						bn := next.BoundsPixels()
 
 						var sizePrev int
 						var sizeNext int
@@ -501,11 +502,11 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 							sizeNext = bn.Height
 						}
 
-						if e := prev.SetBounds(bp); e != nil {
+						if e := prev.SetBoundsPixels(bp); e != nil {
 							return
 						}
 
-						if e := next.SetBounds(bn); e != nil {
+						if e := next.SetBoundsPixels(bn); e != nil {
 							return
 						}
 

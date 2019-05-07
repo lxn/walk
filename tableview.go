@@ -2259,7 +2259,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr 
 }
 
 func (tv *TableView) updateLVSizes() {
-	cb := tv.ClientBounds()
+	cb := tv.ClientBoundsPixels()
 
 	var width int
 	for i := tv.columns.Len() - 1; i >= 0; i-- {
@@ -2267,6 +2267,8 @@ func (tv *TableView) updateLVSizes() {
 			width += col.Width()
 		}
 	}
+
+	width = tv.IntFrom96DPI(width)
 
 	win.MoveWindow(tv.hwndNormalLV, int32(width), 0, int32(cb.Width-width), int32(cb.Height), true)
 

@@ -90,7 +90,7 @@ func (l *FlowLayout) MinSize() Size {
 		return Size{}
 	}
 
-	return l.MinSizeForSize(l.container.ClientBounds().Size())
+	return l.MinSizeForSize(l.container.ClientBoundsPixels().Size())
 }
 
 func (l *FlowLayout) MinSizeForSize(size Size) Size {
@@ -195,7 +195,7 @@ func (l *FlowLayout) Update(reset bool) error {
 
 	ifContainerIsScrollViewDoCoolSpecialLayoutStuff(l)
 
-	bounds := l.container.ClientBounds()
+	bounds := l.container.ClientBoundsPixels()
 	sections := l.sectionsForPrimarySize(bounds.Width)
 
 	for i, section := range sections {
