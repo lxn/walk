@@ -380,6 +380,7 @@ func (tvc *TableViewColumn) create() error {
 	} else {
 		lvc.Cx = 100
 	}
+	lvc.Cx = int32(tvc.tv.IntFrom96DPI(int(lvc.Cx)))
 
 	switch tvc.alignment {
 	case AlignCenter:
