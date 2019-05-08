@@ -40,8 +40,8 @@ func init() {
 
 func synchronize(f func()) {
 	syncFuncs.m.Lock()
-	defer syncFuncs.m.Unlock()
 	syncFuncs.funcs = append(syncFuncs.funcs, f)
+	syncFuncs.m.Unlock()
 }
 
 func runSynchronized() {
