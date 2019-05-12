@@ -8,6 +8,7 @@ package walk
 
 import (
 	"fmt"
+	"runtime"
 	"strconv"
 	"sync"
 	"syscall"
@@ -350,6 +351,9 @@ func (fb *FormBase) SetRightToLeftLayout(rtl bool) error {
 }
 
 func (fb *FormBase) Run() int {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	if fb.owner != nil {
 		win.EnableWindow(fb.owner.Handle(), false)
 
