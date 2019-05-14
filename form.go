@@ -8,6 +8,7 @@ package walk
 
 import (
 	"fmt"
+	"runtime"
 	"strconv"
 	"sync"
 	"syscall"
@@ -40,8 +41,8 @@ func init() {
 
 func synchronize(f func()) {
 	syncFuncs.m.Lock()
-	defer syncFuncs.m.Unlock()
 	syncFuncs.funcs = append(syncFuncs.funcs, f)
+	syncFuncs.m.Unlock()
 }
 
 func runSynchronized() {
@@ -156,6 +157,11 @@ func (fb *FormBase) init(form Form) error {
 			return fb.SetTitle(assertStringOr(v, ""))
 		},
 		fb.titleChangedPublisher.Event()))
+
+	version := win.GetVersion()
+	if (version & 0xFF) > 6 || ((version & 0xFF) == 6 && (version & 0xFF00 >> 8) > 0) {
+		win.ChangeWindowMessageFilterEx(fb.hWnd, taskbarButtonCreatedMsgId, win.MSGFLT_ALLOW, nil)
+	}
 
 	return nil
 }
@@ -350,6 +356,9 @@ func (fb *FormBase) SetRightToLeftLayout(rtl bool) error {
 }
 
 func (fb *FormBase) Run() int {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	if fb.owner != nil {
 		win.EnableWindow(fb.owner.Handle(), false)
 
@@ -744,7 +753,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		major := version & 0xFF
 		minor := version & 0xFF00 >> 8
 		// Check that the OS is Win 7 or later (Win 7 is v6.1).
-		if major > 6 || (major == 6 && minor > 0) {
+		if fb.progressIndicator == nil && (major > 6 || (major == 6 && minor > 0)) {
 			fb.progressIndicator, _ = newTaskbarList3(fb.hWnd)
 		}
 	}

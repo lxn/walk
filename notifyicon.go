@@ -84,10 +84,11 @@ type NotifyIcon struct {
 // NewNotifyIcon creates and returns a new NotifyIcon.
 //
 // The NotifyIcon is initially not visible.
-func NewNotifyIcon(mw *MainWindow) (*NotifyIcon, error) {
+func NewNotifyIcon(form Form) (*NotifyIcon, error) {
+	fb := form.AsFormBase()
 	// Add our notify icon to the status area and make sure it is hidden.
 	nid := win.NOTIFYICONDATA{
-		HWnd:             mw.hWnd,
+		HWnd:             fb.hWnd,
 		UFlags:           win.NIF_MESSAGE | win.NIF_STATE,
 		DwState:          win.NIS_HIDDEN,
 		DwStateMask:      win.NIS_HIDDEN,
@@ -115,12 +116,12 @@ func NewNotifyIcon(mw *MainWindow) (*NotifyIcon, error) {
 
 	ni := &NotifyIcon{
 		id:          nid.UID,
-		hWnd:        mw.hWnd,
+		hWnd:        fb.hWnd,
 		contextMenu: menu,
 	}
 
 	// Set our *NotifyIcon as user data for the message window.
-	win.SetWindowLongPtr(mw.hWnd, win.GWLP_USERDATA, uintptr(unsafe.Pointer(ni)))
+	win.SetWindowLongPtr(fb.hWnd, win.GWLP_USERDATA, uintptr(unsafe.Pointer(ni)))
 
 	return ni, nil
 }
