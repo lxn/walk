@@ -86,7 +86,7 @@ func (pi *ProgressIndicator) Completed() uint32 {
 func (pi *ProgressIndicator) SetOverlayIcon(icon *Icon, description string) error {
 	handle := win.HICON(0)
 	if icon != nil {
-		handle = icon.hIcon
+		handle = icon.handleForDPI(int(win.GetDpiForWindow(pi.hwnd)))
 	}
 	if hr := pi.taskbarList3.SetOverlayIcon(pi.hwnd, handle, syscall.StringToUTF16Ptr(description)); win.FAILED(hr) {
 		return errorFromHRESULT("ITaskbarList3.SetOverlayIcon", hr)
