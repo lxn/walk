@@ -111,15 +111,15 @@ func newIconFromResource(res *uint16, size Size) (*Icon, error) {
 	return checkNewIcon(&Icon{res: res, size96dpi: size})
 }
 
-// NewIconExtractedFromSysDLL returns a new Icon, as identified by index of
+// NewIconFromSysDLL returns a new Icon, as identified by index of
 // size 16x16 from the system DLL identified by dllBaseName.
-func NewIconExtractedFromSysDLL(dllBaseName string, index int) (*Icon, error) {
-	return NewIconExtractedFromSysDLLWithSize(dllBaseName, index, 16)
+func NewIconFromSysDLL(dllBaseName string, index int) (*Icon, error) {
+	return NewIconFromSysDLLWithSize(dllBaseName, index, 16)
 }
 
-// NewIconExtractedFromSysDLLWithSize returns a new Icon, as identified by
+// NewIconFromSysDLLWithSize returns a new Icon, as identified by
 // index of the desired size from the system DLL identified by dllBaseName.
-func NewIconExtractedFromSysDLLWithSize(dllBaseName string, index, size int) (*Icon, error) {
+func NewIconFromSysDLLWithSize(dllBaseName string, index, size int) (*Icon, error) {
 	system32, err := windows.GetSystemDirectory()
 	if err != nil {
 		return nil, err
@@ -307,14 +307,7 @@ func (i *Icon) Dispose() {
 }
 
 func (i *Icon) draw(hdc win.HDC, location Point) error {
-	var dpi int
-	if hwnd := win.WindowFromDC(hdc); hwnd != 0 {
-		dpi = int(win.GetDpiForWindow(hwnd))
-	} else {
-		// ISSUE: LOGPIXELSX seems to be highly unreliable, probably not even worth trying.
-		dpi = int(win.GetDeviceCaps(hdc, win.LOGPIXELSX))
-	}
-
+	dpi := dpiForHDC(hdc)
 	size := SizeFrom96DPI(i.size96dpi, dpi)
 
 	return i.drawStretched(hdc, Rectangle{location.X, location.Y, size.Width, size.Height})

@@ -9,9 +9,7 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -79,7 +77,7 @@ func NewCanvasFromImage(image Image) (*Canvas, error) {
 
 		succeeded = true
 
-		return (&Canvas{hdc: hdc, bitmap: img}).init()
+		return (&Canvas{hdc: hdc, bitmap: img, dpix: img.dpi, dpiy: img.dpi}).init()
 
 	case *Metafile:
 		c, err := newCanvasFromHDC(img.hdc)
@@ -101,9 +99,7 @@ func newCanvasFromHWND(hwnd win.HWND) (*Canvas, error) {
 		return nil, newError("GetDC failed")
 	}
 
-	dpi := int(win.GetDpiForWindow(hwnd))
-
-	return (&Canvas{hdc: hdc, hwnd: hwnd, dpix: dpi, dpiy: dpi}).init()
+	return (&Canvas{hdc: hdc, hwnd: hwnd}).init()
 }
 
 func newCanvasFromHDC(hdc win.HDC) (*Canvas, error) {
@@ -116,8 +112,8 @@ func newCanvasFromHDC(hdc win.HDC) (*Canvas, error) {
 
 func (c *Canvas) init() (*Canvas, error) {
 	if c.dpix == 0 || c.dpiy == 0 {
-		c.dpix = int(win.GetDeviceCaps(c.hdc, win.LOGPIXELSX))
-		c.dpiy = int(win.GetDeviceCaps(c.hdc, win.LOGPIXELSY))
+		c.dpix = dpiForHDC(c.hdc)
+		c.dpiy = c.dpix
 	}
 
 	if win.SetBkMode(c.hdc, win.TRANSPARENT) == 0 {
@@ -239,12 +235,22 @@ func (c *Canvas) DrawImage(image Image, location Point) error {
 		return newError("image cannot be nil")
 	}
 
+	location = PointFrom96DPI(location, c.dpix)
+
 	return image.draw(c.hdc, location)
 }
 
 func (c *Canvas) DrawImageStretched(image Image, bounds Rectangle) error {
 	if image == nil {
 		return newError("image cannot be nil")
+	}
+
+	bounds = RectangleFrom96DPI(bounds, c.dpix)
+
+	if dsoc, ok := image.(interface {
+		drawStretchedOnCanvas(canvas *Canvas, bounds Rectangle) error
+	}); ok {
+		return dsoc.drawStretchedOnCanvas(c, bounds)
 	}
 
 	return image.drawStretched(c.hdc, bounds)
@@ -254,6 +260,8 @@ func (c *Canvas) DrawBitmapWithOpacity(bmp *Bitmap, bounds Rectangle, opacity by
 	if bmp == nil {
 		return newError("bmp cannot be nil")
 	}
+
+	bounds = RectangleFrom96DPI(bounds, c.dpix)
 
 	return bmp.alphaBlend(c.hdc, bounds, opacity)
 }
@@ -266,6 +274,9 @@ func (c *Canvas) DrawBitmapPartWithOpacity(bmp *Bitmap, dst, src Rectangle, opac
 	if bmp == nil {
 		return newError("bmp cannot be nil")
 	}
+
+	dst = RectangleFrom96DPI(dst, c.dpix)
+	src = RectangleFrom96DPI(src, c.dpix)
 
 	return bmp.alphaBlendPart(c.hdc, dst, src, opacity)
 }

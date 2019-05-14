@@ -260,9 +260,7 @@ func (m *Menu) insertAction(action *Action, visibleChanged bool) (err error) {
 		menu.window = m.window
 	}
 
-	if m.window != nil {
-		win.DrawMenuBar(m.window.Handle())
-	}
+	m.ensureMenuBarRedrawn()
 
 	return
 }
@@ -278,11 +276,17 @@ func (m *Menu) removeAction(action *Action, visibleChanged bool) error {
 		action.removeChangedHandler(m)
 	}
 
-	if m.window != nil {
-		win.DrawMenuBar(m.window.Handle())
-	}
+	m.ensureMenuBarRedrawn()
 
 	return nil
+}
+
+func (m *Menu) ensureMenuBarRedrawn() {
+	if m.window != nil {
+		if mw, ok := m.window.(*MainWindow); ok && mw != nil {
+			win.DrawMenuBar(mw.Handle())
+		}
+	}
 }
 
 func (m *Menu) onInsertedAction(action *Action) error {

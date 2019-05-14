@@ -20,6 +20,7 @@ type Bitmap struct {
 	hBmp       win.HBITMAP
 	hPackedDIB win.HGLOBAL
 	size       Size
+	dpi        int
 }
 
 func NewBitmap(size Size) (*Bitmap, error) {
@@ -134,11 +135,16 @@ func NewBitmapFromImageWithSize(image Image, size Size) (*Bitmap, error) {
 	}
 	disposables.Add(bmp)
 
+	dpi := int(float64(size.Width) / float64(image.Size().Width) * 96.0)
+
 	canvas, err := NewCanvasFromImage(bmp)
 	if err != nil {
 		return nil, err
 	}
 	defer canvas.Dispose()
+
+	canvas.dpix = dpi
+	canvas.dpiy = dpi
 
 	if err := canvas.DrawImageStretched(image, Rectangle{0, 0, size.Width, size.Height}); err != nil {
 		return nil, err
