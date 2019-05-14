@@ -75,12 +75,6 @@ func (tb ToolBar) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(tb, w, func() error {
-		imageList, err := walk.NewImageList(walk.Size{16, 16}, 0)
-		if err != nil {
-			return err
-		}
-		w.SetImageList(imageList)
-
 		mtr := tb.MaxTextRows
 		if mtr < 1 {
 			mtr = 1

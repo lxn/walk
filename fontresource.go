@@ -11,7 +11,7 @@ import (
 	"syscall"
 )
 
-// FontMemResource represents a font resource loaded into memory from 
+// FontMemResource represents a font resource loaded into memory from
 // the application's resources.
 type FontMemResource struct {
 	hFontResource win.HANDLE
@@ -22,7 +22,7 @@ func newFontMemResource(resourceName *uint16) (*FontMemResource, error) {
 	if hModule == win.HMODULE(0) {
 		return nil, lastError("GetModuleHandle")
 	}
-	
+
 	hres := win.FindResource(hModule, resourceName, win.MAKEINTRESOURCE(8) /*RT_FONT*/)
 	if hres == win.HRSRC(0) {
 		return nil, lastError("FindResource")
@@ -50,12 +50,12 @@ func newFontMemResource(resourceName *uint16) (*FontMemResource, error) {
 		return nil, lastError("AddFontMemResource")
 	}
 
-	return &FontMemResource { hFontResource: hFontResource }, nil
+	return &FontMemResource{hFontResource: hFontResource}, nil
 }
 
 // NewFontMemResourceByName function loads a font resource from the executable's resources
-// using the resource name. 
-// The font must be embedded into resources using corresponding operator in the 
+// using the resource name.
+// The font must be embedded into resources using corresponding operator in the
 // application's RC script.
 func NewFontMemResourceByName(name string) (*FontMemResource, error) {
 	lpstr, err := syscall.UTF16PtrFromString(name)
@@ -66,9 +66,9 @@ func NewFontMemResourceByName(name string) (*FontMemResource, error) {
 	return newFontMemResource(lpstr)
 }
 
-// NewFontMemResourceById function loads a font resource from the executable's resources 
+// NewFontMemResourceById function loads a font resource from the executable's resources
 // using the resource ID.
-// The font must be embedded into resources using corresponding operator in the 
+// The font must be embedded into resources using corresponding operator in the
 // application's RC script.
 func NewFontMemResourceById(id int) (*FontMemResource, error) {
 	return newFontMemResource(win.MAKEINTRESOURCE(uintptr(id)))

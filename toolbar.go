@@ -32,6 +32,7 @@ type ToolBar struct {
 	defaultButtonWidth int
 	maxTextRows        int
 	buttonStyle        ToolBarButtonStyle
+	action2bitmap      map[*Action]*Bitmap
 }
 
 func NewToolBarWithOrientationAndButtonStyle(parent Container, orientation Orientation, buttonStyle ToolBarButtonStyle) (*ToolBar, error) {
@@ -46,7 +47,10 @@ func NewToolBarWithOrientationAndButtonStyle(parent Container, orientation Orien
 		style |= win.TBSTYLE_LIST
 	}
 
-	tb := &ToolBar{buttonStyle: buttonStyle}
+	tb := &ToolBar{
+		buttonStyle:   buttonStyle,
+		action2bitmap: make(map[*Action]*Bitmap),
+	}
 	tb.actions = newActionList(tb)
 
 	if orientation == Vertical {
@@ -131,6 +135,43 @@ func (tb *ToolBar) applyFont(font *Font) {
 	tb.applyDefaultButtonWidth()
 
 	tb.updateParentLayout()
+}
+
+func (tb *ToolBar) ApplyDPI(dpi int) {
+	oldDPI := tb.DPI()
+	if dpi == oldDPI {
+		return
+	}
+
+	tb.WidgetBase.ApplyDPI(dpi)
+
+	var maskColor Color
+	var size Size
+	if tb.imageList != nil {
+		maskColor = tb.imageList.maskColor
+		size = tb.imageList.imageSize96dpi
+	} else {
+		size = Size{16, 16}
+	}
+
+	iml, err := newImageList(size, maskColor, dpi)
+	if err != nil {
+		return
+	}
+
+	tb.SendMessage(win.TB_SETIMAGELIST, 0, uintptr(iml.hIml))
+
+	if tb.imageList != nil {
+		tb.imageList.Dispose()
+	}
+
+	tb.imageList = iml
+
+	for _, action := range tb.actions.actions {
+		if action.image != nil {
+			tb.onActionChanged(action)
+		}
+	}
 }
 
 func (tb *ToolBar) Orientation() Orientation {
@@ -242,9 +283,17 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 }
 
 func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
+	if tb.imageList == nil {
+		iml, err := newImageList(Size{16, 16}, 0, tb.DPI())
+		if err != nil {
+			return 0, err
+		}
+
+		tb.SetImageList(iml)
+	}
+
 	imageIndex = -1
 	if image != nil {
-		// FIXME: Protect against duplicate insertion
 		if imageIndex, err = tb.imageList.AddMasked(image); err != nil {
 			return
 		}
@@ -289,6 +338,8 @@ func (tb *ToolBar) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 				if !win.ClientToScreen(tb.hWnd, &p) {
 					break
 				}
+
+				action.menu.updateItemsWithImageForWindow(tb)
 
 				win.TrackPopupMenuEx(
 					action.menu.hMenu,
@@ -346,8 +397,14 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 	}
 
 	if tb.buttonStyle != ToolBarButtonTextOnly {
-		if *image, err = tb.imageIndex(action.image); err != nil {
-			return
+		var bmp *Bitmap
+
+		if action.image != nil {
+			bmp, _ = iconCache.Bitmap(action.image, tb.DPI())
+		}
+
+		if *image, err = tb.imageIndex(bmp); err != nil {
+			return err
 		}
 	}
 

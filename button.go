@@ -99,25 +99,37 @@ func (b *Button) Image() Image {
 }
 
 func (b *Button) SetImage(image Image) error {
-	var typ uintptr
+	// var typ uintptr
+	// var handle uintptr
+	// switch img := image.(type) {
+	// case nil:
+	// 	// zeroes are good
+
+	// case *Bitmap:
+	// 	typ = win.IMAGE_BITMAP
+	// 	handle = uintptr(img.hBmp)
+
+	// case *Icon:
+	// 	typ = win.IMAGE_ICON
+	// 	handle = uintptr(img.handleForDPI(b.DPI()))
+
+	// default:
+	// 	return newError("image must be either *walk.Bitmap or *walk.Icon")
+	// }
+
+	// b.SendMessage(win.BM_SETIMAGE, typ, handle)
+
 	var handle uintptr
-	switch img := image.(type) {
-	case nil:
-		// zeroes are good
+	if image != nil {
+		bmp, err := iconCache.Bitmap(image, b.DPI())
+		if err != nil {
+			return err
+		}
 
-	case *Bitmap:
-		typ = win.IMAGE_BITMAP
-		handle = uintptr(img.hBmp)
-
-	case *Icon:
-		typ = win.IMAGE_ICON
-		handle = uintptr(img.hIcon)
-
-	default:
-		return newError("image must be either *walk.Bitmap or *walk.Icon")
+		handle = uintptr(bmp.hBmp)
 	}
 
-	b.SendMessage(win.BM_SETIMAGE, typ, handle)
+	b.SendMessage(win.BM_SETIMAGE, win.IMAGE_BITMAP, handle)
 
 	b.image = image
 

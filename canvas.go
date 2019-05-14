@@ -192,10 +192,10 @@ func (c *Canvas) HDC() win.HDC {
 }
 
 func (c *Canvas) Bounds() Rectangle {
-	return Rectangle{
+	return RectangleTo96DPI(Rectangle{
 		Width:  int(win.GetDeviceCaps(c.hdc, win.HORZRES)),
 		Height: int(win.GetDeviceCaps(c.hdc, win.VERTRES)),
-	}
+	}, c.dpix)
 }
 
 func (c *Canvas) withPen(pen Pen, f func() error) error {
@@ -210,6 +210,8 @@ func (c *Canvas) withBrushAndPen(brush Brush, pen Pen, f func() error) error {
 
 func (c *Canvas) ellipse(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) error {
 	return c.withBrushAndPen(brush, pen, func() error {
+		bounds = RectangleFrom96DPI(bounds, c.dpix)
+
 		if !win.Ellipse(
 			c.hdc,
 			int32(bounds.X),
@@ -269,11 +271,13 @@ func (c *Canvas) DrawBitmapPartWithOpacity(bmp *Bitmap, dst, src Rectangle, opac
 }
 
 func (c *Canvas) DrawLine(pen Pen, from, to Point) error {
+	from = PointFrom96DPI(from, c.dpix)
 	if !win.MoveToEx(c.hdc, from.X, from.Y, nil) {
 		return newError("MoveToEx failed")
 	}
 
 	return c.withPen(pen, func() error {
+		to = PointFrom96DPI(to, c.dpix)
 		if !win.LineTo(c.hdc, int32(to.X), int32(to.Y)) {
 			return newError("LineTo failed")
 		}
@@ -288,8 +292,10 @@ func (c *Canvas) DrawPolyline(pen Pen, points []Point) error {
 	}
 
 	pts := make([]win.POINT, len(points))
-	for i := range points {
-		pts[i] = win.POINT{X: int32(points[i].X), Y: int32(points[i].Y)}
+	for i, p := range points {
+		p = PointFrom96DPI(p, c.dpix)
+
+		pts[i] = win.POINT{X: int32(p.X), Y: int32(p.Y)}
 	}
 
 	return c.withPen(pen, func() error {
@@ -303,6 +309,8 @@ func (c *Canvas) DrawPolyline(pen Pen, points []Point) error {
 
 func (c *Canvas) rectangle(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) error {
 	return c.withBrushAndPen(brush, pen, func() error {
+		bounds = RectangleFrom96DPI(bounds, c.dpix)
+
 		if !win.Rectangle_(
 			c.hdc,
 			int32(bounds.X),
@@ -327,6 +335,9 @@ func (c *Canvas) FillRectangle(brush Brush, bounds Rectangle) error {
 
 func (c *Canvas) roundedRectangle(brush Brush, pen Pen, bounds Rectangle, ellipseSize Size, sizeCorrection int) error {
 	return c.withBrushAndPen(brush, pen, func() error {
+		bounds = RectangleFrom96DPI(bounds, c.dpix)
+		ellipseSize = SizeFrom96DPI(ellipseSize, c.dpix)
+
 		if !win.RoundRect(
 			c.hdc,
 			int32(bounds.X),
@@ -352,6 +363,8 @@ func (c *Canvas) FillRoundedRectangle(brush Brush, bounds Rectangle, ellipseSize
 }
 
 func (c *Canvas) GradientFillRectangle(color1, color2 Color, orientation Orientation, bounds Rectangle) error {
+	bounds = RectangleFrom96DPI(bounds, c.dpix)
+
 	vertices := [2]win.TRIVERTEX{
 		{
 			X:     int32(bounds.X),
@@ -384,6 +397,8 @@ func (c *Canvas) GradientFillRectangle(color1, color2 Color, orientation Orienta
 
 func (c *Canvas) DrawText(text string, font *Font, color Color, bounds Rectangle, format DrawTextFormat) error {
 	return c.withFontAndTextColor(font, color, func() error {
+		bounds = RectangleFrom96DPI(bounds, c.dpix)
+
 		rect := bounds.toRECT()
 		ret := win.DrawTextEx(
 			c.hdc,
@@ -438,6 +453,8 @@ func (c *Canvas) MeasureText(text string, font *Font, bounds Rectangle, format D
 	}
 	defer win.SelectObject(c.measureTextMetafile.hdc, oldHandle)
 
+	bounds = RectangleFrom96DPI(bounds, c.dpix)
+
 	rect := &win.RECT{
 		int32(bounds.X),
 		int32(bounds.Y),
@@ -457,12 +474,12 @@ func (c *Canvas) MeasureText(text string, font *Font, bounds Rectangle, format D
 		return
 	}
 
-	boundsMeasured = Rectangle{
+	boundsMeasured = RectangleTo96DPI(Rectangle{
 		int(rect.Left),
 		int(rect.Top),
 		int(rect.Right - rect.Left),
 		int(height),
-	}
+	}, c.dpix)
 	runesFitted = int(params.UiLengthDrawn)
 
 	return

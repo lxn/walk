@@ -1816,7 +1816,8 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						tv.hIml,
 						tv.usingSysIml,
 						tv.imageUintptr2Index,
-						tv.filePath2IconIndex)
+						tv.filePath2IconIndex,
+						tv.DPI())
 				}
 			}
 

@@ -26,7 +26,7 @@ type Action struct {
 	changedHandlers               []actionChangedHandler
 	text                          string
 	toolTip                       string
-	image                         *Bitmap
+	image                         Image
 	checkedCondition              Condition
 	checkedConditionChangedHandle int
 	defaultCondition              Condition
@@ -292,11 +292,11 @@ func (a *Action) SetExclusive(value bool) (err error) {
 	return
 }
 
-func (a *Action) Image() *Bitmap {
+func (a *Action) Image() Image {
 	return a.image
 }
 
-func (a *Action) SetImage(value *Bitmap) (err error) {
+func (a *Action) SetImage(value Image) (err error) {
 	if value != a.image {
 		old := a.image
 

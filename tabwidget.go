@@ -462,18 +462,21 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 					y := rc.Top
 					s := int32(16)
 
-					if imageCanvas, err := NewCanvasFromImage(page.image); err == nil {
-						defer imageCanvas.Dispose()
+					bmp, err := iconCache.Bitmap(page.image, tw.DPI())
+					if err == nil {
+						if imageCanvas, err := NewCanvasFromImage(page.image); err == nil {
+							defer imageCanvas.Dispose()
 
-						if !win.TransparentBlt(
-							canvas.hdc, x, y, s, s,
-							imageCanvas.hdc, 0, 0, int32(page.image.size.Width), int32(page.image.size.Height),
-							0) {
-							break
+							if !win.TransparentBlt(
+								canvas.hdc, x, y, s, s,
+								imageCanvas.hdc, 0, 0, int32(bmp.size.Width), int32(bmp.size.Height),
+								0) {
+								break
+							}
 						}
-					}
 
-					rc.Left += s + 6
+						rc.Left += s + 6
+					}
 				}
 
 				rc.Left += 6
@@ -647,7 +650,13 @@ func (tw *TabWidget) onClearedPages(pages []*TabPage) (err error) {
 }
 
 func (tw *TabWidget) tcitemFromPage(page *TabPage) *win.TCITEM {
-	imageIndex, _ := tw.imageIndex(page.image)
+	var imageIndex int32
+	if page.image != nil {
+		if bmp, err := iconCache.Bitmap(page.image, tw.DPI()); err == nil {
+			imageIndex, _ = tw.imageIndex(bmp)
+		}
+	}
+
 	text := syscall.StringToUTF16(page.title)
 
 	item := &win.TCITEM{
@@ -671,7 +680,6 @@ func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
 			win.SendMessage(tw.hWndTab, win.TCM_SETIMAGELIST, 0, uintptr(tw.imageList.hIml))
 		}
 
-		// FIXME: Protect against duplicate insertion
 		if index, err = tw.imageList.AddMasked(image); err != nil {
 			return
 		}

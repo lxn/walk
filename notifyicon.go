@@ -73,7 +73,7 @@ type NotifyIcon struct {
 	id                      uint32
 	hWnd                    win.HWND
 	contextMenu             *Menu
-	icon                    *Icon
+	icon                    Image
 	toolTip                 string
 	visible                 bool
 	mouseDownPublisher      MouseEventPublisher
@@ -111,6 +111,7 @@ func NewNotifyIcon(mw *MainWindow) (*NotifyIcon, error) {
 	if err != nil {
 		return nil, err
 	}
+	menu.window = mw
 
 	ni := &NotifyIcon{
 		id:          nid.UID,
@@ -157,14 +158,16 @@ func (ni *NotifyIcon) Dispose() error {
 	return nil
 }
 
-func (ni *NotifyIcon) showMessage(title, info string, iconType uint32, icon *Icon) error {
+func (ni *NotifyIcon) showMessage(title, info string, iconType uint32, icon Image) error {
 	nid := ni.notifyIconData()
 	nid.UFlags = win.NIF_INFO
 	nid.DwInfoFlags = iconType
-	var oldIcon *Icon
+	var oldIcon Image
 	if iconType == win.NIIF_USER && icon != nil {
 		oldIcon = ni.icon
-		nid.HIcon = icon.hIcon
+		if err := ni.setNIDIcon(nid, icon); err != nil {
+			return err
+		}
 		nid.UFlags |= win.NIF_ICON
 	}
 	if title16, err := syscall.UTF16FromString(title); err == nil {
@@ -216,7 +219,7 @@ func (ni *NotifyIcon) ShowError(title, info string) error {
 // If icon is nil, the main notification icon is used instead of a custom one.
 //
 // The NotifyIcon must be visible before calling this method.
-func (ni *NotifyIcon) ShowCustom(title, info string, icon *Icon) error {
+func (ni *NotifyIcon) ShowCustom(title, info string, icon Image) error {
 	return ni.showMessage(title, info, win.NIIF_USER, icon)
 }
 
@@ -226,12 +229,12 @@ func (ni *NotifyIcon) ContextMenu() *Menu {
 }
 
 // Icon returns the Icon of the NotifyIcon.
-func (ni *NotifyIcon) Icon() *Icon {
+func (ni *NotifyIcon) Icon() Image {
 	return ni.icon
 }
 
 // SetIcon sets the Icon of the NotifyIcon.
-func (ni *NotifyIcon) SetIcon(icon *Icon) error {
+func (ni *NotifyIcon) SetIcon(icon Image) error {
 	if icon == ni.icon {
 		return nil
 	}
@@ -241,7 +244,9 @@ func (ni *NotifyIcon) SetIcon(icon *Icon) error {
 	if icon == nil {
 		nid.HIcon = 0
 	} else {
-		nid.HIcon = icon.hIcon
+		if err := ni.setNIDIcon(nid, icon); err != nil {
+			return err
+		}
 	}
 
 	if !win.Shell_NotifyIcon(win.NIM_MODIFY, nid) {
@@ -249,6 +254,18 @@ func (ni *NotifyIcon) SetIcon(icon *Icon) error {
 	}
 
 	ni.icon = icon
+
+	return nil
+}
+
+func (ni *NotifyIcon) setNIDIcon(nid *win.NOTIFYICONDATA, icon Image) error {
+	hwnd := win.FindWindow(syscall.StringToUTF16Ptr("Shell_TrayWnd"), syscall.StringToUTF16Ptr(""))
+	dpi := int(win.GetDpiForWindow(hwnd))
+	ic, err := iconCache.Icon(icon, dpi)
+	if err != nil {
+		return err
+	}
+	nid.HIcon = ic.handleForDPI(dpi)
 
 	return nil
 }

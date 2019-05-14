@@ -892,8 +892,8 @@ type ApplyDPIer interface {
 
 func (wb *WindowBase) ApplyDPI(dpi int) {
 	scale := float64(dpi) / float64(wb.dpi)
-	wb.minSize = wb.scaleSize(wb.minSize, scale)
-	wb.maxSize = wb.scaleSize(wb.maxSize, scale)
+	wb.minSize = scaleSize(wb.minSize, scale)
+	wb.maxSize = scaleSize(wb.maxSize, scale)
 
 	wb.dpi = dpi
 
@@ -903,79 +903,43 @@ func (wb *WindowBase) ApplyDPI(dpi int) {
 }
 
 func (wb *WindowBase) IntFrom96DPI(value int) int {
-	return wb.scaleInt(value, float64(wb.DPI())/96.0)
+	return IntFrom96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) IntTo96DPI(value int) int {
-	return wb.scaleInt(value, 96.0/float64(wb.DPI()))
-}
-
-func (wb *WindowBase) scaleInt(value int, scale float64) int {
-	return int(float64(value) * scale)
+	return IntFrom96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) MarginsFrom96DPI(value Margins) Margins {
-	return wb.scaleMargins(value, float64(wb.DPI())/96.0)
+	return MarginsFrom96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) MarginsTo96DPI(value Margins) Margins {
-	return wb.scaleMargins(value, 96.0/float64(wb.DPI()))
-}
-
-func (wb *WindowBase) scaleMargins(value Margins, scale float64) Margins {
-	return Margins{
-		HNear: int(float64(value.HNear) * scale),
-		VNear: int(float64(value.VNear) * scale),
-		HFar:  int(float64(value.HFar) * scale),
-		VFar:  int(float64(value.VFar) * scale),
-	}
+	return MarginsFrom96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) PointFrom96DPI(value Point) Point {
-	return wb.scalePoint(value, float64(wb.DPI())/96.0)
+	return PointFrom96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) PointTo96DPI(value Point) Point {
-	return wb.scalePoint(value, 96.0/float64(wb.DPI()))
-}
-
-func (wb *WindowBase) scalePoint(value Point, scale float64) Point {
-	return Point{
-		X: int(float64(value.X) * scale),
-		Y: int(float64(value.Y) * scale),
-	}
+	return PointFrom96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) RectangleFrom96DPI(value Rectangle) Rectangle {
-	return wb.scaleRectangle(value, float64(wb.DPI())/96.0)
+	return RectangleFrom96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) RectangleTo96DPI(value Rectangle) Rectangle {
-	return wb.scaleRectangle(value, 96.0/float64(wb.DPI()))
-}
-
-func (wb *WindowBase) scaleRectangle(value Rectangle, scale float64) Rectangle {
-	return Rectangle{
-		X:      int(float64(value.X) * scale),
-		Y:      int(float64(value.Y) * scale),
-		Width:  int(float64(value.Width) * scale),
-		Height: int(float64(value.Height) * scale),
-	}
+	return RectangleFrom96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) SizeFrom96DPI(value Size) Size {
-	return wb.scaleSize(value, float64(wb.DPI())/96.0)
+	return SizeFrom96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) SizeTo96DPI(value Size) Size {
-	return wb.scaleSize(value, 96.0/float64(wb.DPI()))
-}
-
-func (wb *WindowBase) scaleSize(value Size, scale float64) Size {
-	return Size{
-		Width:  int(float64(value.Width) * scale),
-		Height: int(float64(value.Height) * scale),
-	}
+	return SizeFrom96DPI(value, wb.DPI())
 }
 
 // Enabled returns if the *WindowBase is enabled for user interaction.
@@ -2207,6 +2171,8 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		}
 
 		if contextMenu != nil {
+			contextMenu.updateItemsWithImageForWindow(wb.window)
+
 			win.TrackPopupMenuEx(
 				contextMenu.hMenu,
 				win.TPM_NOANIMATION,
