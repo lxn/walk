@@ -12,6 +12,7 @@ import (
 
 import (
 	"github.com/lxn/win"
+	"syscall"
 )
 
 type ProgressIndicator struct {
@@ -80,4 +81,15 @@ func (pi *ProgressIndicator) SetCompleted(completed uint32) error {
 
 func (pi *ProgressIndicator) Completed() uint32 {
 	return pi.completed
+}
+
+func (pi *ProgressIndicator) SetOverlayIcon(icon *Icon, description string) error {
+	handle := win.HICON(0)
+	if icon != nil {
+		handle = icon.hIcon
+	}
+	if hr := pi.taskbarList3.SetOverlayIcon(pi.hwnd, handle, syscall.StringToUTF16Ptr(description)); win.FAILED(hr) {
+		return errorFromHRESULT("ITaskbarList3.SetOverlayIcon", hr)
+	}
+	return nil
 }
