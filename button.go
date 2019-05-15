@@ -94,6 +94,12 @@ func (b *Button) MinSizeHint() Size {
 	return maxSize(Size{int(s.CX), int(s.CY)}, b.dialogBaseUnitsToPixels(Size{50, 14}))
 }
 
+func (b *Button) ApplyDPI(dpi int) {
+	b.WidgetBase.ApplyDPI(dpi)
+
+	b.SetImage(b.image)
+}
+
 func (b *Button) Image() Image {
 	return b.image
 }
