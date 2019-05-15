@@ -146,6 +146,8 @@ func NewBitmapFromImageWithSize(image Image, size Size) (*Bitmap, error) {
 	canvas.dpix = dpi
 	canvas.dpiy = dpi
 
+	size = SizeTo96DPI(size, dpi)
+
 	if err := canvas.DrawImageStretched(image, Rectangle{0, 0, size.Width, size.Height}); err != nil {
 		return nil, err
 	}
