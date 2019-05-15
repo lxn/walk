@@ -907,7 +907,7 @@ func (wb *WindowBase) IntFrom96DPI(value int) int {
 }
 
 func (wb *WindowBase) IntTo96DPI(value int) int {
-	return IntFrom96DPI(value, wb.DPI())
+	return IntTo96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) MarginsFrom96DPI(value Margins) Margins {
@@ -915,7 +915,7 @@ func (wb *WindowBase) MarginsFrom96DPI(value Margins) Margins {
 }
 
 func (wb *WindowBase) MarginsTo96DPI(value Margins) Margins {
-	return MarginsFrom96DPI(value, wb.DPI())
+	return MarginsTo96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) PointFrom96DPI(value Point) Point {
@@ -923,7 +923,7 @@ func (wb *WindowBase) PointFrom96DPI(value Point) Point {
 }
 
 func (wb *WindowBase) PointTo96DPI(value Point) Point {
-	return PointFrom96DPI(value, wb.DPI())
+	return PointTo96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) RectangleFrom96DPI(value Rectangle) Rectangle {
@@ -931,7 +931,7 @@ func (wb *WindowBase) RectangleFrom96DPI(value Rectangle) Rectangle {
 }
 
 func (wb *WindowBase) RectangleTo96DPI(value Rectangle) Rectangle {
-	return RectangleFrom96DPI(value, wb.DPI())
+	return RectangleTo96DPI(value, wb.DPI())
 }
 
 func (wb *WindowBase) SizeFrom96DPI(value Size) Size {
@@ -939,7 +939,7 @@ func (wb *WindowBase) SizeFrom96DPI(value Size) Size {
 }
 
 func (wb *WindowBase) SizeTo96DPI(value Size) Size {
-	return SizeFrom96DPI(value, wb.DPI())
+	return SizeTo96DPI(value, wb.DPI())
 }
 
 // Enabled returns if the *WindowBase is enabled for user interaction.
