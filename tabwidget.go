@@ -175,6 +175,36 @@ func (tw *TabWidget) applyFont(font *Font) {
 	// applyFontToDescendants(tw, font)
 }
 
+func (tw *TabWidget) ApplyDPI(dpi int) {
+	tw.WidgetBase.ApplyDPI(dpi)
+
+	var maskColor Color
+	var size Size
+	if tw.imageList != nil {
+		maskColor = tw.imageList.maskColor
+		size = tw.imageList.imageSize96dpi
+	} else {
+		size = Size{16, 16}
+	}
+
+	iml, err := newImageList(size, maskColor, dpi)
+	if err != nil {
+		return
+	}
+
+	win.SendMessage(tw.hWndTab, win.TCM_SETIMAGELIST, 0, uintptr(iml.hIml))
+
+	if tw.imageList != nil {
+		tw.imageList.Dispose()
+	}
+
+	tw.imageList = iml
+
+	for _, page := range tw.pages.items {
+		tw.onPageChanged(page)
+	}
+}
+
 func (tw *TabWidget) CurrentIndex() int {
 	return tw.currentIndex
 }
@@ -464,7 +494,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 					bmp, err := iconCache.Bitmap(page.image, tw.DPI())
 					if err == nil {
-						if imageCanvas, err := NewCanvasFromImage(page.image); err == nil {
+						if imageCanvas, err := NewCanvasFromImage(bmp); err == nil {
 							defer imageCanvas.Dispose()
 
 							if !win.TransparentBlt(
@@ -650,7 +680,7 @@ func (tw *TabWidget) onClearedPages(pages []*TabPage) (err error) {
 }
 
 func (tw *TabWidget) tcitemFromPage(page *TabPage) *win.TCITEM {
-	var imageIndex int32
+	var imageIndex int32 = -1
 	if page.image != nil {
 		if bmp, err := iconCache.Bitmap(page.image, tw.DPI()); err == nil {
 			imageIndex, _ = tw.imageIndex(bmp)
@@ -673,7 +703,7 @@ func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
 	index = -1
 	if image != nil {
 		if tw.imageList == nil {
-			if tw.imageList, err = NewImageList(Size{tw.DPI() / 6, tw.DPI() / 6}, 0); err != nil {
+			if tw.imageList, err = newImageList(Size{16, 16}, 0, tw.DPI()); err != nil {
 				return
 			}
 
