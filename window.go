@@ -1407,6 +1407,8 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 
 	dpi := wb.DPI()
 
+	width = IntTo96DPI(width, dpi)
+
 	if wb.calcTextSizeInfoPrev != nil &&
 		width == wb.calcTextSizeInfoPrev.width &&
 		font.family == wb.calcTextSizeInfoPrev.font.family &&
@@ -1434,7 +1436,7 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 			return size
 		}
 
-		size = bounds.Size()
+		size = SizeFrom96DPI(bounds.Size(), dpi)
 	} else {
 		hdc := win.GetDC(wb.hWnd)
 		if hdc == 0 {
