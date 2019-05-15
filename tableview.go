@@ -382,6 +382,10 @@ func (tv *TableView) ApplyDPI(dpi int) {
 		tv.style.canvas.dpiy = dpi
 	}
 
+	for _, column := range tv.columns.items {
+		column.update()
+	}
+
 	tv.WidgetBase.ApplyDPI(dpi)
 }
 
