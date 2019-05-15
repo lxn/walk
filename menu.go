@@ -19,6 +19,7 @@ type Menu struct {
 	window        Window
 	actions       *ActionList
 	action2bitmap map[*Action]*Bitmap
+	getDPI        func() int
 }
 
 func newMenuBar(window Window) (*Menu, error) {
@@ -110,7 +111,9 @@ func (m *Menu) initMenuItemInfoFromAction(mii *win.MENUITEMINFO, action *Action)
 	if action.image != nil {
 		mii.FMask |= win.MIIM_BITMAP
 		dpi := 96
-		if m.window != nil {
+		if m.getDPI != nil {
+			dpi = m.getDPI()
+		} else if m.window != nil {
 			dpi = m.window.DPI()
 		}
 		if bmp, err := iconCache.Bitmap(action.image, dpi); err == nil {

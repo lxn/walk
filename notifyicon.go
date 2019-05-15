@@ -112,12 +112,7 @@ func NewNotifyIcon(form Form) (*NotifyIcon, error) {
 	if err != nil {
 		return nil, err
 	}
-	hwnd := win.FindWindow(syscall.StringToUTF16Ptr("Shell_TrayWnd"), syscall.StringToUTF16Ptr(""))
-	if hwnd != 0 {
-		menu.window = &WindowBase{hWnd: hwnd}
-	} else {
-		menu.window = form
-	}
+	menu.window = form
 
 	ni := &NotifyIcon{
 		id:          nid.UID,
@@ -125,10 +120,17 @@ func NewNotifyIcon(form Form) (*NotifyIcon, error) {
 		contextMenu: menu,
 	}
 
+	menu.getDPI = ni.DPI
+
 	// Set our *NotifyIcon as user data for the message window.
 	win.SetWindowLongPtr(fb.hWnd, win.GWLP_USERDATA, uintptr(unsafe.Pointer(ni)))
 
 	return ni, nil
+}
+
+func (ni *NotifyIcon) DPI() int {
+	fakeWb := WindowBase{hWnd: win.FindWindow(syscall.StringToUTF16Ptr("Shell_TrayWnd"), syscall.StringToUTF16Ptr(""))}
+	return fakeWb.DPI()
 }
 
 func (ni *NotifyIcon) notifyIconData() *win.NOTIFYICONDATA {
@@ -265,8 +267,7 @@ func (ni *NotifyIcon) SetIcon(icon Image) error {
 }
 
 func (ni *NotifyIcon) setNIDIcon(nid *win.NOTIFYICONDATA, icon Image) error {
-	hwnd := win.FindWindow(syscall.StringToUTF16Ptr("Shell_TrayWnd"), syscall.StringToUTF16Ptr(""))
-	dpi := int(win.GetDpiForWindow(hwnd))
+	dpi := ni.DPI()
 	ic, err := iconCache.Icon(icon, dpi)
 	if err != nil {
 		return err
