@@ -7,8 +7,6 @@
 package walk
 
 import (
-	// "fmt"
-
 	"image"
 	"path/filepath"
 	"syscall"
@@ -33,8 +31,7 @@ type Icon struct {
 	res       *uint16
 	dpi2hIcon map[int]win.HICON
 	size96dpi Size
-	// size      Size
-	isStock bool
+	isStock   bool
 }
 
 func IconApplication() *Icon {
@@ -314,23 +311,9 @@ func (i *Icon) draw(hdc win.HDC, location Point) error {
 }
 
 func (i *Icon) drawStretched(hdc win.HDC, bounds Rectangle) error {
-	dpis := []int{72, 96, 120, 144, 168, 192}
-
 	dpi := int(float64(bounds.Width) / float64(i.size96dpi.Width) * 96.0)
 
-	var bestDPI, bestDiff int
-	for _, dpiCur := range dpis {
-		diff := dpi - dpiCur
-		if diff < 0 {
-			diff *= -1
-		}
-		if bestDPI == 0 || diff < bestDiff {
-			bestDiff = diff
-			bestDPI = dpiCur
-		}
-	}
-
-	hIcon := i.handleForDPI(bestDPI)
+	hIcon := i.handleForDPI(dpi)
 
 	if !win.DrawIconEx(hdc, int32(bounds.X), int32(bounds.Y), hIcon, int32(bounds.Width), int32(bounds.Height), 0, 0, win.DI_NORMAL) {
 		return lastError("DrawIconEx")
