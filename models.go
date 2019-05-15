@@ -6,7 +6,9 @@
 
 package walk
 
-import "github.com/lxn/win"
+import (
+	"github.com/lxn/win"
+)
 
 // BindingValueProvider is the interface that a model must implement to support
 // data binding with widgets like ComboBox.
@@ -299,6 +301,7 @@ type CellStyle struct {
 	col             int
 	bounds          Rectangle
 	hdc             win.HDC
+	dpi             int
 	canvas          *Canvas
 	BackgroundColor Color
 	TextColor       Color
@@ -328,6 +331,8 @@ func (cs *CellStyle) Bounds() Rectangle {
 func (cs *CellStyle) Canvas() *Canvas {
 	if cs.canvas == nil && cs.hdc != 0 {
 		cs.canvas, _ = newCanvasFromHDC(cs.hdc)
+		cs.canvas.dpix = cs.dpi
+		cs.canvas.dpiy = cs.dpi
 	}
 
 	return cs.canvas

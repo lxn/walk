@@ -233,6 +233,8 @@ func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error
 
 	tv.applyFont(parent.Font())
 
+	tv.style.dpi = tv.DPI()
+
 	tv.currentIndex = -1
 
 	tv.GraphicsEffects().Add(InteractionEffect)
@@ -371,6 +373,16 @@ func (tv *TableView) applyFont(font *Font) {
 
 	win.SendMessage(tv.hwndFrozenLV, win.WM_SETFONT, hFont, 0)
 	win.SendMessage(tv.hwndNormalLV, win.WM_SETFONT, hFont, 0)
+}
+
+func (tv *TableView) ApplyDPI(dpi int) {
+	tv.style.dpi = dpi
+	if tv.style.canvas != nil {
+		tv.style.canvas.dpix = dpi
+		tv.style.canvas.dpiy = dpi
+	}
+
+	tv.WidgetBase.ApplyDPI(dpi)
 }
 
 // ColumnsOrderable returns if the user can reorder columns by dragging and
@@ -1874,7 +1886,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 							}
 						}
 
-						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc)
+						tv.style.bounds = tv.RectangleTo96DPI(rectangleFromRECT(nmlvcd.Nmcd.Rc))
 						tv.style.hdc = nmlvcd.Nmcd.Hdc
 						tv.style.TextColor = tv.defaultTextColor
 						tv.style.Font = nil
@@ -1923,7 +1935,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						tv.style.row = row
 						tv.style.col = -1
 
-						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc)
+						tv.style.bounds = tv.RectangleTo96DPI(rectangleFromRECT(nmlvcd.Nmcd.Rc))
 						tv.style.hdc = 0
 						tv.defaultTextColor = Color(nmlvcd.ClrText)
 						if itemState := win.SendMessage(hwnd, win.LVM_GETITEMSTATE, nmlvcd.Nmcd.DwItemSpec, win.LVIS_SELECTED); itemState&win.LVIS_SELECTED != 0 && !win.IsAppThemed() {
@@ -2166,7 +2178,7 @@ func tableViewHdrWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 					tv.style.row = -1
 					tv.style.col = col
 
-					tv.style.bounds = rectangleFromRECT(nmcd.Rc)
+					tv.style.bounds = tv.RectangleTo96DPI(rectangleFromRECT(nmcd.Rc))
 					tv.style.hdc = nmcd.Hdc
 					tv.style.TextColor = RGB(0, 0, 0)
 					tv.style.Font = nil
