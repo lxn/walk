@@ -112,7 +112,12 @@ func NewNotifyIcon(form Form) (*NotifyIcon, error) {
 	if err != nil {
 		return nil, err
 	}
-	menu.window = form
+	hwnd := win.FindWindow(syscall.StringToUTF16Ptr("Shell_TrayWnd"), syscall.StringToUTF16Ptr(""))
+	if hwnd != 0 {
+		menu.window = &WindowBase{hWnd: hwnd}
+	} else {
+		menu.window = form
+	}
 
 	ni := &NotifyIcon{
 		id:          nid.UID,
