@@ -112,7 +112,7 @@ func NewNotifyIcon(form Form) (*NotifyIcon, error) {
 	if err != nil {
 		return nil, err
 	}
-	menu.window = mw
+	menu.window = form
 
 	ni := &NotifyIcon{
 		id:          nid.UID,

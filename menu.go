@@ -111,9 +111,7 @@ func (m *Menu) initMenuItemInfoFromAction(mii *win.MENUITEMINFO, action *Action)
 		mii.FMask |= win.MIIM_BITMAP
 		dpi := 96
 		if m.window != nil {
-			if mw, ok := m.window.(*MainWindow); ok && mw != nil {
-				dpi = mw.DPI()
-			}
+			dpi = m.window.DPI()
 		}
 		if bmp, err := iconCache.Bitmap(action.image, dpi); err == nil {
 			mii.HbmpItem = bmp.hBmp

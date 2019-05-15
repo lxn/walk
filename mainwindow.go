@@ -28,8 +28,6 @@ type MainWindow struct {
 	statusBar       *StatusBar
 }
 
-var mw Form = (*MainWindow)(nil)
-
 func NewMainWindow() (*MainWindow, error) {
 	return NewMainWindowWithName("")
 }
