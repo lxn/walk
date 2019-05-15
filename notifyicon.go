@@ -47,6 +47,16 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 			lastError("GetCursorPos")
 		}
 
+		dpi := ni.DPI()
+		if dpi != ni.lastDPI {
+			ni.lastDPI = dpi
+			for _, action := range ni.contextMenu.actions.actions {
+				if action.image != nil {
+					ni.contextMenu.onActionChanged(action)
+				}
+			}
+		}
+
 		actionId := uint16(win.TrackPopupMenuEx(
 			ni.contextMenu.hMenu,
 			win.TPM_NOANIMATION|win.TPM_RETURNCMD,
@@ -72,6 +82,7 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 type NotifyIcon struct {
 	id                      uint32
 	hWnd                    win.HWND
+	lastDPI                 int
 	contextMenu             *Menu
 	icon                    Image
 	toolTip                 string
