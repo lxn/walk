@@ -159,7 +159,7 @@ func (fb *FormBase) init(form Form) error {
 		fb.titleChangedPublisher.Event()))
 
 	version := win.GetVersion()
-	if (version & 0xFF) > 6 || ((version & 0xFF) == 6 && (version & 0xFF00 >> 8) > 0) {
+	if (version&0xFF) > 6 || ((version&0xFF) == 6 && (version&0xFF00>>8) > 0) {
 		win.ChangeWindowMessageFilterEx(fb.hWnd, taskbarButtonCreatedMsgId, win.MSGFLT_ALLOW, nil)
 	}
 
