@@ -239,6 +239,12 @@ func (l *BoxLayout) Update(reset bool) error {
 		return nil
 	}
 
+	if widget, ok := l.container.(Widget); ok {
+		if form := widget.Form(); form == nil || form.Suspended() {
+			return nil
+		}
+	}
+
 	if !performingScheduledLayouts && scheduleLayout(l) {
 		return nil
 	}

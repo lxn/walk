@@ -103,7 +103,7 @@ func (s *static) applyEnabled(enabled bool) {
 func (s *static) applyFont(font *Font) {
 	s.WidgetBase.applyFont(font)
 
-	setWindowFont(s.hwndStatic, font)
+	SetWindowFont(s.hwndStatic, font)
 }
 
 func (s *static) textAlignment1D() Alignment1D {

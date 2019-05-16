@@ -237,6 +237,8 @@ func applyEnabledToDescendants(window Window, enabled bool) {
 	})
 }
 
+var seenInApplyFontToDescendantsDuringDPIChange map[*WindowBase]bool
+
 func applyFontToDescendants(window Window, font *Font) {
 	wb := window.AsWindowBase()
 	wb.applyFont(font)
@@ -250,11 +252,21 @@ func applyFontToDescendants(window Window, font *Font) {
 			return false
 		}
 
+		if seenInApplyFontToDescendantsDuringDPIChange != nil {
+			wb := w.AsWindowBase()
+			if seenInApplyFontToDescendantsDuringDPIChange[wb] {
+				return true
+			}
+			seenInApplyFontToDescendantsDuringDPIChange[wb] = true
+		}
+
 		w.(applyFonter).applyFont(font)
 
 		return true
 	})
 }
+
+var seenInApplyDPIToDescendantsDuringDPIChange map[*WindowBase]bool
 
 func applyDPIToDescendants(window Window, dpi int) {
 	wb := window.AsWindowBase()
@@ -263,6 +275,14 @@ func applyDPIToDescendants(window Window, dpi int) {
 	walkDescendants(window, func(w Window) bool {
 		if w.Handle() == wb.hWnd {
 			return true
+		}
+
+		if seenInApplyDPIToDescendantsDuringDPIChange != nil {
+			wb := w.AsWindowBase()
+			if seenInApplyDPIToDescendantsDuringDPIChange[wb] {
+				return true
+			}
+			seenInApplyDPIToDescendantsDuringDPIChange[wb] = true
 		}
 
 		w.(ApplyDPIer).ApplyDPI(dpi)

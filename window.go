@@ -387,6 +387,7 @@ type WindowBase struct {
 	origWndProcPtr          uintptr
 	name                    string
 	font                    *Font
+	hFont                   win.HFONT
 	contextMenu             *Menu
 	disposables             []Disposable
 	disposingPublisher      EventPublisher
@@ -547,7 +548,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
-	setWindowFont(wb.hWnd, defaultFont)
+	SetWindowFont(wb.hWnd, defaultFont)
 
 	if form, ok := window.(Form); ok {
 		if fb := form.AsFormBase(); fb != nil {
@@ -1003,7 +1004,11 @@ type ApplyFonter interface {
 }
 
 func (wb *WindowBase) applyFont(font *Font) {
-	setWindowFont(wb.hWnd, font)
+	if hFont := font.handleForDPI(wb.DPI()); hFont != wb.hFont {
+		wb.hFont = hFont
+
+		setWindowFont(wb.hWnd, hFont)
+	}
 
 	if af, ok := wb.window.(ApplyFonter); ok {
 		af.ApplyFont(font)
@@ -1011,13 +1016,12 @@ func (wb *WindowBase) applyFont(font *Font) {
 }
 
 func SetWindowFont(hwnd win.HWND, font *Font) {
-	setWindowFont(hwnd, font)
+	dpi := int(win.GetDpiForWindow(hwnd))
+	setWindowFont(hwnd, font.handleForDPI(dpi))
 }
 
-func setWindowFont(hwnd win.HWND, font *Font) {
-	dpi := int(win.GetDpiForWindow(hwnd))
-
-	win.SendMessage(hwnd, win.WM_SETFONT, uintptr(font.handleForDPI(dpi)), 1)
+func setWindowFont(hwnd win.HWND, hFont win.HFONT) {
+	win.SendMessage(hwnd, win.WM_SETFONT, uintptr(hFont), 1)
 
 	if window := windowFromHandle(hwnd); window != nil {
 		if widget, ok := window.(Widget); ok {

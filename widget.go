@@ -90,6 +90,7 @@ type Widget interface {
 
 type WidgetBase struct {
 	WindowBase
+	form                        Form
 	parent                      Container
 	toolTipTextProperty         Property
 	toolTipTextChangedPublisher EventPublisher
@@ -212,7 +213,11 @@ func (wb *WidgetBase) applyFont(font *Font) {
 
 // Form returns the root ancestor Form of the Widget.
 func (wb *WidgetBase) Form() Form {
-	return ancestor(wb)
+	if wb.form == nil {
+		wb.form = ancestor(wb)
+	}
+
+	return wb.form
 }
 
 // Alignment return the alignment ot the *WidgetBase.
@@ -462,6 +467,10 @@ func (wb *WidgetBase) updateParentLayout() error {
 }
 
 func (wb *WidgetBase) updateParentLayoutWithReset(reset bool) error {
+	if form := wb.Form(); form == nil || form.Suspended() {
+		return nil
+	}
+
 	parent := wb.window.(Widget).Parent()
 
 	if parent == nil || parent.Layout() == nil {

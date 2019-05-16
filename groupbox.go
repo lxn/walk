@@ -56,7 +56,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 		return nil, lastError("CreateWindowEx(BUTTON)")
 	}
 
-	setWindowFont(gb.hWndGroupBox, gb.Font())
+	gb.applyFont(gb.Font())
 	gb.updateHeaderHeight()
 
 	var err error
@@ -230,7 +230,7 @@ func (gb *GroupBox) applyFont(font *Font) {
 	}
 
 	if gb.hWndGroupBox != 0 {
-		setWindowFont(gb.hWndGroupBox, font)
+		SetWindowFont(gb.hWndGroupBox, font)
 	}
 
 	if gb.composite != nil {

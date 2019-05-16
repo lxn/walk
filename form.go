@@ -248,6 +248,10 @@ func (fb *FormBase) SetDataBinder(db *DataBinder) {
 }
 
 func (fb *FormBase) Suspended() bool {
+	if fb.clientComposite == nil {
+		return false
+	}
+
 	return fb.clientComposite.Suspended()
 }
 
@@ -733,6 +737,13 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		defer fb.SetSuspended(wasSuspended)
 
 		dpi := int(win.HIWORD(uint32(wParam)))
+
+		seenInApplyFontToDescendantsDuringDPIChange = make(map[*WindowBase]bool)
+		seenInApplyDPIToDescendantsDuringDPIChange = make(map[*WindowBase]bool)
+		defer func() {
+			seenInApplyFontToDescendantsDuringDPIChange = nil
+			seenInApplyDPIToDescendantsDuringDPIChange = nil
+		}()
 
 		fb.clientComposite.ApplyDPI(dpi)
 		fb.ApplyDPI(dpi)

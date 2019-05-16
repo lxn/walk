@@ -66,7 +66,7 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 
 	win.SendMessage(tw.hWndTab, win.WM_SETFONT, uintptr(defaultFont.handleForDPI(0)), 1)
 
-	setWindowFont(tw.hWndTab, tw.Font())
+	tw.applyFont(tw.Font())
 
 	tw.MustRegisterProperty("HasCurrentPage", NewReadOnlyBoolProperty(
 		func() bool {
@@ -169,7 +169,7 @@ func (tw *TabWidget) applyEnabled(enabled bool) {
 func (tw *TabWidget) applyFont(font *Font) {
 	tw.WidgetBase.applyFont(font)
 
-	setWindowFont(tw.hWndTab, font)
+	SetWindowFont(tw.hWndTab, font)
 
 	// FIXME: won't work with ApplyDPI
 	// applyFontToDescendants(tw, font)

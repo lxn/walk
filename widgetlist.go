@@ -55,6 +55,10 @@ func (l *WidgetList) Clear() error {
 		}
 	}
 
+	for _, item := range oldItems {
+		item.form = nil
+	}
+
 	return nil
 }
 
@@ -160,6 +164,8 @@ func (l *WidgetList) RemoveAt(index int) error {
 			return err
 		}
 	}
+
+	item.form = nil
 
 	return nil
 }

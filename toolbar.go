@@ -10,9 +10,7 @@ import (
 	"fmt"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -172,6 +170,9 @@ func (tb *ToolBar) ApplyDPI(dpi int) {
 			tb.onActionChanged(action)
 		}
 	}
+
+	tb.hFont = tb.Font().handleForDPI(tb.DPI())
+	setWindowFont(tb.hWnd, tb.hFont)
 }
 
 func (tb *ToolBar) Orientation() Orientation {
