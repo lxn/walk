@@ -32,6 +32,7 @@ type Icon struct {
 	dpi2hIcon map[int]win.HICON
 	size96dpi Size
 	isStock   bool
+	hasIndex  bool
 }
 
 func IconApplication() *Icon {
@@ -122,17 +123,17 @@ func NewIconFromSysDLLWithSize(dllBaseName string, index, size int) (*Icon, erro
 		return nil, err
 	}
 
-	return checkNewIcon(&Icon{filePath: filepath.Join(system32, dllBaseName+".dll"), index: index, size96dpi: Size{size, size}})
+	return checkNewIcon(&Icon{filePath: filepath.Join(system32, dllBaseName+".dll"), index: index, hasIndex: true, size96dpi: Size{size, size}})
 }
 
 // NewIconExtractedFromFile returns a new Icon, as identified by index of size 16x16 from filePath.
 func NewIconExtractedFromFile(filePath string, index, size int) (*Icon, error) {
-	return checkNewIcon(&Icon{filePath: filePath, index: index, size96dpi: Size{16, 16}})
+	return checkNewIcon(&Icon{filePath: filePath, index: index, hasIndex: true, size96dpi: Size{16, 16}})
 }
 
 // NewIconExtractedFromFileWithSize returns a new Icon, as identified by index of the desired size from filePath.
 func NewIconExtractedFromFileWithSize(filePath string, index, size int) (*Icon, error) {
-	return checkNewIcon(&Icon{filePath: filePath, index: index, size96dpi: Size{size, size}})
+	return checkNewIcon(&Icon{filePath: filePath, index: index, hasIndex: true, size96dpi: Size{size, size}})
 }
 
 // NewIconFromImage returns a new Icon, using the specified image.Image as source.
@@ -262,7 +263,7 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 
 	var hIcon win.HICON
 
-	if i.index != 0 {
+	if i.hasIndex {
 		win.SHDefExtractIcon(
 			name,
 			int32(i.index),
