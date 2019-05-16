@@ -734,7 +734,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		dpi := int(win.HIWORD(uint32(wParam)))
 
-		fb.clientComposite.dpi = dpi
+		fb.clientComposite.ApplyDPI(dpi)
 		fb.ApplyDPI(dpi)
 		if fb.progressIndicator != nil {
 			fb.progressIndicator.SetOverlayIcon(fb.progressIndicator.overlayIcon, fb.progressIndicator.overlayIconDescription)
