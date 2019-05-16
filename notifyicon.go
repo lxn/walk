@@ -9,11 +9,11 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
+
+var notifyIcons = make(map[*NotifyIcon]bool)
 
 func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (result uintptr) {
 	// Retrieve our *NotifyIcon from the message window.
@@ -47,6 +47,8 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 			lastError("GetCursorPos")
 		}
 
+		ni.applyDPI()
+
 		actionId := uint16(win.TrackPopupMenuEx(
 			ni.contextMenu.hMenu,
 			win.TPM_NOANIMATION|win.TPM_RETURNCMD,
@@ -72,6 +74,7 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 type NotifyIcon struct {
 	id                      uint32
 	hWnd                    win.HWND
+	lastDPI                 int
 	contextMenu             *Menu
 	icon                    Image
 	toolTip                 string
@@ -112,7 +115,7 @@ func NewNotifyIcon(form Form) (*NotifyIcon, error) {
 	if err != nil {
 		return nil, err
 	}
-	menu.window = mw
+	menu.window = form
 
 	ni := &NotifyIcon{
 		id:          nid.UID,
@@ -120,10 +123,36 @@ func NewNotifyIcon(form Form) (*NotifyIcon, error) {
 		contextMenu: menu,
 	}
 
+	menu.getDPI = ni.DPI
+
 	// Set our *NotifyIcon as user data for the message window.
 	win.SetWindowLongPtr(fb.hWnd, win.GWLP_USERDATA, uintptr(unsafe.Pointer(ni)))
 
+	notifyIcons[ni] = true
 	return ni, nil
+}
+
+func (ni *NotifyIcon) DPI() int {
+	fakeWb := WindowBase{hWnd: win.FindWindow(syscall.StringToUTF16Ptr("Shell_TrayWnd"), syscall.StringToUTF16Ptr(""))}
+	return fakeWb.DPI()
+}
+
+func (ni *NotifyIcon) applyDPI() {
+	dpi := ni.DPI()
+	if dpi == ni.lastDPI {
+		return
+	}
+	ni.lastDPI = dpi
+	for _, action := range ni.contextMenu.actions.actions {
+		if action.image != nil {
+			ni.contextMenu.onActionChanged(action)
+		}
+	}
+	icon := ni.icon
+	ni.icon = nil
+	if icon != nil {
+		ni.SetIcon(icon)
+	}
 }
 
 func (ni *NotifyIcon) notifyIconData() *win.NOTIFYICONDATA {
@@ -144,6 +173,7 @@ func (ni *NotifyIcon) Dispose() error {
 	if ni.hWnd == 0 {
 		return nil
 	}
+	delete(notifyIcons, ni)
 
 	nid := ni.notifyIconData()
 
@@ -260,8 +290,7 @@ func (ni *NotifyIcon) SetIcon(icon Image) error {
 }
 
 func (ni *NotifyIcon) setNIDIcon(nid *win.NOTIFYICONDATA, icon Image) error {
-	hwnd := win.FindWindow(syscall.StringToUTF16Ptr("Shell_TrayWnd"), syscall.StringToUTF16Ptr(""))
-	dpi := int(win.GetDpiForWindow(hwnd))
+	dpi := ni.DPI()
 	ic, err := iconCache.Icon(icon, dpi)
 	if err != nil {
 		return err

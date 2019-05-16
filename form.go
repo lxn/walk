@@ -736,6 +736,15 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		fb.clientComposite.dpi = dpi
 		fb.ApplyDPI(dpi)
+		if fb.progressIndicator != nil {
+			fb.progressIndicator.SetOverlayIcon(fb.progressIndicator.overlayIcon, fb.progressIndicator.overlayIconDescription)
+		}
+		for ni := range notifyIcons {
+			// We do this on all NotifyIcons, not just ones attached to this form or descendents, because
+			// the notify icon might be on a different screen, and since it can't get notifications itself
+			// we hope that one of the forms did for it.
+			ni.applyDPI()
+		}
 		applyDPIToDescendants(fb.window, dpi)
 
 		rc := (*win.RECT)(unsafe.Pointer(lParam))
