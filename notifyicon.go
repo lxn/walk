@@ -9,11 +9,11 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
+
+var notifyIcons = make(map[*NotifyIcon]bool)
 
 func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (result uintptr) {
 	// Retrieve our *NotifyIcon from the message window.
@@ -47,15 +47,7 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 			lastError("GetCursorPos")
 		}
 
-		dpi := ni.DPI()
-		if dpi != ni.lastDPI {
-			ni.lastDPI = dpi
-			for _, action := range ni.contextMenu.actions.actions {
-				if action.image != nil {
-					ni.contextMenu.onActionChanged(action)
-				}
-			}
-		}
+		ni.applyDPI()
 
 		actionId := uint16(win.TrackPopupMenuEx(
 			ni.contextMenu.hMenu,
@@ -136,12 +128,31 @@ func NewNotifyIcon(form Form) (*NotifyIcon, error) {
 	// Set our *NotifyIcon as user data for the message window.
 	win.SetWindowLongPtr(fb.hWnd, win.GWLP_USERDATA, uintptr(unsafe.Pointer(ni)))
 
+	notifyIcons[ni] = true
 	return ni, nil
 }
 
 func (ni *NotifyIcon) DPI() int {
 	fakeWb := WindowBase{hWnd: win.FindWindow(syscall.StringToUTF16Ptr("Shell_TrayWnd"), syscall.StringToUTF16Ptr(""))}
 	return fakeWb.DPI()
+}
+
+func (ni *NotifyIcon) applyDPI() {
+	dpi := ni.DPI()
+	if dpi == ni.lastDPI {
+		return
+	}
+	ni.lastDPI = dpi
+	for _, action := range ni.contextMenu.actions.actions {
+		if action.image != nil {
+			ni.contextMenu.onActionChanged(action)
+		}
+	}
+	icon := ni.icon
+	ni.icon = nil
+	if icon != nil {
+		ni.SetIcon(icon)
+	}
 }
 
 func (ni *NotifyIcon) notifyIconData() *win.NOTIFYICONDATA {
@@ -162,6 +173,7 @@ func (ni *NotifyIcon) Dispose() error {
 	if ni.hWnd == 0 {
 		return nil
 	}
+	delete(notifyIcons, ni)
 
 	nid := ni.notifyIconData()
 
