@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/lxn/win"
@@ -750,18 +751,27 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		if fb.progressIndicator != nil {
 			fb.progressIndicator.SetOverlayIcon(fb.progressIndicator.overlayIcon, fb.progressIndicator.overlayIconDescription)
 		}
-		for ni := range notifyIcons {
-			// We do this on all NotifyIcons, not just ones attached to this form or descendents, because
-			// the notify icon might be on a different screen, and since it can't get notifications itself
-			// we hope that one of the forms did for it.
-			ni.applyDPI()
-		}
 		applyDPIToDescendants(fb.window, dpi)
 
 		rc := (*win.RECT)(unsafe.Pointer(lParam))
 		fb.window.SetBoundsPixels(rectangleFromRECT(*rc))
 
 		fb.SetIcon(fb.icon)
+
+		time.AfterFunc(time.Second, func() {
+			if fb.hWnd == 0 {
+				return
+			}
+			fb.Synchronize(func() {
+				for ni := range notifyIcons {
+					// We do this on all NotifyIcons, not just ones attached to this form or descendents, because
+					// the notify icon might be on a different screen, and since it can't get notifications itself
+					// we hope that one of the forms did for it. We also have to delay it by a second, because the
+					// tray usually gets resized sometime after us. This is a nasty hack!
+					ni.applyDPI()
+				}
+			})
+		})
 
 	case win.WM_SYSCOMMAND:
 		if wParam == win.SC_CLOSE {
