@@ -1427,45 +1427,30 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 		width = int(float64(width) * float64(dpi) / float64(wb.calcTextSizeInfoPrev.dpi))
 	}
 
+	hdc := win.GetDC(wb.hWnd)
+	if hdc == 0 {
+		newError("GetDC failed")
+		return Size{}
+	}
+	defer win.ReleaseDC(wb.hWnd, hdc)
+
+	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(dpi)))
+	defer win.SelectObject(hdc, hFontOld)
+
+	lines := strings.Split(text, "\n")
+
 	var size Size
-	if width > 0 {
-		canvas, err := wb.CreateCanvas()
-		if err != nil {
-			return size
-		}
-		defer canvas.Dispose()
+	for _, line := range lines {
+		var s win.SIZE
+		str := syscall.StringToUTF16(strings.TrimRight(line, "\r "))
 
-		bounds, _, err := canvas.MeasureText(text, font, Rectangle{Width: width, Height: 9999999}, 0)
-		if err != nil {
-			return size
-		}
-
-		size = SizeFrom96DPI(bounds.Size(), dpi)
-	} else {
-		hdc := win.GetDC(wb.hWnd)
-		if hdc == 0 {
-			newError("GetDC failed")
+		if !win.GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
+			newError("GetTextExtentPoint32 failed")
 			return Size{}
 		}
-		defer win.ReleaseDC(wb.hWnd, hdc)
 
-		hFontOld := win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(dpi)))
-		defer win.SelectObject(hdc, hFontOld)
-
-		lines := strings.Split(text, "\n")
-
-		for _, line := range lines {
-			var s win.SIZE
-			str := syscall.StringToUTF16(strings.TrimRight(line, "\r "))
-
-			if !win.GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
-				newError("GetTextExtentPoint32 failed")
-				return Size{}
-			}
-
-			size.Width = maxi(size.Width, int(s.CX))
-			size.Height += int(s.CY)
-		}
+		size.Width = maxi(size.Width, int(s.CX))
+		size.Height += int(s.CY)
 	}
 
 	if wb.calcTextSizeInfoPrev == nil {
