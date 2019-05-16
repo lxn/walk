@@ -382,11 +382,11 @@ func (tv *TableView) ApplyDPI(dpi int) {
 		tv.style.canvas.dpiy = dpi
 	}
 
+	tv.WidgetBase.ApplyDPI(dpi)
+
 	for _, column := range tv.columns.items {
 		column.update()
 	}
-
-	tv.WidgetBase.ApplyDPI(dpi)
 }
 
 // ColumnsOrderable returns if the user can reorder columns by dragging and
