@@ -300,6 +300,16 @@ func (gb *GroupBox) CheckedChanged() *Event {
 	return gb.checkBox.CheckedChanged()
 }
 
+func (gb *GroupBox) ApplyDPI(dpi int) {
+	gb.WidgetBase.ApplyDPI(dpi)
+	if gb.checkBox != nil {
+		gb.checkBox.ApplyDPI(dpi)
+	}
+	if gb.composite != nil {
+		gb.composite.ApplyDPI(dpi)
+	}
+}
+
 func (gb *GroupBox) Children() *WidgetList {
 	if gb.composite == nil {
 		// Without this we would get into trouble in NewComposite.
