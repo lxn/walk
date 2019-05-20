@@ -413,7 +413,7 @@ type WindowBase struct {
 	focusedProperty         Property
 	focusedChangedPublisher EventPublisher
 	calcTextSizeInfoPrev    *calcTextSizeInfo
-	dpi                     int
+	lastDPI                 int
 	suspended               bool
 	visible                 bool
 	enabled                 bool
@@ -547,6 +547,8 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 			return lastError("SetWindowLongPtr")
 		}
 	}
+
+	wb.lastDPI = wb.DPI()
 
 	SetWindowFont(wb.hWnd, defaultFont)
 
@@ -872,19 +874,7 @@ func (wb *WindowBase) SetDoubleBuffering(enabled bool) error {
 
 // DPI returns the current DPI value of the WindowBase.
 func (wb *WindowBase) DPI() int {
-	if wb.dpi == 0 {
-		if widget, ok := wb.window.(Widget); ok {
-			if parent := widget.Parent(); parent != nil {
-				wb.dpi = parent.DPI()
-			}
-		}
-
-		if wb.dpi == 0 {
-			wb.dpi = int(win.GetDpiForWindow(wb.hWnd))
-		}
-	}
-
-	return wb.dpi
+	return int(win.GetDpiForWindow(wb.hWnd))
 }
 
 type ApplyDPIer interface {
@@ -892,11 +882,11 @@ type ApplyDPIer interface {
 }
 
 func (wb *WindowBase) ApplyDPI(dpi int) {
-	scale := float64(dpi) / float64(wb.dpi)
+	scale := float64(dpi) / float64(wb.lastDPI)
 	wb.minSize = scaleSize(wb.minSize, scale)
 	wb.maxSize = scaleSize(wb.maxSize, scale)
 
-	wb.dpi = dpi
+	wb.lastDPI = dpi
 
 	if af, ok := wb.window.(applyFonter); ok {
 		af.applyFont(wb.window.Font())
