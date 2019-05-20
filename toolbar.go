@@ -136,11 +136,6 @@ func (tb *ToolBar) applyFont(font *Font) {
 }
 
 func (tb *ToolBar) ApplyDPI(dpi int) {
-	oldDPI := tb.DPI()
-	if dpi == oldDPI {
-		return
-	}
-
 	tb.WidgetBase.ApplyDPI(dpi)
 
 	var maskColor Color
