@@ -413,7 +413,6 @@ type WindowBase struct {
 	focusedProperty         Property
 	focusedChangedPublisher EventPublisher
 	calcTextSizeInfoPrev    *calcTextSizeInfo
-	lastDPI                 int
 	suspended               bool
 	visible                 bool
 	enabled                 bool
@@ -547,8 +546,6 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 			return lastError("SetWindowLongPtr")
 		}
 	}
-
-	wb.lastDPI = wb.DPI()
 
 	SetWindowFont(wb.hWnd, defaultFont)
 
@@ -882,12 +879,6 @@ type ApplyDPIer interface {
 }
 
 func (wb *WindowBase) ApplyDPI(dpi int) {
-	scale := float64(dpi) / float64(wb.lastDPI)
-	wb.minSize = scaleSize(wb.minSize, scale)
-	wb.maxSize = scaleSize(wb.maxSize, scale)
-
-	wb.lastDPI = dpi
-
 	if af, ok := wb.window.(applyFonter); ok {
 		af.applyFont(wb.window.Font())
 	}
@@ -1273,7 +1264,7 @@ func (wb *WindowBase) SetBoundsPixels(bounds Rectangle) error {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MinSize() Size {
-	return wb.SizeTo96DPI(wb.MinSizePixels())
+	return wb.minSize
 }
 
 // MinSizePixels returns the minimum allowed outer Size for the *WindowBase, including
@@ -1282,7 +1273,7 @@ func (wb *WindowBase) MinSize() Size {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MinSizePixels() Size {
-	return wb.minSize
+	return wb.SizeFrom96DPI(wb.minSize)
 }
 
 // MaxSize returns the maximum allowed outer Size for the *WindowBase, including
@@ -1291,7 +1282,7 @@ func (wb *WindowBase) MinSizePixels() Size {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MaxSize() Size {
-	return wb.SizeFrom96DPI(wb.MaxSizePixels())
+	return wb.maxSize
 }
 
 // MaxSizePixels returns the maximum allowed outer Size for the *WindowBase, including
@@ -1300,7 +1291,7 @@ func (wb *WindowBase) MaxSize() Size {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MaxSizePixels() Size {
-	return wb.maxSize
+	return wb.SizeFrom96DPI(wb.maxSize)
 }
 
 // SetMinMaxSize sets the minimum and maximum outer Size of the *WindowBase,
@@ -1308,14 +1299,6 @@ func (wb *WindowBase) MaxSizePixels() Size {
 //
 // Use walk.Size{} to make the respective limit be ignored.
 func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
-	return wb.SetMinMaxSizePixels(wb.SizeFrom96DPI(min), wb.SizeFrom96DPI(max))
-}
-
-// SetMinMaxSizePixels sets the minimum and maximum outer Size of the *WindowBase,
-// including decorations.
-//
-// Use walk.Size{} to make the respective limit be ignored.
-func (wb *WindowBase) SetMinMaxSizePixels(min, max Size) error {
 	if min.Width < 0 || min.Height < 0 {
 		return newError("min must be positive")
 	}
@@ -1323,11 +1306,17 @@ func (wb *WindowBase) SetMinMaxSizePixels(min, max Size) error {
 		max.Height > 0 && max.Height < min.Height {
 		return newError("max must be greater as or equal to min")
 	}
-
 	wb.minSize = min
 	wb.maxSize = max
-
 	return nil
+}
+
+// SetMinMaxSizePixels sets the minimum and maximum outer Size of the *WindowBase,
+// including decorations.
+//
+// Use walk.Size{} to make the respective limit be ignored.
+func (wb *WindowBase) SetMinMaxSizePixels(min, max Size) error {
+	return wb.SetMinMaxSize(wb.SizeTo96DPI(min), wb.SizeTo96DPI(max))
 }
 
 type fontInfoAndDPI struct {
