@@ -403,6 +403,8 @@ type WindowBase struct {
 	sizeChangedPublisher    EventPublisher
 	maxSize                 Size
 	minSize                 Size
+	maxSizePixels           Size
+	minSizePixels           Size
 	background              Brush
 	cursor                  Cursor
 	name2Property           map[string]Property
@@ -879,6 +881,7 @@ type ApplyDPIer interface {
 }
 
 func (wb *WindowBase) ApplyDPI(dpi int) {
+	wb.SetMinMaxSize(wb.minSize, wb.maxSize)
 	if af, ok := wb.window.(applyFonter); ok {
 		af.applyFont(wb.window.Font())
 	}
@@ -1273,7 +1276,7 @@ func (wb *WindowBase) MinSize() Size {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MinSizePixels() Size {
-	return wb.SizeFrom96DPI(wb.minSize)
+	return wb.maxSizePixels
 }
 
 // MaxSize returns the maximum allowed outer Size for the *WindowBase, including
@@ -1291,7 +1294,7 @@ func (wb *WindowBase) MaxSize() Size {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MaxSizePixels() Size {
-	return wb.SizeFrom96DPI(wb.maxSize)
+	return wb.maxSizePixels
 }
 
 // SetMinMaxSize sets the minimum and maximum outer Size of the *WindowBase,
@@ -1308,6 +1311,8 @@ func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
 	}
 	wb.minSize = min
 	wb.maxSize = max
+	wb.minSizePixels = wb.SizeFrom96DPI(min)
+	wb.maxSizePixels = wb.SizeFrom96DPI(max)
 	return nil
 }
 
@@ -1316,7 +1321,18 @@ func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
 //
 // Use walk.Size{} to make the respective limit be ignored.
 func (wb *WindowBase) SetMinMaxSizePixels(min, max Size) error {
-	return wb.SetMinMaxSize(wb.SizeTo96DPI(min), wb.SizeTo96DPI(max))
+	if min.Width < 0 || min.Height < 0 {
+		return newError("min must be positive")
+	}
+	if max.Width > 0 && max.Width < min.Width ||
+		max.Height > 0 && max.Height < min.Height {
+		return newError("max must be greater as or equal to min")
+	}
+	wb.minSizePixels = min
+	wb.maxSizePixels = max
+	wb.minSize = wb.SizeTo96DPI(min)
+	wb.maxSize = wb.SizeTo96DPI(max)
+	return nil
 }
 
 type fontInfoAndDPI struct {
