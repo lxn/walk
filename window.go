@@ -1411,8 +1411,6 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 
 	dpi := wb.DPI()
 
-	width = IntTo96DPI(width, dpi)
-
 	if wb.calcTextSizeInfoPrev != nil &&
 		width == wb.calcTextSizeInfoPrev.width &&
 		font.family == wb.calcTextSizeInfoPrev.font.family &&
@@ -1435,12 +1433,12 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 		}
 		defer canvas.Dispose()
 
-		bounds, _, err := canvas.MeasureText(text, font, Rectangle{Width: width, Height: 9999999}, 0)
+		bounds, _, err := canvas.measureTextForDPI(text, font, Rectangle{Width: width, Height: 9999999}, 0, dpi)
 		if err != nil {
 			return size
 		}
 
-		size = SizeFrom96DPI(bounds.Size(), dpi)
+		size = bounds.Size()
 	} else {
 		hdc := win.GetDC(wb.hWnd)
 		if hdc == 0 {
