@@ -173,7 +173,7 @@ func (gb *GroupBox) ClientBoundsPixels() Rectangle {
 		cb.Height -= s.Height
 	}
 
-	return Rectangle{cb.X + 1, cb.Y + gb.headerHeight, cb.Width - 2, cb.Height - gb.headerHeight}
+	return Rectangle{cb.X + 1, cb.Y + gb.headerHeight, cb.Width - 2, cb.Height - gb.headerHeight - 2}
 }
 
 func (gb *GroupBox) updateHeaderHeight() {
@@ -363,11 +363,12 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			win.UpdateWindow(gb.checkBox.hWnd)
 
 		case win.WM_SIZE, win.WM_SIZING:
+			offset := gb.headerHeight / 4
 			wbcb := gb.WidgetBase.ClientBoundsPixels()
 			if !win.MoveWindow(
 				gb.hWndGroupBox,
 				int32(wbcb.X),
-				int32(wbcb.Y),
+				int32(wbcb.Y-offset),
 				int32(wbcb.Width),
 				int32(wbcb.Height),
 				true) {
@@ -388,7 +389,7 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			}
 
 			gbcb := gb.ClientBoundsPixels()
-			gbcb.Height -= 2
+			gbcb.Y -= offset
 			gb.composite.SetBoundsPixels(gbcb)
 		}
 	}
