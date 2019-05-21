@@ -121,6 +121,11 @@ func (sv *ScrollView) sizeHint(ideal bool) Size {
 	return s
 }
 
+func (sv *ScrollView) ApplyDPI(dpi int) {
+	sv.WidgetBase.ApplyDPI(dpi)
+	sv.composite.ApplyDPI(dpi)
+}
+
 func (sv *ScrollView) Scrollbars() (horizontal, vertical bool) {
 	horizontal = sv.horizontal
 	vertical = sv.vertical
