@@ -91,7 +91,7 @@ func (te *TextEdit) HeightForWidth(width int) int {
 
 	te.SetWidthPixels(oldWidth)
 
-	return margins + lineCount*lineHeight
+	return margins + lineCount*lineHeight + te.dialogBaseUnitsToPixels(Size{20, 12}).Height - lineHeight - 2
 }
 
 func (te *TextEdit) MinSizeHint() Size {
