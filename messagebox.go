@@ -59,7 +59,7 @@ func MsgBox(owner Form, title, message string, style MsgBoxStyle) int {
 
 	return int(win.MessageBox(
 		ownerHWnd,
-		syscall.StringToUTF16Ptr(strings.ReplaceAll(message, "\0", "�")),
-		syscall.StringToUTF16Ptr(strings.ReplaceAll(title, "\0", "�")),
+		syscall.StringToUTF16Ptr(strings.ReplaceAll(message, "\x00", "␀")),
+		syscall.StringToUTF16Ptr(strings.ReplaceAll(title, "\x00", "␀")),
 		uint32(style)))
 }
