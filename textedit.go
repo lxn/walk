@@ -20,6 +20,8 @@ type TextEdit struct {
 	readOnlyChangedPublisher EventPublisher
 	textChangedPublisher     EventPublisher
 	textColor                Color
+	compactHeight            bool
+	havePainted              bool
 }
 
 func NewTextEdit(parent Container) (*TextEdit, error) {
@@ -62,16 +64,50 @@ func NewTextEditWithStyle(parent Container, style uint32) (*TextEdit, error) {
 	return te, nil
 }
 
-func (*TextEdit) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
+func (te *TextEdit) applyFont(font *Font) {
+	te.havePainted = false
+
+	te.WidgetBase.applyFont(font)
+}
+
+func (te *TextEdit) LayoutFlags() LayoutFlags {
+	flags := ShrinkableHorz | GrowableHorz | GreedyHorz
+	if !te.compactHeight {
+		flags |= GreedyVert | GrowableVert | ShrinkableVert
+	}
+	return flags
+}
+
+func (te *TextEdit) HeightForWidth(width int) int {
+	oldWidth := te.WidthPixels()
+	te.SetWidthPixels(width)
+
+	var rc win.RECT
+	te.SendMessage(win.EM_GETRECT, 0, uintptr(unsafe.Pointer(&rc)))
+
+	margins := te.HeightPixels() - rectangleFromRECT(rc).Height
+	lineCount := int(te.SendMessage(win.EM_GETLINECOUNT, 0, 0))
+	lineHeight := te.calculateTextSizeImpl("gM").Height
+
+	te.SetWidthPixels(oldWidth)
+
+	return margins + lineCount*lineHeight
 }
 
 func (te *TextEdit) MinSizeHint() Size {
-	return te.dialogBaseUnitsToPixels(Size{20, 12})
+	if te.compactHeight {
+		return Size{100, te.HeightForWidth(te.WidthPixels())}
+	} else {
+		return te.dialogBaseUnitsToPixels(Size{20, 12})
+	}
 }
 
 func (te *TextEdit) SizeHint() Size {
-	return Size{100, 100}
+	if te.compactHeight {
+		return te.MinSizeHint()
+	} else {
+		return Size{100, 100}
+	}
 }
 
 func (te *TextEdit) Text() string {
@@ -87,9 +123,21 @@ func (te *TextEdit) SetText(value string) (err error) {
 		return nil
 	}
 
+	te.havePainted = false
 	err = te.setText(value)
+	if te.compactHeight {
+		te.updateParentLayout()
+	}
 	te.textChangedPublisher.Publish()
 	return
+}
+
+func (te *TextEdit) CompactHeight() bool {
+	return te.compactHeight
+}
+
+func (te *TextEdit) SetCompactHeight(enabled bool) {
+	te.compactHeight = enabled
 }
 
 func (te *TextEdit) TextAlignment() Alignment1D {
@@ -147,6 +195,7 @@ func (te *TextEdit) SetTextSelection(start, end int) {
 }
 
 func (te *TextEdit) ReplaceSelectedText(text string, canUndo bool) {
+	te.havePainted = false
 	te.SendMessage(win.EM_REPLACESEL,
 		uintptr(win.BoolToBOOL(canUndo)),
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))))
@@ -206,6 +255,16 @@ func (te *TextEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	case win.WM_KEYDOWN:
 		if Key(wParam) == KeyA && ControlDown() {
 			te.SetTextSelection(0, -1)
+		}
+
+	case win.WM_PAINT:
+		if !te.havePainted {
+			te.havePainted = true
+			ret := te.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+			if te.compactHeight && te.Parent() != nil && te.Parent().Layout() != nil {
+				te.Parent().Layout().Update(false)
+			}
+			return ret
 		}
 	}
 
