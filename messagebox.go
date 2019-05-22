@@ -7,6 +7,7 @@
 package walk
 
 import (
+	"strings"
 	"syscall"
 )
 
@@ -58,7 +59,7 @@ func MsgBox(owner Form, title, message string, style MsgBoxStyle) int {
 
 	return int(win.MessageBox(
 		ownerHWnd,
-		syscall.StringToUTF16Ptr(message),
-		syscall.StringToUTF16Ptr(title),
+		syscall.StringToUTF16Ptr(strings.ReplaceAll(message, "\0", "�")),
+		syscall.StringToUTF16Ptr(strings.ReplaceAll(title, "\0", "�")),
 		uint32(style)))
 }
