@@ -147,7 +147,9 @@ func (gb *GroupBox) HeightForWidth(width int) int {
 		return 100
 	}
 
-	cmsh := gb.composite.layout.MinSizeForSize(Size{Width: width})
+	borderWidth := gb.WidthPixels() - gb.composite.WidthPixels()
+
+	cmsh := gb.composite.layout.MinSizeForSize(Size{Width: width - borderWidth})
 
 	if gb.Checkable() {
 		s := gb.checkBox.SizeHint()
