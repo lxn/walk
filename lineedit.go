@@ -174,7 +174,7 @@ func (le *LineEdit) SetTextAlignment(alignment Alignment1D) error {
 		bit = win.ES_LEFT
 	}
 
-	return le.ensureStyleBits(bit, true)
+	return le.setAndClearStyleBits(bit, win.ES_LEFT|win.ES_CENTER|win.ES_RIGHT)
 }
 
 func (le *LineEdit) CaseMode() CaseMode {
