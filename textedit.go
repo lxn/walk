@@ -22,6 +22,7 @@ type TextEdit struct {
 	textColor                Color
 	compactHeight            bool
 	havePainted              bool
+	lastLineCount            int
 }
 
 func NewTextEdit(parent Container) (*TextEdit, error) {
@@ -79,19 +80,15 @@ func (te *TextEdit) LayoutFlags() LayoutFlags {
 }
 
 func (te *TextEdit) HeightForWidth(width int) int {
-	oldWidth := te.WidthPixels()
-	te.SetWidthPixels(width)
-
-	var rc win.RECT
-	te.SendMessage(win.EM_GETRECT, 0, uintptr(unsafe.Pointer(&rc)))
-
-	margins := te.HeightPixels() - rectangleFromRECT(rc).Height
+	te.SetWidthPixels(te.WidthPixels())
 	lineCount := int(te.SendMessage(win.EM_GETLINECOUNT, 0, 0))
+	if te.lastLineCount != lineCount {
+		te.havePainted = false
+		te.lastLineCount = lineCount
+	}
 	lineHeight := te.calculateTextSizeImpl("gM").Height
-
-	te.SetWidthPixels(oldWidth)
-
-	return margins + lineCount*lineHeight + te.dialogBaseUnitsToPixels(Size{20, 12}).Height - lineHeight - 2
+	margins := te.dialogBaseUnitsToPixels(Size{20, 12}).Height - lineHeight
+	return margins + lineCount*lineHeight
 }
 
 func (te *TextEdit) MinSizeHint() Size {
@@ -261,8 +258,8 @@ func (te *TextEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		if !te.havePainted {
 			te.havePainted = true
 			ret := te.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
-			if te.compactHeight && te.Parent() != nil && te.Parent().Layout() != nil {
-				te.Parent().Layout().Update(false)
+			if te.compactHeight {
+				te.updateParentLayout()
 			}
 			return ret
 		}
