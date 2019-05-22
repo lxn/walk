@@ -392,21 +392,6 @@ func (fb *FormBase) Run() int {
 
 	fb.SetBoundsPixels(fb.BoundsPixels())
 
-	// Some widgets perform weird scrolling stunts, when initially focused.
-	// We try to fix that here and hope for the best.
-	if hwnd := win.GetFocus(); hwnd != 0 {
-		if window := windowFromHandle(hwnd); window != nil {
-			fb.ForEachDescendant(func(widget Widget) bool {
-				if widget.Handle() != hwnd && widget.SetFocus() == nil {
-					window.SetFocus()
-					return false
-				}
-
-				return true
-			})
-		}
-	}
-
 	msg := (*win.MSG)(unsafe.Pointer(win.GlobalAlloc(0, unsafe.Sizeof(win.MSG{}))))
 	defer win.GlobalFree(win.HGLOBAL(unsafe.Pointer(msg)))
 
@@ -802,7 +787,11 @@ func (fb *FormBase) focusFirstCandidateDescendant() {
 	}
 
 	if textSel, ok := window.(textSelectable); ok {
-		textSel.SetTextSelection(0, -1)
+		time.AfterFunc(time.Millisecond, func() {
+			window.Synchronize(func() {
+				textSel.SetTextSelection(0, -1)
+			})
+		})
 	}
 }
 
