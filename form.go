@@ -789,7 +789,9 @@ func (fb *FormBase) focusFirstCandidateDescendant() {
 	if textSel, ok := window.(textSelectable); ok {
 		time.AfterFunc(time.Millisecond, func() {
 			window.Synchronize(func() {
-				textSel.SetTextSelection(0, -1)
+				if window.Focused() {
+					textSel.SetTextSelection(0, -1)
+				}
 			})
 		})
 	}
