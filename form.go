@@ -406,8 +406,8 @@ func (fb *FormBase) Run() int {
 
 		switch msg.Message {
 		case win.WM_KEYDOWN:
-			if fb.webViewTranslateAccelerator(msg) {
-				// handled accelerator key of webview and its childen (ie IE)
+			if fb.handleKeyDown(msg) {
+				continue
 			}
 		}
 
@@ -422,8 +422,61 @@ func (fb *FormBase) Run() int {
 	return 0
 }
 
-func (fb *FormBase) webViewTranslateAccelerator(msg *win.MSG) bool {
+func (fb *FormBase) handleKeyDown(msg *win.MSG) bool {
 	ret := false
+
+	if key, mods := Key(msg.WParam), ModifiersDown(); key == KeyTab && (mods&ModControl) != 0 {
+		doTabbing := func(tw *TabWidget) {
+			index := tw.CurrentIndex()
+			if (mods & ModShift) != 0 {
+				index--
+				if index < 0 {
+					index = tw.Pages().Len() - 1
+				}
+			} else {
+				index++
+				if index >= tw.Pages().Len() {
+					index = 0
+				}
+			}
+			tw.SetCurrentIndex(index)
+		}
+
+		hwnd := win.GetFocus()
+
+	LOOP:
+		for hwnd != 0 {
+			window := windowFromHandle(hwnd)
+
+			switch widget := window.(type) {
+			case nil:
+
+			case *TabWidget:
+				doTabbing(widget)
+				return true
+
+			case Widget:
+
+			default:
+				break LOOP
+			}
+
+			hwnd = win.GetParent(hwnd)
+		}
+
+		walkDescendants(fb.window, func(w Window) bool {
+			if tw, ok := w.(*TabWidget); ok {
+				doTabbing(tw)
+				ret = true
+				return false
+			}
+			return true
+		})
+		if ret {
+			return true
+		}
+	}
+
 	walkDescendants(fb.window, func(w Window) bool {
 		if webView, ok := w.(*WebView); ok {
 			webViewHWnd := webView.Handle()
