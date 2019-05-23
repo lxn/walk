@@ -209,7 +209,7 @@ func (fb *FormBase) SetLayout(value Layout) error {
 
 func (fb *FormBase) SetBoundsPixels(bounds Rectangle) error {
 	if layout := fb.Layout(); layout != nil {
-		minSize := fb.sizeFromClientSizePixels(layout.MinSizeForSize(fb.clientComposite.SizePixels()))
+		minSize := fb.sizeFromClientSizePixels(layout.MinSizeForSize(bounds.Size()))
 
 		if bounds.Width < minSize.Width {
 			bounds.Width = minSize.Width
