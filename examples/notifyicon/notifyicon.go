@@ -49,7 +49,8 @@ func main() {
 
 		if err := ni.ShowCustom(
 			"Walk NotifyIcon Example",
-			"There are multiple ShowX methods sporting different icons."); err != nil {
+			"There are multiple ShowX methods sporting different icons.",
+			icon); err != nil {
 
 			log.Fatal(err)
 		}
