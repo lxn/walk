@@ -392,7 +392,34 @@ func (fb *FormBase) Run() int {
 
 	fb.SetBoundsPixels(fb.BoundsPixels())
 
-	return fb.mainLoop()
+	msg := (*win.MSG)(unsafe.Pointer(win.GlobalAlloc(0, unsafe.Sizeof(win.MSG{}))))
+	defer win.GlobalFree(win.HGLOBAL(unsafe.Pointer(msg)))
+
+	for fb.hWnd != 0 {
+		switch win.GetMessage(msg, 0, 0, 0) {
+		case 0:
+			return int(msg.WParam)
+
+		case -1:
+			return -1
+		}
+
+		switch msg.Message {
+		case win.WM_KEYDOWN:
+			if fb.handleKeyDown(msg) {
+				continue
+			}
+		}
+
+		if !win.IsDialogMessage(fb.hWnd, msg) {
+			win.TranslateMessage(msg)
+			win.DispatchMessage(msg)
+		}
+
+		runSynchronized()
+	}
+
+	return 0
 }
 
 func (fb *FormBase) handleKeyDown(msg *win.MSG) bool {
