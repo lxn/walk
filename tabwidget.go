@@ -348,6 +348,7 @@ func (tw *TabWidget) onSelChange() {
 		page := tw.pages.At(tw.currentIndex)
 		page.SetVisible(true)
 		page.Invalidate()
+		tw.pages.At(tw.currentIndex).focusFirstCandidateDescendant()
 	}
 
 	tw.Invalidate()
