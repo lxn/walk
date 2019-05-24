@@ -219,6 +219,10 @@ type Window interface {
 	// parent.
 	SetBoundsPixels(value Rectangle) error
 
+	// SetClientSize sets the Size of the inner bounding box of the Window,
+	// excluding decorations.
+	SetClientSize(value Size) error
+
 	// SetClientSizePixels sets the Size of the inner bounding box of the Window,
 	// excluding decorations.
 	SetClientSizePixels(value Size) error
@@ -1652,6 +1656,12 @@ func (wb *WindowBase) clientSizeFromSizePixels(size Size) Size {
 	ncs := Size{s.Width - cs.Width, s.Height - cs.Height}
 
 	return Size{size.Width - ncs.Width, size.Height - ncs.Height}
+}
+
+// SetClientSize sets the Size of the inner bounding box of the *WindowBase,
+// excluding decorations.
+func (wb *WindowBase) SetClientSize(value Size) error {
+	return wb.SetClientSizePixels(wb.SizeFrom96DPI(value))
 }
 
 // SetClientSizePixels sets the Size of the inner bounding box of the *WindowBase,
