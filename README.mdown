@@ -135,3 +135,12 @@ somewhere in your program. If you don't have `gcc` installed and on your `PATH`,
 you can alternatively add `-linkmode internal` to the `-ldflags` of your `go build` command like so:
 
     go build -ldflags="-H windowsgui -linkmode internal"
+
+CGo Optimizations
+=================
+
+The usual default message loop includes calls to win32 API functions, which incurs a decent amount
+of runtime overhead coming from Go. As an alternative to this, you may compile Walk using an
+optional C implementation of the main message loop, by passing the `walk_use_cgo` build tag:
+
+   go build -tags walk_use_cgo
