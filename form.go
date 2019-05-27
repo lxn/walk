@@ -386,6 +386,8 @@ func (fb *FormBase) Run() int {
 		layout.Update(false)
 	}
 
+	fb.clientComposite.focusFirstCandidateDescendant()
+	
 	fb.started = true
 	fb.startingPublisher.Publish()
 
