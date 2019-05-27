@@ -1943,7 +1943,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						tv.style.hdc = 0
 						tv.defaultTextColor = Color(nmlvcd.ClrText)
 						if itemState := win.SendMessage(hwnd, win.LVM_GETITEMSTATE, nmlvcd.Nmcd.DwItemSpec, win.LVIS_SELECTED); itemState&win.LVIS_SELECTED != 0 && !win.IsAppThemed() {
-							tv.defaultTextColor = RGB(255, 255, 255)
+							tv.defaultTextColor = Color(win.GetSysColor(win.COLOR_HIGHLIGHTTEXT))
 						}
 						tv.style.TextColor = tv.defaultTextColor
 						tv.style.Font = nil
