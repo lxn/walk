@@ -104,6 +104,7 @@ type FormBase struct {
 	proposedSize          Size
 	isInRestoreState      bool
 	started               bool
+	didSetFocus           bool
 	closeReason           CloseReason
 }
 
@@ -384,8 +385,6 @@ func (fb *FormBase) Run() int {
 	if layout := fb.Layout(); layout != nil {
 		layout.Update(false)
 	}
-
-	fb.clientComposite.focusFirstCandidateDescendant()
 
 	fb.started = true
 	fb.startingPublisher.Publish()
@@ -742,6 +741,17 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 	case win.WM_SIZE:
 		fb.clientComposite.SetBoundsPixels(fb.window.ClientBoundsPixels())
+
+	case win.WM_SHOWWINDOW:
+		if wParam == win.FALSE {
+			fb.didSetFocus = false
+		}
+
+	case win.WM_PAINT:
+		if !fb.didSetFocus && fb.Visible() {
+			fb.didSetFocus = true
+			fb.clientComposite.focusFirstCandidateDescendant()
+		}
 
 	case win.WM_DPICHANGED:
 		wasSuspended := fb.Suspended()
