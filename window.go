@@ -873,6 +873,14 @@ func (wb *WindowBase) SetDoubleBuffering(enabled bool) error {
 	return wb.ensureExtendedStyleBits(win.WS_EX_COMPOSITED, enabled)
 }
 
+type ApplySysColorser interface {
+	ApplySysColors()
+}
+
+func (wb *WindowBase) ApplySysColors() {
+	wb.Invalidate()
+}
+
 // DPI returns the current DPI value of the WindowBase.
 func (wb *WindowBase) DPI() int {
 	return int(win.GetDpiForWindow(wb.hWnd))
@@ -2012,7 +2020,11 @@ func (wb *WindowBase) handleWMCTLCOLOR(wParam, lParam uintptr) uintptr {
 
 		wnd = wb
 	} else if tc, ok := wnd.(TextColorer); ok {
-		win.SetTextColor(hdc, win.COLORREF(tc.TextColor()))
+		color := tc.TextColor()
+		if color == 0 {
+			color = Color(win.GetSysColor(win.COLOR_WINDOWTEXT))
+		}
+		win.SetTextColor(hdc, win.COLORREF(color))
 	}
 
 	if bg, wnd := wnd.AsWindowBase().backgroundEffective(); bg != nil {
@@ -2196,6 +2208,9 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	case win.WM_WINDOWPOSCHANGED:
 		wb.boundsChangedPublisher.Publish()
+
+	case win.WM_THEMECHANGED:
+		wb.window.(ApplySysColorser).ApplySysColors()
 
 	case win.WM_DESTROY:
 		if wb.origWndProcPtr != 0 {

@@ -25,7 +25,6 @@ func init() {
 }
 
 var (
-	defaultTVRowBGColor         = Color(win.GetSysColor(win.COLOR_WINDOW))
 	white                       = win.COLORREF(RGB(255, 255, 255))
 	checkmark                   = string([]byte{0xE2, 0x9C, 0x94})
 	tableViewFrozenLVWndProcPtr = syscall.NewCallback(tableViewFrozenLVWndProc)
@@ -93,7 +92,12 @@ type TableView struct {
 	lastColumnStretched                bool
 	persistent                         bool
 	itemStateChangedEventDelay         int
-	defaultTextColor                   Color
+	themeNormalBGColor                 Color
+	themeNormalTextColor               Color
+	themeSelectedBGColor               Color
+	themeSelectedTextColor             Color
+	itemBGColor                        Color
+	itemTextColor                      Color
 	alternatingRowBGColor              Color
 	hasDarkAltBGColor                  bool
 	delayedCurrentIndexChangedCanceled bool
@@ -127,12 +131,11 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 // Container and with the provided additional configuration.
 func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error) {
 	tv := &TableView{
-		alternatingRowBGColor: defaultTVRowBGColor,
-		imageUintptr2Index:    make(map[uintptr]int32),
-		filePath2IconIndex:    make(map[string]int32),
-		formActivatingHandle:  -1,
-		customHeaderHeight:    cfg.CustomHeaderHeight,
-		customRowHeight:       cfg.CustomRowHeight,
+		imageUintptr2Index:   make(map[uintptr]int32),
+		filePath2IconIndex:   make(map[string]int32),
+		formActivatingHandle: -1,
+		customHeaderHeight:   cfg.CustomHeaderHeight,
+		customRowHeight:      cfg.CustomRowHeight,
 	}
 
 	tv.columns = newTableViewColumnList(tv)
@@ -234,6 +237,7 @@ func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error
 	tv.applyFont(parent.Font())
 
 	tv.style.dpi = tv.DPI()
+	tv.ApplySysColors()
 
 	tv.currentIndex = -1
 
@@ -387,6 +391,48 @@ func (tv *TableView) ApplyDPI(dpi int) {
 	for _, column := range tv.columns.items {
 		column.update()
 	}
+}
+
+func (tv *TableView) ApplySysColors() {
+	tv.WidgetBase.ApplySysColors()
+
+	// As some combinations of property and state may be invalid for any theme,
+	// we set some defaults here.
+	tv.themeNormalBGColor = Color(win.GetSysColor(win.COLOR_WINDOW))
+	tv.themeSelectedBGColor = tv.themeNormalBGColor
+	tv.themeNormalTextColor = Color(win.GetSysColor(win.COLOR_WINDOWTEXT))
+	tv.themeSelectedTextColor = tv.themeNormalTextColor
+
+	if hTheme := win.OpenThemeData(tv.hwndNormalLV, syscall.StringToUTF16Ptr("Listview")); hTheme != 0 {
+		defer win.CloseThemeData(hTheme)
+
+		type item struct {
+			stateID    int32
+			propertyID int32
+			color      *Color
+		}
+
+		items := [...]item{
+			{win.LISS_NORMAL, win.TMT_FILLCOLOR, &tv.themeNormalBGColor},
+			{win.LISS_NORMAL, win.TMT_TEXTCOLOR, &tv.themeNormalTextColor},
+			{win.LISS_SELECTED, win.TMT_FILLCOLOR, &tv.themeSelectedBGColor},
+			{win.LISS_SELECTED, win.TMT_TEXTCOLOR, &tv.themeSelectedTextColor},
+		}
+		for _, item := range items {
+			var c win.COLORREF
+			if result := win.GetThemeColor(hTheme, win.LVP_LISTITEM, item.stateID, item.propertyID, &c); !win.FAILED(result) {
+				(*item.color) = Color(c)
+			}
+		}
+	} else {
+		tv.themeNormalBGColor = Color(win.GetSysColor(win.COLOR_WINDOW))
+		tv.themeNormalTextColor = Color(win.GetSysColor(win.COLOR_WINDOWTEXT))
+		tv.themeSelectedBGColor = Color(win.GetSysColor(win.COLOR_HIGHLIGHT))
+		tv.themeSelectedTextColor = Color(win.GetSysColor(win.COLOR_HIGHLIGHTTEXT))
+	}
+
+	win.SendMessage(tv.hwndNormalLV, win.LVM_SETBKCOLOR, 0, uintptr(tv.themeNormalBGColor))
+	win.SendMessage(tv.hwndFrozenLV, win.LVM_SETBKCOLOR, 0, uintptr(tv.themeNormalBGColor))
 }
 
 // ColumnsOrderable returns if the user can reorder columns by dragging and
@@ -1881,18 +1927,10 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 					if tv.styler != nil {
 						tv.style.row = row
 						tv.style.col = col
-
-						if tv.alternatingRowBGColor != 0 {
-							if row%2 == 1 {
-								tv.style.BackgroundColor = tv.alternatingRowBGColor
-							} else {
-								tv.style.BackgroundColor = defaultTVRowBGColor
-							}
-						}
-
 						tv.style.bounds = tv.RectangleTo96DPI(rectangleFromRECT(nmlvcd.Nmcd.Rc))
 						tv.style.hdc = nmlvcd.Nmcd.Hdc
-						tv.style.TextColor = tv.defaultTextColor
+						tv.style.BackgroundColor = tv.itemBGColor
+						tv.style.TextColor = tv.itemTextColor
 						tv.style.Font = nil
 						tv.style.Image = nil
 
@@ -1927,25 +1965,26 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 					return win.CDRF_NOTIFYITEMDRAW
 
 				case win.CDDS_ITEMPREPAINT:
-					if tv.alternatingRowBGColor != 0 {
-						if row%2 == 1 {
-							tv.style.BackgroundColor = tv.alternatingRowBGColor
-						} else {
-							tv.style.BackgroundColor = defaultTVRowBGColor
-						}
+					if itemState := win.SendMessage(hwnd, win.LVM_GETITEMSTATE, nmlvcd.Nmcd.DwItemSpec, win.LVIS_SELECTED); itemState&win.LVIS_SELECTED != 0 {
+						tv.itemBGColor = tv.themeSelectedBGColor
+						tv.itemTextColor = tv.themeSelectedTextColor
+					} else {
+						tv.itemBGColor = tv.themeNormalBGColor
+						tv.itemTextColor = tv.themeNormalTextColor
 					}
+
+					if tv.alternatingRowBGColor != 0 && row%2 == 1 {
+						tv.itemBGColor = tv.alternatingRowBGColor
+					}
+
+					tv.style.BackgroundColor = tv.itemBGColor
+					tv.style.TextColor = tv.itemTextColor
 
 					if tv.styler != nil {
 						tv.style.row = row
 						tv.style.col = -1
-
 						tv.style.bounds = tv.RectangleTo96DPI(rectangleFromRECT(nmlvcd.Nmcd.Rc))
 						tv.style.hdc = 0
-						tv.defaultTextColor = Color(nmlvcd.ClrText)
-						if itemState := win.SendMessage(hwnd, win.LVM_GETITEMSTATE, nmlvcd.Nmcd.DwItemSpec, win.LVIS_SELECTED); itemState&win.LVIS_SELECTED != 0 && !win.IsAppThemed() {
-							tv.defaultTextColor = Color(win.GetSysColor(win.COLOR_HIGHLIGHTTEXT))
-						}
-						tv.style.TextColor = tv.defaultTextColor
 						tv.style.Font = nil
 						tv.style.Image = nil
 
@@ -1954,7 +1993,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						tv.itemFont = tv.style.Font
 					}
 
-					if tv.style.BackgroundColor != defaultTVRowBGColor {
+					if tv.style.BackgroundColor != tv.themeNormalBGColor {
 						if brush, _ := NewSolidColorBrush(tv.style.BackgroundColor); brush != nil {
 							defer brush.Dispose()
 

@@ -433,6 +433,12 @@ func (cb *ContainerBase) applyFont(font *Font) {
 	applyFontToDescendants(cb.window.(Widget), font)
 }
 
+func (cb *ContainerBase) ApplySysColors() {
+	cb.WidgetBase.ApplySysColors()
+
+	applySysColorsToDescendants(cb.window.(Widget))
+}
+
 func (cb *ContainerBase) ApplyDPI(dpi int) {
 	cb.WidgetBase.ApplyDPI(dpi)
 

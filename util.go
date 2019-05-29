@@ -266,6 +266,21 @@ func applyFontToDescendants(window Window, font *Font) {
 	})
 }
 
+func applySysColorsToDescendants(window Window) {
+	wb := window.AsWindowBase()
+	wb.ApplySysColors()
+
+	walkDescendants(window, func(w Window) bool {
+		if w.Handle() == wb.hWnd {
+			return true
+		}
+
+		w.(ApplySysColorser).ApplySysColors()
+
+		return true
+	})
+}
+
 var seenInApplyDPIToDescendantsDuringDPIChange map[*WindowBase]bool
 
 func applyDPIToDescendants(window Window, dpi int) {

@@ -329,6 +329,11 @@ func (fb *FormBase) applyFont(font *Font) {
 	fb.clientComposite.applyFont(font)
 }
 
+func (fb *FormBase) ApplySysColors() {
+	fb.WindowBase.ApplySysColors()
+	fb.clientComposite.ApplySysColors()
+}
+
 func (fb *FormBase) Background() Brush {
 	return fb.clientComposite.Background()
 }
@@ -387,7 +392,7 @@ func (fb *FormBase) Run() int {
 	}
 
 	fb.clientComposite.focusFirstCandidateDescendant()
-	
+
 	fb.started = true
 	fb.startingPublisher.Publish()
 
@@ -754,6 +759,9 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			fb.didSetFocus = true
 			fb.clientComposite.focusFirstCandidateDescendant()
 		}
+
+	case win.WM_SYSCOLORCHANGE:
+		fb.ApplySysColors()
 
 	case win.WM_DPICHANGED:
 		wasSuspended := fb.Suspended()
