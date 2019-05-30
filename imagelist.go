@@ -122,7 +122,7 @@ func (il *ImageList) MaskColor() Color {
 	return il.maskColor
 }
 
-func imageListForImage(image interface{}) (hIml win.HIMAGELIST, isSysIml bool, err error) {
+func imageListForImage(image interface{}, dpi int) (hIml win.HIMAGELIST, isSysIml bool, err error) {
 	if name, ok := image.(string); ok {
 		if img, err := Resources.Image(name); err == nil {
 			image = img
@@ -133,7 +133,9 @@ func imageListForImage(image interface{}) (hIml win.HIMAGELIST, isSysIml bool, e
 		_, hIml = iconIndexAndHImlForFilePath(filePath)
 		isSysIml = hIml != 0
 	} else {
-		w, h := win.GetSystemMetrics(win.SM_CXSMICON), win.GetSystemMetrics(win.SM_CYSMICON)
+		scale := float64(dpi) / 96.0
+		w := int32(float64(win.GetSystemMetrics(win.SM_CXSMICON)) * scale)
+		h := int32(float64(win.GetSystemMetrics(win.SM_CYSMICON)) * scale)
 
 		hIml = win.ImageList_Create(w, h, win.ILC_MASK|win.ILC_COLOR32, 8, 8)
 		if hIml == 0 {

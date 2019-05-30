@@ -268,8 +268,14 @@ func (tv *TreeView) insertRoots() error {
 	return nil
 }
 
+func (tv *TreeView) ApplyDPI(dpi int) {
+	tv.WidgetBase.ApplyDPI(dpi)
+
+	tv.disposeImageListAndCaches()
+}
+
 func (tv *TreeView) applyImageListForImage(image interface{}) {
-	tv.hIml, tv.usingSysIml, _ = imageListForImage(image)
+	tv.hIml, tv.usingSysIml, _ = imageListForImage(image, tv.DPI())
 
 	tv.SendMessage(win.TVM_SETIMAGELIST, 0, uintptr(tv.hIml))
 

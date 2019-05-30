@@ -393,6 +393,8 @@ func (tv *TableView) ApplyDPI(dpi int) {
 	for _, column := range tv.columns.items {
 		column.update()
 	}
+
+	tv.disposeImageListAndCaches()
 }
 
 func (tv *TableView) ApplySysColors() {
@@ -1623,7 +1625,7 @@ func (tv *TableView) toggleItemChecked(index int) error {
 }
 
 func (tv *TableView) applyImageListForImage(image interface{}) {
-	tv.hIml, tv.usingSysIml, _ = imageListForImage(image)
+	tv.hIml, tv.usingSysIml, _ = imageListForImage(image, tv.DPI())
 
 	tv.applyImageList()
 
