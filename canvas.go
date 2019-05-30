@@ -319,9 +319,11 @@ func (c *Canvas) DrawPolyline(pen Pen, points []Point) error {
 }
 
 func (c *Canvas) rectangle(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) error {
-	return c.withBrushAndPen(brush, pen, func() error {
-		bounds = RectangleFrom96DPI(bounds, c.dpix)
+	return c.rectanglePixels(brush, pen, RectangleFrom96DPI(bounds, c.dpix), sizeCorrection)
+}
 
+func (c *Canvas) rectanglePixels(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) error {
+	return c.withBrushAndPen(brush, pen, func() error {
 		if !win.Rectangle_(
 			c.hdc,
 			int32(bounds.X),
@@ -342,6 +344,10 @@ func (c *Canvas) DrawRectangle(pen Pen, bounds Rectangle) error {
 
 func (c *Canvas) FillRectangle(brush Brush, bounds Rectangle) error {
 	return c.rectangle(brush, nullPenSingleton, bounds, 1)
+}
+
+func (c *Canvas) fillRectanglePixels(brush Brush, bounds Rectangle) error {
+	return c.rectanglePixels(brush, nullPenSingleton, bounds, 1)
 }
 
 func (c *Canvas) roundedRectangle(brush Brush, pen Pen, bounds Rectangle, ellipseSize Size, sizeCorrection int) error {

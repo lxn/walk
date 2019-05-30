@@ -96,6 +96,8 @@ type TableView struct {
 	themeNormalTextColor               Color
 	themeSelectedBGColor               Color
 	themeSelectedTextColor             Color
+	themeSelectedNotFocusedBGColor     Color
+	themeSelectedNotFocusedTextColor   Color
 	itemBGColor                        Color
 	itemTextColor                      Color
 	alternatingRowBGColor              Color
@@ -399,9 +401,11 @@ func (tv *TableView) ApplySysColors() {
 	// As some combinations of property and state may be invalid for any theme,
 	// we set some defaults here.
 	tv.themeNormalBGColor = Color(win.GetSysColor(win.COLOR_WINDOW))
-	tv.themeSelectedBGColor = tv.themeNormalBGColor
 	tv.themeNormalTextColor = Color(win.GetSysColor(win.COLOR_WINDOWTEXT))
+	tv.themeSelectedBGColor = tv.themeNormalBGColor
 	tv.themeSelectedTextColor = tv.themeNormalTextColor
+	tv.themeSelectedNotFocusedBGColor = tv.themeNormalBGColor
+	tv.themeSelectedNotFocusedTextColor = tv.themeNormalTextColor
 
 	if hTheme := win.OpenThemeData(tv.hwndNormalLV, syscall.StringToUTF16Ptr("Listview")); hTheme != 0 {
 		defer win.CloseThemeData(hTheme)
@@ -417,6 +421,8 @@ func (tv *TableView) ApplySysColors() {
 			{win.LISS_NORMAL, win.TMT_TEXTCOLOR, &tv.themeNormalTextColor},
 			{win.LISS_SELECTED, win.TMT_FILLCOLOR, &tv.themeSelectedBGColor},
 			{win.LISS_SELECTED, win.TMT_TEXTCOLOR, &tv.themeSelectedTextColor},
+			{win.LISS_SELECTEDNOTFOCUS, win.TMT_FILLCOLOR, &tv.themeSelectedNotFocusedBGColor},
+			{win.LISS_SELECTEDNOTFOCUS, win.TMT_TEXTCOLOR, &tv.themeSelectedNotFocusedTextColor},
 		}
 		for _, item := range items {
 			var c win.COLORREF
@@ -425,10 +431,11 @@ func (tv *TableView) ApplySysColors() {
 			}
 		}
 	} else {
-		tv.themeNormalBGColor = Color(win.GetSysColor(win.COLOR_WINDOW))
-		tv.themeNormalTextColor = Color(win.GetSysColor(win.COLOR_WINDOWTEXT))
+		// The others already have been retrieved above.
 		tv.themeSelectedBGColor = Color(win.GetSysColor(win.COLOR_HIGHLIGHT))
 		tv.themeSelectedTextColor = Color(win.GetSysColor(win.COLOR_HIGHLIGHTTEXT))
+		tv.themeSelectedNotFocusedBGColor = Color(win.GetSysColor(win.COLOR_BTNFACE))
+		tv.themeSelectedNotFocusedTextColor = Color(win.GetSysColor(win.COLOR_BTNTEXT))
 	}
 
 	win.SendMessage(tv.hwndNormalLV, win.LVM_SETBKCOLOR, 0, uintptr(tv.themeNormalBGColor))
@@ -1953,7 +1960,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						nmlvcd.ClrText = win.COLORREF(tv.style.TextColor)
 
 						if font := tv.style.Font; font != nil {
-							win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(0)))
+							win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(tv.DPI())))
 						}
 					}
 
@@ -1965,15 +1972,23 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 					return win.CDRF_NOTIFYITEMDRAW
 
 				case win.CDDS_ITEMPREPAINT:
+					var selected bool
 					if itemState := win.SendMessage(hwnd, win.LVM_GETITEMSTATE, nmlvcd.Nmcd.DwItemSpec, win.LVIS_SELECTED); itemState&win.LVIS_SELECTED != 0 {
-						tv.itemBGColor = tv.themeSelectedBGColor
-						tv.itemTextColor = tv.themeSelectedTextColor
+						selected = true
+
+						if tv.Focused() {
+							tv.itemBGColor = tv.themeSelectedBGColor
+							tv.itemTextColor = tv.themeSelectedTextColor
+						} else {
+							tv.itemBGColor = tv.themeSelectedNotFocusedBGColor
+							tv.itemTextColor = tv.themeSelectedNotFocusedTextColor
+						}
 					} else {
 						tv.itemBGColor = tv.themeNormalBGColor
 						tv.itemTextColor = tv.themeNormalTextColor
 					}
 
-					if tv.alternatingRowBGColor != 0 && row%2 == 1 {
+					if !selected && tv.alternatingRowBGColor != 0 && row%2 == 1 {
 						tv.itemBGColor = tv.alternatingRowBGColor
 					}
 
@@ -1993,12 +2008,20 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						tv.itemFont = tv.style.Font
 					}
 
+					if selected {
+						tv.style.BackgroundColor = tv.itemBGColor
+						tv.style.TextColor = tv.itemTextColor
+					} else {
+						tv.itemBGColor = tv.style.BackgroundColor
+						tv.itemTextColor = tv.style.TextColor
+					}
+
 					if tv.style.BackgroundColor != tv.themeNormalBGColor {
 						if brush, _ := NewSolidColorBrush(tv.style.BackgroundColor); brush != nil {
 							defer brush.Dispose()
 
 							canvas, _ := newCanvasFromHDC(nmlvcd.Nmcd.Hdc)
-							canvas.FillRectangle(brush, rectangleFromRECT(nmlvcd.Nmcd.Rc))
+							canvas.fillRectanglePixels(brush, rectangleFromRECT(nmlvcd.Nmcd.Rc))
 						}
 					}
 
@@ -2220,10 +2243,9 @@ func tableViewHdrWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 				if tv.styler != nil && col > -1 {
 					tv.style.row = -1
 					tv.style.col = col
-
 					tv.style.bounds = tv.RectangleTo96DPI(rectangleFromRECT(nmcd.Rc))
 					tv.style.hdc = nmcd.Hdc
-					tv.style.TextColor = RGB(0, 0, 0)
+					tv.style.TextColor = tv.themeNormalTextColor
 					tv.style.Font = nil
 
 					tv.styler.StyleCell(&tv.style)
