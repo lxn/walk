@@ -8,6 +8,7 @@ package walk
 
 import (
 	"bytes"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -513,7 +514,7 @@ func IntTo96DPI(value, dpi int) int {
 }
 
 func scaleInt(value int, scale float64) int {
-	return int(float64(value) * scale)
+	return int(math.Round(float64(value) * scale))
 }
 
 func MarginsFrom96DPI(value Margins, dpi int) Margins {
@@ -526,10 +527,10 @@ func MarginsTo96DPI(value Margins, dpi int) Margins {
 
 func scaleMargins(value Margins, scale float64) Margins {
 	return Margins{
-		HNear: int(float64(value.HNear) * scale),
-		VNear: int(float64(value.VNear) * scale),
-		HFar:  int(float64(value.HFar) * scale),
-		VFar:  int(float64(value.VFar) * scale),
+		HNear: int(math.Round(float64(value.HNear) * scale)),
+		VNear: int(math.Round(float64(value.VNear) * scale)),
+		HFar:  int(math.Round(float64(value.HFar) * scale)),
+		VFar:  int(math.Round(float64(value.VFar) * scale)),
 	}
 }
 
@@ -543,8 +544,8 @@ func PointTo96DPI(value Point, dpi int) Point {
 
 func scalePoint(value Point, scale float64) Point {
 	return Point{
-		X: int(float64(value.X) * scale),
-		Y: int(float64(value.Y) * scale),
+		X: int(math.Round(float64(value.X) * scale)),
+		Y: int(math.Round(float64(value.Y) * scale)),
 	}
 }
 
@@ -558,10 +559,10 @@ func RectangleTo96DPI(value Rectangle, dpi int) Rectangle {
 
 func scaleRectangle(value Rectangle, scale float64) Rectangle {
 	return Rectangle{
-		X:      int(float64(value.X) * scale),
-		Y:      int(float64(value.Y) * scale),
-		Width:  int(float64(value.Width) * scale),
-		Height: int(float64(value.Height) * scale),
+		X:      int(math.Round(float64(value.X) * scale)),
+		Y:      int(math.Round(float64(value.Y) * scale)),
+		Width:  int(math.Round(float64(value.Width) * scale)),
+		Height: int(math.Round(float64(value.Height) * scale)),
 	}
 }
 
@@ -575,7 +576,7 @@ func SizeTo96DPI(value Size, dpi int) Size {
 
 func scaleSize(value Size, scale float64) Size {
 	return Size{
-		Width:  int(float64(value.Width) * scale),
-		Height: int(float64(value.Height) * scale),
+		Width:  int(math.Round(float64(value.Width) * scale)),
+		Height: int(math.Round(float64(value.Height) * scale)),
 	}
 }
