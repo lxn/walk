@@ -217,6 +217,37 @@ func (l *LayoutBase) SetAlignment(alignment Alignment2D) error {
 	return nil
 }
 
+func clearDescendantsLayoutMinSizeCache(root Container) {
+	clearLayoutMinSizeCache(root)
+
+	walkDescendants(root, func(w Window) bool {
+		if w.Handle() == root.Handle() {
+			return true
+		}
+
+		if container, ok := w.(Container); ok {
+			clearLayoutMinSizeCache(container)
+		}
+
+		return true
+	})
+}
+
+func clearLayoutMinSizeCache(container Container) {
+	layout := container.Layout()
+	if layout == nil {
+		return
+	}
+
+	if lb, ok := layout.(interface{ sizeAndDPIToMinSize() map[sizeAndDPI]Size }); ok {
+		sizeAndDPI2MinSize := lb.sizeAndDPIToMinSize()
+
+		for k := range sizeAndDPI2MinSize {
+			delete(sizeAndDPI2MinSize, k)
+		}
+	}
+}
+
 type sizeAndDPI struct {
 	size Size
 	dpi  int
@@ -249,6 +280,16 @@ func applyLayoutResults(container Container, items []layoutResultItem) error {
 		x, y, w, h := item.bounds.X, item.bounds.Y, item.bounds.Width, item.bounds.Height
 
 		b := widget.BoundsPixels()
+
+		if w == b.Width && h == b.Height {
+			if container, ok := widget.(Container); ok {
+				if layout := container.Layout(); layout != nil {
+					// TODO: Check for dirty flag, which should be set in
+					// WidgetBase.updateParentLayoutWithReset, to avoid pointless updates.
+					layout.Update(false)
+				}
+			}
+		}
 
 		if b.X == x && b.Y == y && b.Width == w {
 			if _, ok := widget.(*ComboBox); ok {
@@ -564,6 +605,8 @@ func (cb *ContainerBase) SetSuspended(suspend bool) {
 	cb.WidgetBase.SetSuspended(suspend)
 
 	if !suspend && wasSuspended && cb.layout != nil {
+		clearDescendantsLayoutMinSizeCache(cb)
+
 		cb.layout.Update(false)
 	}
 }
