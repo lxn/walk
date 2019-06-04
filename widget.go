@@ -147,6 +147,16 @@ func (wb *WidgetBase) init(widget Widget) error {
 	return nil
 }
 
+func (wb *WidgetBase) Dispose() {
+	if wb.hWnd == 0 {
+		return
+	}
+
+	globalToolTip.RemoveTool(wb)
+
+	wb.WindowBase.Dispose()
+}
+
 // AsWidgetBase just returns the receiver.
 func (wb *WidgetBase) AsWidgetBase() *WidgetBase {
 	return wb
