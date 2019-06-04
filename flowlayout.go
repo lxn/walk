@@ -187,6 +187,8 @@ func (l *FlowLayout) Update(reset bool) error {
 		return nil
 	}
 
+	l.dirty = false
+
 	if l.resetNeeded {
 		l.resetNeeded = false
 

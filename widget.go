@@ -467,6 +467,20 @@ func (wb *WidgetBase) updateParentLayout() error {
 }
 
 func (wb *WidgetBase) updateParentLayoutWithReset(reset bool) error {
+	parent := wb.window.(Widget).Parent()
+
+	if parent == nil || parent.Layout() == nil {
+		return nil
+	}
+
+	if lb, ok := parent.Layout().(interface{ asLayoutBase() *LayoutBase }); ok {
+		lb.asLayoutBase().dirty = true
+	}
+
+	return wb.updateParentLayoutWithResetRecursive(reset)
+}
+
+func (wb *WidgetBase) updateParentLayoutWithResetRecursive(reset bool) error {
 	if form := wb.Form(); form == nil || form.Suspended() {
 		return nil
 	}
@@ -498,7 +512,7 @@ func (wb *WidgetBase) updateParentLayoutWithReset(reset bool) error {
 			return nil
 
 		case Widget:
-			return wnd.AsWidgetBase().updateParentLayoutWithReset(reset)
+			return wnd.AsWidgetBase().updateParentLayoutWithResetRecursive(reset)
 
 		case Form:
 			if len(inProgressEventsByForm[appSingleton.activeForm]) > 0 {

@@ -112,6 +112,11 @@ type LayoutBase struct {
 	spacing            int
 	alignment          Alignment2D
 	resetNeeded        bool
+	dirty              bool
+}
+
+func (l *LayoutBase) asLayoutBase() *LayoutBase {
+	return l
 }
 
 func (l *LayoutBase) sizeAndDPIToMinSize() map[sizeAndDPI]Size {
@@ -284,10 +289,18 @@ func applyLayoutResults(container Container, items []layoutResultItem) error {
 		if w == b.Width && h == b.Height {
 			if container, ok := widget.(Container); ok {
 				if layout := container.Layout(); layout != nil {
-					// TODO: Check for dirty flag, which should be set in
-					// WidgetBase.updateParentLayoutWithReset, to avoid pointless updates.
-					layout.Update(false)
+					var dirty bool
+					if lb, ok := layout.(interface{ asLayoutBase() *LayoutBase }); ok {
+						dirty = lb.asLayoutBase().dirty
+					}
+					if dirty {
+						layout.Update(false)
+					}
 				}
+			}
+
+			if x == b.X && y == b.Y {
+				continue
 			}
 		}
 
