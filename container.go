@@ -295,6 +295,14 @@ func applyLayoutResults(container Container, items []layoutResultItem) error {
 					}
 					if dirty {
 						layout.Update(false)
+					} else {
+						walkDescendants(container, func(window Window) bool {
+							if asTV, ok := window.(interface{ asTableView() *TableView }); ok {
+								asTV.asTableView().updateLVSizesForSize(window.SizePixels())
+							}
+
+							return true
+						})
 					}
 				}
 			}

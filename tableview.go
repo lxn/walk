@@ -311,6 +311,10 @@ func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error
 	return tv, nil
 }
 
+func (tv *TableView) asTableView() *TableView {
+	return tv
+}
+
 // Dispose releases the operating system resources, associated with the
 // *TableView.
 func (tv *TableView) Dispose() {
@@ -2356,8 +2360,10 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr 
 }
 
 func (tv *TableView) updateLVSizes() {
-	cb := tv.ClientBoundsPixels()
+	tv.updateLVSizesForSize(tv.ClientBoundsPixels().Size())
+}
 
+func (tv *TableView) updateLVSizesForSize(size Size) {
 	var width int
 	for i := tv.columns.Len() - 1; i >= 0; i-- {
 		if col := tv.columns.At(i); col.frozen {
@@ -2367,12 +2373,12 @@ func (tv *TableView) updateLVSizes() {
 
 	width = tv.IntFrom96DPI(width)
 
-	win.MoveWindow(tv.hwndNormalLV, int32(width), 0, int32(cb.Width-width), int32(cb.Height), true)
+	win.MoveWindow(tv.hwndNormalLV, int32(width), 0, int32(size.Width-width), int32(size.Height), true)
 
 	var sbh int
 	if hasWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.WS_HSCROLL) {
 		sbh = int(win.GetSystemMetrics(win.SM_CYHSCROLL))
 	}
 
-	win.MoveWindow(tv.hwndFrozenLV, 0, 0, int32(width), int32(cb.Height-sbh), true)
+	win.MoveWindow(tv.hwndFrozenLV, 0, 0, int32(width), int32(size.Height-sbh), true)
 }
