@@ -186,8 +186,10 @@ func (tv *TreeView) SetCurrentItem(item TreeItem) error {
 		return nil
 	}
 
-	if err := tv.ensureItemAndAncestorsInserted(item); err != nil {
-		return err
+	if item != nil {	
+		if err := tv.ensureItemAndAncestorsInserted(item); err != nil {
+			return err
+		}
 	}
 
 	var handle win.HTREEITEM
@@ -424,6 +426,9 @@ func (tv *TreeView) ensureItemAndAncestorsInserted(item TreeItem) error {
 	if item == nil {
 		return newError("invalid item")
 	}
+
+	tv.SetSuspended(true)
+	defer tv.SetSuspended(false)
 
 	var hierarchy []TreeItem
 
