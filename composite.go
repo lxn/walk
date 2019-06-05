@@ -36,9 +36,6 @@ func NewCompositeWithStyle(parent Window, style uint32) (*Composite, error) {
 
 	c.SetBackground(NullBrush())
 
-	// bg, _ := NewSolidColorBrush(RGB(byte(rand.Intn(255)), byte(rand.Intn(255)), byte(rand.Intn(255))))
-	// c.SetBackground(bg)
-
 	return c, nil
 }
 

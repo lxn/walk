@@ -114,6 +114,7 @@ type TableView struct {
 	inEraseBkgnd                       bool
 	focused                            bool
 	ignoreNowhere                      bool
+	updateLVSizesNeedsSpecialCare      bool
 }
 
 // NewTableView creates and returns a *TableView as child of the specified
@@ -2360,10 +2361,10 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr 
 }
 
 func (tv *TableView) updateLVSizes() {
-	tv.updateLVSizesForSize(tv.ClientBoundsPixels().Size())
+	tv.updateLVSizesWithSpecialCare(false)
 }
 
-func (tv *TableView) updateLVSizesForSize(size Size) {
+func (tv *TableView) updateLVSizesWithSpecialCare(needSpecialCare bool) {
 	var width int
 	for i := tv.columns.Len() - 1; i >= 0; i-- {
 		if col := tv.columns.At(i); col.frozen {
@@ -2373,12 +2374,27 @@ func (tv *TableView) updateLVSizesForSize(size Size) {
 
 	width = tv.IntFrom96DPI(width)
 
-	win.MoveWindow(tv.hwndNormalLV, int32(width), 0, int32(size.Width-width), int32(size.Height), true)
+	cb := tv.ClientBoundsPixels()
+
+	win.MoveWindow(tv.hwndNormalLV, int32(width), 0, int32(cb.Width-width), int32(cb.Height), true)
 
 	var sbh int
 	if hasWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.WS_HSCROLL) {
 		sbh = int(win.GetSystemMetrics(win.SM_CYHSCROLL))
 	}
 
-	win.MoveWindow(tv.hwndFrozenLV, 0, 0, int32(width), int32(size.Height-sbh), true)
+	win.MoveWindow(tv.hwndFrozenLV, 0, 0, int32(width), int32(cb.Height-sbh), true)
+
+	if needSpecialCare {
+		tv.updateLVSizesNeedsSpecialCare = true
+	}
+
+	if tv.updateLVSizesNeedsSpecialCare {
+		win.ShowWindow(tv.hwndNormalLV, win.SW_HIDE)
+		win.ShowWindow(tv.hwndNormalLV, win.SW_SHOW)
+	}
+
+	if !needSpecialCare {
+		tv.updateLVSizesNeedsSpecialCare = false
+	}
 }

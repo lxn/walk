@@ -298,7 +298,7 @@ func applyLayoutResults(container Container, items []layoutResultItem) error {
 					} else {
 						walkDescendants(container, func(window Window) bool {
 							if asTV, ok := window.(interface{ asTableView() *TableView }); ok {
-								asTV.asTableView().updateLVSizesForSize(window.SizePixels())
+								asTV.asTableView().updateLVSizesWithSpecialCare(true)
 							}
 
 							return true

@@ -186,7 +186,7 @@ func (tv *TreeView) SetCurrentItem(item TreeItem) error {
 		return nil
 	}
 
-	if item != nil {	
+	if item != nil {
 		if err := tv.ensureItemAndAncestorsInserted(item); err != nil {
 			return err
 		}
