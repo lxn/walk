@@ -8,7 +8,6 @@ package walk
 
 import (
 	"fmt"
-	"runtime"
 	"strconv"
 	"sync"
 	"syscall"
