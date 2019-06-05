@@ -162,6 +162,14 @@ func (wb *WidgetBase) AsWidgetBase() *WidgetBase {
 	return wb
 }
 
+// Bounds returns the outer bounding box Rectangle of the WidgetBase, including
+// decorations.
+//
+// The coordinates are relative to the parent of the Widget.
+func (wb *WidgetBase) Bounds() Rectangle {
+	return wb.RectangleTo96DPI(wb.BoundsPixels())
+}
+
 // BoundsPixels returns the outer bounding box Rectangle of the WidgetBase, including
 // decorations.
 //
