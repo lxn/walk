@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"runtime"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -486,10 +487,16 @@ func MustRegisterWindowClassWithWndProcPtrAndStyle(className string, wndProcPtr 
 	registeredWindowClasses[className] = true
 }
 
+var lockedOSThread bool
+
 // InitWindow initializes a window.
 //
 // Widgets should be initialized using InitWidget instead.
 func InitWindow(window, parent Window, className string, style, exStyle uint32) error {
+	if !lockedOSThread {
+		runtime.LockOSThread()
+	}
+
 	wb := window.AsWindowBase()
 	wb.window = window
 	wb.enabled = true
