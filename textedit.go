@@ -78,7 +78,7 @@ func (te *TextEdit) LayoutFlags() LayoutFlags {
 }
 
 func (te *TextEdit) HeightForWidth(width int) int {
-	te.SetWidthPixels(te.WidthPixels())
+	te.SetWidthPixels(width)
 	lineCount := int(te.SendMessage(win.EM_GETLINECOUNT, 0, 0))
 	if te.lastLineCount != lineCount {
 		te.havePainted = false
