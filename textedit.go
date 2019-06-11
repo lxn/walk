@@ -118,7 +118,6 @@ func (te *TextEdit) SetText(text string) (err error) {
 		return nil
 	}
 
-	te.havePainted = false
 	var oldLineCount int
 	if te.compactHeight {
 		oldLineCount = int(te.SendMessage(win.EM_GETLINECOUNT, 0, 0))
@@ -126,6 +125,7 @@ func (te *TextEdit) SetText(text string) (err error) {
 	err = te.setText(text)
 	if te.compactHeight {
 		if newLineCount := int(te.SendMessage(win.EM_GETLINECOUNT, 0, 0)); newLineCount != oldLineCount {
+			te.havePainted = false
 			te.updateParentLayout()
 		}
 	}
