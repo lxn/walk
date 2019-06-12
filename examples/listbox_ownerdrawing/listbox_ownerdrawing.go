@@ -101,7 +101,7 @@ func (s *Styler) DefaultItemHeight() int {
 
 const (
 	marginH = 3
-	marginV = 4
+	marginV = 2
 	lineW = 1
 )
 
@@ -168,17 +168,19 @@ func (s *Styler) StyleItem(style *walk.ListItemStyle) {
 		b.X += marginH
 		b.Y += marginV
 
-		canvas.DrawText(s.model.items[style.Index()].timestamp.Format(time.StampMilli), (*s.lb).Font(), style.TextColor, b, walk.TextEditControl|walk.TextWordbreak)
+		item := s.model.items[style.Index()]
+
+		canvas.DrawText(item.timestamp.Format(time.StampMilli), (*s.lb).Font(), style.TextColor, b, walk.TextEditControl|walk.TextWordbreak)
 
 		stampSize := s.StampSize()
 
-		x := b.X + marginH + stampSize.Width
+		x := b.X + stampSize.Width + marginH
 		canvas.DrawLine(pen, walk.Point{x, b.Y - marginV}, walk.Point{x, b.Y - marginV + b.Height})
 
 		b.X += stampSize.Width + marginH*2+lineW
 		b.Width -= stampSize.Width + marginH*4+lineW
 
-		canvas.DrawText(s.model.items[style.Index()].message, (*s.lb).Font(), style.TextColor, b, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
+		canvas.DrawText(item.message, (*s.lb).Font(), style.TextColor, b, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
 	}
 }
 

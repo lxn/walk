@@ -130,9 +130,13 @@ func (lb *ListBox) ApplySysColors() {
 }
 
 func (lb *ListBox) ApplyDPI(dpi int) {
-	lb.WidgetBase.ApplyDPI(dpi)
-
 	lb.style.dpi = dpi
+
+	lb.WidgetBase.ApplyDPI(dpi)
+}
+
+func (lb *ListBox) applyFont(font *Font) {
+	lb.WidgetBase.applyFont(font)
 
 	for i := range lb.lastWidthsMeasuredFor {
 		lb.lastWidthsMeasuredFor[i] = 0
@@ -237,7 +241,7 @@ func (lb *ListBox) ensureVisibleItemsHeightUpToDate() error {
 			break
 		}
 
-		height := lb.styler.ItemHeight(i, width)
+		height := lb.IntFrom96DPI(lb.styler.ItemHeight(i, width))
 
 		lb.SendMessage(win.LB_SETITEMHEIGHT, uintptr(i), uintptr(height))
 
@@ -496,7 +500,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 
 		mis := (*win.MEASUREITEMSTRUCT)(unsafe.Pointer(lParam))
 
-		mis.ItemHeight = uint32(lb.styler.DefaultItemHeight())
+		mis.ItemHeight = uint32(lb.IntFrom96DPI(lb.styler.DefaultItemHeight()))
 
 		return win.TRUE
 
