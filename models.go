@@ -338,6 +338,89 @@ func (cs *CellStyle) Canvas() *Canvas {
 	return cs.canvas
 }
 
+// ListItemStyler is the interface that must be implemented to provide a list
+// widget like ListBox with item display style information.
+type ListItemStyler interface {
+	// ItemHeightDependsOnWidth returns whether item height depends on width.
+	ItemHeightDependsOnWidth() bool
+
+	// DefaultItemHeight returns the initial height for any item.
+	DefaultItemHeight() int
+
+	// ItemHeight is called for each item to retrieve the height of the item.
+	ItemHeight(index, width int) int
+
+	// StyleItem is called for each item to pick up item style information.
+	StyleItem(style *ListItemStyle)
+}
+
+// ListItemStyle carries information about the display style of an item in a list widget
+// like ListBox.
+type ListItemStyle struct {
+	index           int
+	rc              win.RECT
+	bounds          Rectangle
+	state           uint32
+	hdc             win.HDC
+	dpi             int
+	canvas          *Canvas
+	BackgroundColor Color
+	TextColor       Color
+	Font            *Font
+
+	// Image is the image to display for the item.
+	//
+	// Supported types are *walk.Bitmap, *walk.Icon and string. A string will be
+	// interpreted as a file path and the icon associated with the file will be
+	// used. It is not supported to use strings together with the other options
+	// in the same model instance.
+	Image interface{}
+}
+
+func (lis *ListItemStyle) Index() int {
+	return lis.index
+}
+
+func (lis *ListItemStyle) Bounds() Rectangle {
+	return lis.bounds
+}
+
+func (lis *ListItemStyle) Focused() bool {
+	return lis.state&win.ODS_FOCUS != 0
+}
+
+func (lis *ListItemStyle) Canvas() *Canvas {
+	if lis.canvas == nil && lis.hdc != 0 {
+		lis.canvas, _ = newCanvasFromHDC(lis.hdc)
+		lis.canvas.dpix = lis.dpi
+		lis.canvas.dpiy = lis.dpi
+	}
+
+	return lis.canvas
+}
+
+func (lis *ListItemStyle) DrawBackground() error {
+	if canvas := lis.Canvas(); canvas != nil {
+		brush, err := NewSolidColorBrush(lis.BackgroundColor)
+		if err != nil {
+			return err
+		}
+		defer brush.Dispose()
+
+		return canvas.FillRectangle(brush, lis.bounds)
+	}
+
+	return nil
+}
+
+func (lis *ListItemStyle) DrawFocusRectangle() error {
+	if !win.DrawFocusRect(lis.hdc, &lis.rc) {
+		return newError("DrawFocusRect failed")
+	}
+
+	return nil
+}
+
 // ItemChecker is the interface that a model must implement to support check
 // boxes in a widget like TableView.
 type ItemChecker interface {

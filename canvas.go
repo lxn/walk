@@ -480,7 +480,7 @@ func (c *Canvas) measureTextForDPI(text string, font *Font, bounds Rectangle, fo
 	params.CbSize = uint32(unsafe.Sizeof(params))
 
 	strPtr := syscall.StringToUTF16Ptr(text)
-	dtfmt := uint32(format) | win.DT_EDITCONTROL | win.DT_WORDBREAK
+	dtfmt := uint32(format) | win.DT_EDITCONTROL | win.DT_WORDBREAK | win.DT_CALCRECT
 
 	height := win.DrawTextEx(
 		c.measureTextMetafile.hdc, strPtr, -1, rect, dtfmt, &params)
