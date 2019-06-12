@@ -505,11 +505,15 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 	wb.name2Property = make(map[string]Property)
 
 	var hwndParent win.HWND
+	var hMenu win.HMENU
 	if parent != nil {
 		hwndParent = parent.Handle()
 
 		if widget, ok := window.(Widget); ok {
 			if container, ok := parent.(Container); ok {
+				if cb := container.AsContainerBase(); cb != nil {
+					hMenu = win.HMENU(cb.NextChildID())
+				}
 				widget.AsWidgetBase().parent = container
 			}
 		}
@@ -531,7 +535,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 			win.CW_USEDEFAULT,
 			win.CW_USEDEFAULT,
 			hwndParent,
-			0,
+			hMenu,
 			0,
 			nil)
 		if wb.hWnd == 0 {

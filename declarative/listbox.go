@@ -74,7 +74,7 @@ func (lb ListBox) Create(builder *Builder) error {
 	var style uint32
 
 	if lb.ItemStyler != nil {
-		style |= /*win.LBS_HASSTRINGS |*/ win.LBS_OWNERDRAWVARIABLE
+		style |= win.LBS_OWNERDRAWVARIABLE
 	}
 	if lb.MultiSelection {
 		style |= win.LBS_EXTENDEDSEL

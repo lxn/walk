@@ -57,6 +57,10 @@ func NewScrollView(parent Container) (*ScrollView, error) {
 }
 
 func (sv *ScrollView) AsContainerBase() *ContainerBase {
+	if sv.composite == nil {
+		return nil
+	}
+
 	return sv.composite.AsContainerBase()
 }
 

@@ -110,6 +110,10 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 }
 
 func (gb *GroupBox) AsContainerBase() *ContainerBase {
+	if gb.composite == nil {
+		return nil
+	}
+
 	return gb.composite.AsContainerBase()
 }
 

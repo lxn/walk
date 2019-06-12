@@ -31,10 +31,11 @@ func main() {
 		textWidthDPI2Height: make(map[textWidthDPI]int),
 	}
 
-	if err := (MainWindow{
+	if _, err := (MainWindow{
 		AssignTo: &mw,
 		Title: "Walk ListBox Owner Drawing Example",
-		MinSize:  Size{600, 400},
+		MinSize: Size{200, 200},
+		Size:  Size{800, 600},
 		Font:     Font{Family: "Segoe UI", PointSize: 9},
 		Layout:   VBox{},
 		Children: []Widget{
@@ -51,12 +52,9 @@ func main() {
 				},
 			},
 		},
-	}).Create(); err != nil {
+	}).Run(); err != nil {
 		log.Fatal(err)
 	}
-
-	mw.Show()
-	mw.Run()
 }
 
 type logModel struct {
@@ -98,8 +96,14 @@ func (s *Styler) ItemHeightDependsOnWidth() bool {
 }
 
 func (s *Styler) DefaultItemHeight() int {
-	return s.StampSize().Height+8
+	return s.StampSize().Height+marginV*2
 }
+
+const (
+	marginH = 3
+	marginV = 4
+	lineW = 1
+)
 
 func (s *Styler) ItemHeight(index, width int) int {
 	dpi := (*s.lb).DPI()
@@ -109,7 +113,7 @@ func (s *Styler) ItemHeight(index, width int) int {
 	twd := textWidthDPI{msg, width, dpi}
 
 	if height, ok := s.textWidthDPI2Height[twd]; ok {
-		return height+8
+		return height+marginV*2
 	}
 
 	canvas, err := s.Canvas()
@@ -126,23 +130,23 @@ func (s *Styler) ItemHeight(index, width int) int {
 		if err != nil {
 			return 0
 		}
-		wsPerLine = (width - stampSize.Width - 3 - 7 - 3) / bounds.Width
+		wsPerLine = (width - marginH*4-lineW - stampSize.Width) / bounds.Width
 		s.widthDPI2WsPerLine[wd] = wsPerLine
 	}
 
 	if len(msg) <= wsPerLine {
 		s.textWidthDPI2Height[twd] = stampSize.Height
-		return stampSize.Height + 8
+		return stampSize.Height + marginV*2
 	}
 
-	bounds, _, err := canvas.MeasureText(msg, (*s.lb).Font(), walk.Rectangle{Width: width - stampSize.Width - 3 - 7 - 3, Height: 255}, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
+	bounds, _, err := canvas.MeasureText(msg, (*s.lb).Font(), walk.Rectangle{Width: width - marginH*4-lineW - stampSize.Width, Height: 255}, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
 	if err != nil {
 		return 0
 	}
 
 	s.textWidthDPI2Height[twd] = bounds.Height
 
-	return bounds.Height + 8
+	return bounds.Height + marginV*2
 }
 
 func (s *Styler) StyleItem(style *walk.ListItemStyle) {
@@ -161,18 +165,18 @@ func (s *Styler) StyleItem(style *walk.ListItemStyle) {
 		defer pen.Dispose()
 
 		b := style.Bounds()
-		b.X += 3
-		b.Y += 4
+		b.X += marginH
+		b.Y += marginV
 
 		canvas.DrawText(s.model.items[style.Index()].timestamp.Format(time.StampMilli), (*s.lb).Font(), style.TextColor, b, walk.TextEditControl|walk.TextWordbreak)
 
 		stampSize := s.StampSize()
 
-		x := b.X + stampSize.Width + 3
-		canvas.DrawLine(pen, walk.Point{x, b.Y - 4}, walk.Point{x, b.Y - 4 + b.Height})
+		x := b.X + marginH + stampSize.Width
+		canvas.DrawLine(pen, walk.Point{x, b.Y - marginV}, walk.Point{x, b.Y - marginV + b.Height})
 
-		b.X += stampSize.Width + 7
-		b.Width -= stampSize.Width + 3 + 7 + 3
+		b.X += stampSize.Width + marginH*2+lineW
+		b.Width -= stampSize.Width + marginH*4+lineW
 
 		canvas.DrawText(s.model.items[style.Index()].message, (*s.lb).Font(), style.TextColor, b, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
 	}

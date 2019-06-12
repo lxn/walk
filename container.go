@@ -445,10 +445,11 @@ type Container interface {
 
 type ContainerBase struct {
 	WidgetBase
-	layout     Layout
-	children   *WidgetList
-	dataBinder *DataBinder
-	persistent bool
+	layout      Layout
+	children    *WidgetList
+	dataBinder  *DataBinder
+	nextChildID int32
+	persistent  bool
 }
 
 func (cb *ContainerBase) AsWidgetBase() *WidgetBase {
@@ -457,6 +458,11 @@ func (cb *ContainerBase) AsWidgetBase() *WidgetBase {
 
 func (cb *ContainerBase) AsContainerBase() *ContainerBase {
 	return cb
+}
+
+func (cb *ContainerBase) NextChildID() int32 {
+	cb.nextChildID++
+	return cb.nextChildID
 }
 
 func (cb *ContainerBase) LayoutFlags() LayoutFlags {
@@ -768,6 +774,13 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 				window.WndProc(hwnd, msg, wParam, lParam)
 				return 0
 			}
+		}
+
+	case win.WM_MEASUREITEM:
+		mis := (*win.MEASUREITEMSTRUCT)(unsafe.Pointer(lParam))
+		if window := windowFromHandle(win.GetDlgItem(hwnd, int32(mis.CtlID))); window != nil {
+			// The window that sent the notification shall handle it itself.
+			return window.WndProc(hwnd, msg, wParam, lParam)
 		}
 
 	case win.WM_DRAWITEM:

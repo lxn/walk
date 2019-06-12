@@ -168,6 +168,10 @@ func (fb *FormBase) init(form Form) error {
 }
 
 func (fb *FormBase) AsContainerBase() *ContainerBase {
+	if fb.clientComposite == nil {
+		return nil
+	}
+
 	return fb.clientComposite.AsContainerBase()
 }
 

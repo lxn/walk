@@ -32,7 +32,6 @@ type ListBox struct {
 	itemsInsertedHandlerHandle      int
 	itemsRemovedHandlerHandle       int
 	maxItemTextWidth                int
-	lineHeight                      int
 	lastWidth                       int
 	lastWidthsMeasuredFor           []int
 	currentIndexChangedPublisher    EventPublisher
@@ -72,10 +71,6 @@ func NewListBoxWithStyle(parent Container, style uint32) (*ListBox, error) {
 	lb.style.dpi = lb.DPI()
 
 	lb.ApplySysColors()
-
-	if err := lb.updateLineHeight(); err != nil {
-		return nil, err
-	}
 
 	lb.GraphicsEffects().Add(InteractionEffect)
 	lb.GraphicsEffects().Add(FocusEffect)
@@ -142,25 +137,6 @@ func (lb *ListBox) ApplyDPI(dpi int) {
 	for i := range lb.lastWidthsMeasuredFor {
 		lb.lastWidthsMeasuredFor[i] = 0
 	}
-
-	lb.updateLineHeight()
-}
-
-func (lb *ListBox) updateLineHeight() error {
-	canvas, err := lb.CreateCanvas()
-	if err != nil {
-		return err
-	}
-	defer canvas.Dispose()
-
-	bounds, _, err := canvas.MeasureText("gM", lb.Font(), Rectangle{Width: 9999999}, TextCalcRect)
-	if err != nil {
-		return err
-	}
-
-	lb.lineHeight = bounds.Height
-
-	return nil
 }
 
 func (lb *ListBox) itemString(index int) string {
