@@ -57,6 +57,7 @@ type TextEdit struct {
 	TextAlignment Alignment1D
 	TextColor     walk.Color
 	VScroll       bool
+	CompactHeight bool
 }
 
 func (te TextEdit) Create(builder *Builder) error {
@@ -71,6 +72,9 @@ func (te TextEdit) Create(builder *Builder) error {
 	w, err := walk.NewTextEditWithStyle(builder.Parent(), style)
 	if err != nil {
 		return err
+	}
+	if te.CompactHeight {
+		w.SetCompactHeight(true)
 	}
 
 	if te.AssignTo != nil {
