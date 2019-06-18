@@ -1743,7 +1743,7 @@ func (wb *WindowBase) FocusedChanged() *Event {
 // Remember to call the Dispose method on the canvas to release resources,
 // when you no longer need it.
 func (wb *WindowBase) CreateCanvas() (*Canvas, error) {
-	return newCanvasFromHWND(wb.hWnd)
+	return newCanvasFromWindow(wb.window)
 }
 
 func (wb *WindowBase) setTheme(appName string) error {
