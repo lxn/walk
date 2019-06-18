@@ -59,10 +59,16 @@ func newReflectListModel(dataSource interface{}) (ListModel, error) {
 		})
 
 		rlm.ItemsInserted().Attach(func(from, to int) {
+			m.items = rlm.Items()
+			m.value = reflect.ValueOf(m.items)
+
 			m.PublishItemsInserted(from, to)
 		})
 
 		rlm.ItemsRemoved().Attach(func(from, to int) {
+			m.items = rlm.Items()
+			m.value = reflect.ValueOf(m.items)
+
 			m.PublishItemsRemoved(from, to)
 		})
 	}
@@ -139,6 +145,20 @@ func newReflectTableModel(dataSource interface{}) (TableModel, error) {
 				sb := is.sorterBase()
 				m.sort(sb.SortedColumn(), sb.SortOrder())
 			}
+		})
+
+		rtm.RowsInserted().Attach(func(from, to int) {
+			m.items = rtm.Items()
+			m.value = reflect.ValueOf(m.items)
+
+			m.PublishRowsInserted(from, to)
+		})
+
+		rtm.RowsRemoved().Attach(func(from, to int) {
+			m.items = rtm.Items()
+			m.value = reflect.ValueOf(m.items)
+
+			m.PublishRowsRemoved(from, to)
 		})
 	} else {
 		m.sorterBase = new(SorterBase)
