@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lxn/win"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"github.com/lxn/win"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 	var lb *walk.ListBox
 	var items []logEntry
 	for i := 10000; i > 0; i-- {
-		items = append(items, logEntry{time.Now().Add(-time.Second * time.Duration(i)), fmt.Sprintf("Some stuff just happend. %s", strings.Repeat("blah ", i%100))})
+		items = append(items, logEntry{time.Now().Add(-time.Second * time.Duration(i)), fmt.Sprintf("Some stuff just happend. %s", strings.TrimSpace(strings.Repeat("blah ", i%100)))})
 	}
 	model := &logModel{items: items}
 	styler := &Styler{
@@ -31,11 +31,11 @@ func main() {
 		textWidthDPI2Height: make(map[textWidthDPI]int),
 	}
 
-	if _, err := (MainWindow{
+	if err := (MainWindow{
 		AssignTo: &mw,
-		Title: "Walk ListBox Owner Drawing Example",
-		MinSize: Size{200, 200},
-		Size:  Size{800, 600},
+		Title:    "Walk ListBox Owner Drawing Example",
+		MinSize:  Size{200, 200},
+		Size:     Size{800, 600},
 		Font:     Font{Family: "Segoe UI", PointSize: 9},
 		Layout:   VBox{},
 		Children: []Widget{
@@ -44,17 +44,49 @@ func main() {
 				Layout:          VBox{},
 				Children: []Widget{
 					ListBox{
-						AssignTo:   &lb,
+						AssignTo:       &lb,
 						MultiSelection: true,
-						Model:      model,
-						ItemStyler: styler,
+						Model:          model,
+						ItemStyler:     styler,
 					},
 				},
 			},
 		},
-	}).Run(); err != nil {
+	}).Create(); err != nil {
 		log.Fatal(err)
 	}
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	cancel := make(chan bool, 1)
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				mw.Synchronize(func() {
+					trackLatest := lb.ItemVisible(len(model.items) - 1)
+
+					model.items = append(model.items, logEntry{time.Now(), "Some new stuff."})
+					index := len(model.items) - 1
+					model.PublishItemsInserted(index, index)
+
+					if trackLatest {
+						lb.EnsureItemVisible(len(model.items) - 1)
+					}
+				})
+
+			case <-cancel:
+				break
+			}
+		}
+	}()
+
+	mw.Show()
+	mw.Run()
+
+	cancel <- true
 }
 
 type logModel struct {
@@ -84,8 +116,9 @@ type textWidthDPI struct {
 
 type Styler struct {
 	lb                  **walk.ListBox
-	canvas *walk.Canvas
+	canvas              *walk.Canvas
 	model               *logModel
+	font                *walk.Font
 	dpi2StampSize       map[int]walk.Size
 	widthDPI2WsPerLine  map[widthDPI]int
 	textWidthDPI2Height map[textWidthDPI]int
@@ -96,13 +129,13 @@ func (s *Styler) ItemHeightDependsOnWidth() bool {
 }
 
 func (s *Styler) DefaultItemHeight() int {
-	return s.StampSize().Height+marginV*2
+	return s.StampSize().Height + marginV*2
 }
 
 const (
-	marginH = 3
+	marginH = 6
 	marginV = 2
-	lineW = 1
+	lineW   = 1
 )
 
 func (s *Styler) ItemHeight(index, width int) int {
@@ -113,7 +146,7 @@ func (s *Styler) ItemHeight(index, width int) int {
 	twd := textWidthDPI{msg, width, dpi}
 
 	if height, ok := s.textWidthDPI2Height[twd]; ok {
-		return height+marginV*2
+		return height + marginV*2
 	}
 
 	canvas, err := s.Canvas()
@@ -130,7 +163,7 @@ func (s *Styler) ItemHeight(index, width int) int {
 		if err != nil {
 			return 0
 		}
-		wsPerLine = (width - marginH*4-lineW - stampSize.Width) / bounds.Width
+		wsPerLine = (width - marginH*4 - lineW - stampSize.Width) / bounds.Width
 		s.widthDPI2WsPerLine[wd] = wsPerLine
 	}
 
@@ -139,7 +172,7 @@ func (s *Styler) ItemHeight(index, width int) int {
 		return stampSize.Height + marginV*2
 	}
 
-	bounds, _, err := canvas.MeasureText(msg, (*s.lb).Font(), walk.Rectangle{Width: width - marginH*4-lineW - stampSize.Width, Height: 255}, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
+	bounds, _, err := canvas.MeasureText(msg, (*s.lb).Font(), walk.Rectangle{Width: width - marginH*4 - lineW - stampSize.Width, Height: 255}, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
 	if err != nil {
 		return 0
 	}
@@ -158,7 +191,7 @@ func (s *Styler) StyleItem(style *walk.ListItemStyle) {
 			}
 		}
 
-		pen, err := walk.NewCosmeticPen(walk.PenSolid, walk.RGB(0, 0, 0))
+		pen, err := walk.NewCosmeticPen(walk.PenSolid, style.LineColor)
 		if err != nil {
 			return
 		}
@@ -170,21 +203,21 @@ func (s *Styler) StyleItem(style *walk.ListItemStyle) {
 
 		item := s.model.items[style.Index()]
 
-		canvas.DrawText(item.timestamp.Format(time.StampMilli), (*s.lb).Font(), style.TextColor, b, walk.TextEditControl|walk.TextWordbreak)
+		style.DrawText(item.timestamp.Format(time.StampMilli), b, walk.TextEditControl|walk.TextWordbreak)
 
 		stampSize := s.StampSize()
 
 		x := b.X + stampSize.Width + marginH
 		canvas.DrawLine(pen, walk.Point{x, b.Y - marginV}, walk.Point{x, b.Y - marginV + b.Height})
 
-		b.X += stampSize.Width + marginH*2+lineW
-		b.Width -= stampSize.Width + marginH*4+lineW
+		b.X += stampSize.Width + marginH*2 + lineW
+		b.Width -= stampSize.Width + marginH*4 + lineW
 
-		canvas.DrawText(item.message, (*s.lb).Font(), style.TextColor, b, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
+		style.DrawText(item.message, b, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
 	}
 }
 
-func (s *Styler) StampSize()  walk.Size {
+func (s *Styler) StampSize() walk.Size {
 	dpi := (*s.lb).DPI()
 
 	stampSize, ok := s.dpi2StampSize[dpi]
@@ -196,7 +229,7 @@ func (s *Styler) StampSize()  walk.Size {
 
 		bounds, _, err := canvas.MeasureText("Jan _2 20:04:05.000", (*s.lb).Font(), walk.Rectangle{Width: 9999999}, walk.TextCalcRect)
 		if err != nil {
-			return  walk.Size{}
+			return walk.Size{}
 		}
 
 		stampSize = bounds.Size()
@@ -210,7 +243,7 @@ func (s *Styler) Canvas() (*walk.Canvas, error) {
 	if s.canvas != nil {
 		return s.canvas, nil
 	}
-	
+
 	canvas, err := (*s.lb).CreateCanvas()
 	if err != nil {
 		return nil, err

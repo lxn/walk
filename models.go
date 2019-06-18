@@ -7,6 +7,8 @@
 package walk
 
 import (
+	"syscall"
+
 	"github.com/lxn/win"
 )
 
@@ -358,14 +360,18 @@ type ListItemStyler interface {
 // like ListBox.
 type ListItemStyle struct {
 	index           int
+	hoverIndex      int
 	rc              win.RECT
 	bounds          Rectangle
 	state           uint32
+	hTheme          win.HTHEME
+	hwnd            win.HWND
 	hdc             win.HDC
 	dpi             int
 	canvas          *Canvas
 	BackgroundColor Color
 	TextColor       Color
+	LineColor       Color
 	Font            *Font
 
 	// Image is the image to display for the item.
@@ -375,6 +381,8 @@ type ListItemStyle struct {
 	// used. It is not supported to use strings together with the other options
 	// in the same model instance.
 	Image interface{}
+
+	highContrastActive bool
 }
 
 func (lis *ListItemStyle) Index() int {
@@ -383,10 +391,6 @@ func (lis *ListItemStyle) Index() int {
 
 func (lis *ListItemStyle) Bounds() Rectangle {
 	return lis.bounds
-}
-
-func (lis *ListItemStyle) Focused() bool {
-	return lis.state&win.ODS_FOCUS != 0
 }
 
 func (lis *ListItemStyle) Canvas() *Canvas {
@@ -400,25 +404,82 @@ func (lis *ListItemStyle) Canvas() *Canvas {
 }
 
 func (lis *ListItemStyle) DrawBackground() error {
-	if canvas := lis.Canvas(); canvas != nil {
+	canvas := lis.Canvas()
+	if canvas == nil {
+		return nil
+	}
+
+	stateID := lis.stateID()
+
+	if lis.hTheme != 0 && stateID != win.LISS_NORMAL {
+		if win.FAILED(win.DrawThemeBackground(lis.hTheme, lis.hdc, win.LVP_LISTITEM, stateID, &lis.rc, nil)) {
+			return newError("DrawThemeBackground failed")
+		}
+	} else {
 		brush, err := NewSolidColorBrush(lis.BackgroundColor)
 		if err != nil {
 			return err
 		}
 		defer brush.Dispose()
 
-		return canvas.FillRectangle(brush, lis.bounds)
+		if err := canvas.FillRectangle(brush, lis.bounds); err != nil {
+			return err
+		}
+
+		if lis.highContrastActive && (lis.index == lis.hoverIndex || stateID != win.LISS_NORMAL) {
+			pen, err := NewCosmeticPen(PenSolid, lis.LineColor)
+			if err != nil {
+				return err
+			}
+			defer pen.Dispose()
+
+			if err := canvas.DrawRectangle(pen, lis.bounds); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
 }
 
-func (lis *ListItemStyle) DrawFocusRectangle() error {
-	if !win.DrawFocusRect(lis.hdc, &lis.rc) {
-		return newError("DrawFocusRect failed")
+func (lis *ListItemStyle) DrawText(text string, bounds Rectangle, format DrawTextFormat) error {
+	if lis.hTheme != 0 {
+		if lis.Font != nil {
+			hFontOld := win.SelectObject(lis.hdc, win.HGDIOBJ(lis.Font.handleForDPI(lis.dpi)))
+			defer win.SelectObject(lis.hdc, hFontOld)
+		}
+		rc := RectangleFrom96DPI(bounds, lis.dpi).toRECT()
+
+		if win.FAILED(win.DrawThemeTextEx(lis.hTheme, lis.hdc, win.LVP_LISTITEM, lis.stateID(), syscall.StringToUTF16Ptr(text), int32(len(([]rune)(text))), uint32(format), &rc, nil)) {
+			return newError("DrawThemeTextEx failed")
+		}
+	} else {
+		if canvas := lis.Canvas(); canvas != nil {
+			if err := canvas.DrawText(text, lis.Font, lis.TextColor, bounds, format); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
+}
+
+func (lis *ListItemStyle) stateID() int32 {
+	if lis.state&win.ODS_CHECKED != 0 {
+		if win.GetFocus() == lis.hwnd {
+			if lis.index == lis.hoverIndex {
+				return win.LISS_HOTSELECTED
+			} else {
+				return win.LISS_SELECTED
+			}
+		} else {
+			return win.LISS_SELECTEDNOTFOCUS
+		}
+	} else if lis.index == lis.hoverIndex {
+		return win.LISS_HOT
+	}
+
+	return win.LISS_NORMAL
 }
 
 // ItemChecker is the interface that a model must implement to support check
