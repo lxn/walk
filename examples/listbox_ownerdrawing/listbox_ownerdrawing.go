@@ -66,7 +66,7 @@ func main() {
 			select {
 			case <-ticker.C:
 				mw.Synchronize(func() {
-					trackLatest := lb.ItemVisible(len(model.items) - 1)
+					trackLatest := lb.ItemVisible(len(model.items)-1) && len(lb.SelectedIndexes()) <= 1
 
 					model.items = append(model.items, logEntry{time.Now(), "Some new stuff."})
 					index := len(model.items) - 1
@@ -207,7 +207,7 @@ func (s *Styler) StyleItem(style *walk.ListItemStyle) {
 
 		stampSize := s.StampSize()
 
-		x := b.X + stampSize.Width + marginH
+		x := b.X + stampSize.Width + marginH + lineW
 		canvas.DrawLine(pen, walk.Point{x, b.Y - marginV}, walk.Point{x, b.Y - marginV + b.Height})
 
 		b.X += stampSize.Width + marginH*2 + lineW
