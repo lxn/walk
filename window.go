@@ -387,6 +387,7 @@ type calcTextSizeInfo struct {
 
 // WindowBase implements many operations common to all Windows.
 type WindowBase struct {
+	nopActionListObserver
 	window                  Window
 	hWnd                    win.HWND
 	origWndProcPtr          uintptr
@@ -394,6 +395,7 @@ type WindowBase struct {
 	font                    *Font
 	hFont                   win.HFONT
 	contextMenu             *Menu
+	shortcutActions         *ActionList
 	disposables             []Disposable
 	disposingPublisher      EventPublisher
 	dropFilesPublisher      DropFilesEventPublisher
@@ -826,6 +828,17 @@ func (wb *WindowBase) ContextMenu() *Menu {
 // SetContextMenu sets the context menu of the *WindowBase.
 func (wb *WindowBase) SetContextMenu(value *Menu) {
 	wb.contextMenu = value
+}
+
+// ShortcutActions returns the list of actions that will be triggered if their
+// shortcut is pressed when this window or one of its descendants has the
+// keyboard focus.
+func (wb *WindowBase) ShortcutActions() *ActionList {
+	if wb.shortcutActions == nil {
+		wb.shortcutActions = newActionList(wb)
+	}
+
+	return wb.shortcutActions
 }
 
 // Background returns the background Brush of the *WindowBase.

@@ -12,6 +12,20 @@ type actionListObserver interface {
 	onClearingActions() error
 }
 
+type nopActionListObserver struct{}
+
+func (nopActionListObserver) onInsertedAction(action *Action) error {
+	return nil
+}
+
+func (nopActionListObserver) onRemovingAction(action *Action) error {
+	return nil
+}
+
+func (nopActionListObserver) onClearingActions() error {
+	return nil
+}
+
 type ActionList struct {
 	actions  []*Action
 	observer actionListObserver
@@ -173,18 +187,4 @@ func (l *ActionList) updateSeparatorVisibility() error {
 	}
 
 	return nil
-}
-
-func (l *ActionList) AttachShortcuts(w Window) {
-	shortcuts := make(map[Shortcut]*Action, len(l.actions))
-	for _, action := range l.actions {
-		if action.Shortcut().Key != 0 {
-			shortcuts[action.Shortcut()] = action
-		}
-	}
-	w.KeyDown().Attach(func(key Key) {
-		if action, ok := shortcuts[Shortcut{ModifiersDown(), key}]; ok {
-			action.raiseTriggered()
-		}
-	})
 }

@@ -404,7 +404,10 @@ func (fb *FormBase) Run() int {
 func (fb *FormBase) handleKeyDown(msg *win.MSG) bool {
 	ret := false
 
-	if key, mods := Key(msg.WParam), ModifiersDown(); key == KeyTab && (mods&ModControl) != 0 {
+	key, mods := Key(msg.WParam), ModifiersDown()
+
+	// Tabbing
+	if key == KeyTab && (mods&ModControl) != 0 {
 		doTabbing := func(tw *TabWidget) {
 			index := tw.CurrentIndex()
 			if (mods & ModShift) != 0 {
@@ -456,6 +459,26 @@ func (fb *FormBase) handleKeyDown(msg *win.MSG) bool {
 		}
 	}
 
+	// Shortcut actions
+	hwnd := msg.HWnd
+	for hwnd != 0 {
+		if window := windowFromHandle(hwnd); window != nil {
+			wb := window.AsWindowBase()
+
+			if wb.shortcutActions != nil {
+				for _, action := range wb.shortcutActions.actions {
+					if action.shortcut.Key == key && action.shortcut.Modifiers == mods && action.Enabled() {
+						action.raiseTriggered()
+						return true
+					}
+				}
+			}
+		}
+
+		hwnd = win.GetParent(hwnd)
+	}
+
+	// WebView
 	walkDescendants(fb.window, func(w Window) bool {
 		if webView, ok := w.(*WebView); ok {
 			webViewHWnd := webView.Handle()
