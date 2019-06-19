@@ -565,7 +565,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		dis := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
 
 		if lb.styler == nil || dis.ItemID < 0 || dis.ItemAction != win.ODA_DRAWENTIRE {
-			break
+			return win.TRUE
 		}
 
 		lb.style.index = int(dis.ItemID)
