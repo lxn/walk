@@ -359,29 +359,20 @@ type ListItemStyler interface {
 // ListItemStyle carries information about the display style of an item in a list widget
 // like ListBox.
 type ListItemStyle struct {
-	index           int
-	hoverIndex      int
-	rc              win.RECT
-	bounds          Rectangle
-	state           uint32
-	hTheme          win.HTHEME
-	hwnd            win.HWND
-	hdc             win.HDC
-	dpi             int
-	canvas          *Canvas
-	BackgroundColor Color
-	TextColor       Color
-	LineColor       Color
-	Font            *Font
-
-	// Image is the image to display for the item.
-	//
-	// Supported types are *walk.Bitmap, *walk.Icon and string. A string will be
-	// interpreted as a file path and the icon associated with the file will be
-	// used. It is not supported to use strings together with the other options
-	// in the same model instance.
-	Image interface{}
-
+	BackgroundColor    Color
+	TextColor          Color
+	LineColor          Color
+	Font               *Font
+	index              int
+	hoverIndex         int
+	rc                 win.RECT
+	bounds             Rectangle
+	state              uint32
+	hTheme             win.HTHEME
+	hwnd               win.HWND
+	hdc                win.HDC
+	dpi                int
+	canvas             *Canvas
 	highContrastActive bool
 }
 
