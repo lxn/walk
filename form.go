@@ -467,7 +467,7 @@ func (fb *FormBase) handleKeyDown(msg *win.MSG) bool {
 
 			if wb.shortcutActions != nil {
 				for _, action := range wb.shortcutActions.actions {
-					if action.shortcut.Key == key && action.shortcut.Modifiers == mods && action.Enabled() {
+					if action.shortcut.Key == key && action.shortcut.Modifiers == mods && action.Visible() && action.Enabled() {
 						action.raiseTriggered()
 						return true
 					}
