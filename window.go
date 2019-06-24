@@ -381,48 +381,47 @@ type calcTextSizeInfo struct {
 	width int
 	font  fontInfo
 	text  string
-	size  Size
 	dpi   int
 }
 
 // WindowBase implements many operations common to all Windows.
 type WindowBase struct {
 	nopActionListObserver
-	window                  Window
-	hWnd                    win.HWND
-	origWndProcPtr          uintptr
-	name                    string
-	font                    *Font
-	hFont                   win.HFONT
-	contextMenu             *Menu
-	shortcutActions         *ActionList
-	disposables             []Disposable
-	disposingPublisher      EventPublisher
-	dropFilesPublisher      DropFilesEventPublisher
-	keyDownPublisher        KeyEventPublisher
-	keyPressPublisher       KeyEventPublisher
-	keyUpPublisher          KeyEventPublisher
-	mouseDownPublisher      MouseEventPublisher
-	mouseUpPublisher        MouseEventPublisher
-	mouseMovePublisher      MouseEventPublisher
-	mouseWheelPublisher     MouseEventPublisher
-	boundsChangedPublisher  EventPublisher
-	sizeChangedPublisher    EventPublisher
-	maxSize                 Size
-	minSize                 Size
-	background              Brush
-	cursor                  Cursor
-	name2Property           map[string]Property
-	enabledProperty         Property
-	enabledChangedPublisher EventPublisher
-	visibleProperty         Property
-	visibleChangedPublisher EventPublisher
-	focusedProperty         Property
-	focusedChangedPublisher EventPublisher
-	calcTextSizeInfoPrev    *calcTextSizeInfo
-	suspended               bool
-	visible                 bool
-	enabled                 bool
+	window                    Window
+	hWnd                      win.HWND
+	origWndProcPtr            uintptr
+	name                      string
+	font                      *Font
+	hFont                     win.HFONT
+	contextMenu               *Menu
+	shortcutActions           *ActionList
+	disposables               []Disposable
+	disposingPublisher        EventPublisher
+	dropFilesPublisher        DropFilesEventPublisher
+	keyDownPublisher          KeyEventPublisher
+	keyPressPublisher         KeyEventPublisher
+	keyUpPublisher            KeyEventPublisher
+	mouseDownPublisher        MouseEventPublisher
+	mouseUpPublisher          MouseEventPublisher
+	mouseMovePublisher        MouseEventPublisher
+	mouseWheelPublisher       MouseEventPublisher
+	boundsChangedPublisher    EventPublisher
+	sizeChangedPublisher      EventPublisher
+	maxSize                   Size
+	minSize                   Size
+	background                Brush
+	cursor                    Cursor
+	name2Property             map[string]Property
+	enabledProperty           Property
+	enabledChangedPublisher   EventPublisher
+	visibleProperty           Property
+	visibleChangedPublisher   EventPublisher
+	focusedProperty           Property
+	focusedChangedPublisher   EventPublisher
+	calcTextSizeInfo2TextSize map[calcTextSizeInfo]Size
+	suspended                 bool
+	visible                   bool
+	enabled                   bool
 }
 
 var (
@@ -503,7 +502,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 	wb.window = window
 	wb.enabled = true
 	wb.visible = true
-
+	wb.calcTextSizeInfo2TextSize = make(map[calcTextSizeInfo]Size)
 	wb.name2Property = make(map[string]Property)
 
 	var hwndParent win.HWND
@@ -1099,11 +1098,6 @@ func (wb *WindowBase) setText(text string) error {
 		return err
 	}
 
-	if wb.calcTextSizeInfoPrev != nil {
-		wb.calcTextSizeInfoPrev.font.family = ""
-		wb.calcTextSizeInfoPrev.text = text
-	}
-
 	return nil
 }
 
@@ -1426,18 +1420,24 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 
 	dpi := wb.DPI()
 
-	if wb.calcTextSizeInfoPrev != nil &&
-		width == wb.calcTextSizeInfoPrev.width &&
-		font.family == wb.calcTextSizeInfoPrev.font.family &&
-		font.pointSize == wb.calcTextSizeInfoPrev.font.pointSize &&
-		font.style == wb.calcTextSizeInfoPrev.font.style &&
-		text == wb.calcTextSizeInfoPrev.text &&
-		dpi == wb.calcTextSizeInfoPrev.dpi {
-		return wb.calcTextSizeInfoPrev.size
+	w := width
+	if w == 0 {
+		w = wb.WidthPixels()
 	}
 
-	if wb.calcTextSizeInfoPrev != nil && dpi != wb.calcTextSizeInfoPrev.dpi {
-		width = int(float64(width) * float64(dpi) / float64(wb.calcTextSizeInfoPrev.dpi))
+	key := calcTextSizeInfo{
+		width: w,
+		font: fontInfo{
+			family:    font.family,
+			pointSize: font.pointSize,
+			style:     font.style,
+		},
+		text: text,
+		dpi:  dpi,
+	}
+
+	if size, ok := wb.calcTextSizeInfo2TextSize[key]; ok {
+		return size
 	}
 
 	var size Size
@@ -1481,17 +1481,7 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 		}
 	}
 
-	if wb.calcTextSizeInfoPrev == nil {
-		wb.calcTextSizeInfoPrev = new(calcTextSizeInfo)
-	}
-
-	wb.calcTextSizeInfoPrev.width = width
-	wb.calcTextSizeInfoPrev.font.family = font.family
-	wb.calcTextSizeInfoPrev.font.pointSize = font.pointSize
-	wb.calcTextSizeInfoPrev.font.style = font.style
-	wb.calcTextSizeInfoPrev.text = text
-	wb.calcTextSizeInfoPrev.size = size
-	wb.calcTextSizeInfoPrev.dpi = dpi
+	wb.calcTextSizeInfo2TextSize[key] = size
 
 	return size
 }
@@ -1501,17 +1491,7 @@ func (wb *WindowBase) calculateTextSize() Size {
 }
 
 func (wb *WindowBase) calculateTextSizeForWidth(width int) Size {
-	var text string
-	if wb.calcTextSizeInfoPrev != nil {
-		// setText copied the new text here for us.
-		text = wb.calcTextSizeInfoPrev.text
-	}
-
-	if text == "" {
-		text = wb.text()
-	}
-
-	return wb.calculateTextSizeImplForWidth(text, width)
+	return wb.calculateTextSizeImplForWidth(wb.text(), width)
 }
 
 // Size returns the outer Size of the *WindowBase, including decorations.
