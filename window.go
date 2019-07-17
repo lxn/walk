@@ -121,6 +121,9 @@ type Window interface {
 	// By default this is a MS Shell Dlg 2, 8 point font.
 	Font() *Font
 
+	// Form returns the Form of the Window.
+	Form() Form
+
 	// Handle returns the window handle of the Window.
 	Handle() win.HWND
 
@@ -190,6 +193,9 @@ type Window interface {
 
 	// Name returns the name of the Window.
 	Name() string
+
+	// RequestLayout either schedules or immediately starts performing layout.
+	RequestLayout()
 
 	// RightToLeftReading returns whether the reading order of the Window
 	// is from right to left.
@@ -388,6 +394,7 @@ type calcTextSizeInfo struct {
 type WindowBase struct {
 	nopActionListObserver
 	window                    Window
+	form                      Form
 	hWnd                      win.HWND
 	origWndProcPtr            uintptr
 	name                      string
@@ -501,7 +508,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 	wb := window.AsWindowBase()
 	wb.window = window
 	wb.enabled = true
-	wb.visible = true
+	wb.visible = style&win.WS_VISIBLE != 0
 	wb.calcTextSizeInfo2TextSize = make(map[calcTextSizeInfo]Size)
 	wb.name2Property = make(map[string]Property)
 
@@ -1041,7 +1048,7 @@ func setWindowFont(hwnd win.HWND, hFont win.HFONT) {
 
 	if window := windowFromHandle(hwnd); window != nil {
 		if widget, ok := window.(Widget); ok {
-			widget.AsWidgetBase().updateParentLayoutWithReset(false)
+			widget.AsWidgetBase().RequestLayout()
 		}
 	}
 }
@@ -1152,6 +1159,19 @@ func (wb *WindowBase) SaveState() (err error) {
 	return
 }
 
+// Form returns the Form of the Window.
+func (wb *WindowBase) Form() Form {
+	if wb.form == nil {
+		if form, ok := wb.window.(Form); ok {
+			wb.form = form
+		} else {
+			wb.form = ancestor(wb.window.(Widget))
+		}
+	}
+
+	return wb.form
+}
+
 func forEachDescendant(hwnd win.HWND, lParam uintptr) uintptr {
 	if window := windowFromHandle(hwnd); window != nil && forEachDescendantCallback(window.(Widget)) {
 		return 1
@@ -1200,7 +1220,7 @@ func (wb *WindowBase) SetVisible(visible bool) {
 	if widget, ok := wb.window.(Widget); ok {
 		wb := widget.AsWidgetBase()
 		wb.invalidateBorderInParent()
-		wb.updateParentLayoutWithReset(true)
+		wb.RequestLayout()
 	}
 
 	wb.visibleChangedPublisher.Publish()
@@ -1440,28 +1460,44 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 		return size
 	}
 
+	size := calculateTextSize(text, font, dpi, width, wb.hWnd)
+
+	wb.calcTextSizeInfo2TextSize[key] = size
+
+	return size
+}
+
+func (wb *WindowBase) calculateTextSize() Size {
+	return wb.calculateTextSizeForWidth(0)
+}
+
+func (wb *WindowBase) calculateTextSizeForWidth(width int) Size {
+	return wb.calculateTextSizeImplForWidth(wb.text(), width)
+}
+
+func calculateTextSize(text string, font *Font, dpi, width int, hwnd win.HWND) Size {
+	hdc := win.GetDC(hwnd)
+	if hdc == 0 {
+		newError("GetDC failed")
+		return Size{}
+	}
+	defer win.ReleaseDC(hwnd, hdc)
+
 	var size Size
 	if width > 0 {
-		canvas, err := wb.CreateCanvas()
+		canvas, err := newCanvasFromHDC(hdc)
 		if err != nil {
 			return size
 		}
 		defer canvas.Dispose()
 
-		bounds, _, err := canvas.measureTextForDPI(text, font, Rectangle{Width: width, Height: 9999999}, 0, dpi)
+		bounds, err := canvas.measureTextForDPI(text, font, Rectangle{Width: width, Height: 9999999}, 0, dpi)
 		if err != nil {
 			return size
 		}
 
 		size = bounds.Size()
 	} else {
-		hdc := win.GetDC(wb.hWnd)
-		if hdc == 0 {
-			newError("GetDC failed")
-			return Size{}
-		}
-		defer win.ReleaseDC(wb.hWnd, hdc)
-
 		hFontOld := win.SelectObject(hdc, win.HGDIOBJ(font.handleForDPI(dpi)))
 		defer win.SelectObject(hdc, hFontOld)
 
@@ -1481,17 +1517,7 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 		}
 	}
 
-	wb.calcTextSizeInfo2TextSize[key] = size
-
 	return size
-}
-
-func (wb *WindowBase) calculateTextSize() Size {
-	return wb.calculateTextSizeForWidth(0)
-}
-
-func (wb *WindowBase) calculateTextSizeForWidth(width int) Size {
-	return wb.calculateTextSizeImplForWidth(wb.text(), width)
 }
 
 // Size returns the outer Size of the *WindowBase, including decorations.
@@ -1680,6 +1706,23 @@ func (wb *WindowBase) SetClientSize(value Size) error {
 // excluding decorations.
 func (wb *WindowBase) SetClientSizePixels(value Size) error {
 	return wb.SetSizePixels(wb.sizeFromClientSizePixels(value))
+}
+
+// RequestLayout either schedules or immediately starts performing layout.
+func (wb *WindowBase) RequestLayout() {
+	if widget, ok := wb.window.(Widget); ok {
+		if parent := widget.Parent(); parent == nil || parent.Layout() == nil || !parent.Visible() || parent.Suspended() {
+			return
+		}
+	}
+
+	if form := wb.Form(); form != nil && form.Layout() != nil && !form.Suspended() {
+		if fb := form.AsFormBase(); fb.inProgressEventCount > 0 || !fb.Visible() {
+			fb.layoutScheduled = true
+		} else {
+			fb.startLayout()
+		}
+	}
 }
 
 // RightToLeftReading returns whether the reading order of the Window
@@ -2132,8 +2175,8 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	case win.WM_SETFOCUS, win.WM_KILLFOCUS:
 		switch wnd := wb.window.(type) {
-		case *splitterHandle:
-			// nop
+		// case *splitterHandle:
+		// nop
 
 		case Widget:
 			parent := wnd.Parent()
@@ -2201,17 +2244,30 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	case win.WM_DROPFILES:
 		wb.dropFilesPublisher.Publish(win.HDROP(wParam))
 
-	case win.WM_SIZE, win.WM_SIZING:
-		if msg == win.WM_SIZE {
-			if widget, ok := wb.window.(Widget); ok {
-				widget.AsWidgetBase().invalidateBorderInParent()
-			}
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOMOVE != 0 && wp.Flags&win.SWP_NOSIZE != 0 {
+			break
 		}
 
-		wb.sizeChangedPublisher.Publish()
+		if wp.Flags&win.SWP_NOSIZE == 0 {
+			if widget, ok := wb.window.(Widget); ok {
+				wb := widget.AsWidgetBase()
+				wb.geometry.size = wb.window.SizePixels()
+				wb.geometry.clientSize = Size{int(wp.Cx), int(wp.Cy)}
 
-	case win.WM_WINDOWPOSCHANGED:
+				wb.invalidateBorderInParent()
+			}
+
+			wb.sizeChangedPublisher.Publish()
+		}
+
 		wb.boundsChangedPublisher.Publish()
+
+		if nws, ok := wb.window.(interface{ needsWmSize() bool }); !ok || !nws.needsWmSize() {
+			return 0
+		}
 
 	case win.WM_THEMECHANGED:
 		wb.window.(ApplySysColorser).ApplySysColors()

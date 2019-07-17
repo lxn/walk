@@ -34,14 +34,6 @@ func NewPushButton(parent Container) (*PushButton, error) {
 	return pb, nil
 }
 
-func (*PushButton) LayoutFlags() LayoutFlags {
-	return GrowableHorz
-}
-
-func (pb *PushButton) SizeHint() Size {
-	return pb.MinSizeHint()
-}
-
 func (pb *PushButton) ImageAboveText() bool {
 	return pb.hasStyleBits(win.BS_TOP)
 }
@@ -121,4 +113,20 @@ func (pb *PushButton) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	}
 
 	return pb.Button.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (pb *PushButton) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return &pushButtonLayoutItem{
+		buttonLayoutItem: buttonLayoutItem{
+			idealSize: pb.idealSize(),
+		},
+	}
+}
+
+type pushButtonLayoutItem struct {
+	buttonLayoutItem
+}
+
+func (*pushButtonLayoutItem) LayoutFlags() LayoutFlags {
+	return GrowableHorz
 }

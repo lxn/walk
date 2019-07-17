@@ -49,6 +49,7 @@ type TextEdit struct {
 	// TextEdit
 
 	AssignTo      **walk.TextEdit
+	CompactHeight bool
 	HScroll       bool
 	MaxLength     int
 	OnTextChanged walk.EventHandler
@@ -78,6 +79,7 @@ func (te TextEdit) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(te, w, func() error {
+		w.SetCompactHeight(te.CompactHeight)
 		w.SetTextColor(te.TextColor)
 
 		if err := w.SetTextAlignment(walk.Alignment1D(te.TextAlignment)); err != nil {

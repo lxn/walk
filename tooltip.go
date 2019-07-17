@@ -70,14 +70,6 @@ func newToolTip(style uint32) (*ToolTip, error) {
 	return tt, nil
 }
 
-func (*ToolTip) LayoutFlags() LayoutFlags {
-	return 0
-}
-
-func (tt *ToolTip) SizeHint() Size {
-	return Size{0, 0}
-}
-
 func (tt *ToolTip) Title() string {
 	var gt win.TTGETTITLE
 

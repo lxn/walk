@@ -216,7 +216,7 @@ func (lb *ListBox) resetItems() error {
 
 	if lb.styler == nil {
 		// Update the listbox width (this sets the correct horizontal scrollbar).
-		sh := lb.SizeHint()
+		sh := lb.idealSize()
 		lb.SendMessage(win.LB_SETHORIZONTALEXTENT, uintptr(sh.Width), 0)
 	}
 
@@ -467,7 +467,7 @@ func (lb *ListBox) calculateMaxItemTextWidth() int {
 	return maxWidth
 }
 
-func (lb *ListBox) SizeHint() Size {
+func (lb *ListBox) idealSize() Size {
 	defaultSize := lb.dialogBaseUnitsToPixels(Size{50, 12})
 
 	if lb.maxItemTextWidth <= 0 {
@@ -628,7 +628,13 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 
 		return win.TRUE
 
-	case win.WM_SIZE:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		if lb.styler != nil && lb.styler.ItemHeightDependsOnWidth() {
 			width := lb.WidthPixels()
 			if width != lb.lastWidth {
@@ -737,4 +743,8 @@ func (lb *ListBox) invalidateItem(index int) {
 	lb.SendMessage(win.LB_GETITEMRECT, uintptr(index), uintptr(unsafe.Pointer(&rc)))
 
 	win.InvalidateRect(lb.hWnd, &rc, true)
+}
+
+func (lb *ListBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return NewGreedyLayoutItem()
 }

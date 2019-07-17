@@ -59,22 +59,6 @@ func (sb *SplitButton) Dispose() {
 	sb.menu.Dispose()
 }
 
-func (*SplitButton) LayoutFlags() LayoutFlags {
-	return GrowableHorz
-}
-
-func (sb *SplitButton) MinSizeHint() Size {
-	var s win.SIZE
-
-	sb.SendMessage(win.BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
-
-	return maxSize(Size{int(s.CX), int(s.CY)}, sb.dialogBaseUnitsToPixels(Size{50, 14}))
-}
-
-func (sb *SplitButton) SizeHint() Size {
-	return sb.MinSizeHint()
-}
-
 func (sb *SplitButton) ImageAboveText() bool {
 	return sb.hasStyleBits(win.BS_TOP)
 }

@@ -103,7 +103,6 @@ func (mw MainWindow) Create() error {
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
-		w.SetBoundsPixels(w.BoundsPixels())
 		return nil
 	})
 
@@ -149,8 +148,10 @@ func (mw MainWindow) Create() error {
 			w.StatusBar().SetVisible(true)
 		}
 
-		if err := w.SetSizePixels(mw.Size.toW()); err != nil {
-			return err
+		if mw.Size.Width > 0 && mw.Size.Height > 0 {
+			if err := w.SetSizePixels(mw.Size.toW()); err != nil {
+				return err
+			}
 		}
 
 		imageList, err := walk.NewImageList(walk.Size{16, 16}, 0)

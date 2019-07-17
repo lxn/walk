@@ -97,36 +97,6 @@ func NewImageView(parent Container) (*ImageView, error) {
 	return iv, nil
 }
 
-func (iv *ImageView) LayoutFlags() LayoutFlags {
-	if iv.mode == ImageViewModeIdeal {
-		return 0
-	}
-
-	return iv.CustomWidget.LayoutFlags()
-}
-
-func (iv *ImageView) MinSizeHint() Size {
-	if iv.mode == ImageViewModeIdeal {
-		return iv.SizeHint()
-	}
-
-	s := iv.IntFrom96DPI(iv.margin96dpi)*2 + 1
-
-	return Size{s, s}
-}
-
-func (iv *ImageView) SizeHint() Size {
-	if iv.mode == ImageViewModeIdeal && iv.image != nil {
-		m2 := iv.IntFrom96DPI(iv.margin96dpi) * 2
-		s := iv.SizeFrom96DPI(iv.image.Size())
-		s.Width += m2
-		s.Height += m2
-		return s
-	}
-
-	return iv.CustomWidget.SizeHint()
-}
-
 func (iv *ImageView) Mode() ImageViewMode {
 	return iv.mode
 }
@@ -140,7 +110,7 @@ func (iv *ImageView) SetMode(mode ImageViewMode) {
 
 	iv.Invalidate()
 
-	iv.updateParentLayout()
+	iv.RequestLayout()
 }
 
 func (iv *ImageView) applyDPI(dpi int) {
@@ -148,7 +118,7 @@ func (iv *ImageView) applyDPI(dpi int) {
 
 	iv.Invalidate()
 
-	iv.updateParentLayout()
+	iv.RequestLayout()
 }
 
 func (iv *ImageView) Image() Image {
@@ -168,7 +138,7 @@ func (iv *ImageView) SetImage(value Image) error {
 	err := iv.Invalidate()
 
 	if iv.mode == ImageViewModeIdeal {
-		iv.updateParentLayout()
+		iv.RequestLayout()
 	}
 
 	iv.imageChangedPublisher.Publish()
@@ -194,7 +164,7 @@ func (iv *ImageView) SetMargin(margin int) error {
 	err := iv.Invalidate()
 
 	if iv.mode == ImageViewModeIdeal {
-		iv.updateParentLayout()
+		iv.RequestLayout()
 	}
 
 	iv.marginChangedPublisher.Publish()
@@ -265,4 +235,54 @@ func (iv *ImageView) drawImage(canvas *Canvas, _ Rectangle) error {
 	}
 
 	return canvas.DrawImage(iv.image, PointTo96DPI(pos, iv.DPI()))
+}
+
+func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	var layoutFlags LayoutFlags
+	if iv.mode != ImageViewModeIdeal {
+		layoutFlags = ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
+	}
+
+	idealSize := iv.SizeFrom96DPI(Size{100, 100})
+
+	var minSize Size
+	if iv.mode == ImageViewModeIdeal {
+		if iv.image != nil {
+			m2 := iv.IntFrom96DPI(iv.margin96dpi) * 2
+			s := iv.SizeFrom96DPI(iv.image.Size())
+			s.Width += m2
+			s.Height += m2
+			idealSize = s
+		}
+
+		minSize = idealSize
+	} else {
+		s := iv.IntFrom96DPI(iv.margin96dpi)*2 + 1
+		minSize = Size{s, s}
+	}
+
+	return &imageViewLayoutItem{
+		layoutFlags: layoutFlags,
+		idealSize:   idealSize,
+		minSize:     minSize,
+	}
+}
+
+type imageViewLayoutItem struct {
+	LayoutItemBase
+	layoutFlags LayoutFlags
+	idealSize   Size
+	minSize     Size
+}
+
+func (li *imageViewLayoutItem) LayoutFlags() LayoutFlags {
+	return li.layoutFlags
+}
+
+func (li *imageViewLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *imageViewLayoutItem) MinSize() Size {
+	return li.minSize
 }

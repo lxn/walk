@@ -91,6 +91,11 @@ type FormBase struct {
 	WindowBase
 	clientComposite       *Composite
 	owner                 Form
+	inProgressEventCount  int
+	performLayout         chan ContainerLayoutItem
+	layoutResults         chan []LayoutResult
+	inSizeLoop            chan bool
+	quitLayoutPerformer   chan struct{}
 	closingPublisher      CloseEventPublisher
 	activatingPublisher   EventPublisher
 	deactivatingPublisher EventPublisher
@@ -101,10 +106,12 @@ type FormBase struct {
 	icon                  Image
 	prevFocusHWnd         win.HWND
 	proposedSize          Size
+	closeReason           CloseReason
+	inSizingLoop          bool
 	isInRestoreState      bool
 	started               bool
 	didSetFocus           bool
-	closeReason           CloseReason
+	layoutScheduled       bool
 }
 
 func (fb *FormBase) init(form Form) error {
@@ -164,7 +171,17 @@ func (fb *FormBase) init(form Form) error {
 		win.ChangeWindowMessageFilterEx(fb.hWnd, taskbarButtonCreatedMsgId, win.MSGFLT_ALLOW, nil)
 	}
 
+	fb.performLayout, fb.layoutResults, fb.inSizeLoop, fb.quitLayoutPerformer = startLayoutPerformer(fb)
+
 	return nil
+}
+
+func (fb *FormBase) Dispose() {
+	if fb.hWnd != 0 {
+		fb.quitLayoutPerformer <- struct{}{}
+	}
+
+	fb.WindowBase.Dispose()
 }
 
 func (fb *FormBase) AsContainerBase() *ContainerBase {
@@ -177,14 +194,6 @@ func (fb *FormBase) AsContainerBase() *ContainerBase {
 
 func (fb *FormBase) AsFormBase() *FormBase {
 	return fb
-}
-
-func (fb *FormBase) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
-}
-
-func (fb *FormBase) SizeHint() Size {
-	return fb.dialogBaseUnitsToPixels(Size{252, 218})
 }
 
 func (fb *FormBase) Children() *WidgetList {
@@ -213,7 +222,9 @@ func (fb *FormBase) SetLayout(value Layout) error {
 
 func (fb *FormBase) SetBoundsPixels(bounds Rectangle) error {
 	if layout := fb.Layout(); layout != nil {
-		minSize := fb.sizeFromClientSizePixels(layout.MinSizeForSize(bounds.Size()))
+		layoutItem := createLayoutItemsForContainer(fb)
+		minSize := fb.sizeFromClientSizePixels(layoutItem.MinSizeForSize(bounds.Size()))
+		minSize = fb.sizeFromClientSizePixels(layoutItem.MinSizeForSize(minSize))
 
 		if bounds.Width < minSize.Width {
 			bounds.Width = minSize.Width
@@ -227,15 +238,7 @@ func (fb *FormBase) SetBoundsPixels(bounds Rectangle) error {
 		return err
 	}
 
-	walkDescendants(fb, func(wnd Window) bool {
-		if container, ok := wnd.(Container); ok {
-			if layout := container.Layout(); layout != nil {
-				layout.Update(false)
-			}
-		}
-
-		return true
-	})
+	fb.proposedSize = bounds.Size()
 
 	return nil
 }
@@ -252,16 +255,12 @@ func (fb *FormBase) SetDataBinder(db *DataBinder) {
 	fb.clientComposite.SetDataBinder(db)
 }
 
-func (fb *FormBase) Suspended() bool {
-	if fb.clientComposite == nil {
-		return false
-	}
-
-	return fb.clientComposite.Suspended()
-}
-
 func (fb *FormBase) SetSuspended(suspended bool) {
-	fb.clientComposite.SetSuspended(suspended)
+	fb.suspended = suspended
+
+	if fb.clientComposite != nil {
+		fb.clientComposite.SetSuspended(suspended)
+	}
 }
 
 func (fb *FormBase) MouseDown() *MouseEvent {
@@ -281,19 +280,7 @@ func (fb *FormBase) onInsertingWidget(index int, widget Widget) error {
 }
 
 func (fb *FormBase) onInsertedWidget(index int, widget Widget) error {
-	err := fb.clientComposite.onInsertedWidget(index, widget)
-	if err == nil {
-		if layout := fb.Layout(); layout != nil && !fb.Suspended() {
-			minClientSize := fb.Layout().MinSize()
-			clientSize := fb.clientComposite.SizePixels()
-
-			if clientSize.Width < minClientSize.Width || clientSize.Height < minClientSize.Height {
-				fb.SetClientSizePixels(minClientSize)
-			}
-		}
-	}
-
-	return err
+	return fb.clientComposite.onInsertedWidget(index, widget)
 }
 
 func (fb *FormBase) onRemovingWidget(index int, widget Widget) error {
@@ -387,16 +374,17 @@ func (fb *FormBase) Run() int {
 		defer invalidateDescendentBorders()
 	}
 
-	if layout := fb.Layout(); layout != nil {
-		layout.Update(false)
-	}
-
 	fb.clientComposite.focusFirstCandidateDescendant()
 
 	fb.started = true
 	fb.startingPublisher.Publish()
 
 	fb.SetBoundsPixels(fb.BoundsPixels())
+
+	if fb.proposedSize == (Size{}) {
+		fb.proposedSize = maxSize(fb.minSize, fb.SizePixels())
+		fb.startLayout()
+	}
 
 	return fb.mainLoop()
 }
@@ -579,7 +567,7 @@ func (fb *FormBase) Hide() {
 }
 
 func (fb *FormBase) Show() {
-	fb.proposedSize = fb.minSize
+	fb.proposedSize = maxSize(fb.minSize, fb.SizePixels())
 
 	if p, ok := fb.window.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
 		p.RestoreState()
@@ -670,7 +658,8 @@ func (fb *FormBase) RestoreState() error {
 	wp.Length = uint32(unsafe.Sizeof(wp))
 
 	if layout := fb.Layout(); layout != nil && fb.fixedSize() {
-		minSize := fb.sizeFromClientSizePixels(layout.MinSize())
+		layoutItem := createLayoutItemsForContainer(fb)
+		minSize := fb.sizeFromClientSizePixels(layoutItem.MinSize())
 
 		wp.RcNormalPosition.Right = wp.RcNormalPosition.Left + int32(minSize.Width) - 1
 		wp.RcNormalPosition.Bottom = wp.RcNormalPosition.Top + int32(minSize.Height) - 1
@@ -689,6 +678,18 @@ func (fb *FormBase) Closing() *CloseEvent {
 
 func (fb *FormBase) ProgressIndicator() *ProgressIndicator {
 	return fb.progressIndicator
+}
+
+func (fb *FormBase) startLayout() {
+	cb := fb.window.ClientBoundsPixels()
+	cs := fb.clientSizeFromSizePixels(fb.proposedSize)
+
+	fb.clientComposite.SetBoundsPixels(Rectangle{cb.X, cb.Y, cs.Width, cs.Height})
+
+	cli := createLayoutItemsForContainer(fb)
+	cli.Geometry().clientSize = cs
+
+	fb.performLayout <- cli
 }
 
 func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -743,10 +744,11 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		var min Size
 		if layout := fb.clientComposite.layout; layout != nil {
 			size := fb.clientSizeFromSizePixels(fb.proposedSize)
-			min = fb.sizeFromClientSizePixels(layout.MinSizeForSize(size))
+			layoutItem := createLayoutItemsForContainer(fb)
+			min = fb.sizeFromClientSizePixels(layoutItem.MinSizeForSize(size))
 
 			if fb.proposedSize.Width < min.Width {
-				min = fb.sizeFromClientSizePixels(layout.MinSizeForSize(min))
+				min = fb.sizeFromClientSizePixels(layoutItem.MinSizeForSize(min))
 			}
 		}
 
@@ -762,15 +764,28 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	case win.WM_SETTEXT:
 		fb.titleChangedPublisher.Publish()
 
-	case win.WM_SIZING:
-		rc := (*win.RECT)(unsafe.Pointer(lParam))
+	case win.WM_ENTERSIZEMOVE:
+		fb.inSizingLoop = true
+		fb.inSizeLoop <- true
 
-		fb.proposedSize = rectangleFromRECT(*rc).Size()
+	case win.WM_EXITSIZEMOVE:
+		fb.inSizingLoop = false
+		fb.inSizeLoop <- false
 
-		fb.clientComposite.SetBoundsPixels(fb.window.ClientBoundsPixels())
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
 
-	case win.WM_SIZE:
-		fb.clientComposite.SetBoundsPixels(fb.window.ClientBoundsPixels())
+		if wp.Flags&win.SWP_NOSIZE != 0 || fb.Layout() == nil {
+			break
+		}
+
+		fb.proposedSize = Size{int(wp.Cx), int(wp.Cy)}
+
+		fb.startLayout()
+
+		if fb.inSizingLoop {
+			applyLayoutResults(<-fb.layoutResults)
+		}
 
 	case win.WM_SHOWWINDOW:
 		if wParam == win.FALSE {

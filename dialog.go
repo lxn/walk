@@ -154,32 +154,39 @@ func (dlg *Dialog) Close(result int) {
 }
 
 func (dlg *Dialog) Show() {
-	if dlg.owner != nil {
-		var size Size
-		if layout := dlg.Layout(); layout != nil {
-			size = layout.MinSize()
-			min := dlg.MinSizePixels()
-			size.Width = maxi(size.Width, min.Width)
-			size.Height = maxi(size.Height, min.Height)
+	var willRestore bool
+	if dlg.Persistent() {
+		state, _ := dlg.ReadState()
+		willRestore = state != ""
+	}
+
+	if !willRestore {
+		if dlg.owner != nil {
+			var size Size
+			if layout := dlg.Layout(); layout != nil {
+				size = maxSize(dlg.clientComposite.MinSizeHint(), dlg.MinSizePixels())
+			} else {
+				size = dlg.SizePixels()
+			}
+
+			ob := dlg.owner.BoundsPixels()
+
+			if dlg.centerInOwnerWhenRun {
+				dlg.SetBoundsPixels(fitRectToScreen(dlg.hWnd, Rectangle{
+					ob.X + (ob.Width-size.Width)/2,
+					ob.Y + (ob.Height-size.Height)/2,
+					size.Width,
+					size.Height,
+				}))
+			}
 		} else {
-			size = dlg.SizePixels()
+			dlg.SetBoundsPixels(dlg.BoundsPixels())
 		}
-
-		ob := dlg.owner.BoundsPixels()
-
-		if dlg.centerInOwnerWhenRun {
-			dlg.SetBoundsPixels(fitRectToScreen(dlg.hWnd, Rectangle{
-				ob.X + (ob.Width-size.Width)/2,
-				ob.Y + (ob.Height-size.Height)/2,
-				size.Width,
-				size.Height,
-			}))
-		}
-	} else {
-		dlg.SetBoundsPixels(dlg.BoundsPixels())
 	}
 
 	dlg.FormBase.Show()
+
+	dlg.startLayout()
 }
 
 func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {

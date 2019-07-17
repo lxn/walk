@@ -242,22 +242,6 @@ func (le *LineEdit) SetReadOnly(readOnly bool) error {
 	return nil
 }
 
-func (le *LineEdit) LayoutFlags() (lf LayoutFlags) {
-	lf = ShrinkableHorz | GrowableHorz
-	if le.MaxLength() > lineEditGreedyLimit {
-		lf |= GreedyHorz
-	}
-	return
-}
-
-func (le *LineEdit) MinSizeHint() Size {
-	return le.sizeHintForLimit(lineEditMinChars)
-}
-
-func (le *LineEdit) SizeHint() (size Size) {
-	return le.sizeHintForLimit(lineEditGreedyLimit)
-}
-
 func (le *LineEdit) sizeHintForLimit(limit int) (size Size) {
 	size = le.dialogBaseUnitsToPixels(Size{50, 12})
 	le.initCharWidth()
@@ -314,6 +298,10 @@ func (le *LineEdit) SetTextColor(c Color) {
 	le.Invalidate()
 }
 
+func (*LineEdit) needsWmSize() bool {
+	return true
+}
+
 func (le *LineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_COMMAND:
@@ -355,4 +343,36 @@ func (le *LineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	}
 
 	return le.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (le *LineEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	lf := ShrinkableHorz | GrowableHorz
+	if le.MaxLength() > lineEditGreedyLimit {
+		lf |= GreedyHorz
+	}
+
+	return &lineEditLayoutItem{
+		layoutFlags: lf,
+		idealSize:   le.sizeHintForLimit(lineEditGreedyLimit),
+		minSize:     le.sizeHintForLimit(lineEditMinChars),
+	}
+}
+
+type lineEditLayoutItem struct {
+	LayoutItemBase
+	layoutFlags LayoutFlags
+	idealSize   Size
+	minSize     Size
+}
+
+func (li *lineEditLayoutItem) LayoutFlags() LayoutFlags {
+	return li.layoutFlags
+}
+
+func (li *lineEditLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *lineEditLayoutItem) MinSize() Size {
+	return li.minSize
 }

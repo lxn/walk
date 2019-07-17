@@ -64,14 +64,29 @@ func NewVSpacerFixed(parent Container, height int) (*Spacer, error) {
 	return newSpacer(parent, 0, Size{0, height}, false)
 }
 
-func (s *Spacer) LayoutFlags() LayoutFlags {
-	return s.layoutFlags
+func (s *Spacer) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return &spacerLayoutItem{
+		idealSize:         s.sizeHint,
+		layoutFlags:       s.layoutFlags,
+		greedyLocallyOnly: s.greedyLocallyOnly,
+	}
 }
 
-func (s *Spacer) MinSizeHint() Size {
-	return s.sizeHint
+type spacerLayoutItem struct {
+	LayoutItemBase
+	idealSize         Size
+	layoutFlags       LayoutFlags
+	greedyLocallyOnly bool
 }
 
-func (s *Spacer) SizeHint() Size {
-	return s.sizeHint
+func (li *spacerLayoutItem) LayoutFlags() LayoutFlags {
+	return li.layoutFlags
+}
+
+func (li *spacerLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *spacerLayoutItem) MinSize() Size {
+	return li.idealSize
 }

@@ -464,25 +464,14 @@ func (c *Canvas) fontHeight(font *Font) (height int, err error) {
 	return
 }
 
-func (c *Canvas) measureTextForDPI(text string, font *Font, bounds Rectangle, format DrawTextFormat, dpi int) (boundsMeasured Rectangle, runesFitted int, err error) {
-	// HACK: We don't want to actually draw on the Canvas here, but if we use
-	// the DT_CALCRECT flag to avoid drawing, DRAWTEXTPARAMc.UiLengthDrawn will
-	// not contain a useful value. To work around this, we create an in-memory
-	// metafile and draw into that instead.
-	if c.measureTextMetafile == nil {
-		c.measureTextMetafile, err = NewMetafile(c)
-		if err != nil {
-			return
-		}
-	}
-
+func (c *Canvas) measureTextForDPI(text string, font *Font, bounds Rectangle, format DrawTextFormat, dpi int) (boundsMeasured Rectangle, err error) {
 	hFont := win.HGDIOBJ(font.handleForDPI(dpi))
-	oldHandle := win.SelectObject(c.measureTextMetafile.hdc, hFont)
+	oldHandle := win.SelectObject(c.hdc, hFont)
 	if oldHandle == 0 {
 		err = newError("SelectObject failed")
 		return
 	}
-	defer win.SelectObject(c.measureTextMetafile.hdc, oldHandle)
+	defer win.SelectObject(c.hdc, oldHandle)
 
 	rect := &win.RECT{
 		int32(bounds.X),
@@ -494,10 +483,10 @@ func (c *Canvas) measureTextForDPI(text string, font *Font, bounds Rectangle, fo
 	params.CbSize = uint32(unsafe.Sizeof(params))
 
 	strPtr := syscall.StringToUTF16Ptr(text)
-	dtfmt := uint32(format) | win.DT_EDITCONTROL | win.DT_WORDBREAK | win.DT_CALCRECT
+	dtfmt := uint32(format) | win.DT_CALCRECT | win.DT_EDITCONTROL | win.DT_NOPREFIX | win.DT_WORDBREAK
 
 	height := win.DrawTextEx(
-		c.measureTextMetafile.hdc, strPtr, -1, rect, dtfmt, &params)
+		c.hdc, strPtr, -1, rect, dtfmt, &params)
 	if height == 0 {
 		err = newError("DrawTextEx failed")
 		return
@@ -509,7 +498,6 @@ func (c *Canvas) measureTextForDPI(text string, font *Font, bounds Rectangle, fo
 		int(rect.Right - rect.Left),
 		int(height),
 	}
-	runesFitted = int(params.UiLengthDrawn)
 
 	return
 }

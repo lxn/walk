@@ -60,18 +60,6 @@ func NewDateEditWithNoneOption(parent Container) (*DateEdit, error) {
 	return newDateEdit(parent, win.DTS_SHOWNONE)
 }
 
-func (*DateEdit) LayoutFlags() LayoutFlags {
-	return GrowableHorz
-}
-
-func (de *DateEdit) MinSizeHint() Size {
-	return de.dialogBaseUnitsToPixels(Size{80, 12})
-}
-
-func (de *DateEdit) SizeHint() Size {
-	return de.MinSizeHint()
-}
-
 func (de *DateEdit) systemTimeToTime(st *win.SYSTEMTIME) time.Time {
 	if st == nil || !de.hasStyleBits(win.DTS_SHOWNONE) && st.WYear == 1601 && st.WMonth == 1 && st.WDay == 1 {
 		return time.Time{}
@@ -254,4 +242,27 @@ func (de *DateEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	}
 
 	return de.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (de *DateEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return &dateEditLayoutItem{
+		idealSize: de.dialogBaseUnitsToPixels(Size{80, 12}),
+	}
+}
+
+type dateEditLayoutItem struct {
+	LayoutItemBase
+	idealSize Size
+}
+
+func (*dateEditLayoutItem) LayoutFlags() LayoutFlags {
+	return GrowableHorz
+}
+
+func (li *dateEditLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *dateEditLayoutItem) MinSize() Size {
+	return li.idealSize
 }

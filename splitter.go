@@ -11,6 +11,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"unsafe"
 
 	"github.com/lxn/win"
 )
@@ -83,14 +84,6 @@ func NewVSplitter(parent Container) (*Splitter, error) {
 	return newSplitter(parent, Vertical)
 }
 
-func (s *Splitter) LayoutFlags() LayoutFlags {
-	return s.layout.LayoutFlags()
-}
-
-func (s *Splitter) SizeHint() Size {
-	return Size{100, 100}
-}
-
 func (s *Splitter) SetLayout(value Layout) error {
 	return newError("not supported")
 }
@@ -110,7 +103,9 @@ func (s *Splitter) SetHandleWidth(value int) error {
 
 	s.handleWidth = value
 
-	return s.layout.Update(false)
+	s.RequestLayout()
+
+	return nil
 }
 
 func (s *Splitter) Orientation() Orientation {
@@ -311,7 +306,13 @@ func (s *Splitter) SetFixed(widget Widget, fixed bool) error {
 
 func (s *Splitter) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case win.WM_SIZE:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		layout := s.layout.(*splitterLayout)
 		for _, item := range layout.hwnd2Item {
 			item.oldExplicitSize = 0
@@ -347,7 +348,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 		layout.hwnd2Item[widget.Handle()] = item
 		item.visibleChangedHandle = widget.VisibleChanged().Attach(func() {
 			if !layout.suspended && widget.AsWidgetBase().visible != item.wasVisible {
-				layout.Update(true)
+				s.RequestLayout()
 			}
 		})
 
@@ -401,11 +402,11 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 
 						prev := closestVisibleWidget(handleIndex, -1)
 						bp := prev.BoundsPixels()
-						msep := minSizeEffective(prev)
+						msep := minSizeEffective(createLayoutItemForWidget(prev))
 
 						next := closestVisibleWidget(handleIndex, 1)
 						bn := next.BoundsPixels()
-						msen := minSizeEffective(next)
+						msen := minSizeEffective(createLayoutItemForWidget(next))
 
 						if s.Orientation() == Horizontal {
 							xh := s.draggedHandle.XPixels()
@@ -575,7 +576,7 @@ func (s *Splitter) onRemovedWidget(index int, widget Widget) (err error) {
 					item.keepSize = false
 				}
 
-				s.layout.Update(true)
+				s.RequestLayout()
 
 				handle.Dispose()
 			}
@@ -595,4 +596,8 @@ func (s *Splitter) onClearingWidgets() (err error) {
 
 func (s *Splitter) onClearedWidgets() (err error) {
 	panic("not implemented")
+}
+
+func (s *Splitter) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return s.layout.CreateLayoutItem(ctx)
 }

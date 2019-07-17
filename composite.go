@@ -42,33 +42,3 @@ func NewCompositeWithStyle(parent Window, style uint32) (*Composite, error) {
 func NewComposite(parent Container) (*Composite, error) {
 	return NewCompositeWithStyle(parent, 0)
 }
-
-func (c *Composite) onInsertedWidget(index int, widget Widget) (err error) {
-	err = c.ContainerBase.onInsertedWidget(index, widget)
-
-	c.ensureAppropriateParentScrollViewCompositeSize()
-
-	return
-}
-
-func (c *Composite) onRemovedWidget(index int, widget Widget) (err error) {
-	err = c.ContainerBase.onRemovedWidget(index, widget)
-
-	c.ensureAppropriateParentScrollViewCompositeSize()
-
-	return
-}
-
-func (c *Composite) onClearedWidgets() error {
-	c.ensureAppropriateParentScrollViewCompositeSize()
-
-	return c.ContainerBase.onClearedWidgets()
-}
-
-func (c *Composite) ensureAppropriateParentScrollViewCompositeSize() {
-	if parent := c.Parent(); parent != nil {
-		if sv, ok := parent.(*ScrollView); ok {
-			sv.updateCompositeSize()
-		}
-	}
-}

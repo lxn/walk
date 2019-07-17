@@ -86,14 +86,6 @@ func (b *Button) init() {
 		b.textChangedPublisher.Event()))
 }
 
-func (b *Button) MinSizeHint() Size {
-	var s win.SIZE
-
-	b.SendMessage(win.BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
-
-	return maxSize(Size{int(s.CX), int(s.CY)}, b.dialogBaseUnitsToPixels(Size{50, 14}))
-}
-
 func (b *Button) ApplyDPI(dpi int) {
 	b.WidgetBase.ApplyDPI(dpi)
 
@@ -119,7 +111,7 @@ func (b *Button) SetImage(image Image) error {
 
 	b.image = image
 
-	b.updateParentLayout()
+	b.RequestLayout()
 
 	b.imageChangedPublisher.Publish()
 
@@ -143,7 +135,9 @@ func (b *Button) SetText(value string) error {
 		return err
 	}
 
-	return b.updateParentLayout()
+	b.RequestLayout()
+
+	return nil
 }
 
 func (b *Button) Checked() bool {
@@ -228,4 +222,35 @@ func (b *Button) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 	}
 
 	return b.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (b *Button) idealSize() Size {
+	var s win.SIZE
+
+	b.SendMessage(win.BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
+
+	return maxSize(Size{int(s.CX), int(s.CY)}, b.dialogBaseUnitsToPixels(Size{50, 14}))
+}
+
+func (b *Button) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return &buttonLayoutItem{
+		idealSize: b.idealSize(),
+	}
+}
+
+type buttonLayoutItem struct {
+	LayoutItemBase
+	idealSize Size
+}
+
+func (li *buttonLayoutItem) LayoutFlags() LayoutFlags {
+	return 0
+}
+
+func (li *buttonLayoutItem) IdealSize() Size {
+	return li.MinSize()
+}
+
+func (li *buttonLayoutItem) MinSize() Size {
+	return li.idealSize
 }

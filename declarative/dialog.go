@@ -116,7 +116,6 @@ func (d Dialog) Create(owner walk.Form) error {
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
-		w.SetBoundsPixels(w.BoundsPixels())
 		return nil
 	})
 
@@ -125,8 +124,10 @@ func (d Dialog) Create(owner walk.Form) error {
 	}
 
 	return builder.InitWidget(fi, w, func() error {
-		if err := w.SetSizePixels(d.Size.toW()); err != nil {
-			return err
+		if d.Size.Width > 0 && d.Size.Height > 0 {
+			if err := w.SetSizePixels(d.Size.toW()); err != nil {
+				return err
+			}
 		}
 
 		if d.DefaultButton != nil {

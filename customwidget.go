@@ -7,6 +7,8 @@
 package walk
 
 import (
+	"unsafe"
+
 	"github.com/lxn/win"
 )
 
@@ -46,14 +48,6 @@ func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidg
 	}
 
 	return cw, nil
-}
-
-func (*CustomWidget) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
-}
-
-func (cw *CustomWidget) SizeHint() Size {
-	return Size{100, 100}
 }
 
 // deprecated, use PaintMode
@@ -149,7 +143,13 @@ func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 	case win.WM_PRINTCLIENT:
 		win.SendMessage(hwnd, win.WM_PAINT, wParam, lParam)
 
-	case win.WM_SIZE, win.WM_SIZING:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		if cw.invalidatesOnResize {
 			cw.Invalidate()
 		}
@@ -202,4 +202,8 @@ func (cw *CustomWidget) bufferedPaint(canvas *Canvas, updateBounds Rectangle) er
 	}
 
 	return err
+}
+
+func (*CustomWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return NewGreedyLayoutItem()
 }

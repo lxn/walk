@@ -60,14 +60,6 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 	return cb, nil
 }
 
-func (*CheckBox) LayoutFlags() LayoutFlags {
-	return 0
-}
-
-func (cb *CheckBox) SizeHint() Size {
-	return cb.MinSizeHint()
-}
-
 func (cb *CheckBox) TextOnLeftSide() bool {
 	return cb.hasStyleBits(win.BS_LEFTTEXT)
 }

@@ -97,14 +97,6 @@ func NewTreeView(parent Container) (*TreeView, error) {
 	return tv, nil
 }
 
-func (*TreeView) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
-}
-
-func (tv *TreeView) SizeHint() Size {
-	return tv.dialogBaseUnitsToPixels(Size{100, 100})
-}
-
 func (tv *TreeView) Dispose() {
 	tv.WidgetBase.Dispose()
 
@@ -588,4 +580,8 @@ func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	}
 
 	return tv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (tv *TreeView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return NewGreedyLayoutItem()
 }

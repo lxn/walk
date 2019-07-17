@@ -46,41 +46,6 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, error) {
 	return sh, nil
 }
 
-func (sh *splitterHandle) LayoutFlags() LayoutFlags {
-	splitter, ok := sh.Parent().(*Splitter)
-	if !ok {
-		return 0
-	}
-
-	if splitter.Orientation() == Horizontal {
-		return ShrinkableVert | GrowableVert | GreedyVert
-	}
-
-	return ShrinkableHorz | GrowableHorz | GreedyHorz
-}
-
-func (sh *splitterHandle) MinSizeHint() Size {
-	return sh.SizeHint()
-}
-
-func (sh *splitterHandle) SizeHint() Size {
-	splitter, ok := sh.Parent().(*Splitter)
-	if !ok {
-		return Size{}
-	}
-
-	handleWidth := splitter.HandleWidth()
-	var size Size
-
-	if splitter.Orientation() == Horizontal {
-		size.Width = handleWidth
-	} else {
-		size.Height = handleWidth
-	}
-
-	return size
-}
-
 func (sh *splitterHandle) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_ERASEBKGND:
@@ -100,4 +65,49 @@ func (sh *splitterHandle) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uint
 	}
 
 	return sh.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (sh *splitterHandle) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	var orientation Orientation
+	var handleWidth int
+
+	if splitter, ok := sh.Parent().(*Splitter); ok {
+		orientation = splitter.Orientation()
+		handleWidth = splitter.HandleWidth()
+	}
+
+	return &splitterHandleLayoutItem{
+		orientation: orientation,
+		handleWidth: handleWidth,
+	}
+}
+
+type splitterHandleLayoutItem struct {
+	LayoutItemBase
+	orientation Orientation
+	handleWidth int
+}
+
+func (li *splitterHandleLayoutItem) LayoutFlags() LayoutFlags {
+	if li.orientation == Horizontal {
+		return ShrinkableVert | GrowableVert | GreedyVert
+	}
+
+	return ShrinkableHorz | GrowableHorz | GreedyHorz
+}
+
+func (li *splitterHandleLayoutItem) IdealSize() Size {
+	var size Size
+
+	if li.orientation == Horizontal {
+		size.Width = li.handleWidth
+	} else {
+		size.Height = li.handleWidth
+	}
+
+	return size
+}
+
+func (li *splitterHandleLayoutItem) MinSize() Size {
+	return li.IdealSize()
 }

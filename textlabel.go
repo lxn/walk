@@ -6,6 +6,10 @@
 
 package walk
 
+import (
+	"sync"
+)
+
 type TextLabel struct {
 	static
 	textChangedPublisher EventPublisher
@@ -40,26 +44,6 @@ func (tl *TextLabel) asStatic() *static {
 	return &tl.static
 }
 
-func (*TextLabel) LayoutFlags() LayoutFlags {
-	return GrowableHorz | GrowableVert
-}
-
-func (tl *TextLabel) MinSizeHint() Size {
-	if tl.minSize.Width > 0 {
-		return tl.calculateTextSizeForWidth(tl.minSize.Width)
-	}
-
-	return tl.calculateTextSizeForWidth(0)
-}
-
-func (tl *TextLabel) SizeHint() Size {
-	return tl.calculateTextSizeForWidth(tl.WidthPixels())
-}
-
-func (tl *TextLabel) HeightForWidth(width int) int {
-	return tl.calculateTextSizeForWidth(width).Height
-}
-
 func (tl *TextLabel) TextAlignment() Alignment2D {
 	return tl.textAlignment
 }
@@ -86,4 +70,53 @@ func (tl *TextLabel) SetText(text string) error {
 	tl.textChangedPublisher.Publish()
 
 	return nil
+}
+
+func (tl *TextLabel) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return &textLabelLayoutItem{
+		width2Height: make(map[int]int),
+		text:         tl.Text(),
+		font:         tl.Font(),
+		minWidth:     tl.MinSizePixels().Width,
+	}
+}
+
+type textLabelLayoutItem struct {
+	LayoutItemBase
+	mutex        sync.Mutex
+	width2Height map[int]int
+	text         string
+	font         *Font
+	minWidth     int
+}
+
+func (*textLabelLayoutItem) LayoutFlags() LayoutFlags {
+	return GrowableHorz | GrowableVert
+}
+
+func (li *textLabelLayoutItem) IdealSize() Size {
+	return li.MinSize()
+}
+
+func (li *textLabelLayoutItem) MinSize() Size {
+	return calculateTextSize(li.text, li.font, li.ctx.dpi, li.minWidth, li.handle)
+}
+
+func (li *textLabelLayoutItem) HasHeightForWidth() bool {
+	return true
+}
+
+func (li *textLabelLayoutItem) HeightForWidth(width int) int {
+	li.mutex.Lock()
+	defer li.mutex.Unlock()
+
+	if height, ok := li.width2Height[width]; ok {
+		return height
+	}
+
+	size := calculateTextSize(li.text, li.font, li.ctx.dpi, width, li.handle)
+
+	li.width2Height[width] = size.Height
+
+	return size.Height
 }

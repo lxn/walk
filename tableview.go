@@ -352,23 +352,6 @@ func (tv *TableView) Dispose() {
 	tv.WidgetBase.Dispose()
 }
 
-// LayoutFlags returns a combination of LayoutFlags that specify how the
-// *TableView wants to be treated by Layout implementations.
-func (*TableView) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
-}
-
-// MinSizeHint returns the minimum outer Size, including decorations, that
-// makes sense for the *TableView.
-func (tv *TableView) MinSizeHint() Size {
-	return Size{10, 10}
-}
-
-// SizeHint returns a sensible Size for a *TableView.
-func (tv *TableView) SizeHint() Size {
-	return Size{100, 100}
-}
-
 func (tv *TableView) applyEnabled(enabled bool) {
 	tv.WidgetBase.applyEnabled(enabled)
 
@@ -2300,7 +2283,13 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr 
 			return tableViewNormalLVWndProc(nmh.HwndFrom, msg, wp, lp)
 		}
 
-	case win.WM_SIZE:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lp))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		if tv.formActivatingHandle == -1 {
 			if form := tv.Form(); form != nil {
 				tv.formActivatingHandle = form.Activating().Attach(func() {
@@ -2397,4 +2386,8 @@ func (tv *TableView) updateLVSizesWithSpecialCare(needSpecialCare bool) {
 	if !needSpecialCare {
 		tv.updateLVSizesNeedsSpecialCare = false
 	}
+}
+
+func (*TableView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return NewGreedyLayoutItem()
 }

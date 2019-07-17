@@ -39,6 +39,10 @@ func newSplitterLayout(orientation Orientation) *splitterLayout {
 	}
 }
 
+func (l *splitterLayout) asLayoutBase() *LayoutBase {
+	return nil
+}
+
 func (l *splitterLayout) Container() Container {
 	return l.container
 }
@@ -54,7 +58,7 @@ func (l *splitterLayout) SetContainer(value Container) {
 		if value != nil && value.Layout() != Layout(l) {
 			value.SetLayout(l)
 
-			l.Update(true)
+			l.container.RequestLayout()
 		}
 	}
 }
@@ -66,7 +70,9 @@ func (l *splitterLayout) Margins() Margins {
 func (l *splitterLayout) SetMargins(value Margins) error {
 	l.margins = value
 
-	return l.Update(false)
+	l.container.RequestLayout()
+
+	return nil
 }
 
 func (l *splitterLayout) Spacing() int {
@@ -92,7 +98,7 @@ func (l *splitterLayout) SetOrientation(value Orientation) error {
 
 		l.orientation = value
 
-		l.Update(false)
+		l.container.RequestLayout()
 	}
 
 	return nil
@@ -130,80 +136,15 @@ func (l *splitterLayout) SetStretchFactor(widget Widget, factor int) error {
 
 		item.stretchFactor = factor
 
-		l.Update(false)
+		l.container.RequestLayout()
 	}
 
 	return nil
 }
 
-func (l *splitterLayout) cleanupItems() {
-	widgets := l.container.Children()
-
-	for handle, _ := range l.hwnd2Item {
-		if !widgets.containsHandle(handle) {
-			delete(l.hwnd2Item, handle)
-		}
-	}
-}
-
-func (l *splitterLayout) LayoutFlags() LayoutFlags {
-	if l.container == nil {
-		return 0
-	}
-
-	return boxLayoutFlags(l.orientation, l.container.Children())
-}
-
-func (l *splitterLayout) MinSize() Size {
-	if l.container == nil {
-		return Size{}
-	}
-
-	return l.MinSizeForSize(l.container.ClientBoundsPixels().Size())
-}
-
-func (l *splitterLayout) MinSizeForSize(size Size) Size {
-	margins := Size{l.margins.HNear + l.margins.HFar, l.margins.VNear + l.margins.VFar}
-	s := margins
-
-	anyNonFixed := l.anyNonFixed()
-
-	for _, wb := range l.container.Children().items {
-		if !anyVisibleWidgetInHierarchy(wb) {
-			continue
-		}
-
-		widget := wb.window.(Widget)
-
-		var cur Size
-
-		if anyNonFixed && l.Fixed(widget) {
-			cur = widget.SizePixels()
-
-			if l.orientation == Horizontal {
-				cur.Height = 0
-			} else {
-				cur.Width = 0
-			}
-		} else {
-			cur = minSizeEffective(widget)
-		}
-
-		if l.orientation == Horizontal {
-			s.Width += cur.Width
-			s.Height = maxi(s.Height, margins.Height+cur.Height)
-		} else {
-			s.Height += cur.Height
-			s.Width = maxi(s.Width, margins.Width+cur.Width)
-		}
-	}
-
-	return s
-}
-
 func (l *splitterLayout) anyNonFixed() bool {
 	for i, widget := range l.container.Children().items {
-		if i%2 == 0 && widget.visible && !l.Fixed(widget) {
+		if i%2 == 0 && widget.visible && !l.Fixed(widget.window.(Widget)) {
 			return true
 		}
 	}
@@ -231,171 +172,123 @@ func (l *splitterLayout) spaceForRegularWidgets() int {
 	return space
 }
 
-func (l *splitterLayout) reset() {
-	l.cleanupItems()
+func (l splitterLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
+	splitter := l.container.(*Splitter)
 
-	children := l.container.Children()
-
-	var anyVisible bool
-
-	for i, wb := range children.items {
-		item := l.hwnd2Item[wb.hWnd]
-
-		visible := anyVisibleWidgetInHierarchy(wb)
-		if !anyVisible && visible {
-			anyVisible = true
-		}
-
-		if item == nil || visible == item.wasVisible {
-			continue
-		}
-
-		item.wasVisible = visible
-
-		if _, isHandle := wb.window.(*splitterHandle); !isHandle {
-			var handleIndex int
-
-			if i == 0 {
-				if len(children.items) > 1 {
-					handleIndex = 1
-				} else {
-					handleIndex = -1
-				}
-			} else {
-				handleIndex = i - 1
-			}
-
-			if handleIndex > -1 {
-				children.items[handleIndex].SetVisible(visible)
-			}
-		}
+	hwnd2Item := make(map[win.HWND]*splitterLayoutItem, len(l.hwnd2Item))
+	for hwnd, sli := range l.hwnd2Item {
+		hwnd2Item[hwnd] = sli
 	}
 
-	if l.container.AsWindowBase().visible != anyVisible {
-		l.suspended = true
-		l.container.SetVisible(anyVisible)
-		l.suspended = false
-	}
-
-	minSizes := make([]int, children.Len())
-	var minSizesTotal int
-	for i, wb := range children.items {
-		if i%2 == 1 || !anyVisibleWidgetInHierarchy(wb) {
-			continue
-		}
-
-		min := minSizeEffective(wb.window.(Widget))
-		if l.orientation == Horizontal {
-			minSizes[i] = min.Width
-			minSizesTotal += min.Width
-		} else {
-			minSizes[i] = min.Height
-			minSizesTotal += min.Height
-		}
-	}
-	regularSpace := l.spaceForRegularWidgets()
-
-	stretchTotal := 0
-	for i, wb := range children.items {
-		if i%2 == 1 || !anyVisibleWidgetInHierarchy(wb) {
-			continue
-		}
-
-		if item := l.hwnd2Item[wb.hWnd]; item == nil {
-			l.hwnd2Item[wb.hWnd] = &splitterLayoutItem{stretchFactor: 1}
-		}
-
-		stretchTotal += l.StretchFactor(wb.window.(Widget))
-	}
-
-	for i, wb := range children.items {
-		if i%2 == 1 || !anyVisibleWidgetInHierarchy(wb) {
-			continue
-		}
-
-		widget := wb.window.(Widget)
-		item := l.hwnd2Item[wb.hWnd]
-		item.growth = 0
-		item.keepSize = false
-		if item.oldExplicitSize > 0 {
-			item.size = item.oldExplicitSize
-		} else {
-			item.size = int(float64(l.StretchFactor(widget)) / float64(stretchTotal) * float64(regularSpace))
-		}
-
-		min := minSizes[i]
-		if minSizesTotal <= regularSpace {
-			if item.size < min {
-				item.size = min
-			}
-		}
-
-		if item.size >= min {
-			flags := widget.LayoutFlags()
-
-			if l.orientation == Horizontal && flags&GrowableHorz == 0 || l.orientation == Vertical && flags&GrowableVert == 0 {
-				item.size = min
-				item.keepSize = true
-			}
-		}
+	return &splitterContainerLayoutItem{
+		orientation:          l.orientation,
+		hwnd2Item:            hwnd2Item,
+		spaceForRegularItems: l.spaceForRegularWidgets(),
+		handleWidth:          splitter.HandleWidth(),
+		anyNonFixed:          l.anyNonFixed(),
 	}
 }
 
-func (l *splitterLayout) Update(reset bool) error {
-	if l.container == nil {
-		return newError("container required")
+type splitterContainerLayoutItem struct {
+	ContainerLayoutItemBase
+	orientation          Orientation
+	hwnd2Item            map[win.HWND]*splitterLayoutItem
+	spaceForRegularItems int
+	handleWidth          int
+	anyNonFixed          bool
+}
+
+func (li *splitterContainerLayoutItem) StretchFactor(item LayoutItem) int {
+	sli := li.hwnd2Item[item.Handle()]
+	if sli == nil || sli.stretchFactor == 0 {
+		return 1
 	}
 
-	if reset {
-		l.resetNeeded = true
+	return sli.stretchFactor
+}
+
+func (li *splitterContainerLayoutItem) LayoutFlags() LayoutFlags {
+	return boxLayoutFlags(li.orientation, li.children)
+}
+
+func (li *splitterContainerLayoutItem) MinSize() Size {
+	return li.MinSizeForSize(li.geometry.clientSize)
+}
+
+func (li *splitterContainerLayoutItem) HeightForWidth(width int) int {
+	return li.MinSizeForSize(Size{width, li.geometry.clientSize.Height}).Height
+}
+
+func (li *splitterContainerLayoutItem) MinSizeForSize(size Size) Size {
+	margins := Size{li.margins.HNear + li.margins.HFar, li.margins.VNear + li.margins.VFar}
+	s := margins
+
+	for _, item := range li.children {
+		if !anyVisibleItemInHierarchy(item) {
+			continue
+		}
+
+		var cur Size
+
+		if sli, ok := li.hwnd2Item[item.Handle()]; ok && li.anyNonFixed && sli.fixed {
+			cur = item.Geometry().size
+
+			if li.orientation == Horizontal {
+				cur.Height = 0
+			} else {
+				cur.Width = 0
+			}
+		} else {
+			cur = li.MinSizeEffectiveForChild(item)
+		}
+
+		if li.orientation == Horizontal {
+			s.Width += cur.Width
+			s.Height = maxi(s.Height, margins.Height+cur.Height)
+		} else {
+			s.Height += cur.Height
+			s.Width = maxi(s.Width, margins.Width+cur.Width)
+		}
 	}
 
-	if l.container.Suspended() {
-		return nil
-	}
+	return s
+}
 
-	if l.resetNeeded {
-		reset = true
-		l.resetNeeded = false
+func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
+	li.reset()
 
-		l.reset()
-	}
-
-	widgets := l.container.Children().items
-	splitter := l.container.(*Splitter)
-	handleWidth := splitter.HandleWidth()
-	sizes := make([]int, len(widgets))
-	cb := splitter.ClientBoundsPixels()
-	cb.X += l.margins.HNear
-	cb.Y += l.margins.HFar
-	cb.Width -= l.margins.HNear + l.margins.HFar
-	cb.Height -= l.margins.VNear + l.margins.VFar
-	space1 := l.spaceForRegularWidgets()
+	sizes := make([]int, len(li.children))
+	cb := Rectangle{Width: li.geometry.clientSize.Width, Height: li.geometry.clientSize.Height}
+	cb.X += li.margins.HNear
+	cb.Y += li.margins.HFar
+	cb.Width -= li.margins.HNear + li.margins.HFar
+	cb.Height -= li.margins.VNear + li.margins.VFar
+	space1 := li.spaceForRegularItems
 
 	var space2 int
-	if l.orientation == Horizontal {
+	if li.orientation == Horizontal {
 		space2 = cb.Height
 	} else {
 		space2 = cb.Width
 	}
 
-	anyNonFixed := l.anyNonFixed()
+	anyNonFixed := li.anyNonFixed
 	var totalRegularSize int
-	for i, wb := range widgets {
-		if !anyVisibleWidgetInHierarchy(wb) {
+	for i, item := range li.children {
+		if !anyVisibleItemInHierarchy(item) {
 			continue
 		}
 
-		widget := wb.window.(Widget)
-
 		if i%2 == 0 {
-			size := l.hwnd2Item[widget.Handle()].size
+			size := li.hwnd2Item[item.Handle()].size
 			totalRegularSize += size
 			sizes[i] = size
 		} else {
-			sizes[i] = handleWidth
+			sizes[i] = li.handleWidth
 		}
 	}
+
+	var resultItems []LayoutResultItem
 
 	diff := space1 - totalRegularSize
 
@@ -409,21 +302,19 @@ func (l *splitterLayout) Update(reset bool) error {
 
 		var wis []WidgetItem
 
-		for i, wb := range widgets {
-			if !anyVisibleWidgetInHierarchy(wb) {
+		for i, item := range li.children {
+			if !anyVisibleItemInHierarchy(item) {
 				continue
 			}
 
-			widget := wb.window.(Widget)
-
 			if i%2 == 0 {
-				if item := l.hwnd2Item[widget.Handle()]; !anyNonFixed || !item.fixed {
+				if it := li.hwnd2Item[item.Handle()]; !anyNonFixed || !it.fixed {
 					var min, max int
 
-					minSize := minSizeEffective(widget)
-					maxSize := widget.MaxSizePixels()
+					minSize := li.MinSizeEffectiveForChild(item)
+					maxSize := item.Geometry().maxSize
 
-					if l.orientation == Horizontal {
+					if li.orientation == Horizontal {
 						min = minSize.Width
 						max = maxSize.Width
 					} else {
@@ -431,7 +322,7 @@ func (l *splitterLayout) Update(reset bool) error {
 						max = maxSize.Height
 					}
 
-					wis = append(wis, WidgetItem{item: item, index: i, min: min, max: max})
+					wis = append(wis, WidgetItem{item: it, index: i, min: min, max: max})
 				}
 			}
 		}
@@ -484,60 +375,131 @@ func (l *splitterLayout) Update(reset bool) error {
 		}
 	}
 
-	maybeInvalidate := l.container.AsContainerBase().hasComplexBackground()
-
-	hdwp := win.BeginDeferWindowPos(int32(len(widgets)))
-	if hdwp == 0 {
-		return lastError("BeginDeferWindowPos")
-	}
-
 	var p1 int
-	if l.orientation == Horizontal {
-		p1 = l.margins.HNear
+	if li.orientation == Horizontal {
+		p1 = li.margins.HNear
 	} else {
-		p1 = l.margins.VNear
+		p1 = li.margins.VNear
 	}
-	for i, wb := range widgets {
-		if !anyVisibleWidgetInHierarchy(wb) {
+	for i, item := range li.children {
+		if !anyVisibleItemInHierarchy(item) {
 			continue
 		}
-
-		widget := wb.window.(Widget)
 
 		s1 := sizes[i]
 
 		var x, y, w, h int
-		if l.orientation == Horizontal {
-			x, y, w, h = p1, l.margins.VNear, s1, space2
+		if li.orientation == Horizontal {
+			x, y, w, h = p1, li.margins.VNear, s1, space2
 		} else {
-			x, y, w, h = l.margins.HNear, p1, space2, s1
+			x, y, w, h = li.margins.HNear, p1, space2, s1
 		}
 
-		if maybeInvalidate {
-			if b := widget.BoundsPixels(); w == b.Width && h == b.Height && (x != b.X || y != b.Y) {
-				widget.Invalidate()
+		resultItems = append(resultItems, LayoutResultItem{item: item, bounds: Rectangle{x, y, w, h}})
+	}
+
+	return resultItems
+}
+
+func (li *splitterContainerLayoutItem) reset() {
+	var anyVisible bool
+
+	for i, item := range li.children {
+		sli := li.hwnd2Item[item.Handle()]
+
+		visible := anyVisibleItemInHierarchy(item)
+		if !anyVisible && visible {
+			anyVisible = true
+		}
+
+		if sli == nil || visible == sli.wasVisible {
+			continue
+		}
+
+		sli.wasVisible = visible
+
+		if _, isHandle := item.(*splitterHandleLayoutItem); !isHandle {
+			var handleIndex int
+
+			if i == 0 {
+				if len(li.children) > 1 {
+					handleIndex = 1
+				} else {
+					handleIndex = -1
+				}
+			} else {
+				handleIndex = i - 1
+			}
+
+			if handleIndex > -1 {
+				li.children[handleIndex].AsLayoutItemBase().visible = visible
+			}
+		}
+	}
+
+	if li.Visible() != anyVisible {
+		li.AsLayoutItemBase().visible = anyVisible
+	}
+
+	minSizes := make([]int, len(li.children))
+	var minSizesTotal int
+	for i, item := range li.children {
+		if i%2 == 1 || !anyVisibleItemInHierarchy(item) {
+			continue
+		}
+
+		min := li.MinSizeEffectiveForChild(item)
+		if li.orientation == Horizontal {
+			minSizes[i] = min.Width
+			minSizesTotal += min.Width
+		} else {
+			minSizes[i] = min.Height
+			minSizesTotal += min.Height
+		}
+	}
+	regularSpace := li.spaceForRegularItems
+
+	stretchTotal := 0
+	for i, item := range li.children {
+		if i%2 == 1 || !anyVisibleItemInHierarchy(item) {
+			continue
+		}
+
+		if sli := li.hwnd2Item[item.Handle()]; sli == nil {
+			li.hwnd2Item[item.Handle()] = &splitterLayoutItem{stretchFactor: 1}
+		}
+
+		stretchTotal += li.StretchFactor(item)
+	}
+
+	for i, item := range li.children {
+		if i%2 == 1 || !anyVisibleItemInHierarchy(item) {
+			continue
+		}
+
+		sli := li.hwnd2Item[item.Handle()]
+		sli.growth = 0
+		sli.keepSize = false
+		if sli.oldExplicitSize > 0 {
+			sli.size = sli.oldExplicitSize
+		} else {
+			sli.size = int(float64(li.StretchFactor(item)) / float64(stretchTotal) * float64(regularSpace))
+		}
+
+		min := minSizes[i]
+		if minSizesTotal <= regularSpace {
+			if sli.size < min {
+				sli.size = min
 			}
 		}
 
-		if hdwp = win.DeferWindowPos(
-			hdwp,
-			widget.Handle(),
-			0,
-			int32(x),
-			int32(y),
-			int32(w),
-			int32(h),
-			win.SWP_NOACTIVATE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER); hdwp == 0 {
+		if sli.size >= min {
+			flags := item.LayoutFlags()
 
-			return lastError("DeferWindowPos")
+			if li.orientation == Horizontal && flags&GrowableHorz == 0 || li.orientation == Vertical && flags&GrowableVert == 0 {
+				sli.size = min
+				sli.keepSize = true
+			}
 		}
-
-		p1 += s1
 	}
-
-	if !win.EndDeferWindowPos(hdwp) {
-		return lastError("EndDeferWindowPos")
-	}
-
-	return nil
 }

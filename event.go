@@ -37,21 +37,17 @@ func (p *EventPublisher) Event() *Event {
 }
 
 func (p *EventPublisher) Publish() {
-	events := inProgressEventsByForm[appSingleton.activeForm]
-	events = append(events, &p.event)
-	inProgressEventsByForm[appSingleton.activeForm] = events
-
-	defer func() {
-		events = events[:len(events)-1]
-		if len(events) == 0 {
-			delete(inProgressEventsByForm, appSingleton.activeForm)
-		} else {
-			inProgressEventsByForm[appSingleton.activeForm] = events
-			return
-		}
-
-		performScheduledLayouts()
-	}()
+	if form := appSingleton.activeForm; form != nil {
+		fb := form.AsFormBase()
+		fb.inProgressEventCount++
+		defer func() {
+			fb.inProgressEventCount--
+			if fb.inProgressEventCount == 0 && fb.layoutScheduled {
+				fb.layoutScheduled = false
+				fb.startLayout()
+			}
+		}()
+	}
 
 	for _, handler := range p.event.handlers {
 		if handler != nil {
