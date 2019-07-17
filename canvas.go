@@ -47,6 +47,7 @@ var gM = syscall.StringToUTF16Ptr("gM")
 
 type Canvas struct {
 	hdc                 win.HDC
+	hBmpStock           win.HBITMAP
 	window              Window
 	dpix                int
 	dpiy                int
@@ -71,13 +72,14 @@ func NewCanvasFromImage(image Image) (*Canvas, error) {
 			}
 		}()
 
-		if win.SelectObject(hdc, win.HGDIOBJ(img.hBmp)) == 0 {
+		var hBmpStock win.HBITMAP
+		if hBmpStock = win.HBITMAP(win.SelectObject(hdc, win.HGDIOBJ(img.hBmp))); hBmpStock == 0 {
 			return nil, newError("SelectObject failed")
 		}
 
 		succeeded = true
 
-		return (&Canvas{hdc: hdc, bitmap: img, dpix: img.dpi, dpiy: img.dpi}).init()
+		return (&Canvas{hdc: hdc, hBmpStock: hBmpStock, bitmap: img, dpix: img.dpi, dpiy: img.dpi}).init()
 
 	case *Metafile:
 		c, err := newCanvasFromHDC(img.hdc)
@@ -135,6 +137,7 @@ func (c *Canvas) init() (*Canvas, error) {
 func (c *Canvas) Dispose() {
 	if !c.doNotDispose && c.hdc != 0 {
 		if c.bitmap != nil {
+			win.SelectObject(c.hdc, win.HGDIOBJ(c.hBmpStock))
 			win.DeleteDC(c.hdc)
 			c.bitmap.postProcess()
 		} else {
