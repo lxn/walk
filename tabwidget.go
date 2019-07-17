@@ -345,13 +345,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 		cb := tw.ClientBoundsPixels()
 
-		bitmap, err := NewBitmap(cb.Size())
-		if err != nil {
-			break
-		}
-		defer bitmap.Dispose()
-
-		canvas, err := NewCanvasFromImage(bitmap)
+		canvas, err := newCanvasFromHDC(hdc)
 		if err != nil {
 			break
 		}
@@ -474,10 +468,6 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 					}
 				}
 			}
-		}
-
-		if !win.BitBlt(hdc, 0, 0, int32(cb.Width), int32(cb.Height), canvas.hdc, 0, 0, win.SRCCOPY) {
-			break
 		}
 
 		return 0
