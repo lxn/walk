@@ -74,20 +74,24 @@ func (te *TextEdit) applyFont(font *Font) {
 }
 
 func (te *TextEdit) updateMargins() {
+	// 56 works at least from 96 to 192 DPI, so until a better solution comes up, this is it.
+	defaultSize := te.dialogBaseUnitsToPixels(Size{56, 12})
+
 	var rc win.RECT
 	te.SendMessage(win.EM_GETRECT, 0, uintptr(unsafe.Pointer(&rc)))
-	te.margins.Width = int(rc.Left) * 2
+
+	if te.hasExtendedStyleBits(win.WS_EX_CLIENTEDGE) {
+		width := te.WidthPixels()
+		if width == 0 {
+			width = defaultSize.Width
+		}
+		te.margins.Width = width - int(rc.Right-rc.Left)
+	} else {
+		te.margins.Width = int(rc.Left) * 2
+	}
 
 	lineHeight := te.calculateTextSizeImpl("gM").Height
-	te.margins.Height = te.dialogBaseUnitsToPixels(Size{20, 12}).Height - lineHeight
-}
-
-func (te *TextEdit) LayoutFlags() LayoutFlags {
-	flags := ShrinkableHorz | GrowableHorz | GreedyHorz
-	if !te.compactHeight {
-		flags |= GreedyVert | GrowableVert | ShrinkableVert
-	}
-	return flags
+	te.margins.Height = defaultSize.Height - lineHeight
 }
 
 var drawTextCompatibleEditWordbreakProcPtr = syscall.NewCallback(drawTextCompatibleEditWordbreakProc)
