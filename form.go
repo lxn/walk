@@ -91,10 +91,12 @@ type FormBase struct {
 	WindowBase
 	clientComposite       *Composite
 	owner                 Form
+	stopwatch             *Stopwatch
 	inProgressEventCount  int
 	performLayout         chan ContainerLayoutItem
 	layoutResults         chan []LayoutResult
 	inSizeLoop            chan bool
+	updateStopwatch       chan *Stopwatch
 	quitLayoutPerformer   chan struct{}
 	closingPublisher      CloseEventPublisher
 	activatingPublisher   EventPublisher
@@ -171,7 +173,7 @@ func (fb *FormBase) init(form Form) error {
 		win.ChangeWindowMessageFilterEx(fb.hWnd, taskbarButtonCreatedMsgId, win.MSGFLT_ALLOW, nil)
 	}
 
-	fb.performLayout, fb.layoutResults, fb.inSizeLoop, fb.quitLayoutPerformer = startLayoutPerformer(fb)
+	fb.performLayout, fb.layoutResults, fb.inSizeLoop, fb.updateStopwatch, fb.quitLayoutPerformer = startLayoutPerformer(fb)
 
 	return nil
 }
@@ -680,6 +682,16 @@ func (fb *FormBase) ProgressIndicator() *ProgressIndicator {
 	return fb.progressIndicator
 }
 
+func (fb *FormBase) Stopwatch() *Stopwatch {
+	return fb.stopwatch
+}
+
+func (fb *FormBase) SetStopwatch(sw *Stopwatch) {
+	fb.stopwatch = sw
+
+	fb.updateStopwatch <- sw
+}
+
 func (fb *FormBase) startLayout() {
 	cb := fb.window.ClientBoundsPixels()
 	cs := fb.clientSizeFromSizePixels(fb.proposedSize)
@@ -781,10 +793,20 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		fb.proposedSize = Size{int(wp.Cx), int(wp.Cy)}
 
+		const performingLayoutSubject = "*FormBase.WndProc - WM_WINDOWPOSCHANGED - full layout from sizing loop"
+
+		if fb.inSizingLoop && fb.stopwatch != nil {
+			fb.stopwatch.Start(performingLayoutSubject)
+		}
+
 		fb.startLayout()
 
 		if fb.inSizingLoop {
-			applyLayoutResults(<-fb.layoutResults)
+			applyLayoutResults(<-fb.layoutResults, fb.stopwatch)
+
+			if fb.stopwatch != nil {
+				fb.stopwatch.Stop(performingLayoutSubject)
+			}
 		}
 
 	case win.WM_SHOWWINDOW:

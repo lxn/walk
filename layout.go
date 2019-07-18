@@ -92,11 +92,14 @@ func createLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 	return containerItem
 }
 
-func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, layoutResults chan []LayoutResult, inSizeLoop chan bool, quit chan struct{}) {
+func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, layoutResults chan []LayoutResult, inSizeLoop chan bool, updateStopwatch chan *Stopwatch, quit chan struct{}) {
 	performLayout = make(chan ContainerLayoutItem)
 	layoutResults = make(chan []LayoutResult)
 	inSizeLoop = make(chan bool)
+	updateStopwatch = make(chan *Stopwatch)
 	quit = make(chan struct{})
+
+	var stopwatch *Stopwatch
 
 	go func() {
 		sizing := false
@@ -114,7 +117,7 @@ func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, la
 				busy = true
 				cancel = make(chan struct{})
 
-				go layoutTree(root, root.Geometry().clientSize, cancel, done)
+				go layoutTree(root, root.Geometry().clientSize, cancel, done, stopwatch)
 
 			case results := <-done:
 				busy = false
@@ -127,20 +130,24 @@ func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, la
 					layoutResults <- results
 				} else {
 					form.Synchronize(func() {
-						applyLayoutResults(results)
+						applyLayoutResults(results, stopwatch)
 					})
 				}
 
 			case sizing = <-inSizeLoop:
 
+			case stopwatch = <-updateStopwatch:
+
 			case <-quit:
 				close(performLayout)
 				close(layoutResults)
 				close(inSizeLoop)
+				close(updateStopwatch)
 				if cancel != nil {
 					close(cancel)
 				}
 				close(done)
+				close(quit)
 				return
 			}
 		}
@@ -149,7 +156,13 @@ func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, la
 	return
 }
 
-func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done chan []LayoutResult) {
+func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done chan []LayoutResult, stopwatch *Stopwatch) {
+	const minSizeCacheSubject = "layoutTree - populating min size cache"
+
+	if stopwatch != nil {
+		stopwatch.Start(minSizeCacheSubject)
+	}
+
 	// Populate some caches now, so we later need only read access to them from multiple goroutines.
 	ctx := root.Context()
 
@@ -171,6 +184,16 @@ func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done 
 	}
 
 	populateContextForContainer(root)
+
+	if stopwatch != nil {
+		stopwatch.Stop(minSizeCacheSubject)
+	}
+
+	const layoutSubject = "layoutTree - computing layout"
+
+	if stopwatch != nil {
+		stopwatch.Start(layoutSubject)
+	}
 
 	results := make(chan LayoutResult)
 	finished := make(chan struct{})
@@ -240,16 +263,29 @@ func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done 
 			layoutResults = append(layoutResults, result)
 
 		case <-finished:
+			if stopwatch != nil {
+				stopwatch.Stop(layoutSubject)
+			}
+
 			done <- layoutResults
 			return
 
 		case <-cancel:
+			if stopwatch != nil {
+				stopwatch.Cancel(layoutSubject)
+			}
 			return
 		}
 	}
 }
 
-func applyLayoutResults(results []LayoutResult) error {
+func applyLayoutResults(results []LayoutResult, stopwatch *Stopwatch) error {
+	if stopwatch != nil {
+		const subject = "applyLayoutResults"
+		stopwatch.Start(subject)
+		defer stopwatch.Stop(subject)
+	}
+
 	for _, result := range results {
 		if len(result.items) == 0 {
 			continue
