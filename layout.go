@@ -124,13 +124,7 @@ func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, la
 				}
 
 				if sizing {
-					select {
-					case layoutResults <- results:
-
-					default:
-						// The Form is probably blocking sending us some new layout request,
-						// so we just drop our results.
-					}
+					layoutResults <- results
 				} else {
 					form.Synchronize(func() {
 						applyLayoutResults(results)
