@@ -664,8 +664,16 @@ func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	}
 
 	for i := tw.pages.Len() - 1; i >= 0; i-- {
-		page := createLayoutItemsForContainerWithContext(tw.pages.At(i), ctx)
-		page.AsLayoutItemBase().parent = li
+		var page LayoutItem
+		if p := tw.pages.At(i); p.Layout() != nil {
+			page = createLayoutItemsForContainerWithContext(p, ctx)
+		} else {
+			page = NewGreedyLayoutItem()
+		}
+
+		lib := page.AsLayoutItemBase()
+		lib.ctx = ctx
+		lib.parent = li
 		pages[i] = page
 	}
 
