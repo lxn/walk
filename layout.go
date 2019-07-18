@@ -102,7 +102,7 @@ func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, la
 		sizing := false
 		busy := false
 		var cancel chan struct{}
-		done := make(chan []LayoutResult, 1)
+		done := make(chan []LayoutResult)
 
 		for {
 			select {
@@ -173,7 +173,7 @@ func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done 
 	populateContextForContainer(root)
 
 	results := make(chan LayoutResult)
-	finished := make(chan struct{}, 1)
+	finished := make(chan struct{})
 
 	go func() {
 		defer func() {
