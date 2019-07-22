@@ -687,6 +687,12 @@ func (tv *TableView) detachModel() {
 	}
 }
 
+// ItemCountChanged returns the event that is published when the number of items
+// in the model of the TableView changed.
+func (tv *TableView) ItemCountChanged() *Event {
+	return tv.itemCountChangedPublisher.Event()
+}
+
 // Model returns the model of the TableView.
 func (tv *TableView) Model() interface{} {
 	return tv.providedModel
