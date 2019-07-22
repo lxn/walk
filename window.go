@@ -1717,10 +1717,10 @@ func (wb *WindowBase) RequestLayout() {
 	}
 
 	if form := wb.Form(); form != nil && form.Layout() != nil && !form.Suspended() {
-		if fb := form.AsFormBase(); fb.inProgressEventCount > 0 || !fb.Visible() {
-			fb.layoutScheduled = true
-		} else {
+		if fb := form.AsFormBase(); appSingleton.activeForm != form || fb.inProgressEventCount == 0 && fb.Visible() {
 			fb.startLayout()
+		} else {
+			fb.layoutScheduled = true
 		}
 	}
 }
