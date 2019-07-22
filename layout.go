@@ -307,7 +307,12 @@ func applyLayoutResults(results []LayoutResult, stopwatch *Stopwatch) error {
 
 		for _, ri := range result.items {
 			if ri.item.Handle() != 0 {
-				widget := windowFromHandle(ri.item.Handle()).(Widget)
+				window := windowFromHandle(ri.item.Handle())
+				if window == nil {
+					continue
+				}
+
+				widget := window.(Widget)
 
 				oldBounds := widget.BoundsPixels()
 
