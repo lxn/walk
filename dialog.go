@@ -161,14 +161,14 @@ func (dlg *Dialog) Show() {
 	}
 
 	if !willRestore {
-		if dlg.owner != nil {
-			var size Size
-			if layout := dlg.Layout(); layout != nil {
-				size = maxSize(dlg.clientComposite.MinSizeHint(), dlg.MinSizePixels())
-			} else {
-				size = dlg.SizePixels()
-			}
+		var size Size
+		if layout := dlg.Layout(); layout != nil {
+			size = maxSize(dlg.clientComposite.MinSizeHint(), dlg.MinSizePixels())
+		} else {
+			size = dlg.SizePixels()
+		}
 
+		if dlg.owner != nil {
 			ob := dlg.owner.BoundsPixels()
 
 			if dlg.centerInOwnerWhenRun {
@@ -180,7 +180,9 @@ func (dlg *Dialog) Show() {
 				}))
 			}
 		} else {
-			dlg.SetBoundsPixels(dlg.BoundsPixels())
+			b := dlg.BoundsPixels()
+
+			dlg.SetBoundsPixels(Rectangle{b.X, b.Y, size.Width, size.Height})
 		}
 	}
 
