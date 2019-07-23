@@ -15,11 +15,10 @@ import (
 )
 
 type Menu struct {
-	hMenu         win.HMENU
-	window        Window
-	actions       *ActionList
-	action2bitmap map[*Action]*Bitmap
-	getDPI        func() int
+	hMenu   win.HMENU
+	window  Window
+	actions *ActionList
+	getDPI  func() int
 }
 
 func newMenuBar(window Window) (*Menu, error) {
@@ -29,9 +28,8 @@ func newMenuBar(window Window) (*Menu, error) {
 	}
 
 	m := &Menu{
-		hMenu:         hMenu,
-		window:        window,
-		action2bitmap: make(map[*Action]*Bitmap),
+		hMenu:  hMenu,
+		window: window,
 	}
 	m.actions = newActionList(m)
 
@@ -59,8 +57,7 @@ func NewMenu() (*Menu, error) {
 	}
 
 	m := &Menu{
-		hMenu:         hMenu,
-		action2bitmap: make(map[*Action]*Bitmap),
+		hMenu: hMenu,
 	}
 	m.actions = newActionList(m)
 
@@ -71,11 +68,6 @@ func (m *Menu) Dispose() {
 	if m.hMenu != 0 {
 		win.DestroyMenu(m.hMenu)
 		m.hMenu = 0
-
-		for action, bmp := range m.action2bitmap {
-			bmp.Dispose()
-			delete(m.action2bitmap, action)
-		}
 	}
 }
 

@@ -30,7 +30,6 @@ type ToolBar struct {
 	defaultButtonWidth int
 	maxTextRows        int
 	buttonStyle        ToolBarButtonStyle
-	action2bitmap      map[*Action]*Bitmap
 }
 
 func NewToolBarWithOrientationAndButtonStyle(parent Container, orientation Orientation, buttonStyle ToolBarButtonStyle) (*ToolBar, error) {
@@ -46,8 +45,7 @@ func NewToolBarWithOrientationAndButtonStyle(parent Container, orientation Orien
 	}
 
 	tb := &ToolBar{
-		buttonStyle:   buttonStyle,
-		action2bitmap: make(map[*Action]*Bitmap),
+		buttonStyle: buttonStyle,
 	}
 	tb.actions = newActionList(tb)
 
