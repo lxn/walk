@@ -692,7 +692,11 @@ func (fb *FormBase) SetStopwatch(sw *Stopwatch) {
 	fb.updateStopwatch <- sw
 }
 
-func (fb *FormBase) startLayout() {
+func (fb *FormBase) startLayout() bool {
+	if fb.performLayout == nil {
+		return false
+	}
+
 	cb := fb.window.ClientBoundsPixels()
 	cs := fb.clientSizeFromSizePixels(fb.proposedSize)
 
@@ -702,6 +706,8 @@ func (fb *FormBase) startLayout() {
 	cli.Geometry().clientSize = cs
 
 	fb.performLayout <- cli
+
+	return true
 }
 
 func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
@@ -799,13 +805,13 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			fb.stopwatch.Start(performingLayoutSubject)
 		}
 
-		fb.startLayout()
+		if fb.startLayout() {
+			if fb.inSizingLoop {
+				applyLayoutResults(<-fb.layoutResults, fb.stopwatch)
 
-		if fb.inSizingLoop {
-			applyLayoutResults(<-fb.layoutResults, fb.stopwatch)
-
-			if fb.stopwatch != nil {
-				fb.stopwatch.Stop(performingLayoutSubject)
+				if fb.stopwatch != nil {
+					fb.stopwatch.Stop(performingLayoutSubject)
+				}
 			}
 		}
 
