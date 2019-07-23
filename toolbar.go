@@ -80,6 +80,8 @@ func NewVerticalToolBar(parent Container) (*ToolBar, error) {
 func (tb *ToolBar) Dispose() {
 	tb.WidgetBase.Dispose()
 
+	tb.actions.Clear()
+
 	if tb.imageList != nil {
 		tb.imageList.Dispose()
 		tb.imageList = nil

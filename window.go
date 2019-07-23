@@ -808,6 +808,10 @@ func (wb *WindowBase) Dispose() {
 		cm.Dispose()
 	}
 
+	if wb.shortcutActions != nil {
+		wb.shortcutActions.Clear()
+	}
+
 	for _, p := range wb.name2Property {
 		p.SetSource(nil)
 	}

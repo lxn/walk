@@ -65,6 +65,8 @@ func NewMenu() (*Menu, error) {
 }
 
 func (m *Menu) Dispose() {
+	m.actions.Clear()
+
 	if m.hMenu != 0 {
 		win.DestroyMenu(m.hMenu)
 		m.hMenu = 0
