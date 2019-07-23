@@ -793,6 +793,14 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	case win.WM_WINDOWPOSCHANGED:
 		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
 
+		if wp.Flags&win.SWP_SHOWWINDOW != 0 {
+			fb.startLayout()
+		}
+
+		if wp.Flags&win.SWP_HIDEWINDOW != 0 {
+			fb.didSetFocus = false
+		}
+
 		if wp.Flags&win.SWP_NOSIZE != 0 || fb.Layout() == nil {
 			break
 		}
@@ -813,11 +821,6 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 					fb.stopwatch.Stop(performingLayoutSubject)
 				}
 			}
-		}
-
-	case win.WM_SHOWWINDOW:
-		if wParam == win.FALSE {
-			fb.didSetFocus = false
 		}
 
 	case win.WM_PAINT:
