@@ -79,6 +79,15 @@ func NewVerticalToolBar(parent Container) (*ToolBar, error) {
 	return NewToolBarWithOrientationAndButtonStyle(parent, Vertical, ToolBarButtonImageAboveText)
 }
 
+func (tb *ToolBar) Dispose() {
+	tb.WidgetBase.Dispose()
+
+	if tb.imageList != nil {
+		tb.imageList.Dispose()
+		tb.imageList = nil
+	}
+}
+
 func (tb *ToolBar) applyFont(font *Font) {
 	tb.WidgetBase.applyFont(font)
 
