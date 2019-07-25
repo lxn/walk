@@ -29,6 +29,10 @@ type stopwatchStats struct {
 }
 
 func (sws *stopwatchStats) Average() time.Duration {
+	if sws.count == 0 {
+		return 0
+	}
+
 	return time.Nanosecond * time.Duration(sws.total.Nanoseconds()/sws.count)
 }
 
