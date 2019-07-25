@@ -154,6 +154,10 @@ func (wb *WidgetBase) Dispose() {
 		return
 	}
 
+	if wb.parent != nil && win.GetParent(wb.hWnd) == wb.parent.Handle() {
+		wb.SetParent(nil)
+	}
+
 	globalToolTip.RemoveTool(wb.window.(Widget))
 
 	wb.WindowBase.Dispose()
