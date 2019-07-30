@@ -373,7 +373,7 @@ func (gb *GroupBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		title:        gb.Title(),
 	}
 
-	gbli := createLayoutItemsForContainerWithContext(gb.composite, ctx)
+	gbli := CreateLayoutItemsForContainerWithContext(gb.composite, ctx)
 	gbli.AsLayoutItemBase().parent = li
 
 	li.children = append(li.children, gbli)
@@ -418,8 +418,8 @@ func (li *groupBoxLayoutItem) IdealSize() Size {
 func (li *groupBoxLayoutItem) PerformLayout() []LayoutResultItem {
 	return []LayoutResultItem{
 		{
-			item:   li.children[0],
-			bounds: Rectangle{X: li.compositePos.X, Y: li.compositePos.Y, Width: li.geometry.size.Width - li.compositePos.X*2, Height: li.geometry.size.Height - li.compositePos.Y - IntFrom96DPI(5, li.ctx.dpi)},
+			Item:   li.children[0],
+			Bounds: Rectangle{X: li.compositePos.X, Y: li.compositePos.Y, Width: li.geometry.Size.Width - li.compositePos.X*2, Height: li.geometry.Size.Height - li.compositePos.Y - IntFrom96DPI(5, li.ctx.dpi)},
 		},
 	}
 }

@@ -359,10 +359,10 @@ func (li *gridLayoutItem) LayoutFlags() LayoutFlags {
 
 			wf := item.LayoutFlags()
 
-			if wf&GreedyHorz != 0 && item.Geometry().maxSize.Width > 0 {
+			if wf&GreedyHorz != 0 && item.Geometry().MaxSize.Width > 0 {
 				wf &^= GreedyHorz
 			}
-			if wf&GreedyVert != 0 && item.Geometry().maxSize.Height > 0 {
+			if wf&GreedyVert != 0 && item.Geometry().MaxSize.Height > 0 {
 				wf &^= GreedyVert
 			}
 
@@ -382,11 +382,11 @@ func (li *gridLayoutItem) MinSize() Size {
 		return Size{}
 	}
 
-	return li.MinSizeForSize(li.geometry.clientSize)
+	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
 func (li *gridLayoutItem) HeightForWidth(width int) int {
-	return li.MinSizeForSize(Size{width, li.geometry.clientSize.Height}).Height
+	return li.MinSizeForSize(Size{width, li.geometry.ClientSize.Height}).Height
 }
 
 func (li *gridLayoutItem) MinSizeForSize(size Size) Size {
@@ -564,8 +564,8 @@ func (l gridLayoutSectionInfoList) Swap(i, j int) {
 }
 
 func (li *gridLayoutItem) PerformLayout() []LayoutResultItem {
-	widths := li.sectionSizesForSpace(Horizontal, li.geometry.clientSize.Width, nil)
-	heights := li.sectionSizesForSpace(Vertical, li.geometry.clientSize.Height, widths)
+	widths := li.sectionSizesForSpace(Horizontal, li.geometry.ClientSize.Width, nil)
+	heights := li.sectionSizesForSpace(Vertical, li.geometry.ClientSize.Height, widths)
 
 	items := make([]LayoutResultItem, 0, len(li.item2Info))
 
@@ -602,7 +602,7 @@ func (li *gridLayoutItem) PerformLayout() []LayoutResultItem {
 				}
 			}
 
-			max := item.Geometry().maxSize
+			max := item.Geometry().MaxSize
 			if max.Width > 0 && s.Width > max.Width {
 				s.Width = max.Width
 			}
@@ -622,7 +622,7 @@ func (li *gridLayoutItem) PerformLayout() []LayoutResultItem {
 			}
 		}
 
-		alignment := item.Geometry().alignment
+		alignment := item.Geometry().Alignment
 		if alignment == AlignHVDefault {
 			alignment = li.alignment
 		}
@@ -647,7 +647,7 @@ func (li *gridLayoutItem) PerformLayout() []LayoutResultItem {
 			}
 		}
 
-		items = append(items, LayoutResultItem{item: item, bounds: Rectangle{X: x, Y: y, Width: w, Height: h}})
+		items = append(items, LayoutResultItem{Item: item, Bounds: Rectangle{X: x, Y: y, Width: w, Height: h}})
 	}
 
 	return items
@@ -697,7 +697,7 @@ func (li *gridLayoutItem) sectionSizesForSpace(orientation Orientation, space in
 			info := li.item2Info[item]
 			flags := item.LayoutFlags()
 
-			max := item.Geometry().maxSize
+			max := item.Geometry().MaxSize
 
 			var pref Size
 			if hfw, ok := item.(HeightForWidther); !ok || !hfw.HasHeightForWidth() {

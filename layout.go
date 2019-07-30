@@ -26,7 +26,7 @@ func createLayoutItemForWidgetWithContext(widget Widget, ctx *LayoutContext) Lay
 			return nil
 		}
 
-		item = createLayoutItemsForContainerWithContext(container, ctx)
+		item = CreateLayoutItemsForContainerWithContext(container, ctx)
 	} else {
 		item = widget.CreateLayoutItem(ctx)
 	}
@@ -36,20 +36,20 @@ func createLayoutItemForWidgetWithContext(widget Widget, ctx *LayoutContext) Lay
 	lib.handle = widget.Handle()
 	lib.visible = widget.Visible()
 	lib.geometry = widget.AsWidgetBase().geometry
-	lib.geometry.alignment = widget.Alignment()
-	lib.geometry.minSize = widget.MinSizePixels()
-	lib.geometry.maxSize = widget.MaxSizePixels()
+	lib.geometry.Alignment = widget.Alignment()
+	lib.geometry.MinSize = widget.MinSizePixels()
+	lib.geometry.MaxSize = widget.MaxSizePixels()
 
 	return item
 }
 
-func createLayoutItemsForContainer(container Container) ContainerLayoutItem {
+func CreateLayoutItemsForContainer(container Container) ContainerLayoutItem {
 	ctx := newLayoutContext(container.Handle())
 
-	return createLayoutItemsForContainerWithContext(container, ctx)
+	return CreateLayoutItemsForContainerWithContext(container, ctx)
 }
 
-func createLayoutItemsForContainerWithContext(container Container, ctx *LayoutContext) ContainerLayoutItem {
+func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutContext) ContainerLayoutItem {
 	var containerItem ContainerLayoutItem
 	var clib *ContainerLayoutItemBase
 
@@ -117,7 +117,7 @@ func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, la
 				busy = true
 				cancel = make(chan struct{})
 
-				go layoutTree(root, root.Geometry().clientSize, cancel, done, stopwatch)
+				go layoutTree(root, root.Geometry().ClientSize, cancel, done, stopwatch)
 
 			case results := <-done:
 				busy = false
@@ -215,7 +215,7 @@ func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done 
 
 				clib := container.AsContainerLayoutItemBase()
 
-				clib.geometry.clientSize = size
+				clib.geometry.ClientSize = size
 
 				items := container.PerformLayout()
 
@@ -234,10 +234,10 @@ func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done 
 					default:
 					}
 
-					item.item.Geometry().size = item.bounds.Size()
+					item.Item.Geometry().Size = item.Bounds.Size()
 
-					if childContainer, ok := item.item.(ContainerLayoutItem); ok {
-						layoutSubtree(childContainer, item.bounds.Size())
+					if childContainer, ok := item.Item.(ContainerLayoutItem); ok {
+						layoutSubtree(childContainer, item.Bounds.Size())
 					}
 				}
 			}()
@@ -306,8 +306,8 @@ func applyLayoutResults(results []LayoutResult, stopwatch *Stopwatch) error {
 		}
 
 		for _, ri := range result.items {
-			if ri.item.Handle() != 0 {
-				window := windowFromHandle(ri.item.Handle())
+			if ri.Item.Handle() != 0 {
+				window := windowFromHandle(ri.Item.Handle())
 				if window == nil {
 					continue
 				}
@@ -316,34 +316,34 @@ func applyLayoutResults(results []LayoutResult, stopwatch *Stopwatch) error {
 
 				oldBounds := widget.BoundsPixels()
 
-				if ri.bounds == oldBounds {
+				if ri.Bounds == oldBounds {
 					continue
 				}
 
-				if ri.bounds.X == oldBounds.X && ri.bounds.Y == oldBounds.Y && ri.bounds.Width == oldBounds.Width {
+				if ri.Bounds.X == oldBounds.X && ri.Bounds.Y == oldBounds.Y && ri.Bounds.Width == oldBounds.Width {
 					if _, ok := widget.(*ComboBox); ok {
-						if ri.bounds.Height == oldBounds.Height+1 {
+						if ri.Bounds.Height == oldBounds.Height+1 {
 							continue
 						}
-					} else if ri.bounds.Height == oldBounds.Height {
+					} else if ri.Bounds.Height == oldBounds.Height {
 						continue
 					}
 				}
 
 				if maybeInvalidate {
-					if ri.bounds.Width == oldBounds.Width && ri.bounds.Height == oldBounds.Height && (ri.bounds.X != oldBounds.X || ri.bounds.Y != oldBounds.Y) {
+					if ri.Bounds.Width == oldBounds.Width && ri.Bounds.Height == oldBounds.Height && (ri.Bounds.X != oldBounds.X || ri.Bounds.Y != oldBounds.Y) {
 						widget.Invalidate()
 					}
 				}
 
 				if hdwp = win.DeferWindowPos(
 					hdwp,
-					ri.item.Handle(),
+					ri.Item.Handle(),
 					0,
-					int32(ri.bounds.X),
-					int32(ri.bounds.Y),
-					int32(ri.bounds.Width),
-					int32(ri.bounds.Height),
+					int32(ri.Bounds.X),
+					int32(ri.Bounds.Y),
+					int32(ri.Bounds.Width),
+					int32(ri.Bounds.Height),
 					win.SWP_NOACTIVATE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER); hdwp == 0 {
 
 					return lastError("DeferWindowPos")
@@ -529,6 +529,10 @@ type LayoutContext struct {
 	dpi                         int
 }
 
+func (ctx *LayoutContext) DPI() int {
+	return ctx.dpi
+}
+
 func newLayoutContext(handle win.HWND) *LayoutContext {
 	return &LayoutContext{
 		layoutItem2MinSizeEffective: make(map[LayoutItem]Size),
@@ -691,13 +695,13 @@ func (li *greedyLayoutItem) MinSize() Size {
 }
 
 type Geometry struct {
-	alignment                   Alignment2D
-	minSize                     Size
-	maxSize                     Size
-	idealSize                   Size
-	size                        Size
-	clientSize                  Size
-	consumingSpaceWhenInvisible bool
+	Alignment                   Alignment2D
+	MinSize                     Size
+	MaxSize                     Size
+	IdealSize                   Size
+	Size                        Size
+	ClientSize                  Size
+	ConsumingSpaceWhenInvisible bool
 }
 
 type LayoutResult struct {
@@ -706,8 +710,8 @@ type LayoutResult struct {
 }
 
 type LayoutResultItem struct {
-	item   LayoutItem
-	bounds Rectangle
+	Item   LayoutItem
+	Bounds Rectangle
 }
 
 func shouldLayoutItem(item LayoutItem) bool {
@@ -717,7 +721,7 @@ func shouldLayoutItem(item LayoutItem) bool {
 
 	_, isSpacer := item.(*spacerLayoutItem)
 
-	return isSpacer || item.Visible() || item.Geometry().consumingSpaceWhenInvisible
+	return isSpacer || item.Visible() || item.Geometry().ConsumingSpaceWhenInvisible
 }
 
 func itemsToLayout(allItems []LayoutItem) []LayoutItem {
@@ -774,9 +778,9 @@ func minSizeEffective(item LayoutItem) Size {
 		s = is.IdealSize()
 	}
 
-	size := maxSize(geometry.minSize, s)
+	size := maxSize(geometry.MinSize, s)
 
-	max := geometry.maxSize
+	max := geometry.MaxSize
 	if max.Width > 0 && size.Width > max.Width {
 		size.Width = max.Width
 	}

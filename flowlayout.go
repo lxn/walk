@@ -94,11 +94,11 @@ func (*flowLayoutItem) LayoutFlags() LayoutFlags {
 }
 
 func (li *flowLayoutItem) MinSize() Size {
-	return li.MinSizeForSize(li.geometry.clientSize)
+	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
 func (li *flowLayoutItem) HeightForWidth(width int) int {
-	return li.MinSizeForSize(Size{width, li.geometry.clientSize.Height}).Height
+	return li.MinSizeForSize(Size{width, li.geometry.ClientSize.Height}).Height
 }
 
 func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
@@ -139,14 +139,14 @@ func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
 		var maxSecondary int
 
 		for _, item := range layoutItems {
-			if hfw, ok := item.item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
-				item.bounds.Height = hfw.HeightForWidth(item.bounds.Width)
+			if hfw, ok := item.Item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
+				item.Bounds.Height = hfw.HeightForWidth(item.Bounds.Width)
 			} else {
-				min := li.MinSizeEffectiveForChild(item.item)
-				item.bounds.Height = min.Height
+				min := li.MinSizeEffectiveForChild(item.Item)
+				item.Bounds.Height = min.Height
 			}
 
-			maxSecondary = maxi(maxSecondary, item.bounds.Height)
+			maxSecondary = maxi(maxSecondary, item.Bounds.Height)
 		}
 
 		s.Height += maxSecondary
@@ -167,7 +167,7 @@ func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
 }
 
 func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
-	bounds := Rectangle{Width: li.geometry.clientSize.Width, Height: li.geometry.clientSize.Height}
+	bounds := Rectangle{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
 
 	sections := li.sectionsForPrimarySize(bounds.Width)
 
@@ -194,13 +194,13 @@ func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
 		var maxSecondary int
 
 		for _, item := range layoutItems {
-			if hfw, ok := item.item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
-				item.bounds.Height = hfw.HeightForWidth(item.bounds.Width)
+			if hfw, ok := item.Item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
+				item.Bounds.Height = hfw.HeightForWidth(item.Bounds.Width)
 			} else {
-				item.bounds.Height = li.MinSizeEffectiveForChild(item.item).Height
+				item.Bounds.Height = li.MinSizeEffectiveForChild(item.Item).Height
 			}
 
-			maxSecondary = maxi(maxSecondary, item.bounds.Height)
+			maxSecondary = maxi(maxSecondary, item.Bounds.Height)
 		}
 
 		bounds.Height = maxSecondary + margins.VNear + margins.VFar

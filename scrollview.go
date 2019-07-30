@@ -301,7 +301,7 @@ func (sv *ScrollView) scroll(sb int32, cmd uint16) int {
 func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	svli := new(scrollViewLayoutItem)
 	svli.ctx = ctx
-	cli := createLayoutItemsForContainerWithContext(sv.composite, ctx)
+	cli := CreateLayoutItemsForContainerWithContext(sv.composite, ctx)
 	cli.AsLayoutItemBase().parent = svli
 	svli.children = append(svli.children, cli)
 
@@ -326,7 +326,7 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		svli.layoutFlags |= ShrinkableHorz | GrowableHorz | GreedyHorz
 
 		if !v {
-			if svli.idealSize.Width > sv.geometry.clientSize.Width {
+			if svli.idealSize.Width > sv.geometry.ClientSize.Width {
 				svli.sbSize.Height = int(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(ctx.dpi)))
 				svli.idealSize.Height += svli.sbSize.Height
 			}
@@ -339,7 +339,7 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		svli.layoutFlags |= GreedyVert | GrowableVert | ShrinkableVert
 
 		if !h {
-			if svli.idealSize.Height > sv.geometry.clientSize.Height {
+			if svli.idealSize.Height > sv.geometry.ClientSize.Height {
 				svli.sbSize.Width = int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))
 				svli.idealSize.Width += svli.sbSize.Width
 			}
@@ -398,7 +398,7 @@ func (li *scrollViewLayoutItem) HeightForWidth(width int) int {
 func (li *scrollViewLayoutItem) PerformLayout() []LayoutResultItem {
 	composite := li.children[0]
 
-	clientSize := li.geometry.size
+	clientSize := li.geometry.Size
 	clientSize.Width -= li.sbSize.Width
 	clientSize.Height -= li.sbSize.Height
 
@@ -431,8 +431,8 @@ func (li *scrollViewLayoutItem) PerformLayout() []LayoutResultItem {
 
 	return []LayoutResultItem{
 		{
-			item:   composite,
-			bounds: Rectangle{x, y, s.Width, s.Height},
+			Item:   composite,
+			Bounds: Rectangle{x, y, s.Width, s.Height},
 		},
 	}
 }

@@ -171,11 +171,11 @@ func (li *boxLayoutItem) IdealSize() Size {
 }
 
 func (li *boxLayoutItem) MinSize() Size {
-	return li.MinSizeForSize(li.geometry.clientSize)
+	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
 func (li *boxLayoutItem) HeightForWidth(width int) int {
-	return li.MinSizeForSize(Size{width, li.geometry.clientSize.Height}).Height
+	return li.MinSizeForSize(Size{width, li.geometry.ClientSize.Height}).Height
 }
 
 func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
@@ -193,25 +193,24 @@ func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 	s := Size{li.margins.HNear + li.margins.HFar, li.margins.VNear + li.margins.VFar}
 
 	var maxSecondary int
-
 	for _, item := range items {
-		min := li.MinSizeEffectiveForChild(item.item)
+		min := li.MinSizeEffectiveForChild(item.Item)
 
-		if hfw, ok := item.item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
-			item.bounds.Height = hfw.HeightForWidth(item.bounds.Width)
+		if hfw, ok := item.Item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
+			item.Bounds.Height = hfw.HeightForWidth(item.Bounds.Width)
 		} else {
-			item.bounds.Height = min.Height
+			item.Bounds.Height = min.Height
 		}
-		item.bounds.Width = min.Width
+		item.Bounds.Width = min.Width
 
 		if li.orientation == Horizontal {
-			maxSecondary = maxi(maxSecondary, item.bounds.Height)
+			maxSecondary = maxi(maxSecondary, item.Bounds.Height)
 
-			s.Width += item.bounds.Width
+			s.Width += item.Bounds.Width
 		} else {
-			maxSecondary = maxi(maxSecondary, item.bounds.Width)
+			maxSecondary = maxi(maxSecondary, item.Bounds.Width)
 
-			s.Height += item.bounds.Height
+			s.Height += item.Bounds.Height
 		}
 	}
 
@@ -231,7 +230,7 @@ func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 }
 
 func (li *boxLayoutItem) PerformLayout() []LayoutResultItem {
-	cb := Rectangle{Width: li.geometry.clientSize.Width, Height: li.geometry.clientSize.Height}
+	cb := Rectangle{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
 	return boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, cb, li.margins, li.spacing, li.hwnd2StretchFactor)
 }
 
@@ -312,7 +311,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 		flags := item.LayoutFlags()
 
-		max := geometry.maxSize
+		max := geometry.MaxSize
 		var pref Size
 		if hfw, ok := item.(HeightForWidther); !ok || !hfw.HasHeightForWidth() {
 			if is, ok := item.(IdealSizer); ok {
@@ -450,7 +449,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 			s2 = prefSizes2[i]
 		}
 
-		align := item.Geometry().alignment
+		align := item.Geometry().Alignment
 		if align == AlignHVDefault {
 			align = alignment
 		}
@@ -533,7 +532,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 		p1 += s1 + spacing
 
-		results = append(results, LayoutResultItem{item: item, bounds: Rectangle{X: x, Y: y, Width: w, Height: h}})
+		results = append(results, LayoutResultItem{Item: item, Bounds: Rectangle{X: x, Y: y, Width: w, Height: h}})
 	}
 
 	return results

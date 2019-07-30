@@ -2258,8 +2258,8 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		if wp.Flags&win.SWP_NOSIZE == 0 {
 			if widget, ok := wb.window.(Widget); ok {
 				wb := widget.AsWidgetBase()
-				wb.geometry.size = wb.window.SizePixels()
-				wb.geometry.clientSize = Size{int(wp.Cx), int(wp.Cy)}
+				wb.geometry.Size = wb.window.SizePixels()
+				wb.geometry.ClientSize = Size{int(wp.Cx), int(wp.Cy)}
 
 				wb.invalidateBorderInParent()
 			}

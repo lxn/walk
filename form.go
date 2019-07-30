@@ -225,7 +225,7 @@ func (fb *FormBase) SetLayout(value Layout) error {
 
 func (fb *FormBase) SetBoundsPixels(bounds Rectangle) error {
 	if layout := fb.Layout(); layout != nil {
-		layoutItem := createLayoutItemsForContainer(fb)
+		layoutItem := CreateLayoutItemsForContainer(fb)
 		minSize := fb.sizeFromClientSizePixels(layoutItem.MinSizeForSize(bounds.Size()))
 		minSize = fb.sizeFromClientSizePixels(layoutItem.MinSizeForSize(minSize))
 
@@ -661,7 +661,7 @@ func (fb *FormBase) RestoreState() error {
 	wp.Length = uint32(unsafe.Sizeof(wp))
 
 	if layout := fb.Layout(); layout != nil && fb.fixedSize() {
-		layoutItem := createLayoutItemsForContainer(fb)
+		layoutItem := CreateLayoutItemsForContainer(fb)
 		minSize := fb.sizeFromClientSizePixels(layoutItem.MinSize())
 
 		wp.RcNormalPosition.Right = wp.RcNormalPosition.Left + int32(minSize.Width) - 1
@@ -703,8 +703,8 @@ func (fb *FormBase) startLayout() bool {
 
 	fb.clientComposite.SetBoundsPixels(Rectangle{cb.X, cb.Y, cs.Width, cs.Height})
 
-	cli := createLayoutItemsForContainer(fb)
-	cli.Geometry().clientSize = cs
+	cli := CreateLayoutItemsForContainer(fb)
+	cli.Geometry().ClientSize = cs
 
 	fb.performLayout <- cli
 
@@ -763,7 +763,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		var min Size
 		if layout := fb.clientComposite.layout; layout != nil {
 			size := fb.clientSizeFromSizePixels(fb.proposedSize)
-			layoutItem := createLayoutItemsForContainer(fb)
+			layoutItem := CreateLayoutItemsForContainer(fb)
 			min = fb.sizeFromClientSizePixels(layoutItem.MinSizeForSize(size))
 
 			if fb.proposedSize.Width < min.Width {

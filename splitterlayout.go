@@ -217,11 +217,11 @@ func (li *splitterContainerLayoutItem) LayoutFlags() LayoutFlags {
 }
 
 func (li *splitterContainerLayoutItem) MinSize() Size {
-	return li.MinSizeForSize(li.geometry.clientSize)
+	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
 func (li *splitterContainerLayoutItem) HeightForWidth(width int) int {
-	return li.MinSizeForSize(Size{width, li.geometry.clientSize.Height}).Height
+	return li.MinSizeForSize(Size{width, li.geometry.ClientSize.Height}).Height
 }
 
 func (li *splitterContainerLayoutItem) MinSizeForSize(size Size) Size {
@@ -236,7 +236,7 @@ func (li *splitterContainerLayoutItem) MinSizeForSize(size Size) Size {
 		var cur Size
 
 		if sli, ok := li.hwnd2Item[item.Handle()]; ok && li.anyNonFixed && sli.fixed {
-			cur = item.Geometry().size
+			cur = item.Geometry().Size
 
 			if li.orientation == Horizontal {
 				cur.Height = 0
@@ -265,7 +265,7 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 	}
 
 	sizes := make([]int, len(li.children))
-	cb := Rectangle{Width: li.geometry.clientSize.Width, Height: li.geometry.clientSize.Height}
+	cb := Rectangle{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
 	cb.X += li.margins.HNear
 	cb.Y += li.margins.HFar
 	cb.Width -= li.margins.HNear + li.margins.HFar
@@ -320,7 +320,7 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 					var min, max int
 
 					minSize := li.MinSizeEffectiveForChild(item)
-					maxSize := item.Geometry().maxSize
+					maxSize := item.Geometry().MaxSize
 
 					if li.orientation == Horizontal {
 						min = minSize.Width
@@ -403,7 +403,7 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 			x, y, w, h = li.margins.HNear, p1, space2, s1
 		}
 
-		resultItems = append(resultItems, LayoutResultItem{item: item, bounds: Rectangle{x, y, w, h}})
+		resultItems = append(resultItems, LayoutResultItem{Item: item, Bounds: Rectangle{x, y, w, h}})
 
 		p1 += s1
 	}
@@ -470,9 +470,9 @@ func (li *splitterContainerLayoutItem) reset() {
 
 	var regularSpace int
 	if li.orientation == Horizontal {
-		regularSpace = li.Geometry().clientSize.Width - li.spaceUnavailableToRegularItems
+		regularSpace = li.Geometry().ClientSize.Width - li.spaceUnavailableToRegularItems
 	} else {
-		regularSpace = li.Geometry().clientSize.Height - li.spaceUnavailableToRegularItems
+		regularSpace = li.Geometry().ClientSize.Height - li.spaceUnavailableToRegularItems
 	}
 
 	stretchTotal := 0

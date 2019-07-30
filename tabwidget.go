@@ -686,7 +686,7 @@ func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	for i := tw.pages.Len() - 1; i >= 0; i-- {
 		var page LayoutItem
 		if p := tw.pages.At(i); p.Layout() != nil {
-			page = createLayoutItemsForContainerWithContext(p, ctx)
+			page = CreateLayoutItemsForContainerWithContext(p, ctx)
 		} else {
 			page = NewGreedyLayoutItem()
 		}
@@ -738,8 +738,8 @@ func (li *tabWidgetLayoutItem) MinSize() Size {
 		}
 	}
 
-	s := li.geometry.size
-	ps := li.children[0].Geometry().size
+	s := li.geometry.Size
+	ps := li.children[0].Geometry().Size
 
 	size := Size{s.Width - ps.Width + min.Width, s.Height - ps.Height + min.Height}
 
@@ -770,8 +770,8 @@ func (li *tabWidgetLayoutItem) HeightForWidth(width int) int {
 	}
 
 	var height int
-	margin := li.geometry.size
-	pageSize := li.children[0].Geometry().size
+	margin := li.geometry.Size
+	pageSize := li.children[0].Geometry().Size
 
 	margin.Width -= pageSize.Width
 	margin.Height -= pageSize.Height
@@ -797,8 +797,8 @@ func (li *tabWidgetLayoutItem) PerformLayout() []LayoutResultItem {
 
 		return []LayoutResultItem{
 			{
-				item:   page,
-				bounds: Rectangle{X: li.pagePos.X, Y: li.pagePos.Y, Width: li.geometry.size.Width - li.pagePos.X*2 - 1, Height: li.geometry.size.Height - li.pagePos.Y - 2},
+				Item:   page,
+				Bounds: Rectangle{X: li.pagePos.X, Y: li.pagePos.Y, Width: li.geometry.Size.Width - li.pagePos.X*2 - 1, Height: li.geometry.Size.Height - li.pagePos.Y - 2},
 			},
 		}
 	}
