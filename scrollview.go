@@ -212,6 +212,10 @@ func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			}
 
 			sv.updateScrollBars()
+
+			if h, v := sv.Scrollbars(); !h || !v {
+				sv.RequestLayout()
+			}
 		}
 	}
 
@@ -314,23 +318,33 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	}
 
 	svli.idealSize = cli.MinSize()
-	cb := sv.ClientBoundsPixels()
+	svli.minSize = sv.SizeFrom96DPI(Size{100, 100})
 
 	h, v := sv.Scrollbars()
 
 	if h {
 		svli.layoutFlags |= ShrinkableHorz | GrowableHorz | GreedyHorz
 
-		if !v && svli.idealSize.Width > cb.Width {
-			svli.idealSize.Height += int(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(sv.DPI())))
+		if !v {
+			if svli.idealSize.Width > sv.geometry.clientSize.Width {
+				svli.sbSize.Height = int(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(ctx.dpi)))
+				svli.idealSize.Height += svli.sbSize.Height
+			}
+
+			svli.minSize.Height = svli.idealSize.Height
 		}
 	}
 
 	if v {
 		svli.layoutFlags |= GreedyVert | GrowableVert | ShrinkableVert
 
-		if !h && svli.idealSize.Height > cb.Height {
-			svli.idealSize.Width += int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(sv.DPI())))
+		if !h {
+			if svli.idealSize.Height > sv.geometry.clientSize.Height {
+				svli.sbSize.Width = int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))
+				svli.idealSize.Width += svli.sbSize.Width
+			}
+
+			svli.minSize.Width = svli.idealSize.Width
 		}
 	}
 
@@ -350,6 +364,8 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type scrollViewLayoutItem struct {
 	ContainerLayoutItemBase
 	idealSize   Size
+	minSize     Size
+	sbSize      Size
 	layoutFlags LayoutFlags
 	scrollX     float64
 	scrollY     float64
@@ -364,7 +380,7 @@ func (li *scrollViewLayoutItem) IdealSize() Size {
 }
 
 func (li *scrollViewLayoutItem) MinSize() Size {
-	return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
+	return li.minSize
 }
 
 func (li *scrollViewLayoutItem) MinSizeForSize(size Size) Size {
@@ -383,6 +399,8 @@ func (li *scrollViewLayoutItem) PerformLayout() []LayoutResultItem {
 	composite := li.children[0]
 
 	clientSize := li.geometry.size
+	clientSize.Width -= li.sbSize.Width
+	clientSize.Height -= li.sbSize.Height
 
 	minSize := composite.(MinSizeForSizer).MinSizeForSize(clientSize)
 	if hfw, ok := composite.(HeightForWidther); ok && hfw.HasHeightForWidth() {
