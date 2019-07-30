@@ -248,7 +248,14 @@ func (s *Splitter) RestoreState() error {
 		s.SetSuspended(false)
 	}()
 
-	regularSpace := layout.spaceForRegularWidgets()
+	var space int
+	size := s.ClientBoundsPixels().Size()
+	if s.Orientation() == Horizontal {
+		space = size.Width
+	} else {
+		space = size.Height
+	}
+	regularSpace := space - layout.spaceUnavailableToRegularWidgets()
 
 	for i, wb := range s.children.items {
 		widget := wb.window.(Widget)
@@ -348,6 +355,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 		layout.hwnd2Item[widget.Handle()] = item
 		item.visibleChangedHandle = widget.VisibleChanged().Attach(func() {
 			if !layout.suspended && widget.AsWidgetBase().visible != item.wasVisible {
+				layout.resetNeeded = true
 				s.RequestLayout()
 			}
 		})
@@ -576,6 +584,7 @@ func (s *Splitter) onRemovedWidget(index int, widget Widget) (err error) {
 					item.keepSize = false
 				}
 
+				sl.resetNeeded = true
 				s.RequestLayout()
 
 				handle.Dispose()

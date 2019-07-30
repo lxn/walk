@@ -152,20 +152,19 @@ func (l *splitterLayout) anyNonFixed() bool {
 	return false
 }
 
-func (l *splitterLayout) spaceForRegularWidgets() int {
+func (l *splitterLayout) spaceUnavailableToRegularWidgets() int {
 	splitter := l.container.(*Splitter)
-	s := splitter.ClientBoundsPixels().Size()
 
 	var space int
 	if l.orientation == Horizontal {
-		space = s.Width - l.margins.HNear - l.margins.HFar
+		space = l.margins.HNear + l.margins.HFar
 	} else {
-		space = s.Height - l.margins.VNear - l.margins.VFar
+		space = l.margins.VNear + l.margins.VFar
 	}
 
 	for _, widget := range l.container.Children().items {
 		if _, isHandle := widget.window.(*splitterHandle); isHandle && widget.visible {
-			space -= splitter.handleWidth
+			space += splitter.handleWidth
 		}
 	}
 
@@ -180,22 +179,28 @@ func (l splitterLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem
 		hwnd2Item[hwnd] = sli
 	}
 
-	return &splitterContainerLayoutItem{
-		orientation:          l.orientation,
-		hwnd2Item:            hwnd2Item,
-		spaceForRegularItems: l.spaceForRegularWidgets(),
-		handleWidth:          splitter.HandleWidth(),
-		anyNonFixed:          l.anyNonFixed(),
+	li := &splitterContainerLayoutItem{
+		orientation:                    l.orientation,
+		hwnd2Item:                      hwnd2Item,
+		spaceUnavailableToRegularItems: l.spaceUnavailableToRegularWidgets(),
+		handleWidth:                    splitter.HandleWidth(),
+		anyNonFixed:                    l.anyNonFixed(),
+		resetNeeded:                    l.resetNeeded,
 	}
+
+	l.resetNeeded = false
+
+	return li
 }
 
 type splitterContainerLayoutItem struct {
 	ContainerLayoutItemBase
-	orientation          Orientation
-	hwnd2Item            map[win.HWND]*splitterLayoutItem
-	spaceForRegularItems int
-	handleWidth          int
-	anyNonFixed          bool
+	orientation                    Orientation
+	hwnd2Item                      map[win.HWND]*splitterLayoutItem
+	spaceUnavailableToRegularItems int
+	handleWidth                    int
+	anyNonFixed                    bool
+	resetNeeded                    bool
 }
 
 func (li *splitterContainerLayoutItem) StretchFactor(item LayoutItem) int {
@@ -255,7 +260,9 @@ func (li *splitterContainerLayoutItem) MinSizeForSize(size Size) Size {
 }
 
 func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
-	li.reset()
+	if li.resetNeeded {
+		li.reset()
+	}
 
 	sizes := make([]int, len(li.children))
 	cb := Rectangle{Width: li.geometry.clientSize.Width, Height: li.geometry.clientSize.Height}
@@ -263,12 +270,13 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 	cb.Y += li.margins.HFar
 	cb.Width -= li.margins.HNear + li.margins.HFar
 	cb.Height -= li.margins.VNear + li.margins.VFar
-	space1 := li.spaceForRegularItems
 
-	var space2 int
+	var space1, space2 int
 	if li.orientation == Horizontal {
+		space1 = cb.Width - li.spaceUnavailableToRegularItems
 		space2 = cb.Height
 	} else {
+		space1 = cb.Height - li.spaceUnavailableToRegularItems
 		space2 = cb.Width
 	}
 
@@ -396,6 +404,8 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 		}
 
 		resultItems = append(resultItems, LayoutResultItem{item: item, bounds: Rectangle{x, y, w, h}})
+
+		p1 += s1
 	}
 
 	return resultItems
@@ -457,7 +467,13 @@ func (li *splitterContainerLayoutItem) reset() {
 			minSizesTotal += min.Height
 		}
 	}
-	regularSpace := li.spaceForRegularItems
+
+	var regularSpace int
+	if li.orientation == Horizontal {
+		regularSpace = li.Geometry().clientSize.Width - li.spaceUnavailableToRegularItems
+	} else {
+		regularSpace = li.Geometry().clientSize.Height - li.spaceUnavailableToRegularItems
+	}
 
 	stretchTotal := 0
 	for i, item := range li.children {
