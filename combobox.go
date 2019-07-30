@@ -682,6 +682,10 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	return cb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
+func (*ComboBox) needsWmSize() bool {
+	return true
+}
+
 func (cb *ComboBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	var layoutFlags LayoutFlags
 	if cb.Editable() {
@@ -697,7 +701,7 @@ func (cb *ComboBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	}
 
 	// FIXME: Use GetThemePartSize instead of guessing
-	w := maxi(defaultSize.Width, cb.maxItemTextWidth+int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(cb.DPI())))+8)
+	w := maxi(defaultSize.Width, cb.maxItemTextWidth+int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))+8)
 	h := defaultSize.Height + 1
 
 	return &comboBoxLayoutItem{

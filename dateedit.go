@@ -244,6 +244,10 @@ func (de *DateEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	return de.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
+func (*DateEdit) needsWmSize() bool {
+	return true
+}
+
 func (de *DateEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	return &dateEditLayoutItem{
 		idealSize: de.dialogBaseUnitsToPixels(Size{80, 12}),
