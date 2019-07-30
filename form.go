@@ -110,6 +110,7 @@ type FormBase struct {
 	proposedSize          Size
 	closeReason           CloseReason
 	inSizingLoop          bool
+	startingLayoutViaSizingLoop bool
 	isInRestoreState      bool
 	started               bool
 	didSetFocus           bool
@@ -693,7 +694,7 @@ func (fb *FormBase) SetStopwatch(sw *Stopwatch) {
 }
 
 func (fb *FormBase) startLayout() bool {
-	if fb.performLayout == nil {
+	if fb.performLayout == nil || fb.inSizingLoop && !fb.startingLayoutViaSizingLoop {
 		return false
 	}
 
@@ -801,7 +802,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			fb.didSetFocus = false
 		}
 
-		if wp.Flags&win.SWP_NOSIZE != 0 || fb.Layout() == nil {
+		if wp.Flags&win.SWP_NOSIZE != 0 || fb.Layout() == nil || fb.Suspended() {
 			break
 		}
 
@@ -809,12 +810,18 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		const performingLayoutSubject = "*FormBase.WndProc - WM_WINDOWPOSCHANGED - full layout from sizing loop"
 
-		if fb.inSizingLoop && fb.stopwatch != nil {
-			fb.stopwatch.Start(performingLayoutSubject)
+		if fb.inSizingLoop {
+			fb.startingLayoutViaSizingLoop = true
+
+			if fb.stopwatch != nil {
+				fb.stopwatch.Start(performingLayoutSubject)
+			}
 		}
 
 		if fb.startLayout() {
 			if fb.inSizingLoop {
+				fb.startingLayoutViaSizingLoop = false
+
 				applyLayoutResults(<-fb.layoutResults, fb.stopwatch)
 
 				if fb.stopwatch != nil {
