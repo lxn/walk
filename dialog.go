@@ -233,3 +233,24 @@ func (dlg *Dialog) Run() int {
 
 	return dlg.result
 }
+
+func (dlg *Dialog) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	switch msg {
+	case win.WM_COMMAND:
+		if wphi := win.HIWORD(uint32(wParam)); wphi == 0 {
+			switch win.LOWORD(uint32(wParam)) {
+			case DlgCmdOK:
+			if dlg.defaultButton != nil {
+				dlg.defaultButton.raiseClicked()
+			}
+
+			case DlgCmdCancel:
+				if dlg.cancelButton != nil {
+					dlg.cancelButton.raiseClicked()
+				}	
+			}
+		}
+	}
+
+	return dlg.FormBase.WndProc(hwnd, msg, wParam, lParam)
+}
