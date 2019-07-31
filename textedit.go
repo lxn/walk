@@ -267,7 +267,7 @@ func (te *TextEdit) SetTextColor(c Color) {
 	te.Invalidate()
 }
 
-func (*TextEdit) needsWmSize() bool {
+func (*TextEdit) NeedsWmSize() bool {
 	return true
 }
 

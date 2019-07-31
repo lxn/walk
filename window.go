@@ -2269,7 +2269,7 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 		wb.boundsChangedPublisher.Publish()
 
-		if nws, ok := wb.window.(interface{ needsWmSize() bool }); !ok || !nws.needsWmSize() {
+		if nws, ok := wb.window.(interface{ NeedsWmSize() bool }); !ok || !nws.NeedsWmSize() {
 			return 0
 		}
 

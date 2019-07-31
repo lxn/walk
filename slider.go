@@ -170,7 +170,7 @@ func (sl *Slider) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uin
 	return sl.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func (*Slider) needsWmSize() bool {
+func (*Slider) NeedsWmSize() bool {
 	return true
 }
 

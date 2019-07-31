@@ -298,7 +298,7 @@ func (le *LineEdit) SetTextColor(c Color) {
 	le.Invalidate()
 }
 
-func (*LineEdit) needsWmSize() bool {
+func (*LineEdit) NeedsWmSize() bool {
 	return true
 }
 

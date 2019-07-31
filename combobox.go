@@ -682,7 +682,7 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	return cb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func (*ComboBox) needsWmSize() bool {
+func (*ComboBox) NeedsWmSize() bool {
 	return true
 }
 

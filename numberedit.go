@@ -372,7 +372,7 @@ func (ne *NumberEdit) SetTextColor(c Color) {
 	ne.edit.SetTextColor(c)
 }
 
-func (*NumberEdit) needsWmSize() bool {
+func (*NumberEdit) NeedsWmSize() bool {
 	return true
 }
 

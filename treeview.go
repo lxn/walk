@@ -582,7 +582,7 @@ func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	return tv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func (*TreeView) needsWmSize() bool {
+func (*TreeView) NeedsWmSize() bool {
 	return true
 }
 

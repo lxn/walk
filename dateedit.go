@@ -244,7 +244,7 @@ func (de *DateEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	return de.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func (*DateEdit) needsWmSize() bool {
+func (*DateEdit) NeedsWmSize() bool {
 	return true
 }
 
