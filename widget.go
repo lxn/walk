@@ -326,9 +326,7 @@ func (wb *WidgetBase) SetParent(parent Container) (err error) {
 		}
 
 		if cb := parent.AsContainerBase(); cb != nil {
-			if win.SetWindowLong(wb.hWnd, win.GWL_ID, cb.NextChildID()) == 0 {
-				return lastError("SetWindowLong")
-			}
+			win.SetWindowLong(wb.hWnd, win.GWL_ID, cb.NextChildID())
 		}
 	}
 
