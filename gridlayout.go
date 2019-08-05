@@ -737,7 +737,7 @@ func (li *gridLayoutItem) sectionSizesForSpace(orientation Orientation, space in
 
 				if max.Height > 0 {
 					maxSizes[i] = maxi(maxSizes[i], max.Height)
-				} else if hfw, ok := item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
+				} else if hfw, ok := item.(HeightForWidther); ok && flags&GrowableVert == 0 && hfw.HasHeightForWidth() {
 					maxSizes[i] = minSizes[i]
 				} else if pref.Height > 0 && flags&GrowableVert == 0 {
 					maxSizes[i] = maxi(maxSizes[i], pref.Height)

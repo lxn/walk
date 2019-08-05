@@ -346,7 +346,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 			if max.Height > 0 {
 				maxSizes[i] = max.Height
-			} else if hfw, ok := item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
+			} else if hfw, ok := item.(HeightForWidther); ok && flags&GrowableVert == 0 && hfw.HasHeightForWidth() {
 				maxSizes[i] = minSizes[i]
 			} else if pref.Height > 0 && flags&GrowableVert == 0 {
 				maxSizes[i] = pref.Height
@@ -441,7 +441,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 		s1 := sizes[i]
 
 		var s2 int
-		if hfw, ok := item.(HeightForWidther); ok && hfw.HasHeightForWidth() && orientation == Horizontal {
+		if hfw, ok := item.(HeightForWidther); ok && orientation == Horizontal && hfw.HasHeightForWidth() {
 			s2 = hfw.HeightForWidth(s1)
 		} else if growable2[i] {
 			s2 = space2
