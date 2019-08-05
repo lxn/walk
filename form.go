@@ -89,32 +89,31 @@ type Form interface {
 
 type FormBase struct {
 	WindowBase
-	clientComposite       *Composite
-	owner                 Form
-	stopwatch             *Stopwatch
-	inProgressEventCount  int
-	performLayout         chan ContainerLayoutItem
-	layoutResults         chan []LayoutResult
-	inSizeLoop            chan bool
-	updateStopwatch       chan *Stopwatch
-	quitLayoutPerformer   chan struct{}
-	closingPublisher      CloseEventPublisher
-	activatingPublisher   EventPublisher
-	deactivatingPublisher EventPublisher
-	startingPublisher     EventPublisher
-	titleChangedPublisher EventPublisher
-	iconChangedPublisher  EventPublisher
-	progressIndicator     *ProgressIndicator
-	icon                  Image
-	prevFocusHWnd         win.HWND
-	proposedSize          Size
-	closeReason           CloseReason
-	inSizingLoop          bool
+	clientComposite             *Composite
+	owner                       Form
+	stopwatch                   *Stopwatch
+	inProgressEventCount        int
+	performLayout               chan ContainerLayoutItem
+	layoutResults               chan []LayoutResult
+	inSizeLoop                  chan bool
+	updateStopwatch             chan *Stopwatch
+	quitLayoutPerformer         chan struct{}
+	closingPublisher            CloseEventPublisher
+	activatingPublisher         EventPublisher
+	deactivatingPublisher       EventPublisher
+	startingPublisher           EventPublisher
+	titleChangedPublisher       EventPublisher
+	iconChangedPublisher        EventPublisher
+	progressIndicator           *ProgressIndicator
+	icon                        Image
+	prevFocusHWnd               win.HWND
+	proposedSize                Size
+	closeReason                 CloseReason
+	inSizingLoop                bool
 	startingLayoutViaSizingLoop bool
-	isInRestoreState      bool
-	started               bool
-	didSetFocus           bool
-	layoutScheduled       bool
+	isInRestoreState            bool
+	started                     bool
+	layoutScheduled             bool
 }
 
 func (fb *FormBase) init(form Form) error {
@@ -798,10 +797,6 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			fb.startLayout()
 		}
 
-		if wp.Flags&win.SWP_HIDEWINDOW != 0 {
-			fb.didSetFocus = false
-		}
-
 		if wp.Flags&win.SWP_NOSIZE != 0 || fb.Layout() == nil || fb.Suspended() {
 			break
 		}
@@ -828,12 +823,6 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 					fb.stopwatch.Stop(performingLayoutSubject)
 				}
 			}
-		}
-
-	case win.WM_PAINT:
-		if !fb.didSetFocus && fb.Visible() {
-			fb.didSetFocus = true
-			fb.clientComposite.focusFirstCandidateDescendant()
 		}
 
 	case win.WM_SYSCOLORCHANGE:
