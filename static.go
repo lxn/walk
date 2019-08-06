@@ -270,18 +270,25 @@ func staticWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 }
 
 func (s *static) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	var layoutFlags LayoutFlags
+	if s.textAlignment1D() != AlignNear {
+		layoutFlags = GrowableHorz
+	}
+
 	return &staticLayoutItem{
-		idealSize: s.calculateTextSize(),
+		layoutFlags: layoutFlags,
+		idealSize:   s.calculateTextSize(),
 	}
 }
 
 type staticLayoutItem struct {
 	LayoutItemBase
-	idealSize Size
+	layoutFlags LayoutFlags
+	idealSize   Size
 }
 
 func (li *staticLayoutItem) LayoutFlags() LayoutFlags {
-	return 0
+	return li.layoutFlags
 }
 
 func (li *staticLayoutItem) IdealSize() Size {
