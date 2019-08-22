@@ -27,19 +27,23 @@ type HSpacer struct {
 
 	// Spacer
 
-	Size int
+	GreedyLocallyOnly bool
+	Size              int
 }
 
 func (hs HSpacer) Create(builder *Builder) (err error) {
+	var flags walk.LayoutFlags
+	if hs.Size == 0 {
+		flags = walk.ShrinkableHorz | walk.GrowableHorz | walk.GreedyHorz
+	}
+
 	var w *walk.Spacer
-	if hs.Size > 0 {
-		if w, err = walk.NewHSpacerFixed(builder.Parent(), hs.Size); err != nil {
-			return
-		}
-	} else {
-		if w, err = walk.NewHSpacer(builder.Parent()); err != nil {
-			return
-		}
+	if w, err = walk.NewSpacerWithCfg(builder.Parent(), &walk.SpacerCfg{
+		LayoutFlags:       flags,
+		SizeHint:          walk.Size{Width: hs.Size},
+		GreedyLocallyOnly: hs.GreedyLocallyOnly,
+	}); err != nil {
+		return
 	}
 
 	return builder.InitWidget(hs, w, nil)
@@ -62,19 +66,23 @@ type VSpacer struct {
 
 	// Spacer
 
-	Size int
+	GreedyLocallyOnly bool
+	Size              int
 }
 
 func (vs VSpacer) Create(builder *Builder) (err error) {
+	var flags walk.LayoutFlags
+	if vs.Size == 0 {
+		flags = walk.ShrinkableVert | walk.GrowableVert | walk.GreedyVert
+	}
+
 	var w *walk.Spacer
-	if vs.Size > 0 {
-		if w, err = walk.NewVSpacerFixed(builder.Parent(), vs.Size); err != nil {
-			return
-		}
-	} else {
-		if w, err = walk.NewVSpacer(builder.Parent()); err != nil {
-			return
-		}
+	if w, err = walk.NewSpacerWithCfg(builder.Parent(), &walk.SpacerCfg{
+		LayoutFlags:       flags,
+		SizeHint:          walk.Size{Height: vs.Size},
+		GreedyLocallyOnly: vs.GreedyLocallyOnly,
+	}); err != nil {
+		return
 	}
 
 	return builder.InitWidget(vs, w, nil)

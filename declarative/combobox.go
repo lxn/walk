@@ -19,6 +19,7 @@ type ComboBox struct {
 
 	Background         Brush
 	ContextMenuItems   []MenuItem
+	DoubleBuffering    bool
 	Enabled            Property
 	Font               Font
 	MaxSize            Size
@@ -39,6 +40,7 @@ type ComboBox struct {
 
 	// Widget
 
+	Alignment          Alignment2D
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
@@ -87,6 +89,7 @@ func (cb ComboBox) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(cb, w, func() error {
+		w.SetPersistent(cb.Persistent)
 		w.SetFormat(cb.Format)
 		w.SetPrecision(cb.Precision)
 		w.SetMaxLength(cb.MaxLength)

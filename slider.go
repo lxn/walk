@@ -20,19 +20,31 @@ type Slider struct {
 	persistent            bool
 }
 
+type SliderCfg struct {
+	Orientation    Orientation
+	ToolTipsHidden bool
+}
+
 func NewSlider(parent Container) (*Slider, error) {
 	return NewSliderWithOrientation(parent, Horizontal)
 }
 
 func NewSliderWithOrientation(parent Container, orientation Orientation) (*Slider, error) {
+	return NewSliderWithCfg(parent, &SliderCfg{Orientation: orientation})
+}
+
+func NewSliderWithCfg(parent Container, cfg *SliderCfg) (*Slider, error) {
 	sl := new(Slider)
 
-	var style uint32 = win.WS_TABSTOP | win.WS_VISIBLE | win.TBS_TOOLTIPS
-	if orientation == Vertical {
+	var style uint32 = win.WS_TABSTOP | win.WS_VISIBLE
+	if cfg.Orientation == Vertical {
 		style |= win.TBS_VERT
-		sl.layoutFlags = ShrinkableVert | GrowableVert | GreedyVert
+		sl.layoutFlags = ShrinkableVert | GrowableVert
 	} else {
-		sl.layoutFlags = ShrinkableHorz | GrowableHorz | GreedyHorz
+		sl.layoutFlags = ShrinkableHorz | GrowableHorz
+	}
+	if !cfg.ToolTipsHidden {
+		style |= win.TBS_TOOLTIPS
 	}
 
 	if err := InitWidget(
@@ -54,7 +66,7 @@ func NewSliderWithOrientation(parent Container, orientation Orientation) (*Slide
 			return sl.Value()
 		},
 		func(v interface{}) error {
-			sl.SetValue(v.(int))
+			sl.SetValue(assertIntOr(v, 0))
 			return nil
 		},
 		sl.valueChangedPublisher.Event()))
@@ -127,6 +139,22 @@ func (sl *Slider) RestoreState() error {
 	sl.SetValue(value)
 
 	return nil
+}
+
+func (sl *Slider) LineSize() int {
+	return int(sl.SendMessage(win.TBM_GETLINESIZE, 0, 0))
+}
+
+func (sl *Slider) SetLineSize(lineSize int) {
+	sl.SendMessage(win.TBM_SETLINESIZE, 0, uintptr(lineSize))
+}
+
+func (sl *Slider) PageSize() int {
+	return int(sl.SendMessage(win.TBM_GETPAGESIZE, 0, 0))
+}
+
+func (sl *Slider) SetPageSize(pageSize int) {
+	sl.SendMessage(win.TBM_SETPAGESIZE, 0, uintptr(pageSize))
 }
 
 func (sl *Slider) Tracking() bool {

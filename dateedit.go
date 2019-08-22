@@ -45,7 +45,7 @@ func newDateEdit(parent Container, style uint32) (*DateEdit, error) {
 			return de.Date()
 		},
 		func(v interface{}) error {
-			return de.SetDate(v.(time.Time))
+			return de.SetDate(assertTimeOr(v, time.Time{}))
 		},
 		de.dateChangedPublisher.Event()))
 
@@ -160,7 +160,7 @@ func (de *DateEdit) SetFormat(format string) error {
 	lp := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(format)))
 
 	if 0 == de.SendMessage(win.DTM_SETFORMAT, 0, lp) {
-		return newErr("DTM_SETFORMAT failed")
+		return newError("DTM_SETFORMAT failed")
 	}
 
 	de.format = format

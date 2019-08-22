@@ -10,9 +10,7 @@ import (
 	"fmt"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -32,6 +30,7 @@ type ToolBar struct {
 	defaultButtonWidth int
 	maxTextRows        int
 	buttonStyle        ToolBarButtonStyle
+	action2bitmap      map[*Action]*Bitmap
 }
 
 func NewToolBarWithOrientationAndButtonStyle(parent Container, orientation Orientation, buttonStyle ToolBarButtonStyle) (*ToolBar, error) {
@@ -46,7 +45,10 @@ func NewToolBarWithOrientationAndButtonStyle(parent Container, orientation Orien
 		style |= win.TBSTYLE_LIST
 	}
 
-	tb := &ToolBar{buttonStyle: buttonStyle}
+	tb := &ToolBar{
+		buttonStyle:   buttonStyle,
+		action2bitmap: make(map[*Action]*Bitmap),
+	}
 	tb.actions = newActionList(tb)
 
 	if orientation == Vertical {
@@ -124,6 +126,50 @@ func (tb *ToolBar) SizeHint() Size {
 
 	return Size{width, height}
 }
+
+func (tb *ToolBar) applyFont(font *Font) {
+	tb.WidgetBase.applyFont(font)
+
+	tb.applyDefaultButtonWidth()
+
+	tb.updateParentLayout()
+}
+
+func (tb *ToolBar) ApplyDPI(dpi int) {
+	tb.WidgetBase.ApplyDPI(dpi)
+
+	var maskColor Color
+	var size Size
+	if tb.imageList != nil {
+		maskColor = tb.imageList.maskColor
+		size = tb.imageList.imageSize96dpi
+	} else {
+		size = Size{16, 16}
+	}
+
+	iml, err := newImageList(size, maskColor, dpi)
+	if err != nil {
+		return
+	}
+
+	tb.SendMessage(win.TB_SETIMAGELIST, 0, uintptr(iml.hIml))
+
+	if tb.imageList != nil {
+		tb.imageList.Dispose()
+	}
+
+	tb.imageList = iml
+
+	for _, action := range tb.actions.actions {
+		if action.image != nil {
+			tb.onActionChanged(action)
+		}
+	}
+
+	tb.hFont = tb.Font().handleForDPI(tb.DPI())
+	setWindowFont(tb.hWnd, tb.hFont)
+}
+
 func (tb *ToolBar) Orientation() Orientation {
 	style := win.GetWindowLong(tb.hWnd, win.GWL_STYLE)
 
@@ -143,8 +189,9 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 		return nil
 	}
 
-	lParam := uintptr(
-		win.MAKELONG(uint16(tb.defaultButtonWidth), uint16(tb.defaultButtonWidth)))
+	width := tb.IntFrom96DPI(tb.defaultButtonWidth)
+
+	lParam := uintptr(win.MAKELONG(uint16(width), uint16(width)))
 	if 0 == tb.SendMessage(win.TB_SETBUTTONWIDTH, 0, lParam) {
 		return newError("SendMessage(TB_SETBUTTONWIDTH)")
 	}
@@ -232,9 +279,17 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 }
 
 func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
+	if tb.imageList == nil {
+		iml, err := newImageList(Size{16, 16}, 0, tb.DPI())
+		if err != nil {
+			return 0, err
+		}
+
+		tb.SetImageList(iml)
+	}
+
 	imageIndex = -1
 	if image != nil {
-		// FIXME: Protect against duplicate insertion
 		if imageIndex, err = tb.imageList.AddMasked(image); err != nil {
 			return
 		}
@@ -248,8 +303,8 @@ func (tb *ToolBar) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 	case win.WM_MOUSEMOVE, win.WM_MOUSELEAVE, win.WM_LBUTTONDOWN:
 		tb.Invalidate()
 
-	case win.WM_PAINT:
-		tb.Invalidate()
+	// case win.WM_PAINT:
+	// 	tb.Invalidate()
 
 	case win.WM_COMMAND:
 		switch win.HIWORD(uint32(wParam)) {
@@ -279,6 +334,8 @@ func (tb *ToolBar) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 				if !win.ClientToScreen(tb.hWnd, &p) {
 					break
 				}
+
+				action.menu.updateItemsWithImageForWindow(tb)
 
 				win.TrackPopupMenuEx(
 					action.menu.hMenu,
@@ -319,7 +376,7 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 		*style |= win.BTNS_GROUP
 	}
 
-	if tb.buttonStyle != ToolBarButtonImageOnly {
+	if tb.buttonStyle != ToolBarButtonImageOnly && len(action.text) > 0 {
 		*style |= win.BTNS_SHOWTEXT
 	}
 
@@ -336,8 +393,14 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 	}
 
 	if tb.buttonStyle != ToolBarButtonTextOnly {
-		if *image, err = tb.imageIndex(action.image); err != nil {
-			return
+		var bmp *Bitmap
+
+		if action.image != nil {
+			bmp, _ = iconCache.Bitmap(action.image, tb.DPI())
+		}
+
+		if *image, err = tb.imageIndex(bmp); err != nil {
+			return err
 		}
 	}
 
@@ -348,7 +411,11 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 		actionText = action.Text()
 	}
 
-	*text = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(actionText)))
+	if len(actionText) != 0 {
+		*text = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(actionText)))
+	} else if len(action.toolTip) != 0 {
+		*text = uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(action.toolTip)))
+	}
 
 	return
 }
@@ -356,6 +423,7 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 func (tb *ToolBar) onActionChanged(action *Action) error {
 	tbbi := win.TBBUTTONINFO{
 		DwMask: win.TBIF_IMAGE | win.TBIF_STATE | win.TBIF_STYLE | win.TBIF_TEXT,
+		IImage: win.I_IMAGENONE,
 	}
 
 	tbbi.CbSize = uint32(unsafe.Sizeof(tbbi))

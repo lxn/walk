@@ -8,9 +8,7 @@ package walk
 
 import (
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -160,17 +158,17 @@ func (dlg *Dialog) Show() {
 		var size Size
 		if layout := dlg.Layout(); layout != nil {
 			size = layout.MinSize()
-			min := dlg.MinSize()
+			min := dlg.MinSizePixels()
 			size.Width = maxi(size.Width, min.Width)
 			size.Height = maxi(size.Height, min.Height)
 		} else {
-			size = dlg.Size()
+			size = dlg.SizePixels()
 		}
 
-		ob := dlg.owner.Bounds()
+		ob := dlg.owner.BoundsPixels()
 
 		if dlg.centerInOwnerWhenRun {
-			dlg.SetBounds(fitRectToScreen(dlg.hWnd, Rectangle{
+			dlg.SetBoundsPixels(fitRectToScreen(dlg.hWnd, Rectangle{
 				ob.X + (ob.Width-size.Width)/2,
 				ob.Y + (ob.Height-size.Height)/2,
 				size.Width,
@@ -178,7 +176,7 @@ func (dlg *Dialog) Show() {
 			}))
 		}
 	} else {
-		dlg.SetBounds(dlg.Bounds())
+		dlg.SetBoundsPixels(dlg.BoundsPixels())
 	}
 
 	dlg.FormBase.Show()

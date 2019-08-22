@@ -23,6 +23,7 @@ type LineEdit struct {
 
 	Background         Brush
 	ContextMenuItems   []MenuItem
+	DoubleBuffering    bool
 	Enabled            Property
 	Font               Font
 	MaxSize            Size
@@ -43,6 +44,7 @@ type LineEdit struct {
 
 	// Widget
 
+	Alignment          Alignment2D
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
@@ -53,7 +55,6 @@ type LineEdit struct {
 
 	// LineEdit
 
-	Alignment         Alignment1D
 	AssignTo          **walk.LineEdit
 	CaseMode          CaseMode
 	CueBanner         string
@@ -63,6 +64,7 @@ type LineEdit struct {
 	PasswordMode      bool
 	ReadOnly          Property
 	Text              Property
+	TextAlignment     Alignment1D
 	TextColor         walk.Color
 }
 
@@ -79,7 +81,7 @@ func (le LineEdit) Create(builder *Builder) error {
 	return builder.InitWidget(le, w, func() error {
 		w.SetTextColor(le.TextColor)
 
-		if err := w.SetAlignment(walk.Alignment1D(le.Alignment)); err != nil {
+		if err := w.SetTextAlignment(walk.Alignment1D(le.TextAlignment)); err != nil {
 			return err
 		}
 

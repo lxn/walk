@@ -56,6 +56,19 @@ func main() {
 				},
 			},
 			Menu{
+				Text: "&View",
+				Items: []MenuItem{
+					Action{
+						Text:    "Open / Special Enabled",
+						Checked: Bind("enabledCB.Visible"),
+					},
+					Action{
+						Text:    "Open Hidden",
+						Checked: Bind("openHiddenCB.Visible"),
+					},
+				},
+			},
+			Menu{
 				Text: "&Help",
 				Items: []MenuItem{
 					Action{

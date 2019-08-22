@@ -57,6 +57,20 @@ func newReflectListModel(dataSource interface{}) (ListModel, error) {
 
 			m.PublishItemsReset()
 		})
+
+		rlm.ItemsInserted().Attach(func(from, to int) {
+			m.items = rlm.Items()
+			m.value = reflect.ValueOf(m.items)
+
+			m.PublishItemsInserted(from, to)
+		})
+
+		rlm.ItemsRemoved().Attach(func(from, to int) {
+			m.items = rlm.Items()
+			m.value = reflect.ValueOf(m.items)
+
+			m.PublishItemsRemoved(from, to)
+		})
 	}
 
 	return m, nil
@@ -82,6 +96,10 @@ func (m *reflectListModel) Value(index int) interface{} {
 	return valueFromSlice(m.dataSource, m.value, m.displayMember, index)
 }
 
+type lessFuncsSetter interface {
+	setLessFuncs(lessFuncs []func(i, j int) bool)
+}
+
 type dataMembersSetter interface {
 	setDataMembers(dataMembers []string)
 }
@@ -89,6 +107,7 @@ type dataMembersSetter interface {
 type reflectTableModel struct {
 	TableModelBase
 	sorterBase  *SorterBase
+	lessFuncs   []func(i, j int) bool
 	dataMembers []string
 	dataSource  interface{}
 	items       interface{}
@@ -127,6 +146,20 @@ func newReflectTableModel(dataSource interface{}) (TableModel, error) {
 				m.sort(sb.SortedColumn(), sb.SortOrder())
 			}
 		})
+
+		rtm.RowsInserted().Attach(func(from, to int) {
+			m.items = rtm.Items()
+			m.value = reflect.ValueOf(m.items)
+
+			m.PublishRowsInserted(from, to)
+		})
+
+		rtm.RowsRemoved().Attach(func(from, to int) {
+			m.items = rtm.Items()
+			m.value = reflect.ValueOf(m.items)
+
+			m.PublishRowsRemoved(from, to)
+		})
 	} else {
 		m.sorterBase = new(SorterBase)
 	}
@@ -154,6 +187,10 @@ func newReflectTableModel(dataSource interface{}) (TableModel, error) {
 	}
 
 	return m, nil
+}
+
+func (m *reflectTableModel) setLessFuncs(lessFuncs []func(i, j int) bool) {
+	m.lessFuncs = lessFuncs
 }
 
 func (m *reflectTableModel) setDataMembers(dataMembers []string) {
@@ -261,6 +298,16 @@ func (m *reflectTableModel) Len() int {
 func (m *reflectTableModel) Less(i, j int) bool {
 	col := m.SortedColumn()
 
+	if lt := m.lessFuncs[col]; lt != nil {
+		ls := lt(i, j)
+
+		if m.SortOrder() == SortAscending {
+			return ls
+		} else {
+			return !ls
+		}
+	}
+
 	return less(m.Value(i, col), m.Value(j, col), m.SortOrder())
 }
 
@@ -360,7 +407,7 @@ func valueFromSlice(dataSource interface{}, itemsValue reflect.Value, member str
 		}
 	}
 
-	vv, err := reflectValueFromPath(v, member)
+	_, vv, err := reflectValueFromPath(v, member)
 	if err != nil {
 		return err
 	}

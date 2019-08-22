@@ -47,7 +47,11 @@ func newSplitterHandle(splitter *Splitter) (*splitterHandle, error) {
 }
 
 func (sh *splitterHandle) LayoutFlags() LayoutFlags {
-	splitter := sh.Parent().(*Splitter)
+	splitter, ok := sh.Parent().(*Splitter)
+	if !ok {
+		return 0
+	}
+
 	if splitter.Orientation() == Horizontal {
 		return ShrinkableVert | GrowableVert | GreedyVert
 	}
@@ -60,7 +64,11 @@ func (sh *splitterHandle) MinSizeHint() Size {
 }
 
 func (sh *splitterHandle) SizeHint() Size {
-	splitter := sh.Parent().(*Splitter)
+	splitter, ok := sh.Parent().(*Splitter)
+	if !ok {
+		return Size{}
+	}
+
 	handleWidth := splitter.HandleWidth()
 	var size Size
 

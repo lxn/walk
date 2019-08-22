@@ -8,7 +8,6 @@ package walk
 
 import (
 	"strconv"
-	"syscall"
 
 	"github.com/lxn/win"
 )
@@ -52,7 +51,7 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 			return cb.CheckState()
 		},
 		func(v interface{}) error {
-			cb.SetCheckState(v.(CheckState))
+			cb.SetCheckState(CheckState(assertIntOr(v, 0)))
 
 			return nil
 		},
@@ -63,39 +62,6 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 
 func (*CheckBox) LayoutFlags() LayoutFlags {
 	return 0
-}
-
-func (cb *CheckBox) MinSizeHint() Size {
-	if checkBoxCheckSize.Width == 0 {
-		if win.IsAppThemed() {
-			hTheme := win.OpenThemeData(cb.hWnd, syscall.StringToUTF16Ptr("Button"))
-			defer win.CloseThemeData(hTheme)
-
-			hdc := win.GetDC(cb.hWnd)
-			defer win.ReleaseDC(cb.hWnd, hdc)
-
-			var s win.SIZE
-			if win.S_OK == win.GetThemePartSize(hTheme, hdc, win.BP_CHECKBOX, win.CBS_UNCHECKEDNORMAL, nil, win.TS_TRUE, &s) {
-				checkBoxCheckSize.Width = int(s.CX)
-				checkBoxCheckSize.Height = int(s.CY)
-			}
-		} else {
-			checkBoxCheckSize.Width = 12
-			checkBoxCheckSize.Height = 12
-		}
-	}
-
-	if cb.Text() == "" {
-		return checkBoxCheckSize
-	}
-
-	defaultSize := cb.dialogBaseUnitsToPixels(Size{50, 10})
-	textSize := cb.calculateTextSizeImpl("n" + cb.text())
-
-	w := textSize.Width + checkBoxCheckSize.Width
-	h := maxi(defaultSize.Height, textSize.Height)
-
-	return Size{w, h}
 }
 
 func (cb *CheckBox) SizeHint() Size {

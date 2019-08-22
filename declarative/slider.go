@@ -15,6 +15,7 @@ type Slider struct {
 
 	Background         Brush
 	ContextMenuItems   []MenuItem
+	DoubleBuffering    bool
 	Enabled            Property
 	Font               Font
 	MaxSize            Size
@@ -35,6 +36,7 @@ type Slider struct {
 
 	// Widget
 
+	Alignment          Alignment2D
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
@@ -46,16 +48,22 @@ type Slider struct {
 	// Slider
 
 	AssignTo       **walk.Slider
+	LineSize       int
 	MaxValue       int
 	MinValue       int
 	Orientation    Orientation
 	OnValueChanged walk.EventHandler
+	PageSize       int
+	ToolTipsHidden bool
 	Tracking       bool
 	Value          Property
 }
 
 func (sl Slider) Create(builder *Builder) error {
-	w, err := walk.NewSliderWithOrientation(builder.Parent(), walk.Orientation(sl.Orientation))
+	w, err := walk.NewSliderWithCfg(builder.Parent(), &walk.SliderCfg{
+		Orientation:    walk.Orientation(sl.Orientation),
+		ToolTipsHidden: sl.ToolTipsHidden,
+	})
 	if err != nil {
 		return err
 	}
@@ -66,6 +74,12 @@ func (sl Slider) Create(builder *Builder) error {
 
 	return builder.InitWidget(sl, w, func() error {
 		w.SetPersistent(sl.Persistent)
+		if sl.LineSize > 0 {
+			w.SetLineSize(sl.LineSize)
+		}
+		if sl.PageSize > 0 {
+			w.SetPageSize(sl.PageSize)
+		}
 		w.SetTracking(sl.Tracking)
 
 		if sl.MaxValue > sl.MinValue {

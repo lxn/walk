@@ -116,5 +116,5 @@ func (rm *ResourceManager) Image(name string) (Image, error) {
 func (rm *ResourceManager) notFoundErr(typ, name string) error {
 	path := filepath.Clean(filepath.Join(rm.rootDirPath, name))
 
-	return newErr(fmt.Sprintf("neither %s resource '%s' nor file '%s' could be found or the image format is not supported", typ, name, path))
+	return newError(fmt.Sprintf("neither %s resource '%s' nor file '%s' could be found or the image format is not supported", typ, name, path))
 }

@@ -40,9 +40,9 @@ func newSeparator(parent Container, vertical bool) (*Separator, error) {
 
 func (s *Separator) LayoutFlags() LayoutFlags {
 	if s.vertical {
-		return GrowableHorz
+		return GrowableHorz | GreedyHorz
 	} else {
-		return GrowableVert
+		return GrowableVert | GreedyVert
 	}
 }
 

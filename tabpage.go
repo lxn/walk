@@ -7,8 +7,9 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"strconv"
+
+	"github.com/lxn/win"
 )
 
 const tabPageWindowClass = `\o/ Walk_TabPage_Class \o/`
@@ -23,7 +24,7 @@ func init() {
 
 type TabPage struct {
 	ContainerBase
-	image                 *Bitmap
+	image                 Image
 	title                 string
 	tabWidget             *TabWidget
 	titleChangedPublisher EventPublisher
@@ -49,7 +50,7 @@ func NewTabPage() (*TabPage, error) {
 			return tp.Title()
 		},
 		func(v interface{}) error {
-			return tp.SetTitle(v.(string))
+			return tp.SetTitle(assertStringOr(v, ""))
 		},
 		tp.titleChangedPublisher.Event()))
 
@@ -119,11 +120,11 @@ func (tp *TabPage) Font() *Font {
 	return defaultFont
 }
 
-func (tp *TabPage) Image() *Bitmap {
+func (tp *TabPage) Image() Image {
 	return tp.image
 }
 
-func (tp *TabPage) SetImage(value *Bitmap) error {
+func (tp *TabPage) SetImage(value Image) error {
 	tp.image = value
 
 	if tp.tabWidget == nil {

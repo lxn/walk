@@ -25,6 +25,7 @@ type Action struct {
 	AssignTo    **walk.Action
 	Text        string
 	Image       interface{}
+	Checked     Property
 	Enabled     Property
 	Visible     Property
 	Shortcut    Shortcut
@@ -45,14 +46,18 @@ func (a Action) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, e
 	if err := setActionImage(action, a.Image); err != nil {
 		return nil, err
 	}
-	if err := action.SetCheckable(a.Checkable); err != nil {
+
+	if err := setActionBoolOrCondition(action.SetChecked, action.SetCheckedCondition, a.Checked, "Action.Checked", builder); err != nil {
 		return nil, err
 	}
-
 	if err := setActionBoolOrCondition(action.SetEnabled, action.SetEnabledCondition, a.Enabled, "Action.Enabled", builder); err != nil {
 		return nil, err
 	}
 	if err := setActionBoolOrCondition(action.SetVisible, action.SetVisibleCondition, a.Visible, "Action.Visible", builder); err != nil {
+		return nil, err
+	}
+
+	if err := action.SetCheckable(a.Checkable || action.CheckedCondition() != nil); err != nil {
 		return nil, err
 	}
 

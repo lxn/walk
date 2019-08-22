@@ -7,10 +7,10 @@
 package walk
 
 import (
+	"syscall"
+	"time"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -63,13 +63,13 @@ func performScheduledLayouts() {
 	if formResizeScheduled {
 		formResizeScheduled = false
 
-		bounds := appSingleton.activeForm.Bounds()
+		bounds := appSingleton.activeForm.BoundsPixels()
 
 		if appSingleton.activeForm.AsFormBase().fixedSize() {
 			bounds.Width, bounds.Height = 0, 0
 		}
 
-		appSingleton.activeForm.SetBounds(bounds)
+		appSingleton.activeForm.SetBoundsPixels(bounds)
 	} else {
 		for _, layout := range layouts {
 			if widget, ok := layout.Container().(Widget); ok && widget.Form() != appSingleton.activeForm {
@@ -98,7 +98,292 @@ type Layout interface {
 	SetSpacing(value int) error
 	LayoutFlags() LayoutFlags
 	MinSize() Size
+	MinSizeForSize(size Size) Size
 	Update(reset bool) error
+}
+
+type LayoutBase struct {
+	layout             Layout
+	container          Container
+	sizeAndDPI2MinSize map[sizeAndDPI]Size
+	margins96dpi       Margins
+	margins            Margins
+	spacing96dpi       int
+	spacing            int
+	alignment          Alignment2D
+	resetNeeded        bool
+	dirty              bool
+}
+
+func (l *LayoutBase) asLayoutBase() *LayoutBase {
+	return l
+}
+
+func (l *LayoutBase) sizeAndDPIToMinSize() map[sizeAndDPI]Size {
+	return l.sizeAndDPI2MinSize
+}
+
+func (l *LayoutBase) Container() Container {
+	return l.container
+}
+
+func (l *LayoutBase) SetContainer(value Container) {
+	if value == l.container {
+		return
+	}
+
+	if l.container != nil {
+		l.container.SetLayout(nil)
+	}
+
+	l.container = value
+
+	if value != nil && value.Layout() != l.layout {
+		value.SetLayout(l.layout)
+	}
+
+	l.updateMargins()
+	l.updateSpacing()
+
+	l.layout.Update(true)
+}
+
+func (l *LayoutBase) Margins() Margins {
+	return l.margins96dpi
+}
+
+func (l *LayoutBase) SetMargins(value Margins) error {
+	if value == l.margins96dpi {
+		return nil
+	}
+
+	if value.HNear < 0 || value.VNear < 0 || value.HFar < 0 || value.VFar < 0 {
+		return newError("margins must be positive")
+	}
+
+	l.margins96dpi = value
+
+	l.updateMargins()
+
+	l.layout.Update(false)
+
+	return nil
+}
+
+func (l *LayoutBase) Spacing() int {
+	return l.spacing96dpi
+}
+
+func (l *LayoutBase) SetSpacing(value int) error {
+	if value == l.spacing96dpi {
+		return nil
+	}
+
+	if value < 0 {
+		return newError("spacing cannot be negative")
+	}
+
+	l.spacing96dpi = value
+
+	l.updateSpacing()
+
+	l.layout.Update(false)
+
+	return nil
+}
+
+func (l *LayoutBase) updateMargins() {
+	if l.container != nil {
+		l.margins = l.container.AsWindowBase().MarginsFrom96DPI(l.margins96dpi)
+	}
+}
+
+func (l *LayoutBase) updateSpacing() {
+	if l.container != nil {
+		l.spacing = l.container.AsWindowBase().IntFrom96DPI(l.spacing96dpi)
+	}
+}
+
+func (l *LayoutBase) Alignment() Alignment2D {
+	return l.alignment
+}
+
+func (l *LayoutBase) SetAlignment(alignment Alignment2D) error {
+	if alignment != l.alignment {
+		if alignment < AlignHVDefault || alignment > AlignHFarVFar {
+			return newError("invalid Alignment value")
+		}
+
+		l.alignment = alignment
+
+		l.layout.Update(false)
+	}
+
+	return nil
+}
+
+func clearDescendantsLayoutMinSizeCache(root Container) {
+	clearLayoutMinSizeCache(root)
+
+	walkDescendants(root, func(w Window) bool {
+		if w.Handle() == root.Handle() {
+			return true
+		}
+
+		if container, ok := w.(Container); ok {
+			clearLayoutMinSizeCache(container)
+		}
+
+		return true
+	})
+}
+
+func clearLayoutMinSizeCache(container Container) {
+	layout := container.Layout()
+	if layout == nil {
+		return
+	}
+
+	if lb, ok := layout.(interface{ sizeAndDPIToMinSize() map[sizeAndDPI]Size }); ok {
+		sizeAndDPI2MinSize := lb.sizeAndDPIToMinSize()
+
+		for k := range sizeAndDPI2MinSize {
+			delete(sizeAndDPI2MinSize, k)
+		}
+	}
+}
+
+type sizeAndDPI struct {
+	size Size
+	dpi  int
+}
+
+type HeightForWidther interface {
+	HeightForWidth(width int) int
+}
+
+type minSizeForSize struct {
+	size    Size
+	minSize Size
+}
+
+type layoutResultItem struct {
+	widget Widget
+	bounds Rectangle
+}
+
+func applyLayoutResults(container Container, items []layoutResultItem) error {
+	hdwp := win.BeginDeferWindowPos(int32(len(items)))
+	if hdwp == 0 {
+		return lastError("BeginDeferWindowPos")
+	}
+
+	maybeInvalidate := container.AsContainerBase().hasComplexBackground()
+
+	for _, item := range items {
+		widget := item.widget
+		x, y, w, h := item.bounds.X, item.bounds.Y, item.bounds.Width, item.bounds.Height
+
+		b := widget.BoundsPixels()
+
+		if w == b.Width && h == b.Height {
+			if container, ok := widget.(Container); ok {
+				if layout := container.Layout(); layout != nil {
+					var dirty bool
+					if lb, ok := layout.(interface{ asLayoutBase() *LayoutBase }); ok {
+						dirty = lb.asLayoutBase().dirty
+					}
+					if dirty {
+						layout.Update(false)
+					} else {
+						walkDescendants(container, func(window Window) bool {
+							if asTV, ok := window.(interface{ asTableView() *TableView }); ok {
+								asTV.asTableView().updateLVSizesWithSpecialCare(true)
+							}
+
+							return true
+						})
+					}
+				}
+			}
+
+			if x == b.X && y == b.Y {
+				continue
+			}
+		}
+
+		if b.X == x && b.Y == y && b.Width == w {
+			if _, ok := widget.(*ComboBox); ok {
+				if b.Height+1 == h {
+					continue
+				}
+			} else if b.Height == h {
+				continue
+			}
+		}
+
+		if maybeInvalidate {
+			if w == b.Width && h == b.Height && (x != b.X || y != b.Y) {
+				widget.Invalidate()
+			}
+		}
+
+		if hdwp = win.DeferWindowPos(
+			hdwp,
+			widget.Handle(),
+			0,
+			int32(x),
+			int32(y),
+			int32(w),
+			int32(h),
+			win.SWP_NOACTIVATE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER); hdwp == 0 {
+
+			return lastError("DeferWindowPos")
+		}
+
+		if item.widget.GraphicsEffects().Len() == 0 {
+			continue
+		}
+
+		item.widget.AsWidgetBase().invalidateBorderInParent()
+	}
+
+	if !win.EndDeferWindowPos(hdwp) {
+		return lastError("EndDeferWindowPos")
+	}
+
+	return nil
+}
+
+type applyLayoutResultsItem struct {
+	hwnd                           win.HWND
+	x                              int32
+	y                              int32
+	w                              int32
+	h                              int32
+	oldBounds                      win.RECT
+	shouldInvalidateBorderInParent win.BOOL
+}
+
+func widgetsToLayout(allWidgets *WidgetList) []Widget {
+	filteredWidgets := make([]Widget, 0, allWidgets.Len())
+
+	for i := 0; i < cap(filteredWidgets); i++ {
+		widget := allWidgets.At(i)
+
+		if !shouldLayoutWidget(widget) {
+			continue
+		}
+
+		ps := widget.SizeHint()
+		if ps.Width == 0 && ps.Height == 0 && widget.LayoutFlags() == 0 {
+			continue
+		}
+
+		filteredWidgets = append(filteredWidgets, widget)
+	}
+
+	return filteredWidgets
 }
 
 func shouldLayoutWidget(widget Widget) bool {
@@ -109,6 +394,24 @@ func shouldLayoutWidget(widget Widget) bool {
 	_, isSpacer := widget.(*Spacer)
 
 	return isSpacer || widget.AsWindowBase().visible || widget.AlwaysConsumeSpace()
+}
+
+func anyVisibleWidgetInHierarchy(root *WidgetBase) bool {
+	if root == nil || !root.visible {
+		return false
+	}
+
+	if container, ok := root.window.(Container); ok && container.Children() != nil {
+		for _, child := range container.Children().items {
+			if anyVisibleWidgetInHierarchy(child) {
+				return true
+			}
+		}
+	} else if _, ok := root.window.(*Spacer); !ok {
+		return true
+	}
+
+	return false
 }
 
 func DescendantByName(container Container, name string) Widget {
@@ -142,10 +445,11 @@ type Container interface {
 
 type ContainerBase struct {
 	WidgetBase
-	layout     Layout
-	children   *WidgetList
-	dataBinder *DataBinder
-	persistent bool
+	layout      Layout
+	children    *WidgetList
+	dataBinder  *DataBinder
+	nextChildID int32
+	persistent  bool
 }
 
 func (cb *ContainerBase) AsWidgetBase() *WidgetBase {
@@ -154,6 +458,11 @@ func (cb *ContainerBase) AsWidgetBase() *WidgetBase {
 
 func (cb *ContainerBase) AsContainerBase() *ContainerBase {
 	return cb
+}
+
+func (cb *ContainerBase) NextChildID() int32 {
+	cb.nextChildID++
+	return cb.nextChildID
 }
 
 func (cb *ContainerBase) LayoutFlags() LayoutFlags {
@@ -172,6 +481,14 @@ func (cb *ContainerBase) MinSizeHint() Size {
 	return cb.layout.MinSize()
 }
 
+func (cb *ContainerBase) HeightForWidth(width int) int {
+	if cb.layout == nil {
+		return 0
+	}
+
+	return cb.layout.MinSizeForSize(Size{Width: width}).Height
+}
+
 func (cb *ContainerBase) applyEnabled(enabled bool) {
 	cb.WidgetBase.applyEnabled(enabled)
 
@@ -182,6 +499,30 @@ func (cb *ContainerBase) applyFont(font *Font) {
 	cb.WidgetBase.applyFont(font)
 
 	applyFontToDescendants(cb.window.(Widget), font)
+}
+
+func (cb *ContainerBase) ApplySysColors() {
+	cb.WidgetBase.ApplySysColors()
+
+	applySysColorsToDescendants(cb.window.(Widget))
+}
+
+func (cb *ContainerBase) ApplyDPI(dpi int) {
+	cb.WidgetBase.ApplyDPI(dpi)
+
+	applyDPIToDescendants(cb.window.(Widget), dpi)
+
+	if cb.layout != nil {
+		if ums, ok := cb.layout.(interface {
+			updateMargins()
+			updateSpacing()
+		}); ok {
+			ums.updateMargins()
+			ums.updateSpacing()
+		}
+
+		cb.layout.Update(false)
+	}
 }
 
 func (cb *ContainerBase) Children() *WidgetList {
@@ -254,8 +595,8 @@ func (cb *ContainerBase) forEachPersistableChild(f func(p Persistable) error) er
 		return nil
 	}
 
-	for _, child := range cb.children.items {
-		if persistable, ok := child.(Persistable); ok && persistable.Persistent() {
+	for _, wb := range cb.children.items {
+		if persistable, ok := wb.window.(Persistable); ok && persistable.Persistent() {
 			if err := f(persistable); err != nil {
 				return err
 			}
@@ -291,6 +632,8 @@ func (cb *ContainerBase) SetSuspended(suspend bool) {
 	cb.WidgetBase.SetSuspended(suspend)
 
 	if !suspend && wasSuspended && cb.layout != nil {
+		clearDescendantsLayoutMinSizeCache(cb)
+
 		cb.layout.Update(false)
 	}
 }
@@ -307,7 +650,9 @@ func (cb *ContainerBase) doPaint() error {
 	}
 	defer canvas.Dispose()
 
-	for _, widget := range cb.children.items {
+	for _, wb := range cb.children.items {
+		widget := wb.window.(Widget)
+
 		for _, effect := range widget.GraphicsEffects().items {
 			switch effect {
 			case InteractionEffect:
@@ -328,7 +673,7 @@ func (cb *ContainerBase) doPaint() error {
 				continue
 			}
 
-			b := widget.Bounds().toRECT()
+			b := widget.BoundsPixels().toRECT()
 			win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
 
 			if err := effect.Draw(widget, canvas); err != nil {
@@ -353,7 +698,7 @@ func (cb *ContainerBase) doPaint() error {
 		if widget != nil && widget.Parent() != nil && widget.Parent().Handle() == cb.hWnd {
 			for _, effect := range widget.GraphicsEffects().items {
 				if effect == FocusEffect {
-					b := widget.Bounds().toRECT()
+					b := widget.BoundsPixels().toRECT()
 					win.ExcludeClipRect(hdc, b.Left, b.Top, b.Right, b.Bottom)
 
 					if err := FocusEffect.Draw(widget, canvas); err != nil {
@@ -429,6 +774,20 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 				window.WndProc(hwnd, msg, wParam, lParam)
 				return 0
 			}
+		}
+
+	case win.WM_MEASUREITEM:
+		mis := (*win.MEASUREITEMSTRUCT)(unsafe.Pointer(lParam))
+		if window := windowFromHandle(win.GetDlgItem(hwnd, int32(mis.CtlID))); window != nil {
+			// The window that sent the notification shall handle it itself.
+			return window.WndProc(hwnd, msg, wParam, lParam)
+		}
+
+	case win.WM_DRAWITEM:
+		dis := (*win.DRAWITEMSTRUCT)(unsafe.Pointer(lParam))
+		if window := windowFromHandle(dis.HwndItem); window != nil {
+			// The window that sent the notification shall handle it itself.
+			return window.WndProc(hwnd, msg, wParam, lParam)
 		}
 
 	case win.WM_NOTIFY:
@@ -515,4 +874,60 @@ func (cb *ContainerBase) onClearedWidgets() (err error) {
 	}
 
 	return
+}
+
+func (cb *ContainerBase) focusFirstCandidateDescendant() {
+	window := firstFocusableDescendant(cb)
+	if window == nil {
+		return
+	}
+
+	if err := window.SetFocus(); err != nil {
+		return
+	}
+
+	if textSel, ok := window.(textSelectable); ok {
+		time.AfterFunc(time.Millisecond, func() {
+			window.Synchronize(func() {
+				if window.Focused() {
+					textSel.SetTextSelection(0, -1)
+				}
+			})
+		})
+	}
+}
+
+func firstFocusableDescendantCallback(hwnd win.HWND, lParam uintptr) uintptr {
+	if !win.IsWindowVisible(hwnd) || !win.IsWindowEnabled(hwnd) {
+		return 1
+	}
+
+	if win.GetWindowLong(hwnd, win.GWL_STYLE)&win.WS_TABSTOP > 0 {
+		hwndPtr := (*win.HWND)(unsafe.Pointer(lParam))
+		*hwndPtr = hwnd
+		return 0
+	}
+
+	return 1
+}
+
+var firstFocusableDescendantCallbackPtr = syscall.NewCallback(firstFocusableDescendantCallback)
+
+func firstFocusableDescendant(container Container) Window {
+	var hwnd win.HWND
+
+	win.EnumChildWindows(container.Handle(), firstFocusableDescendantCallbackPtr, uintptr(unsafe.Pointer(&hwnd)))
+
+	window := windowFromHandle(hwnd)
+
+	for hwnd != 0 && window == nil {
+		hwnd = win.GetParent(hwnd)
+		window = windowFromHandle(hwnd)
+	}
+
+	return window
+}
+
+type textSelectable interface {
+	SetTextSelection(start, end int)
 }

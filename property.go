@@ -8,6 +8,7 @@ package walk
 
 import (
 	"errors"
+	"fmt"
 )
 
 var (
@@ -251,8 +252,25 @@ func (bp *boolProperty) SetSource(source interface{}) error {
 				bp.Set(source.Satisfied())
 			})
 
+		case Expression:
+			if err := checkPropertySource(bp, source); err != nil {
+				return err
+			}
+
+			if satisfied, ok := source.Value().(bool); ok {
+				if err := bp.Set(satisfied); err != nil {
+					return err
+				}
+			}
+
+			bp.sourceChangedHandle = source.Changed().Attach(func() {
+				if satisfied, ok := source.Value().(bool); ok {
+					bp.Set(satisfied)
+				}
+			})
+
 		default:
-			return newError("invalid source type")
+			return newError(fmt.Sprintf(`invalid source: "%s" of type %T`, source, source))
 		}
 	}
 

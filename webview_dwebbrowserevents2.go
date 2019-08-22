@@ -12,8 +12,9 @@ import (
 )
 
 import (
-	"github.com/lxn/win"
 	"time"
+
+	"github.com/lxn/win"
 )
 
 var webViewDWebBrowserEvents2Vtbl *win.DWebBrowserEvents2Vtbl
@@ -180,11 +181,11 @@ func webView_DWebBrowserEvents2_Invoke(
 		// FIXME: Horrible hack to avoid glitch where the document is not displayed.
 		time.AfterFunc(time.Millisecond*100, func() {
 			wv.Synchronize(func() {
-				b := wv.Bounds()
+				b := wv.BoundsPixels()
 				b.Width++
-				wv.SetBounds(b)
+				wv.SetBoundsPixels(b)
 				b.Width--
-				wv.SetBounds(b)
+				wv.SetBoundsPixels(b)
 			})
 		})
 

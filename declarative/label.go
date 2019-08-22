@@ -15,6 +15,7 @@ type Label struct {
 
 	Background         Brush
 	ContextMenuItems   []MenuItem
+	DoubleBuffering    bool
 	Enabled            Property
 	Font               Font
 	MaxSize            Size
@@ -35,6 +36,7 @@ type Label struct {
 
 	// Widget
 
+	Alignment          Alignment2D
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
@@ -45,9 +47,10 @@ type Label struct {
 
 	// Label
 
-	AssignTo  **walk.Label
-	Text      Property
-	TextColor walk.Color
+	AssignTo      **walk.Label
+	Text          Property
+	TextAlignment Alignment1D
+	TextColor     walk.Color
 }
 
 func (l Label) Create(builder *Builder) error {
@@ -61,6 +64,10 @@ func (l Label) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(l, w, func() error {
+		if err := w.SetTextAlignment(walk.Alignment1D(l.TextAlignment)); err != nil {
+			return err
+		}
+
 		w.SetTextColor(l.TextColor)
 
 		return nil

@@ -27,7 +27,7 @@ func main() {
 	}
 
 	// Create the notify icon and make sure we clean it up on exit.
-	ni, err := walk.NewNotifyIcon()
+	ni, err := walk.NewNotifyIcon(mw)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,7 +49,8 @@ func main() {
 
 		if err := ni.ShowCustom(
 			"Walk NotifyIcon Example",
-			"There are multiple ShowX methods sporting different icons."); err != nil {
+			"There are multiple ShowX methods sporting different icons.",
+			icon); err != nil {
 
 			log.Fatal(err)
 		}

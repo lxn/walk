@@ -194,7 +194,7 @@ func (gc *GradientComposite) SetColor2(c Color) (err error) {
 }
 
 func (gc *GradientComposite) updateBackground() error {
-	bounds := gc.ClientBounds()
+	bounds := gc.ClientBoundsPixels()
 	if bounds.Width < 1 || bounds.Height < 1 {
 		return nil
 	}
@@ -262,7 +262,7 @@ func (gc *GradientComposite) Dispose() {
 func (gc *GradientComposite) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_SIZE, win.WM_SIZING:
-		size := gc.ClientBounds().Size()
+		size := gc.ClientBoundsPixels().Size()
 		if gc.brush != nil && gc.brush.bitmap.size == size {
 			break
 		}

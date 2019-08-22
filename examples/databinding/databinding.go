@@ -117,11 +117,12 @@ func RunAnimalDialog(owner walk.Form, animal *Animal) (int, error) {
 
 	return Dialog{
 		AssignTo:      &dlg,
-		Title:         "Animal Details",
+		Title:         Bind("'Animal Details' + (animal.Name == '' ? '' : ' - ' + animal.Name)"),
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		DataBinder: DataBinder{
 			AssignTo:       &db,
+			Name:           "animal",
 			DataSource:     animal,
 			ErrorPresenter: ToolTipErrorPresenter{},
 		},

@@ -7,8 +7,9 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"unsafe"
+
+	"github.com/lxn/win"
 )
 
 type HatchStyle int
@@ -65,6 +66,7 @@ type Brush interface {
 	logbrush() *win.LOGBRUSH
 	attachWindow(wb *WindowBase)
 	detachWindow(wb *WindowBase)
+	simple() bool
 }
 
 type perWindowBrush interface {
@@ -141,8 +143,12 @@ func (b *nullBrush) Dispose() {
 	b.brushBase.Dispose()
 }
 
-func (b *nullBrush) logbrush() *win.LOGBRUSH {
+func (*nullBrush) logbrush() *win.LOGBRUSH {
 	return &win.LOGBRUSH{LbStyle: win.BS_NULL}
+}
+
+func (*nullBrush) simple() bool {
+	return true
 }
 
 var nullBrushSingleton Brush = newNullBrush()
@@ -175,7 +181,7 @@ func (b *SystemColorBrush) SystemColor() SystemColor {
 	return b.sysColor
 }
 
-func (b *SystemColorBrush) Dispose() {
+func (*SystemColorBrush) Dispose() {
 	// nop
 }
 
@@ -185,6 +191,12 @@ func (b *SystemColorBrush) logbrush() *win.LOGBRUSH {
 		LbColor: win.COLORREF(win.GetSysColor(int(b.sysColor))),
 	}
 }
+
+func (*SystemColorBrush) simple() bool {
+	return true
+}
+
+var sysColorBtnFaceBrushSingleton, _ = NewSystemColorBrush(SysColorBtnFace)
 
 type SolidColorBrush struct {
 	brushBase
@@ -208,6 +220,10 @@ func (b *SolidColorBrush) Color() Color {
 
 func (b *SolidColorBrush) logbrush() *win.LOGBRUSH {
 	return &win.LOGBRUSH{LbStyle: win.BS_SOLID, LbColor: win.COLORREF(b.color)}
+}
+
+func (*SolidColorBrush) simple() bool {
+	return true
 }
 
 type HatchBrush struct {
@@ -239,6 +255,10 @@ func (b *HatchBrush) Style() HatchStyle {
 	return b.style
 }
 
+func (b *HatchBrush) simple() bool {
+	return false
+}
+
 type BitmapBrush struct {
 	brushBase
 	bitmap *Bitmap
@@ -265,6 +285,10 @@ func (b *BitmapBrush) Bitmap() *Bitmap {
 	return b.bitmap
 }
 
+func (b *BitmapBrush) simple() bool {
+	return false
+}
+
 type GradientVertex struct {
 	X     float64
 	Y     float64
@@ -288,11 +312,11 @@ type GradientBrush struct {
 
 func NewGradientBrush(vertexes []GradientVertex, triangles []GradientTriangle) (*GradientBrush, error) {
 	if len(vertexes) < 3 {
-		return nil, newErr("at least 3 vertexes are required")
+		return nil, newError("at least 3 vertexes are required")
 	}
 
 	if len(triangles) < 1 {
-		return nil, newErr("at least 1 triangle is required")
+		return nil, newError("at least 1 triangle is required")
 	}
 
 	var size Size
@@ -321,6 +345,10 @@ func (b *GradientBrush) logbrush() *win.LOGBRUSH {
 	}
 
 	return b.mainDelegate.logbrush()
+}
+
+func (*GradientBrush) simple() bool {
+	return false
 }
 
 func (b *GradientBrush) create(size Size) (*BitmapBrush, error) {
@@ -367,7 +395,7 @@ func (b *GradientBrush) create(size Size) (*BitmapBrush, error) {
 	}
 
 	if !win.GradientFill(canvas.hdc, &vertexes[0], uint32(len(vertexes)), unsafe.Pointer(&triangles[0]), uint32(len(triangles)), win.GRADIENT_FILL_TRIANGLE) {
-		return nil, newErr("GradientFill failed")
+		return nil, newError("GradientFill failed")
 	}
 
 	disposables.Spare()
@@ -385,7 +413,7 @@ func (b *GradientBrush) attachWindow(wb *WindowBase) {
 	var info *windowBrushInfo
 
 	update := func() {
-		if bb, err := b.create(wb.window.ClientBounds().Size()); err == nil {
+		if bb, err := b.create(wb.window.ClientBoundsPixels().Size()); err == nil {
 			if info.Delegate != nil {
 				info.Delegate.bitmap.Dispose()
 				info.Delegate.Dispose()

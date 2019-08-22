@@ -10,9 +10,7 @@ import (
 	"strconv"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -68,11 +66,20 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 
 	win.SendMessage(tw.hWndTab, win.WM_SETFONT, uintptr(defaultFont.handleForDPI(0)), 1)
 
-	setWindowFont(tw.hWndTab, tw.Font())
+	tw.applyFont(tw.Font())
 
 	tw.MustRegisterProperty("HasCurrentPage", NewReadOnlyBoolProperty(
 		func() bool {
 			return tw.CurrentIndex() != -1
+		},
+		tw.CurrentIndexChanged()))
+
+	tw.MustRegisterProperty("CurrentIndex", NewProperty(
+		func() interface{} {
+			return tw.CurrentIndex()
+		},
+		func(v interface{}) error {
+			return tw.SetCurrentIndex(assertIntOr(v, -1))
 		},
 		tw.CurrentIndexChanged()))
 
@@ -118,13 +125,33 @@ func (tw *TabWidget) MinSizeHint() Size {
 		min.Height = maxi(min.Height, s.Height)
 	}
 
-	b := tw.Bounds()
-	pb := tw.pages.At(0).Bounds()
+	b := tw.BoundsPixels()
+	pb := tw.pages.At(0).BoundsPixels()
 
 	size := Size{b.Width - pb.Width + min.Width, b.Height - pb.Height + min.Height}
 
 	return size
+}
 
+func (tw *TabWidget) HeightForWidth(width int) int {
+	if tw.pages.Len() == 0 {
+		return 0
+	}
+
+	var height int
+	margin := tw.SizePixels()
+	pageSize := tw.pages.At(0).SizePixels()
+
+	margin.Width -= pageSize.Width
+	margin.Height -= pageSize.Height
+
+	for i := tw.pages.Len() - 1; i >= 0; i-- {
+		h := tw.pages.At(i).HeightForWidth(width + margin.Width)
+
+		height = maxi(height, h)
+	}
+
+	return height + margin.Height
 }
 
 func (tw *TabWidget) SizeHint() Size {
@@ -142,9 +169,40 @@ func (tw *TabWidget) applyEnabled(enabled bool) {
 func (tw *TabWidget) applyFont(font *Font) {
 	tw.WidgetBase.applyFont(font)
 
-	setWindowFont(tw.hWndTab, font)
+	SetWindowFont(tw.hWndTab, font)
 
-	applyFontToDescendants(tw, font)
+	// FIXME: won't work with ApplyDPI
+	// applyFontToDescendants(tw, font)
+}
+
+func (tw *TabWidget) ApplyDPI(dpi int) {
+	tw.WidgetBase.ApplyDPI(dpi)
+
+	var maskColor Color
+	var size Size
+	if tw.imageList != nil {
+		maskColor = tw.imageList.maskColor
+		size = tw.imageList.imageSize96dpi
+	} else {
+		size = Size{16, 16}
+	}
+
+	iml, err := newImageList(size, maskColor, dpi)
+	if err != nil {
+		return
+	}
+
+	win.SendMessage(tw.hWndTab, win.TCM_SETIMAGELIST, 0, uintptr(iml.hIml))
+
+	if tw.imageList != nil {
+		tw.imageList.Dispose()
+	}
+
+	tw.imageList = iml
+
+	for _, page := range tw.pages.items {
+		tw.onPageChanged(page)
+	}
 }
 
 func (tw *TabWidget) CurrentIndex() int {
@@ -253,7 +311,7 @@ func (tw *TabWidget) resizePages() {
 	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
 	for _, page := range tw.pages.items {
-		if err := page.SetBounds(
+		if err := page.SetBoundsPixels(
 			Rectangle{
 				int(r.Left - 2),
 				int(r.Top),
@@ -284,12 +342,13 @@ func (tw *TabWidget) onSelChange() {
 		page.SetVisible(false)
 	}
 
-	tw.currentIndex = int(win.SendMessage(tw.hWndTab, win.TCM_GETCURSEL, 0, 0))
+	tw.currentIndex = int(int32(win.SendMessage(tw.hWndTab, win.TCM_GETCURSEL, 0, 0)))
 
 	if tw.currentIndex > -1 && tw.currentIndex < pageCount {
 		page := tw.pages.At(tw.currentIndex)
 		page.SetVisible(true)
 		page.Invalidate()
+		tw.pages.At(tw.currentIndex).focusFirstCandidateDescendant()
 	}
 
 	tw.Invalidate()
@@ -340,7 +399,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 		hdc := win.BeginPaint(hwnd, &ps)
 		defer win.EndPaint(hwnd, &ps)
 
-		cb := tw.ClientBounds()
+		cb := tw.ClientBoundsPixels()
 
 		bitmap, err := NewBitmap(cb.Size())
 		if err != nil {
@@ -434,18 +493,21 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 					y := rc.Top
 					s := int32(16)
 
-					if imageCanvas, err := NewCanvasFromImage(page.image); err == nil {
-						defer imageCanvas.Dispose()
+					bmp, err := iconCache.Bitmap(page.image, tw.DPI())
+					if err == nil {
+						if imageCanvas, err := NewCanvasFromImage(bmp); err == nil {
+							defer imageCanvas.Dispose()
 
-						if !win.TransparentBlt(
-							canvas.hdc, x, y, s, s,
-							imageCanvas.hdc, 0, 0, int32(page.image.size.Width), int32(page.image.size.Height),
-							0) {
-							break
+							if !win.TransparentBlt(
+								canvas.hdc, x, y, s, s,
+								imageCanvas.hdc, 0, 0, int32(bmp.size.Width), int32(bmp.size.Height),
+								0) {
+								break
+							}
 						}
-					}
 
-					rc.Left += s + 6
+						rc.Left += s + 6
+					}
 				}
 
 				rc.Left += 6
@@ -619,7 +681,13 @@ func (tw *TabWidget) onClearedPages(pages []*TabPage) (err error) {
 }
 
 func (tw *TabWidget) tcitemFromPage(page *TabPage) *win.TCITEM {
-	imageIndex, _ := tw.imageIndex(page.image)
+	var imageIndex int32 = -1
+	if page.image != nil {
+		if bmp, err := iconCache.Bitmap(page.image, tw.DPI()); err == nil {
+			imageIndex, _ = tw.imageIndex(bmp)
+		}
+	}
+
 	text := syscall.StringToUTF16(page.title)
 
 	item := &win.TCITEM{
@@ -636,14 +704,13 @@ func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
 	index = -1
 	if image != nil {
 		if tw.imageList == nil {
-			if tw.imageList, err = NewImageList(Size{16, 16}, 0); err != nil {
+			if tw.imageList, err = newImageList(Size{16, 16}, 0, tw.DPI()); err != nil {
 				return
 			}
 
 			win.SendMessage(tw.hWndTab, win.TCM_SETIMAGELIST, 0, uintptr(tw.imageList.hIml))
 		}
 
-		// FIXME: Protect against duplicate insertion
 		if index, err = tw.imageList.AddMasked(image); err != nil {
 			return
 		}

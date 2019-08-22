@@ -15,6 +15,7 @@ type Dialog struct {
 
 	Background         Brush
 	ContextMenuItems   []MenuItem
+	DoubleBuffering    bool
 	Enabled            Property
 	Font               Font
 	MaxSize            Size
@@ -77,6 +78,7 @@ func (d Dialog) Create(owner walk.Form) error {
 		// Window
 		Background:         d.Background,
 		ContextMenuItems:   d.ContextMenuItems,
+		DoubleBuffering:    d.DoubleBuffering,
 		Enabled:            d.Enabled,
 		Font:               d.Font,
 		MaxSize:            d.MaxSize,
@@ -114,7 +116,7 @@ func (d Dialog) Create(owner walk.Form) error {
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
-		w.SetBounds(w.Bounds())
+		w.SetBoundsPixels(w.BoundsPixels())
 		return nil
 	})
 
@@ -123,7 +125,7 @@ func (d Dialog) Create(owner walk.Form) error {
 	}
 
 	return builder.InitWidget(fi, w, func() error {
-		if err := w.SetSize(d.Size.toW()); err != nil {
+		if err := w.SetSizePixels(d.Size.toW()); err != nil {
 			return err
 		}
 

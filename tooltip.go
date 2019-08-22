@@ -15,8 +15,10 @@ import (
 	"github.com/lxn/win"
 )
 
-// see https://msdn.microsoft.com/en-us/library/windows/desktop/bb760416(v=vs.85).aspx
-const maxToolTipTextLen = 80 // including NUL terminator
+// https://msdn.microsoft.com/en-us/library/windows/desktop/bb760416(v=vs.85).aspx says 80,
+// but in reality, that hasn't been enforced for many many Windows versions. So we give it
+// 1024 instead.
+const maxToolTipTextLen = 1024 // including NUL terminator
 
 func init() {
 	var err error
@@ -140,7 +142,7 @@ func (tt *ToolTip) track(tool Widget) error {
 
 	tt.SendMessage(win.TTM_TRACKACTIVATE, 1, uintptr(unsafe.Pointer(ti)))
 
-	b := tool.Bounds()
+	b := tool.BoundsPixels()
 
 	p := win.POINT{X: 0, Y: int32(b.Y + b.Height)}
 	if form.RightToLeftLayout() {

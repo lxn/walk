@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	borderGlowAlpha = []float64{0.4, 0.2, 0.15, 0.1, 0.15}
+	borderGlowAlpha = []float64{0.2, 0.1, 0.075, 0.05, 0.075}
 
 	InteractionEffect WidgetGraphicsEffect
 	FocusEffect       WidgetGraphicsEffect
@@ -111,7 +111,7 @@ func NewBorderGlowEffect(color Color) (*BorderGlowEffect, error) {
 }
 
 func (bge *BorderGlowEffect) Draw(widget Widget, canvas *Canvas) error {
-	b := widget.Bounds()
+	b := widget.BoundsPixels()
 
 	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X - 5, b.Y - 5, 5, 5}, Rectangle{0, 0, 5, 5})
 	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X, b.Y - 5, b.Width, 5}, Rectangle{5 + 1, 0, 1, 5})
@@ -140,7 +140,7 @@ func NewDropShadowEffect(color Color) (*DropShadowEffect, error) {
 }
 
 func (dse *DropShadowEffect) Draw(widget Widget, canvas *Canvas) error {
-	b := widget.Bounds()
+	b := widget.BoundsPixels()
 
 	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + b.Width, b.Y + 10 - 5, 5, 5}, Rectangle{5 + 2, 0, 5, 5})
 	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + b.Width, b.Y + 10, 5, b.Height - 10}, Rectangle{5 + 2, 5 + 1, 5, 1})
@@ -168,7 +168,7 @@ func newWidgetGraphicsEffectList(observer widgetGraphicsEffectListObserver) *Wid
 
 func (l *WidgetGraphicsEffectList) Add(effect WidgetGraphicsEffect) error {
 	if effect == nil {
-		return newErr("effect == nil")
+		return newError("effect == nil")
 	}
 
 	return l.Insert(len(l.items), effect)

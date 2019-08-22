@@ -8,13 +8,13 @@ package walk
 
 import (
 	"bytes"
+	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -27,7 +27,11 @@ func init() {
 // NumberEdit is a widget that is suited to edit numeric values.
 type NumberEdit struct {
 	WidgetBase
-	edit *numberLineEdit
+	edit                     *numberLineEdit
+	maxValueChangedPublisher EventPublisher
+	minValueChangedPublisher EventPublisher
+	prefixChangedPublisher   EventPublisher
+	suffixChangedPublisher   EventPublisher
 }
 
 // NewNumberEdit returns a new NumberEdit widget as child of parent.
@@ -57,12 +61,41 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 
 	ne.edit.applyFont(ne.Font())
 
+	ne.SetRange(-math.MaxFloat64, math.MaxFloat64)
+
 	if err = ne.SetValue(0); err != nil {
 		return nil, err
 	}
 
 	ne.GraphicsEffects().Add(InteractionEffect)
 	ne.GraphicsEffects().Add(FocusEffect)
+
+	ne.MustRegisterProperty("MaxValue", NewProperty(
+		func() interface{} {
+			return ne.MaxValue()
+		},
+		func(v interface{}) error {
+			return ne.SetRange(ne.MinValue(), assertFloat64Or(v, 0.0))
+		},
+		ne.minValueChangedPublisher.Event()))
+
+	ne.MustRegisterProperty("MinValue", NewProperty(
+		func() interface{} {
+			return ne.MinValue()
+		},
+		func(v interface{}) error {
+			return ne.SetRange(assertFloat64Or(v, 0.0), ne.MaxValue())
+		},
+		ne.maxValueChangedPublisher.Event()))
+
+	ne.MustRegisterProperty("Prefix", NewProperty(
+		func() interface{} {
+			return ne.Prefix()
+		},
+		func(v interface{}) error {
+			return ne.SetPrefix(assertStringOr(v, ""))
+		},
+		ne.prefixChangedPublisher.Event()))
 
 	ne.MustRegisterProperty("ReadOnly", NewProperty(
 		func() interface{} {
@@ -73,12 +106,21 @@ func NewNumberEdit(parent Container) (*NumberEdit, error) {
 		},
 		ne.edit.readOnlyChangedPublisher.Event()))
 
+	ne.MustRegisterProperty("Suffix", NewProperty(
+		func() interface{} {
+			return ne.Suffix()
+		},
+		func(v interface{}) error {
+			return ne.SetSuffix(assertStringOr(v, ""))
+		},
+		ne.suffixChangedPublisher.Event()))
+
 	ne.MustRegisterProperty("Value", NewProperty(
 		func() interface{} {
 			return ne.Value()
 		},
 		func(v interface{}) error {
-			return ne.SetValue(v.(float64))
+			return ne.SetValue(assertFloat64Or(v, 0.0))
 		},
 		ne.edit.valueChangedPublisher.Event()))
 
@@ -150,6 +192,10 @@ func (ne *NumberEdit) Prefix() string {
 
 // SetPrefix sets the text that appears in the NumberEdit before the number.
 func (ne *NumberEdit) SetPrefix(prefix string) error {
+	if prefix == ne.Prefix() {
+		return nil
+	}
+
 	p, err := syscall.UTF16FromString(prefix)
 	if err != nil {
 		return err
@@ -163,7 +209,14 @@ func (ne *NumberEdit) SetPrefix(prefix string) error {
 		return err
 	}
 
+	ne.prefixChangedPublisher.Publish()
+
 	return nil
+}
+
+// PrefixChanged returns the event that is published when the prefix changed.
+func (ne *NumberEdit) PrefixChanged() *Event {
+	return ne.prefixChangedPublisher.Event()
 }
 
 // Suffix returns the text that appears in the NumberEdit after the number.
@@ -173,6 +226,10 @@ func (ne *NumberEdit) Suffix() string {
 
 // SetSuffix sets the text that appears in the NumberEdit after the number.
 func (ne *NumberEdit) SetSuffix(suffix string) error {
+	if suffix == ne.Suffix() {
+		return nil
+	}
+
 	s, err := syscall.UTF16FromString(suffix)
 	if err != nil {
 		return err
@@ -186,7 +243,14 @@ func (ne *NumberEdit) SetSuffix(suffix string) error {
 		return err
 	}
 
+	ne.suffixChangedPublisher.Publish()
+
 	return nil
+}
+
+// SuffixChanged returns the event that is published when the suffix changed.
+func (ne *NumberEdit) SuffixChanged() *Event {
+	return ne.suffixChangedPublisher.Event()
 }
 
 // Increment returns the amount by which the NumberEdit increments or decrements
@@ -220,8 +284,11 @@ func (ne *NumberEdit) MaxValue() float64 {
 // If the current value is out of this range, it will be adjusted.
 func (ne *NumberEdit) SetRange(min, max float64) error {
 	if min > max {
-		return newError("invalid range")
+		return newError(fmt.Sprintf("invalid range - min: %f, max: %f", min, max))
 	}
+
+	minChanged := min != ne.edit.minValue
+	maxChanged := max != ne.edit.maxValue
 
 	ne.edit.minValue = min
 	ne.edit.maxValue = max
@@ -235,6 +302,13 @@ func (ne *NumberEdit) SetRange(min, max float64) error {
 				return err
 			}
 		}
+	}
+
+	if minChanged {
+		ne.minValueChangedPublisher.Publish()
+	}
+	if maxChanged {
+		ne.maxValueChangedPublisher.Publish()
 	}
 
 	return nil
@@ -334,8 +408,8 @@ func (ne *NumberEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			break
 		}
 
-		cb := ne.ClientBounds()
-		if err := ne.edit.SetBounds(cb); err != nil {
+		cb := ne.ClientBoundsPixels()
+		if err := ne.edit.SetBoundsPixels(cb); err != nil {
 			break
 		}
 	}
@@ -652,7 +726,7 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			return 0
 
 		case KeyDown:
-			if nle.ReadOnly() {
+			if nle.ReadOnly() || nle.increment <= 0 {
 				return 0
 			}
 
@@ -717,7 +791,7 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 			}
 
 		case KeyUp:
-			if nle.ReadOnly() {
+			if nle.ReadOnly() || nle.increment <= 0 {
 				return 0
 			}
 
@@ -775,7 +849,7 @@ func (nle *numberLineEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uin
 		}
 
 	case win.WM_MOUSEWHEEL:
-		if nle.ReadOnly() {
+		if nle.ReadOnly() || nle.increment <= 0 {
 			break
 		}
 
