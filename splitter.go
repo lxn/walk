@@ -279,8 +279,10 @@ func (s *Splitter) RestoreState() error {
 			item.size = size
 			item.oldExplicitSize = size
 		}
+	}
 
-		if persistable, ok := widget.(Persistable); ok {
+	for _, wb := range s.children.items {
+		if persistable, ok := wb.window.(Persistable); ok {
 			if err := persistable.RestoreState(); err != nil {
 				return err
 			}
@@ -302,7 +304,7 @@ func (s *Splitter) SetFixed(widget Widget, fixed bool) error {
 
 	item.fixed = fixed
 
-	if b := widget.BoundsPixels(); fixed && b.Width == 0 || b.Height == 0 {
+	if b := widget.BoundsPixels(); fixed && item.size == 0 && (b.Width == 0 || b.Height == 0) {
 		b.Width, b.Height = 100, 100
 		widget.SetBoundsPixels(b)
 		item.size = 100
@@ -321,6 +323,7 @@ func (s *Splitter) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		}
 
 		layout := s.layout.(*splitterLayout)
+		layout.resetNeeded = false
 		for _, item := range layout.hwnd2Item {
 			item.oldExplicitSize = 0
 		}
@@ -353,6 +356,12 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 		layout := s.Layout().(*splitterLayout)
 		item := &splitterLayoutItem{stretchFactor: 1, wasVisible: true}
 		layout.hwnd2Item[widget.Handle()] = item
+
+		layout.resetNeeded = true
+		if !layout.suspended && widget.AsWidgetBase().visible {
+			s.RequestLayout()
+		}
+
 		item.visibleChangedHandle = widget.VisibleChanged().Attach(func() {
 			if !layout.suspended && widget.AsWidgetBase().visible != item.wasVisible {
 				layout.resetNeeded = true
@@ -472,6 +481,8 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 							return
 						}
 
+						defer s.RequestLayout()
+
 						dragHandle := s.draggedHandle
 
 						handleIndex := s.children.Index(dragHandle)
@@ -509,14 +520,6 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 							bn.Y = bh.Y + bh.Height
 							sizePrev = bp.Height
 							sizeNext = bn.Height
-						}
-
-						if e := prev.SetBoundsPixels(bp); e != nil {
-							return
-						}
-
-						if e := next.SetBoundsPixels(bn); e != nil {
-							return
 						}
 
 						layout := s.Layout().(*splitterLayout)

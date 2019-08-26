@@ -156,11 +156,6 @@ func (l *splitterLayout) spaceUnavailableToRegularWidgets() int {
 	splitter := l.container.(*Splitter)
 
 	var space int
-	if l.orientation == Horizontal {
-		space = l.margins.HNear + l.margins.HFar
-	} else {
-		space = l.margins.VNear + l.margins.VFar
-	}
 
 	for _, widget := range l.container.Children().items {
 		if _, isHandle := widget.window.(*splitterHandle); isHandle && widget.visible {
@@ -171,7 +166,7 @@ func (l *splitterLayout) spaceUnavailableToRegularWidgets() int {
 	return space
 }
 
-func (l splitterLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
+func (l *splitterLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 	splitter := l.container.(*Splitter)
 
 	hwnd2Item := make(map[win.HWND]*splitterLayoutItem, len(l.hwnd2Item))
@@ -188,7 +183,7 @@ func (l splitterLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem
 		resetNeeded:                    l.resetNeeded,
 	}
 
-	l.resetNeeded = false
+	li.margins = l.margins
 
 	return li
 }
@@ -280,6 +275,17 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 		space2 = cb.Width
 	}
 
+	type WidgetItem struct {
+		item       *splitterLayoutItem
+		index      int
+		min        int
+		max        int
+		shrinkable bool
+		growable   bool
+	}
+
+	var wis []WidgetItem
+
 	anyNonFixed := li.anyNonFixed
 	var totalRegularSize int
 	for i, item := range li.children {
@@ -288,7 +294,79 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 		}
 
 		if i%2 == 0 {
-			size := li.hwnd2Item[item.Handle()].size
+			slItem := li.hwnd2Item[item.Handle()]
+
+			var wi *WidgetItem
+
+			if !anyNonFixed || !slItem.fixed {
+				var min, max int
+
+				minSize := li.MinSizeEffectiveForChild(item)
+				maxSize := item.Geometry().MaxSize
+
+				if li.orientation == Horizontal {
+					min = minSize.Width
+					max = maxSize.Width
+				} else {
+					min = minSize.Height
+					max = maxSize.Height
+				}
+
+				wis = append(wis, WidgetItem{item: slItem, index: i, min: min, max: max})
+
+				wi = &wis[len(wis)-1]
+			}
+
+			size := slItem.size
+			var idealSize Size
+			if hfw, ok := item.(HeightForWidther); ok && li.orientation == Vertical && hfw.HasHeightForWidth() {
+				idealSize.Height = hfw.HeightForWidth(space2)
+			} else {
+				switch sizer := item.(type) {
+				case IdealSizer:
+					idealSize = sizer.IdealSize()
+
+				case MinSizer:
+					idealSize = sizer.MinSize()
+				}
+			}
+
+			if flags := item.LayoutFlags(); li.orientation == Horizontal {
+				if flags&ShrinkableHorz == 0 {
+					size = maxi(size, idealSize.Width)
+					if wi != nil {
+						wi.min = maxi(wi.min, size)
+					}
+				} else if wi != nil {
+					wi.shrinkable = true
+				}
+				if flags&GrowableHorz == 0 {
+					size = mini(size, idealSize.Width)
+					if wi != nil {
+						wi.max = mini(wi.max, size)
+					}
+				} else if wi != nil {
+					wi.growable = true
+				}
+			} else {
+				if flags&ShrinkableVert == 0 {
+					size = maxi(size, idealSize.Height)
+					if wi != nil {
+						wi.min = maxi(wi.min, size)
+					}
+				} else if wi != nil {
+					wi.shrinkable = true
+				}
+				if flags&GrowableVert == 0 {
+					size = mini(size, idealSize.Height)
+					if wi != nil {
+						wi.max = mini(wi.max, size)
+					}
+				} else if wi != nil {
+					wi.growable = true
+				}
+			}
+
 			totalRegularSize += size
 			sizes[i] = size
 		} else {
@@ -301,40 +379,6 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 	diff := space1 - totalRegularSize
 
 	if diff != 0 && len(sizes) > 1 {
-		type WidgetItem struct {
-			item  *splitterLayoutItem
-			index int
-			min   int
-			max   int
-		}
-
-		var wis []WidgetItem
-
-		for i, item := range li.children {
-			if !anyVisibleItemInHierarchy(item) {
-				continue
-			}
-
-			if i%2 == 0 {
-				if it := li.hwnd2Item[item.Handle()]; !anyNonFixed || !it.fixed {
-					var min, max int
-
-					minSize := li.MinSizeEffectiveForChild(item)
-					maxSize := item.Geometry().MaxSize
-
-					if li.orientation == Horizontal {
-						min = minSize.Width
-						max = maxSize.Width
-					} else {
-						min = minSize.Height
-						max = maxSize.Height
-					}
-
-					wis = append(wis, WidgetItem{item: it, index: i, min: min, max: max})
-				}
-			}
-		}
-
 		for diff != 0 {
 			sort.SliceStable(wis, func(i, j int) bool {
 				a := wis[i]
@@ -352,7 +396,7 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 
 			var wi *WidgetItem
 			for _, wItem := range wis {
-				if !wItem.item.keepSize {
+				if !wItem.item.keepSize && (diff < 0 && wItem.item.size > wItem.min || diff > 0 && (wItem.item.size < wItem.max || wItem.max == 0)) {
 					wi = &wItem
 					break
 				}
@@ -362,19 +406,11 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 			}
 
 			if diff > 0 {
-				if wi.max > 0 && wi.item.size >= wi.max {
-					break
-				}
-
 				sizes[wi.index]++
 				wi.item.size++
 				wi.item.growth++
 				diff--
 			} else {
-				if wi.item.size <= wi.min {
-					break
-				}
-
 				sizes[wi.index]--
 				wi.item.size--
 				wi.item.growth--
