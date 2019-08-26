@@ -34,7 +34,7 @@ func createLayoutItemForWidgetWithContext(widget Widget, ctx *LayoutContext) Lay
 	lib := item.AsLayoutItemBase()
 	lib.ctx = ctx
 	lib.handle = widget.Handle()
-	lib.visible = widget.Visible()
+	lib.visible = widget.AsWidgetBase().visible
 	lib.geometry = widget.AsWidgetBase().geometry
 	lib.geometry.Alignment = widget.Alignment()
 	lib.geometry.MinSize = widget.MinSizePixels()
@@ -64,7 +64,7 @@ func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 	clib = containerItem.AsContainerLayoutItemBase()
 	clib.ctx = ctx
 	clib.handle = container.Handle()
-	clib.visible = container.Visible()
+	clib.visible = container.AsContainerBase().visible
 	clib.geometry = container.AsContainerBase().geometry
 
 	if lb := layout.asLayoutBase(); lb != nil {
@@ -652,6 +652,10 @@ func (clib *ContainerLayoutItemBase) MinSizeEffectiveForChild(child LayoutItem) 
 
 func (clib *ContainerLayoutItemBase) Children() []LayoutItem {
 	return clib.children
+}
+
+func (clib *ContainerLayoutItemBase) SetChildren(children []LayoutItem) {
+	clib.children = children
 }
 
 func (clib *ContainerLayoutItemBase) containsHandle(handle win.HWND) bool {
