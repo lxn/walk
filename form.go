@@ -258,6 +258,10 @@ func (fb *FormBase) SetDataBinder(db *DataBinder) {
 }
 
 func (fb *FormBase) SetSuspended(suspended bool) {
+	if suspended == fb.suspended {
+		return
+	}
+
 	fb.suspended = suspended
 
 	if fb.clientComposite != nil {
@@ -385,8 +389,12 @@ func (fb *FormBase) Run() int {
 
 	if fb.proposedSize == (Size{}) {
 		fb.proposedSize = maxSize(fb.minSize, fb.SizePixels())
-		fb.startLayout()
+		if !fb.Suspended() {
+			fb.startLayout()
+		}
 	}
+
+	fb.SetSuspended(false)
 
 	return fb.mainLoop()
 }
@@ -848,6 +856,8 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			fb.progressIndicator.SetOverlayIcon(fb.progressIndicator.overlayIcon, fb.progressIndicator.overlayIconDescription)
 		}
 		applyDPIToDescendants(fb.window, dpi)
+
+		fb.SetSuspended(wasSuspended)
 
 		rc := (*win.RECT)(unsafe.Pointer(lParam))
 		fb.window.SetBoundsPixels(rectangleFromRECT(*rc))
