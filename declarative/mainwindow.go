@@ -53,6 +53,7 @@ type MainWindow struct {
 	MenuItems      []MenuItem
 	OnDropFiles    walk.DropFilesEventHandler
 	StatusBarItems []StatusBarItem
+	SuspendedUntilRun bool
 	ToolBar        ToolBar
 	ToolBarItems   []MenuItem // Deprecated: use ToolBar instead
 }
@@ -101,10 +102,12 @@ func (mw MainWindow) Create() error {
 	builder := NewBuilder(nil)
 
 	w.SetSuspended(true)
-	builder.Defer(func() error {
-		w.SetSuspended(false)
-		return nil
-	})
+	if !mw.SuspendedUntilRun {
+		builder.Defer(func() error {
+			w.SetSuspended(false)
+			return nil
+		})
+	}
 
 	builder.deferBuildMenuActions(w.Menu(), mw.MenuItems)
 
