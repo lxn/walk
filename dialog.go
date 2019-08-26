@@ -237,17 +237,17 @@ func (dlg *Dialog) Run() int {
 func (dlg *Dialog) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_COMMAND:
-		if wphi := win.HIWORD(uint32(wParam)); wphi == 0 {
+		if win.HIWORD(uint32(wParam)) == 0 {
 			switch win.LOWORD(uint32(wParam)) {
 			case DlgCmdOK:
-			if dlg.defaultButton != nil {
-				dlg.defaultButton.raiseClicked()
-			}
+				if dlg.defaultButton != nil {
+					dlg.defaultButton.raiseClicked()
+				}
 
 			case DlgCmdCancel:
 				if dlg.cancelButton != nil {
 					dlg.cancelButton.raiseClicked()
-				}	
+				}
 			}
 		}
 	}
