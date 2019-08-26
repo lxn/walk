@@ -91,12 +91,12 @@ type FormBase struct {
 	WindowBase
 	clientComposite             *Composite
 	owner                       Form
-	stopwatch                   *Stopwatch
+	stopwatch                   *stopwatch
 	inProgressEventCount        int
 	performLayout               chan ContainerLayoutItem
 	layoutResults               chan []LayoutResult
 	inSizeLoop                  chan bool
-	updateStopwatch             chan *Stopwatch
+	updateStopwatch             chan *stopwatch
 	quitLayoutPerformer         chan struct{}
 	closingPublisher            CloseEventPublisher
 	activatingPublisher         EventPublisher
@@ -690,11 +690,7 @@ func (fb *FormBase) ProgressIndicator() *ProgressIndicator {
 	return fb.progressIndicator
 }
 
-func (fb *FormBase) Stopwatch() *Stopwatch {
-	return fb.stopwatch
-}
-
-func (fb *FormBase) SetStopwatch(sw *Stopwatch) {
+func (fb *FormBase) setStopwatch(sw *stopwatch) {
 	fb.stopwatch = sw
 
 	fb.updateStopwatch <- sw

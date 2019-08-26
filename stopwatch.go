@@ -36,18 +36,18 @@ func (sws *stopwatchStats) Average() time.Duration {
 	return time.Nanosecond * time.Duration(sws.total.Nanoseconds()/sws.count)
 }
 
-type Stopwatch struct {
+type stopwatch struct {
 	mutex        sync.Mutex
 	subject2item map[string]*stopwatchItem
 }
 
-func NewStopwatch() *Stopwatch {
-	return &Stopwatch{
+func newStopwatch() *stopwatch {
+	return &stopwatch{
 		subject2item: make(map[string]*stopwatchItem),
 	}
 }
 
-func (sw *Stopwatch) Start(subject string) time.Time {
+func (sw *stopwatch) Start(subject string) time.Time {
 	sw.mutex.Lock()
 	defer sw.mutex.Unlock()
 
@@ -62,7 +62,7 @@ func (sw *Stopwatch) Start(subject string) time.Time {
 	return item.startedTime
 }
 
-func (sw *Stopwatch) Stop(subject string) time.Duration {
+func (sw *stopwatch) Stop(subject string) time.Duration {
 	sw.mutex.Lock()
 	defer sw.mutex.Unlock()
 
@@ -86,7 +86,7 @@ func (sw *Stopwatch) Stop(subject string) time.Duration {
 	return duration
 }
 
-func (sw *Stopwatch) Cancel(subject string) {
+func (sw *stopwatch) Cancel(subject string) {
 	sw.mutex.Lock()
 	defer sw.mutex.Unlock()
 
@@ -98,7 +98,7 @@ func (sw *Stopwatch) Cancel(subject string) {
 	item.startedTime = time.Time{}
 }
 
-func (sw *Stopwatch) Clear() {
+func (sw *stopwatch) Clear() {
 	sw.mutex.Lock()
 	defer sw.mutex.Unlock()
 
@@ -107,7 +107,7 @@ func (sw *Stopwatch) Clear() {
 	}
 }
 
-func (sw *Stopwatch) Print() {
+func (sw *stopwatch) Print() {
 	sw.mutex.Lock()
 
 	items := make([]*stopwatchItem, 0, len(sw.subject2item))

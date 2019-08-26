@@ -92,14 +92,14 @@ func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 	return containerItem
 }
 
-func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, layoutResults chan []LayoutResult, inSizeLoop chan bool, updateStopwatch chan *Stopwatch, quit chan struct{}) {
+func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, layoutResults chan []LayoutResult, inSizeLoop chan bool, updateStopwatch chan *stopwatch, quit chan struct{}) {
 	performLayout = make(chan ContainerLayoutItem)
 	layoutResults = make(chan []LayoutResult)
 	inSizeLoop = make(chan bool)
-	updateStopwatch = make(chan *Stopwatch)
+	updateStopwatch = make(chan *stopwatch)
 	quit = make(chan struct{})
 
-	var stopwatch *Stopwatch
+	var stopwatch *stopwatch
 
 	go func() {
 		sizing := false
@@ -156,7 +156,7 @@ func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, la
 	return
 }
 
-func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done chan []LayoutResult, stopwatch *Stopwatch) {
+func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done chan []LayoutResult, stopwatch *stopwatch) {
 	const minSizeCacheSubject = "layoutTree - populating min size cache"
 
 	if stopwatch != nil {
@@ -279,7 +279,7 @@ func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done 
 	}
 }
 
-func applyLayoutResults(results []LayoutResult, stopwatch *Stopwatch) error {
+func applyLayoutResults(results []LayoutResult, stopwatch *stopwatch) error {
 	if stopwatch != nil {
 		const subject = "applyLayoutResults"
 		stopwatch.Start(subject)
