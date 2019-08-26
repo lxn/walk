@@ -360,6 +360,10 @@ func (tv *TableView) applyEnabled(enabled bool) {
 }
 
 func (tv *TableView) applyFont(font *Font) {
+	if tv.customHeaderHeight > 0 || tv.customRowHeight > 0 {
+		return
+	}
+
 	tv.WidgetBase.applyFont(font)
 
 	hFont := uintptr(font.handleForDPI(tv.DPI()))
