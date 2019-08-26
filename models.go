@@ -601,6 +601,14 @@ type TreeModel interface {
 	// ItemChanged returns the event that the model should publish when an item
 	// was changed.
 	ItemChanged() *TreeItemEvent
+
+	// ItemInserted returns the event that the model should publish when an item
+	// was inserted into the model.
+	ItemInserted() *TreeItemEvent
+
+	// ItemRemoved returns the event that the model should publish when an item
+	// was removed from the model.
+	ItemRemoved() *TreeItemEvent
 }
 
 // TreeModelBase partially implements the TreeModel interface.
@@ -609,8 +617,10 @@ type TreeModel interface {
 // RootCount and RootAt methods. If your model needs lazy population,
 // you will also have to implement LazyPopulation.
 type TreeModelBase struct {
-	itemsResetPublisher  TreeItemEventPublisher
-	itemChangedPublisher TreeItemEventPublisher
+	itemsResetPublisher   TreeItemEventPublisher
+	itemChangedPublisher  TreeItemEventPublisher
+	itemInsertedPublisher TreeItemEventPublisher
+	itemRemovedPublisher  TreeItemEventPublisher
 }
 
 func (tmb *TreeModelBase) LazyPopulation() bool {
@@ -625,10 +635,26 @@ func (tmb *TreeModelBase) ItemChanged() *TreeItemEvent {
 	return tmb.itemChangedPublisher.Event()
 }
 
+func (tmb *TreeModelBase) ItemInserted() *TreeItemEvent {
+	return tmb.itemInsertedPublisher.Event()
+}
+
+func (tmb *TreeModelBase) ItemRemoved() *TreeItemEvent {
+	return tmb.itemRemovedPublisher.Event()
+}
+
 func (tmb *TreeModelBase) PublishItemsReset(parent TreeItem) {
 	tmb.itemsResetPublisher.Publish(parent)
 }
 
 func (tmb *TreeModelBase) PublishItemChanged(item TreeItem) {
 	tmb.itemChangedPublisher.Publish(item)
+}
+
+func (tmb *TreeModelBase) PublishItemInserted(item TreeItem) {
+	tmb.itemInsertedPublisher.Publish(item)
+}
+
+func (tmb *TreeModelBase) PublishItemRemoved(item TreeItem) {
+	tmb.itemRemovedPublisher.Publish(item)
 }
