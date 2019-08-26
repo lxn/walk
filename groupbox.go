@@ -412,7 +412,9 @@ func (li *groupBoxLayoutItem) HeightForWidth(width int) int {
 }
 
 func (li *groupBoxLayoutItem) IdealSize() Size {
-	return Size{100, 100}
+	size := li.children[0].(IdealSizer).IdealSize()
+	size.Height += li.compositePos.Y
+	return size
 }
 
 func (li *groupBoxLayoutItem) PerformLayout() []LayoutResultItem {
