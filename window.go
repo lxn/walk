@@ -1082,7 +1082,9 @@ func (wb *WindowBase) SetSuspended(suspend bool) {
 		wParam = 1
 	}
 
-	wb.SendMessage(win.WM_SETREDRAW, uintptr(wParam), 0)
+	if wb.visible {
+		wb.SendMessage(win.WM_SETREDRAW, uintptr(wParam), 0)
+	}
 
 	wb.suspended = suspend
 
