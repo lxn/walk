@@ -306,9 +306,9 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	svli.children = append(svli.children, cli)
 
 	if box, ok := cli.(*boxLayoutItem); ok {
-		if box.orientation == Vertical && len(box.children) > 0 {
+		if len(box.children) > 0 {
 			if _, ok := box.children[len(box.children)-1].(*spacerLayoutItem); !ok {
-				// To retain the previous behavior with vertical box layouts, we add a fake spacer at the bottom.
+				// To retain the previous behavior with box layouts, we add a fake spacer at the end.
 				// Maybe this should just be an option.
 				box.children = append(box.children, &spacerLayoutItem{
 					layoutFlags: ShrinkableHorz | ShrinkableVert | GrowableVert | GreedyVert,
@@ -318,7 +318,6 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	}
 
 	svli.idealSize = cli.MinSize()
-	svli.minSize = sv.SizeFrom96DPI(Size{100, 100})
 
 	h, v := sv.Scrollbars()
 
@@ -326,7 +325,8 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		svli.layoutFlags |= ShrinkableHorz | GrowableHorz | GreedyHorz
 
 		if !v {
-			if svli.idealSize.Width > sv.geometry.ClientSize.Width {
+			if svli.idealSize.Width > sv.geometry.ClientSize.Width && sv.geometry.ClientSize.Width > 0 && sv.maxSize.Width == 0 ||
+				svli.idealSize.Width > sv.maxSize.Width && sv.maxSize.Width > 0 {
 				svli.sbSize.Height = int(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(ctx.dpi)))
 				svli.idealSize.Height += svli.sbSize.Height
 			}
@@ -339,7 +339,8 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		svli.layoutFlags |= GreedyVert | GrowableVert | ShrinkableVert
 
 		if !h {
-			if svli.idealSize.Height > sv.geometry.ClientSize.Height {
+			if svli.idealSize.Height > sv.geometry.ClientSize.Height && sv.geometry.ClientSize.Height > 0 && sv.maxSize.Height == 0 ||
+				svli.idealSize.Height > sv.maxSize.Height && sv.maxSize.Height > 0 {
 				svli.sbSize.Width = int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))
 				svli.idealSize.Width += svli.sbSize.Width
 			}
