@@ -54,6 +54,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	if gb.hWndGroupBox == 0 {
 		return nil, lastError("CreateWindowEx(BUTTON)")
 	}
+	win.SetWindowLong(gb.hWndGroupBox, win.GWL_ID, 1)
 
 	gb.applyFont(gb.Font())
 	gb.updateHeaderHeight()
@@ -64,6 +65,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	if err != nil {
 		return nil, err
 	}
+	win.SetWindowLong(gb.checkBox.hWnd, win.GWL_ID, 2)
 
 	gb.SetCheckable(false)
 	gb.checkBox.SetChecked(true)
@@ -78,6 +80,7 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 	if err != nil {
 		return nil, err
 	}
+	win.SetWindowLong(gb.composite.hWnd, win.GWL_ID, 3)
 	gb.composite.name = "composite"
 
 	win.SetWindowPos(gb.checkBox.hWnd, win.HWND_TOP, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE)
@@ -310,7 +313,14 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				return hBrush
 			}
 
-		case win.WM_COMMAND, win.WM_NOTIFY:
+		case win.WM_COMMAND:
+			hwndSrc := win.GetDlgItem(gb.hWnd, int32(win.LOWORD(uint32(wParam))))
+
+			if window := windowFromHandle(hwndSrc); window != nil {
+				window.WndProc(hwnd, msg, wParam, lParam)
+			}
+
+		case win.WM_NOTIFY:
 			gb.composite.WndProc(hwnd, msg, wParam, lParam)
 
 		case win.WM_SETTEXT:
