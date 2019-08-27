@@ -329,7 +329,18 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 		} else {
 			// The window that sent the notification shall handle it itself.
 			hwndSrc := win.GetDlgItem(cb.hWnd, int32(win.LOWORD(uint32(wParam))))
+
+			var toolBarOnly bool
+			if hwndSrc == 0 {
+				toolBarOnly = true
+				hwndSrc = win.HWND(lParam)
+			}
+
 			if window := windowFromHandle(hwndSrc); window != nil {
+				if _, ok := window.(*ToolBar); toolBarOnly && !ok {
+					break
+				}
+
 				window.WndProc(hwnd, msg, wParam, lParam)
 				return 0
 			}
