@@ -425,7 +425,9 @@ func (cb *ContainerBase) onRemovedWidget(index int, widget Widget) (err error) {
 }
 
 func (cb *ContainerBase) onClearingWidgets() (err error) {
-	for _, widget := range cb.children.items {
+	for i := cb.children.Len() - 1; i >= 0; i-- {
+		widget := cb.children.At(i)
+
 		if parent := widget.Parent(); parent != nil && parent.Handle() == cb.hWnd {
 			if err = widget.SetParent(nil); err != nil {
 				return
