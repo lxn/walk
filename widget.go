@@ -452,6 +452,10 @@ func (wb *WidgetBase) invalidateBorderInParent() {
 }
 
 func (wb *WidgetBase) hasActiveGraphicsEffects() bool {
+	if wb.graphicsEffects == nil {
+		return false
+	}
+
 	count := wb.graphicsEffects.Len()
 
 	for _, gfx := range [...]WidgetGraphicsEffect{FocusEffect, InteractionEffect, ValidationErrorEffect} {
