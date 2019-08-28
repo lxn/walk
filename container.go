@@ -7,7 +7,6 @@
 package walk
 
 import (
-	"log"
 	"syscall"
 	"time"
 	"unsafe"
@@ -284,9 +283,8 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 			break
 		}
 
-		if err := cb.doPaint(); err != nil {
-			log.Print(err)
-		}
+		// If it fails, what can we do about it? Panic? That's extreme. So just ignore it.
+		_ = cb.doPaint()
 
 		return 0
 
