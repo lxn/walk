@@ -7,6 +7,7 @@
 package walk
 
 import (
+	"log"
 	"syscall"
 	"time"
 	"unsafe"
@@ -279,8 +280,12 @@ func (cb *ContainerBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintp
 		}
 
 	case win.WM_PAINT:
+		if FocusEffect == nil && InteractionEffect == nil && ValidationErrorEffect == nil {
+			break
+		}
+
 		if err := cb.doPaint(); err != nil {
-			panic(err)
+			log.Print(err)
 		}
 
 		return 0

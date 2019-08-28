@@ -427,6 +427,10 @@ func (wb *WidgetBase) onClearedGraphicsEffects() error {
 }
 
 func (wb *WidgetBase) invalidateBorderInParent() {
+	if !wb.hasActiveGraphicsEffects() {
+		return
+	}
+
 	if wb.parent != nil && wb.parent.Layout() != nil {
 		b := wb.BoundsPixels().toRECT()
 		s := int32(wb.parent.Layout().Spacing())
@@ -445,6 +449,20 @@ func (wb *WidgetBase) invalidateBorderInParent() {
 		rc = win.RECT{Left: b.Left, Top: b.Bottom, Right: b.Right, Bottom: b.Bottom + s}
 		win.InvalidateRect(hwnd, &rc, true)
 	}
+}
+
+func (wb *WidgetBase) hasActiveGraphicsEffects() bool {
+	count := wb.graphicsEffects.Len()
+
+	for _, gfx := range [...]WidgetGraphicsEffect{FocusEffect, InteractionEffect, ValidationErrorEffect} {
+		if wb.graphicsEffects.Contains(gfx) {
+			if gfx == nil {
+				count--
+			}
+		}
+	}
+
+	return count > 0
 }
 
 func (wb *WidgetBase) hasComplexBackground() bool {
