@@ -1720,10 +1720,9 @@ func (wb *WindowBase) RequestLayout() {
 	var form Form
 
 	hwnd := wb.hWnd
+	window := wb.window
 
 	for hwnd != 0 {
-		window := windowFromHandle(hwnd)
-
 		if window != nil {
 			var ok, visible bool
 			if form, ok = window.(Form); ok {
@@ -1739,11 +1738,19 @@ func (wb *WindowBase) RequestLayout() {
 			if container, ok := window.(Container); ok && container.Layout() == nil {
 				return
 			}
+
+			if widget, ok := window.(Widget); ok {
+				if window = widget.Parent(); window != nil {
+					hwnd = window.Handle()
+					continue
+				}
+			}
 		} else if !win.IsWindowVisible(hwnd) {
 			return
 		}
 
 		hwnd = win.GetParent(hwnd)
+		window = windowFromHandle(hwnd)
 	}
 
 	if form == nil {
