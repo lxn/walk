@@ -2228,7 +2228,10 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 					}
 				}
 			}
-			wnd.AsWidgetBase().invalidateBorderInParent()
+
+			if wb.Form() == appSingleton.ActiveForm() {
+				wnd.AsWidgetBase().invalidateBorderInParent()
+			}
 		}
 
 		wb.focusedChangedPublisher.Publish()
