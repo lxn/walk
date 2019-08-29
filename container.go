@@ -188,16 +188,6 @@ func (cb *ContainerBase) RestoreState() error {
 	})
 }
 
-func (cb *ContainerBase) SetSuspended(suspend bool) {
-	wasSuspended := cb.Suspended()
-
-	cb.WidgetBase.SetSuspended(suspend)
-
-	if !suspend && wasSuspended && cb.layout != nil {
-		cb.RequestLayout()
-	}
-}
-
 func (cb *ContainerBase) doPaint() error {
 	var ps win.PAINTSTRUCT
 

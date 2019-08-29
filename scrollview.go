@@ -89,8 +89,8 @@ func (sv *ScrollView) SetScrollbars(horizontal, vertical bool) {
 }
 
 func (sv *ScrollView) SetSuspended(suspend bool) {
-	sv.WidgetBase.SetSuspended(suspend)
 	sv.composite.SetSuspended(suspend)
+	sv.WidgetBase.SetSuspended(suspend)
 	sv.Invalidate()
 }
 

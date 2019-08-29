@@ -1090,6 +1090,7 @@ func (wb *WindowBase) SetSuspended(suspend bool) {
 
 	if !suspend {
 		wb.Invalidate()
+		wb.RequestLayout()
 	}
 }
 
@@ -1716,18 +1717,43 @@ func (wb *WindowBase) SetClientSizePixels(value Size) error {
 
 // RequestLayout either schedules or immediately starts performing layout.
 func (wb *WindowBase) RequestLayout() {
-	if widget, ok := wb.window.(Widget); ok {
-		if parent := widget.Parent(); parent == nil || parent.Layout() == nil || !parent.Visible() || parent.Suspended() {
+	var form Form
+
+	hwnd := wb.hWnd
+
+	for hwnd != 0 {
+		window := windowFromHandle(hwnd)
+
+		if window != nil {
+			var ok, visible bool
+			if form, ok = window.(Form); ok {
+				visible = form.Visible()
+			} else {
+				visible = window.AsWindowBase().visible
+			}
+
+			if !visible || window.Suspended() {
+				return
+			}
+
+			if container, ok := window.(Container); ok && container.Layout() == nil {
+				return
+			}
+		} else if !win.IsWindowVisible(hwnd) {
 			return
 		}
+
+		hwnd = win.GetParent(hwnd)
 	}
 
-	if form := wb.Form(); form != nil && form.Layout() != nil && !form.Suspended() {
-		if fb := form.AsFormBase(); appSingleton.activeForm != form || fb.inProgressEventCount == 0 && fb.Visible() {
-			fb.startLayout()
-		} else {
-			fb.layoutScheduled = true
-		}
+	if form == nil {
+		return
+	}
+
+	if fb := form.AsFormBase(); appSingleton.activeForm != form || fb.inProgressEventCount == 0 {
+		fb.startLayout()
+	} else {
+		fb.layoutScheduled = true
 	}
 }
 
