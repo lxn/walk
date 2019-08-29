@@ -30,13 +30,25 @@ var (
 		funcs []func()
 	}
 
-	syncMsgId                 uint32
-	taskbarButtonCreatedMsgId uint32
+	syncMsgId                  uint32
+	taskbarButtonCreatedMsgId  uint32
+	syncApplyLayoutResultsArgs applyLayoutResultsArgs
 )
 
 func init() {
 	syncMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("WalkSync"))
 	taskbarButtonCreatedMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("TaskbarButtonCreated"))
+}
+
+type applyLayoutResultsArgs struct {
+	results   []LayoutResult
+	stopwatch *stopwatch
+}
+
+func synchronizeApplyLayoutResults(results []LayoutResult, stopwatch *stopwatch) {
+	syncFuncs.m.Lock()
+	syncApplyLayoutResultsArgs = applyLayoutResultsArgs{results, stopwatch}
+	syncFuncs.m.Unlock()
 }
 
 func synchronize(f func()) {
@@ -49,9 +61,14 @@ func runSynchronized() {
 	// Clear the list of callbacks first to avoid deadlock
 	// if a callback itself calls Synchronize()...
 	syncFuncs.m.Lock()
+	alrArgs := syncApplyLayoutResultsArgs
+	syncApplyLayoutResultsArgs = applyLayoutResultsArgs{}
 	funcs := syncFuncs.funcs
 	syncFuncs.funcs = nil
 	syncFuncs.m.Unlock()
+	if len(alrArgs.results) > 0 {
+		applyLayoutResults(alrArgs.results, alrArgs.stopwatch)
+	}
 	for _, f := range funcs {
 		f()
 	}

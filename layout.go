@@ -129,9 +129,7 @@ func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, la
 				if sizing {
 					layoutResults <- results
 				} else {
-					form.Synchronize(func() {
-						applyLayoutResults(results, stopwatch)
-					})
+					synchronizeApplyLayoutResults(results, stopwatch)
 				}
 
 			case sizing = <-inSizeLoop:
