@@ -125,19 +125,27 @@ func (iv *ImageView) Image() Image {
 	return iv.image
 }
 
-func (iv *ImageView) SetImage(value Image) error {
-	if value == iv.image {
+func (iv *ImageView) SetImage(image Image) error {
+	if image == iv.image {
 		return nil
 	}
 
-	iv.image = value
+	var oldSize, newSize Size
+	if iv.image != nil {
+		oldSize = iv.image.Size()
+	}
+	if image != nil {
+		newSize = image.Size()
+	}
 
-	_, isMetafile := value.(*Metafile)
+	iv.image = image
+
+	_, isMetafile := image.(*Metafile)
 	iv.SetClearsBackground(isMetafile)
 
 	err := iv.Invalidate()
 
-	if iv.mode == ImageViewModeIdeal {
+	if iv.mode == ImageViewModeIdeal && newSize != oldSize {
 		iv.RequestLayout()
 	}
 
