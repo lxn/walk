@@ -1916,6 +1916,14 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 				}
 			}
 
+			if di.Item.Mask&win.LVIF_COLUMNS > 0 {
+				if hwnd == tv.hwndFrozenLV {
+					di.Item.CColumns = uint32(tv.visibleFrozenColumnCount())
+				} else {
+					di.Item.CColumns = uint32(tv.visibleColumnCount())
+				}
+			}
+
 		case win.NM_CUSTOMDRAW:
 			nmlvcd := (*win.NMLVCUSTOMDRAW)(unsafe.Pointer(lp))
 
