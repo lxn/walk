@@ -87,6 +87,7 @@ type TableView struct {
 	columnsOrderableChangedPublisher   EventPublisher
 	columnsSizableChangedPublisher     EventPublisher
 	itemCountChangedPublisher          EventPublisher
+	gridlinesChangedPublisher          EventPublisher
 	publishNextSelClear                bool
 	inSetSelectedIndexes               bool
 	lastColumnStretched                bool
@@ -264,6 +265,16 @@ func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error
 			return tv.SetColumnsSizable(b)
 		},
 		tv.columnsSizableChangedPublisher.Event()))
+
+	tv.MustRegisterProperty("Gridlines", NewBoolProperty(
+		func() bool {
+			return tv.Gridlines()
+		},
+		func(b bool) error {
+			tv.SetGridlines(b)
+			return nil
+		},
+		tv.gridlinesChangedPublisher.Event()))
 
 	tv.MustRegisterProperty("CurrentIndex", NewProperty(
 		func() interface{} {
@@ -550,6 +561,33 @@ func (tv *TableView) SetAlternatingRowBGColor(c Color) {
 	tv.hasDarkAltBGColor = int(c.R())+int(c.G())+int(c.B()) < 128*3
 
 	tv.Invalidate()
+}
+
+// Gridlines returns if the rows are separated by grid lines.
+func (tv *TableView) Gridlines() bool {
+	exStyle := win.SendMessage(tv.hwndNormalLV, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	return exStyle&win.LVS_EX_GRIDLINES > 0
+}
+
+// SetGridlines sets if the rows are separated by grid lines.
+func (tv *TableView) SetGridlines(enabled bool) {
+	var hwnd win.HWND
+	if tv.hasFrozenColumn {
+		hwnd = tv.hwndFrozenLV
+	} else {
+		hwnd = tv.hwndNormalLV
+	}
+
+	exStyle := win.SendMessage(hwnd, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	if enabled {
+		exStyle |= win.LVS_EX_GRIDLINES
+	} else {
+		exStyle &^= win.LVS_EX_GRIDLINES
+	}
+	win.SendMessage(tv.hwndFrozenLV, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	win.SendMessage(tv.hwndNormalLV, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+
+	tv.gridlinesChangedPublisher.Publish()
 }
 
 // Columns returns the list of columns.
