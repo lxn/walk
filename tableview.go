@@ -1619,7 +1619,7 @@ func (tv *TableView) toggleItemChecked(index int) error {
 }
 
 func (tv *TableView) applyImageListForImage(image interface{}) {
-	tv.hIml, tv.usingSysIml, _ = imageListForImage(image, tv.DPI())
+	tv.hIml, tv.usingSysIml, _ = imageListForImage(image, 96)
 
 	tv.applyImageList()
 
