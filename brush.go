@@ -289,6 +289,11 @@ func (b *BitmapBrush) simple() bool {
 	return false
 }
 
+type GradientStop struct {
+	Offset float64
+	Color  Color
+}
+
 type GradientVertex struct {
 	X     float64
 	Y     float64
@@ -306,8 +311,56 @@ type GradientBrush struct {
 	mainDelegate *BitmapBrush
 	vertexes     []GradientVertex
 	triangles    []GradientTriangle
+	orientation  gradientOrientation
 	absolute     bool
-	vertical     bool
+}
+
+type gradientOrientation int
+
+const (
+	gradientOrientationNone gradientOrientation = iota
+	gradientOrientationHorizontal
+	gradientOrientationVertical
+)
+
+func NewHorizontalGradientBrush(stops []GradientStop) (*GradientBrush, error) {
+	return newGradientBrushWithOrientation(stops, gradientOrientationHorizontal)
+}
+
+func NewVerticalGradientBrush(stops []GradientStop) (*GradientBrush, error) {
+	return newGradientBrushWithOrientation(stops, gradientOrientationVertical)
+}
+
+func newGradientBrushWithOrientation(stops []GradientStop, orientation gradientOrientation) (*GradientBrush, error) {
+	if len(stops) < 2 {
+		return nil, newError("at least 2 stops are required")
+	}
+
+	var vertexes []GradientVertex
+	var triangles []GradientTriangle
+
+	for i, stop := range stops {
+		var x0, y0, x1, y1 float64
+		if orientation == gradientOrientationHorizontal {
+			x0 = stop.Offset
+			x1 = stop.Offset
+			y1 = 1.0
+		} else {
+			y0 = stop.Offset
+			x1 = 1.0
+			y1 = stop.Offset
+		}
+
+		vertexes = append(vertexes, GradientVertex{X: x0, Y: y0, Color: stop.Color})
+		vertexes = append(vertexes, GradientVertex{X: x1, Y: y1, Color: stop.Color})
+
+		if i > 0 {
+			triangles = append(triangles, GradientTriangle{Vertex1: i*2 - 2, Vertex2: i*2 + 1, Vertex3: i*2 - 1})
+			triangles = append(triangles, GradientTriangle{Vertex1: i*2 - 2, Vertex2: i * 2, Vertex3: i*2 + 1})
+		}
+	}
+
+	return newGradientBrush(vertexes, triangles, orientation)
 }
 
 func NewGradientBrush(vertexes []GradientVertex, triangles []GradientTriangle) (*GradientBrush, error) {
@@ -319,12 +372,16 @@ func NewGradientBrush(vertexes []GradientVertex, triangles []GradientTriangle) (
 		return nil, newError("at least 1 triangle is required")
 	}
 
+	return newGradientBrush(vertexes, triangles, gradientOrientationNone)
+}
+
+func newGradientBrush(vertexes []GradientVertex, triangles []GradientTriangle, orientation gradientOrientation) (*GradientBrush, error) {
 	var size Size
 	for _, v := range vertexes {
 		size = maxSize(size, Size{int(v.X), int(v.Y)})
 	}
 
-	gb := &GradientBrush{vertexes: vertexes, triangles: triangles, absolute: size.Width > 1 || size.Height > 1}
+	gb := &GradientBrush{vertexes: vertexes, triangles: triangles, orientation: orientation, absolute: size.Width > 1 || size.Height > 1}
 
 	if gb.absolute {
 		bb, err := gb.create(size)
@@ -354,6 +411,14 @@ func (*GradientBrush) simple() bool {
 func (b *GradientBrush) create(size Size) (*BitmapBrush, error) {
 	var disposables Disposables
 	defer disposables.Treat()
+
+	switch b.orientation {
+	case gradientOrientationHorizontal:
+		size.Height = 1
+
+	case gradientOrientationVertical:
+		size.Width = 1
+	}
 
 	bitmap, err := NewBitmap(size)
 	if err != nil {
