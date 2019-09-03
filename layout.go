@@ -54,6 +54,10 @@ func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 	var clib *ContainerLayoutItemBase
 
 	layout := container.Layout()
+	if layout == nil && container.Children().Len() == 0 {
+		layout = NewHBoxLayout()
+		layout.SetMargins(Margins{})
+	}
 
 	if widget, ok := container.(Widget); ok {
 		containerItem = widget.CreateLayoutItem(ctx).(ContainerLayoutItem)
