@@ -517,6 +517,12 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 	// We can't use sync.Once, because tooltip.go's init also calls InitWindow, so we deadlock.
 	if atomic.CompareAndSwapUint32(&initedWalk, 0, 1) {
 		runtime.LockOSThread()
+
+		var initCtrls win.INITCOMMONCONTROLSEX
+		initCtrls.DwSize = uint32(unsafe.Sizeof(initCtrls))
+		initCtrls.DwICC = win.ICC_LINK_CLASS | win.ICC_LISTVIEW_CLASSES | win.ICC_PROGRESS_CLASS | win.ICC_TAB_CLASSES | win.ICC_TREEVIEW_CLASSES
+		win.InitCommonControlsEx(&initCtrls)
+
 		defaultWndProcPtr = syscall.NewCallback(defaultWndProc)
 		for _, fn := range walkInit {
 			fn()
