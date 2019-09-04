@@ -81,7 +81,13 @@ func (p *nullPen) Width() int {
 	return 0
 }
 
-var nullPenSingleton Pen = newNullPen()
+var nullPenSingleton Pen
+
+func init() {
+	AppendToWalkInit(func() {
+		nullPenSingleton = newNullPen()
+	})
+}
 
 func NullPen() Pen {
 	return nullPenSingleton

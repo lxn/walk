@@ -17,7 +17,10 @@ import (
 const tabWidgetWindowClass = `\o/ Walk_TabWidget_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(tabWidgetWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(tabWidgetWindowClass)
+		tabWidgetTabWndProcPtr = syscall.NewCallback(tabWidgetTabWndProc)
+	})
 }
 
 type TabWidget struct {
@@ -325,7 +328,7 @@ func (tw *TabWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 	return tw.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-var tabWidgetTabWndProcPtr = syscall.NewCallback(tabWidgetTabWndProc)
+var tabWidgetTabWndProcPtr uintptr
 
 func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	tw := (*TabWidget)(unsafe.Pointer(win.GetWindowLongPtr(hwnd, win.GWLP_USERDATA)))

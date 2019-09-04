@@ -17,7 +17,9 @@ import (
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(mainWindowWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(mainWindowWindowClass)
+	})
 }
 
 type MainWindow struct {

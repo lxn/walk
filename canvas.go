@@ -43,7 +43,13 @@ const (
 	TextPrefixOnly           DrawTextFormat = win.DT_PREFIXONLY
 )
 
-var gM = syscall.StringToUTF16Ptr("gM")
+var gM *uint16
+
+func init() {
+	AppendToWalkInit(func() {
+		gM = syscall.StringToUTF16Ptr("gM")
+	})
+}
 
 type Canvas struct {
 	hdc                 win.HDC

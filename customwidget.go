@@ -15,7 +15,9 @@ import (
 const customWidgetWindowClass = `\o/ Walk_CustomWidget_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(customWidgetWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(customWidgetWindowClass)
+	})
 }
 
 type PaintFunc func(canvas *Canvas, updateBounds Rectangle) error

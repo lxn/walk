@@ -15,10 +15,13 @@ import (
 
 const staticWindowClass = `\o/ Walk_Static_Class \o/`
 
-var staticWndProcPtr = syscall.NewCallback(staticWndProc)
+var staticWndProcPtr uintptr
 
 func init() {
-	MustRegisterWindowClass(staticWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(staticWindowClass)
+		staticWndProcPtr = syscall.NewCallback(staticWndProc)
+	})
 }
 
 type static struct {

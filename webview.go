@@ -19,7 +19,9 @@ import (
 const webViewWindowClass = `\o/ Walk_WebView_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(webViewWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(webViewWindowClass)
+	})
 }
 
 type WebView struct {

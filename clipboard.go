@@ -9,40 +9,40 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
 const clipboardWindowClass = `\o/ Walk_Clipboard_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(clipboardWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClassWithWndProcPtr(clipboardWindowClass, syscall.NewCallback(clipboardWndProc))
 
-	hwnd := win.CreateWindowEx(
-		0,
-		syscall.StringToUTF16Ptr(clipboardWindowClass),
-		nil,
-		0,
-		0,
-		0,
-		0,
-		0,
-		win.HWND_MESSAGE,
-		0,
-		0,
-		nil)
+		hwnd := win.CreateWindowEx(
+			0,
+			syscall.StringToUTF16Ptr(clipboardWindowClass),
+			nil,
+			0,
+			0,
+			0,
+			0,
+			0,
+			win.HWND_MESSAGE,
+			0,
+			0,
+			nil)
 
-	if hwnd == 0 {
-		panic("failed to create clipboard window")
-	}
+		if hwnd == 0 {
+			panic("failed to create clipboard window")
+		}
 
-	if !win.AddClipboardFormatListener(hwnd) {
-		lastError("AddClipboardFormatListener")
-	}
+		if !win.AddClipboardFormatListener(hwnd) {
+			lastError("AddClipboardFormatListener")
+		}
 
-	clipboard.hwnd = hwnd
+		clipboard.hwnd = hwnd
+	})
 }
 
 func clipboardWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {

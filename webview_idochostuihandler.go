@@ -18,26 +18,28 @@ import (
 var webViewIDocHostUIHandlerVtbl *win.IDocHostUIHandlerVtbl
 
 func init() {
-	webViewIDocHostUIHandlerVtbl = &win.IDocHostUIHandlerVtbl{
-		syscall.NewCallback(webView_IDocHostUIHandler_QueryInterface),
-		syscall.NewCallback(webView_IDocHostUIHandler_AddRef),
-		syscall.NewCallback(webView_IDocHostUIHandler_Release),
-		syscall.NewCallback(webView_IDocHostUIHandler_ShowContextMenu),
-		syscall.NewCallback(webView_IDocHostUIHandler_GetHostInfo),
-		syscall.NewCallback(webView_IDocHostUIHandler_ShowUI),
-		syscall.NewCallback(webView_IDocHostUIHandler_HideUI),
-		syscall.NewCallback(webView_IDocHostUIHandler_UpdateUI),
-		syscall.NewCallback(webView_IDocHostUIHandler_EnableModeless),
-		syscall.NewCallback(webView_IDocHostUIHandler_OnDocWindowActivate),
-		syscall.NewCallback(webView_IDocHostUIHandler_OnFrameWindowActivate),
-		syscall.NewCallback(webView_IDocHostUIHandler_ResizeBorder),
-		syscall.NewCallback(webView_IDocHostUIHandler_TranslateAccelerator),
-		syscall.NewCallback(webView_IDocHostUIHandler_GetOptionKeyPath),
-		syscall.NewCallback(webView_IDocHostUIHandler_GetDropTarget),
-		syscall.NewCallback(webView_IDocHostUIHandler_GetExternal),
-		syscall.NewCallback(webView_IDocHostUIHandler_TranslateUrl),
-		syscall.NewCallback(webView_IDocHostUIHandler_FilterDataObject),
-	}
+	AppendToWalkInit(func() {
+		webViewIDocHostUIHandlerVtbl = &win.IDocHostUIHandlerVtbl{
+			syscall.NewCallback(webView_IDocHostUIHandler_QueryInterface),
+			syscall.NewCallback(webView_IDocHostUIHandler_AddRef),
+			syscall.NewCallback(webView_IDocHostUIHandler_Release),
+			syscall.NewCallback(webView_IDocHostUIHandler_ShowContextMenu),
+			syscall.NewCallback(webView_IDocHostUIHandler_GetHostInfo),
+			syscall.NewCallback(webView_IDocHostUIHandler_ShowUI),
+			syscall.NewCallback(webView_IDocHostUIHandler_HideUI),
+			syscall.NewCallback(webView_IDocHostUIHandler_UpdateUI),
+			syscall.NewCallback(webView_IDocHostUIHandler_EnableModeless),
+			syscall.NewCallback(webView_IDocHostUIHandler_OnDocWindowActivate),
+			syscall.NewCallback(webView_IDocHostUIHandler_OnFrameWindowActivate),
+			syscall.NewCallback(webView_IDocHostUIHandler_ResizeBorder),
+			syscall.NewCallback(webView_IDocHostUIHandler_TranslateAccelerator),
+			syscall.NewCallback(webView_IDocHostUIHandler_GetOptionKeyPath),
+			syscall.NewCallback(webView_IDocHostUIHandler_GetDropTarget),
+			syscall.NewCallback(webView_IDocHostUIHandler_GetExternal),
+			syscall.NewCallback(webView_IDocHostUIHandler_TranslateUrl),
+			syscall.NewCallback(webView_IDocHostUIHandler_FilterDataObject),
+		}
+	})
 }
 
 type webViewIDocHostUIHandler struct {

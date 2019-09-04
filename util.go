@@ -28,17 +28,19 @@ var (
 )
 
 func init() {
-	var buf [4]uint16
+	AppendToWalkInit(func() {
+		var buf [4]uint16
 
-	win.GetLocaleInfo(win.LOCALE_USER_DEFAULT, win.LOCALE_SDECIMAL, &buf[0], int32(len(buf)))
-	decimalSepB = byte(buf[0])
-	decimalSepS = syscall.UTF16ToString(buf[0:1])
-	decimalSepUint16 = buf[0]
+		win.GetLocaleInfo(win.LOCALE_USER_DEFAULT, win.LOCALE_SDECIMAL, &buf[0], int32(len(buf)))
+		decimalSepB = byte(buf[0])
+		decimalSepS = syscall.UTF16ToString(buf[0:1])
+		decimalSepUint16 = buf[0]
 
-	win.GetLocaleInfo(win.LOCALE_USER_DEFAULT, win.LOCALE_STHOUSAND, &buf[0], int32(len(buf)))
-	groupSepB = byte(buf[0])
-	groupSepS = syscall.UTF16ToString(buf[0:1])
-	groupSepUint16 = buf[0]
+		win.GetLocaleInfo(win.LOCALE_USER_DEFAULT, win.LOCALE_STHOUSAND, &buf[0], int32(len(buf)))
+		groupSepB = byte(buf[0])
+		groupSepS = syscall.UTF16ToString(buf[0:1])
+		groupSepUint16 = buf[0]
+	})
 }
 
 func maxi(a, b int) int {

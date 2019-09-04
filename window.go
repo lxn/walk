@@ -12,6 +12,7 @@ import (
 	"image"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"unsafe"
 
@@ -433,9 +434,16 @@ type WindowBase struct {
 
 var (
 	registeredWindowClasses = make(map[string]bool)
-	defaultWndProcPtr       = syscall.NewCallback(defaultWndProc)
+	defaultWndProcPtr       uintptr
 	hwnd2WindowBase         = make(map[win.HWND]*WindowBase)
 )
+
+func init() {
+	AppendToWalkInit(func() {
+		forEachDescendantCallbackPtr = syscall.NewCallback(forEachDescendant)
+		dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+	})
+}
 
 // MustRegisterWindowClass registers the specified window class.
 //
@@ -495,14 +503,24 @@ func MustRegisterWindowClassWithWndProcPtrAndStyle(className string, wndProcPtr 
 	registeredWindowClasses[className] = true
 }
 
-var lockedOSThread bool
+var initedWalk uint32
+var walkInit []func()
+
+func AppendToWalkInit(fn func()) {
+	walkInit = append(walkInit, fn)
+}
 
 // InitWindow initializes a window.
 //
 // Widgets should be initialized using InitWidget instead.
 func InitWindow(window, parent Window, className string, style, exStyle uint32) error {
-	if !lockedOSThread {
+	// We can't use sync.Once, because tooltip.go's init also calls InitWindow, so we deadlock.
+	if atomic.CompareAndSwapUint32(&initedWalk, 0, 1) {
 		runtime.LockOSThread()
+		defaultWndProcPtr = syscall.NewCallback(defaultWndProc)
+		for _, fn := range walkInit {
+			fn()
+		}
 	}
 
 	wb := window.AsWindowBase()
@@ -1188,7 +1206,7 @@ func forEachDescendant(hwnd win.HWND, lParam uintptr) uintptr {
 }
 
 var (
-	forEachDescendantCallbackPtr = syscall.NewCallback(forEachDescendant)
+	forEachDescendantCallbackPtr uintptr
 	forEachDescendantCallback    func(widget Widget) bool
 )
 
@@ -1382,7 +1400,7 @@ type fontInfoAndDPI struct {
 }
 
 var (
-	dialogBaseUnitsUTF16StringPtr  = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+	dialogBaseUnitsUTF16StringPtr  *uint16
 	fontInfoAndDPI2DialogBaseUnits = make(map[fontInfoAndDPI]Size)
 )
 

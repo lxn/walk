@@ -151,7 +151,10 @@ func (*nullBrush) simple() bool {
 	return true
 }
 
-var nullBrushSingleton Brush = newNullBrush()
+var (
+	nullBrushSingleton   Brush
+	sysColorBtnFaceBrush *SystemColorBrush
+)
 
 func NullBrush() Brush {
 	return nullBrushSingleton
@@ -162,7 +165,12 @@ type SystemColorBrush struct {
 	sysColor SystemColor
 }
 
-var sysColorBtnFaceBrush, _ = NewSystemColorBrush(SysColorBtnFace)
+func init() {
+	AppendToWalkInit(func() {
+		nullBrushSingleton = newNullBrush()
+		sysColorBtnFaceBrush, _ = NewSystemColorBrush(SysColorBtnFace)
+	})
+}
 
 func NewSystemColorBrush(sysColor SystemColor) (*SystemColorBrush, error) {
 	hBrush := win.GetSysColorBrush(int(sysColor))
@@ -195,8 +203,6 @@ func (b *SystemColorBrush) logbrush() *win.LOGBRUSH {
 func (*SystemColorBrush) simple() bool {
 	return true
 }
-
-var sysColorBtnFaceBrushSingleton, _ = NewSystemColorBrush(SysColorBtnFace)
 
 type SolidColorBrush struct {
 	brushBase

@@ -6,7 +6,13 @@
 
 package walk
 
-var iconCache = NewIconCache()
+var iconCache *IconCache
+
+func init() {
+	AppendToWalkInit(func() {
+		iconCache = NewIconCache()
+	})
+}
 
 type IconCache struct {
 	imageAndDPI2Bitmap map[imageAndDPI]*Bitmap

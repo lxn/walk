@@ -16,7 +16,9 @@ import (
 const groupBoxWindowClass = `\o/ Walk_GroupBox_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(groupBoxWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(groupBoxWindowClass)
+	})
 }
 
 type GroupBox struct {

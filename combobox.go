@@ -43,7 +43,13 @@ type ComboBox struct {
 	persistent                   bool
 }
 
-var comboBoxEditWndProcPtr = syscall.NewCallback(comboBoxEditWndProc)
+var comboBoxEditWndProcPtr uintptr
+
+func init() {
+	AppendToWalkInit(func() {
+		comboBoxEditWndProcPtr = syscall.NewCallback(comboBoxEditWndProc)
+	})
+}
 
 func comboBoxEditWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	cb := (*ComboBox)(unsafe.Pointer(win.GetWindowLongPtr(hwnd, win.GWLP_USERDATA)))

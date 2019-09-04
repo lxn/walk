@@ -9,7 +9,9 @@ package walk
 const spacerWindowClass = `\o/ Walk_Spacer_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(spacerWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(spacerWindowClass)
+	})
 }
 
 type Spacer struct {

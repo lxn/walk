@@ -478,7 +478,13 @@ func firstFocusableDescendantCallback(hwnd win.HWND, lParam uintptr) uintptr {
 	return 1
 }
 
-var firstFocusableDescendantCallbackPtr = syscall.NewCallback(firstFocusableDescendantCallback)
+var firstFocusableDescendantCallbackPtr uintptr
+
+func init() {
+	AppendToWalkInit(func() {
+		firstFocusableDescendantCallbackPtr = syscall.NewCallback(firstFocusableDescendantCallback)
+	})
+}
 
 func firstFocusableDescendant(container Container) Window {
 	var hwnd win.HWND
