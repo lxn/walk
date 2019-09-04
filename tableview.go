@@ -386,6 +386,11 @@ func (tv *TableView) ApplyDPI(dpi int) {
 	}
 
 	tv.disposeImageListAndCaches()
+
+	if bmp, err := NewBitmap(tv.SizeFrom96DPI(Size{16, 16})); err == nil {
+		tv.applyImageListForImage(bmp)
+		bmp.Dispose()
+	}
 }
 
 func (tv *TableView) ApplySysColors() {
