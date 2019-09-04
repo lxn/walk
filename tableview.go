@@ -557,6 +557,31 @@ func (tv *TableView) SetAlternatingRowBGColor(c Color) {
 	tv.Invalidate()
 }
 
+// Gridlines returns if the rows are separated by grid lines.
+func (tv *TableView) Gridlines() bool {
+	exStyle := win.SendMessage(tv.hwndNormalLV, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	return exStyle&win.LVS_EX_GRIDLINES > 0
+}
+
+// SetGridlines sets if the rows are separated by grid lines.
+func (tv *TableView) SetGridlines(enabled bool) {
+	var hwnd win.HWND
+	if tv.hasFrozenColumn {
+		hwnd = tv.hwndFrozenLV
+	} else {
+		hwnd = tv.hwndNormalLV
+	}
+
+	exStyle := win.SendMessage(hwnd, win.LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0)
+	if enabled {
+		exStyle |= win.LVS_EX_GRIDLINES
+	} else {
+		exStyle &^= win.LVS_EX_GRIDLINES
+	}
+	win.SendMessage(tv.hwndFrozenLV, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+	win.SendMessage(tv.hwndNormalLV, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
+}
+
 // Columns returns the list of columns.
 func (tv *TableView) Columns() *TableViewColumnList {
 	return tv.columns
