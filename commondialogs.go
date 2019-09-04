@@ -127,40 +127,47 @@ func (dlg *FileDialog) ShowSave(owner Form) (accepted bool, err error) {
 	return dlg.show(owner, win.GetSaveFileName, 0)
 }
 
+func pathFromPIDL(pidl uintptr) (string, error) {
+	var path [win.MAX_PATH]uint16
+	if !win.SHGetPathFromIDList(pidl, &path[0]) {
+		return "", newError("SHGetPathFromIDList failed")
+	}
+
+	return syscall.UTF16ToString(path[:]), nil
+}
+
+// We use this callback to disable the OK button in case of "invalid" selections.
+func browseFolderCallback(hwnd win.HWND, msg uint32, lp, wp uintptr) uintptr {
+	const BFFM_SELCHANGED = 2
+	if msg == BFFM_SELCHANGED {
+		_, err := pathFromPIDL(lp)
+		var enabled uintptr
+		if err == nil {
+			enabled = 1
+		}
+
+		const BFFM_ENABLEOK = win.WM_USER + 101
+
+		win.SendMessage(hwnd, BFFM_ENABLEOK, 0, enabled)
+	}
+
+	return 0
+}
+
+var browseFolderCallbackPtr uintptr
+
+func init() {
+	AppendToWalkInit(func() {
+		browseFolderCallbackPtr = syscall.NewCallback(browseFolderCallback)
+	})
+}
+
 func (dlg *FileDialog) ShowBrowseFolder(owner Form) (accepted bool, err error) {
 	// Calling OleInitialize (or similar) is required for BIF_NEWDIALOGSTYLE.
 	if hr := win.OleInitialize(); hr != win.S_OK && hr != win.S_FALSE {
 		return false, newError(fmt.Sprint("OleInitialize Error: ", hr))
 	}
 	defer win.OleUninitialize()
-
-	pathFromPIDL := func(pidl uintptr) (string, error) {
-		var path [win.MAX_PATH]uint16
-		if !win.SHGetPathFromIDList(pidl, &path[0]) {
-			return "", newError("SHGetPathFromIDList failed")
-		}
-
-		return syscall.UTF16ToString(path[:]), nil
-	}
-
-	// We use this callback to disable the OK button in case of "invalid"
-	// selections.
-	callback := func(hwnd win.HWND, msg uint32, lp, wp uintptr) uintptr {
-		const BFFM_SELCHANGED = 2
-		if msg == BFFM_SELCHANGED {
-			_, err := pathFromPIDL(lp)
-			var enabled uintptr
-			if err == nil {
-				enabled = 1
-			}
-
-			const BFFM_ENABLEOK = win.WM_USER + 101
-
-			win.SendMessage(hwnd, BFFM_ENABLEOK, 0, enabled)
-		}
-
-		return 0
-	}
 
 	var ownerHwnd win.HWND
 	if owner != nil {
@@ -178,7 +185,7 @@ func (dlg *FileDialog) ShowBrowseFolder(owner Form) (accepted bool, err error) {
 		HwndOwner: ownerHwnd,
 		LpszTitle: syscall.StringToUTF16Ptr(dlg.Title),
 		UlFlags:   BIF_NEWDIALOGSTYLE,
-		Lpfn:      syscall.NewCallback(callback),
+		Lpfn:      browseFolderCallbackPtr,
 	}
 
 	win.SHParseDisplayName(&buf[0], 0, &bi.PidlRoot, 0, nil)
