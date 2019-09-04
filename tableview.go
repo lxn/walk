@@ -87,7 +87,6 @@ type TableView struct {
 	columnsOrderableChangedPublisher   EventPublisher
 	columnsSizableChangedPublisher     EventPublisher
 	itemCountChangedPublisher          EventPublisher
-	gridlinesChangedPublisher          EventPublisher
 	publishNextSelClear                bool
 	inSetSelectedIndexes               bool
 	lastColumnStretched                bool
@@ -265,16 +264,6 @@ func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error
 			return tv.SetColumnsSizable(b)
 		},
 		tv.columnsSizableChangedPublisher.Event()))
-
-	tv.MustRegisterProperty("Gridlines", NewBoolProperty(
-		func() bool {
-			return tv.Gridlines()
-		},
-		func(b bool) error {
-			tv.SetGridlines(b)
-			return nil
-		},
-		tv.gridlinesChangedPublisher.Event()))
 
 	tv.MustRegisterProperty("CurrentIndex", NewProperty(
 		func() interface{} {
@@ -586,8 +575,6 @@ func (tv *TableView) SetGridlines(enabled bool) {
 	}
 	win.SendMessage(tv.hwndFrozenLV, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
 	win.SendMessage(tv.hwndNormalLV, win.LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle)
-
-	tv.gridlinesChangedPublisher.Publish()
 }
 
 // Columns returns the list of columns.
