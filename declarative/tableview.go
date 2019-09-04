@@ -48,7 +48,7 @@ type TableView struct {
 
 	// TableView
 
-	AlternatingRowBGColor       walk.Color
+	AlternatingRowBG            bool
 	AssignTo                    **walk.TableView
 	CellStyler                  walk.CellStyler
 	CheckBoxes                  bool
@@ -157,9 +157,7 @@ func (tv TableView) Create(builder *Builder) error {
 			w.SetCellStyler(styler)
 		}
 
-		if tv.AlternatingRowBGColor != 0 {
-			w.SetAlternatingRowBGColor(tv.AlternatingRowBGColor)
-		}
+		w.SetAlternatingRowBG(tv.AlternatingRowBG)
 		w.SetCheckBoxes(tv.CheckBoxes)
 		w.SetItemStateChangedEventDelay(tv.ItemStateChangedEventDelay)
 		if err := w.SetLastColumnStretched(tv.LastColumnStretched); err != nil {

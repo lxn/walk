@@ -177,11 +177,11 @@ func main() {
 				},
 			},
 			TableView{
-				AssignTo:              &tv,
-				AlternatingRowBGColor: walk.RGB(239, 239, 239),
-				CheckBoxes:            true,
-				ColumnsOrderable:      true,
-				MultiSelection:        true,
+				AssignTo:         &tv,
+				AlternatingRowBG: true,
+				CheckBoxes:       true,
+				ColumnsOrderable: true,
+				MultiSelection:   true,
 				Columns: []TableViewColumn{
 					{Title: "#"},
 					{Title: "Bar"},

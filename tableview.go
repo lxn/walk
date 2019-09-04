@@ -100,7 +100,8 @@ type TableView struct {
 	itemBGColor                        Color
 	itemTextColor                      Color
 	alternatingRowBGColor              Color
-	hasDarkAltBGColor                  bool
+	alternatingRowTextColor            Color
+	alternatingRowBG                   bool
 	delayedCurrentIndexChangedCanceled bool
 	sortedColumnIndex                  int
 	sortOrder                          SortOrder
@@ -403,34 +404,48 @@ func (tv *TableView) ApplySysColors() {
 	tv.themeSelectedBGColor = tv.themeNormalBGColor
 	tv.themeSelectedTextColor = tv.themeNormalTextColor
 	tv.themeSelectedNotFocusedBGColor = tv.themeNormalBGColor
+	tv.alternatingRowBGColor = Color(win.GetSysColor(win.COLOR_BTNFACE))
+	tv.alternatingRowTextColor = Color(win.GetSysColor(win.COLOR_BTNTEXT))
 
-	if hTheme := win.OpenThemeData(tv.hwndNormalLV, syscall.StringToUTF16Ptr("Listview")); hTheme != 0 {
-		defer win.CloseThemeData(hTheme)
+	type item struct {
+		stateID    int32
+		propertyID int32
+		color      *Color
+	}
 
-		type item struct {
-			stateID    int32
-			propertyID int32
-			color      *Color
+	getThemeColor := func(theme win.HTHEME, partId int32, items []item) {
+		for _, item := range items {
+			var c win.COLORREF
+			if result := win.GetThemeColor(theme, partId, item.stateID, item.propertyID, &c); !win.FAILED(result) {
+				(*item.color) = Color(c)
+			}
 		}
+	}
 
-		items := [...]item{
+	if hThemeListView := win.OpenThemeData(tv.hwndNormalLV, syscall.StringToUTF16Ptr("Listview")); hThemeListView != 0 {
+		defer win.CloseThemeData(hThemeListView)
+
+		getThemeColor(hThemeListView, win.LVP_LISTITEM, []item{
 			{win.LISS_NORMAL, win.TMT_FILLCOLOR, &tv.themeNormalBGColor},
 			{win.LISS_NORMAL, win.TMT_TEXTCOLOR, &tv.themeNormalTextColor},
 			{win.LISS_SELECTED, win.TMT_FILLCOLOR, &tv.themeSelectedBGColor},
 			{win.LISS_SELECTED, win.TMT_TEXTCOLOR, &tv.themeSelectedTextColor},
 			{win.LISS_SELECTEDNOTFOCUS, win.TMT_FILLCOLOR, &tv.themeSelectedNotFocusedBGColor},
-		}
-		for _, item := range items {
-			var c win.COLORREF
-			if result := win.GetThemeColor(hTheme, win.LVP_LISTITEM, item.stateID, item.propertyID, &c); !win.FAILED(result) {
-				(*item.color) = Color(c)
-			}
-		}
+		})
 	} else {
 		// The others already have been retrieved above.
 		tv.themeSelectedBGColor = Color(win.GetSysColor(win.COLOR_HIGHLIGHT))
 		tv.themeSelectedTextColor = Color(win.GetSysColor(win.COLOR_HIGHLIGHTTEXT))
 		tv.themeSelectedNotFocusedBGColor = Color(win.GetSysColor(win.COLOR_BTNFACE))
+	}
+
+	if hThemeButton := win.OpenThemeData(tv.hwndNormalLV, syscall.StringToUTF16Ptr("BUTTON")); hThemeButton != 0 {
+		defer win.CloseThemeData(hThemeButton)
+
+		getThemeColor(hThemeButton, win.BP_PUSHBUTTON, []item{
+			{win.PBS_NORMAL, win.TMT_FILLCOLOR, &tv.alternatingRowBGColor},
+			{win.PBS_NORMAL, win.TMT_TEXTCOLOR, &tv.alternatingRowTextColor},
+		})
 	}
 
 	win.SendMessage(tv.hwndNormalLV, win.LVM_SETBKCOLOR, 0, uintptr(tv.themeNormalBGColor))
@@ -543,16 +558,14 @@ func (tv *TableView) SetHeaderHidden(hidden bool) error {
 	return updateStyle(tv.hwndNormalLV)
 }
 
-// AlternatingRowBGColor returns the alternating row background color.
-func (tv *TableView) AlternatingRowBGColor() Color {
-	return tv.alternatingRowBGColor
+// AlternatingRowBG returns the alternating row background.
+func (tv *TableView) AlternatingRowBG() bool {
+	return tv.alternatingRowBG
 }
 
-// SetAlternatingRowBGColor sets the alternating row background color.
-func (tv *TableView) SetAlternatingRowBGColor(c Color) {
-	tv.alternatingRowBGColor = c
-
-	tv.hasDarkAltBGColor = int(c.R())+int(c.G())+int(c.B()) < 128*3
+// SetAlternatingRowBG sets the alternating row background.
+func (tv *TableView) SetAlternatingRowBG(enabled bool) {
+	tv.alternatingRowBG = enabled
 
 	tv.Invalidate()
 }
@@ -2009,8 +2022,9 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						tv.itemTextColor = tv.themeNormalTextColor
 					}
 
-					if !selected && tv.alternatingRowBGColor != 0 && row%2 == 1 {
+					if !selected && tv.alternatingRowBG && row%2 == 1 {
 						tv.itemBGColor = tv.alternatingRowBGColor
+						tv.itemTextColor = tv.alternatingRowTextColor
 					}
 
 					tv.style.BackgroundColor = tv.itemBGColor
