@@ -17,7 +17,9 @@ import (
 const myWidgetWindowClass = "MyWidget Class"
 
 func init() {
-	walk.MustRegisterWindowClass(myWidgetWindowClass)
+	walk.AppendToWalkInit(func() {
+		walk.MustRegisterWindowClass(myWidgetWindowClass)
+	})
 }
 
 func main() {
