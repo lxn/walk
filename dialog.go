@@ -31,7 +31,9 @@ const (
 const dialogWindowClass = `\o/ Walk_Dialog_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(dialogWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(dialogWindowClass)
+	})
 }
 
 type dialogish interface {

@@ -32,17 +32,19 @@ var (
 )
 
 func init() {
-	// Retrieve screen DPI
-	hDC := win.GetDC(0)
-	defer win.ReleaseDC(0, hDC)
-	screenDPIX = int(win.GetDeviceCaps(hDC, win.LOGPIXELSX))
-	screenDPIY = int(win.GetDeviceCaps(hDC, win.LOGPIXELSY))
+	AppendToWalkInit(func() {
+		// Retrieve screen DPI
+		hDC := win.GetDC(0)
+		defer win.ReleaseDC(0, hDC)
+		screenDPIX = int(win.GetDeviceCaps(hDC, win.LOGPIXELSX))
+		screenDPIY = int(win.GetDeviceCaps(hDC, win.LOGPIXELSY))
 
-	// Initialize default font
-	var err error
-	if defaultFont, err = NewFont("MS Shell Dlg 2", 8, 0); err != nil {
-		panic("failed to create default font")
-	}
+		// Initialize default font
+		var err error
+		if defaultFont, err = NewFont("MS Shell Dlg 2", 8, 0); err != nil {
+			panic("failed to create default font")
+		}
+	})
 }
 
 type fontInfo struct {

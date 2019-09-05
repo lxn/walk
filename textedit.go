@@ -94,7 +94,13 @@ func (te *TextEdit) updateMargins() {
 	te.margins.Height = defaultSize.Height - lineHeight
 }
 
-var drawTextCompatibleEditWordbreakProcPtr = syscall.NewCallback(drawTextCompatibleEditWordbreakProc)
+var drawTextCompatibleEditWordbreakProcPtr uintptr
+
+func init() {
+	AppendToWalkInit(func() {
+		drawTextCompatibleEditWordbreakProcPtr = syscall.NewCallback(drawTextCompatibleEditWordbreakProc)
+	})
+}
 
 func drawTextCompatibleEditWordbreakProc(lpch *uint16, ichCurrent, cch, code uintptr) uintptr {
 	switch code {

@@ -13,7 +13,9 @@ import (
 const splitterHandleWindowClass = `\o/ Walk_SplitterHandle_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(splitterHandleWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(splitterHandleWindowClass)
+	})
 }
 
 type splitterHandle struct {

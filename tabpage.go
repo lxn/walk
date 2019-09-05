@@ -17,9 +17,11 @@ const tabPageWindowClass = `\o/ Walk_TabPage_Class \o/`
 var tabPageBackgroundBrush Brush
 
 func init() {
-	MustRegisterWindowClass(tabPageWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(tabPageWindowClass)
 
-	tabPageBackgroundBrush, _ = NewSystemColorBrush(win.COLOR_WINDOW)
+		tabPageBackgroundBrush, _ = NewSystemColorBrush(win.COLOR_WINDOW)
+	})
 }
 
 type TabPage struct {

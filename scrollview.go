@@ -15,7 +15,9 @@ import (
 const scrollViewWindowClass = `\o/ Walk_ScrollView_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(scrollViewWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(scrollViewWindowClass)
+	})
 }
 
 type ScrollView struct {

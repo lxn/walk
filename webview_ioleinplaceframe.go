@@ -17,23 +17,25 @@ import (
 var webViewIOleInPlaceFrameVtbl *win.IOleInPlaceFrameVtbl
 
 func init() {
-	webViewIOleInPlaceFrameVtbl = &win.IOleInPlaceFrameVtbl{
-		syscall.NewCallback(webView_IOleInPlaceFrame_QueryInterface),
-		syscall.NewCallback(webView_IOleInPlaceFrame_AddRef),
-		syscall.NewCallback(webView_IOleInPlaceFrame_Release),
-		syscall.NewCallback(webView_IOleInPlaceFrame_GetWindow),
-		syscall.NewCallback(webView_IOleInPlaceFrame_ContextSensitiveHelp),
-		syscall.NewCallback(webView_IOleInPlaceFrame_GetBorder),
-		syscall.NewCallback(webView_IOleInPlaceFrame_RequestBorderSpace),
-		syscall.NewCallback(webView_IOleInPlaceFrame_SetBorderSpace),
-		syscall.NewCallback(webView_IOleInPlaceFrame_SetActiveObject),
-		syscall.NewCallback(webView_IOleInPlaceFrame_InsertMenus),
-		syscall.NewCallback(webView_IOleInPlaceFrame_SetMenu),
-		syscall.NewCallback(webView_IOleInPlaceFrame_RemoveMenus),
-		syscall.NewCallback(webView_IOleInPlaceFrame_SetStatusText),
-		syscall.NewCallback(webView_IOleInPlaceFrame_EnableModeless),
-		syscall.NewCallback(webView_IOleInPlaceFrame_TranslateAccelerator),
-	}
+	AppendToWalkInit(func() {
+		webViewIOleInPlaceFrameVtbl = &win.IOleInPlaceFrameVtbl{
+			syscall.NewCallback(webView_IOleInPlaceFrame_QueryInterface),
+			syscall.NewCallback(webView_IOleInPlaceFrame_AddRef),
+			syscall.NewCallback(webView_IOleInPlaceFrame_Release),
+			syscall.NewCallback(webView_IOleInPlaceFrame_GetWindow),
+			syscall.NewCallback(webView_IOleInPlaceFrame_ContextSensitiveHelp),
+			syscall.NewCallback(webView_IOleInPlaceFrame_GetBorder),
+			syscall.NewCallback(webView_IOleInPlaceFrame_RequestBorderSpace),
+			syscall.NewCallback(webView_IOleInPlaceFrame_SetBorderSpace),
+			syscall.NewCallback(webView_IOleInPlaceFrame_SetActiveObject),
+			syscall.NewCallback(webView_IOleInPlaceFrame_InsertMenus),
+			syscall.NewCallback(webView_IOleInPlaceFrame_SetMenu),
+			syscall.NewCallback(webView_IOleInPlaceFrame_RemoveMenus),
+			syscall.NewCallback(webView_IOleInPlaceFrame_SetStatusText),
+			syscall.NewCallback(webView_IOleInPlaceFrame_EnableModeless),
+			syscall.NewCallback(webView_IOleInPlaceFrame_TranslateAccelerator),
+		}
+	})
 }
 
 type webViewIOleInPlaceFrame struct {

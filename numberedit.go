@@ -21,7 +21,9 @@ import (
 const numberEditWindowClass = `\o/ Walk_NumberEdit_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(numberEditWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(numberEditWindowClass)
+	})
 }
 
 // NumberEdit is a widget that is suited to edit numeric values.

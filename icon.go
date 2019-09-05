@@ -20,7 +20,9 @@ import (
 var defaultIconSize Size
 
 func init() {
-	defaultIconSize = Size{int(win.GetSystemMetricsForDpi(win.SM_CXSMICON, 96)), int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))}
+	AppendToWalkInit(func() {
+		defaultIconSize = Size{int(win.GetSystemMetricsForDpi(win.SM_CXSMICON, 96)), int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))}
+	})
 }
 
 // Icon is a bitmap that supports transparency and combining multiple

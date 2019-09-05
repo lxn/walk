@@ -13,7 +13,9 @@ import (
 const compositeWindowClass = `\o/ Walk_Composite_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(compositeWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(compositeWindowClass)
+	})
 }
 
 type Composite struct {

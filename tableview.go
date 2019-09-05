@@ -20,17 +20,22 @@ import (
 
 const tableViewWindowClass = `\o/ Walk_TableView_Class \o/`
 
-func init() {
-	MustRegisterWindowClass(tableViewWindowClass)
-}
-
 var (
 	white                       = win.COLORREF(RGB(255, 255, 255))
 	checkmark                   = string([]byte{0xE2, 0x9C, 0x94})
-	tableViewFrozenLVWndProcPtr = syscall.NewCallback(tableViewFrozenLVWndProc)
-	tableViewNormalLVWndProcPtr = syscall.NewCallback(tableViewNormalLVWndProc)
-	tableViewHdrWndProcPtr      = syscall.NewCallback(tableViewHdrWndProc)
+	tableViewFrozenLVWndProcPtr uintptr
+	tableViewNormalLVWndProcPtr uintptr
+	tableViewHdrWndProcPtr      uintptr
 )
+
+func init() {
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(tableViewWindowClass)
+		tableViewFrozenLVWndProcPtr = syscall.NewCallback(tableViewFrozenLVWndProc)
+		tableViewNormalLVWndProcPtr = syscall.NewCallback(tableViewNormalLVWndProc)
+		tableViewHdrWndProcPtr = syscall.NewCallback(tableViewHdrWndProc)
+	})
+}
 
 const (
 	tableViewCurrentIndexChangedTimerId = 1 + iota

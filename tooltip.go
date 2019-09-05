@@ -21,10 +21,12 @@ import (
 const maxToolTipTextLen = 1024 // including NUL terminator
 
 func init() {
-	var err error
-	if globalToolTip, err = NewToolTip(); err != nil {
-		panic(err)
-	}
+	AppendToWalkInit(func() {
+		var err error
+		if globalToolTip, err = NewToolTip(); err != nil {
+			panic(err)
+		}
+	})
 }
 
 type ToolTip struct {

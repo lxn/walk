@@ -22,8 +22,14 @@ import (
 
 var (
 	conditionsByName = make(map[string]walk.Condition)
-	propertyRE       = regexp.MustCompile("[A-Za-z]+[0-9A-Za-z]*(\\.[A-Za-z]+[0-9A-Za-z]*)+")
+	propertyRE       *regexp.Regexp
 )
+
+func init() {
+	walk.AppendToWalkInit(func() {
+		propertyRE = regexp.MustCompile("[A-Za-z]+[0-9A-Za-z]*(\\.[A-Za-z]+[0-9A-Za-z]*)+")
+	})
+}
 
 func MustRegisterCondition(name string, condition walk.Condition) {
 	if name == "" {

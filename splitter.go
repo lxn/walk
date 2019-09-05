@@ -21,10 +21,12 @@ const splitterWindowClass = `\o/ Walk_Splitter_Class \o/`
 var splitterHandleDraggingBrush *SolidColorBrush
 
 func init() {
-	MustRegisterWindowClass(splitterWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(splitterWindowClass)
 
-	splitterHandleDraggingBrush, _ = NewSolidColorBrush(Color(win.GetSysColor(win.COLOR_BTNSHADOW)))
-	splitterHandleDraggingBrush.wb2info = map[*WindowBase]*windowBrushInfo{nil: nil}
+		splitterHandleDraggingBrush, _ = NewSolidColorBrush(Color(win.GetSysColor(win.COLOR_BTNSHADOW)))
+		splitterHandleDraggingBrush.wb2info = map[*WindowBase]*windowBrushInfo{nil: nil}
+	})
 }
 
 type Splitter struct {
