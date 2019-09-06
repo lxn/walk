@@ -394,6 +394,7 @@ type calcTextSizeInfo struct {
 // WindowBase implements many operations common to all Windows.
 type WindowBase struct {
 	nopActionListObserver
+	group                     *WindowGroup
 	window                    Window
 	form                      Form
 	hWnd                      win.HWND
@@ -576,6 +577,9 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 	} else {
 		wb.hWnd = hwnd
 	}
+
+	//fmt.Printf("Create: %p %s\n", wb, className)
+	wb.group = wgm.Group(win.GetCurrentThreadId())
 
 	succeeded := false
 	defer func() {
@@ -815,12 +819,6 @@ func (wb *WindowBase) Dispose() {
 	if hWnd != 0 {
 		wb.disposingPublisher.Publish()
 
-		switch w := wb.window.(type) {
-		case *ToolTip:
-		case Widget:
-			globalToolTip.RemoveTool(w)
-		}
-
 		wb.hWnd = 0
 		if _, ok := hwnd2WindowBase[hWnd]; ok {
 			win.DestroyWindow(hWnd)
@@ -838,6 +836,11 @@ func (wb *WindowBase) Dispose() {
 
 	for _, p := range wb.name2Property {
 		p.SetSource(nil)
+	}
+
+	if hWnd != 0 {
+		//fmt.Printf("Dispose: %p\n", wb)
+		wb.group.Done()
 	}
 }
 

@@ -20,20 +20,9 @@ import (
 // 1024 instead.
 const maxToolTipTextLen = 1024 // including NUL terminator
 
-func init() {
-	AppendToWalkInit(func() {
-		var err error
-		if globalToolTip, err = NewToolTip(); err != nil {
-			panic(err)
-		}
-	})
-}
-
 type ToolTip struct {
 	WindowBase
 }
-
-var globalToolTip *ToolTip
 
 func NewToolTip() (*ToolTip, error) {
 	tt, err := newToolTip(0)
