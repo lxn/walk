@@ -578,8 +578,22 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		wb.hWnd = hwnd
 	}
 
-	//fmt.Printf("Create: %p %s\n", wb, className)
-	wb.group = wgm.Group(win.GetCurrentThreadId())
+	// Handles returned by CreateWindowEx can only be used by the calling
+	// thread. As a result, InitWindow *must* be called from a goroutine that
+	// has been locked to an OS thread via runtime.LockOSThread().
+	//
+	// This means we can ask the OS for the ID of the current thread and we
+	// don't have to worry about the scheduler moving us onto another thread
+	// later.
+	tid := win.GetCurrentThreadId()
+
+	// Use the thread ID to look up our window group, which stores data that
+	// is common to all windows on a common thread. A group will be created
+	// automatically if one doesn't already exist for the thread ID.
+	//
+	// Making this call increments the reference counter for the group.
+	// The counter will be decremented later in WindowBase.Dispose.
+	wb.group = wgm.Group(tid)
 
 	succeeded := false
 	defer func() {
@@ -839,7 +853,6 @@ func (wb *WindowBase) Dispose() {
 	}
 
 	if hWnd != 0 {
-		//fmt.Printf("Dispose: %p\n", wb)
 		wb.group.Done()
 	}
 }

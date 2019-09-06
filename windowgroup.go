@@ -84,7 +84,6 @@ type WindowGroup struct {
 //
 // The completion function will be called when the group is disposed of.
 func newWindowGroup(threadID uint32, completion func(uint32)) *WindowGroup {
-	//fmt.Printf("Window Group Created: %d\n", threadID)
 	return &WindowGroup{
 		threadID:   threadID,
 		completion: completion,
@@ -112,7 +111,6 @@ func (g *WindowGroup) Add(delta int) {
 	}
 
 	g.refs += delta
-	//fmt.Printf("Thread %d: Refs: %d, Ignored: %d\n", g.threadID, g.refs, g.ignored)
 	if g.refs < 0 {
 		panic("walk: negative WindowGroup refs counter")
 	}
@@ -172,7 +170,6 @@ func (g *WindowGroup) ignore(delta int) {
 	}
 
 	g.ignored += delta
-	//fmt.Printf("Thread %d: Refs: %d, Ignored: %d\n", g.threadID, refs, ignored)
 	if g.ignored < 0 {
 		panic("walk: negative WindowGroup ignored counter")
 	}
@@ -183,7 +180,6 @@ func (g *WindowGroup) ignore(delta int) {
 
 // dispose releases any resources consumed by the group.
 func (g *WindowGroup) dispose() {
-	//fmt.Printf("Window Group Disposed: %d\n", g.threadID)
 	if g.toolTip != nil {
 		g.toolTip.Dispose()
 		g.toolTip = nil
