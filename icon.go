@@ -245,8 +245,12 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 
 		flags |= win.LR_LOADFROMFILE
 	} else {
-		if hInst = win.GetModuleHandle(nil); hInst == 0 {
-			return 0, lastError("GetModuleHandle")
+		if i.isStock {
+			flags |= win.LR_SHARED
+		} else {
+			if hInst = win.GetModuleHandle(nil); hInst == 0 {
+				return 0, lastError("GetModuleHandle")
+			}
 		}
 
 		name = i.res
