@@ -1711,6 +1711,28 @@ func (wb *WindowBase) SetHeightPixels(value int) error {
 	return wb.SetBoundsPixels(bounds)
 }
 
+func windowTrimToClientBounds(hwnd win.HWND, pt *win.POINT) {
+	var r win.RECT
+
+	if !win.GetClientRect(hwnd, &r) {
+		lastError("GetClientRect")
+		return
+	}
+
+	if pt.X < r.Left {
+		pt.X = r.Left
+	}
+	if pt.X > r.Right {
+		pt.X = r.Right
+	}
+	if pt.Y < r.Top {
+		pt.Y = r.Top
+	}
+	if pt.Y > r.Bottom {
+		pt.Y = r.Bottom
+	}
+}
+
 func windowClientBounds(hwnd win.HWND) Rectangle {
 	var r win.RECT
 

@@ -539,6 +539,7 @@ func (tv *TableView) ContextMenuLocation() Point {
 		pt.X = rc.Left
 	}
 	pt.X = rc.Bottom
+	windowTrimToClientBounds(tv.hwndNormalLV, &pt)
 	win.ClientToScreen(tv.hwndNormalLV, &pt)
 	return Point{int(pt.X), int(pt.Y)}
 }
