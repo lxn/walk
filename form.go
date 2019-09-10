@@ -332,6 +332,10 @@ func (fb *FormBase) SetContextMenu(contextMenu *Menu) {
 	fb.clientComposite.SetContextMenu(contextMenu)
 }
 
+func (fb *FormBase) ContextMenuLocation() Point {
+	return fb.clientComposite.ContextMenuLocation()
+}
+
 func (fb *FormBase) applyEnabled(enabled bool) {
 	fb.WindowBase.applyEnabled(enabled)
 

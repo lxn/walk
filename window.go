@@ -76,6 +76,11 @@ type Window interface {
 	// By default this is nil.
 	ContextMenu() *Menu
 
+	// ContextMenuLocation returns the context menu suggested location in screen
+	// coordinates. This method is called when context menu is invoked using
+	// keyboard and mouse coordinates are not available.
+	ContextMenuLocation() Point
+
 	// CreateCanvas creates and returns a *Canvas that can be used to draw
 	// inside the ClientBoundsPixels of the Window.
 	//
@@ -878,6 +883,15 @@ func (wb *WindowBase) ContextMenu() *Menu {
 // SetContextMenu sets the context menu of the *WindowBase.
 func (wb *WindowBase) SetContextMenu(value *Menu) {
 	wb.contextMenu = value
+}
+
+// ContextMenuLocation returns the the *WindowBase center in screen coordinates.
+func (wb *WindowBase) ContextMenuLocation() Point {
+	var rc win.RECT
+	if !win.GetWindowRect(wb.hWnd, &rc) {
+		return Point{}
+	}
+	return Point{int(rc.Left+rc.Right) / 2, int(rc.Top+rc.Bottom) / 2}
 }
 
 // ShortcutActions returns the list of actions that will be triggered if their
@@ -2288,9 +2302,6 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			break
 		}
 
-		x := win.GET_X_LPARAM(lParam)
-		y := win.GET_Y_LPARAM(lParam)
-
 		contextMenu := sourceWindow.ContextMenu()
 
 		var handle win.HWND
@@ -2305,6 +2316,14 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		}
 
 		if contextMenu != nil {
+			x := win.GET_X_LPARAM(lParam)
+			y := win.GET_Y_LPARAM(lParam)
+			if x == -1 && y == -1 {
+				pt := sourceWindow.ContextMenuLocation()
+				x = int32(pt.X)
+				y = int32(pt.Y)
+			}
+
 			contextMenu.updateItemsWithImageForWindow(wb.window)
 
 			win.TrackPopupMenuEx(

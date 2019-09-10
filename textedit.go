@@ -273,6 +273,19 @@ func (te *TextEdit) SetTextColor(c Color) {
 	te.Invalidate()
 }
 
+// ContextMenuLocation returns carret position in screen coordinates.
+func (te *TextEdit) ContextMenuLocation() Point {
+	idx := int(te.SendMessage(win.EM_GETCARETINDEX, 0, 0))
+	if idx < 0 {
+		start, end := te.TextSelection()
+		idx = (start + end) / 2
+	}
+	res := uint32(te.SendMessage(win.EM_POSFROMCHAR, uintptr(idx), 0))
+	pt := win.POINT{int32(win.LOWORD(res)), int32(win.HIWORD(res))}
+	win.ClientToScreen(te.hWnd, &pt)
+	return Point{int(pt.X), int(pt.Y)}
+}
+
 func (*TextEdit) NeedsWmSize() bool {
 	return true
 }

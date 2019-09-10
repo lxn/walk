@@ -525,6 +525,24 @@ func (tv *TableView) SetColumnsSizable(b bool) error {
 	return nil
 }
 
+// ContextMenuLocation returns selected item position in screen coordinates.
+func (tv *TableView) ContextMenuLocation() Point {
+	idx := win.SendMessage(tv.hwndNormalLV, win.LVM_GETSELECTIONMARK, 0, 0)
+	rc := win.RECT{Left: win.LVIR_BOUNDS}
+	if 0 == win.SendMessage(tv.hwndNormalLV, win.LVM_GETITEMRECT, idx, uintptr(unsafe.Pointer(&rc))) {
+		return tv.WidgetBase.ContextMenuLocation()
+	}
+	var pt win.POINT
+	if tv.RightToLeftReading() {
+		pt.X = rc.Right
+	} else {
+		pt.X = rc.Left
+	}
+	pt.X = rc.Bottom
+	win.ClientToScreen(tv.hwndNormalLV, &pt)
+	return Point{int(pt.X), int(pt.Y)}
+}
+
 // SortableByHeaderClick returns if the user can change sorting by clicking the header.
 func (tv *TableView) SortableByHeaderClick() bool {
 	return !hasWindowLongBits(tv.hwndFrozenLV, win.GWL_STYLE, win.LVS_NOSORTHEADER) ||
