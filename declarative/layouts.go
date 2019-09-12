@@ -8,6 +8,7 @@ package declarative
 
 import (
 	"errors"
+	"math"
 
 	"github.com/lxn/walk"
 )
@@ -18,6 +19,14 @@ const (
 	Horizontal Orientation = Orientation(walk.Horizontal)
 	Vertical   Orientation = Orientation(walk.Vertical)
 )
+
+func IntFrom96DPI(value, dpi int) int {
+	return scaleInt(value, float64(dpi)/96.0)
+}
+
+func scaleInt(value int, scale float64) int {
+	return int(math.Round(float64(value) * scale))
+}
 
 type Margins struct {
 	Left   int
@@ -34,6 +43,19 @@ func (m Margins) toW() walk.Margins {
 	return walk.Margins{m.Left, m.Top, m.Right, m.Bottom}
 }
 
+func (m Margins) From96DPI(dpi int) Margins {
+	return scaleMargins(m, float64(dpi)/96.0)
+}
+
+func scaleMargins(value Margins, scale float64) Margins {
+	return Margins{
+		Left:   scaleInt(value.Left, scale),
+		Top:    scaleInt(value.Top, scale),
+		Right:  scaleInt(value.Right, scale),
+		Bottom: scaleInt(value.Bottom, scale),
+	}
+}
+
 type Size struct {
 	Width  int
 	Height int
@@ -41,6 +63,17 @@ type Size struct {
 
 func (s Size) toW() walk.Size {
 	return walk.Size{s.Width, s.Height}
+}
+
+func (s Size) From96DPI(dpi int) Size {
+	return scaleSize(s, float64(dpi)/96.0)
+}
+
+func scaleSize(value Size, scale float64) Size {
+	return Size{
+		Width:  scaleInt(value.Width, scale),
+		Height: scaleInt(value.Height, scale),
+	}
 }
 
 func setLayoutMargins(layout walk.Layout, margins Margins, marginsZero bool) error {

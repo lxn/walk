@@ -439,7 +439,7 @@ func (lis *ListItemStyle) DrawText(text string, bounds Rectangle, format DrawTex
 			hFontOld := win.SelectObject(lis.hdc, win.HGDIOBJ(lis.Font.handleForDPI(lis.dpi)))
 			defer win.SelectObject(lis.hdc, hFontOld)
 		}
-		rc := RectangleFrom96DPI(bounds, lis.dpi).toRECT()
+		rc := bounds.From96DPI(lis.dpi).toRECT()
 
 		if win.FAILED(win.DrawThemeTextEx(lis.hTheme, lis.hdc, win.LVP_LISTITEM, lis.stateID(), syscall.StringToUTF16Ptr(text), int32(len(([]rune)(text))), uint32(format), &rc, nil)) {
 			return newError("DrawThemeTextEx failed")

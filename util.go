@@ -520,65 +520,33 @@ func scaleInt(value int, scale float64) int {
 }
 
 func MarginsFrom96DPI(value Margins, dpi int) Margins {
-	return scaleMargins(value, float64(dpi)/96.0)
+	return value.From96DPI(dpi)
 }
 
 func MarginsTo96DPI(value Margins, dpi int) Margins {
-	return scaleMargins(value, 96.0/float64(dpi))
-}
-
-func scaleMargins(value Margins, scale float64) Margins {
-	return Margins{
-		HNear: int(math.Round(float64(value.HNear) * scale)),
-		VNear: int(math.Round(float64(value.VNear) * scale)),
-		HFar:  int(math.Round(float64(value.HFar) * scale)),
-		VFar:  int(math.Round(float64(value.VFar) * scale)),
-	}
+	return value.To96DPI(dpi)
 }
 
 func PointFrom96DPI(value Point, dpi int) Point {
-	return scalePoint(value, float64(dpi)/96.0)
+	return value.From96DPI(dpi)
 }
 
 func PointTo96DPI(value Point, dpi int) Point {
-	return scalePoint(value, 96.0/float64(dpi))
-}
-
-func scalePoint(value Point, scale float64) Point {
-	return Point{
-		X: int(math.Round(float64(value.X) * scale)),
-		Y: int(math.Round(float64(value.Y) * scale)),
-	}
+	return value.To96DPI(dpi)
 }
 
 func RectangleFrom96DPI(value Rectangle, dpi int) Rectangle {
-	return scaleRectangle(value, float64(dpi)/96.0)
+	return value.From96DPI(dpi)
 }
 
 func RectangleTo96DPI(value Rectangle, dpi int) Rectangle {
-	return scaleRectangle(value, 96.0/float64(dpi))
-}
-
-func scaleRectangle(value Rectangle, scale float64) Rectangle {
-	return Rectangle{
-		X:      int(math.Round(float64(value.X) * scale)),
-		Y:      int(math.Round(float64(value.Y) * scale)),
-		Width:  int(math.Round(float64(value.Width) * scale)),
-		Height: int(math.Round(float64(value.Height) * scale)),
-	}
+	return value.To96DPI(dpi)
 }
 
 func SizeFrom96DPI(value Size, dpi int) Size {
-	return scaleSize(value, float64(dpi)/96.0)
+	return value.From96DPI(dpi)
 }
 
 func SizeTo96DPI(value Size, dpi int) Size {
-	return scaleSize(value, 96.0/float64(dpi))
-}
-
-func scaleSize(value Size, scale float64) Size {
-	return Size{
-		Width:  int(math.Round(float64(value.Width) * scale)),
-		Height: int(math.Round(float64(value.Height) * scale)),
-	}
+	return value.To96DPI(dpi)
 }

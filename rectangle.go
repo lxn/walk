@@ -61,6 +61,23 @@ func (r *Rectangle) SetSize(s Size) Rectangle {
 	return *r
 }
 
+func (r Rectangle) From96DPI(dpi int) Rectangle {
+	return scaleRectangle(r, float64(dpi)/96.0)
+}
+
+func (r Rectangle) To96DPI(dpi int) Rectangle {
+	return scaleRectangle(r, 96.0/float64(dpi))
+}
+
+func scaleRectangle(value Rectangle, scale float64) Rectangle {
+	return Rectangle{
+		X:      scaleInt(value.X, scale),
+		Y:      scaleInt(value.Y, scale),
+		Width:  scaleInt(value.Width, scale),
+		Height: scaleInt(value.Height, scale),
+	}
+}
+
 func (r Rectangle) toRECT() win.RECT {
 	return win.RECT{
 		int32(r.X),

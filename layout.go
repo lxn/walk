@@ -371,6 +371,23 @@ type Margins struct {
 	HNear, VNear, HFar, VFar int
 }
 
+func (m Margins) From96DPI(dpi int) Margins {
+	return scaleMargins(m, float64(dpi)/96.0)
+}
+
+func (m Margins) To96DPI(dpi int) Margins {
+	return scaleMargins(m, 96.0/float64(dpi))
+}
+
+func scaleMargins(value Margins, scale float64) Margins {
+	return Margins{
+		HNear: scaleInt(value.HNear, scale),
+		VNear: scaleInt(value.VNear, scale),
+		HFar:  scaleInt(value.HFar, scale),
+		VFar:  scaleInt(value.VFar, scale),
+	}
+}
+
 func (m Margins) isZero() bool {
 	return m.HNear == 0 && m.HFar == 0 && m.VNear == 0 && m.VFar == 0
 }
@@ -693,11 +710,11 @@ func (*greedyLayoutItem) LayoutFlags() LayoutFlags {
 }
 
 func (li *greedyLayoutItem) IdealSize() Size {
-	return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
+	return Size{100, 100}.From96DPI(li.ctx.dpi)
 }
 
 func (li *greedyLayoutItem) MinSize() Size {
-	return SizeFrom96DPI(Size{50, 50}, li.ctx.dpi)
+	return Size{50, 50}.From96DPI(li.ctx.dpi)
 }
 
 type Geometry struct {

@@ -224,7 +224,7 @@ func (iv *ImageView) drawImage(canvas *Canvas, _ Rectangle) error {
 			bounds.Y = margin + (cb.Height-bounds.Height)/2
 		}
 
-		return canvas.DrawImageStretched(iv.image, RectangleTo96DPI(bounds, iv.DPI()))
+		return canvas.DrawImageStretched(iv.image, bounds.To96DPI(iv.DPI()))
 
 	case ImageViewModeCorner, ImageViewModeCenter:
 		win.IntersectClipRect(canvas.hdc, int32(margin), int32(margin), int32(cb.Width+margin), int32(cb.Height+margin))
@@ -242,7 +242,7 @@ func (iv *ImageView) drawImage(canvas *Canvas, _ Rectangle) error {
 		pos.Y = margin + (cb.Height-s.Height)/2
 	}
 
-	return canvas.DrawImage(iv.image, PointTo96DPI(pos, iv.DPI()))
+	return canvas.DrawImage(iv.image, pos.To96DPI(iv.DPI()))
 }
 
 func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {

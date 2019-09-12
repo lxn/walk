@@ -359,7 +359,7 @@ func (li *textEditLayoutItem) IdealSize() Size {
 	if li.compactHeight {
 		return li.MinSize()
 	} else {
-		return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
+		return Size{100, 100}.From96DPI(li.ctx.dpi)
 	}
 }
 

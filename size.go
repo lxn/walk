@@ -10,6 +10,21 @@ type Size struct {
 	Width, Height int
 }
 
+func (s Size) From96DPI(dpi int) Size {
+	return scaleSize(s, float64(dpi)/96.0)
+}
+
+func (s Size) To96DPI(dpi int) Size {
+	return scaleSize(s, 96.0/float64(dpi))
+}
+
+func scaleSize(value Size, scale float64) Size {
+	return Size{
+		Width:  scaleInt(value.Width, scale),
+		Height: scaleInt(value.Height, scale),
+	}
+}
+
 func minSize(a, b Size) Size {
 	var s Size
 

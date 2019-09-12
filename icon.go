@@ -159,7 +159,7 @@ func NewIconFromImageWithSize(image Image, size Size) (*Icon, error) {
 }
 
 func newIconFromImageForDPI(image Image, dpi int) (*Icon, error) {
-	sizePixels := SizeFrom96DPI(image.Size(), dpi)
+	sizePixels := image.Size().From96DPI(dpi)
 
 	bmp, err := NewBitmapFromImageWithSize(image, sizePixels)
 	if err != nil {
@@ -312,7 +312,7 @@ func (i *Icon) Dispose() {
 
 func (i *Icon) draw(hdc win.HDC, location Point) error {
 	dpi := dpiForHDC(hdc)
-	size := SizeFrom96DPI(i.size96dpi, dpi)
+	size := i.size96dpi.From96DPI(dpi)
 
 	return i.drawStretched(hdc, Rectangle{location.X, location.Y, size.Width, size.Height})
 }

@@ -77,7 +77,7 @@ func NewMyWidget(parent walk.Container) (*MyWidget, error) {
 }
 
 func (*MyWidget) CreateLayoutItem(ctx *walk.LayoutContext) walk.LayoutItem {
-	return &myWidgetLayoutItem{idealSize: walk.SizeFrom96DPI(walk.Size{50, 50}, ctx.DPI())}
+	return &myWidgetLayoutItem{idealSize: walk.Size{50, 50}.From96DPI(ctx.DPI())}
 }
 
 type myWidgetLayoutItem struct {

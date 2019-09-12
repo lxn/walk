@@ -45,7 +45,7 @@ func NewPaintFuncImageWithDispose(size Size, paint func(canvas *Canvas, bounds R
 
 func (pfi *PaintFuncImage) draw(hdc win.HDC, location Point) error {
 	dpi := dpiForHDC(hdc)
-	size := SizeFrom96DPI(pfi.size96dpi, dpi)
+	size := pfi.size96dpi.From96DPI(dpi)
 
 	return pfi.drawStretched(hdc, Rectangle{location.X, location.Y, size.Width, size.Height})
 }
@@ -61,7 +61,7 @@ func (pfi *PaintFuncImage) drawStretched(hdc win.HDC, bounds Rectangle) error {
 }
 
 func (pfi *PaintFuncImage) drawStretchedOnCanvas(canvas *Canvas, bounds Rectangle) error {
-	bounds = RectangleTo96DPI(bounds, canvas.dpix)
+	bounds = bounds.To96DPI(canvas.dpix)
 
 	return pfi.paint(canvas, bounds)
 }
