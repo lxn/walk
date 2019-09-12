@@ -30,7 +30,7 @@ func NewImageList(imageSize Size, maskColor Color) (*ImageList, error) {
 	hDC := win.GetDC(0)
 	defer win.ReleaseDC(0, hDC)
 
-	dpi := int(win.GetDeviceCaps(hDC, win.LOGPIXELSX))
+	dpi := int(win.GetDeviceCaps(hDC, win.LOGPIXELSY))
 
 	return newImageList(imageSize, maskColor, dpi)
 }

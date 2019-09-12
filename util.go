@@ -504,7 +504,7 @@ func dpiForHDC(hdc win.HDC) int {
 		return int(win.GetDpiForWindow(hwnd))
 	}
 
-	return int(win.GetDeviceCaps(hdc, win.LOGPIXELSX))
+	return int(win.GetDeviceCaps(hdc, win.LOGPIXELSY))
 }
 
 func IntFrom96DPI(value, dpi int) int {
