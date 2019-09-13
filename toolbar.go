@@ -127,7 +127,7 @@ func (tb *ToolBar) ApplyDPI(dpi int) {
 		}
 	}
 
-	tb.hFont = tb.Font().handleForDPI(tb.DPI())
+	tb.hFont = tb.Font().handleForDPI(dpi)
 	setWindowFont(tb.hWnd, tb.hFont)
 }
 

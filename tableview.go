@@ -393,7 +393,7 @@ func (tv *TableView) ApplyDPI(dpi int) {
 
 	tv.disposeImageListAndCaches()
 
-	if bmp, err := NewBitmap(tv.SizeFrom96DPI(Size{16, 16})); err == nil {
+	if bmp, err := NewBitmap(Size{16, 16}.From96DPI(dpi)); err == nil {
 		tv.applyImageListForImage(bmp)
 		bmp.Dispose()
 	}
