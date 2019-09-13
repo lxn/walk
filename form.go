@@ -693,7 +693,7 @@ func (fb *FormBase) RestoreState() error {
 
 	if layout := fb.Layout(); layout != nil && fb.fixedSize() {
 		layoutItem := CreateLayoutItemsForContainer(fb)
-		minSize := fb.sizeFromClientSizePixels(layoutItem.MinSize())
+		minSize := fb.sizeFromClientSizePixels(layoutItem.MinSize()) // TODO: MinSize() returns 96dpi pixels
 
 		wp.RcNormalPosition.Right = wp.RcNormalPosition.Left + int32(minSize.Width) - 1
 		wp.RcNormalPosition.Bottom = wp.RcNormalPosition.Top + int32(minSize.Height) - 1

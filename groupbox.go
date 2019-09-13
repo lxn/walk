@@ -132,7 +132,7 @@ func (gb *GroupBox) ClientBoundsPixels() Rectangle {
 	}
 
 	if gb.Checkable() {
-		s := createLayoutItemForWidget(gb.checkBox).(MinSizer).MinSize()
+		s := createLayoutItemForWidget(gb.checkBox).(MinSizer).MinSize() // TODO: MinSize() returns 96dpi pixels, we're in ...Pixels() member
 
 		cb.Y += s.Height
 		cb.Height -= s.Height
@@ -356,7 +356,7 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			}
 
 			if gb.Checkable() {
-				s := createLayoutItemForWidget(gb.checkBox).(MinSizer).MinSize()
+				s := createLayoutItemForWidget(gb.checkBox).(MinSizer).MinSize() // TODO: MinSize() returns 96dpi pixels, we're using it in SetBoundsPixels()
 				var x int
 				if l := gb.Layout(); l != nil {
 					x = l.Margins().HNear
