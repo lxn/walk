@@ -102,6 +102,7 @@ func (mf *Metafile) ensureFinished() error {
 }
 
 func (mf *Metafile) Size() Size {
+	// TODO: Should return size in 96dpi like Icon and PaintFuncImage do?
 	return mf.size
 }
 

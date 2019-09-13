@@ -259,6 +259,7 @@ func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	if iv.mode == ImageViewModeIdeal {
 		if iv.image != nil {
 			m2 := iv.IntFrom96DPI(iv.margin96dpi) * 2
+			// TODO: If image is Bitmap, Size() returns pixels. If image is Icon, Size() returns 96dpi pixels.
 			s := iv.SizeFrom96DPI(iv.image.Size())
 			s.Width += m2
 			s.Height += m2
