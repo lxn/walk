@@ -49,10 +49,13 @@ func NewGroupBox(parent Container) (*GroupBox, error) {
 		}
 	}()
 
+	size := Size{80, 24}.From96DPI(parent.DPI())
+
 	gb.hWndGroupBox = win.CreateWindowEx(
 		0, syscall.StringToUTF16Ptr("BUTTON"), nil,
 		win.WS_CHILD|win.WS_VISIBLE|win.BS_GROUPBOX,
-		0, 0, 80, 24, gb.hWnd, 0, 0, nil)
+		0, 0, int32(size.Width), int32(size.Height),
+		gb.hWnd, 0, 0, nil)
 	if gb.hWndGroupBox == 0 {
 		return nil, lastError("CreateWindowEx(BUTTON)")
 	}
