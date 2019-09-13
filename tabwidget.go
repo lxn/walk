@@ -260,6 +260,7 @@ func (tw *TabWidget) pageBounds() Rectangle {
 	}
 	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
+	// TODO: From96DPI?
 	return Rectangle{
 		int(r.Left - 2),
 		int(r.Top),
@@ -390,6 +391,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 					break
 				}
 
+				// TODO: From96DPI?
 				if i == tw.currentIndex {
 					rc.Left -= 2
 					rc.Top -= 2
@@ -429,6 +431,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 					break
 				}
 
+				// TODO: From96DPI?
 				hRgn := win.CreateRectRgn(rc.Left, rc.Top, rc.Right, rc.Bottom+2)
 				defer win.DeleteObject(win.HGDIOBJ(hRgn))
 				if !win.FillRgn(canvas.hdc, hRgn, bg.handle()) {
@@ -808,6 +811,7 @@ func (li *tabWidgetLayoutItem) PerformLayout() []LayoutResultItem {
 	if li.currentIndex > -1 {
 		page := li.children[li.currentIndex]
 
+		// TODO: From96DPI?
 		return []LayoutResultItem{
 			{
 				Item:   page,
