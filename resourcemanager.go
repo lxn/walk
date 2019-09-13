@@ -14,11 +14,9 @@ import (
 )
 
 func init() {
-	AppendToWalkInit(func() {
-		Resources.rootDirPath, _ = os.Getwd()
-		Resources.bitmaps = make(map[string]*Bitmap)
-		Resources.icons = make(map[string]*Icon)
-	})
+	Resources.rootDirPath, _ = os.Getwd()
+	Resources.bitmaps = make(map[string]*Bitmap)
+	Resources.icons = make(map[string]*Icon)
 }
 
 // Resources is the singleton instance of ResourceManager.
