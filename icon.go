@@ -264,7 +264,10 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 
 	if size.Width == 0 || size.Height == 0 {
 		flags |= win.LR_DEFAULTSIZE
-		size = defaultIconSize
+		size = Size{
+			Width:  int(float64(defaultIconSize.Width) * scale),
+			Height: int(float64(defaultIconSize.Height) * scale),
+		}
 	}
 
 	var hIcon win.HICON
