@@ -129,7 +129,7 @@ func NewIconFromSysDLLWithSize(dllBaseName string, index, size int) (*Icon, erro
 }
 
 // NewIconExtractedFromFile returns a new Icon, as identified by index of size 16x16 from filePath.
-func NewIconExtractedFromFile(filePath string, index, size int) (*Icon, error) {
+func NewIconExtractedFromFile(filePath string, index int) (*Icon, error) {
 	return checkNewIcon(&Icon{filePath: filePath, index: index, hasIndex: true, size96dpi: Size{16, 16}})
 }
 
@@ -188,14 +188,6 @@ func NewIconFromBitmap(bmp *Bitmap) (ic *Icon, err error) {
 	return newIconFromHICONAndSize(hIcon, bmp.Size()), nil
 }
 
-func newIconFromBitmap(bmp *Bitmap) (ic *Icon, err error) {
-	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, Point{}, true)
-	if err != nil {
-		return nil, err
-	}
-	return newIconFromHICONAndSize(hIcon, bmp.Size()), nil
-}
-
 // NewIconFromHICON returns a new Icon, using the specified win.HICON as source.
 func NewIconFromHICON(hIcon win.HICON) (ic *Icon, err error) {
 	size, err := sizeFromHICON(hIcon)
@@ -225,9 +217,7 @@ func (i *Icon) handleForDPI(dpi int) win.HICON {
 func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 	if i.dpi2hIcon == nil {
 		i.dpi2hIcon = make(map[int]win.HICON)
-	}
-
-	if handle, ok := i.dpi2hIcon[dpi]; ok {
+	} else if handle, ok := i.dpi2hIcon[dpi]; ok {
 		return handle, nil
 	}
 
@@ -343,8 +333,8 @@ func createAlphaCursorOrIconFromImage(im image.Image, hotspot image.Point, fIcon
 
 func createAlphaCursorOrIconFromBitmap(bmp *Bitmap, hotspot Point, fIcon bool) (win.HICON, error) {
 	// Create an empty mask bitmap.
-	size := bmp.Size()
-	hMonoBitmap := win.CreateBitmap(int32(size.Width), int32(size.Height), 1, 1, nil)
+	sz := bmp.Size().toSIZE()
+	hMonoBitmap := win.CreateBitmap(sz.CX, sz.CY, 1, 1, nil)
 	if hMonoBitmap == 0 {
 		return 0, newError("CreateBitmap failed")
 	}
