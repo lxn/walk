@@ -236,6 +236,8 @@ func (gc *GradientComposite) updateBackground() error {
 		orientation = Horizontal
 	}
 
+	bounds = gc.RectangleTo96DPI(bounds)
+
 	if err := canvas.GradientFillRectangle(gc.color1, gc.color2, orientation, bounds); err != nil {
 		return err
 	}
