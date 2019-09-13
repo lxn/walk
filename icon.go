@@ -139,13 +139,13 @@ func NewIconExtractedFromFileWithSize(filePath string, index, size int) (*Icon, 
 }
 
 // NewIconFromImage returns a new Icon, using the specified image.Image as source.
-func NewIconFromImage(im image.Image) (ic *Icon, err error) {
+func NewIconFromImage(im image.Image, dpi int) (ic *Icon, err error) {
 	hIcon, err := createAlphaCursorOrIconFromImage(im, image.Pt(0, 0), true)
 	if err != nil {
 		return nil, err
 	}
 	b := im.Bounds()
-	return newIconFromHICONAndSize(hIcon, Size{b.Dx(), b.Dy()}), nil
+	return newIconFromHICONAndSize(hIcon, Size{b.Dx(), b.Dy()}.To96DPI(dpi), dpi), nil
 }
 
 // NewIconFromImageWithSize returns a new Icon of the given size, using the specified Image as source.
@@ -155,7 +155,9 @@ func NewIconFromImageWithSize(image Image, size Size) (*Icon, error) {
 		return nil, err
 	}
 
-	return NewIconFromBitmap(bmp)
+	dpi := int(float64(size.Width) / float64(image.Size().Width) * 96.0)
+
+	return NewIconFromBitmap(bmp, dpi)
 }
 
 func newIconFromImageForDPI(image Image, dpi int) (*Icon, error) {
@@ -180,25 +182,25 @@ func newIconFromImageForDPI(image Image, dpi int) (*Icon, error) {
 }
 
 // NewIconFromBitmap returns a new Icon, using the specified Bitmap as source.
-func NewIconFromBitmap(bmp *Bitmap) (ic *Icon, err error) {
+func NewIconFromBitmap(bmp *Bitmap, dpi int) (ic *Icon, err error) {
 	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, Point{}, true)
 	if err != nil {
 		return nil, err
 	}
-	return newIconFromHICONAndSize(hIcon, bmp.Size()), nil
+	return newIconFromHICONAndSize(hIcon, bmp.Size().To96DPI(dpi), dpi), nil
 }
 
 // NewIconFromHICON returns a new Icon, using the specified win.HICON as source.
-func NewIconFromHICON(hIcon win.HICON) (ic *Icon, err error) {
+func NewIconFromHICON(hIcon win.HICON, dpi int) (ic *Icon, err error) {
 	size, err := sizeFromHICON(hIcon)
 	if err != nil {
 		return nil, err
 	}
-	return newIconFromHICONAndSize(hIcon, size), nil
+	return newIconFromHICONAndSize(hIcon, size.To96DPI(dpi), dpi), nil
 }
 
-func newIconFromHICONAndSize(hIcon win.HICON, size Size) *Icon {
-	return &Icon{dpi2hIcon: map[int]win.HICON{96: hIcon}, size96dpi: size}
+func newIconFromHICONAndSize(hIcon win.HICON, size Size, dpi int) *Icon {
+	return &Icon{dpi2hIcon: map[int]win.HICON{dpi: hIcon}, size96dpi: size}
 }
 
 func checkNewIcon(icon *Icon) (*Icon, error) {
@@ -306,6 +308,15 @@ func (i *Icon) drawStretched(hdc win.HDC, bounds Rectangle) error {
 	dpi := int(float64(bounds.Width) / float64(i.size96dpi.Width) * 96.0)
 
 	hIcon := i.handleForDPI(dpi)
+	if hIcon == 0 {
+		dpiMax := -1
+		for d, h := range i.dpi2hIcon {
+			if d > dpiMax {
+				dpiMax = d
+				hIcon = h
+			}
+		}
+	}
 
 	if !win.DrawIconEx(hdc, int32(bounds.X), int32(bounds.Y), hIcon, int32(bounds.Width), int32(bounds.Height), 0, 0, win.DI_NORMAL) {
 		return lastError("DrawIconEx")
