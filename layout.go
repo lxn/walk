@@ -62,6 +62,7 @@ func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 	if widget, ok := container.(Widget); ok {
 		containerItem = widget.CreateLayoutItem(ctx).(ContainerLayoutItem)
 	} else {
+		// TODO: Possible nil pointer reference: layout may be nil.
 		containerItem = layout.CreateLayoutItem(ctx)
 	}
 
