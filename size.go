@@ -6,6 +6,8 @@
 
 package walk
 
+import "github.com/lxn/win"
+
 type Size struct {
 	Width, Height int
 }
@@ -22,6 +24,13 @@ func scaleSize(value Size, scale float64) Size {
 	return Size{
 		Width:  scaleInt(value.Width, scale),
 		Height: scaleInt(value.Height, scale),
+	}
+}
+
+func (s Size) toSIZE() win.SIZE {
+	return win.SIZE{
+		int32(s.Width),
+		int32(s.Height),
 	}
 }
 

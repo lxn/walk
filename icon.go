@@ -256,21 +256,14 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 	}
 
 	scale := float64(dpi) / 96.0
-	size := Size{
-		Width:  int(float64(i.size96dpi.Width) * scale),
-		Height: int(float64(i.size96dpi.Height) * scale),
-	}
+	size := scaleSize(i.size96dpi, scale)
 
 	if size.Width == 0 || size.Height == 0 {
 		flags |= win.LR_DEFAULTSIZE
-		size = Size{
-			Width:  int(float64(defaultIconSize.Width) * scale),
-			Height: int(float64(defaultIconSize.Height) * scale),
-		}
+		size = scaleSize(defaultIconSize, scale)
 	}
 
 	var hIcon win.HICON
-
 	if i.hasIndex {
 		win.SHDefExtractIcon(
 			name,

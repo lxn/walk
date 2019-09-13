@@ -32,12 +32,11 @@ func NewImageList(imageSize Size, maskColor Color) (*ImageList, error) {
 
 func newImageList(imageSize Size, maskColor Color, dpi int) (*ImageList, error) {
 	scale := float64(dpi) / 96.0
-	width := int32(float64(imageSize.Width) * scale)
-	height := int32(float64(imageSize.Height) * scale)
+	sz := scaleSize(imageSize, scale).toSIZE()
 
 	hIml := win.ImageList_Create(
-		width,
-		height,
+		sz.CX,
+		sz.CY,
 		win.ILC_MASK|win.ILC_COLOR32,
 		8,
 		8)
@@ -129,10 +128,13 @@ func imageListForImage(image interface{}, dpi int) (hIml win.HIMAGELIST, isSysIm
 		isSysIml = hIml != 0
 	} else {
 		scale := float64(dpi) / 96.0
-		w := int32(float64(win.GetSystemMetrics(win.SM_CXSMICON)) * scale)
-		h := int32(float64(win.GetSystemMetrics(win.SM_CYSMICON)) * scale)
+		sz := scaleSize(
+			Size{
+				int(win.GetSystemMetrics(win.SM_CXSMICON)),
+				int(win.GetSystemMetrics(win.SM_CYSMICON))},
+			scale).toSIZE()
 
-		hIml = win.ImageList_Create(w, h, win.ILC_MASK|win.ILC_COLOR32, 8, 8)
+		hIml = win.ImageList_Create(sz.CX, sz.CY, win.ILC_MASK|win.ILC_COLOR32, 8, 8)
 		if hIml == 0 {
 			return 0, false, newError("ImageList_Create failed")
 		}
