@@ -82,7 +82,7 @@ type Window interface {
 	ContextMenuLocation() Point
 
 	// CreateCanvas creates and returns a *Canvas that can be used to draw
-	// inside the ClientBoundsPixels of the Window.
+	// inside the ClientBounds of the Window.
 	//
 	// Remember to call the Dispose method on the canvas to release resources,
 	// when you no longer need it.
@@ -2039,7 +2039,7 @@ func (wb *WindowBase) FocusedChanged() *Event {
 }
 
 // CreateCanvas creates and returns a *Canvas that can be used to draw
-// inside the ClientBoundsPixels of the *WindowBase.
+// inside the ClientBounds of the *WindowBase.
 //
 // Remember to call the Dispose method on the canvas to release resources,
 // when you no longer need it.
