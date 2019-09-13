@@ -499,6 +499,13 @@ func less(a, b interface{}, order SortOrder) bool {
 	return false
 }
 
+func ScreenDPI() int {
+	hdc := win.GetDC(0)
+	defer win.ReleaseDC(0, hdc)
+
+	return int(win.GetDeviceCaps(hdc, win.LOGPIXELSY))
+}
+
 func dpiForHDC(hdc win.HDC) int {
 	if hwnd := win.WindowFromDC(hdc); hwnd != 0 {
 		return int(win.GetDpiForWindow(hwnd))
