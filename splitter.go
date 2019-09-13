@@ -308,7 +308,7 @@ func (s *Splitter) SetFixed(widget Widget, fixed bool) error {
 
 	if b := widget.BoundsPixels(); fixed && item.size == 0 && (b.Width == 0 || b.Height == 0) {
 		b.Width, b.Height = 100, 100
-		widget.SetBoundsPixels(b)
+		widget.SetBounds(b)
 		item.size = 100
 	}
 
