@@ -529,10 +529,10 @@ func MarginsTo96DPI(value Margins, dpi int) Margins {
 
 func scaleMargins(value Margins, scale float64) Margins {
 	return Margins{
-		HNear: int(math.Round(float64(value.HNear) * scale)),
-		VNear: int(math.Round(float64(value.VNear) * scale)),
-		HFar:  int(math.Round(float64(value.HFar) * scale)),
-		VFar:  int(math.Round(float64(value.VFar) * scale)),
+		HNear: scaleInt(value.HNear, scale),
+		VNear: scaleInt(value.VNear, scale),
+		HFar:  scaleInt(value.HFar, scale),
+		VFar:  scaleInt(value.VFar, scale),
 	}
 }
 
@@ -546,8 +546,8 @@ func PointTo96DPI(value Point, dpi int) Point {
 
 func scalePoint(value Point, scale float64) Point {
 	return Point{
-		X: int(math.Round(float64(value.X) * scale)),
-		Y: int(math.Round(float64(value.Y) * scale)),
+		X: scaleInt(value.X, scale),
+		Y: scaleInt(value.Y, scale),
 	}
 }
 
@@ -561,10 +561,10 @@ func RectangleTo96DPI(value Rectangle, dpi int) Rectangle {
 
 func scaleRectangle(value Rectangle, scale float64) Rectangle {
 	return Rectangle{
-		X:      int(math.Round(float64(value.X) * scale)),
-		Y:      int(math.Round(float64(value.Y) * scale)),
-		Width:  int(math.Round(float64(value.Width) * scale)),
-		Height: int(math.Round(float64(value.Height) * scale)),
+		X:      scaleInt(value.X, scale),
+		Y:      scaleInt(value.Y, scale),
+		Width:  scaleInt(value.Width, scale),
+		Height: scaleInt(value.Height, scale),
 	}
 }
 
@@ -578,7 +578,7 @@ func SizeTo96DPI(value Size, dpi int) Size {
 
 func scaleSize(value Size, scale float64) Size {
 	return Size{
-		Width:  int(math.Round(float64(value.Width) * scale)),
-		Height: int(math.Round(float64(value.Height) * scale)),
+		Width:  scaleInt(value.Width, scale),
+		Height: scaleInt(value.Height, scale),
 	}
 }
