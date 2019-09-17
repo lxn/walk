@@ -114,8 +114,8 @@ func (ifs *IniFileSettings) FilePath() string {
 
 	return filepath.Join(
 		appDataPath,
-		appSingleton.OrganizationName(),
-		appSingleton.ProductName(),
+		App().OrganizationName(),
+		App().ProductName(),
 		ifs.fileName)
 }
 

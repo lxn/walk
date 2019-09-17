@@ -110,3 +110,9 @@ func (app *Application) ActiveForm() Form {
 	defer app.mutex.RUnlock()
 	return app.activeForm
 }
+
+func (app *Application) setActiveForm(form Form) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
+	app.activeForm = form
+}

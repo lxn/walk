@@ -37,7 +37,11 @@ func (p *EventPublisher) Event() *Event {
 }
 
 func (p *EventPublisher) Publish() {
-	if form := appSingleton.activeForm; form != nil {
+	// This is a kludge to find the form that the event publisher is
+	// affiliated with. It's only necessary because the event publisher
+	// doesn't keep a pointer to the form on its own, and the call
+	// to Publish isn't providing it either.
+	if form := App().ActiveForm(); form != nil {
 		fb := form.AsFormBase()
 		fb.inProgressEventCount++
 		defer func() {

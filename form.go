@@ -602,7 +602,7 @@ func (fb *FormBase) Hide() {
 func (fb *FormBase) Show() {
 	fb.proposedSize = maxSize(fb.minSize, fb.SizePixels())
 
-	if p, ok := fb.window.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
+	if p, ok := fb.window.(Persistable); ok && p.Persistent() && App().Settings() != nil {
 		p.RestoreState()
 	}
 
@@ -610,7 +610,7 @@ func (fb *FormBase) Show() {
 }
 
 func (fb *FormBase) close() error {
-	if p, ok := fb.window.(Persistable); ok && p.Persistent() && appSingleton.settings != nil {
+	if p, ok := fb.window.(Persistable); ok && p.Persistent() && App().Settings() != nil {
 		p.SaveState()
 	}
 
@@ -746,14 +746,14 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				win.SetFocus(fb.prevFocusHWnd)
 			}
 
-			appSingleton.activeForm = fb.window.(Form)
+			App().setActiveForm(fb.window.(Form))
 
 			fb.activatingPublisher.Publish()
 
 		case win.WA_INACTIVE:
 			fb.prevFocusHWnd = win.GetFocus()
 
-			appSingleton.activeForm = nil
+			App().setActiveForm(nil)
 
 			fb.deactivatingPublisher.Publish()
 		}
