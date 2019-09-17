@@ -7,10 +7,9 @@
 package walk
 
 import (
+	"sync"
 	"time"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -34,6 +33,7 @@ type Persistable interface {
 }
 
 type Application struct {
+	mutex              sync.RWMutex
 	organizationName   string
 	productName        string
 	settings           Settings
@@ -50,43 +50,63 @@ func App() *Application {
 }
 
 func (app *Application) OrganizationName() string {
+	app.mutex.RLock()
+	defer app.mutex.RUnlock()
 	return app.organizationName
 }
 
 func (app *Application) SetOrganizationName(value string) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
 	app.organizationName = value
 }
 
 func (app *Application) ProductName() string {
+	app.mutex.RLock()
+	defer app.mutex.RUnlock()
 	return app.productName
 }
 
 func (app *Application) SetProductName(value string) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
 	app.productName = value
 }
 
 func (app *Application) Settings() Settings {
+	app.mutex.RLock()
+	defer app.mutex.RUnlock()
 	return app.settings
 }
 
 func (app *Application) SetSettings(value Settings) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
 	app.settings = value
 }
 
 func (app *Application) Exit(exitCode int) {
+	app.mutex.Lock()
+	defer app.mutex.Unlock()
 	app.exiting = true
 	app.exitCode = exitCode
 	win.PostQuitMessage(int32(exitCode))
 }
 
 func (app *Application) ExitCode() int {
+	app.mutex.RLock()
+	defer app.mutex.RUnlock()
 	return app.exitCode
 }
 
 func (app *Application) Panicking() *ErrorEvent {
+	app.mutex.RLock()
+	defer app.mutex.RUnlock()
 	return app.panickingPublisher.Event()
 }
 
 func (app *Application) ActiveForm() Form {
+	app.mutex.RLock()
+	defer app.mutex.RUnlock()
 	return app.activeForm
 }
