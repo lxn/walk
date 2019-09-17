@@ -30,9 +30,8 @@ var (
 		funcs []func()
 	}
 
-	syncMsgId                  uint32
-	taskbarButtonCreatedMsgId  uint32
-	syncApplyLayoutResultsArgs applyLayoutResultsArgs
+	syncMsgId                 uint32
+	taskbarButtonCreatedMsgId uint32
 )
 
 func init() {
@@ -40,40 +39,6 @@ func init() {
 		syncMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("WalkSync"))
 		taskbarButtonCreatedMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("TaskbarButtonCreated"))
 	})
-}
-
-type applyLayoutResultsArgs struct {
-	results   []LayoutResult
-	stopwatch *stopwatch
-}
-
-func synchronizeApplyLayoutResults(results []LayoutResult, stopwatch *stopwatch) {
-	syncFuncs.m.Lock()
-	syncApplyLayoutResultsArgs = applyLayoutResultsArgs{results, stopwatch}
-	syncFuncs.m.Unlock()
-}
-
-func synchronize(f func()) {
-	syncFuncs.m.Lock()
-	syncFuncs.funcs = append(syncFuncs.funcs, f)
-	syncFuncs.m.Unlock()
-}
-
-func runSynchronized() {
-	// Clear the list of callbacks first to avoid deadlock
-	// if a callback itself calls Synchronize()...
-	syncFuncs.m.Lock()
-	alrArgs := syncApplyLayoutResultsArgs
-	syncApplyLayoutResultsArgs = applyLayoutResultsArgs{}
-	funcs := syncFuncs.funcs
-	syncFuncs.funcs = nil
-	syncFuncs.m.Unlock()
-	if len(alrArgs.results) > 0 {
-		applyLayoutResults(alrArgs.results, alrArgs.stopwatch)
-	}
-	for _, f := range funcs {
-		f()
-	}
 }
 
 type Form interface {
@@ -746,14 +711,14 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				win.SetFocus(fb.prevFocusHWnd)
 			}
 
-			App().setActiveForm(fb.window.(Form))
+			fb.group.SetActiveForm(fb.window.(Form))
 
 			fb.activatingPublisher.Publish()
 
 		case win.WA_INACTIVE:
 			fb.prevFocusHWnd = win.GetFocus()
 
-			App().setActiveForm(nil)
+			fb.group.SetActiveForm(nil)
 
 			fb.deactivatingPublisher.Publish()
 		}

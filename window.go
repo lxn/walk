@@ -631,11 +631,11 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 
 	// Use the thread ID to look up our window group, which stores data that
 	// is common to all windows on a common thread. A group will be created
-	// automatically if one doesn't already exist for the thread ID.
+	// if one doesn't already exist for the thread ID.
 	//
-	// Making this call increments the reference counter for the group.
-	// The counter will be decremented later in WindowBase.Dispose.
-	wb.group = wgm.Group(tid)
+	// CreateGroup automatically increments the reference counter for the
+	// group. The counter will be decremented later in WindowBase.Dispose.
+	wb.group = wgm.CreateGroup(tid)
 
 	succeeded := false
 	defer func() {
@@ -1983,7 +1983,7 @@ func (wb *WindowBase) RequestLayout() {
 		return
 	}
 
-	if fb := form.AsFormBase(); App().ActiveForm() != form || fb.inProgressEventCount == 0 {
+	if fb := form.AsFormBase(); fb.group.ActiveForm() != form || fb.inProgressEventCount == 0 {
 		fb.startLayout()
 	} else {
 		fb.layoutScheduled = true
@@ -2146,7 +2146,18 @@ func (wb *WindowBase) BoundsChanged() *Event {
 // Synchronize enqueues func f to be called some time later by the main
 // goroutine from inside a message loop.
 func (wb *WindowBase) Synchronize(f func()) {
-	synchronize(f)
+	wb.group.Synchronize(f)
+
+	win.PostMessage(wb.hWnd, syncMsgId, 0, 0)
+}
+
+// synchronizeLayout causes the given layout computations to be applied
+// later by the message loop running on the group's thread.
+//
+// Any previously queued layout computations that have not yet been applied
+// will be replaced.
+func (wb *WindowBase) synchronizeLayout(results []LayoutResult, stopwatch *stopwatch) {
+	wb.group.SynchronizeLayout(results, stopwatch)
 
 	win.PostMessage(wb.hWnd, syncMsgId, 0, 0)
 }
@@ -2457,7 +2468,7 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 				}
 			}
 
-			if wb.Form() == App().ActiveForm() {
+			if wb.Form() == wb.group.ActiveForm() {
 				wnd.AsWidgetBase().invalidateBorderInParent()
 			}
 		}

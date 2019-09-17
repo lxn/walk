@@ -35,7 +35,7 @@ import (
 //             TranslateMessage(&m);
 //             DispatchMessage(&m);
 //         }
-//         shimRunSynchronized();
+//         shimRunSynchronized(fb_ptr);
 //     }
 //     return 0;
 // }
@@ -47,8 +47,8 @@ func shimHandleKeyDown(fb uintptr, msg uintptr) bool {
 }
 
 //export shimRunSynchronized
-func shimRunSynchronized() {
-	runSynchronized()
+func shimRunSynchronized(fb uintptr) {
+	(*FormBase)(unsafe.Pointer(fb)).group.RunSynchronized()
 }
 
 func (fb *FormBase) mainLoop() int {

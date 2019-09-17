@@ -20,12 +20,24 @@ type windowGroupManager struct {
 	groups map[uint32]*WindowGroup
 }
 
-// Group returns a window group for the given thread ID.
+// Group returns a window group for the given thread ID, if one exists.
+// If a group does not already exist it returns nil.
+func (m *windowGroupManager) Group(threadID uint32) *WindowGroup {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+	if m.groups == nil {
+		return nil
+	}
+	return m.groups[threadID]
+}
+
+// CreateGroup returns a window group for the given thread ID. If one does
+// not already exist, it will be created.
 //
 // The group will have its counter incremented as a result of this call.
 // It is the caller's responsibility to call Done when finished with the
 // group.
-func (m *windowGroupManager) Group(threadID uint32) *WindowGroup {
+func (m *windowGroupManager) CreateGroup(threadID uint32) *WindowGroup {
 	// Fast path with read lock
 	m.mutex.RLock()
 	if m.groups != nil {
@@ -78,6 +90,12 @@ type WindowGroup struct {
 	completion func(uint32) // Used to tell the window group manager to remove this group
 	removed    bool         // Has this group been removed from its manager? (used for race detection)
 	toolTip    *ToolTip
+	activeForm Form
+
+	syncMutex       sync.Mutex
+	syncFuncs       []func()       // Functions queued to run on the group's thread
+	layoutResults   []LayoutResult // Layout computations queued for application on the group's thread
+	layoutStopwatch *stopwatch     // Timing information for the layout computations
 }
 
 // newWindowGroup returns a new window group for the given thread ID.
@@ -124,6 +142,53 @@ func (g *WindowGroup) Done() {
 	g.Add(-1)
 }
 
+// Synchronize adds f to the group's function queue, to be executed
+// by the message loop running on the the group's thread.
+//
+// Synchronize can be called from any thread.
+func (g *WindowGroup) Synchronize(f func()) {
+	g.syncMutex.Lock()
+	defer g.syncMutex.Unlock()
+	g.syncFuncs = append(g.syncFuncs, f)
+}
+
+// SynchronizeLayout causes the given layout computations to be applied
+// later by the message loop running on the group's thread.
+//
+// Any previously queued layout computations that have not yet been applied
+// will be replaced.
+//
+// SynchronizeLayout can be called from any thread.
+func (g *WindowGroup) SynchronizeLayout(results []LayoutResult, stopwatch *stopwatch) {
+	g.syncMutex.Lock()
+	g.layoutResults = results
+	g.layoutStopwatch = stopwatch
+	g.syncMutex.Unlock()
+}
+
+// RunSynchronized runs all of the function calls queued by Synchronize
+// and applies any layout changes queued by SynchronizeLayoutResults.
+//
+// RunSynchronized must be called by the group's thread.
+func (g *WindowGroup) RunSynchronized() {
+	// Clear the list of callbacks first to avoid deadlock
+	// if a callback itself calls Synchronize()...
+	g.syncMutex.Lock()
+	funcs := g.syncFuncs
+	results, stopwatch := g.layoutResults, g.layoutStopwatch
+	g.syncFuncs = nil
+	g.layoutResults = nil
+	g.layoutStopwatch = nil
+	g.syncMutex.Unlock()
+
+	if len(results) > 0 {
+		applyLayoutResults(results, stopwatch)
+	}
+	for _, f := range funcs {
+		f()
+	}
+}
+
 // ToolTip returns the tool tip control for the group, if one exists.
 func (g *WindowGroup) ToolTip() *ToolTip {
 	return g.toolTip
@@ -157,6 +222,17 @@ func (g *WindowGroup) CreateToolTip() (*ToolTip, error) {
 	g.ignore(1)
 
 	return tt, nil
+}
+
+// ActiveForm returns the currently active form for the group. If no
+// form is active it returns nil.
+func (g *WindowGroup) ActiveForm() Form {
+	return g.activeForm
+}
+
+// SetActiveForm updates the currently active form for the group.
+func (g *WindowGroup) SetActiveForm(form Form) {
+	g.activeForm = form
 }
 
 // ignore changes the number of references that the group will ignore.

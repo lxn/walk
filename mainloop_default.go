@@ -7,8 +7,9 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"unsafe"
+
+	"github.com/lxn/win"
 )
 
 func (fb *FormBase) mainLoop() int {
@@ -36,7 +37,7 @@ func (fb *FormBase) mainLoop() int {
 			win.DispatchMessage(msg)
 		}
 
-		runSynchronized()
+		fb.group.RunSynchronized()
 	}
 
 	return 0

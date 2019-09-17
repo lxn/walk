@@ -7,6 +7,7 @@
 package walk
 
 import (
+	"runtime"
 	"sync"
 	"time"
 
@@ -39,7 +40,6 @@ type Application struct {
 	settings           Settings
 	exiting            bool
 	exitCode           int
-	activeForm         Form
 	panickingPublisher ErrorEventPublisher
 }
 
@@ -105,14 +105,17 @@ func (app *Application) Panicking() *ErrorEvent {
 	return app.panickingPublisher.Event()
 }
 
+// ActiveForm returns the currently active form for the caller's thread.
+// It returns nil if no form is active or the caller's thread does not
+// have any windows associated with it. It should be called from within
+// synchronized functions.
 func (app *Application) ActiveForm() Form {
-	app.mutex.RLock()
-	defer app.mutex.RUnlock()
-	return app.activeForm
-}
-
-func (app *Application) setActiveForm(form Form) {
-	app.mutex.Lock()
-	defer app.mutex.Unlock()
-	app.activeForm = form
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	tid := win.GetCurrentThreadId()
+	group := wgm.Group(tid)
+	if group == nil {
+		return nil
+	}
+	return group.ActiveForm()
 }
