@@ -7,6 +7,7 @@
 package walk
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/lxn/win"
@@ -19,6 +20,29 @@ type Image interface {
 	Size() Size
 }
 
+func ImageFrom(src interface{}) (img Image, err error) {
+	switch src := src.(type) {
+	case nil:
+		// nop
+
+	case Image:
+		img = src
+
+	case ExtractableIcon:
+		img, err = NewIconExtractedFromFileWithSize(src.FilePath_(), src.Index_(), src.Size_())
+
+	case int:
+		img, err = Resources.Image(strconv.Itoa(src))
+
+	case string:
+		img, err = Resources.Image(src)
+
+	default:
+		err = ErrInvalidType
+	}
+
+	return
+}
 func NewImageFromFile(filePath string) (Image, error) {
 	if strings.HasSuffix(filePath, ".ico") {
 		return NewIconFromFile(filePath)

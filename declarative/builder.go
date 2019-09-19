@@ -8,12 +8,9 @@ package declarative
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"regexp"
-)
-
-import (
-	"log"
 	"strings"
 
 	"github.com/lxn/walk"
@@ -51,6 +48,7 @@ type declWidget struct {
 }
 
 type Builder struct {
+	dpi                      int
 	level                    int
 	rows                     int
 	columns                  int
@@ -68,7 +66,14 @@ type Builder struct {
 }
 
 func NewBuilder(parent walk.Container) *Builder {
+	var dpi int
+
+	if parent != nil {
+		dpi = parent.DPI()
+	}
+
 	return &Builder{
+		dpi:                      dpi,
 		parent:                   parent,
 		name2Window:              make(map[string]walk.Window),
 		name2DataBinder:          make(map[string]*walk.DataBinder),
@@ -119,6 +124,9 @@ func (b *Builder) deferBuildActions(actionList *walk.ActionList, items []MenuIte
 }
 
 func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) error {
+	if b.dpi == 0 {
+		b.dpi = w.DPI()
+	}
 	oldWidgetValue := b.widgetValue
 	b.widgetValue = reflect.ValueOf(d)
 	b.level++

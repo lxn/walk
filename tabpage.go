@@ -7,8 +7,6 @@
 package walk
 
 import (
-	"strconv"
-
 	"github.com/lxn/win"
 )
 
@@ -61,26 +59,9 @@ func NewTabPage() (*TabPage, error) {
 			return tp.Image()
 		},
 		func(v interface{}) error {
-			var img *Bitmap
-
-			switch val := v.(type) {
-			case *Bitmap:
-				img = val
-
-			case int:
-				var err error
-				if img, err = Resources.Bitmap(strconv.Itoa(val)); err != nil {
-					return err
-				}
-
-			case string:
-				var err error
-				if img, err = Resources.Bitmap(val); err != nil {
-					return err
-				}
-
-			default:
-				return ErrInvalidType
+			img, err := ImageFrom(v)
+			if err != nil {
+				return err
 			}
 
 			return tp.SetImage(img)

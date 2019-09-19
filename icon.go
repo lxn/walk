@@ -37,6 +37,25 @@ type Icon struct {
 	hasIndex  bool
 }
 
+type ExtractableIcon interface {
+	FilePath_() string
+	Index_() int
+	Size_() int
+}
+
+func IconFrom(src interface{}, dpi int) (*Icon, error) {
+	if src == nil {
+		return nil, nil
+	}
+
+	img, err := ImageFrom(src)
+	if err != nil {
+		return nil, err
+	}
+
+	return iconCache.Icon(img, dpi)
+}
+
 func IconApplication() *Icon {
 	return stockIcon(win.IDI_APPLICATION)
 }

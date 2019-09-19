@@ -8,7 +8,6 @@ package walk
 
 import (
 	"math"
-	"strconv"
 
 	"github.com/lxn/win"
 )
@@ -59,26 +58,9 @@ func NewImageView(parent Container) (*ImageView, error) {
 			return iv.Image()
 		},
 		func(v interface{}) error {
-			var img Image
-
-			switch val := v.(type) {
-			case Image:
-				img = val
-
-			case int:
-				var err error
-				if img, err = Resources.Image(strconv.Itoa(val)); err != nil {
-					return err
-				}
-
-			case string:
-				var err error
-				if img, err = Resources.Image(val); err != nil {
-					return err
-				}
-
-			default:
-				return ErrInvalidType
+			img, err := ImageFrom(v)
+			if err != nil {
+				return err
 			}
 
 			return iv.SetImage(img)

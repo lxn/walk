@@ -8,9 +8,7 @@ package walk
 
 import (
 	"syscall"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -34,6 +32,10 @@ func CommonAppDataPath() (string, error) {
 
 func LocalAppDataPath() (string, error) {
 	return knownFolderPath(win.CSIDL_LOCAL_APPDATA)
+}
+
+func SystemPath() (string, error) {
+	return knownFolderPath(win.CSIDL_SYSTEM)
 }
 
 func DriveNames() ([]string, error) {

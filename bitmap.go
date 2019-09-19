@@ -23,6 +23,19 @@ type Bitmap struct {
 	dpi        int
 }
 
+func BitmapFrom(src interface{}, dpi int) (*Bitmap, error) {
+	if src == nil {
+		return nil, nil
+	}
+
+	img, err := ImageFrom(src)
+	if err != nil {
+		return nil, err
+	}
+
+	return iconCache.Bitmap(img, dpi)
+}
+
 func NewBitmap(size Size) (*Bitmap, error) {
 	return newBitmap(size, false)
 }

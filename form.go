@@ -8,7 +8,6 @@ package walk
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -115,29 +114,17 @@ func (fb *FormBase) init(form Form) error {
 			return fb.Icon()
 		},
 		func(v interface{}) error {
-			var icon *Icon
-
-			switch val := v.(type) {
-			case *Icon:
-				icon = val
-
-			case int:
-				var err error
-				if icon, err = Resources.Icon(strconv.Itoa(val)); err != nil {
-					return err
-				}
-
-			case string:
-				var err error
-				if icon, err = Resources.Icon(val); err != nil {
-					return err
-				}
-
-			default:
-				return ErrInvalidType
+			icon, err := IconFrom(v, fb.DPI())
+			if err != nil {
+				return err
 			}
 
-			fb.SetIcon(icon)
+			var img Image
+			if icon != nil {
+				img = icon
+			}
+
+			fb.SetIcon(img)
 
 			return nil
 		},
