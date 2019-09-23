@@ -148,7 +148,7 @@ func NewIconFromSysDLLWithSize(dllBaseName string, index, size int) (*Icon, erro
 }
 
 // NewIconExtractedFromFile returns a new Icon, as identified by index of size 16x16 from filePath.
-func NewIconExtractedFromFile(filePath string, index, size int) (*Icon, error) {
+func NewIconExtractedFromFile(filePath string, index, _ int) (*Icon, error) {
 	return checkNewIcon(&Icon{filePath: filePath, index: index, hasIndex: true, size96dpi: Size{16, 16}})
 }
 
@@ -222,7 +222,7 @@ func NewIconFromHICON(hIcon win.HICON) (ic *Icon, err error) {
 		return nil, err
 	}
 
-	return newIconFromHICONAndSize(hIcon, Size{s, s}), nil
+	return newIconFromHICONAndSize(hIcon, s), nil
 }
 
 func newIconFromHICONAndSize(hIcon win.HICON, size Size) *Icon {
@@ -386,12 +386,12 @@ func createAlphaCursorOrIconFromBitmap(bmp *Bitmap, hotspot Point, fIcon bool) (
 	return hIconOrCursor, nil
 }
 
-func sizeFromHICON(hIcon win.HICON) (int, error) {
+func sizeFromHICON(hIcon win.HICON) (Size, error) {
 	var ii win.ICONINFO
 	var bi win.BITMAPINFO
 
 	if !win.GetIconInfo(hIcon, &ii) {
-		return 0, lastError("GetIconInfo")
+		return Size{}, lastError("GetIconInfo")
 	}
 	defer win.DeleteObject(win.HGDIOBJ(ii.HbmMask))
 
@@ -405,8 +405,8 @@ func sizeFromHICON(hIcon win.HICON) (int, error) {
 	}
 
 	if 0 == win.GetObject(win.HGDIOBJ(hBmp), unsafe.Sizeof(bi), unsafe.Pointer(&bi)) {
-		return 0, newError("GetObject")
+		return Size{}, newError("GetObject")
 	}
 
-	return int(bi.BmiHeader.BiWidth), nil
+	return Size{int(bi.BmiHeader.BiWidth), int(bi.BmiHeader.BiHeight)}, nil
 }
