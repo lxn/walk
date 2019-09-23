@@ -213,42 +213,6 @@ type Window interface {
 	// SendMessage sends a message to the window and returns the result.
 	SendMessage(msg uint32, wParam, lParam uintptr) uintptr
 
-	// SetAccAccelerator sets window accelerator name using Dynamic Annotation.
-	SetAccAccelerator(acc string) win.HRESULT
-
-	// SetAccDefaultAction sets window default action using Dynamic Annotation.
-	SetAccDefaultAction(defAction string) win.HRESULT
-
-	// SetAccDescription sets window description using Dynamic Annotation.
-	SetAccDescription(acc string) win.HRESULT
-
-	// SetAccHelp sets window help using Dynamic Annotation.
-	SetAccHelp(help string) win.HRESULT
-
-	// SetAccName sets window name using Dynamic Annotation.
-	SetAccName(name string) win.HRESULT
-
-	// SetAccRole sets window role using Dynamic Annotation. Parameter role must be one of
-	// win.ROLE_SYSTEM_* constants. The role must be set when the window is created and is not to
-	// be modified later.
-	SetAccRole(role int32) win.HRESULT
-
-	// SetAccRoleMap sets window role map using Dynamic Annotation. The role map must be set when
-	// the window is created and is not to be modified later.
-	SetAccRoleMap(roleMap string) win.HRESULT
-
-	// SetAccState sets window state using Dynamic Annotation. Parameter state must be one of
-	// win.STATE_SYSTEM_* constants.
-	SetAccState(state int32) win.HRESULT
-
-	// SetAccStateMap sets window state map using Dynamic Annotation. The state map must be set
-	// when the window is created and is not to be modified later.
-	SetAccStateMap(stateMap string) win.HRESULT
-
-	// SetAccValueMap sets window value map using Dynamic Annotation. The value map must be set
-	// when the window is created and is not to be modified later.
-	SetAccValueMap(valueMap string) win.HRESULT
-
 	// SetBackground sets the background Brush of the Window.
 	SetBackground(value Brush)
 
@@ -472,7 +436,6 @@ type WindowBase struct {
 	suspended                 bool
 	visible                   bool
 	enabled                   bool
-	accPropServices           *win.IAccPropServices
 }
 
 var (
@@ -804,113 +767,6 @@ func ensureWindowLongBits(hwnd win.HWND, index int32, bits uint32, set bool) err
 	return setAndClearWindowLongBits(hwnd, index, setBits, clearBits)
 }
 
-// accPropIds is a static list of accessibility properties user (may) set for a window
-// and we should clear when the window is disposed.
-var accPropIds = []win.MSAAPROPID{
-	win.PROPID_ACC_DEFAULTACTION,
-	win.PROPID_ACC_DESCRIPTION,
-	win.PROPID_ACC_HELP,
-	win.PROPID_ACC_KEYBOARDSHORTCUT,
-	win.PROPID_ACC_NAME,
-	win.PROPID_ACC_ROLE,
-	win.PROPID_ACC_ROLEMAP,
-	win.PROPID_ACC_STATE,
-	win.PROPID_ACC_STATEMAP,
-	win.PROPID_ACC_VALUEMAP,
-}
-
-func (wb *WindowBase) accSetPropertyInt(idProp *win.MSAAPROPID, event uint32, value int32) win.HRESULT {
-	if wb.accPropServices == nil {
-		hr := win.CoCreateInstance(&win.CLSID_AccPropServices, nil, win.CLSCTX_ALL, &win.IID_IAccPropServices, (*unsafe.Pointer)(unsafe.Pointer(&wb.accPropServices)))
-		if win.FAILED(hr) {
-			return hr
-		}
-	}
-	var v win.VARIANT
-	v.SetLong(value)
-	hr := wb.accPropServices.SetHwndProp(wb.hWnd, win.OBJID_CLIENT, win.CHILDID_SELF, idProp, &v)
-	if win.FAILED(hr) {
-		return hr
-	}
-	if win.EVENT_OBJECT_CREATE <= event && event <= win.EVENT_OBJECT_END {
-		win.NotifyWinEvent(event, wb.hWnd, win.OBJID_CLIENT, win.CHILDID_SELF)
-	}
-	return win.S_OK
-}
-
-func (wb *WindowBase) accSetPropertyStr(idProp *win.MSAAPROPID, event uint32, value string) win.HRESULT {
-	if wb.accPropServices == nil {
-		hr := win.CoCreateInstance(&win.CLSID_AccPropServices, nil, win.CLSCTX_ALL, &win.IID_IAccPropServices, (*unsafe.Pointer)(unsafe.Pointer(&wb.accPropServices)))
-		if win.FAILED(hr) {
-			return hr
-		}
-	}
-	hr := wb.accPropServices.SetHwndPropStr(wb.hWnd, win.OBJID_CLIENT, win.CHILDID_SELF, idProp, value)
-	if win.FAILED(hr) {
-		return hr
-	}
-	if win.EVENT_OBJECT_CREATE <= event && event <= win.EVENT_OBJECT_END {
-		win.NotifyWinEvent(event, wb.hWnd, win.OBJID_CLIENT, win.CHILDID_SELF)
-	}
-	return win.S_OK
-}
-
-// SetAccAccelerator sets window accelerator name using Dynamic Annotation.
-func (wb *WindowBase) SetAccAccelerator(acc string) win.HRESULT {
-	return wb.accSetPropertyStr(&win.PROPID_ACC_KEYBOARDSHORTCUT, win.EVENT_OBJECT_ACCELERATORCHANGE, acc)
-}
-
-// SetAccDefaultAction sets window default action using Dynamic Annotation.
-func (wb *WindowBase) SetAccDefaultAction(defAction string) win.HRESULT {
-	return wb.accSetPropertyStr(&win.PROPID_ACC_DEFAULTACTION, win.EVENT_OBJECT_DEFACTIONCHANGE, defAction)
-}
-
-// SetAccDescription sets window description using Dynamic Annotation.
-func (wb *WindowBase) SetAccDescription(acc string) win.HRESULT {
-	return wb.accSetPropertyStr(&win.PROPID_ACC_DESCRIPTION, win.EVENT_OBJECT_DESCRIPTIONCHANGE, acc)
-}
-
-// SetAccHelp sets window help using Dynamic Annotation.
-func (wb *WindowBase) SetAccHelp(help string) win.HRESULT {
-	return wb.accSetPropertyStr(&win.PROPID_ACC_HELP, win.EVENT_OBJECT_HELPCHANGE, help)
-}
-
-// SetAccName sets window name using Dynamic Annotation.
-func (wb *WindowBase) SetAccName(name string) win.HRESULT {
-	return wb.accSetPropertyStr(&win.PROPID_ACC_NAME, win.EVENT_OBJECT_NAMECHANGE, name)
-}
-
-// SetAccRole sets window role using Dynamic Annotation. Parameter role must be one of
-// win.ROLE_SYSTEM_* constants. The role must be set when the window is created and is not to be
-// modified later.
-func (wb *WindowBase) SetAccRole(role int32) win.HRESULT {
-	return wb.accSetPropertyInt(&win.PROPID_ACC_ROLE, 0, role)
-}
-
-// SetAccRoleMap sets window role map using Dynamic Annotation. The role map must be set when the
-// window is created and is not to be modified later.
-func (wb *WindowBase) SetAccRoleMap(roleMap string) win.HRESULT {
-	return wb.accSetPropertyStr(&win.PROPID_ACC_ROLEMAP, 0, roleMap)
-}
-
-// SetAccState sets window state using Dynamic Annotation. Parameter state must be one of
-// win.STATE_SYSTEM_* constants.
-func (wb *WindowBase) SetAccState(state int32) win.HRESULT {
-	return wb.accSetPropertyInt(&win.PROPID_ACC_STATE, win.EVENT_OBJECT_STATECHANGE, state)
-}
-
-// SetAccStateMap sets window state map using Dynamic Annotation. The state map must be set when
-// the window is created and is not to be modified later.
-func (wb *WindowBase) SetAccStateMap(stateMap string) win.HRESULT {
-	return wb.accSetPropertyStr(&win.PROPID_ACC_STATEMAP, 0, stateMap)
-}
-
-// SetAccValueMap sets window value map using Dynamic Annotation. The value map must be set when
-// the window is created and is not to be modified later.
-func (wb *WindowBase) SetAccValueMap(valueMap string) win.HRESULT {
-	return wb.accSetPropertyStr(&win.PROPID_ACC_VALUEMAP, 0, valueMap)
-}
-
 // Handle returns the window handle of the Window.
 func (wb *WindowBase) Handle() win.HWND {
 	return wb.hWnd
@@ -1003,12 +859,6 @@ func (wb *WindowBase) Dispose() {
 
 	if hWnd != 0 {
 		wb.group.Done()
-	}
-
-	if wb.accPropServices != nil {
-		wb.accPropServices.ClearHwndProps(wb.hWnd, win.OBJID_CLIENT, win.CHILDID_SELF, accPropIds)
-		wb.accPropServices.Release()
-		wb.accPropServices = nil
 	}
 }
 
