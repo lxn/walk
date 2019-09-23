@@ -14,7 +14,7 @@ import (
 
 // #include <windows.h>
 //
-// extern void shimRunSynchronized(void);
+// extern void shimRunSynchronized(uintptr_t fb);
 // extern unsigned char shimHandleKeyDown(uintptr_t fb, uintptr_t m);
 //
 // static int mainloop(uintptr_t handle_ptr, uintptr_t fb_ptr)
