@@ -229,17 +229,17 @@ func (ll *LinkLabel) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type linkLabelLayoutItem struct {
 	LayoutItemBase
-	idealSize Size
+	idealSize SizePixels
 }
 
 func (*linkLabelLayoutItem) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (li *linkLabelLayoutItem) IdealSize() Size {
+func (li *linkLabelLayoutItem) IdealSize() SizePixels {
 	return li.idealSize
 }
 
-func (li *linkLabelLayoutItem) MinSize() Size {
+func (li *linkLabelLayoutItem) MinSize() SizePixels {
 	return li.idealSize
 }

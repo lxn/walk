@@ -62,9 +62,9 @@ type Widget interface {
 	// Widget wants to be treated by Layout implementations.
 	LayoutFlags() LayoutFlags
 
-	// MinSizeHint returns the minimum outer Size, including decorations, that
+	// MinSizeHint returns the minimum outer size, including decorations, that
 	// makes sense for the respective type of Widget.
-	MinSizeHint() Size
+	MinSizeHint() SizePixels
 
 	// Parent returns the Container of the Widget.
 	Parent() Container
@@ -83,8 +83,8 @@ type Widget interface {
 	// SetToolTipText sets the tool tip text of the Widget.
 	SetToolTipText(s string) error
 
-	// SizeHint returns the preferred Size for the respective type of Widget.
-	SizeHint() Size
+	// SizeHint returns the preferred size for the respective type of Widget.
+	SizeHint() SizePixels
 
 	// ToolTipText returns the tool tip text of the Widget.
 	ToolTipText() string
@@ -174,26 +174,26 @@ func (wb *WidgetBase) AsWidgetBase() *WidgetBase {
 	return wb
 }
 
-// Bounds returns the outer bounding box Rectangle of the WidgetBase, including
+// Bounds returns the outer bounding box rectangle of the WidgetBase, including
 // decorations.
 //
 // The coordinates are relative to the parent of the Widget.
-func (wb *WidgetBase) Bounds() Rectangle96DPI {
+func (wb *WidgetBase) Bounds() Rectangle {
 	return wb.RectangleTo96DPI(wb.BoundsPixels())
 }
 
-// BoundsPixels returns the outer bounding box Rectangle of the WidgetBase, including
+// BoundsPixels returns the outer bounding box rectangle of the WidgetBase, including
 // decorations.
 //
 // The coordinates are relative to the parent of the Widget.
-func (wb *WidgetBase) BoundsPixels() Rectangle {
+func (wb *WidgetBase) BoundsPixels() RectanglePixels {
 	b := wb.WindowBase.BoundsPixels()
 
 	if wb.parent != nil {
 		p := b.Location().toPOINT()
 		if !win.ScreenToClient(wb.parent.Handle(), &p) {
 			newError("ScreenToClient failed")
-			return Rectangle{}
+			return RectanglePixels{}
 		}
 		b.X = Pixel(p.X)
 		b.Y = Pixel(p.Y)
@@ -261,11 +261,11 @@ func (wb *WidgetBase) SetAlignment(alignment Alignment2D) error {
 	return nil
 }
 
-// SetMinMaxSize sets the minimum and maximum outer Size of the *WidgetBase,
+// SetMinMaxSize sets the minimum and maximum outer size of the *WidgetBase,
 // including decorations.
 //
 // Use walk.Size{} to make the respective limit be ignored.
-func (wb *WidgetBase) SetMinMaxSize(min, max Size96DPI) (err error) {
+func (wb *WidgetBase) SetMinMaxSize(min, max Size) (err error) {
 	err = wb.WindowBase.SetMinMaxSize(min, max)
 
 	wb.RequestLayout()
@@ -513,18 +513,18 @@ func (wb *WidgetBase) LayoutFlags() LayoutFlags {
 	return createLayoutItemForWidget(wb.window.(Widget)).LayoutFlags()
 }
 
-func (wb *WidgetBase) SizeHint() Size {
+func (wb *WidgetBase) SizeHint() SizePixels {
 	if is, ok := createLayoutItemForWidget(wb.window.(Widget)).(IdealSizer); ok {
 		return is.IdealSize()
 	}
 
-	return Size{}
+	return SizePixels{}
 }
 
-func (wb *WidgetBase) MinSizeHint() Size {
+func (wb *WidgetBase) MinSizeHint() SizePixels {
 	if ms, ok := createLayoutItemForWidget(wb.window.(Widget)).(MinSizer); ok {
 		return ms.MinSize()
 	}
 
-	return Size{}
+	return SizePixels{}
 }

@@ -254,7 +254,7 @@ func (tv *TreeView) handleForItem(item TreeItem) (win.HTREEITEM, error) {
 }
 
 func (tv *TreeView) ItemAt(x, y Pixel) TreeItem {
-	hti := win.TVHITTESTINFO{Pt: Point{x, y}.toPOINT()}
+	hti := win.TVHITTESTINFO{Pt: PointPixels{x, y}.toPOINT()}
 
 	tv.SendMessage(win.TVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
 

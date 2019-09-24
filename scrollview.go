@@ -232,7 +232,7 @@ func (sv *ScrollView) updateScrollBars() {
 	si.CbSize = uint32(unsafe.Sizeof(si))
 	si.FMask = win.SIF_PAGE | win.SIF_RANGE
 
-	newCompositeBounds := Rectangle{Width: compositeSize.Width, Height: compositeSize.Height}
+	newCompositeBounds := RectanglePixels{Width: compositeSize.Width, Height: compositeSize.Height}
 
 	if size != compositeSize {
 		dpi := uint32(sv.DPI())
@@ -328,7 +328,7 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		svli.layoutFlags |= ShrinkableHorz | GrowableHorz | GreedyHorz
 
 		if !v {
-			maxSizePixels := sv.maxSize.ForDPI(ctx.dpi)
+			maxSizePixels := SizeFrom96DPI(sv.maxSize, ctx.dpi)
 			if svli.idealSize.Width > sv.geometry.ClientSize.Width && sv.geometry.ClientSize.Width > 0 && sv.maxSize.Width == 0 ||
 				svli.idealSize.Width > maxSizePixels.Width && maxSizePixels.Width > 0 {
 				svli.sbSize.Height = Pixel(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(ctx.dpi)))
@@ -343,7 +343,7 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		svli.layoutFlags |= GreedyVert | GrowableVert | ShrinkableVert
 
 		if !h {
-			maxSizePixels := sv.maxSize.ForDPI(ctx.dpi)
+			maxSizePixels := SizeFrom96DPI(sv.maxSize, ctx.dpi)
 			if svli.idealSize.Height > sv.geometry.ClientSize.Height && sv.geometry.ClientSize.Height > 0 && sv.maxSize.Height == 0 ||
 				svli.idealSize.Height > maxSizePixels.Height && maxSizePixels.Height > 0 {
 				svli.sbSize.Width = Pixel(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))
@@ -369,9 +369,9 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type scrollViewLayoutItem struct {
 	ContainerLayoutItemBase
-	idealSize   Size
-	minSize     Size
-	sbSize      Size
+	idealSize   SizePixels
+	minSize     SizePixels
+	sbSize      SizePixels
 	layoutFlags LayoutFlags
 	scrollX     float64
 	scrollY     float64
@@ -381,15 +381,15 @@ func (li *scrollViewLayoutItem) LayoutFlags() LayoutFlags {
 	return li.layoutFlags
 }
 
-func (li *scrollViewLayoutItem) IdealSize() Size {
+func (li *scrollViewLayoutItem) IdealSize() SizePixels {
 	return li.idealSize
 }
 
-func (li *scrollViewLayoutItem) MinSize() Size {
+func (li *scrollViewLayoutItem) MinSize() SizePixels {
 	return li.minSize
 }
 
-func (li *scrollViewLayoutItem) MinSizeForSize(size Size) Size {
+func (li *scrollViewLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 	return li.MinSize()
 }
 
@@ -425,7 +425,7 @@ func (li *scrollViewLayoutItem) PerformLayout() []LayoutResultItem {
 		}
 	}
 
-	s := maxSize(minSize, clientSize)
+	s := maxSizePixels(minSize, clientSize)
 
 	var x, y Pixel
 	if clientSize.Width < minSize.Width {
@@ -438,7 +438,7 @@ func (li *scrollViewLayoutItem) PerformLayout() []LayoutResultItem {
 	return []LayoutResultItem{
 		{
 			Item:   composite,
-			Bounds: Rectangle{x, y, s.Width, s.Height},
+			Bounds: RectanglePixels{x, y, s.Width, s.Height},
 		},
 	}
 }

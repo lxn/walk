@@ -29,7 +29,7 @@ type BoxLayout struct {
 func newBoxLayout(orientation Orientation) *BoxLayout {
 	l := &BoxLayout{
 		LayoutBase: LayoutBase{
-			margins96dpi: Margins96DPI{9, 9, 9, 9},
+			margins96dpi: Margins{9, 9, 9, 9},
 			spacing96dpi: 6,
 		},
 		orientation:        orientation,
@@ -102,7 +102,7 @@ func (l *BoxLayout) SetStretchFactor(widget Widget, factor int) error {
 
 func (l *BoxLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 	li := &boxLayoutItem{
-		size2MinSize:       make(map[Size]Size),
+		size2MinSize:       make(map[SizePixels]SizePixels),
 		orientation:        l.orientation,
 		hwnd2StretchFactor: make(map[win.HWND]int),
 	}
@@ -157,7 +157,7 @@ func (l boxLayoutItemInfoList) Swap(i, j int) {
 type boxLayoutItem struct {
 	ContainerLayoutItemBase
 	mutex              sync.Mutex
-	size2MinSize       map[Size]Size
+	size2MinSize       map[SizePixels]SizePixels
 	orientation        Orientation
 	hwnd2StretchFactor map[win.HWND]int
 }
@@ -166,19 +166,19 @@ func (li *boxLayoutItem) LayoutFlags() LayoutFlags {
 	return boxLayoutFlags(li.orientation, li.children)
 }
 
-func (li *boxLayoutItem) IdealSize() Size {
+func (li *boxLayoutItem) IdealSize() SizePixels {
 	return li.MinSize()
 }
 
-func (li *boxLayoutItem) MinSize() Size {
+func (li *boxLayoutItem) MinSize() SizePixels {
 	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
 func (li *boxLayoutItem) HeightForWidth(width Pixel) Pixel {
-	return li.MinSizeForSize(Size{width, li.geometry.ClientSize.Height}).Height
+	return li.MinSizeForSize(SizePixels{width, li.geometry.ClientSize.Height}).Height
 }
 
-func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
+func (li *boxLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 	li.mutex.Lock()
 	defer li.mutex.Unlock()
 
@@ -186,13 +186,13 @@ func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 		return min
 	}
 
-	bounds := Rectangle{Width: size.Width, Height: size.Height}
+	bounds := RectanglePixels{Width: size.Width, Height: size.Height}
 
 	items := boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, bounds, li.margins, li.spacing, li.hwnd2StretchFactor)
 
-	marginsPixels := li.margins.ForDPI(li.ctx.dpi)
-	spacingPixels := li.spacing.ForDPI(li.ctx.dpi)
-	s := Size{marginsPixels.HNear + marginsPixels.HFar, marginsPixels.VNear + marginsPixels.VFar}
+	marginsPixels := MarginsFrom96DPI(li.margins, li.ctx.dpi)
+	spacingPixels := IntFrom96DPI(li.spacing, li.ctx.dpi)
+	s := SizePixels{marginsPixels.HNear + marginsPixels.HFar, marginsPixels.VNear + marginsPixels.VFar}
 
 	var maxSecondary Pixel
 	for _, item := range items {
@@ -232,7 +232,7 @@ func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 }
 
 func (li *boxLayoutItem) PerformLayout() []LayoutResultItem {
-	cb := Rectangle{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
+	cb := RectanglePixels{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
 	return boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, cb, li.margins, li.spacing, li.hwnd2StretchFactor)
 }
 
@@ -285,14 +285,14 @@ func boxLayoutFlags(orientation Orientation, children []LayoutItem) LayoutFlags 
 	return flags
 }
 
-func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientation Orientation, alignment Alignment2D, bounds Rectangle, margins Margins96DPI, spacing Pixel96DPI, hwnd2StretchFactor map[win.HWND]int) []LayoutResultItem {
+func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientation Orientation, alignment Alignment2D, bounds RectanglePixels, margins Margins, spacing int, hwnd2StretchFactor map[win.HWND]int) []LayoutResultItem {
 	if len(items) == 0 {
 		return nil
 	}
 
 	dpi := container.Context().dpi
-	marginsPixels := margins.ForDPI(dpi)
-	spacingPixels := spacing.ForDPI(dpi)
+	marginsPixels := MarginsFrom96DPI(margins, dpi)
+	spacingPixels := IntFrom96DPI(spacing, dpi)
 
 	var greedyNonSpacerCount int
 	var greedySpacerCount int
@@ -318,7 +318,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 		flags := item.LayoutFlags()
 
 		max := geometry.MaxSize
-		var pref Size
+		var pref SizePixels
 		if hfw, ok := item.(HeightForWidther); !ok || !hfw.HasHeightForWidth() {
 			if is, ok := item.(IdealSizer); ok {
 				pref = is.IdealSize()
@@ -538,7 +538,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 		p1 += s1 + spacingPixels
 
-		results = append(results, LayoutResultItem{Item: item, Bounds: Rectangle{X: x, Y: y, Width: w, Height: h}})
+		results = append(results, LayoutResultItem{Item: item, Bounds: RectanglePixels{X: x, Y: y, Width: w, Height: h}})
 	}
 
 	return results

@@ -46,7 +46,7 @@ func Bind(expression string, validators ...Validator) Property {
 type SysDLLIcon struct {
 	FileName string
 	Index    int
-	Size     Pixel
+	Size     int
 }
 
 func (sdi SysDLLIcon) FilePath_() string {
@@ -64,12 +64,12 @@ func (sdi SysDLLIcon) Index_() int {
 	return sdi.Index
 }
 
-func (sdi SysDLLIcon) Size_() walk.Pixel96DPI {
+func (sdi SysDLLIcon) Size_() int {
 	if sdi.Size == 0 {
 		return 16
 	}
 
-	return sdi.Size.toW()
+	return sdi.Size
 }
 
 type Brush interface {

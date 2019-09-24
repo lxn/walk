@@ -10,37 +10,36 @@ import (
 	"github.com/lxn/win"
 )
 
-// Rectangle96DPI defines upper left corner with width and height region in 1/96".
-type Rectangle96DPI struct {
-	X, Y, Width, Height Pixel96DPI
+// Rectangle defines upper left corner with width and height region in 1/96".
+type Rectangle struct {
+	X, Y, Width, Height int
 }
 
-// ForDPI converts from 1/96" units to native pixels.
-func (r Rectangle96DPI) ForDPI(dpi int) Rectangle {
-	return r.scale(float64(dpi) / 96.0)
+func (r Rectangle) Size() Size {
+	return Size{r.Width, r.Height}
 }
 
-func (r Rectangle96DPI) scale(scale float64) Rectangle {
-	return Rectangle{
-		X:      r.X.scale(scale),
-		Y:      r.Y.scale(scale),
-		Width:  r.Width.scale(scale),
-		Height: r.Height.scale(scale),
+func scaleRectangle(value Rectangle, scale float64) RectanglePixels {
+	return RectanglePixels{
+		X:      scaleInt(value.X, scale),
+		Y:      scaleInt(value.Y, scale),
+		Width:  scaleInt(value.Width, scale),
+		Height: scaleInt(value.Height, scale),
 	}
 }
 
 // RectangleFrom96DPI converts from 1/96" units to native pixels.
-func RectangleFrom96DPI(value Rectangle96DPI, dpi int) Rectangle {
-	return value.ForDPI(dpi)
+func RectangleFrom96DPI(value Rectangle, dpi int) RectanglePixels {
+	return scaleRectangle(value, float64(dpi)/96.0)
 }
 
-// Rectangle defines upper left corner with width and height region in native pixels.
-type Rectangle struct {
+// RectanglePixels defines upper left corner with width and height region in native pixels.
+type RectanglePixels struct {
 	X, Y, Width, Height Pixel
 }
 
-func rectangleFromRECT(r win.RECT) Rectangle {
-	return Rectangle{
+func rectangleFromRECT(r win.RECT) RectanglePixels {
+	return RectanglePixels{
 		X:      Pixel(r.Left),
 		Y:      Pixel(r.Top),
 		Width:  Pixel(r.Right - r.Left),
@@ -48,45 +47,45 @@ func rectangleFromRECT(r win.RECT) Rectangle {
 	}
 }
 
-func (r Rectangle) Left() Pixel {
+func (r RectanglePixels) Left() Pixel {
 	return r.X
 }
 
-func (r Rectangle) Top() Pixel {
+func (r RectanglePixels) Top() Pixel {
 	return r.Y
 }
 
-func (r Rectangle) Right() Pixel {
+func (r RectanglePixels) Right() Pixel {
 	return r.X + r.Width - 1
 }
 
-func (r Rectangle) Bottom() Pixel {
+func (r RectanglePixels) Bottom() Pixel {
 	return r.Y + r.Height - 1
 }
 
-func (r Rectangle) Location() Point {
-	return Point{r.X, r.Y}
+func (r RectanglePixels) Location() PointPixels {
+	return PointPixels{r.X, r.Y}
 }
 
-func (r *Rectangle) SetLocation(p Point) Rectangle {
+func (r *RectanglePixels) SetLocation(p PointPixels) RectanglePixels {
 	r.X = p.X
 	r.Y = p.Y
 
 	return *r
 }
 
-func (r Rectangle) Size() Size {
-	return Size{r.Width, r.Height}
+func (r RectanglePixels) Size() SizePixels {
+	return SizePixels{r.Width, r.Height}
 }
 
-func (r *Rectangle) SetSize(s Size) Rectangle {
+func (r *RectanglePixels) SetSize(s SizePixels) RectanglePixels {
 	r.Width = s.Width
 	r.Height = s.Height
 
 	return *r
 }
 
-func (r Rectangle) toRECT() win.RECT {
+func (r RectanglePixels) toRECT() win.RECT {
 	return win.RECT{
 		int32(r.X),
 		int32(r.Y),
@@ -95,23 +94,18 @@ func (r Rectangle) toRECT() win.RECT {
 	}
 }
 
-// To96DPI converts from native pixels to 1/96" units.
-func (r Rectangle) To96DPI(dpi int) Rectangle96DPI {
-	return r.scale(96.0 / float64(dpi))
-}
-
-func (r Rectangle) scale(scale float64) Rectangle96DPI {
-	return Rectangle96DPI{
-		X:      r.X.scale(scale),
-		Y:      r.Y.scale(scale),
-		Width:  r.Width.scale(scale),
-		Height: r.Height.scale(scale),
+func scaleRectanglePixels(value RectanglePixels, scale float64) Rectangle {
+	return Rectangle{
+		X:      scalePixel(value.X, scale),
+		Y:      scalePixel(value.Y, scale),
+		Width:  scalePixel(value.Width, scale),
+		Height: scalePixel(value.Height, scale),
 	}
 }
 
 // RectangleTo96DPI converts from native pixels to 1/96" units.
-func RectangleTo96DPI(value Rectangle, dpi int) Rectangle96DPI {
-	return value.To96DPI(dpi)
+func RectangleTo96DPI(value RectanglePixels, dpi int) Rectangle {
+	return scaleRectanglePixels(value, 96.0/float64(dpi))
 }
 
 // RectangleGrid measures X and Y of the rectangular area upper left corner, width and height in grid rows and columns.

@@ -90,7 +90,7 @@ type FormBase struct {
 	progressIndicator           *ProgressIndicator
 	icon                        Image
 	prevFocusHWnd               win.HWND
-	proposedSize                Size
+	proposedSize                SizePixels
 	closeReason                 CloseReason
 	inSizingLoop                bool
 	startingLayoutViaSizingLoop bool
@@ -193,7 +193,7 @@ func (fb *FormBase) SetLayout(value Layout) error {
 	return fb.clientComposite.SetLayout(value)
 }
 
-func (fb *FormBase) SetBoundsPixels(bounds Rectangle) error {
+func (fb *FormBase) SetBoundsPixels(bounds RectanglePixels) error {
 	if layout := fb.Layout(); layout != nil {
 		layoutItem := CreateLayoutItemsForContainer(fb)
 		minSize := fb.sizeFromClientSizePixels(layoutItem.MinSizeForSize(bounds.Size()))
@@ -284,7 +284,7 @@ func (fb *FormBase) SetContextMenu(contextMenu *Menu) {
 	fb.clientComposite.SetContextMenu(contextMenu)
 }
 
-func (fb *FormBase) ContextMenuLocation() Point {
+func (fb *FormBase) ContextMenuLocation() PointPixels {
 	return fb.clientComposite.ContextMenuLocation()
 }
 
@@ -362,8 +362,8 @@ func (fb *FormBase) Run() int {
 
 	fb.SetBoundsPixels(fb.BoundsPixels())
 
-	if fb.proposedSize == (Size{}) {
-		fb.proposedSize = maxSize(fb.minSize.ForDPI(fb.DPI()), fb.SizePixels())
+	if fb.proposedSize == (SizePixels{}) {
+		fb.proposedSize = maxSizePixels(SizeFrom96DPI(fb.minSize, fb.DPI()), fb.SizePixels())
 		if !fb.Suspended() {
 			fb.startLayout()
 		}
@@ -552,7 +552,7 @@ func (fb *FormBase) Hide() {
 }
 
 func (fb *FormBase) Show() {
-	fb.proposedSize = maxSize(fb.minSize.ForDPI(fb.DPI()), fb.SizePixels())
+	fb.proposedSize = maxSizePixels(SizeFrom96DPI(fb.minSize, fb.DPI()), fb.SizePixels())
 
 	if p, ok := fb.window.(Persistable); ok && p.Persistent() && App().Settings() != nil {
 		p.RestoreState()
@@ -679,7 +679,7 @@ func (fb *FormBase) startLayout() bool {
 	cb := fb.window.ClientBoundsPixels()
 	cs := fb.clientSizeFromSizePixels(fb.proposedSize)
 
-	fb.clientComposite.SetBoundsPixels(Rectangle{cb.X, cb.Y, cs.Width, cs.Height})
+	fb.clientComposite.SetBoundsPixels(RectanglePixels{cb.X, cb.Y, cs.Width, cs.Height})
 
 	cli := CreateLayoutItemsForContainer(fb)
 	cli.Geometry().ClientSize = cs
@@ -732,13 +732,13 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		return fb.clientComposite.WndProc(hwnd, msg, wParam, lParam)
 
 	case win.WM_GETMINMAXINFO:
-		if fb.Suspended() || fb.proposedSize == (Size{}) {
+		if fb.Suspended() || fb.proposedSize == (SizePixels{}) {
 			break
 		}
 
 		mmi := (*win.MINMAXINFO)(unsafe.Pointer(lParam))
 
-		var min Size
+		var min SizePixels
 		if layout := fb.clientComposite.layout; layout != nil {
 			size := fb.clientSizeFromSizePixels(fb.proposedSize)
 			layoutItem := CreateLayoutItemsForContainer(fb)
@@ -749,9 +749,9 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			}
 		}
 
-		minSizePixels := fb.minSize.ForDPI(fb.DPI())
+		minSizePixels := SizeFrom96DPI(fb.minSize, fb.DPI())
 
-		mmi.PtMinTrackSize = Point{
+		mmi.PtMinTrackSize = PointPixels{
 			maxPixel(min.Width, minSizePixels.Width),
 			maxPixel(min.Height, minSizePixels.Height),
 		}.toPOINT()
@@ -782,7 +782,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			break
 		}
 
-		fb.proposedSize = Size{Pixel(wp.Cx), Pixel(wp.Cy)}
+		fb.proposedSize = SizePixels{Pixel(wp.Cx), Pixel(wp.Cy)}
 
 		const performingLayoutSubject = "*FormBase.WndProc - WM_WINDOWPOSCHANGED - full layout from sizing loop"
 

@@ -256,17 +256,17 @@ func (de *DateEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type dateEditLayoutItem struct {
 	LayoutItemBase
-	idealSize Size
+	idealSize SizePixels
 }
 
 func (*dateEditLayoutItem) LayoutFlags() LayoutFlags {
 	return GrowableHorz
 }
 
-func (li *dateEditLayoutItem) IdealSize() Size {
+func (li *dateEditLayoutItem) IdealSize() SizePixels {
 	return li.idealSize
 }
 
-func (li *dateEditLayoutItem) MinSize() Size {
+func (li *dateEditLayoutItem) MinSize() SizePixels {
 	return li.idealSize
 }

@@ -94,11 +94,11 @@ func (*textLabelLayoutItem) LayoutFlags() LayoutFlags {
 	return GrowableHorz | GrowableVert
 }
 
-func (li *textLabelLayoutItem) IdealSize() Size {
+func (li *textLabelLayoutItem) IdealSize() SizePixels {
 	return li.MinSize()
 }
 
-func (li *textLabelLayoutItem) MinSize() Size {
+func (li *textLabelLayoutItem) MinSize() SizePixels {
 	return calculateTextSize(li.text, li.font, li.ctx.dpi, li.minWidth, li.handle)
 }
 

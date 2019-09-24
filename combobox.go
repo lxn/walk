@@ -712,24 +712,24 @@ func (cb *ComboBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 	return &comboBoxLayoutItem{
 		layoutFlags: layoutFlags,
-		idealSize:   Size{w, h},
+		idealSize:   SizePixels{w, h},
 	}
 }
 
 type comboBoxLayoutItem struct {
 	LayoutItemBase
 	layoutFlags LayoutFlags
-	idealSize   Size
+	idealSize   SizePixels
 }
 
 func (li *comboBoxLayoutItem) LayoutFlags() LayoutFlags {
 	return li.layoutFlags
 }
 
-func (li *comboBoxLayoutItem) IdealSize() Size {
+func (li *comboBoxLayoutItem) IdealSize() SizePixels {
 	return li.idealSize
 }
 
-func (li *comboBoxLayoutItem) MinSize() Size {
+func (li *comboBoxLayoutItem) MinSize() SizePixels {
 	return li.idealSize
 }

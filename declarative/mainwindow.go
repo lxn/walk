@@ -142,7 +142,7 @@ func (mw MainWindow) Create() error {
 			s.SetText(sbi.Text)
 			s.SetToolTipText(sbi.ToolTipText)
 			if sbi.Width > 0 {
-				s.SetWidth(sbi.Width.toW())
+				s.SetWidth(sbi.Width)
 			}
 			if sbi.OnClicked != nil {
 				s.Clicked().Attach(sbi.OnClicked)
@@ -157,7 +157,7 @@ func (mw MainWindow) Create() error {
 			}
 		}
 
-		imageList, err := walk.NewImageList(walk.Size{16, 16}, 0)
+		imageList, err := walk.NewImageListForDPI(walk.SizeFrom96DPI(walk.Size{16, 16}, builder.dpi), 0, builder.dpi)
 		if err != nil {
 			return err
 		}
@@ -213,6 +213,6 @@ type StatusBarItem struct {
 	Icon        *walk.Icon
 	Text        string
 	ToolTipText string
-	Width       Pixel
+	Width       int
 	OnClicked   walk.EventHandler
 }

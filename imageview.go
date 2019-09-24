@@ -27,7 +27,7 @@ type ImageView struct {
 	*CustomWidget
 	image                  Image
 	imageChangedPublisher  EventPublisher
-	margin96dpi            Pixel96DPI
+	margin96dpi            int
 	marginChangedPublisher EventPublisher
 	mode                   ImageViewMode
 }
@@ -35,7 +35,7 @@ type ImageView struct {
 func NewImageView(parent Container) (*ImageView, error) {
 	iv := new(ImageView)
 
-	cw, err := NewCustomWidget(parent, 0, func(canvas *Canvas, updateBounds Rectangle) error {
+	cw, err := NewCustomWidget(parent, 0, func(canvas *Canvas, updateBounds RectanglePixels) error {
 		return iv.drawImage(canvas, updateBounds)
 	})
 	if err != nil {
@@ -72,7 +72,7 @@ func NewImageView(parent Container) (*ImageView, error) {
 			return iv.Margin()
 		},
 		func(v interface{}) error {
-			return iv.SetMargin(assertPixel96DPIOr(v, 0))
+			return iv.SetMargin(assertIntOr(v, 0))
 		},
 		iv.MarginChanged()))
 
@@ -112,7 +112,7 @@ func (iv *ImageView) SetImage(image Image) error {
 		return nil
 	}
 
-	var oldSize, newSize Size96DPI
+	var oldSize, newSize Size
 	if iv.image != nil {
 		oldSize = iv.image.Size()
 	}
@@ -140,11 +140,11 @@ func (iv *ImageView) ImageChanged() *Event {
 	return iv.imageChangedPublisher.Event()
 }
 
-func (iv *ImageView) Margin() Pixel96DPI {
+func (iv *ImageView) Margin() int {
 	return iv.margin96dpi
 }
 
-func (iv *ImageView) SetMargin(margin Pixel96DPI) error {
+func (iv *ImageView) SetMargin(margin int) error {
 	if margin == iv.margin96dpi {
 		return nil
 	}
@@ -166,7 +166,7 @@ func (iv *ImageView) MarginChanged() *Event {
 	return iv.marginChangedPublisher.Event()
 }
 
-func (iv *ImageView) drawImage(canvas *Canvas, _ Rectangle) error {
+func (iv *ImageView) drawImage(canvas *Canvas, _ RectanglePixels) error {
 	if iv.image == nil {
 		return nil
 	}
@@ -174,16 +174,16 @@ func (iv *ImageView) drawImage(canvas *Canvas, _ Rectangle) error {
 	cb := iv.ClientBoundsPixels()
 
 	dpi := iv.DPI()
-	margin := iv.margin96dpi.ForDPI(dpi)
+	margin := IntFrom96DPI(iv.margin96dpi, dpi)
 
 	cb.Width -= margin * 2
 	cb.Height -= margin * 2
 
-	s := iv.image.Size().ForDPI(dpi)
+	s := SizeFrom96DPI(iv.image.Size(), dpi)
 
 	switch iv.mode {
 	case ImageViewModeShrink, ImageViewModeZoom, ImageViewModeStretch:
-		var bounds Rectangle
+		var bounds RectanglePixels
 
 		if iv.mode == ImageViewModeStretch {
 			bounds.X = margin
@@ -213,7 +213,7 @@ func (iv *ImageView) drawImage(canvas *Canvas, _ Rectangle) error {
 		win.IntersectClipRect(canvas.hdc, int32(margin), int32(margin), int32(cb.Width+margin), int32(cb.Height+margin))
 	}
 
-	var pos Point
+	var pos PointPixels
 
 	switch iv.mode {
 	case ImageViewModeIdeal, ImageViewModeCorner:
@@ -235,22 +235,22 @@ func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	}
 
 	dpi := iv.DPI()
-	idealSize := Size96DPI{100, 100}.ForDPI(dpi)
+	idealSize := SizeFrom96DPI(Size{100, 100}, dpi)
 
-	var minSize Size
+	var minSize SizePixels
 	if iv.mode == ImageViewModeIdeal {
 		if iv.image != nil {
 			m2 := iv.margin96dpi * 2
 			s := iv.image.Size()
 			s.Width += m2
 			s.Height += m2
-			idealSize = s.ForDPI(dpi)
+			idealSize = SizeFrom96DPI(s, dpi)
 		}
 
 		minSize = idealSize
 	} else {
-		s := iv.margin96dpi.ForDPI(dpi)*2 + 1
-		minSize = Size{s, s}
+		s := IntFrom96DPI(iv.margin96dpi, dpi)*2 + 1
+		minSize = SizePixels{s, s}
 	}
 
 	return &imageViewLayoutItem{
@@ -263,18 +263,18 @@ func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type imageViewLayoutItem struct {
 	LayoutItemBase
 	layoutFlags LayoutFlags
-	idealSize   Size
-	minSize     Size
+	idealSize   SizePixels
+	minSize     SizePixels
 }
 
 func (li *imageViewLayoutItem) LayoutFlags() LayoutFlags {
 	return li.layoutFlags
 }
 
-func (li *imageViewLayoutItem) IdealSize() Size {
+func (li *imageViewLayoutItem) IdealSize() SizePixels {
 	return li.idealSize
 }
 
-func (li *imageViewLayoutItem) MinSize() Size {
+func (li *imageViewLayoutItem) MinSize() SizePixels {
 	return li.minSize
 }

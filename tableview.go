@@ -393,7 +393,7 @@ func (tv *TableView) ApplyDPI(dpi int) {
 
 	tv.disposeImageListAndCaches()
 
-	if bmp, err := NewBitmapForDPI(Size96DPI{16, 16}.ForDPI(dpi), dpi); err == nil {
+	if bmp, err := NewBitmapForDPI(SizeFrom96DPI(Size{16, 16}, dpi), dpi); err == nil {
 		tv.applyImageListForImage(bmp)
 		bmp.Dispose()
 	}
@@ -526,7 +526,7 @@ func (tv *TableView) SetColumnsSizable(b bool) error {
 }
 
 // ContextMenuLocation returns selected item position in screen coordinates.
-func (tv *TableView) ContextMenuLocation() Point {
+func (tv *TableView) ContextMenuLocation() PointPixels {
 	idx := win.SendMessage(tv.hwndNormalLV, win.LVM_GETSELECTIONMARK, 0, 0)
 	rc := win.RECT{Left: win.LVIR_BOUNDS}
 	if 0 == win.SendMessage(tv.hwndNormalLV, win.LVM_GETITEMRECT, idx, uintptr(unsafe.Pointer(&rc))) {
@@ -541,7 +541,7 @@ func (tv *TableView) ContextMenuLocation() Point {
 	pt.X = rc.Bottom
 	windowTrimToClientBounds(tv.hwndNormalLV, &pt)
 	win.ClientToScreen(tv.hwndNormalLV, &pt)
-	return Point{Pixel(pt.X), Pixel(pt.Y)}
+	return pointPixelsFromPOINT(pt)
 }
 
 // SortableByHeaderClick returns if the user can change sorting by clicking the header.
@@ -1443,7 +1443,7 @@ type tableViewState struct {
 type tableViewColumnState struct {
 	Name         string
 	Title        string
-	Width        Pixel96DPI
+	Width        int
 	Visible      bool
 	Frozen       bool
 	LastSeenDate string
@@ -1949,7 +1949,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 				if styler := tv.styler; styler != nil && image == nil {
 					tv.style.row = row
 					tv.style.col = col
-					tv.style.bounds = Rectangle96DPI{}
+					tv.style.bounds = Rectangle{}
 					tv.style.Image = nil
 
 					styler.StyleCell(&tv.style)
@@ -1999,7 +1999,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 
 						tv.style.row = row
 						tv.style.col = col
-						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc).To96DPI(dpi)
+						tv.style.bounds = RectangleTo96DPI(rectangleFromRECT(nmlvcd.Nmcd.Rc), dpi)
 						tv.style.hdc = nmlvcd.Nmcd.Hdc
 						tv.style.BackgroundColor = tv.itemBGColor
 						tv.style.TextColor = tv.itemTextColor
@@ -2009,7 +2009,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						tv.styler.StyleCell(&tv.style)
 
 						defer func() {
-							tv.style.bounds = Rectangle96DPI{}
+							tv.style.bounds = Rectangle{}
 							if tv.style.canvas != nil {
 								tv.style.canvas.Dispose()
 								tv.style.canvas = nil
@@ -2059,7 +2059,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 					if tv.styler != nil {
 						tv.style.row = row
 						tv.style.col = -1
-						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc).To96DPI(tv.DPI())
+						tv.style.bounds = RectangleTo96DPI(rectangleFromRECT(nmlvcd.Nmcd.Rc), tv.DPI())
 						tv.style.hdc = 0
 						tv.style.Font = nil
 						tv.style.Image = nil
@@ -2311,7 +2311,7 @@ func tableViewHdrWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 				if tv.styler != nil && col > -1 {
 					tv.style.row = -1
 					tv.style.col = col
-					tv.style.bounds = rectangleFromRECT(nmcd.Rc).To96DPI(tv.DPI())
+					tv.style.bounds = RectangleTo96DPI(rectangleFromRECT(nmcd.Rc), tv.DPI())
 					tv.style.hdc = nmcd.Hdc
 					tv.style.TextColor = tv.themeNormalTextColor
 					tv.style.Font = nil
@@ -2319,7 +2319,7 @@ func tableViewHdrWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 					tv.styler.StyleCell(&tv.style)
 
 					defer func() {
-						tv.style.bounds = Rectangle96DPI{}
+						tv.style.bounds = Rectangle{}
 						if tv.style.canvas != nil {
 							tv.style.canvas.Dispose()
 							tv.style.canvas = nil
@@ -2434,7 +2434,7 @@ func (tv *TableView) updateLVSizes() {
 }
 
 func (tv *TableView) updateLVSizesWithSpecialCare(needSpecialCare bool) {
-	var width Pixel96DPI
+	var width int
 	for i := tv.columns.Len() - 1; i >= 0; i-- {
 		if col := tv.columns.At(i); col.frozen {
 			width += col.Width()
@@ -2442,7 +2442,7 @@ func (tv *TableView) updateLVSizesWithSpecialCare(needSpecialCare bool) {
 	}
 
 	dpi := tv.DPI()
-	widthPixels := width.ForDPI(dpi)
+	widthPixels := IntFrom96DPI(width, dpi)
 
 	cb := tv.ClientBoundsPixels()
 

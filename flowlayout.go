@@ -18,7 +18,7 @@ type FlowLayout struct {
 func NewFlowLayout() *FlowLayout {
 	l := &FlowLayout{
 		LayoutBase: LayoutBase{
-			margins96dpi: Margins96DPI{9, 9, 9, 9},
+			margins96dpi: Margins{9, 9, 9, 9},
 			spacing96dpi: 6,
 		},
 		hwnd2StretchFactor: make(map[win.HWND]int),
@@ -61,7 +61,7 @@ func (l *FlowLayout) SetStretchFactor(widget Widget, factor int) error {
 
 func (l *FlowLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 	li := &flowLayoutItem{
-		size2MinSize:       make(map[Size]Size),
+		size2MinSize:       make(map[SizePixels]SizePixels),
 		hwnd2StretchFactor: make(map[win.HWND]int),
 	}
 
@@ -74,7 +74,7 @@ func (l *FlowLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 
 type flowLayoutItem struct {
 	ContainerLayoutItemBase
-	size2MinSize       map[Size]Size
+	size2MinSize       map[SizePixels]SizePixels
 	hwnd2StretchFactor map[win.HWND]int
 }
 
@@ -86,34 +86,34 @@ type flowLayoutSection struct {
 
 type flowLayoutSectionItem struct {
 	item    LayoutItem
-	minSize Size
+	minSize SizePixels
 }
 
 func (*flowLayoutItem) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
-func (li *flowLayoutItem) MinSize() Size {
+func (li *flowLayoutItem) MinSize() SizePixels {
 	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
 func (li *flowLayoutItem) HeightForWidth(width Pixel) Pixel {
-	return li.MinSizeForSize(Size{width, li.geometry.ClientSize.Height}).Height
+	return li.MinSizeForSize(SizePixels{width, li.geometry.ClientSize.Height}).Height
 }
 
-func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
+func (li *flowLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 	if min, ok := li.size2MinSize[size]; ok {
 		return min
 	}
 
-	spacingPixels := li.spacing.ForDPI(li.ctx.dpi)
-	marginsPixels := li.margins.ForDPI(li.ctx.dpi)
+	spacingPixels := IntFrom96DPI(li.spacing, li.ctx.dpi)
+	marginsPixels := MarginsFrom96DPI(li.margins, li.ctx.dpi)
 
-	bounds := Rectangle{Width: size.Width}
+	bounds := RectanglePixels{Width: size.Width}
 
 	sections := li.sectionsForPrimarySize(size.Width)
 
-	var s Size
+	var s SizePixels
 	var maxPrimary Pixel
 
 	for i, section := range sections {
@@ -170,8 +170,8 @@ func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
 }
 
 func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
-	spacingPixels := li.spacing.ForDPI(li.ctx.dpi)
-	bounds := Rectangle{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
+	spacingPixels := IntFrom96DPI(li.spacing, li.ctx.dpi)
+	bounds := RectanglePixels{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
 
 	sections := li.sectionsForPrimarySize(bounds.Width)
 
@@ -195,7 +195,7 @@ func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
 
 		layoutItems := boxLayoutItems(li, items, Horizontal, li.alignment, bounds, margins, li.spacing, li.hwnd2StretchFactor)
 
-		marginsPixels := margins.ForDPI(li.ctx.dpi)
+		marginsPixels := MarginsFrom96DPI(margins, li.ctx.dpi)
 
 		var maxSecondary Pixel
 
@@ -220,8 +220,8 @@ func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
 }
 
 func (li *flowLayoutItem) sectionsForPrimarySize(primarySize Pixel) []flowLayoutSection {
-	marginsPixels := li.margins.ForDPI(li.ctx.dpi)
-	spacingPixels := li.spacing.ForDPI(li.ctx.dpi)
+	marginsPixels := MarginsFrom96DPI(li.margins, li.ctx.dpi)
+	spacingPixels := IntFrom96DPI(li.spacing, li.ctx.dpi)
 
 	var sections []flowLayoutSection
 

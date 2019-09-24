@@ -301,7 +301,7 @@ type CellStyler interface {
 type CellStyle struct {
 	row             int
 	col             int
-	bounds          Rectangle96DPI
+	bounds          Rectangle
 	hdc             win.HDC
 	dpi             int
 	canvas          *Canvas
@@ -326,7 +326,7 @@ func (cs *CellStyle) Col() int {
 	return cs.col
 }
 
-func (cs *CellStyle) Bounds() Rectangle96DPI {
+func (cs *CellStyle) Bounds() Rectangle {
 	return cs.bounds
 }
 
@@ -347,10 +347,10 @@ type ListItemStyler interface {
 	ItemHeightDependsOnWidth() bool
 
 	// DefaultItemHeight returns the initial height for any item.
-	DefaultItemHeight() Pixel96DPI
+	DefaultItemHeight() int
 
 	// ItemHeight is called for each item to retrieve the height of the item.
-	ItemHeight(index int, width Pixel96DPI) Pixel96DPI
+	ItemHeight(index int, width int) int
 
 	// StyleItem is called for each item to pick up item style information.
 	StyleItem(style *ListItemStyle)
@@ -366,7 +366,7 @@ type ListItemStyle struct {
 	index              int
 	hoverIndex         int
 	rc                 win.RECT
-	bounds             Rectangle96DPI
+	bounds             Rectangle
 	state              uint32
 	hTheme             win.HTHEME
 	hwnd               win.HWND
@@ -380,7 +380,7 @@ func (lis *ListItemStyle) Index() int {
 	return lis.index
 }
 
-func (lis *ListItemStyle) Bounds() Rectangle96DPI {
+func (lis *ListItemStyle) Bounds() Rectangle {
 	return lis.bounds
 }
 
@@ -433,7 +433,7 @@ func (lis *ListItemStyle) DrawBackground() error {
 	return nil
 }
 
-func (lis *ListItemStyle) DrawText(text string, bounds Rectangle, format DrawTextFormat) error {
+func (lis *ListItemStyle) DrawText(text string, bounds RectanglePixels, format DrawTextFormat) error {
 	if lis.hTheme != 0 {
 		if lis.Font != nil {
 			hFontOld := win.SelectObject(lis.hdc, win.HGDIOBJ(lis.Font.handleForDPI(lis.dpi)))

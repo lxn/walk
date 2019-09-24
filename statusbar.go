@@ -79,7 +79,7 @@ func (sb *StatusBar) updateParts() error {
 	rightEdges := make([]int32, len(items))
 	var right int32
 	for i, item := range items {
-		right += int32(item.width.ForDPI(dpi))
+		right += int32(IntFrom96DPI(item.width, dpi))
 		rightEdges[i] = right
 	}
 	var rep *int32
@@ -131,8 +131,8 @@ func (*statusBarLayoutItem) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (*statusBarLayoutItem) IdealSize() Size {
-	return Size{}
+func (*statusBarLayoutItem) IdealSize() SizePixels {
+	return SizePixels{}
 }
 
 // StatusBarItem represents a section of a StatusBar that can have its own icon,
@@ -142,7 +142,7 @@ type StatusBarItem struct {
 	icon             *Icon
 	text             string
 	toolTipText      string
-	width            Pixel96DPI
+	width            int
 	clickedPublisher EventPublisher
 }
 
@@ -203,12 +203,12 @@ func (sbi *StatusBarItem) SetToolTipText(toolTipText string) error {
 }
 
 // Width returns the width of the StatusBarItem.
-func (sbi *StatusBarItem) Width() Pixel96DPI {
+func (sbi *StatusBarItem) Width() int {
 	return sbi.width
 }
 
 // SetWidth sets the width of the StatusBarItem.
-func (sbi *StatusBarItem) SetWidth(width Pixel96DPI) error {
+func (sbi *StatusBarItem) SetWidth(width int) error {
 	if width == sbi.width {
 		return nil
 	}

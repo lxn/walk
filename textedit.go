@@ -20,7 +20,7 @@ type TextEdit struct {
 	textChangedPublisher     EventPublisher
 	textColor                Color
 	compactHeight            bool
-	margins                  Size
+	margins                  SizePixels
 	lastHeight               int
 	origWordbreakProcPtr     uintptr
 }
@@ -274,7 +274,7 @@ func (te *TextEdit) SetTextColor(c Color) {
 }
 
 // ContextMenuLocation returns carret position in screen coordinates.
-func (te *TextEdit) ContextMenuLocation() Point {
+func (te *TextEdit) ContextMenuLocation() PointPixels {
 	idx := int(te.SendMessage(win.EM_GETCARETINDEX, 0, 0))
 	if idx < 0 {
 		start, end := te.TextSelection()
@@ -283,7 +283,7 @@ func (te *TextEdit) ContextMenuLocation() Point {
 	res := uint32(te.SendMessage(win.EM_POSFROMCHAR, uintptr(idx), 0))
 	pt := win.POINT{int32(win.LOWORD(res)), int32(win.HIWORD(res))}
 	windowTrimToClientBounds(te.hWnd, &pt)
-	return Point{Pixel(pt.X), Pixel(pt.Y)}
+	return pointPixelsFromPOINT(pt)
 }
 
 func (*TextEdit) NeedsWmSize() bool {
@@ -339,8 +339,8 @@ type textEditLayoutItem struct {
 	LayoutItemBase
 	mutex                   sync.Mutex
 	width2Height            map[Pixel]Pixel
-	nonCompactHeightMinSize Size
-	margins                 Size
+	nonCompactHeightMinSize SizePixels
+	margins                 SizePixels
 	text                    string
 	font                    *Font
 	minWidth                Pixel
@@ -355,18 +355,18 @@ func (li *textEditLayoutItem) LayoutFlags() LayoutFlags {
 	return flags
 }
 
-func (li *textEditLayoutItem) IdealSize() Size {
+func (li *textEditLayoutItem) IdealSize() SizePixels {
 	if li.compactHeight {
 		return li.MinSize()
 	} else {
-		return Size96DPI{100, 100}.ForDPI(li.ctx.dpi)
+		return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
 	}
 }
 
-func (li *textEditLayoutItem) MinSize() Size {
+func (li *textEditLayoutItem) MinSize() SizePixels {
 	if li.compactHeight {
-		width := Pixel96DPI(100).ForDPI(li.ctx.dpi)
-		return Size{width, li.HeightForWidth(width)}
+		width := IntFrom96DPI(100, li.ctx.dpi)
+		return SizePixels{width, li.HeightForWidth(width)}
 	} else {
 		return li.nonCompactHeightMinSize
 	}

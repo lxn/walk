@@ -53,7 +53,7 @@ func (ic *IconCache) Bitmap(image Image, dpi int) (*Bitmap, error) {
 		return bmp, nil
 	}
 
-	size := image.Size().ForDPI(dpi)
+	size := SizeFrom96DPI(image.Size(), dpi)
 
 	bmp, err := NewBitmapFromImageWithSize(image, size)
 	if err != nil {

@@ -163,9 +163,9 @@ func (dlg *Dialog) Show() {
 	}
 
 	if !willRestore {
-		var size Size
+		var size SizePixels
 		if layout := dlg.Layout(); layout != nil {
-			size = maxSize(dlg.clientComposite.MinSizeHint(), dlg.MinSizePixels())
+			size = maxSizePixels(dlg.clientComposite.MinSizeHint(), dlg.MinSizePixels())
 		} else {
 			size = dlg.SizePixels()
 		}
@@ -174,7 +174,7 @@ func (dlg *Dialog) Show() {
 			ob := dlg.owner.BoundsPixels()
 
 			if dlg.centerInOwnerWhenRun {
-				dlg.SetBoundsPixels(fitRectToScreen(dlg.hWnd, Rectangle{
+				dlg.SetBoundsPixels(fitRectToScreen(dlg.hWnd, RectanglePixels{
 					ob.X + (ob.Width-size.Width)/2,
 					ob.Y + (ob.Height-size.Height)/2,
 					size.Width,
@@ -184,7 +184,7 @@ func (dlg *Dialog) Show() {
 		} else {
 			b := dlg.BoundsPixels()
 
-			dlg.SetBoundsPixels(Rectangle{b.X, b.Y, size.Width, size.Height})
+			dlg.SetBoundsPixels(RectanglePixels{b.X, b.Y, size.Width, size.Height})
 		}
 	}
 
@@ -193,7 +193,7 @@ func (dlg *Dialog) Show() {
 	dlg.startLayout()
 }
 
-func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {
+func fitRectToScreen(hWnd win.HWND, r RectanglePixels) RectanglePixels {
 	var mi win.MONITORINFO
 	mi.CbSize = uint32(unsafe.Sizeof(mi))
 

@@ -28,7 +28,7 @@ type HSpacer struct {
 	// Spacer
 
 	GreedyLocallyOnly bool
-	Size              Pixel
+	Size              int
 }
 
 func (hs HSpacer) Create(builder *Builder) (err error) {
@@ -67,7 +67,7 @@ type VSpacer struct {
 	// Spacer
 
 	GreedyLocallyOnly bool
-	Size              Pixel
+	Size              int
 }
 
 func (vs VSpacer) Create(builder *Builder) (err error) {

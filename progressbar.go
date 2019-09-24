@@ -72,18 +72,18 @@ func (pb *ProgressBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type progressBarLayoutItem struct {
 	LayoutItemBase
-	idealSize Size
-	minSize   Size
+	idealSize SizePixels
+	minSize   SizePixels
 }
 
 func (*progressBarLayoutItem) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | GrowableHorz | GreedyHorz
 }
 
-func (li *progressBarLayoutItem) IdealSize() Size {
+func (li *progressBarLayoutItem) IdealSize() SizePixels {
 	return li.idealSize
 }
 
-func (li *progressBarLayoutItem) MinSize() Size {
+func (li *progressBarLayoutItem) MinSize() SizePixels {
 	return li.minSize
 }

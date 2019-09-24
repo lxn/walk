@@ -31,8 +31,8 @@ func init() {
 
 type Splitter struct {
 	ContainerBase
-	handleWidth   Pixel96DPI
-	mouseDownPos  Point
+	handleWidth   int
+	mouseDownPos  PointPixels
 	draggedHandle *splitterHandle
 	persistent    bool
 	removing      bool
@@ -90,11 +90,11 @@ func (s *Splitter) SetLayout(value Layout) error {
 	return newError("not supported")
 }
 
-func (s *Splitter) HandleWidth() Pixel96DPI {
+func (s *Splitter) HandleWidth() int {
 	return s.handleWidth
 }
 
-func (s *Splitter) SetHandleWidth(value Pixel96DPI) error {
+func (s *Splitter) SetHandleWidth(value int) error {
 	if value == s.handleWidth {
 		return nil
 	}
@@ -134,7 +134,7 @@ func (s *Splitter) setOrientation(value Orientation) error {
 }
 
 func (s *Splitter) updateMarginsForFocusEffect() {
-	var margins Margins96DPI
+	var margins Margins
 	var parentLayout Layout
 
 	if s.parent != nil {
@@ -168,12 +168,12 @@ func (s *Splitter) updateMarginsForFocusEffect() {
 		}
 
 		if marginsNeeded {
-			margins = Margins96DPI{5, 5, 5, 5}
+			margins = Margins{5, 5, 5, 5}
 		}
 	}
 
 	if parentLayout != nil {
-		parentLayout.SetMargins(Margins96DPI{9 - margins.HNear, 9 - margins.VNear, 9 - margins.HFar, 9 - margins.VFar})
+		parentLayout.SetMargins(Margins{9 - margins.HNear, 9 - margins.VNear, 9 - margins.HFar, 9 - margins.VFar})
 	}
 
 	s.layout.SetMargins(margins)
@@ -407,7 +407,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						}
 
 						s.draggedHandle = handle
-						s.mouseDownPos = Point{x, y}
+						s.mouseDownPos = PointPixels{x, y}
 						handle.SetBackground(splitterHandleDraggingBrush)
 					})
 
@@ -428,7 +428,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						msen := minSizeEffective(createLayoutItemForWidget(next))
 
 						dpi := s.draggedHandle.DPI()
-						handleWidth := s.handleWidth.ForDPI(dpi)
+						handleWidth := IntFrom96DPI(s.handleWidth, dpi)
 
 						if s.Orientation() == Horizontal {
 							xh := s.draggedHandle.XPixels()

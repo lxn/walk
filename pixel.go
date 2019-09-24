@@ -8,32 +8,13 @@ package walk
 
 import "math"
 
-// Pixel96DPI defines distance in 1/96" units.
-type Pixel96DPI int
-
-// ForDPI converts from 1/96" units to native pixels.
-func (p Pixel96DPI) ForDPI(dpi int) Pixel {
-	return p.scale(float64(dpi) / 96.0)
-}
-
-func (p Pixel96DPI) scale(scale float64) Pixel {
-	return Pixel(math.Round(float64(p) * scale))
-}
-
-func assertPixel96DPIOr(value interface{}, defaultValue Pixel96DPI) Pixel96DPI {
-	if n, ok := value.(Pixel96DPI); ok {
-		return n
-	}
-	if n, ok := value.(int); ok {
-		return Pixel96DPI(n)
-	}
-
-	return defaultValue
-}
-
 // IntFrom96DPI converts from 1/96" units to native pixels.
-func IntFrom96DPI(value Pixel96DPI, dpi int) Pixel {
-	return value.ForDPI(dpi)
+func IntFrom96DPI(value int, dpi int) Pixel {
+	return scaleInt(value, float64(dpi)/96.0)
+}
+
+func scaleInt(value int, scale float64) Pixel {
+	return Pixel(math.Round(float64(value) * scale))
 }
 
 // Pixel defines distance in native pixels.
@@ -55,18 +36,13 @@ func minPixel(a, b Pixel) Pixel {
 	return b
 }
 
-// To96DPI converts from native pixels to 1/96" units.
-func (p Pixel) To96DPI(dpi int) Pixel96DPI {
-	return p.scale(96.0 / float64(dpi))
-}
-
-func (p Pixel) scale(scale float64) Pixel96DPI {
-	return Pixel96DPI(math.Round(float64(p) * scale))
+func scalePixel(value Pixel, scale float64) int {
+	return int(math.Round(float64(value) * scale))
 }
 
 // IntTo96DPI converts from native pixels to 1/96" units.
-func IntTo96DPI(value Pixel, dpi int) Pixel96DPI {
-	return value.To96DPI(dpi)
+func IntTo96DPI(value Pixel, dpi int) int {
+	return scalePixel(value, 96.0/float64(dpi))
 }
 
 // PixelDBU defines distance in dialog base units.

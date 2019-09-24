@@ -48,7 +48,7 @@ type TreeView struct {
 	// TreeView
 
 	AssignTo             **walk.TreeView
-	ItemHeight           Pixel
+	ItemHeight           int
 	Model                walk.TreeModel
 	OnCurrentItemChanged walk.EventHandler
 	OnExpandedChanged    walk.TreeItemEventHandler

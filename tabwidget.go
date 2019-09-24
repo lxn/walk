@@ -236,11 +236,11 @@ func (tw *TabWidget) resizePages() {
 	}
 }
 
-func (tw *TabWidget) pageBounds() Rectangle {
+func (tw *TabWidget) pageBounds() RectanglePixels {
 	var r win.RECT
 	if !win.GetWindowRect(tw.hWndTab, &r) {
 		lastError("GetWindowRect")
-		return Rectangle{}
+		return RectanglePixels{}
 	}
 
 	p := win.POINT{
@@ -249,7 +249,7 @@ func (tw *TabWidget) pageBounds() Rectangle {
 	}
 	if !win.ScreenToClient(tw.hWnd, &p) {
 		newError("ScreenToClient failed")
-		return Rectangle{}
+		return RectanglePixels{}
 	}
 
 	r = win.RECT{
@@ -260,7 +260,7 @@ func (tw *TabWidget) pageBounds() Rectangle {
 	}
 	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
-	return Rectangle{
+	return RectanglePixels{
 		Pixel(r.Left - 2),
 		Pixel(r.Top),
 		Pixel(r.Right - r.Left + 2),
@@ -672,7 +672,8 @@ func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
 	index = -1
 	if image != nil {
 		if tw.imageList == nil {
-			if tw.imageList, err = newImageList(Size{16, 16}, 0, tw.DPI()); err != nil {
+			dpi := tw.DPI()
+			if tw.imageList, err = newImageList(Size{16, 16}, 0, dpi); err != nil {
 				return
 			}
 
@@ -693,7 +694,7 @@ func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	bounds := tw.pageBounds()
 
 	li := &tabWidgetLayoutItem{
-		pagePos:      Point{bounds.X, bounds.Y},
+		pagePos:      bounds.Location(),
 		currentIndex: tw.CurrentIndex(),
 	}
 
@@ -718,7 +719,7 @@ func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type tabWidgetLayoutItem struct {
 	ContainerLayoutItemBase
-	pagePos      Point
+	pagePos      PointPixels
 	currentIndex int
 }
 
@@ -736,12 +737,12 @@ func (li *tabWidgetLayoutItem) LayoutFlags() LayoutFlags {
 	return flags
 }
 
-func (li *tabWidgetLayoutItem) MinSize() Size {
+func (li *tabWidgetLayoutItem) MinSize() SizePixels {
 	if len(li.children) == 0 {
 		return li.IdealSize()
 	}
 
-	var min Size
+	var min SizePixels
 
 	for _, page := range li.children {
 		if ms, ok := page.(MinSizer); ok {
@@ -755,12 +756,12 @@ func (li *tabWidgetLayoutItem) MinSize() Size {
 	s := li.geometry.Size
 	ps := li.children[0].Geometry().Size
 
-	size := Size{s.Width - ps.Width + min.Width, s.Height - ps.Height + min.Height}
+	size := SizePixels{s.Width - ps.Width + min.Width, s.Height - ps.Height + min.Height}
 
 	return size
 }
 
-func (li *tabWidgetLayoutItem) MinSizeForSize(size Size) Size {
+func (li *tabWidgetLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 	return li.MinSize()
 }
 
@@ -801,8 +802,8 @@ func (li *tabWidgetLayoutItem) HeightForWidth(width Pixel) Pixel {
 	return height + margin.Height
 }
 
-func (li *tabWidgetLayoutItem) IdealSize() Size {
-	return Size96DPI{100, 100}.ForDPI(li.ctx.dpi)
+func (li *tabWidgetLayoutItem) IdealSize() SizePixels {
+	return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
 }
 
 func (li *tabWidgetLayoutItem) PerformLayout() []LayoutResultItem {
@@ -812,7 +813,7 @@ func (li *tabWidgetLayoutItem) PerformLayout() []LayoutResultItem {
 		return []LayoutResultItem{
 			{
 				Item:   page,
-				Bounds: Rectangle{X: li.pagePos.X, Y: li.pagePos.Y, Width: li.geometry.Size.Width - li.pagePos.X*2 - 1, Height: li.geometry.Size.Height - li.pagePos.Y - 2},
+				Bounds: RectanglePixels{X: li.pagePos.X, Y: li.pagePos.Y, Width: li.geometry.Size.Width - li.pagePos.X*2 - 1, Height: li.geometry.Size.Height - li.pagePos.Y - 2},
 			},
 		}
 	}

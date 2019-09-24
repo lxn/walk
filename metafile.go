@@ -16,7 +16,7 @@ import (
 type Metafile struct {
 	hdc  win.HDC
 	hemf win.HENHMETAFILE
-	size Size
+	size SizePixels
 }
 
 func NewMetafile(referenceCanvas *Canvas) (*Metafile, error) {
@@ -96,16 +96,16 @@ func (mf *Metafile) ensureFinished() error {
 	return mf.readSizeFromHeader()
 }
 
-func (mf *Metafile) Size() Size96DPI {
+func (mf *Metafile) Size() Size {
 	// TODO: Handle DPI
-	return mf.size.To96DPI(96)
+	return SizeTo96DPI(mf.size, 96)
 }
 
-func (mf *Metafile) draw(hdc win.HDC, location Point) error {
-	return mf.drawStretched(hdc, Rectangle{location.X, location.Y, mf.size.Width, mf.size.Height})
+func (mf *Metafile) draw(hdc win.HDC, location PointPixels) error {
+	return mf.drawStretched(hdc, RectanglePixels{location.X, location.Y, mf.size.Width, mf.size.Height})
 }
 
-func (mf *Metafile) drawStretched(hdc win.HDC, bounds Rectangle) error {
+func (mf *Metafile) drawStretched(hdc win.HDC, bounds RectanglePixels) error {
 	rc := bounds.toRECT()
 
 	if !win.PlayEnhMetaFile(hdc, mf.hemf, &rc) {

@@ -23,7 +23,7 @@ type TableViewColumn struct {
 	precision     int
 	title         string
 	titleOverride string
-	width         Pixel96DPI
+	width         int
 	lessFunc      func(i, j int) bool
 	formatFunc    func(value interface{}) string
 	visible       bool
@@ -293,16 +293,16 @@ func (tvc *TableViewColumn) SetFrozen(frozen bool) (err error) {
 }
 
 // Width returns the width of the column in pixels.
-func (tvc *TableViewColumn) Width() Pixel96DPI {
+func (tvc *TableViewColumn) Width() int {
 	if tvc.tv == nil || !tvc.visible {
 		return tvc.width
 	}
 
-	return Pixel(tvc.sendMessage(win.LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0)).To96DPI(tvc.tv.DPI())
+	return IntTo96DPI(Pixel(tvc.sendMessage(win.LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0)), tvc.tv.DPI())
 }
 
 // SetWidth sets the width of the column in pixels.
-func (tvc *TableViewColumn) SetWidth(width Pixel96DPI) (err error) {
+func (tvc *TableViewColumn) SetWidth(width int) (err error) {
 	if width == tvc.width {
 		return nil
 	}
@@ -377,9 +377,9 @@ func (tvc *TableViewColumn) create() error {
 	lvc.ISubItem = index
 	lvc.PszText = syscall.StringToUTF16Ptr(tvc.TitleEffective())
 	if tvc.width > 0 {
-		lvc.Cx = int32(tvc.width.ForDPI(dpi))
+		lvc.Cx = int32(IntFrom96DPI(tvc.width, dpi))
 	} else {
-		lvc.Cx = int32(Pixel96DPI(100).ForDPI(dpi))
+		lvc.Cx = int32(IntFrom96DPI(100, dpi))
 	}
 
 	switch tvc.alignment {
@@ -434,9 +434,9 @@ func (tvc *TableViewColumn) getLVCOLUMN() *win.LVCOLUMN {
 
 	var width Pixel
 	if tvc.tv != nil {
-		width = tvc.width.ForDPI(tvc.tv.DPI())
+		width = IntFrom96DPI(tvc.width, tvc.tv.DPI())
 	} else {
-		width = tvc.width.ForDPI(96)
+		width = IntFrom96DPI(tvc.width, 96)
 	}
 
 	lvc.Mask = win.LVCF_FMT | win.LVCF_WIDTH | win.LVCF_TEXT | win.LVCF_SUBITEM

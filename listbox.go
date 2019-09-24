@@ -239,7 +239,7 @@ func (lb *ListBox) ensureVisibleItemsHeightUpToDate() error {
 	count := lb.model.ItemCount()
 	var rc win.RECT
 	lb.SendMessage(win.LB_GETITEMRECT, uintptr(offset), uintptr(unsafe.Pointer(&rc)))
-	width := Pixel(rc.Right - rc.Left).To96DPI(dpi)
+	width := IntTo96DPI(Pixel(rc.Right-rc.Left), dpi)
 	offsetTop := Pixel(rc.Top)
 	lbHeight := lb.HeightPixels()
 
@@ -257,7 +257,7 @@ func (lb *ListBox) ensureVisibleItemsHeightUpToDate() error {
 			}
 		}
 
-		height := lb.styler.ItemHeight(i, width).ForDPI(dpi)
+		height := IntFrom96DPI(lb.styler.ItemHeight(i, width), dpi)
 
 		lb.SendMessage(win.LB_SETITEMHEIGHT, uintptr(i), uintptr(height))
 
@@ -286,8 +286,8 @@ func (lb *ListBox) attachModel() {
 			var rc win.RECT
 			lb.SendMessage(win.LB_GETITEMRECT, uintptr(index), uintptr(unsafe.Pointer(&rc)))
 			dpi := lb.DPI()
-			width := Pixel(rc.Right - rc.Left).To96DPI(dpi)
-			height := lb.styler.ItemHeight(index, width).ForDPI(dpi)
+			width := IntTo96DPI(Pixel(rc.Right-rc.Left), dpi)
+			height := IntFrom96DPI(lb.styler.ItemHeight(index, width), dpi)
 
 			lb.SendMessage(win.LB_SETITEMHEIGHT, uintptr(index), uintptr(height))
 
@@ -468,7 +468,7 @@ func (lb *ListBox) calculateMaxItemTextWidth() Pixel {
 	return maxWidth
 }
 
-func (lb *ListBox) idealSize() Size {
+func (lb *ListBox) idealSize() SizePixels {
 	defaultSize := lb.dialogBaseUnitsToPixels(SizeDBU{50, 12})
 
 	if lb.maxItemTextWidth <= 0 {
@@ -476,10 +476,10 @@ func (lb *ListBox) idealSize() Size {
 	}
 
 	// FIXME: Use GetThemePartSize instead of guessing
-	w := maxPixel(defaultSize.Width, lb.maxItemTextWidth+Pixel96DPI(24).ForDPI(lb.DPI()))
+	w := maxPixel(defaultSize.Width, lb.maxItemTextWidth+IntFrom96DPI(24, lb.DPI()))
 	h := defaultSize.Height + 1
 
-	return Size{w, h}
+	return SizePixels{w, h}
 }
 
 func (lb *ListBox) ItemVisible(index int) bool {
@@ -558,7 +558,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 
 		mis := (*win.MEASUREITEMSTRUCT)(unsafe.Pointer(lParam))
 
-		mis.ItemHeight = uint32(lb.styler.DefaultItemHeight().ForDPI(lb.DPI()))
+		mis.ItemHeight = uint32(IntFrom96DPI(lb.styler.DefaultItemHeight(), lb.DPI()))
 
 		return win.TRUE
 
@@ -571,7 +571,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 
 		lb.style.index = int(dis.ItemID)
 		lb.style.rc = dis.RcItem
-		lb.style.bounds = rectangleFromRECT(dis.RcItem).To96DPI(lb.DPI())
+		lb.style.bounds = RectangleTo96DPI(rectangleFromRECT(dis.RcItem), lb.DPI())
 		lb.style.state = dis.ItemState
 		lb.style.hwnd = lb.hWnd
 		lb.style.hdc = dis.HDC
@@ -619,7 +619,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		lb.styler.StyleItem(&lb.style)
 
 		defer func() {
-			lb.style.bounds = Rectangle96DPI{}
+			lb.style.bounds = Rectangle{}
 			if lb.style.canvas != nil {
 				lb.style.canvas.Dispose()
 				lb.style.canvas = nil

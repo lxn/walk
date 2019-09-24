@@ -19,34 +19,28 @@ const (
 	Vertical   Orientation = Orientation(walk.Vertical)
 )
 
-type Pixel int
-
-func (p Pixel) toW() walk.Pixel96DPI {
-	return walk.Pixel96DPI(p)
-}
-
 type Margins struct {
-	Left   Pixel
-	Top    Pixel
-	Right  Pixel
-	Bottom Pixel
+	Left   int
+	Top    int
+	Right  int
+	Bottom int
 }
 
 func (m Margins) isZero() bool {
 	return m.Left == 0 && m.Top == 0 && m.Right == 0 && m.Bottom == 0
 }
 
-func (m Margins) toW() walk.Margins96DPI {
-	return walk.Margins96DPI{walk.Pixel96DPI(m.Left), walk.Pixel96DPI(m.Top), walk.Pixel96DPI(m.Right), walk.Pixel96DPI(m.Bottom)}
+func (m Margins) toW() walk.Margins {
+	return walk.Margins{m.Left, m.Top, m.Right, m.Bottom}
 }
 
 type Size struct {
-	Width  Pixel
-	Height Pixel
+	Width  int
+	Height int
 }
 
-func (s Size) toW() walk.Size96DPI {
-	return walk.Size96DPI{walk.Pixel96DPI(s.Width), walk.Pixel96DPI(s.Height)}
+func (s Size) toW() walk.Size {
+	return walk.Size{s.Width, s.Height}
 }
 
 func setLayoutMargins(layout walk.Layout, margins Margins, marginsZero bool) error {
@@ -57,18 +51,18 @@ func setLayoutMargins(layout walk.Layout, margins Margins, marginsZero bool) err
 	return layout.SetMargins(margins.toW())
 }
 
-func setLayoutSpacing(layout walk.Layout, spacing Pixel, spacingZero bool) error {
+func setLayoutSpacing(layout walk.Layout, spacing int, spacingZero bool) error {
 	if !spacingZero && spacing == 0 {
 		spacing = 6
 	}
 
-	return layout.SetSpacing(spacing.toW())
+	return layout.SetSpacing(spacing)
 }
 
 type HBox struct {
 	Margins     Margins
 	Alignment   Alignment2D
-	Spacing     Pixel
+	Spacing     int
 	MarginsZero bool
 	SpacingZero bool
 }
@@ -94,7 +88,7 @@ func (hb HBox) Create() (walk.Layout, error) {
 type VBox struct {
 	Margins     Margins
 	Alignment   Alignment2D
-	Spacing     Pixel
+	Spacing     int
 	MarginsZero bool
 	SpacingZero bool
 }
@@ -122,7 +116,7 @@ type Grid struct {
 	Columns     int
 	Margins     Margins
 	Alignment   Alignment2D
-	Spacing     Pixel
+	Spacing     int
 	MarginsZero bool
 	SpacingZero bool
 }
@@ -152,7 +146,7 @@ func (g Grid) Create() (walk.Layout, error) {
 type Flow struct {
 	Margins     Margins
 	Alignment   Alignment2D
-	Spacing     Pixel
+	Spacing     int
 	MarginsZero bool
 	SpacingZero bool
 }

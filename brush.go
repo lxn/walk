@@ -382,9 +382,9 @@ func NewGradientBrush(vertexes []GradientVertex, triangles []GradientTriangle) (
 }
 
 func newGradientBrush(vertexes []GradientVertex, triangles []GradientTriangle, orientation gradientOrientation) (*GradientBrush, error) {
-	var size Size
+	var size SizePixels
 	for _, v := range vertexes {
-		size = maxSize(size, Size{Pixel(v.X), Pixel(v.Y)})
+		size = maxSizePixels(size, SizePixels{Pixel(v.X), Pixel(v.Y)})
 	}
 
 	gb := &GradientBrush{vertexes: vertexes, triangles: triangles, orientation: orientation, absolute: size.Width > 1 || size.Height > 1}
@@ -414,7 +414,7 @@ func (*GradientBrush) simple() bool {
 	return false
 }
 
-func (b *GradientBrush) create(size Size) (*BitmapBrush, error) {
+func (b *GradientBrush) create(size SizePixels) (*BitmapBrush, error) {
 	var disposables Disposables
 	defer disposables.Treat()
 

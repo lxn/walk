@@ -27,7 +27,7 @@ type ToolBar struct {
 	WidgetBase
 	imageList          *ImageList
 	actions            *ActionList
-	defaultButtonWidth Pixel96DPI
+	defaultButtonWidth int
 	maxTextRows        int
 	buttonStyle        ToolBarButtonStyle
 }
@@ -151,7 +151,7 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 	}
 
 	dpi := tb.DPI()
-	width := tb.defaultButtonWidth.ForDPI(dpi)
+	width := IntFrom96DPI(tb.defaultButtonWidth, dpi)
 
 	lParam := uintptr(win.MAKELONG(uint16(width), uint16(width)))
 	if 0 == tb.SendMessage(win.TB_SETBUTTONWIDTH, 0, lParam) {
@@ -173,7 +173,7 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 //
 // The default value for a horizontal ToolBar is 0, resulting in automatic
 // sizing behavior. For a vertical ToolBar, the default is 100 pixels.
-func (tb *ToolBar) DefaultButtonWidth() Pixel96DPI {
+func (tb *ToolBar) DefaultButtonWidth() int {
 	return tb.defaultButtonWidth
 }
 
@@ -182,7 +182,7 @@ func (tb *ToolBar) DefaultButtonWidth() Pixel96DPI {
 // Calling this method affects all buttons in the ToolBar, no matter if they are
 // added before or after the call. A width of 0 results in automatic sizing
 // behavior. Negative values are not allowed.
-func (tb *ToolBar) SetDefaultButtonWidth(width Pixel96DPI) error {
+func (tb *ToolBar) SetDefaultButtonWidth(width int) error {
 	if width == tb.defaultButtonWidth {
 		return nil
 	}
@@ -242,7 +242,8 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 
 func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
 	if tb.imageList == nil {
-		iml, err := newImageList(Size{16, 16}, 0, tb.DPI())
+		dpi := tb.DPI()
+		iml, err := newImageList(Size{16, 16}, 0, dpi)
 		if err != nil {
 			return 0, err
 		}
@@ -521,7 +522,7 @@ func (tb *ToolBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	buttonSize := uint32(tb.SendMessage(win.TB_GETBUTTONSIZE, 0, 0))
 
 	dpi := tb.DPI()
-	width := tb.defaultButtonWidth.ForDPI(dpi)
+	width := IntFrom96DPI(tb.defaultButtonWidth, dpi)
 	if width == 0 {
 		width = Pixel(win.LOWORD(buttonSize))
 	}
@@ -552,24 +553,24 @@ func (tb *ToolBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 	return &toolBarLayoutItem{
 		layoutFlags: layoutFlags,
-		idealSize:   Size{width, height},
+		idealSize:   SizePixels{width, height},
 	}
 }
 
 type toolBarLayoutItem struct {
 	LayoutItemBase
 	layoutFlags LayoutFlags
-	idealSize   Size
+	idealSize   SizePixels
 }
 
 func (li *toolBarLayoutItem) LayoutFlags() LayoutFlags {
 	return li.layoutFlags
 }
 
-func (li *toolBarLayoutItem) IdealSize() Size {
+func (li *toolBarLayoutItem) IdealSize() SizePixels {
 	return li.idealSize
 }
 
-func (li *toolBarLayoutItem) MinSize() Size {
+func (li *toolBarLayoutItem) MinSize() SizePixels {
 	return li.idealSize
 }

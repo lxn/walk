@@ -22,7 +22,7 @@ const inchesPerMeter = 39.37008
 type Bitmap struct {
 	hBmp       win.HBITMAP
 	hPackedDIB win.HGLOBAL
-	size       Size
+	size       SizePixels
 	dpi        int
 }
 
@@ -42,28 +42,28 @@ func BitmapFrom(src interface{}, dpi int) (*Bitmap, error) {
 // NewBitmap creates an opaque bitmap with given size at 96dpi.
 //
 // Deprecated: Newer applications should use DPI-aware variant.
-func NewBitmap(size Size) (*Bitmap, error) {
+func NewBitmap(size SizePixels) (*Bitmap, error) {
 	return newBitmap(size, false, 96)
 }
 
 // NewBitmapForDPI creates an opaque bitmap with given size and DPI.
-func NewBitmapForDPI(size Size, dpi int) (*Bitmap, error) {
+func NewBitmapForDPI(size SizePixels, dpi int) (*Bitmap, error) {
 	return newBitmap(size, false, dpi)
 }
 
 // NewBitmapWithTransparentPixels creates a transparent bitmap with given size at 96dpi.
 //
 // Deprecated: Newer applications should use DPI-aware variant.
-func NewBitmapWithTransparentPixels(size Size) (*Bitmap, error) {
+func NewBitmapWithTransparentPixels(size SizePixels) (*Bitmap, error) {
 	return newBitmap(size, true, 96)
 }
 
 // NewBitmapWithTransparentPixelsForDPI creates a transparent bitmap with given size and DPI.
-func NewBitmapWithTransparentPixelsForDPI(size Size, dpi int) (*Bitmap, error) {
+func NewBitmapWithTransparentPixelsForDPI(size SizePixels, dpi int) (*Bitmap, error) {
 	return newBitmap(size, true, dpi)
 }
 
-func newBitmap(size Size, transparent bool, dpi int) (bmp *Bitmap, err error) {
+func newBitmap(size SizePixels, transparent bool, dpi int) (bmp *Bitmap, err error) {
 	err = withCompatibleDC(func(hdc win.HDC) error {
 		bufSize := int(size.Width * size.Height * 4)
 
@@ -192,7 +192,7 @@ func newBitmapFromResource(res *uint16, dpi int) (bm *Bitmap, err error) {
 	return
 }
 
-func NewBitmapFromImageWithSize(image Image, size Size) (*Bitmap, error) {
+func NewBitmapFromImageWithSize(image Image, size SizePixels) (*Bitmap, error) {
 	var disposables Disposables
 	defer disposables.Treat()
 
@@ -212,7 +212,7 @@ func NewBitmapFromImageWithSize(image Image, size Size) (*Bitmap, error) {
 	canvas.dpix = dpi
 	canvas.dpiy = dpi
 
-	if err := canvas.DrawImageStretchedPixels(image, Rectangle{0, 0, size.Width, size.Height}); err != nil {
+	if err := canvas.DrawImageStretchedPixels(image, RectanglePixels{0, 0, size.Width, size.Height}); err != nil {
 		return nil, err
 	}
 
@@ -233,12 +233,12 @@ func NewBitmapFromWindow(window Window) (*Bitmap, error) {
 // NewBitmapFromIcon creates a new bitmap and paints the icon with given size at 96dpi.
 //
 // Deprecated: Newer applications should use DPI-aware variant.
-func NewBitmapFromIcon(icon *Icon, size Size) (*Bitmap, error) {
+func NewBitmapFromIcon(icon *Icon, size SizePixels) (*Bitmap, error) {
 	return NewBitmapFromIconForDPI(icon, size, 96)
 }
 
 // NewBitmapFromIconForDPI creates a new bitmap and paints the icon with given size and DPI.
-func NewBitmapFromIconForDPI(icon *Icon, size Size, dpi int) (*Bitmap, error) {
+func NewBitmapFromIconForDPI(icon *Icon, size SizePixels, dpi int) (*Bitmap, error) {
 	hBmp, err := hBitmapFromIcon(icon, size, dpi)
 	if err != nil {
 		return nil, err
@@ -331,27 +331,27 @@ func (bmp *Bitmap) Dispose() {
 	}
 }
 
-func (bmp *Bitmap) Size() Size96DPI {
-	return bmp.size.To96DPI(bmp.dpi)
+func (bmp *Bitmap) Size() Size {
+	return SizeTo96DPI(bmp.size, bmp.dpi)
 }
 
 func (bmp *Bitmap) handle() win.HBITMAP {
 	return bmp.hBmp
 }
 
-func (bmp *Bitmap) draw(hdc win.HDC, location Point) error {
-	return bmp.drawStretched(hdc, Rectangle{X: location.X, Y: location.Y, Width: bmp.size.Width, Height: bmp.size.Height})
+func (bmp *Bitmap) draw(hdc win.HDC, location PointPixels) error {
+	return bmp.drawStretched(hdc, RectanglePixels{X: location.X, Y: location.Y, Width: bmp.size.Width, Height: bmp.size.Height})
 }
 
-func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds Rectangle) error {
+func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds RectanglePixels) error {
 	return bmp.alphaBlend(hdc, bounds, 255)
 }
 
-func (bmp *Bitmap) alphaBlend(hdc win.HDC, bounds Rectangle, opacity byte) error {
-	return bmp.alphaBlendPart(hdc, bounds, Rectangle{0, 0, bmp.size.Width, bmp.size.Height}, opacity)
+func (bmp *Bitmap) alphaBlend(hdc win.HDC, bounds RectanglePixels, opacity byte) error {
+	return bmp.alphaBlendPart(hdc, bounds, RectanglePixels{0, 0, bmp.size.Width, bmp.size.Height}, opacity)
 }
 
-func (bmp *Bitmap) alphaBlendPart(hdc win.HDC, dst, src Rectangle, opacity byte) error {
+func (bmp *Bitmap) alphaBlendPart(hdc win.HDC, dst, src RectanglePixels, opacity byte) error {
 	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
 		if !win.AlphaBlend(
 			hdc,
@@ -418,7 +418,7 @@ func newBitmapFromHBITMAP(hBmp win.HBITMAP, dpi int) (bmp *Bitmap, err error) {
 	return &Bitmap{
 		hBmp:       hBmp,
 		hPackedDIB: hPackedDIB,
-		size: Size{
+		size: SizePixels{
 			Pixel(bmih.BiWidth),
 			Pixel(bmih.BiHeight),
 		},
@@ -499,7 +499,7 @@ func hBitmapFromWindow(window Window) (win.HBITMAP, error) {
 	return hBmp, nil
 }
 
-func hBitmapFromIcon(icon *Icon, size Size, dpi int) (win.HBITMAP, error) {
+func hBitmapFromIcon(icon *Icon, size SizePixels, dpi int) (win.HBITMAP, error) {
 	hdc := win.GetDC(0)
 	defer win.ReleaseDC(0, hdc)
 
@@ -535,7 +535,7 @@ func hBitmapFromIcon(icon *Icon, size Size, dpi int) (win.HBITMAP, error) {
 	hOld := win.SelectObject(hdcMem, win.HGDIOBJ(hBmp))
 	defer win.SelectObject(hdcMem, hOld)
 
-	err := icon.drawStretched(hdcMem, Rectangle{Width: size.Width, Height: size.Height})
+	err := icon.drawStretched(hdcMem, RectanglePixels{Width: size.Width, Height: size.Height})
 	if err != nil {
 		return 0, err
 	}

@@ -30,19 +30,18 @@ func NewImageList(imageSize Size, maskColor Color) (*ImageList, error) {
 	hDC := win.GetDC(0)
 	defer win.ReleaseDC(0, hDC)
 
-	dpi := int(win.GetDeviceCaps(hDC, win.LOGPIXELSX))
+	// TODO: Revise
+	dpi := int(win.GetDeviceCaps(hDC, win.LOGPIXELSY))
 
 	return newImageList(imageSize, maskColor, dpi)
 }
 
 func newImageList(imageSize Size, maskColor Color, dpi int) (*ImageList, error) {
-	scale := float64(dpi) / 96.0
-	width := int32(float64(imageSize.Width) * scale)
-	height := int32(float64(imageSize.Height) * scale)
+	size := SizeFrom96DPI(imageSize, dpi)
 
 	hIml := win.ImageList_Create(
-		width,
-		height,
+		int32(size.Width),
+		int32(size.Height),
 		win.ILC_MASK|win.ILC_COLOR32,
 		8,
 		8)

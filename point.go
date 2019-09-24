@@ -8,53 +8,50 @@ package walk
 
 import "github.com/lxn/win"
 
-// Point96DPI defines 2D coordinate in 1/96" units.
-type Point96DPI struct {
-	X, Y Pixel96DPI
+// Point defines 2D coordinate in 1/96" units.
+type Point struct {
+	X, Y int
 }
 
-// ForDPI converts from 1/96" units to native pixels.
-func (p Point96DPI) ForDPI(dpi int) Point {
-	return p.scale(float64(dpi) / 96.0)
-}
-
-func (p Point96DPI) scale(scale float64) Point {
-	return Point{
-		X: p.X.scale(scale),
-		Y: p.Y.scale(scale),
+func scalePoint(value Point, scale float64) PointPixels {
+	return PointPixels{
+		X: scaleInt(value.X, scale),
+		Y: scaleInt(value.Y, scale),
 	}
 }
 
 // PointFrom96DPI converts from 1/96" units to native pixels.
-func PointFrom96DPI(value Point96DPI, dpi int) Point {
-	return value.ForDPI(dpi)
+func PointFrom96DPI(value Point, dpi int) PointPixels {
+	return scalePoint(value, float64(dpi)/96.0)
 }
 
-// Point defines 2D coordinate in native pixels.
-type Point struct {
+// PointPixels defines 2D coordinate in native pixels.
+type PointPixels struct {
 	X, Y Pixel
 }
 
-func (p Point) toPOINT() win.POINT {
+func (p PointPixels) toPOINT() win.POINT {
 	return win.POINT{
 		X: int32(p.X),
 		Y: int32(p.Y),
 	}
 }
 
-// To96DPI converts from native pixels to 1/96" units.
-func (p Point) To96DPI(dpi int) Point96DPI {
-	return p.scale(96.0 / float64(dpi))
+func pointPixelsFromPOINT(p win.POINT) PointPixels {
+	return PointPixels{
+		X: Pixel(p.X),
+		Y: Pixel(p.Y),
+	}
 }
 
-func (p Point) scale(scale float64) Point96DPI {
-	return Point96DPI{
-		X: p.X.scale(scale),
-		Y: p.Y.scale(scale),
+func scalePointPixels(value PointPixels, scale float64) Point {
+	return Point{
+		X: scalePixel(value.X, scale),
+		Y: scalePixel(value.Y, scale),
 	}
 }
 
 // PointTo96DPI converts from native pixels to 1/96" units.
-func PointTo96DPI(value Point, dpi int) Point96DPI {
-	return value.To96DPI(dpi)
+func PointTo96DPI(value PointPixels, dpi int) Point {
+	return scalePointPixels(value, 96.0/float64(dpi))
 }
