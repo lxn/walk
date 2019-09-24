@@ -40,7 +40,7 @@ const (
 )
 
 type Pen interface {
-	handle() win.HPEN
+	handle() win.HPEN // TODO: Pen width is DPI-specific: handle() => handleForDPI()
 	Dispose()
 	Style() PenStyle
 	Width() int

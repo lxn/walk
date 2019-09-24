@@ -8,9 +8,7 @@ package walk
 
 import (
 	"syscall"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -25,20 +23,12 @@ const (
 )
 
 var (
-	screenDPIX  int
-	screenDPIY  int
 	defaultFont *Font
 	knownFonts  = make(map[fontInfo]*Font)
 )
 
 func init() {
 	AppendToWalkInit(func() {
-		// Retrieve screen DPI
-		hDC := win.GetDC(0)
-		defer win.ReleaseDC(0, hDC)
-		screenDPIX = int(win.GetDeviceCaps(hDC, win.LOGPIXELSX))
-		screenDPIY = int(win.GetDeviceCaps(hDC, win.LOGPIXELSY))
-
 		// Initialize default font
 		var err error
 		if defaultFont, err = NewFont("MS Shell Dlg 2", 8, 0); err != nil {
@@ -185,12 +175,14 @@ func (f *Font) Italic() bool {
 // A value of 0 returns a HFONT suitable for the screen.
 func (f *Font) handleForDPI(dpi int) win.HFONT {
 	if len(f.dpi2hFont) == 0 {
-		hFont := f.createForDPI(screenDPIY)
+		dpi := screenDPI()
+
+		hFont := f.createForDPI(dpi)
 		if hFont == 0 {
 			return 0
 		}
 
-		f.dpi2hFont[screenDPIY] = hFont
+		f.dpi2hFont[dpi] = hFont
 		f.dpi2hFont[0] = hFont // Make HFONT for screen easier accessible.
 	}
 
@@ -221,4 +213,10 @@ func (f *Font) Underline() bool {
 // PointSize returns the size of the Font in point units.
 func (f *Font) PointSize() int {
 	return f.pointSize
+}
+
+func screenDPI() int {
+	hDC := win.GetDC(0)
+	defer win.ReleaseDC(0, hDC)
+	return int(win.GetDeviceCaps(hDC, win.LOGPIXELSY))
 }

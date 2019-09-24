@@ -50,16 +50,16 @@ func (rm *ResourceManager) SetRootDirPath(rootDirPath string) error {
 	return nil
 }
 
-// Bitmap loads a bitmap with 96dpi from file or resource identified by name, or an error if it
-// could not be found.
+// Bitmap loads a bitmap from file or resource identified by name, or an error if it could not be
+// found. When bitmap is loaded, 96dpi is assumed.
 //
-// Deprecated: Newer applications should use DPI-aware variant.
+// Deprecated: Newer applications should use BitmapForDPI.
 func (rm *ResourceManager) Bitmap(name string) (*Bitmap, error) {
 	return rm.BitmapForDPI(name, 96)
 }
 
-// BitmapForDPI loads a bitmap with given DPI from file or resource identified by name, or an error
-// if it could not be found.
+// BitmapForDPI loads a bitmap from file or resource identified by name, or an error if it could
+// not be found. When bitmap is loaded, given DPI is assumed.
 func (rm *ResourceManager) BitmapForDPI(name string, dpi int) (*Bitmap, error) {
 	if bm := rm.bitmaps[name]; bm != nil {
 		return bm, nil

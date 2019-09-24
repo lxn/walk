@@ -432,12 +432,13 @@ func (tvc *TableViewColumn) update() error {
 func (tvc *TableViewColumn) getLVCOLUMN() *win.LVCOLUMN {
 	var lvc win.LVCOLUMN
 
-	var width Pixel
+	dpi := 96
 	if tvc.tv != nil {
-		width = IntFrom96DPI(tvc.width, tvc.tv.DPI())
+		dpi = tvc.tv.DPI()
 	} else {
-		width = IntFrom96DPI(tvc.width, 96)
+		dpi = screenDPI()
 	}
+	width := IntFrom96DPI(tvc.width, dpi)
 
 	lvc.Mask = win.LVCF_FMT | win.LVCF_WIDTH | win.LVCF_TEXT | win.LVCF_SUBITEM
 	lvc.ISubItem = int32(tvc.indexInListView())

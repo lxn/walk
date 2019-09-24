@@ -44,14 +44,14 @@ func ImageFrom(src interface{}) (img Image, err error) {
 	return
 }
 
-// NewImageFromFile loads image from file with 96dpi. Supported types are .ico, .emf, .bmp, .png...
+// NewImageFromFile loads image from file at 96dpi. Supported types are .ico, .emf, .bmp, .png...
 //
-// Deprecated: Newer applications should use DPI-aware variant.
+// Deprecated: Newer applications should use NewImageFromFileForDPI.
 func NewImageFromFile(filePath string) (Image, error) {
 	return NewImageFromFileForDPI(filePath, 96)
 }
 
-// NewImageFromFileForDPI loads image from file with given DPI. Supported types are .ico, .emf,
+// NewImageFromFileForDPI loads image from file at given DPI. Supported types are .ico, .emf,
 // .bmp, .png...
 func NewImageFromFileForDPI(filePath string, dpi int) (Image, error) {
 	if strings.HasSuffix(filePath, ".ico") {

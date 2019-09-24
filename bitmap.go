@@ -41,7 +41,7 @@ func BitmapFrom(src interface{}, dpi int) (*Bitmap, error) {
 
 // NewBitmap creates an opaque bitmap with given size at 96dpi.
 //
-// Deprecated: Newer applications should use DPI-aware variant.
+// Deprecated: Newer applications should use NewBitmapForDPI.
 func NewBitmap(size SizePixels) (*Bitmap, error) {
 	return newBitmap(size, false, 96)
 }
@@ -53,7 +53,7 @@ func NewBitmapForDPI(size SizePixels, dpi int) (*Bitmap, error) {
 
 // NewBitmapWithTransparentPixels creates a transparent bitmap with given size at 96dpi.
 //
-// Deprecated: Newer applications should use DPI-aware variant.
+// Deprecated: Newer applications should use NewBitmapWithTransparentPixelsForDPI.
 func NewBitmapWithTransparentPixels(size SizePixels) (*Bitmap, error) {
 	return newBitmap(size, true, 96)
 }
@@ -107,7 +107,7 @@ func newBitmap(size SizePixels, transparent bool, dpi int) (bmp *Bitmap, err err
 
 // NewBitmapFromFile creates new bitmap from a bitmap file with 96dpi.
 //
-// Deprecated: Newer applications should use DPI-aware variant.
+// Deprecated: Newer applications should use NewBitmapFromFileForDPI.
 func NewBitmapFromFile(filePath string) (*Bitmap, error) {
 	return NewBitmapFromFileForDPI(filePath, 96)
 }
@@ -135,11 +135,11 @@ func NewBitmapFromFileForDPI(filePath string, dpi int) (*Bitmap, error) {
 	return newBitmapFromHBITMAP(hBmp, dpi)
 }
 
-// NewBitmapFromImage creates a Bitmap from image.Image with 96dpi.
+// NewBitmapFromImage creates a Bitmap from image.Image at screen DPI.
 //
-// Deprecated: Newer applications should use DPI-aware variant.
+// Deprecated: Newer applications should use NewBitmapFromImageForDPI.
 func NewBitmapFromImage(im image.Image) (*Bitmap, error) {
-	return NewBitmapFromImageForDPI(im, 96)
+	return NewBitmapFromImageForDPI(im, screenDPI())
 }
 
 // NewBitmapFromImageForDPI creates a Bitmap from image.Image with given DPI.
@@ -152,9 +152,9 @@ func NewBitmapFromImageForDPI(im image.Image, dpi int) (*Bitmap, error) {
 	return newBitmapFromHBITMAP(hBmp, dpi)
 }
 
-// NewBitmapFromResource creates a Bitmap with 96dpi from resource by name.
+// NewBitmapFromResource creates a Bitmap at 96dpi from resource by name.
 //
-// Deprecated: Newer applications should use DPI-aware variant.
+// Deprecated: Newer applications should use NewBitmapFromResourceForDPI.
 func NewBitmapFromResource(name string) (*Bitmap, error) {
 	return newBitmapFromResource(syscall.StringToUTF16Ptr(name), 96)
 }
@@ -164,9 +164,9 @@ func NewBitmapFromResourceForDPI(name string, dpi int) (*Bitmap, error) {
 	return newBitmapFromResource(syscall.StringToUTF16Ptr(name), dpi)
 }
 
-// NewBitmapFromResourceId creates a Bitmap with 96dpi from resource by ID.
+// NewBitmapFromResourceId creates a Bitmap at 96dpi from resource by ID.
 //
-// Deprecated: Newer applications should use DPI-aware variant.
+// Deprecated: Newer applications should use NewBitmapFromResourceIdForDPI.
 func NewBitmapFromResourceId(id int) (*Bitmap, error) {
 	return newBitmapFromResource(win.MAKEINTRESOURCE(uintptr(id)), 96)
 }
@@ -230,11 +230,11 @@ func NewBitmapFromWindow(window Window) (*Bitmap, error) {
 	return newBitmapFromHBITMAP(hBmp, window.DPI())
 }
 
-// NewBitmapFromIcon creates a new bitmap and paints the icon with given size at 96dpi.
+// NewBitmapFromIcon creates a new bitmap and paints the icon with given size at screen DPI.
 //
-// Deprecated: Newer applications should use DPI-aware variant.
+// Deprecated: Newer applications should use NewBitmapFromIconForDPI.
 func NewBitmapFromIcon(icon *Icon, size SizePixels) (*Bitmap, error) {
-	return NewBitmapFromIconForDPI(icon, size, 96)
+	return NewBitmapFromIconForDPI(icon, size, screenDPI())
 }
 
 // NewBitmapFromIconForDPI creates a new bitmap and paints the icon with given size and DPI.

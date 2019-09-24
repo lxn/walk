@@ -213,7 +213,7 @@ func (gc *GradientComposite) updateBackground() error {
 		bounds.Height = 1
 	}
 
-	bmp, err := NewBitmap(bounds.Size()) // TODO: DPI
+	bmp, err := NewBitmapForDPI(bounds.Size(), gc.DPI())
 	if err != nil {
 		return err
 	}

@@ -108,7 +108,7 @@ func (tb *ToolBar) ApplyDPI(dpi int) {
 		size = Size{16, 16}
 	}
 
-	iml, err := newImageList(size, maskColor, dpi)
+	iml, err := NewImageListForDPI(size, maskColor, dpi)
 	if err != nil {
 		return
 	}
@@ -243,7 +243,7 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
 	if tb.imageList == nil {
 		dpi := tb.DPI()
-		iml, err := newImageList(Size{16, 16}, 0, dpi)
+		iml, err := NewImageListForDPI(Size{16, 16}, 0, dpi)
 		if err != nil {
 			return 0, err
 		}

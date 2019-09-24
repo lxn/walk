@@ -26,17 +26,15 @@ type bitmapMaskedBitmap struct {
 	mask   *Bitmap
 }
 
-func NewImageList(imageSize Size, maskColor Color) (*ImageList, error) {
-	hDC := win.GetDC(0)
-	defer win.ReleaseDC(0, hDC)
-
-	// TODO: Revise
-	dpi := int(win.GetDeviceCaps(hDC, win.LOGPIXELSY))
-
-	return newImageList(imageSize, maskColor, dpi)
+// NewImageList creates an empty image list at 96dpi.
+//
+// Deprecated: Newer applications should use NewImageListForDPI.
+func NewImageList(imageSize96dpi Size, maskColor Color) (*ImageList, error) {
+	return NewImageListForDPI(SizeFrom96DPI(imageSize96dpi, 96), maskColor, 96)
 }
 
-func newImageList(imageSize Size, maskColor Color, dpi int) (*ImageList, error) {
+// NewImageListForDPI creates an empty image list at given DPI.
+func NewImageListForDPI(imageSize Size, maskColor Color, dpi int) (*ImageList, error) {
 	size := SizeFrom96DPI(imageSize, dpi)
 
 	hIml := win.ImageList_Create(
@@ -132,9 +130,8 @@ func imageListForImage(image interface{}, dpi int) (hIml win.HIMAGELIST, isSysIm
 		_, hIml = iconIndexAndHImlForFilePath(filePath)
 		isSysIml = hIml != 0
 	} else {
-		scale := float64(dpi) / 96.0
-		w := int32(float64(win.GetSystemMetrics(win.SM_CXSMICON)) * scale)
-		h := int32(float64(win.GetSystemMetrics(win.SM_CYSMICON)) * scale)
+		w := int32(win.GetSystemMetricsForDpi(win.SM_CXSMICON, uint32(dpi)))
+		h := int32(win.GetSystemMetricsForDpi(win.SM_CYSMICON, uint32(dpi)))
 
 		hIml = win.ImageList_Create(w, h, win.ILC_MASK|win.ILC_COLOR32, 8, 8)
 		if hIml == 0 {
