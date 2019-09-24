@@ -71,7 +71,7 @@ func (sh *splitterHandle) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uint
 
 func (sh *splitterHandle) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	var orientation Orientation
-	var handleWidth int
+	var handleWidth Pixel96DPI
 
 	if splitter, ok := sh.Parent().(*Splitter); ok {
 		orientation = splitter.Orientation()
@@ -87,7 +87,7 @@ func (sh *splitterHandle) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type splitterHandleLayoutItem struct {
 	LayoutItemBase
 	orientation Orientation
-	handleWidth int
+	handleWidth Pixel96DPI
 }
 
 func (li *splitterHandleLayoutItem) LayoutFlags() LayoutFlags {
@@ -100,11 +100,12 @@ func (li *splitterHandleLayoutItem) LayoutFlags() LayoutFlags {
 
 func (li *splitterHandleLayoutItem) IdealSize() Size {
 	var size Size
+	dpi := int(win.GetDpiForWindow(li.handle))
 
 	if li.orientation == Horizontal {
-		size.Width = li.handleWidth
+		size.Width = li.handleWidth.ForDPI(dpi)
 	} else {
-		size.Height = li.handleWidth
+		size.Height = li.handleWidth.ForDPI(dpi)
 	}
 
 	return size

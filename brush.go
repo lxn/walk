@@ -62,8 +62,8 @@ const (
 
 type Brush interface {
 	Dispose()
-	handle() win.HBRUSH
-	logbrush() *win.LOGBRUSH
+	handle() win.HBRUSH      // TODO: BitmapBrush is DPI-specific: handle() => handleForDPI()
+	logbrush() *win.LOGBRUSH // TODO: BitmapBrush is DPI-specific: logbrush() => logbrushForDPI()
 	attachWindow(wb *WindowBase)
 	detachWindow(wb *WindowBase)
 	simple() bool
@@ -384,7 +384,7 @@ func NewGradientBrush(vertexes []GradientVertex, triangles []GradientTriangle) (
 func newGradientBrush(vertexes []GradientVertex, triangles []GradientTriangle, orientation gradientOrientation) (*GradientBrush, error) {
 	var size Size
 	for _, v := range vertexes {
-		size = maxSize(size, Size{int(v.X), int(v.Y)})
+		size = maxSize(size, Size{Pixel(v.X), Pixel(v.Y)})
 	}
 
 	gb := &GradientBrush{vertexes: vertexes, triangles: triangles, orientation: orientation, absolute: size.Width > 1 || size.Height > 1}

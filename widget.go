@@ -178,7 +178,7 @@ func (wb *WidgetBase) AsWidgetBase() *WidgetBase {
 // decorations.
 //
 // The coordinates are relative to the parent of the Widget.
-func (wb *WidgetBase) Bounds() Rectangle {
+func (wb *WidgetBase) Bounds() Rectangle96DPI {
 	return wb.RectangleTo96DPI(wb.BoundsPixels())
 }
 
@@ -190,13 +190,13 @@ func (wb *WidgetBase) BoundsPixels() Rectangle {
 	b := wb.WindowBase.BoundsPixels()
 
 	if wb.parent != nil {
-		p := win.POINT{int32(b.X), int32(b.Y)}
+		p := b.Location().toPOINT()
 		if !win.ScreenToClient(wb.parent.Handle(), &p) {
 			newError("ScreenToClient failed")
 			return Rectangle{}
 		}
-		b.X = int(p.X)
-		b.Y = int(p.Y)
+		b.X = Pixel(p.X)
+		b.Y = Pixel(p.Y)
 	}
 
 	return b
@@ -265,7 +265,7 @@ func (wb *WidgetBase) SetAlignment(alignment Alignment2D) error {
 // including decorations.
 //
 // Use walk.Size{} to make the respective limit be ignored.
-func (wb *WidgetBase) SetMinMaxSize(min, max Size) (err error) {
+func (wb *WidgetBase) SetMinMaxSize(min, max Size96DPI) (err error) {
 	err = wb.WindowBase.SetMinMaxSize(min, max)
 
 	wb.RequestLayout()

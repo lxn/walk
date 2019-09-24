@@ -9,9 +9,7 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -74,10 +72,7 @@ func (mf *Metafile) readSizeFromHeader() error {
 		return newError("GetEnhMetaFileHeader failed")
 	}
 
-	mf.size = Size{
-		int(hdr.RclBounds.Right - hdr.RclBounds.Left),
-		int(hdr.RclBounds.Bottom - hdr.RclBounds.Top),
-	}
+	mf.size = sizeFromRECT(hdr.RclBounds)
 
 	return nil
 }
@@ -101,8 +96,9 @@ func (mf *Metafile) ensureFinished() error {
 	return mf.readSizeFromHeader()
 }
 
-func (mf *Metafile) Size() Size {
-	return mf.size
+func (mf *Metafile) Size() Size96DPI {
+	// TODO: Handle DPI
+	return mf.size.To96DPI(96)
 }
 
 func (mf *Metafile) draw(hdc win.HDC, location Point) error {

@@ -26,7 +26,7 @@ type GroupBox struct {
 	hWndGroupBox          win.HWND
 	checkBox              *CheckBox
 	composite             *Composite
-	headerHeight          int
+	headerHeight          Pixel
 	titleChangedPublisher EventPublisher
 }
 
@@ -354,9 +354,9 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 			if gb.Checkable() {
 				s := createLayoutItemForWidget(gb.checkBox).(MinSizer).MinSize()
-				var x int
+				var x Pixel
 				if l := gb.Layout(); l != nil {
-					x = l.Margins().HNear
+					x = l.Margins().HNear.ForDPI(gb.DPI())
 				} else {
 					x = gb.headerHeight * 2 / 3
 				}
@@ -406,7 +406,7 @@ func (li *groupBoxLayoutItem) LayoutFlags() LayoutFlags {
 func (li *groupBoxLayoutItem) MinSize() Size {
 	min := li.children[0].(MinSizer).MinSize()
 	min.Width += li.compositePos.X * 2
-	min.Height += li.compositePos.Y + IntFrom96DPI(5, li.ctx.dpi)
+	min.Height += li.compositePos.Y + Pixel96DPI(5).ForDPI(li.ctx.dpi)
 
 	return min
 }
@@ -419,8 +419,8 @@ func (li *groupBoxLayoutItem) HasHeightForWidth() bool {
 	return li.children[0].(HeightForWidther).HasHeightForWidth()
 }
 
-func (li *groupBoxLayoutItem) HeightForWidth(width int) int {
-	return li.children[0].(HeightForWidther).HeightForWidth(width-li.compositePos.X*2) + li.compositePos.Y + IntFrom96DPI(5, li.ctx.dpi)
+func (li *groupBoxLayoutItem) HeightForWidth(width Pixel) Pixel {
+	return li.children[0].(HeightForWidther).HeightForWidth(width-li.compositePos.X*2) + li.compositePos.Y + Pixel96DPI(5).ForDPI(li.ctx.dpi)
 }
 
 func (li *groupBoxLayoutItem) IdealSize() Size {
@@ -433,7 +433,7 @@ func (li *groupBoxLayoutItem) PerformLayout() []LayoutResultItem {
 	return []LayoutResultItem{
 		{
 			Item:   li.children[0],
-			Bounds: Rectangle{X: li.compositePos.X, Y: li.compositePos.Y, Width: li.geometry.Size.Width - li.compositePos.X*2, Height: li.geometry.Size.Height - li.compositePos.Y - IntFrom96DPI(5, li.ctx.dpi)},
+			Bounds: Rectangle{X: li.compositePos.X, Y: li.compositePos.Y, Width: li.geometry.Size.Width - li.compositePos.X*2, Height: li.geometry.Size.Height - li.compositePos.Y - Pixel96DPI(5).ForDPI(li.ctx.dpi)},
 		},
 	}
 }

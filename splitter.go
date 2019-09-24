@@ -31,7 +31,7 @@ func init() {
 
 type Splitter struct {
 	ContainerBase
-	handleWidth   int
+	handleWidth   Pixel96DPI
 	mouseDownPos  Point
 	draggedHandle *splitterHandle
 	persistent    bool
@@ -90,11 +90,11 @@ func (s *Splitter) SetLayout(value Layout) error {
 	return newError("not supported")
 }
 
-func (s *Splitter) HandleWidth() int {
+func (s *Splitter) HandleWidth() Pixel96DPI {
 	return s.handleWidth
 }
 
-func (s *Splitter) SetHandleWidth(value int) error {
+func (s *Splitter) SetHandleWidth(value Pixel96DPI) error {
 	if value == s.handleWidth {
 		return nil
 	}
@@ -134,7 +134,7 @@ func (s *Splitter) setOrientation(value Orientation) error {
 }
 
 func (s *Splitter) updateMarginsForFocusEffect() {
-	var margins Margins
+	var margins Margins96DPI
 	var parentLayout Layout
 
 	if s.parent != nil {
@@ -168,12 +168,12 @@ func (s *Splitter) updateMarginsForFocusEffect() {
 		}
 
 		if marginsNeeded {
-			margins = Margins{5, 5, 5, 5}
+			margins = Margins96DPI{5, 5, 5, 5}
 		}
 	}
 
 	if parentLayout != nil {
-		parentLayout.SetMargins(Margins{9 - margins.HNear, 9 - margins.VNear, 9 - margins.HFar, 9 - margins.VFar})
+		parentLayout.SetMargins(Margins96DPI{9 - margins.HNear, 9 - margins.VNear, 9 - margins.HFar, 9 - margins.VFar})
 	}
 
 	s.layout.SetMargins(margins)
@@ -250,7 +250,7 @@ func (s *Splitter) RestoreState() error {
 		s.SetSuspended(false)
 	}()
 
-	var space int
+	var space Pixel
 	size := s.ClientBoundsPixels().Size()
 	if s.Orientation() == Horizontal {
 		space = size.Width
@@ -278,8 +278,8 @@ func (s *Splitter) RestoreState() error {
 			}
 
 			item := layout.hwnd2Item[widget.Handle()]
-			item.size = size
-			item.oldExplicitSize = size
+			item.size = Pixel(size)
+			item.oldExplicitSize = Pixel(size)
 		}
 	}
 
@@ -401,7 +401,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 				err = s.children.Insert(handleIndex, handle)
 				if err == nil {
 					// FIXME: These handlers will be leaked, if widgets get removed.
-					handle.MouseDown().Attach(func(x, y int, button MouseButton) {
+					handle.MouseDown().Attach(func(x, y Pixel, button MouseButton) {
 						if button != LeftButton {
 							return
 						}
@@ -411,7 +411,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						handle.SetBackground(splitterHandleDraggingBrush)
 					})
 
-					handle.MouseMove().Attach(func(x, y int, button MouseButton) {
+					handle.MouseMove().Attach(func(x, y Pixel, button MouseButton) {
 						if s.draggedHandle == nil {
 							return
 						}
@@ -427,14 +427,17 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						bn := next.BoundsPixels()
 						msen := minSizeEffective(createLayoutItemForWidget(next))
 
+						dpi := s.draggedHandle.DPI()
+						handleWidth := s.handleWidth.ForDPI(dpi)
+
 						if s.Orientation() == Horizontal {
 							xh := s.draggedHandle.XPixels()
 
 							xnew := xh + x - s.mouseDownPos.X
 							if xnew < bp.X+msep.Width {
 								xnew = bp.X + msep.Width
-							} else if xnew >= bn.X+bn.Width-msen.Width-s.handleWidth {
-								xnew = bn.X + bn.Width - msen.Width - s.handleWidth
+							} else if xnew >= bn.X+bn.Width-msen.Width-handleWidth {
+								xnew = bn.X + bn.Width - msen.Width - handleWidth
 							}
 
 							if e := s.draggedHandle.SetXPixels(xnew); e != nil {
@@ -446,8 +449,8 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 							ynew := yh + y - s.mouseDownPos.Y
 							if ynew < bp.Y+msep.Height {
 								ynew = bp.Y + msep.Height
-							} else if ynew >= bn.Y+bn.Height-msen.Height-s.handleWidth {
-								ynew = bn.Y + bn.Height - msen.Height - s.handleWidth
+							} else if ynew >= bn.Y+bn.Height-msen.Height-handleWidth {
+								ynew = bn.Y + bn.Height - msen.Height - handleWidth
 							}
 
 							if e := s.draggedHandle.SetYPixels(ynew); e != nil {
@@ -478,7 +481,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						s.draggedHandle.Invalidate()
 					})
 
-					handle.MouseUp().Attach(func(x, y int, button MouseButton) {
+					handle.MouseUp().Attach(func(x, y Pixel, button MouseButton) {
 						if s.draggedHandle == nil {
 							return
 						}
@@ -507,8 +510,8 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						bp := prev.BoundsPixels()
 						bn := next.BoundsPixels()
 
-						var sizePrev int
-						var sizeNext int
+						var sizePrev Pixel
+						var sizeNext Pixel
 
 						if s.Orientation() == Horizontal {
 							bp.Width = bh.X - bp.X

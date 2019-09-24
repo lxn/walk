@@ -261,10 +261,10 @@ func (tw *TabWidget) pageBounds() Rectangle {
 	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
 	return Rectangle{
-		int(r.Left - 2),
-		int(r.Top),
-		int(r.Right - r.Left + 2),
-		int(r.Bottom - r.Top),
+		Pixel(r.Left - 2),
+		Pixel(r.Top),
+		Pixel(r.Right - r.Left + 2),
+		Pixel(r.Bottom - r.Top),
 	}
 }
 
@@ -363,7 +363,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 		themed := win.IsAppThemed()
 
 		if !themed {
-			if err := canvas.FillRectangle(sysColorBtnFaceBrush, cb); err != nil {
+			if err := canvas.FillRectanglePixels(sysColorBtnFaceBrush, cb); err != nil {
 				break
 			}
 		}
@@ -746,8 +746,8 @@ func (li *tabWidgetLayoutItem) MinSize() Size {
 		if ms, ok := page.(MinSizer); ok {
 			s := ms.MinSize()
 
-			min.Width = maxi(min.Width, s.Width)
-			min.Height = maxi(min.Height, s.Height)
+			min.Width = maxPixel(min.Width, s.Width)
+			min.Height = maxPixel(min.Height, s.Height)
 		}
 	}
 
@@ -777,12 +777,12 @@ func (li *tabWidgetLayoutItem) HasHeightForWidth() bool {
 	return false
 }
 
-func (li *tabWidgetLayoutItem) HeightForWidth(width int) int {
+func (li *tabWidgetLayoutItem) HeightForWidth(width Pixel) Pixel {
 	if len(li.children) == 0 {
 		return 0
 	}
 
-	var height int
+	var height Pixel
 	margin := li.geometry.Size
 	pageSize := li.children[0].Geometry().Size
 
@@ -793,7 +793,7 @@ func (li *tabWidgetLayoutItem) HeightForWidth(width int) int {
 		if hfw, ok := page.(HeightForWidther); ok && hfw.HasHeightForWidth() {
 			h := hfw.HeightForWidth(width + margin.Width)
 
-			height = maxi(height, h)
+			height = maxPixel(height, h)
 		}
 	}
 
@@ -801,7 +801,7 @@ func (li *tabWidgetLayoutItem) HeightForWidth(width int) int {
 }
 
 func (li *tabWidgetLayoutItem) IdealSize() Size {
-	return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
+	return Size96DPI{100, 100}.ForDPI(li.ctx.dpi)
 }
 
 func (li *tabWidgetLayoutItem) PerformLayout() []LayoutResultItem {

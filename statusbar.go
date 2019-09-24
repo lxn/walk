@@ -9,9 +9,7 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -76,10 +74,12 @@ func (sb *StatusBar) update() error {
 func (sb *StatusBar) updateParts() error {
 	items := sb.items.items
 
+	dpi := sb.DPI()
+
 	rightEdges := make([]int32, len(items))
 	var right int32
 	for i, item := range items {
-		right += int32(sb.IntFrom96DPI(item.width))
+		right += int32(item.width.ForDPI(dpi))
 		rightEdges[i] = right
 	}
 	var rep *int32
@@ -142,7 +142,7 @@ type StatusBarItem struct {
 	icon             *Icon
 	text             string
 	toolTipText      string
-	width            int
+	width            Pixel96DPI
 	clickedPublisher EventPublisher
 }
 
@@ -203,12 +203,12 @@ func (sbi *StatusBarItem) SetToolTipText(toolTipText string) error {
 }
 
 // Width returns the width of the StatusBarItem.
-func (sbi *StatusBarItem) Width() int {
+func (sbi *StatusBarItem) Width() Pixel96DPI {
 	return sbi.width
 }
 
 // SetWidth sets the width of the StatusBarItem.
-func (sbi *StatusBarItem) SetWidth(width int) error {
+func (sbi *StatusBarItem) SetWidth(width Pixel96DPI) error {
 	if width == sbi.width {
 		return nil
 	}

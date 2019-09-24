@@ -56,7 +56,7 @@ func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 	layout := container.Layout()
 	if layout == nil && container.Children().Len() == 0 {
 		layout = NewHBoxLayout()
-		layout.SetMargins(Margins{})
+		layout.SetMargins(Margins96DPI{})
 	}
 
 	if widget, ok := container.(Widget); ok {
@@ -73,8 +73,8 @@ func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 
 	if lb := layout.asLayoutBase(); lb != nil {
 		clib.alignment = lb.alignment
-		clib.margins = lb.margins
-		clib.spacing = lb.spacing
+		clib.margins = lb.margins96dpi
+		clib.spacing = lb.spacing96dpi
 	}
 
 	if len(clib.children) == 0 {
@@ -367,21 +367,69 @@ func applyLayoutResults(results []LayoutResult, stopwatch *stopwatch) error {
 	return nil
 }
 
+// Margins96DPI define margins in 1/96" units.
+type Margins96DPI struct {
+	HNear, VNear, HFar, VFar Pixel96DPI
+}
+
+func (m Margins96DPI) isZero() bool {
+	return m.HNear == 0 && m.HFar == 0 && m.VNear == 0 && m.VFar == 0
+}
+
+// ForDPI converts from 1/96" units to native pixels.
+func (m Margins96DPI) ForDPI(dpi int) Margins {
+	return m.scale(float64(dpi) / 96.0)
+}
+
+func (m Margins96DPI) scale(scale float64) Margins {
+	return Margins{
+		HNear: m.HNear.scale(scale),
+		VNear: m.VNear.scale(scale),
+		HFar:  m.HFar.scale(scale),
+		VFar:  m.VFar.scale(scale),
+	}
+}
+
+// MarginsFrom96DPI converts from 1/96" units to native pixels.
+func MarginsFrom96DPI(value Margins96DPI, dpi int) Margins {
+	return value.ForDPI(dpi)
+}
+
+// Margins define margins in native pixels.
 type Margins struct {
-	HNear, VNear, HFar, VFar int
+	HNear, VNear, HFar, VFar Pixel
 }
 
 func (m Margins) isZero() bool {
 	return m.HNear == 0 && m.HFar == 0 && m.VNear == 0 && m.VFar == 0
 }
 
+// To96DPI converts from native pixels to 1/96" units.
+func (m Margins) To96DPI(dpi int) Margins96DPI {
+	return m.scale(96.0 / float64(dpi))
+}
+
+func (m Margins) scale(scale float64) Margins96DPI {
+	return Margins96DPI{
+		HNear: m.HNear.scale(scale),
+		VNear: m.VNear.scale(scale),
+		HFar:  m.HFar.scale(scale),
+		VFar:  m.VFar.scale(scale),
+	}
+}
+
+// MarginsTo96DPI converts from native pixels to 1/96" units.
+func MarginsTo96DPI(value Margins, dpi int) Margins96DPI {
+	return value.To96DPI(dpi)
+}
+
 type Layout interface {
 	Container() Container
 	SetContainer(value Container)
-	Margins() Margins
-	SetMargins(value Margins) error
-	Spacing() int
-	SetSpacing(value int) error
+	Margins() Margins96DPI
+	SetMargins(value Margins96DPI) error
+	Spacing() Pixel96DPI
+	SetSpacing(value Pixel96DPI) error
 	CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem
 	asLayoutBase() *LayoutBase
 }
@@ -389,10 +437,10 @@ type Layout interface {
 type LayoutBase struct {
 	layout       Layout
 	container    Container
-	margins96dpi Margins
+	margins96dpi Margins96DPI
 	margins      Margins
-	spacing96dpi int
-	spacing      int
+	spacing96dpi Pixel96DPI
+	spacing      Pixel
 	alignment    Alignment2D
 	resetNeeded  bool
 	dirty        bool
@@ -429,11 +477,11 @@ func (l *LayoutBase) SetContainer(value Container) {
 	}
 }
 
-func (l *LayoutBase) Margins() Margins {
+func (l *LayoutBase) Margins() Margins96DPI {
 	return l.margins96dpi
 }
 
-func (l *LayoutBase) SetMargins(value Margins) error {
+func (l *LayoutBase) SetMargins(value Margins96DPI) error {
 	if value == l.margins96dpi {
 		return nil
 	}
@@ -453,11 +501,11 @@ func (l *LayoutBase) SetMargins(value Margins) error {
 	return nil
 }
 
-func (l *LayoutBase) Spacing() int {
+func (l *LayoutBase) Spacing() Pixel96DPI {
 	return l.spacing96dpi
 }
 
-func (l *LayoutBase) SetSpacing(value int) error {
+func (l *LayoutBase) SetSpacing(value Pixel96DPI) error {
 	if value == l.spacing96dpi {
 		return nil
 	}
@@ -479,13 +527,13 @@ func (l *LayoutBase) SetSpacing(value int) error {
 
 func (l *LayoutBase) updateMargins() {
 	if l.container != nil {
-		l.margins = l.container.AsWindowBase().MarginsFrom96DPI(l.margins96dpi)
+		l.margins = l.margins96dpi.ForDPI(l.container.AsWindowBase().DPI())
 	}
 }
 
 func (l *LayoutBase) updateSpacing() {
 	if l.container != nil {
-		l.spacing = l.container.AsWindowBase().IntFrom96DPI(l.spacing96dpi)
+		l.spacing = l.spacing96dpi.ForDPI(l.container.AsWindowBase().DPI())
 	}
 }
 
@@ -523,7 +571,7 @@ type MinSizeForSizer interface {
 
 type HeightForWidther interface {
 	HasHeightForWidth() bool
-	HeightForWidth(width int) int
+	HeightForWidth(width Pixel) Pixel
 }
 
 type LayoutContext struct {
@@ -599,8 +647,8 @@ func (lib *LayoutItemBase) Visible() bool {
 type ContainerLayoutItemBase struct {
 	LayoutItemBase
 	children  []LayoutItem
-	margins   Margins
-	spacing   int
+	margins   Margins96DPI
+	spacing   Pixel96DPI
 	alignment Alignment2D
 }
 
@@ -693,11 +741,11 @@ func (*greedyLayoutItem) LayoutFlags() LayoutFlags {
 }
 
 func (li *greedyLayoutItem) IdealSize() Size {
-	return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
+	return Size96DPI{100, 100}.ForDPI(li.ctx.dpi)
 }
 
 func (li *greedyLayoutItem) MinSize() Size {
-	return SizeFrom96DPI(Size{50, 50}, li.ctx.dpi)
+	return Size96DPI{50, 50}.ForDPI(li.ctx.dpi)
 }
 
 type Geometry struct {

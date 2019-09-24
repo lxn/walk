@@ -357,7 +357,7 @@ func (ni *NotifyIcon) publishMouseEvent(publisher *MouseEventPublisher, button M
 		lastError("GetCursorPos")
 	}
 
-	publisher.Publish(int(p.X), int(p.Y), button)
+	publisher.Publish(Pixel(p.X), Pixel(p.Y), button)
 }
 
 // MouseDown returns the event that is published when a mouse button is pressed

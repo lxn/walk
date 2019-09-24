@@ -46,7 +46,7 @@ func NewBitmapWithTransparentPixels(size Size) (*Bitmap, error) {
 
 func newBitmap(size Size, transparent bool) (bmp *Bitmap, err error) {
 	err = withCompatibleDC(func(hdc win.HDC) error {
-		bufSize := size.Width * size.Height * 4
+		bufSize := int(size.Width * size.Height * 4)
 
 		var hdr win.BITMAPINFOHEADER
 		hdr.BiSize = uint32(unsafe.Sizeof(hdr))
@@ -159,9 +159,7 @@ func NewBitmapFromImageWithSize(image Image, size Size) (*Bitmap, error) {
 	canvas.dpix = dpi
 	canvas.dpiy = dpi
 
-	size = SizeTo96DPI(size, dpi)
-
-	if err := canvas.DrawImageStretched(image, Rectangle{0, 0, size.Width, size.Height}); err != nil {
+	if err := canvas.DrawImageStretchedPixels(image, Rectangle{0, 0, size.Width, size.Height}); err != nil {
 		return nil, err
 	}
 
@@ -272,8 +270,9 @@ func (bmp *Bitmap) Dispose() {
 	}
 }
 
-func (bmp *Bitmap) Size() Size {
-	return bmp.size
+func (bmp *Bitmap) Size() Size96DPI {
+	// TODO: Handle DPI
+	return bmp.size.To96DPI(96)
 }
 
 func (bmp *Bitmap) handle() win.HBITMAP {
@@ -356,8 +355,8 @@ func newBitmapFromHBITMAP(hBmp win.HBITMAP) (bmp *Bitmap, err error) {
 		hBmp:       hBmp,
 		hPackedDIB: hPackedDIB,
 		size: Size{
-			int(bmih.BiWidth),
-			int(bmih.BiHeight),
+			Pixel(bmih.BiWidth),
+			Pixel(bmih.BiHeight),
 		},
 	}, nil
 }

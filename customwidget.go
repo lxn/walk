@@ -117,13 +117,7 @@ func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 		}
 		defer canvas.Dispose()
 
-		r := &ps.RcPaint
-		bounds := Rectangle{
-			int(r.Left),
-			int(r.Top),
-			int(r.Right - r.Left),
-			int(r.Bottom - r.Top),
-		}
+		bounds := rectangleFromRECT(ps.RcPaint)
 		if cw.paintMode == PaintBuffered {
 			err = cw.bufferedPaint(canvas, bounds)
 		} else {

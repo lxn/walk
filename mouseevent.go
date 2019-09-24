@@ -18,7 +18,7 @@ const (
 	MiddleButton MouseButton = win.MK_MBUTTON
 )
 
-type MouseEventHandler func(x, y int, button MouseButton)
+type MouseEventHandler func(x, y Pixel, button MouseButton)
 
 type MouseEvent struct {
 	handlers []MouseEventHandler
@@ -48,7 +48,7 @@ func (p *MouseEventPublisher) Event() *MouseEvent {
 	return &p.event
 }
 
-func (p *MouseEventPublisher) Publish(x, y int, button MouseButton) {
+func (p *MouseEventPublisher) Publish(x, y Pixel, button MouseButton) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {
 			handler(x, y, button)

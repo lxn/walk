@@ -75,7 +75,7 @@ func (te *TextEdit) applyFont(font *Font) {
 
 func (te *TextEdit) updateMargins() {
 	// 56 works at least from 96 to 192 DPI, so until a better solution comes up, this is it.
-	defaultSize := te.dialogBaseUnitsToPixels(Size{56, 12})
+	defaultSize := te.dialogBaseUnitsToPixels(SizeDBU{56, 12})
 
 	var rc win.RECT
 	te.SendMessage(win.EM_GETRECT, 0, uintptr(unsafe.Pointer(&rc)))
@@ -85,9 +85,9 @@ func (te *TextEdit) updateMargins() {
 		if width == 0 {
 			width = defaultSize.Width
 		}
-		te.margins.Width = width - int(rc.Right-rc.Left)
+		te.margins.Width = width - Pixel(rc.Right-rc.Left)
 	} else {
-		te.margins.Width = int(rc.Left) * 2
+		te.margins.Width = Pixel(rc.Left) * 2
 	}
 
 	lineHeight := te.calculateTextSizeImpl("gM").Height
@@ -283,7 +283,7 @@ func (te *TextEdit) ContextMenuLocation() Point {
 	res := uint32(te.SendMessage(win.EM_POSFROMCHAR, uintptr(idx), 0))
 	pt := win.POINT{int32(win.LOWORD(res)), int32(win.HIWORD(res))}
 	windowTrimToClientBounds(te.hWnd, &pt)
-	return Point{int(pt.X), int(pt.Y)}
+	return Point{Pixel(pt.X), Pixel(pt.Y)}
 }
 
 func (*TextEdit) NeedsWmSize() bool {
@@ -325,25 +325,25 @@ func (te *TextEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	}
 
 	return &textEditLayoutItem{
-		width2Height:            make(map[int]int),
+		width2Height:            make(map[Pixel]Pixel),
 		compactHeight:           te.compactHeight,
 		margins:                 te.margins,
 		text:                    te.Text(),
 		font:                    te.Font(),
 		minWidth:                te.calculateTextSizeImpl("W").Width,
-		nonCompactHeightMinSize: te.dialogBaseUnitsToPixels(Size{20, 12}),
+		nonCompactHeightMinSize: te.dialogBaseUnitsToPixels(SizeDBU{20, 12}),
 	}
 }
 
 type textEditLayoutItem struct {
 	LayoutItemBase
 	mutex                   sync.Mutex
-	width2Height            map[int]int
+	width2Height            map[Pixel]Pixel
 	nonCompactHeightMinSize Size
 	margins                 Size
 	text                    string
 	font                    *Font
-	minWidth                int
+	minWidth                Pixel
 	compactHeight           bool
 }
 
@@ -359,13 +359,13 @@ func (li *textEditLayoutItem) IdealSize() Size {
 	if li.compactHeight {
 		return li.MinSize()
 	} else {
-		return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
+		return Size96DPI{100, 100}.ForDPI(li.ctx.dpi)
 	}
 }
 
 func (li *textEditLayoutItem) MinSize() Size {
 	if li.compactHeight {
-		width := IntFrom96DPI(100, li.ctx.dpi)
+		width := Pixel96DPI(100).ForDPI(li.ctx.dpi)
 		return Size{width, li.HeightForWidth(width)}
 	} else {
 		return li.nonCompactHeightMinSize
@@ -376,7 +376,7 @@ func (li *textEditLayoutItem) HasHeightForWidth() bool {
 	return li.compactHeight
 }
 
-func (li *textEditLayoutItem) HeightForWidth(width int) int {
+func (li *textEditLayoutItem) HeightForWidth(width Pixel) Pixel {
 	li.mutex.Lock()
 	defer li.mutex.Unlock()
 

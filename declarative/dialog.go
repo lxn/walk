@@ -125,7 +125,7 @@ func (d Dialog) Create(owner walk.Form) error {
 
 	return builder.InitWidget(fi, w, func() error {
 		if d.Size.Width > 0 && d.Size.Height > 0 {
-			if err := w.SetSizePixels(d.Size.toW()); err != nil {
+			if err := w.SetSize(d.Size.toW()); err != nil {
 				return err
 			}
 		}

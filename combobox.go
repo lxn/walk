@@ -31,7 +31,7 @@ type ComboBox struct {
 	itemChangedHandlerHandle     int
 	itemsInsertedHandlerHandle   int
 	itemsRemovedHandlerHandle    int
-	maxItemTextWidth             int
+	maxItemTextWidth             Pixel
 	prevCurIndex                 int
 	selChangeIndex               int
 	maxLength                    int
@@ -514,7 +514,7 @@ func (cb *ComboBox) SetMaxLength(value int) {
 	cb.maxLength = value
 }
 
-func (cb *ComboBox) calculateMaxItemTextWidth() int {
+func (cb *ComboBox) calculateMaxItemTextWidth() Pixel {
 	hdc := win.GetDC(cb.hWnd)
 	if hdc == 0 {
 		newError("GetDC failed")
@@ -525,7 +525,7 @@ func (cb *ComboBox) calculateMaxItemTextWidth() int {
 	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(cb.Font().handleForDPI(cb.DPI())))
 	defer win.SelectObject(hdc, hFontOld)
 
-	var maxWidth int
+	var maxWidth Pixel
 
 	count := cb.model.ItemCount()
 	for i := 0; i < count; i++ {
@@ -537,7 +537,7 @@ func (cb *ComboBox) calculateMaxItemTextWidth() int {
 			return -1
 		}
 
-		maxWidth = maxi(maxWidth, int(s.CX))
+		maxWidth = maxPixel(maxWidth, Pixel(s.CX))
 	}
 
 	return maxWidth
@@ -700,14 +700,14 @@ func (cb *ComboBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		layoutFlags = GrowableHorz
 	}
 
-	defaultSize := cb.dialogBaseUnitsToPixels(Size{30, 12})
+	defaultSize := cb.dialogBaseUnitsToPixels(SizeDBU{30, 12})
 
 	if cb.model != nil && cb.maxItemTextWidth <= 0 {
 		cb.maxItemTextWidth = cb.calculateMaxItemTextWidth()
 	}
 
 	// FIXME: Use GetThemePartSize instead of guessing
-	w := maxi(defaultSize.Width, cb.maxItemTextWidth+int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))+8)
+	w := maxPixel(defaultSize.Width, cb.maxItemTextWidth+Pixel(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))+8)
 	h := defaultSize.Height + 1
 
 	return &comboBoxLayoutItem{

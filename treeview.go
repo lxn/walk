@@ -253,8 +253,8 @@ func (tv *TreeView) handleForItem(item TreeItem) (win.HTREEITEM, error) {
 	return 0, newError("invalid item")
 }
 
-func (tv *TreeView) ItemAt(x, y int) TreeItem {
-	hti := win.TVHITTESTINFO{Pt: win.POINT{int32(x), int32(y)}}
+func (tv *TreeView) ItemAt(x, y Pixel) TreeItem {
+	hti := win.TVHITTESTINFO{Pt: Point{x, y}.toPOINT()}
 
 	tv.SendMessage(win.TVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
 
@@ -265,11 +265,11 @@ func (tv *TreeView) ItemAt(x, y int) TreeItem {
 	return nil
 }
 
-func (tv *TreeView) ItemHeight() int {
-	return int(tv.SendMessage(win.TVM_GETITEMHEIGHT, 0, 0))
+func (tv *TreeView) ItemHeight() Pixel {
+	return Pixel(tv.SendMessage(win.TVM_GETITEMHEIGHT, 0, 0))
 }
 
-func (tv *TreeView) SetItemHeight(height int) {
+func (tv *TreeView) SetItemHeight(height Pixel) {
 	tv.SendMessage(win.TVM_SETITEMHEIGHT, uintptr(height), 0)
 }
 

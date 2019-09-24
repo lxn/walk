@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
-)
 
-import "github.com/lxn/win"
+	"github.com/lxn/win"
+)
 
 type DateEdit struct {
 	WidgetBase
@@ -250,7 +250,7 @@ func (*DateEdit) NeedsWmSize() bool {
 
 func (de *DateEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	return &dateEditLayoutItem{
-		idealSize: de.dialogBaseUnitsToPixels(Size{80, 12}),
+		idealSize: de.dialogBaseUnitsToPixels(SizeDBU{80, 12}),
 	}
 }
 

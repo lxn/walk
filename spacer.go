@@ -16,7 +16,7 @@ func init() {
 
 type Spacer struct {
 	WidgetBase
-	sizeHint          Size
+	sizeHint          Size // TODO: Spacer should resize on DPI change or switch to sizeHint96dpi.
 	layoutFlags       LayoutFlags
 	greedyLocallyOnly bool
 }
@@ -54,7 +54,7 @@ func NewHSpacer(parent Container) (*Spacer, error) {
 	return newSpacer(parent, ShrinkableHorz|ShrinkableVert|GrowableHorz|GreedyHorz, Size{}, false)
 }
 
-func NewHSpacerFixed(parent Container, width int) (*Spacer, error) {
+func NewHSpacerFixed(parent Container, width Pixel) (*Spacer, error) {
 	return newSpacer(parent, 0, Size{width, 0}, false)
 }
 
@@ -62,7 +62,7 @@ func NewVSpacer(parent Container) (*Spacer, error) {
 	return newSpacer(parent, ShrinkableHorz|ShrinkableVert|GrowableVert|GreedyVert, Size{}, false)
 }
 
-func NewVSpacerFixed(parent Container, height int) (*Spacer, error) {
+func NewVSpacerFixed(parent Container, height Pixel) (*Spacer, error) {
 	return newSpacer(parent, 0, Size{0, height}, false)
 }
 

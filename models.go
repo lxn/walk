@@ -301,7 +301,7 @@ type CellStyler interface {
 type CellStyle struct {
 	row             int
 	col             int
-	bounds          Rectangle
+	bounds          Rectangle96DPI
 	hdc             win.HDC
 	dpi             int
 	canvas          *Canvas
@@ -326,7 +326,7 @@ func (cs *CellStyle) Col() int {
 	return cs.col
 }
 
-func (cs *CellStyle) Bounds() Rectangle {
+func (cs *CellStyle) Bounds() Rectangle96DPI {
 	return cs.bounds
 }
 
@@ -347,10 +347,10 @@ type ListItemStyler interface {
 	ItemHeightDependsOnWidth() bool
 
 	// DefaultItemHeight returns the initial height for any item.
-	DefaultItemHeight() int
+	DefaultItemHeight() Pixel96DPI
 
 	// ItemHeight is called for each item to retrieve the height of the item.
-	ItemHeight(index, width int) int
+	ItemHeight(index int, width Pixel96DPI) Pixel96DPI
 
 	// StyleItem is called for each item to pick up item style information.
 	StyleItem(style *ListItemStyle)
@@ -366,7 +366,7 @@ type ListItemStyle struct {
 	index              int
 	hoverIndex         int
 	rc                 win.RECT
-	bounds             Rectangle
+	bounds             Rectangle96DPI
 	state              uint32
 	hTheme             win.HTHEME
 	hwnd               win.HWND
@@ -380,7 +380,7 @@ func (lis *ListItemStyle) Index() int {
 	return lis.index
 }
 
-func (lis *ListItemStyle) Bounds() Rectangle {
+func (lis *ListItemStyle) Bounds() Rectangle96DPI {
 	return lis.bounds
 }
 
@@ -439,14 +439,14 @@ func (lis *ListItemStyle) DrawText(text string, bounds Rectangle, format DrawTex
 			hFontOld := win.SelectObject(lis.hdc, win.HGDIOBJ(lis.Font.handleForDPI(lis.dpi)))
 			defer win.SelectObject(lis.hdc, hFontOld)
 		}
-		rc := RectangleFrom96DPI(bounds, lis.dpi).toRECT()
+		rc := bounds.toRECT()
 
 		if win.FAILED(win.DrawThemeTextEx(lis.hTheme, lis.hdc, win.LVP_LISTITEM, lis.stateID(), syscall.StringToUTF16Ptr(text), int32(len(([]rune)(text))), uint32(format), &rc, nil)) {
 			return newError("DrawThemeTextEx failed")
 		}
 	} else {
 		if canvas := lis.Canvas(); canvas != nil {
-			if err := canvas.DrawText(text, lis.Font, lis.TextColor, bounds, format); err != nil {
+			if err := canvas.DrawTextPixels(text, lis.Font, lis.TextColor, bounds, format); err != nil {
 				return err
 			}
 		}

@@ -15,15 +15,15 @@ import (
 type splitterLayout struct {
 	container   Container
 	orientation Orientation
-	margins     Margins
+	margins     Margins96DPI
 	hwnd2Item   map[win.HWND]*splitterLayoutItem
 	resetNeeded bool
 	suspended   bool
 }
 
 type splitterLayoutItem struct {
-	size                 int
-	oldExplicitSize      int
+	size                 Pixel
+	oldExplicitSize      Pixel
 	stretchFactor        int
 	growth               int
 	visibleChangedHandle int
@@ -63,11 +63,11 @@ func (l *splitterLayout) SetContainer(value Container) {
 	}
 }
 
-func (l *splitterLayout) Margins() Margins {
+func (l *splitterLayout) Margins() Margins96DPI {
 	return l.margins
 }
 
-func (l *splitterLayout) SetMargins(value Margins) error {
+func (l *splitterLayout) SetMargins(value Margins96DPI) error {
 	l.margins = value
 
 	l.container.RequestLayout()
@@ -75,11 +75,11 @@ func (l *splitterLayout) SetMargins(value Margins) error {
 	return nil
 }
 
-func (l *splitterLayout) Spacing() int {
+func (l *splitterLayout) Spacing() Pixel96DPI {
 	return l.container.(*Splitter).handleWidth
 }
 
-func (l *splitterLayout) SetSpacing(value int) error {
+func (l *splitterLayout) SetSpacing(value Pixel96DPI) error {
 	return newError("not supported")
 }
 
@@ -152,10 +152,10 @@ func (l *splitterLayout) anyNonFixed() bool {
 	return false
 }
 
-func (l *splitterLayout) spaceUnavailableToRegularWidgets() int {
+func (l *splitterLayout) spaceUnavailableToRegularWidgets() Pixel {
 	splitter := l.container.(*Splitter)
 
-	var space int
+	var space Pixel96DPI
 
 	for _, widget := range l.container.Children().items {
 		if _, isHandle := widget.window.(*splitterHandle); isHandle && widget.visible {
@@ -163,7 +163,7 @@ func (l *splitterLayout) spaceUnavailableToRegularWidgets() int {
 		}
 	}
 
-	return space
+	return space.ForDPI(splitter.DPI())
 }
 
 func (l *splitterLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
@@ -192,8 +192,8 @@ type splitterContainerLayoutItem struct {
 	ContainerLayoutItemBase
 	orientation                    Orientation
 	hwnd2Item                      map[win.HWND]*splitterLayoutItem
-	spaceUnavailableToRegularItems int
-	handleWidth                    int
+	spaceUnavailableToRegularItems Pixel
+	handleWidth                    Pixel96DPI
 	anyNonFixed                    bool
 	resetNeeded                    bool
 }
@@ -215,12 +215,13 @@ func (li *splitterContainerLayoutItem) MinSize() Size {
 	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
-func (li *splitterContainerLayoutItem) HeightForWidth(width int) int {
+func (li *splitterContainerLayoutItem) HeightForWidth(width Pixel) Pixel {
 	return li.MinSizeForSize(Size{width, li.geometry.ClientSize.Height}).Height
 }
 
 func (li *splitterContainerLayoutItem) MinSizeForSize(size Size) Size {
-	margins := Size{li.margins.HNear + li.margins.HFar, li.margins.VNear + li.margins.VFar}
+	marginsPixels := li.margins.ForDPI(li.ctx.dpi)
+	margins := Size{marginsPixels.HNear + marginsPixels.HFar, marginsPixels.VNear + marginsPixels.VFar}
 	s := margins
 
 	for _, item := range li.children {
@@ -244,10 +245,10 @@ func (li *splitterContainerLayoutItem) MinSizeForSize(size Size) Size {
 
 		if li.orientation == Horizontal {
 			s.Width += cur.Width
-			s.Height = maxi(s.Height, margins.Height+cur.Height)
+			s.Height = maxPixel(s.Height, margins.Height+cur.Height)
 		} else {
 			s.Height += cur.Height
-			s.Width = maxi(s.Width, margins.Width+cur.Width)
+			s.Width = maxPixel(s.Width, margins.Width+cur.Width)
 		}
 	}
 
@@ -259,14 +260,16 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 		li.reset()
 	}
 
-	sizes := make([]int, len(li.children))
+	marginsPixels := li.margins.ForDPI(li.ctx.dpi)
+	handleWidthPixels := li.handleWidth.ForDPI(li.ctx.dpi)
+	sizes := make([]Pixel, len(li.children))
 	cb := Rectangle{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
-	cb.X += li.margins.HNear
-	cb.Y += li.margins.HFar
-	cb.Width -= li.margins.HNear + li.margins.HFar
-	cb.Height -= li.margins.VNear + li.margins.VFar
+	cb.X += marginsPixels.HNear
+	cb.Y += marginsPixels.HFar
+	cb.Width -= marginsPixels.HNear + marginsPixels.HFar
+	cb.Height -= marginsPixels.VNear + marginsPixels.VFar
 
-	var space1, space2 int
+	var space1, space2 Pixel
 	if li.orientation == Horizontal {
 		space1 = cb.Width - li.spaceUnavailableToRegularItems
 		space2 = cb.Height
@@ -278,8 +281,8 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 	type WidgetItem struct {
 		item       *splitterLayoutItem
 		index      int
-		min        int
-		max        int
+		min        Pixel
+		max        Pixel
 		shrinkable bool
 		growable   bool
 	}
@@ -287,7 +290,7 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 	var wis []WidgetItem
 
 	anyNonFixed := li.anyNonFixed
-	var totalRegularSize int
+	var totalRegularSize Pixel
 	for i, item := range li.children {
 		if !anyVisibleItemInHierarchy(item) {
 			continue
@@ -299,7 +302,7 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 			var wi *WidgetItem
 
 			if !anyNonFixed || !slItem.fixed {
-				var min, max int
+				var min, max Pixel
 
 				minSize := li.MinSizeEffectiveForChild(item)
 				maxSize := item.Geometry().MaxSize
@@ -333,34 +336,34 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 
 			if flags := item.LayoutFlags(); li.orientation == Horizontal {
 				if flags&ShrinkableHorz == 0 {
-					size = maxi(size, idealSize.Width)
+					size = maxPixel(size, idealSize.Width)
 					if wi != nil {
-						wi.min = maxi(wi.min, size)
+						wi.min = maxPixel(wi.min, size)
 					}
 				} else if wi != nil {
 					wi.shrinkable = true
 				}
 				if flags&GrowableHorz == 0 {
-					size = mini(size, idealSize.Width)
+					size = minPixel(size, idealSize.Width)
 					if wi != nil {
-						wi.max = mini(wi.max, size)
+						wi.max = minPixel(wi.max, size)
 					}
 				} else if wi != nil {
 					wi.growable = true
 				}
 			} else {
 				if flags&ShrinkableVert == 0 {
-					size = maxi(size, idealSize.Height)
+					size = maxPixel(size, idealSize.Height)
 					if wi != nil {
-						wi.min = maxi(wi.min, size)
+						wi.min = maxPixel(wi.min, size)
 					}
 				} else if wi != nil {
 					wi.shrinkable = true
 				}
 				if flags&GrowableVert == 0 {
-					size = mini(size, idealSize.Height)
+					size = minPixel(size, idealSize.Height)
 					if wi != nil {
-						wi.max = mini(wi.max, size)
+						wi.max = minPixel(wi.max, size)
 					}
 				} else if wi != nil {
 					wi.growable = true
@@ -370,7 +373,7 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 			totalRegularSize += size
 			sizes[i] = size
 		} else {
-			sizes[i] = li.handleWidth
+			sizes[i] = handleWidthPixels
 		}
 	}
 
@@ -419,11 +422,11 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 		}
 	}
 
-	var p1 int
+	var p1 Pixel
 	if li.orientation == Horizontal {
-		p1 = li.margins.HNear
+		p1 = marginsPixels.HNear
 	} else {
-		p1 = li.margins.VNear
+		p1 = marginsPixels.VNear
 	}
 	for i, item := range li.children {
 		if !anyVisibleItemInHierarchy(item) {
@@ -432,11 +435,11 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 
 		s1 := sizes[i]
 
-		var x, y, w, h int
+		var x, y, w, h Pixel
 		if li.orientation == Horizontal {
-			x, y, w, h = p1, li.margins.VNear, s1, space2
+			x, y, w, h = p1, marginsPixels.VNear, s1, space2
 		} else {
-			x, y, w, h = li.margins.HNear, p1, space2, s1
+			x, y, w, h = marginsPixels.HNear, p1, space2, s1
 		}
 
 		resultItems = append(resultItems, LayoutResultItem{Item: item, Bounds: Rectangle{x, y, w, h}})
@@ -487,8 +490,8 @@ func (li *splitterContainerLayoutItem) reset() {
 		li.AsLayoutItemBase().visible = anyVisible
 	}
 
-	minSizes := make([]int, len(li.children))
-	var minSizesTotal int
+	minSizes := make([]Pixel, len(li.children))
+	var minSizesTotal Pixel
 	for i, item := range li.children {
 		if i%2 == 1 || !anyVisibleItemInHierarchy(item) {
 			continue
@@ -504,7 +507,7 @@ func (li *splitterContainerLayoutItem) reset() {
 		}
 	}
 
-	var regularSpace int
+	var regularSpace Pixel
 	if li.orientation == Horizontal {
 		regularSpace = li.Geometry().ClientSize.Width - li.spaceUnavailableToRegularItems
 	} else {
@@ -535,7 +538,7 @@ func (li *splitterContainerLayoutItem) reset() {
 		if sli.oldExplicitSize > 0 {
 			sli.size = sli.oldExplicitSize
 		} else {
-			sli.size = int(float64(li.StretchFactor(item)) / float64(stretchTotal) * float64(regularSpace))
+			sli.size = Pixel(float64(li.StretchFactor(item)) / float64(stretchTotal) * float64(regularSpace))
 		}
 
 		min := minSizes[i]

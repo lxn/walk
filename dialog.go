@@ -205,7 +205,8 @@ func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {
 
 	mon := rectangleFromRECT(mi.RcWork)
 
-	mon.Height -= int(win.GetSystemMetrics(win.SM_CYCAPTION))
+	dpi := win.GetDpiForWindow(hWnd)
+	mon.Height -= Pixel(win.GetSystemMetricsForDpi(win.SM_CYCAPTION, dpi))
 
 	if r.Width <= mon.Width {
 		switch {

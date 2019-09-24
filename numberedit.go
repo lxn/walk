@@ -411,8 +411,8 @@ func (ne *NumberEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 func (ne *NumberEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	return &numberEditLayoutItem{
-		idealSize: ne.dialogBaseUnitsToPixels(Size{50, 12}),
-		minSize:   ne.dialogBaseUnitsToPixels(Size{20, 12}),
+		idealSize: ne.dialogBaseUnitsToPixels(SizeDBU{50, 12}),
+		minSize:   ne.dialogBaseUnitsToPixels(SizeDBU{20, 12}),
 	}
 }
 

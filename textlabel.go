@@ -74,7 +74,7 @@ func (tl *TextLabel) SetText(text string) error {
 
 func (tl *TextLabel) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	return &textLabelLayoutItem{
-		width2Height: make(map[int]int),
+		width2Height: make(map[Pixel]Pixel),
 		text:         tl.Text(),
 		font:         tl.Font(),
 		minWidth:     tl.MinSizePixels().Width,
@@ -84,10 +84,10 @@ func (tl *TextLabel) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type textLabelLayoutItem struct {
 	LayoutItemBase
 	mutex        sync.Mutex
-	width2Height map[int]int
+	width2Height map[Pixel]Pixel
 	text         string
 	font         *Font
-	minWidth     int
+	minWidth     Pixel
 }
 
 func (*textLabelLayoutItem) LayoutFlags() LayoutFlags {
@@ -106,7 +106,7 @@ func (li *textLabelLayoutItem) HasHeightForWidth() bool {
 	return true
 }
 
-func (li *textLabelLayoutItem) HeightForWidth(width int) int {
+func (li *textLabelLayoutItem) HeightForWidth(width Pixel) Pixel {
 	li.mutex.Lock()
 	defer li.mutex.Unlock()
 

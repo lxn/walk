@@ -9,9 +9,7 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -34,7 +32,7 @@ type LineEdit struct {
 	readOnlyChangedPublisher EventPublisher
 	textChangedPublisher     EventPublisher
 	charWidthFont            *Font
-	charWidth                int
+	charWidth                Pixel
 	textColor                Color
 }
 
@@ -243,13 +241,13 @@ func (le *LineEdit) SetReadOnly(readOnly bool) error {
 }
 
 func (le *LineEdit) sizeHintForLimit(limit int) (size Size) {
-	size = le.dialogBaseUnitsToPixels(Size{50, 12})
+	size = le.dialogBaseUnitsToPixels(SizeDBU{50, 12})
 	le.initCharWidth()
 	n := le.MaxLength()
 	if n > limit {
 		n = limit
 	}
-	size.Width = le.charWidth * (n + 1)
+	size.Width = Pixel(int(le.charWidth) * (n + 1))
 	return
 }
 
@@ -277,7 +275,7 @@ func (le *LineEdit) initCharWidth() {
 		newError("GetTextExtentPoint32 failed")
 		return
 	}
-	le.charWidth = int(s.CX)
+	le.charWidth = Pixel(s.CX)
 }
 
 func (le *LineEdit) EditingFinished() *Event {

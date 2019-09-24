@@ -223,7 +223,7 @@ func (ll *LinkLabel) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	ll.SendMessage(win.LM_GETIDEALSIZE, uintptr(ll.maxSize.Width), uintptr(unsafe.Pointer(&s)))
 
 	return &linkLabelLayoutItem{
-		idealSize: Size{int(s.CX), int(s.CY)},
+		idealSize: sizeFromSIZE(s),
 	}
 }
 

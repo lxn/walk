@@ -53,7 +53,7 @@ type HSplitter struct {
 	// Splitter
 
 	AssignTo    **walk.Splitter
-	HandleWidth int
+	HandleWidth Pixel
 }
 
 func (s HSplitter) Create(builder *Builder) error {
@@ -74,7 +74,7 @@ func (s HSplitter) Create(builder *Builder) error {
 
 	return builder.InitWidget(s, w, func() error {
 		if s.HandleWidth > 0 {
-			if err := w.SetHandleWidth(s.HandleWidth); err != nil {
+			if err := w.SetHandleWidth(s.HandleWidth.toW()); err != nil {
 				return err
 			}
 		}
@@ -123,7 +123,7 @@ type VSplitter struct {
 	// Splitter
 
 	AssignTo    **walk.Splitter
-	HandleWidth int
+	HandleWidth Pixel
 }
 
 func (s VSplitter) Create(builder *Builder) error {
@@ -144,7 +144,7 @@ func (s VSplitter) Create(builder *Builder) error {
 
 	return builder.InitWidget(s, w, func() error {
 		if s.HandleWidth > 0 {
-			if err := w.SetHandleWidth(s.HandleWidth); err != nil {
+			if err := w.SetHandleWidth(s.HandleWidth.toW()); err != nil {
 				return err
 			}
 		}

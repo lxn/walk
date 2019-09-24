@@ -28,7 +28,7 @@ type HSpacer struct {
 	// Spacer
 
 	GreedyLocallyOnly bool
-	Size              int
+	Size              Pixel
 }
 
 func (hs HSpacer) Create(builder *Builder) (err error) {
@@ -40,7 +40,7 @@ func (hs HSpacer) Create(builder *Builder) (err error) {
 	var w *walk.Spacer
 	if w, err = walk.NewSpacerWithCfg(builder.Parent(), &walk.SpacerCfg{
 		LayoutFlags:       flags,
-		SizeHint:          walk.Size{Width: hs.Size},
+		SizeHint:          Size{Width: hs.Size}.toW().ForDPI(96), // TODO: DPI
 		GreedyLocallyOnly: hs.GreedyLocallyOnly,
 	}); err != nil {
 		return
@@ -67,7 +67,7 @@ type VSpacer struct {
 	// Spacer
 
 	GreedyLocallyOnly bool
-	Size              int
+	Size              Pixel
 }
 
 func (vs VSpacer) Create(builder *Builder) (err error) {
@@ -79,7 +79,7 @@ func (vs VSpacer) Create(builder *Builder) (err error) {
 	var w *walk.Spacer
 	if w, err = walk.NewSpacerWithCfg(builder.Parent(), &walk.SpacerCfg{
 		LayoutFlags:       flags,
-		SizeHint:          walk.Size{Height: vs.Size},
+		SizeHint:          Size{Height: vs.Size}.toW().ForDPI(96), // TODO: Spacer should resize on DPI change.
 		GreedyLocallyOnly: vs.GreedyLocallyOnly,
 	}); err != nil {
 		return

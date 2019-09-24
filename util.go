@@ -8,7 +8,6 @@ package walk
 
 import (
 	"bytes"
-	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -505,80 +504,4 @@ func dpiForHDC(hdc win.HDC) int {
 	}
 
 	return int(win.GetDeviceCaps(hdc, win.LOGPIXELSX))
-}
-
-func IntFrom96DPI(value, dpi int) int {
-	return scaleInt(value, float64(dpi)/96.0)
-}
-
-func IntTo96DPI(value, dpi int) int {
-	return scaleInt(value, 96.0/float64(dpi))
-}
-
-func scaleInt(value int, scale float64) int {
-	return int(math.Round(float64(value) * scale))
-}
-
-func MarginsFrom96DPI(value Margins, dpi int) Margins {
-	return scaleMargins(value, float64(dpi)/96.0)
-}
-
-func MarginsTo96DPI(value Margins, dpi int) Margins {
-	return scaleMargins(value, 96.0/float64(dpi))
-}
-
-func scaleMargins(value Margins, scale float64) Margins {
-	return Margins{
-		HNear: scaleInt(value.HNear, scale),
-		VNear: scaleInt(value.VNear, scale),
-		HFar:  scaleInt(value.HFar, scale),
-		VFar:  scaleInt(value.VFar, scale),
-	}
-}
-
-func PointFrom96DPI(value Point, dpi int) Point {
-	return scalePoint(value, float64(dpi)/96.0)
-}
-
-func PointTo96DPI(value Point, dpi int) Point {
-	return scalePoint(value, 96.0/float64(dpi))
-}
-
-func scalePoint(value Point, scale float64) Point {
-	return Point{
-		X: scaleInt(value.X, scale),
-		Y: scaleInt(value.Y, scale),
-	}
-}
-
-func RectangleFrom96DPI(value Rectangle, dpi int) Rectangle {
-	return scaleRectangle(value, float64(dpi)/96.0)
-}
-
-func RectangleTo96DPI(value Rectangle, dpi int) Rectangle {
-	return scaleRectangle(value, 96.0/float64(dpi))
-}
-
-func scaleRectangle(value Rectangle, scale float64) Rectangle {
-	return Rectangle{
-		X:      scaleInt(value.X, scale),
-		Y:      scaleInt(value.Y, scale),
-		Width:  scaleInt(value.Width, scale),
-		Height: scaleInt(value.Height, scale),
-	}
-}
-
-func SizeFrom96DPI(value Size, dpi int) Size {
-	return scaleSize(value, float64(dpi)/96.0)
-}
-
-func SizeTo96DPI(value Size, dpi int) Size {
-	return scaleSize(value, 96.0/float64(dpi))
-}
-
-func scaleSize(value Size, scale float64) Size {
-	return Size{
-		Width:  scaleInt(value.Width, scale),
-		Height: scaleInt(value.Height, scale),
-	}
 }

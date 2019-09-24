@@ -26,7 +26,7 @@ type TableViewColumn struct {
 	Title      string
 	Alignment  Alignment1D
 	Precision  int
-	Width      int
+	Width      Pixel
 	Hidden     bool
 	Frozen     bool
 	StyleCell  func(style *walk.CellStyle)
@@ -59,7 +59,7 @@ func (tvc TableViewColumn) Create(tv *walk.TableView) error {
 	if err := w.SetFrozen(tvc.Frozen); err != nil {
 		return err
 	}
-	if err := w.SetWidth(tvc.Width); err != nil {
+	if err := w.SetWidth(tvc.Width.toW()); err != nil {
 		return err
 	}
 	w.SetLessFunc(tvc.LessFunc)

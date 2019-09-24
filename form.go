@@ -363,7 +363,7 @@ func (fb *FormBase) Run() int {
 	fb.SetBoundsPixels(fb.BoundsPixels())
 
 	if fb.proposedSize == (Size{}) {
-		fb.proposedSize = maxSize(fb.minSize, fb.SizePixels())
+		fb.proposedSize = maxSize(fb.minSize.ForDPI(fb.DPI()), fb.SizePixels())
 		if !fb.Suspended() {
 			fb.startLayout()
 		}
@@ -552,7 +552,7 @@ func (fb *FormBase) Hide() {
 }
 
 func (fb *FormBase) Show() {
-	fb.proposedSize = maxSize(fb.minSize, fb.SizePixels())
+	fb.proposedSize = maxSize(fb.minSize.ForDPI(fb.DPI()), fb.SizePixels())
 
 	if p, ok := fb.window.(Persistable); ok && p.Persistent() && App().Settings() != nil {
 		p.RestoreState()
@@ -749,10 +749,12 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			}
 		}
 
-		mmi.PtMinTrackSize = win.POINT{
-			int32(maxi(min.Width, fb.minSize.Width)),
-			int32(maxi(min.Height, fb.minSize.Height)),
-		}
+		minSizePixels := fb.minSize.ForDPI(fb.DPI())
+
+		mmi.PtMinTrackSize = Point{
+			maxPixel(min.Width, minSizePixels.Width),
+			maxPixel(min.Height, minSizePixels.Height),
+		}.toPOINT()
 		return 0
 
 	case win.WM_NOTIFY:
@@ -780,7 +782,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			break
 		}
 
-		fb.proposedSize = Size{int(wp.Cx), int(wp.Cy)}
+		fb.proposedSize = Size{Pixel(wp.Cx), Pixel(wp.Cy)}
 
 		const performingLayoutSubject = "*FormBase.WndProc - WM_WINDOWPOSCHANGED - full layout from sizing loop"
 

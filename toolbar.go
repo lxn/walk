@@ -27,7 +27,7 @@ type ToolBar struct {
 	WidgetBase
 	imageList          *ImageList
 	actions            *ActionList
-	defaultButtonWidth int
+	defaultButtonWidth Pixel96DPI
 	maxTextRows        int
 	buttonStyle        ToolBarButtonStyle
 }
@@ -150,7 +150,8 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 		return nil
 	}
 
-	width := tb.IntFrom96DPI(tb.defaultButtonWidth)
+	dpi := tb.DPI()
+	width := tb.defaultButtonWidth.ForDPI(dpi)
 
 	lParam := uintptr(win.MAKELONG(uint16(width), uint16(width)))
 	if 0 == tb.SendMessage(win.TB_SETBUTTONWIDTH, 0, lParam) {
@@ -160,7 +161,7 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 	size := uint32(tb.SendMessage(win.TB_GETBUTTONSIZE, 0, 0))
 	height := win.HIWORD(size)
 
-	lParam = uintptr(win.MAKELONG(uint16(tb.defaultButtonWidth), height))
+	lParam = uintptr(win.MAKELONG(uint16(width), height))
 	if win.FALSE == tb.SendMessage(win.TB_SETBUTTONSIZE, 0, lParam) {
 		return newError("SendMessage(TB_SETBUTTONSIZE)")
 	}
@@ -172,7 +173,7 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 //
 // The default value for a horizontal ToolBar is 0, resulting in automatic
 // sizing behavior. For a vertical ToolBar, the default is 100 pixels.
-func (tb *ToolBar) DefaultButtonWidth() int {
+func (tb *ToolBar) DefaultButtonWidth() Pixel96DPI {
 	return tb.defaultButtonWidth
 }
 
@@ -181,7 +182,7 @@ func (tb *ToolBar) DefaultButtonWidth() int {
 // Calling this method affects all buttons in the ToolBar, no matter if they are
 // added before or after the call. A width of 0 results in automatic sizing
 // behavior. Negative values are not allowed.
-func (tb *ToolBar) SetDefaultButtonWidth(width int) error {
+func (tb *ToolBar) SetDefaultButtonWidth(width Pixel96DPI) error {
 	if width == tb.defaultButtonWidth {
 		return nil
 	}
@@ -519,12 +520,13 @@ func (tb *ToolBar) onClearingActions() error {
 func (tb *ToolBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	buttonSize := uint32(tb.SendMessage(win.TB_GETBUTTONSIZE, 0, 0))
 
-	width := tb.defaultButtonWidth
+	dpi := tb.DPI()
+	width := tb.defaultButtonWidth.ForDPI(dpi)
 	if width == 0 {
-		width = int(win.LOWORD(buttonSize))
+		width = Pixel(win.LOWORD(buttonSize))
 	}
 
-	height := int(win.HIWORD(buttonSize))
+	height := Pixel(win.HIWORD(buttonSize))
 
 	var size win.SIZE
 	var wp uintptr
@@ -542,9 +544,9 @@ func (tb *ToolBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 	if win.FALSE != tb.SendMessage(win.TB_GETIDEALSIZE, wp, uintptr(unsafe.Pointer(&size))) {
 		if wp == win.TRUE {
-			height = int(size.CY)
+			height = Pixel(size.CY)
 		} else {
-			width = int(size.CX)
+			width = Pixel(size.CX)
 		}
 	}
 

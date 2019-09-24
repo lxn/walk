@@ -45,7 +45,7 @@ func (tb *ToolButton) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 func (tb *ToolButton) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	return &toolButtonLayoutItem{
-		idealSize: tb.dialogBaseUnitsToPixels(Size{16, 12}),
+		idealSize: tb.dialogBaseUnitsToPixels(SizeDBU{16, 12}),
 	}
 }
 
