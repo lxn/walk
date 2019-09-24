@@ -20,7 +20,16 @@ func init() {
 	})
 }
 
+// PaintFunc paints custom widget content. updateBounds is specified in 1/96".
+//
+// Deprecated: PaintFunc is taking updateBounds Rectangle (96dpi) parameter for backward
+// compatibility with clients. On high-DPI displays this is too sparse and may incur a thin
+// unpainted edge around control due to rounding errors. Newer applications should use
+// PaintFuncPixels.
 type PaintFunc func(canvas *Canvas, updateBounds Rectangle) error
+
+// PaintFuncPixels paints custom widget content. updateBounds is specified in native pixels.
+type PaintFuncPixels func(canvas *Canvas, updateBounds RectanglePixels) error
 
 type PaintMode int
 
@@ -33,23 +42,48 @@ const (
 type CustomWidget struct {
 	WidgetBase
 	paint               PaintFunc
+	paintPixels         PaintFuncPixels
 	invalidatesOnResize bool
 	paintMode           PaintMode
 }
 
+// NewCustomWidget creates and initializes a new custom draw widget.
+//
+// Deprecated: PaintFunc is taking updateBounds parameter at 96dpi for backward compatibility with
+// clients. On high-DPI displays this is too sparse and may incur a thin unpainted edge around
+// control due to rounding errors. Newer applications should use NewCustomWidgetPixels.
 func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidget, error) {
 	cw := &CustomWidget{paint: paint}
+	err := cw.init(parent, style)
+	if err != nil {
+		return nil, err
+	}
 
+	return cw, nil
+}
+
+// NewCustomWidgetPixels creates and initializes a new custom draw widget.
+func NewCustomWidgetPixels(parent Container, style uint, paintPixels PaintFuncPixels) (*CustomWidget, error) {
+	cw := &CustomWidget{paintPixels: paintPixels}
+	err := cw.init(parent, style)
+	if err != nil {
+		return nil, err
+	}
+
+	return cw, nil
+}
+
+func (cw *CustomWidget) init(parent Container, style uint) error {
 	if err := InitWidget(
 		cw,
 		parent,
 		customWidgetWindowClass,
 		win.WS_VISIBLE|uint32(style),
 		0); err != nil {
-		return nil, err
+		return err
 	}
 
-	return cw, nil
+	return nil
 }
 
 // deprecated, use PaintMode
@@ -87,8 +121,8 @@ func (cw *CustomWidget) SetPaintMode(value PaintMode) {
 func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_PAINT:
-		if cw.paint == nil {
-			newError("paint func is nil")
+		if cw.paint == nil && cw.paintPixels == nil {
+			newError("paint(Pixels) func is nil")
 			break
 		}
 
@@ -120,8 +154,10 @@ func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 		bounds := rectangleFromRECT(ps.RcPaint)
 		if cw.paintMode == PaintBuffered {
 			err = cw.bufferedPaint(canvas, bounds)
+		} else if cw.paintPixels != nil {
+			err = cw.paintPixels(canvas, bounds)
 		} else {
-			err = cw.paint(canvas, bounds)
+			err = cw.paint(canvas, RectangleTo96DPI(bounds, cw.DPI()))
 		}
 
 		if err != nil {
@@ -154,7 +190,7 @@ func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 	return cw.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func (cw *CustomWidget) bufferedPaint(canvas *Canvas, updateBounds Rectangle) error {
+func (cw *CustomWidget) bufferedPaint(canvas *Canvas, updateBounds RectanglePixels) error {
 	hdc := win.CreateCompatibleDC(canvas.hdc)
 	if hdc == 0 {
 		return newError("CreateCompatibleDC failed")
@@ -188,7 +224,12 @@ func (cw *CustomWidget) bufferedPaint(canvas *Canvas, updateBounds Rectangle) er
 	win.SetViewportOrgEx(buffered.hdc, -int32(updateBounds.X), -int32(updateBounds.Y), nil)
 	win.SetBrushOrgEx(buffered.hdc, -int32(updateBounds.X), -int32(updateBounds.Y), nil)
 
-	err := cw.paint(&buffered, updateBounds)
+	var err error
+	if cw.paintPixels != nil {
+		err = cw.paintPixels(&buffered, updateBounds)
+	} else {
+		err = cw.paint(&buffered, RectangleTo96DPI(updateBounds, cw.DPI()))
+	}
 
 	if !win.BitBlt(canvas.hdc,
 		int32(updateBounds.X), int32(updateBounds.Y), w, h,

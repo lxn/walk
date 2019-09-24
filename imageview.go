@@ -35,7 +35,7 @@ type ImageView struct {
 func NewImageView(parent Container) (*ImageView, error) {
 	iv := new(ImageView)
 
-	cw, err := NewCustomWidget(parent, 0, func(canvas *Canvas, updateBounds RectanglePixels) error {
+	cw, err := NewCustomWidgetPixels(parent, 0, func(canvas *Canvas, updateBounds RectanglePixels) error {
 		return iv.drawImage(canvas, updateBounds)
 	})
 	if err != nil {
