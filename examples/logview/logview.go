@@ -7,9 +7,7 @@ import (
 	"errors"
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/walk"
 	"github.com/lxn/win"
 )
@@ -44,12 +42,12 @@ func (*LogView) LayoutFlags() walk.LayoutFlags {
 	return walk.ShrinkableHorz | walk.ShrinkableVert | walk.GrowableHorz | walk.GrowableVert | walk.GreedyHorz | walk.GreedyVert
 }
 
-func (*LogView) MinSizeHint() walk.Size {
-	return walk.Size{20, 12}
+func (lv *LogView) MinSizeHint() walk.SizePixels {
+	return walk.SizeFrom96DPI(walk.Size{20, 12}, lv.DPI())
 }
 
-func (*LogView) SizeHint() walk.Size {
-	return walk.Size{100, 100}
+func (lv *LogView) SizeHint() walk.SizePixels {
+	return walk.SizeFrom96DPI(walk.Size{100, 100}, lv.DPI())
 }
 
 func (lv *LogView) setTextSelection(start, end int) {

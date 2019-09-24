@@ -7,10 +7,9 @@ package main
 import (
 	"log"
 	"math"
-)
 
-import (
 	"github.com/lxn/walk"
+
 	. "github.com/lxn/walk/declarative"
 )
 
@@ -110,7 +109,7 @@ func (mw *MyMainWindow) drawStuff(canvas *walk.Canvas, updateBounds walk.Rectang
 func createBitmap() (*walk.Bitmap, error) {
 	bounds := walk.Rectangle{Width: 200, Height: 200}
 
-	bmp, err := walk.NewBitmap(bounds.Size())
+	bmp, err := walk.NewBitmap(bounds.Size()) // TODO: DPI
 	if err != nil {
 		return nil, err
 	}
