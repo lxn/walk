@@ -126,55 +126,20 @@ func (g *WindowGroup) Refs() int {
 	return g.refs
 }
 
-// accCreatePropServices creates an instance of CLSID_AccPropServices class or returns existing one
-// if already created.
-func (g *WindowGroup) accCreatePropServices() (*win.IAccPropServices, error) {
+// AccessibilityServices returns an instance of CLSID_AccPropServices class.
+func (g *WindowGroup) accessibilityServices() *win.IAccPropServices {
 	if g.accPropServices != nil {
-		return g.accPropServices, nil
+		return g.accPropServices
 	}
 
 	var accPropServices *win.IAccPropServices
 	hr := win.CoCreateInstance(&win.CLSID_AccPropServices, nil, win.CLSCTX_ALL, &win.IID_IAccPropServices, (*unsafe.Pointer)(unsafe.Pointer(&accPropServices)))
 	if win.FAILED(hr) {
-		return nil, errorFromHRESULT("CoCreateInstance(CLSID_AccPropServices)", hr)
+		return nil
 	}
 
 	g.accPropServices = accPropServices
-	return accPropServices, nil
-}
-
-// accSetPropertyInt sets integer window property for Dynamic Annotation.
-func (g *WindowGroup) accSetPropertyInt(hwnd win.HWND, idProp *win.MSAAPROPID, event uint32, value int32) error {
-	accPropServices, err := g.accCreatePropServices()
-	if err != nil {
-		return err
-	}
-	var v win.VARIANT
-	v.SetLong(value)
-	hr := accPropServices.SetHwndProp(hwnd, win.OBJID_CLIENT, win.CHILDID_SELF, idProp, &v)
-	if win.FAILED(hr) {
-		return errorFromHRESULT("IAccPropServices.SetHwndProp", hr)
-	}
-	if win.EVENT_OBJECT_CREATE <= event && event <= win.EVENT_OBJECT_END {
-		win.NotifyWinEvent(event, hwnd, win.OBJID_CLIENT, win.CHILDID_SELF)
-	}
-	return nil
-}
-
-// accSetPropertyInt sets string window property for Dynamic Annotation.
-func (g *WindowGroup) accSetPropertyStr(hwnd win.HWND, idProp *win.MSAAPROPID, event uint32, value string) error {
-	accPropServices, err := g.accCreatePropServices()
-	if err != nil {
-		return err
-	}
-	hr := accPropServices.SetHwndPropStr(hwnd, win.OBJID_CLIENT, win.CHILDID_SELF, idProp, value)
-	if win.FAILED(hr) {
-		return errorFromHRESULT("IAccPropServices.SetHwndPropStr", hr)
-	}
-	if win.EVENT_OBJECT_CREATE <= event && event <= win.EVENT_OBJECT_END {
-		win.NotifyWinEvent(event, hwnd, win.OBJID_CLIENT, win.CHILDID_SELF)
-	}
-	return nil
+	return accPropServices
 }
 
 // accPropIds is a static list of accessibility properties user (may) set for a window

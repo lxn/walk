@@ -436,6 +436,7 @@ type WindowBase struct {
 	suspended                 bool
 	visible                   bool
 	enabled                   bool
+	acc                       *Accessibility
 }
 
 var (
@@ -767,58 +768,13 @@ func ensureWindowLongBits(hwnd win.HWND, index int32, bits uint32, set bool) err
 	return setAndClearWindowLongBits(hwnd, index, setBits, clearBits)
 }
 
-// SetAccAccelerator sets window accelerator name using Dynamic Annotation.
-func (wb *WindowBase) SetAccAccelerator(acc string) error {
-	return wb.group.accSetPropertyStr(wb.hWnd, &win.PROPID_ACC_KEYBOARDSHORTCUT, win.EVENT_OBJECT_ACCELERATORCHANGE, acc)
-}
-
-// SetAccDefaultAction sets window default action using Dynamic Annotation.
-func (wb *WindowBase) SetAccDefaultAction(defAction string) error {
-	return wb.group.accSetPropertyStr(wb.hWnd, &win.PROPID_ACC_DEFAULTACTION, win.EVENT_OBJECT_DEFACTIONCHANGE, defAction)
-}
-
-// SetAccDescription sets window description using Dynamic Annotation.
-func (wb *WindowBase) SetAccDescription(acc string) error {
-	return wb.group.accSetPropertyStr(wb.hWnd, &win.PROPID_ACC_DESCRIPTION, win.EVENT_OBJECT_DESCRIPTIONCHANGE, acc)
-}
-
-// SetAccHelp sets window help using Dynamic Annotation.
-func (wb *WindowBase) SetAccHelp(help string) error {
-	return wb.group.accSetPropertyStr(wb.hWnd, &win.PROPID_ACC_HELP, win.EVENT_OBJECT_HELPCHANGE, help)
-}
-
-// SetAccName sets window name using Dynamic Annotation.
-func (wb *WindowBase) SetAccName(name string) error {
-	return wb.group.accSetPropertyStr(wb.hWnd, &win.PROPID_ACC_NAME, win.EVENT_OBJECT_NAMECHANGE, name)
-}
-
-// SetAccRole sets window role using Dynamic Annotation. The role must be set when the window is
-// created and is not to be modified later.
-func (wb *WindowBase) SetAccRole(role AccRole) error {
-	return wb.group.accSetPropertyInt(wb.hWnd, &win.PROPID_ACC_ROLE, 0, int32(role))
-}
-
-// SetAccRoleMap sets window role map using Dynamic Annotation. The role map must be set when the
-// window is created and is not to be modified later.
-func (wb *WindowBase) SetAccRoleMap(roleMap string) error {
-	return wb.group.accSetPropertyStr(wb.hWnd, &win.PROPID_ACC_ROLEMAP, 0, roleMap)
-}
-
-// SetAccState sets window state using Dynamic Annotation.
-func (wb *WindowBase) SetAccState(state AccState) error {
-	return wb.group.accSetPropertyInt(wb.hWnd, &win.PROPID_ACC_STATE, win.EVENT_OBJECT_STATECHANGE, int32(state))
-}
-
-// SetAccStateMap sets window state map using Dynamic Annotation. The state map must be set when
-// the window is created and is not to be modified later.
-func (wb *WindowBase) SetAccStateMap(stateMap string) error {
-	return wb.group.accSetPropertyStr(wb.hWnd, &win.PROPID_ACC_STATEMAP, 0, stateMap)
-}
-
-// SetAccValueMap sets window value map using Dynamic Annotation. The value map must be set when
-// the window is created and is not to be modified later.
-func (wb *WindowBase) SetAccValueMap(valueMap string) error {
-	return wb.group.accSetPropertyStr(wb.hWnd, &win.PROPID_ACC_VALUEMAP, 0, valueMap)
+// Accessibility returns the accessibility object used to set Dynamic Annotation properties of the
+// window.
+func (wb *WindowBase) Accessibility() *Accessibility {
+	if wb.acc == nil {
+		wb.acc = &Accessibility{wb: wb}
+	}
+	return wb.acc
 }
 
 // Handle returns the window handle of the Window.

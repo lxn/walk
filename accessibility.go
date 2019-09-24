@@ -115,3 +115,95 @@ const (
 	AccRoleIPAddress          AccRole = win.ROLE_SYSTEM_IPADDRESS
 	AccRoleOutlineButton      AccRole = win.ROLE_SYSTEM_OUTLINEBUTTON
 )
+
+type Accessibility struct {
+	wb *WindowBase
+}
+
+// SetAccelerator sets window accelerator name using Dynamic Annotation.
+func (a *Accessibility) SetAccelerator(acc string) error {
+	return a.accSetPropertyStr(a.wb.hWnd, &win.PROPID_ACC_KEYBOARDSHORTCUT, win.EVENT_OBJECT_ACCELERATORCHANGE, acc)
+}
+
+// SetDefaultAction sets window default action using Dynamic Annotation.
+func (a *Accessibility) SetDefaultAction(defAction string) error {
+	return a.accSetPropertyStr(a.wb.hWnd, &win.PROPID_ACC_DEFAULTACTION, win.EVENT_OBJECT_DEFACTIONCHANGE, defAction)
+}
+
+// SetDescription sets window description using Dynamic Annotation.
+func (a *Accessibility) SetDescription(acc string) error {
+	return a.accSetPropertyStr(a.wb.hWnd, &win.PROPID_ACC_DESCRIPTION, win.EVENT_OBJECT_DESCRIPTIONCHANGE, acc)
+}
+
+// SetHelp sets window help using Dynamic Annotation.
+func (a *Accessibility) SetHelp(help string) error {
+	return a.accSetPropertyStr(a.wb.hWnd, &win.PROPID_ACC_HELP, win.EVENT_OBJECT_HELPCHANGE, help)
+}
+
+// SetName sets window name using Dynamic Annotation.
+func (a *Accessibility) SetName(name string) error {
+	return a.accSetPropertyStr(a.wb.hWnd, &win.PROPID_ACC_NAME, win.EVENT_OBJECT_NAMECHANGE, name)
+}
+
+// SetRole sets window role using Dynamic Annotation. The role must be set when the window is
+// created and is not to be modified later.
+func (a *Accessibility) SetRole(role AccRole) error {
+	return a.accSetPropertyInt(a.wb.hWnd, &win.PROPID_ACC_ROLE, 0, int32(role))
+}
+
+// SetRoleMap sets window role map using Dynamic Annotation. The role map must be set when the
+// window is created and is not to be modified later.
+func (a *Accessibility) SetRoleMap(roleMap string) error {
+	return a.accSetPropertyStr(a.wb.hWnd, &win.PROPID_ACC_ROLEMAP, 0, roleMap)
+}
+
+// SetState sets window state using Dynamic Annotation.
+func (a *Accessibility) SetState(state AccState) error {
+	return a.accSetPropertyInt(a.wb.hWnd, &win.PROPID_ACC_STATE, win.EVENT_OBJECT_STATECHANGE, int32(state))
+}
+
+// SetStateMap sets window state map using Dynamic Annotation. The state map must be set when
+// the window is created and is not to be modified later.
+func (a *Accessibility) SetStateMap(stateMap string) error {
+	return a.accSetPropertyStr(a.wb.hWnd, &win.PROPID_ACC_STATEMAP, 0, stateMap)
+}
+
+// SetValueMap sets window value map using Dynamic Annotation. The value map must be set when
+// the window is created and is not to be modified later.
+func (a *Accessibility) SetValueMap(valueMap string) error {
+	return a.accSetPropertyStr(a.wb.hWnd, &win.PROPID_ACC_VALUEMAP, 0, valueMap)
+}
+
+// accSetPropertyInt sets integer window property for Dynamic Annotation.
+func (a *Accessibility) accSetPropertyInt(hwnd win.HWND, idProp *win.MSAAPROPID, event uint32, value int32) error {
+	accPropServices := a.wb.group.accessibilityServices()
+	if accPropServices != nil {
+		return newError("Dynamic Annotation not available")
+	}
+	var v win.VARIANT
+	v.SetLong(value)
+	hr := accPropServices.SetHwndProp(hwnd, win.OBJID_CLIENT, win.CHILDID_SELF, idProp, &v)
+	if win.FAILED(hr) {
+		return errorFromHRESULT("IAccPropServices.SetHwndProp", hr)
+	}
+	if win.EVENT_OBJECT_CREATE <= event && event <= win.EVENT_OBJECT_END {
+		win.NotifyWinEvent(event, hwnd, win.OBJID_CLIENT, win.CHILDID_SELF)
+	}
+	return nil
+}
+
+// accSetPropertyStr sets string window property for Dynamic Annotation.
+func (a *Accessibility) accSetPropertyStr(hwnd win.HWND, idProp *win.MSAAPROPID, event uint32, value string) error {
+	accPropServices := a.wb.group.accessibilityServices()
+	if accPropServices != nil {
+		return newError("Dynamic Annotation not available")
+	}
+	hr := accPropServices.SetHwndPropStr(hwnd, win.OBJID_CLIENT, win.CHILDID_SELF, idProp, value)
+	if win.FAILED(hr) {
+		return errorFromHRESULT("IAccPropServices.SetHwndPropStr", hr)
+	}
+	if win.EVENT_OBJECT_CREATE <= event && event <= win.EVENT_OBJECT_END {
+		win.NotifyWinEvent(event, hwnd, win.OBJID_CLIENT, win.CHILDID_SELF)
+	}
+	return nil
+}
