@@ -207,14 +207,6 @@ func NewIconFromBitmap(bmp *Bitmap) (ic *Icon, err error) {
 	return newIconFromHICONAndSize(hIcon, bmp.Size()), nil
 }
 
-func newIconFromBitmap(bmp *Bitmap) (ic *Icon, err error) {
-	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, Point{}, true)
-	if err != nil {
-		return nil, err
-	}
-	return newIconFromHICONAndSize(hIcon, bmp.Size()), nil
-}
-
 // NewIconFromHICON returns a new Icon, using the specified win.HICON as source.
 func NewIconFromHICON(hIcon win.HICON) (ic *Icon, err error) {
 	s, err := sizeFromHICON(hIcon)
