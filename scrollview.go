@@ -313,7 +313,8 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 				// To retain the previous behavior with box layouts, we add a fake spacer at the end.
 				// Maybe this should just be an option.
 				box.children = append(box.children, &spacerLayoutItem{
-					layoutFlags: ShrinkableHorz | ShrinkableVert | GrowableVert | GreedyVert,
+					LayoutItemBase: LayoutItemBase{ctx: ctx},
+					layoutFlags:    ShrinkableHorz | ShrinkableVert | GrowableVert | GreedyVert,
 				})
 			}
 		}

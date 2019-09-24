@@ -40,7 +40,7 @@ func (hs HSpacer) Create(builder *Builder) (err error) {
 	var w *walk.Spacer
 	if w, err = walk.NewSpacerWithCfg(builder.Parent(), &walk.SpacerCfg{
 		LayoutFlags:       flags,
-		SizeHint:          Size{Width: hs.Size}.toW().ForDPI(96), // TODO: DPI
+		SizeHint:          Size{Width: hs.Size}.toW(),
 		GreedyLocallyOnly: hs.GreedyLocallyOnly,
 	}); err != nil {
 		return
@@ -79,7 +79,7 @@ func (vs VSpacer) Create(builder *Builder) (err error) {
 	var w *walk.Spacer
 	if w, err = walk.NewSpacerWithCfg(builder.Parent(), &walk.SpacerCfg{
 		LayoutFlags:       flags,
-		SizeHint:          Size{Height: vs.Size}.toW().ForDPI(96), // TODO: Spacer should resize on DPI change.
+		SizeHint:          Size{Height: vs.Size}.toW(),
 		GreedyLocallyOnly: vs.GreedyLocallyOnly,
 	}); err != nil {
 		return

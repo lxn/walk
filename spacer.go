@@ -16,14 +16,14 @@ func init() {
 
 type Spacer struct {
 	WidgetBase
-	sizeHint          Size // TODO: Spacer should resize on DPI change or switch to sizeHint96dpi.
+	sizeHint          Size96DPI
 	layoutFlags       LayoutFlags
 	greedyLocallyOnly bool
 }
 
 type SpacerCfg struct {
 	LayoutFlags       LayoutFlags
-	SizeHint          Size
+	SizeHint          Size96DPI
 	GreedyLocallyOnly bool
 }
 
@@ -31,7 +31,7 @@ func NewSpacerWithCfg(parent Container, cfg *SpacerCfg) (*Spacer, error) {
 	return newSpacer(parent, cfg.LayoutFlags, cfg.SizeHint, cfg.GreedyLocallyOnly)
 }
 
-func newSpacer(parent Container, layoutFlags LayoutFlags, sizeHint Size, greedyLocallyOnly bool) (*Spacer, error) {
+func newSpacer(parent Container, layoutFlags LayoutFlags, sizeHint Size96DPI, greedyLocallyOnly bool) (*Spacer, error) {
 	s := &Spacer{
 		layoutFlags:       layoutFlags,
 		sizeHint:          sizeHint,
@@ -51,19 +51,19 @@ func newSpacer(parent Container, layoutFlags LayoutFlags, sizeHint Size, greedyL
 }
 
 func NewHSpacer(parent Container) (*Spacer, error) {
-	return newSpacer(parent, ShrinkableHorz|ShrinkableVert|GrowableHorz|GreedyHorz, Size{}, false)
+	return newSpacer(parent, ShrinkableHorz|ShrinkableVert|GrowableHorz|GreedyHorz, Size96DPI{}, false)
 }
 
-func NewHSpacerFixed(parent Container, width Pixel) (*Spacer, error) {
-	return newSpacer(parent, 0, Size{width, 0}, false)
+func NewHSpacerFixed(parent Container, width Pixel96DPI) (*Spacer, error) {
+	return newSpacer(parent, 0, Size96DPI{width, 0}, false)
 }
 
 func NewVSpacer(parent Container) (*Spacer, error) {
-	return newSpacer(parent, ShrinkableHorz|ShrinkableVert|GrowableVert|GreedyVert, Size{}, false)
+	return newSpacer(parent, ShrinkableHorz|ShrinkableVert|GrowableVert|GreedyVert, Size96DPI{}, false)
 }
 
-func NewVSpacerFixed(parent Container, height Pixel) (*Spacer, error) {
-	return newSpacer(parent, 0, Size{0, height}, false)
+func NewVSpacerFixed(parent Container, height Pixel96DPI) (*Spacer, error) {
+	return newSpacer(parent, 0, Size96DPI{0, height}, false)
 }
 
 func (s *Spacer) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
@@ -76,7 +76,7 @@ func (s *Spacer) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type spacerLayoutItem struct {
 	LayoutItemBase
-	idealSize         Size
+	idealSize         Size96DPI
 	layoutFlags       LayoutFlags
 	greedyLocallyOnly bool
 }
@@ -86,9 +86,9 @@ func (li *spacerLayoutItem) LayoutFlags() LayoutFlags {
 }
 
 func (li *spacerLayoutItem) IdealSize() Size {
-	return li.idealSize
+	return li.idealSize.ForDPI(li.ctx.dpi)
 }
 
 func (li *spacerLayoutItem) MinSize() Size {
-	return li.idealSize
+	return li.idealSize.ForDPI(li.ctx.dpi)
 }
