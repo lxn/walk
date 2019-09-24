@@ -8,8 +8,10 @@ package walk
 
 import "github.com/lxn/win"
 
+// AccState enum defines the state of the window/control
 type AccState int32
 
+// Window/control states
 const (
 	AccStateNormal          AccState = win.STATE_SYSTEM_NORMAL
 	AccStateUnavailable     AccState = win.STATE_SYSTEM_UNAVAILABLE
@@ -47,8 +49,10 @@ const (
 	AccStateValid           AccState = win.STATE_SYSTEM_VALID
 )
 
+// AccRole enum defines the role of the window/control in UI.
 type AccRole int32
 
+// Window/control system roles
 const (
 	AccRoleTitlebar           AccRole = win.ROLE_SYSTEM_TITLEBAR
 	AccRoleMenubar            AccRole = win.ROLE_SYSTEM_MENUBAR
@@ -116,6 +120,7 @@ const (
 	AccRoleOutlineButton      AccRole = win.ROLE_SYSTEM_OUTLINEBUTTON
 )
 
+// Accessibility provides basic Dynamic Annotation of windows and controls.
 type Accessibility struct {
 	wb *WindowBase
 }
