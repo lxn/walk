@@ -191,6 +191,7 @@ func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 	items := boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, bounds, li.margins, li.spacing, li.hwnd2StretchFactor)
 
 	marginsPixels := li.margins.ForDPI(li.ctx.dpi)
+	spacingPixels := li.spacing.ForDPI(li.ctx.dpi)
 	s := Size{marginsPixels.HNear + marginsPixels.HFar, marginsPixels.VNear + marginsPixels.VFar}
 
 	var maxSecondary Pixel
@@ -216,10 +217,10 @@ func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 	}
 
 	if li.orientation == Horizontal {
-		s.Width += Pixel((len(items) - 1) * int(li.spacing))
+		s.Width += Pixel((len(items) - 1) * int(spacingPixels))
 		s.Height += maxSecondary
 	} else {
-		s.Height += Pixel((len(items) - 1) * int(li.spacing))
+		s.Height += Pixel((len(items) - 1) * int(spacingPixels))
 		s.Width += maxSecondary
 	}
 
@@ -289,7 +290,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 		return nil
 	}
 
-	dpi := int(win.GetDpiForWindow(container.Handle()))
+	dpi := container.Context().dpi
 	marginsPixels := margins.ForDPI(dpi)
 	spacingPixels := spacing.ForDPI(dpi)
 
@@ -400,7 +401,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 		space2 = bounds.Width - marginsPixels.HNear - marginsPixels.HFar
 	}
 
-	spacingRemaining := Pixel(int(spacing) * (len(items) - 1))
+	spacingRemaining := Pixel(int(spacingPixels) * (len(items) - 1))
 
 	offsets := [3]int{0, greedyNonSpacerCount, greedyNonSpacerCount + greedySpacerCount}
 	counts := [3]int{greedyNonSpacerCount, greedySpacerCount, len(items) - greedyNonSpacerCount - greedySpacerCount}
