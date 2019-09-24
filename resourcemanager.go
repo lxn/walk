@@ -50,24 +50,33 @@ func (rm *ResourceManager) SetRootDirPath(rootDirPath string) error {
 	return nil
 }
 
-// Bitmap returns the Bitmap identified by name, or an error if it could not be found.
+// Bitmap loads a bitmap with 96dpi from file or resource identified by name, or an error if it
+// could not be found.
+//
+// Deprecated: Newer applications should use DPI-aware variant.
 func (rm *ResourceManager) Bitmap(name string) (*Bitmap, error) {
+	return rm.BitmapForDPI(name, 96)
+}
+
+// BitmapForDPI loads a bitmap with given DPI from file or resource identified by name, or an error
+// if it could not be found.
+func (rm *ResourceManager) BitmapForDPI(name string, dpi int) (*Bitmap, error) {
 	if bm := rm.bitmaps[name]; bm != nil {
 		return bm, nil
 	}
 
-	if bm, err := NewBitmapFromFile(filepath.Join(rm.rootDirPath, name)); err == nil {
+	if bm, err := NewBitmapFromFileForDPI(filepath.Join(rm.rootDirPath, name), dpi); err == nil {
 		rm.bitmaps[name] = bm
 		return bm, nil
 	}
 
-	if bm, err := NewBitmapFromResource(name); err == nil {
+	if bm, err := NewBitmapFromResourceForDPI(name, dpi); err == nil {
 		rm.bitmaps[name] = bm
 		return bm, nil
 	}
 
 	if id, err := strconv.Atoi(name); err == nil {
-		if bm, err := NewBitmapFromResourceId(id); err == nil {
+		if bm, err := NewBitmapFromResourceIdForDPI(id, dpi); err == nil {
 			rm.bitmaps[name] = bm
 			return bm, nil
 		}

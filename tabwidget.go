@@ -348,7 +348,8 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 		cb := tw.ClientBoundsPixels()
 
-		bitmap, err := NewBitmap(cb.Size())
+		dpi := tw.DPI()
+		bitmap, err := NewBitmapForDPI(cb.Size(), dpi)
 		if err != nil {
 			break
 		}

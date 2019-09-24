@@ -426,7 +426,7 @@ func (b *GradientBrush) create(size Size) (*BitmapBrush, error) {
 		size.Width = 1
 	}
 
-	bitmap, err := NewBitmap(size)
+	bitmap, err := NewBitmap(size) // TODO: DPI
 	if err != nil {
 		return nil, err
 	}

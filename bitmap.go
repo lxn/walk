@@ -10,11 +10,14 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"syscall"
 	"unsafe"
 
 	"github.com/lxn/win"
 )
+
+const inchesPerMeter = 39.37008
 
 type Bitmap struct {
 	hBmp       win.HBITMAP
@@ -36,15 +39,31 @@ func BitmapFrom(src interface{}, dpi int) (*Bitmap, error) {
 	return iconCache.Bitmap(img, dpi)
 }
 
+// NewBitmap creates an opaque bitmap with given size at 96dpi.
+//
+// Deprecated: Newer applications should use DPI-aware variant.
 func NewBitmap(size Size) (*Bitmap, error) {
-	return newBitmap(size, false)
+	return newBitmap(size, false, 96)
 }
 
+// NewBitmapForDPI creates an opaque bitmap with given size and DPI.
+func NewBitmapForDPI(size Size, dpi int) (*Bitmap, error) {
+	return newBitmap(size, false, dpi)
+}
+
+// NewBitmapWithTransparentPixels creates a transparent bitmap with given size at 96dpi.
+//
+// Deprecated: Newer applications should use DPI-aware variant.
 func NewBitmapWithTransparentPixels(size Size) (*Bitmap, error) {
-	return newBitmap(size, true)
+	return newBitmap(size, true, 96)
 }
 
-func newBitmap(size Size, transparent bool) (bmp *Bitmap, err error) {
+// NewBitmapWithTransparentPixelsForDPI creates a transparent bitmap with given size and DPI.
+func NewBitmapWithTransparentPixelsForDPI(size Size, dpi int) (*Bitmap, error) {
+	return newBitmap(size, true, dpi)
+}
+
+func newBitmap(size Size, transparent bool, dpi int) (bmp *Bitmap, err error) {
 	err = withCompatibleDC(func(hdc win.HDC) error {
 		bufSize := int(size.Width * size.Height * 4)
 
@@ -56,6 +75,9 @@ func newBitmap(size Size, transparent bool) (bmp *Bitmap, err error) {
 		hdr.BiWidth = int32(size.Width)
 		hdr.BiHeight = int32(size.Height)
 		hdr.BiSizeImage = uint32(bufSize)
+		dpm := int32(math.Round(float64(dpi) * inchesPerMeter))
+		hdr.BiXPelsPerMeter = dpm
+		hdr.BiYPelsPerMeter = dpm
 
 		var bitsPtr unsafe.Pointer
 
@@ -76,14 +98,22 @@ func newBitmap(size Size, transparent bool) (bmp *Bitmap, err error) {
 			}
 		}
 
-		bmp, err = newBitmapFromHBITMAP(hBmp)
+		bmp, err = newBitmapFromHBITMAP(hBmp, dpi)
 		return err
 	})
 
 	return
 }
 
+// NewBitmapFromFile creates new bitmap from a bitmap file with 96dpi.
+//
+// Deprecated: Newer applications should use DPI-aware variant.
 func NewBitmapFromFile(filePath string) (*Bitmap, error) {
+	return NewBitmapFromFileForDPI(filePath, 96)
+}
+
+// NewBitmapFromFileForDPI creates new bitmap from a bitmap file with given DPI.
+func NewBitmapFromFileForDPI(filePath string, dpi int) (*Bitmap, error) {
 	var si win.GdiplusStartupInput
 	si.GdiplusVersion = 1
 	if status := win.GdiplusStartup(&si, nil); status != win.Ok {
@@ -102,27 +132,51 @@ func NewBitmapFromFile(filePath string) (*Bitmap, error) {
 		return nil, newError(fmt.Sprintf("GdipCreateHBITMAPFromBitmap failed with status '%s' for file '%s'", status, filePath))
 	}
 
-	return newBitmapFromHBITMAP(hBmp)
+	return newBitmapFromHBITMAP(hBmp, dpi)
 }
 
+// NewBitmapFromImage creates a Bitmap from image.Image with 96dpi.
+//
+// Deprecated: Newer applications should use DPI-aware variant.
 func NewBitmapFromImage(im image.Image) (*Bitmap, error) {
-	hBmp, err := hBitmapFromImage(im)
+	return NewBitmapFromImageForDPI(im, 96)
+}
+
+// NewBitmapFromImageForDPI creates a Bitmap from image.Image with given DPI.
+func NewBitmapFromImageForDPI(im image.Image, dpi int) (*Bitmap, error) {
+	hBmp, err := hBitmapFromImage(im, dpi)
 	if err != nil {
 		return nil, err
 	}
 
-	return newBitmapFromHBITMAP(hBmp)
+	return newBitmapFromHBITMAP(hBmp, dpi)
 }
 
+// NewBitmapFromResource creates a Bitmap with 96dpi from resource by name.
+//
+// Deprecated: Newer applications should use DPI-aware variant.
 func NewBitmapFromResource(name string) (*Bitmap, error) {
-	return newBitmapFromResource(syscall.StringToUTF16Ptr(name))
+	return newBitmapFromResource(syscall.StringToUTF16Ptr(name), 96)
 }
 
+// NewBitmapFromResourceForDPI creates a Bitmap with given DPI from resource by name.
+func NewBitmapFromResourceForDPI(name string, dpi int) (*Bitmap, error) {
+	return newBitmapFromResource(syscall.StringToUTF16Ptr(name), dpi)
+}
+
+// NewBitmapFromResourceId creates a Bitmap with 96dpi from resource by ID.
+//
+// Deprecated: Newer applications should use DPI-aware variant.
 func NewBitmapFromResourceId(id int) (*Bitmap, error) {
-	return newBitmapFromResource(win.MAKEINTRESOURCE(uintptr(id)))
+	return newBitmapFromResource(win.MAKEINTRESOURCE(uintptr(id)), 96)
 }
 
-func newBitmapFromResource(res *uint16) (bm *Bitmap, err error) {
+// NewBitmapFromResourceIdForDPI creates a Bitmap with given DPI from resource by ID.
+func NewBitmapFromResourceIdForDPI(id int, dpi int) (*Bitmap, error) {
+	return newBitmapFromResource(win.MAKEINTRESOURCE(uintptr(id)), dpi)
+}
+
+func newBitmapFromResource(res *uint16, dpi int) (bm *Bitmap, err error) {
 	hInst := win.GetModuleHandle(nil)
 	if hInst == 0 {
 		err = lastError("GetModuleHandle")
@@ -132,7 +186,7 @@ func newBitmapFromResource(res *uint16) (bm *Bitmap, err error) {
 	if hBmp := win.LoadImage(hInst, res, win.IMAGE_BITMAP, 0, 0, win.LR_CREATEDIBSECTION); hBmp == 0 {
 		err = lastError("LoadImage")
 	} else {
-		bm, err = newBitmapFromHBITMAP(win.HBITMAP(hBmp))
+		bm, err = newBitmapFromHBITMAP(win.HBITMAP(hBmp), dpi)
 	}
 
 	return
@@ -142,13 +196,12 @@ func NewBitmapFromImageWithSize(image Image, size Size) (*Bitmap, error) {
 	var disposables Disposables
 	defer disposables.Treat()
 
-	bmp, err := NewBitmapWithTransparentPixels(size)
+	dpi := int(math.Round(float64(size.Width) / float64(image.Size().Width) * 96.0))
+	bmp, err := NewBitmapWithTransparentPixelsForDPI(size, dpi)
 	if err != nil {
 		return nil, err
 	}
 	disposables.Add(bmp)
-
-	dpi := int(float64(size.Width) / float64(image.Size().Width) * 96.0)
 
 	canvas, err := NewCanvasFromImage(bmp)
 	if err != nil {
@@ -174,16 +227,24 @@ func NewBitmapFromWindow(window Window) (*Bitmap, error) {
 		return nil, err
 	}
 
-	return newBitmapFromHBITMAP(hBmp)
+	return newBitmapFromHBITMAP(hBmp, window.DPI())
 }
 
+// NewBitmapFromIcon creates a new bitmap and paints the icon with given size at 96dpi.
+//
+// Deprecated: Newer applications should use DPI-aware variant.
 func NewBitmapFromIcon(icon *Icon, size Size) (*Bitmap, error) {
-	hBmp, err := hBitmapFromIcon(icon, size)
+	return NewBitmapFromIconForDPI(icon, size, 96)
+}
+
+// NewBitmapFromIconForDPI creates a new bitmap and paints the icon with given size and DPI.
+func NewBitmapFromIconForDPI(icon *Icon, size Size, dpi int) (*Bitmap, error) {
+	hBmp, err := hBitmapFromIcon(icon, size, dpi)
 	if err != nil {
 		return nil, err
 	}
 
-	return newBitmapFromHBITMAP(hBmp)
+	return newBitmapFromHBITMAP(hBmp, dpi)
 }
 
 func (bmp *Bitmap) ToImage() (*image.RGBA, error) {
@@ -271,8 +332,7 @@ func (bmp *Bitmap) Dispose() {
 }
 
 func (bmp *Bitmap) Size() Size96DPI {
-	// TODO: Handle DPI
-	return bmp.size.To96DPI(96)
+	return bmp.size.To96DPI(bmp.dpi)
 }
 
 func (bmp *Bitmap) handle() win.HBITMAP {
@@ -325,7 +385,11 @@ func (bmp *Bitmap) withSelectedIntoMemDC(f func(hdcMem win.HDC) error) error {
 	})
 }
 
-func newBitmapFromHBITMAP(hBmp win.HBITMAP) (bmp *Bitmap, err error) {
+// newBitmapFromHBITMAP creates Bitmap from win.HBITMAP.
+//
+// The BiXPelsPerMeter and BiYPelsPerMeter fields of win.BITMAPINFOHEADER are unreliable (for
+// loaded PNG they are both unset). Therefore, we require caller to specify DPI explicitly.
+func newBitmapFromHBITMAP(hBmp win.HBITMAP, dpi int) (bmp *Bitmap, err error) {
 	var dib win.DIBSECTION
 	if win.GetObject(win.HGDIOBJ(hBmp), unsafe.Sizeof(dib), unsafe.Pointer(&dib)) == 0 {
 		return nil, newError("GetObject failed")
@@ -358,10 +422,11 @@ func newBitmapFromHBITMAP(hBmp win.HBITMAP) (bmp *Bitmap, err error) {
 			Pixel(bmih.BiWidth),
 			Pixel(bmih.BiHeight),
 		},
+		dpi: dpi,
 	}, nil
 }
 
-func hBitmapFromImage(im image.Image) (win.HBITMAP, error) {
+func hBitmapFromImage(im image.Image, dpi int) (win.HBITMAP, error) {
 	var bi win.BITMAPV5HEADER
 	bi.BiSize = uint32(unsafe.Sizeof(bi))
 	bi.BiWidth = int32(im.Bounds().Dx())
@@ -369,6 +434,9 @@ func hBitmapFromImage(im image.Image) (win.HBITMAP, error) {
 	bi.BiPlanes = 1
 	bi.BiBitCount = 32
 	bi.BiCompression = win.BI_BITFIELDS
+	dpm := int32(math.Round(float64(dpi) * inchesPerMeter))
+	bi.BiXPelsPerMeter = dpm
+	bi.BiYPelsPerMeter = dpm
 	// The following mask specification specifies a supported 32 BPP
 	// alpha format for Windows XP.
 	bi.BV4RedMask = 0x00FF0000
@@ -431,7 +499,7 @@ func hBitmapFromWindow(window Window) (win.HBITMAP, error) {
 	return hBmp, nil
 }
 
-func hBitmapFromIcon(icon *Icon, size Size) (win.HBITMAP, error) {
+func hBitmapFromIcon(icon *Icon, size Size, dpi int) (win.HBITMAP, error) {
 	hdc := win.GetDC(0)
 	defer win.ReleaseDC(0, hdc)
 
@@ -448,6 +516,9 @@ func hBitmapFromIcon(icon *Icon, size Size) (win.HBITMAP, error) {
 	bi.BiPlanes = 1
 	bi.BiBitCount = 32
 	bi.BiCompression = win.BI_RGB
+	dpm := int32(math.Round(float64(dpi) * inchesPerMeter))
+	bi.BiXPelsPerMeter = dpm
+	bi.BiYPelsPerMeter = dpm
 	// The following mask specification specifies a supported 32 BPP
 	// alpha format for Windows XP.
 	bi.BV4RedMask = 0x00FF0000

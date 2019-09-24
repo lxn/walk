@@ -44,14 +44,23 @@ func ImageFrom(src interface{}) (img Image, err error) {
 	return
 }
 
+// NewImageFromFile loads image from file with 96dpi. Supported types are .ico, .emf, .bmp, .png...
+//
+// Deprecated: Newer applications should use DPI-aware variant.
 func NewImageFromFile(filePath string) (Image, error) {
+	return NewImageFromFileForDPI(filePath, 96)
+}
+
+// NewImageFromFileForDPI loads image from file with given DPI. Supported types are .ico, .emf,
+// .bmp, .png...
+func NewImageFromFileForDPI(filePath string, dpi int) (Image, error) {
 	if strings.HasSuffix(filePath, ".ico") {
 		return NewIconFromFile(filePath)
 	} else if strings.HasSuffix(filePath, ".emf") {
 		return NewMetafileFromFile(filePath)
 	}
 
-	return NewBitmapFromFile(filePath)
+	return NewBitmapFromFileForDPI(filePath, dpi)
 }
 
 type PaintFuncImage struct {
