@@ -1948,7 +1948,8 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 				if styler := tv.styler; styler != nil && image == nil {
 					tv.style.row = row
 					tv.style.col = col
-					tv.style.bounds = Rectangle{}
+					tv.style.bounds = RectanglePixels{}
+					tv.style.dpi = tv.DPI()
 					tv.style.Image = nil
 
 					styler.StyleCell(&tv.style)
@@ -1998,7 +1999,8 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 
 						tv.style.row = row
 						tv.style.col = col
-						tv.style.bounds = RectangleTo96DPI(rectangleFromRECT(nmlvcd.Nmcd.Rc), dpi)
+						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc)
+						tv.style.dpi = dpi
 						tv.style.hdc = nmlvcd.Nmcd.Hdc
 						tv.style.BackgroundColor = tv.itemBGColor
 						tv.style.TextColor = tv.itemTextColor
@@ -2008,7 +2010,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						tv.styler.StyleCell(&tv.style)
 
 						defer func() {
-							tv.style.bounds = Rectangle{}
+							tv.style.bounds = RectanglePixels{}
 							if tv.style.canvas != nil {
 								tv.style.canvas.Dispose()
 								tv.style.canvas = nil
@@ -2058,7 +2060,8 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 					if tv.styler != nil {
 						tv.style.row = row
 						tv.style.col = -1
-						tv.style.bounds = RectangleTo96DPI(rectangleFromRECT(nmlvcd.Nmcd.Rc), tv.DPI())
+						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc)
+						tv.style.dpi = tv.DPI()
 						tv.style.hdc = 0
 						tv.style.Font = nil
 						tv.style.Image = nil
@@ -2310,7 +2313,8 @@ func tableViewHdrWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 				if tv.styler != nil && col > -1 {
 					tv.style.row = -1
 					tv.style.col = col
-					tv.style.bounds = RectangleTo96DPI(rectangleFromRECT(nmcd.Rc), tv.DPI())
+					tv.style.bounds = rectangleFromRECT(nmcd.Rc)
+					tv.style.dpi = tv.DPI()
 					tv.style.hdc = nmcd.Hdc
 					tv.style.TextColor = tv.themeNormalTextColor
 					tv.style.Font = nil
@@ -2318,7 +2322,7 @@ func tableViewHdrWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 					tv.styler.StyleCell(&tv.style)
 
 					defer func() {
-						tv.style.bounds = Rectangle{}
+						tv.style.bounds = RectanglePixels{}
 						if tv.style.canvas != nil {
 							tv.style.canvas.Dispose()
 							tv.style.canvas = nil

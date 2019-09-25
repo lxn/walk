@@ -301,7 +301,7 @@ type CellStyler interface {
 type CellStyle struct {
 	row             int
 	col             int
-	bounds          Rectangle
+	bounds          RectanglePixels
 	hdc             win.HDC
 	dpi             int
 	canvas          *Canvas
@@ -327,11 +327,20 @@ func (cs *CellStyle) Col() int {
 }
 
 func (cs *CellStyle) Bounds() Rectangle {
+	return RectangleTo96DPI(cs.bounds, cs.dpi)
+}
+
+func (cs *CellStyle) BoundsPixels() RectanglePixels {
 	return cs.bounds
 }
 
 func (cs *CellStyle) Canvas() *Canvas {
-	if cs.canvas == nil && cs.hdc != 0 {
+	if cs.canvas != nil {
+		cs.canvas.dpi = cs.dpi
+		return cs.canvas
+	}
+
+	if cs.hdc != 0 {
 		cs.canvas, _ = newCanvasFromHDC(cs.hdc)
 		cs.canvas.dpi = cs.dpi
 	}
@@ -365,7 +374,7 @@ type ListItemStyle struct {
 	index              int
 	hoverIndex         int
 	rc                 win.RECT
-	bounds             Rectangle
+	bounds             RectanglePixels
 	state              uint32
 	hTheme             win.HTHEME
 	hwnd               win.HWND
@@ -380,11 +389,20 @@ func (lis *ListItemStyle) Index() int {
 }
 
 func (lis *ListItemStyle) Bounds() Rectangle {
+	return RectangleTo96DPI(lis.bounds, lis.dpi)
+}
+
+func (lis *ListItemStyle) BoundsPixels() RectanglePixels {
 	return lis.bounds
 }
 
 func (lis *ListItemStyle) Canvas() *Canvas {
-	if lis.canvas == nil && lis.hdc != 0 {
+	if lis.canvas != nil {
+		lis.canvas.dpi = lis.dpi
+		return lis.canvas
+	}
+
+	if lis.hdc != 0 {
 		lis.canvas, _ = newCanvasFromHDC(lis.hdc)
 		lis.canvas.dpi = lis.dpi
 	}
@@ -411,7 +429,7 @@ func (lis *ListItemStyle) DrawBackground() error {
 		}
 		defer brush.Dispose()
 
-		if err := canvas.FillRectangle(brush, lis.bounds); err != nil {
+		if err := canvas.FillRectanglePixels(brush, lis.bounds); err != nil {
 			return err
 		}
 
@@ -422,7 +440,7 @@ func (lis *ListItemStyle) DrawBackground() error {
 			}
 			defer pen.Dispose()
 
-			if err := canvas.DrawRectangle(pen, lis.bounds); err != nil {
+			if err := canvas.DrawRectanglePixels(pen, lis.bounds); err != nil {
 				return err
 			}
 		}

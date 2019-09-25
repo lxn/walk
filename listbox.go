@@ -571,7 +571,8 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 
 		lb.style.index = int(dis.ItemID)
 		lb.style.rc = dis.RcItem
-		lb.style.bounds = RectangleTo96DPI(rectangleFromRECT(dis.RcItem), lb.DPI())
+		lb.style.bounds = rectangleFromRECT(dis.RcItem)
+		lb.style.dpi = lb.DPI()
 		lb.style.state = dis.ItemState
 		lb.style.hwnd = lb.hWnd
 		lb.style.hdc = dis.HDC
@@ -619,7 +620,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		lb.styler.StyleItem(&lb.style)
 
 		defer func() {
-			lb.style.bounds = Rectangle{}
+			lb.style.bounds = RectanglePixels{}
 			if lb.style.canvas != nil {
 				lb.style.canvas.Dispose()
 				lb.style.canvas = nil
