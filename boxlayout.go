@@ -188,11 +188,11 @@ func (li *boxLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 
 	bounds := RectanglePixels{Width: size.Width, Height: size.Height}
 
-	items := boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, bounds, li.margins, li.spacing, li.hwnd2StretchFactor)
+	items := boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, bounds, li.margins96dpi, li.spacing96dpi, li.hwnd2StretchFactor)
 
-	marginsPixels := MarginsFrom96DPI(li.margins, li.ctx.dpi)
-	spacingPixels := IntFrom96DPI(li.spacing, li.ctx.dpi)
-	s := SizePixels{marginsPixels.HNear + marginsPixels.HFar, marginsPixels.VNear + marginsPixels.VFar}
+	margins := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
+	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
+	s := SizePixels{margins.HNear + margins.HFar, margins.VNear + margins.VFar}
 
 	var maxSecondary Pixel
 	for _, item := range items {
@@ -217,10 +217,10 @@ func (li *boxLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 	}
 
 	if li.orientation == Horizontal {
-		s.Width += Pixel((len(items) - 1) * int(spacingPixels))
+		s.Width += Pixel((len(items) - 1) * int(spacing))
 		s.Height += maxSecondary
 	} else {
-		s.Height += Pixel((len(items) - 1) * int(spacingPixels))
+		s.Height += Pixel((len(items) - 1) * int(spacing))
 		s.Width += maxSecondary
 	}
 
@@ -233,7 +233,7 @@ func (li *boxLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 
 func (li *boxLayoutItem) PerformLayout() []LayoutResultItem {
 	cb := RectanglePixels{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
-	return boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, cb, li.margins, li.spacing, li.hwnd2StretchFactor)
+	return boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, cb, li.margins96dpi, li.spacing96dpi, li.hwnd2StretchFactor)
 }
 
 func boxLayoutFlags(orientation Orientation, children []LayoutItem) LayoutFlags {
@@ -285,14 +285,14 @@ func boxLayoutFlags(orientation Orientation, children []LayoutItem) LayoutFlags 
 	return flags
 }
 
-func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientation Orientation, alignment Alignment2D, bounds RectanglePixels, margins Margins, spacing int, hwnd2StretchFactor map[win.HWND]int) []LayoutResultItem {
+func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientation Orientation, alignment Alignment2D, bounds RectanglePixels, margins96dpi Margins, spacing96dpi int, hwnd2StretchFactor map[win.HWND]int) []LayoutResultItem {
 	if len(items) == 0 {
 		return nil
 	}
 
 	dpi := container.Context().dpi
-	marginsPixels := MarginsFrom96DPI(margins, dpi)
-	spacingPixels := IntFrom96DPI(spacing, dpi)
+	margins := MarginsFrom96DPI(margins96dpi, dpi)
+	spacing := IntFrom96DPI(spacing96dpi, dpi)
 
 	var greedyNonSpacerCount int
 	var greedySpacerCount int
@@ -345,7 +345,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 			growable2[i] = flags&GrowableHorz > 0
 
 			if hfw, ok := item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
-				minSizes[i] = hfw.HeightForWidth(bounds.Width - marginsPixels.HNear - marginsPixels.HFar)
+				minSizes[i] = hfw.HeightForWidth(bounds.Width - margins.HNear - margins.HFar)
 			} else {
 				minSizes[i] = container.MinSizeEffectiveForChild(item).Height
 			}
@@ -390,18 +390,18 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 	var start1, start2, space1, space2 Pixel
 	if orientation == Horizontal {
-		start1 = bounds.X + marginsPixels.HNear
-		start2 = bounds.Y + marginsPixels.VNear
-		space1 = bounds.Width - marginsPixels.HNear - marginsPixels.HFar
-		space2 = bounds.Height - marginsPixels.VNear - marginsPixels.VFar
+		start1 = bounds.X + margins.HNear
+		start2 = bounds.Y + margins.VNear
+		space1 = bounds.Width - margins.HNear - margins.HFar
+		space2 = bounds.Height - margins.VNear - margins.VFar
 	} else {
-		start1 = bounds.Y + marginsPixels.VNear
-		start2 = bounds.X + marginsPixels.HNear
-		space1 = bounds.Height - marginsPixels.VNear - marginsPixels.VFar
-		space2 = bounds.Width - marginsPixels.HNear - marginsPixels.HFar
+		start1 = bounds.Y + margins.VNear
+		start2 = bounds.X + margins.HNear
+		space1 = bounds.Height - margins.VNear - margins.VFar
+		space2 = bounds.Width - margins.HNear - margins.HFar
 	}
 
-	spacingRemaining := Pixel(int(spacingPixels) * (len(items) - 1))
+	spacingRemaining := Pixel(int(spacing) * (len(items) - 1))
 
 	offsets := [3]int{0, greedyNonSpacerCount, greedyNonSpacerCount + greedySpacerCount}
 	counts := [3]int{greedyNonSpacerCount, greedySpacerCount, len(items) - greedyNonSpacerCount - greedySpacerCount}
@@ -432,8 +432,8 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 			minSizesRemaining -= min
 			stretchFactorsRemaining -= stretch
-			space1 -= (size + spacingPixels)
-			spacingRemaining -= spacingPixels
+			space1 -= (size + spacing)
+			spacingRemaining -= spacing
 		}
 	}
 
@@ -536,7 +536,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 			}
 		}
 
-		p1 += s1 + spacingPixels
+		p1 += s1 + spacing
 
 		results = append(results, LayoutResultItem{Item: item, Bounds: RectanglePixels{X: x, Y: y, Width: w, Height: h}})
 	}

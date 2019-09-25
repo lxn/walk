@@ -18,11 +18,11 @@ import (
 	"github.com/lxn/win"
 )
 
-var defaultIconSize Size
+var defaultIconSize96dpi Size
 
 func init() {
 	AppendToWalkInit(func() {
-		defaultIconSize = Size{int(win.GetSystemMetricsForDpi(win.SM_CXSMICON, 96)), int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))}
+		defaultIconSize96dpi = Size{int(win.GetSystemMetricsForDpi(win.SM_CXSMICON, 96)), int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))}
 	})
 }
 
@@ -86,7 +86,7 @@ func IconShield() *Icon {
 }
 
 func stockIcon(id uintptr) *Icon {
-	return &Icon{res: win.MAKEINTRESOURCE(id), size96dpi: defaultIconSize, isStock: true}
+	return &Icon{res: win.MAKEINTRESOURCE(id), size96dpi: defaultIconSize96dpi, isStock: true}
 }
 
 // NewIconFromFile returns a new Icon, using the specified icon image file and default size.
@@ -97,7 +97,7 @@ func NewIconFromFile(filePath string) (*Icon, error) {
 // NewIconFromFileWithSize returns a new Icon, using the specified icon image file and size.
 func NewIconFromFileWithSize(filePath string, size Size) (*Icon, error) {
 	if size.Width == 0 || size.Height == 0 {
-		size = defaultIconSize
+		size = defaultIconSize96dpi
 	}
 
 	return checkNewIcon(&Icon{filePath: filePath, size96dpi: size})
@@ -125,7 +125,7 @@ func NewIconFromResourceIdWithSize(id int, size Size) (*Icon, error) {
 
 func newIconFromResource(res *uint16, size Size) (*Icon, error) {
 	if size.Width == 0 || size.Height == 0 {
-		size = defaultIconSize
+		size = defaultIconSize96dpi
 	}
 
 	return checkNewIcon(&Icon{res: res, size96dpi: size})
@@ -187,10 +187,10 @@ func NewIconFromImageWithSize(image Image, size SizePixels) (*Icon, error) {
 }
 
 func newIconFromImageForDPI(image Image, dpi int) (*Icon, error) {
-	size := image.Size()
-	sizePixels := SizeFrom96DPI(size, dpi)
+	size96dpi := image.Size()
+	size := SizeFrom96DPI(size96dpi, dpi)
 
-	bmp, err := NewBitmapFromImageWithSize(image, sizePixels)
+	bmp, err := NewBitmapFromImageWithSize(image, size)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func newIconFromImageForDPI(image Image, dpi int) (*Icon, error) {
 
 	disposables.Spare()
 
-	return &Icon{dpi2hIcon: map[int]win.HICON{dpi: hIcon}, size96dpi: size}, nil
+	return &Icon{dpi2hIcon: map[int]win.HICON{dpi: hIcon}, size96dpi: size96dpi}, nil
 }
 
 // NewIconFromBitmap returns a new Icon at screen DPI, using the specified Bitmap as source.
@@ -294,7 +294,7 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 	var size SizePixels
 	if size.Width == 0 || size.Height == 0 {
 		flags |= win.LR_DEFAULTSIZE
-		size = SizeFrom96DPI(defaultIconSize, dpi)
+		size = SizeFrom96DPI(defaultIconSize96dpi, dpi)
 	} else {
 		size = SizeFrom96DPI(i.size96dpi, dpi)
 	}
@@ -361,7 +361,7 @@ func (i *Icon) drawStretched(hdc win.HDC, bounds RectanglePixels) error {
 	return nil
 }
 
-// Size returns the size of the Icon.
+// Size returns icon size in 1/96" units.
 func (i *Icon) Size() Size {
 	return i.size96dpi
 }
@@ -380,8 +380,7 @@ func createAlphaCursorOrIconFromImage(im image.Image, hotspot image.Point, fIcon
 
 func createAlphaCursorOrIconFromBitmap(bmp *Bitmap, hotspot PointPixels, fIcon bool) (win.HICON, error) {
 	// Create an empty mask bitmap.
-	size := bmp.Size()
-	hMonoBitmap := win.CreateBitmap(int32(size.Width), int32(size.Height), 1, 1, nil)
+	hMonoBitmap := win.CreateBitmap(int32(bmp.size.Width), int32(bmp.size.Height), 1, 1, nil)
 	if hMonoBitmap == 0 {
 		return 0, newError("CreateBitmap failed")
 	}

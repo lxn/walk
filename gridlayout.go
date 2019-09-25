@@ -469,16 +469,16 @@ func (li *gridLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 		heights[row] = maxHeight
 	}
 
-	marginsPixels := MarginsFrom96DPI(li.margins, li.ctx.dpi)
-	spacingPixels := IntFrom96DPI(li.spacing, li.ctx.dpi)
+	margins := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
+	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
 
-	width := marginsPixels.HNear + marginsPixels.HFar
-	height := marginsPixels.VNear + marginsPixels.VFar
+	width := margins.HNear + margins.HFar
+	height := margins.VNear + margins.VFar
 
 	for i, w := range ws {
 		if w > 0 {
 			if i > 0 {
-				width += spacingPixels
+				width += spacing
 			}
 			width += w
 		}
@@ -486,7 +486,7 @@ func (li *gridLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 	for i, h := range heights {
 		if h > 0 {
 			if i > 0 {
-				height += spacingPixels
+				height += spacing
 			}
 			height += h
 		}
@@ -500,7 +500,7 @@ func (li *gridLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 }
 
 func (li *gridLayoutItem) spannedWidth(info *gridLayoutItemInfo, widths []Pixel) Pixel {
-	spacingPixels := IntFrom96DPI(li.spacing, li.ctx.dpi)
+	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
 
 	var width Pixel
 
@@ -508,7 +508,7 @@ func (li *gridLayoutItem) spannedWidth(info *gridLayoutItemInfo, widths []Pixel)
 		if w := widths[i]; w > 0 {
 			width += w
 			if i > info.cell.column {
-				width += spacingPixels
+				width += spacing
 			}
 		}
 	}
@@ -517,7 +517,7 @@ func (li *gridLayoutItem) spannedWidth(info *gridLayoutItemInfo, widths []Pixel)
 }
 
 func (li *gridLayoutItem) spannedHeight(info *gridLayoutItemInfo, heights []Pixel) Pixel {
-	spacingPixels := IntFrom96DPI(li.spacing, li.ctx.dpi)
+	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
 
 	var height Pixel
 
@@ -525,7 +525,7 @@ func (li *gridLayoutItem) spannedHeight(info *gridLayoutItemInfo, heights []Pixe
 		if h := heights[i]; h > 0 {
 			height += h
 			if i > info.cell.row {
-				height += spacingPixels
+				height += spacing
 			}
 		}
 	}
@@ -576,25 +576,25 @@ func (li *gridLayoutItem) PerformLayout() []LayoutResultItem {
 
 	items := make([]LayoutResultItem, 0, len(li.item2Info))
 
-	marginsPixels := MarginsFrom96DPI(li.margins, li.ctx.dpi)
-	spacingPixels := IntFrom96DPI(li.spacing, li.ctx.dpi)
+	margins := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
+	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
 
 	for item, info := range li.item2Info {
 		if !shouldLayoutItem(item) {
 			continue
 		}
 
-		x := marginsPixels.HNear
+		x := margins.HNear
 		for i := 0; i < info.cell.column; i++ {
 			if w := widths[i]; w > 0 {
-				x += w + spacingPixels
+				x += w + spacing
 			}
 		}
 
-		y := marginsPixels.VNear
+		y := margins.VNear
 		for i := 0; i < info.cell.row; i++ {
 			if h := heights[i]; h > 0 {
-				y += h + spacingPixels
+				y += h + spacing
 			}
 		}
 
@@ -785,23 +785,23 @@ func (li *gridLayoutItem) sectionSizesForSpace(orientation Orientation, space Pi
 
 	sort.Stable(sortedSections)
 
-	marginsPixels := MarginsFrom96DPI(li.margins, li.ctx.dpi)
-	spacingPixels := IntFrom96DPI(li.spacing, li.ctx.dpi)
+	margins := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
+	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
 
 	if orientation == Horizontal {
-		space -= marginsPixels.HNear + marginsPixels.HFar
+		space -= margins.HNear + margins.HFar
 	} else {
-		space -= marginsPixels.VNear + marginsPixels.VFar
+		space -= margins.VNear + margins.VFar
 	}
 
 	var spacingRemaining Pixel
 	for _, max := range maxSizes {
 		if max > 0 {
-			spacingRemaining += spacingPixels
+			spacingRemaining += spacing
 		}
 	}
 	if spacingRemaining > 0 {
-		spacingRemaining -= spacingPixels
+		spacingRemaining -= spacing
 	}
 
 	offsets := [3]int{0, sectionCountWithGreedyNonSpacer, sectionCountWithGreedyNonSpacer + sectionCountWithGreedySpacer}
@@ -835,8 +835,8 @@ func (li *gridLayoutItem) sectionSizesForSpace(orientation Orientation, space Pi
 			minSizesRemaining -= min
 			stretchFactorsRemaining -= stretch
 
-			space -= (size + spacingPixels)
-			spacingRemaining -= spacingPixels
+			space -= (size + spacing)
+			spacingRemaining -= spacing
 		}
 	}
 

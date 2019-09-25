@@ -96,6 +96,7 @@ func (mf *Metafile) ensureFinished() error {
 	return mf.readSizeFromHeader()
 }
 
+// Size returns image size in 1/96" units.
 func (mf *Metafile) Size() Size {
 	// TODO: Handle DPI
 	return SizeTo96DPI(mf.size, 96)

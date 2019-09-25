@@ -17,6 +17,8 @@ type Image interface {
 	draw(hdc win.HDC, location PointPixels) error
 	drawStretched(hdc win.HDC, bounds RectanglePixels) error
 	Dispose()
+
+	// Size returns image size in 1/96" units.
 	Size() Size
 }
 
@@ -69,12 +71,12 @@ type PaintFuncImage struct {
 	dispose   func()
 }
 
-func NewPaintFuncImage(size Size, paint func(canvas *Canvas, bounds RectanglePixels) error) *PaintFuncImage {
-	return &PaintFuncImage{size96dpi: size, paint: paint}
+func NewPaintFuncImage(size96dpi Size, paint func(canvas *Canvas, bounds RectanglePixels) error) *PaintFuncImage {
+	return &PaintFuncImage{size96dpi: size96dpi, paint: paint}
 }
 
-func NewPaintFuncImageWithDispose(size Size, paint func(canvas *Canvas, bounds RectanglePixels) error, dispose func()) *PaintFuncImage {
-	return &PaintFuncImage{size96dpi: size, paint: paint, dispose: dispose}
+func NewPaintFuncImageWithDispose(size96dpi Size, paint func(canvas *Canvas, bounds RectanglePixels) error, dispose func()) *PaintFuncImage {
+	return &PaintFuncImage{size96dpi: size96dpi, paint: paint, dispose: dispose}
 }
 
 func (pfi *PaintFuncImage) draw(hdc win.HDC, location PointPixels) error {
@@ -105,6 +107,7 @@ func (pfi *PaintFuncImage) Dispose() {
 	}
 }
 
+// Size returns image size in 1/96" units.
 func (pfi *PaintFuncImage) Size() Size {
 	return pfi.size96dpi
 }

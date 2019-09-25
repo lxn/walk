@@ -121,12 +121,12 @@ func (tw *TabWidget) ApplyDPI(dpi int) {
 	tw.WidgetBase.ApplyDPI(dpi)
 
 	var maskColor Color
-	var size Size
+	var size SizePixels
 	if tw.imageList != nil {
 		maskColor = tw.imageList.maskColor
-		size = tw.imageList.imageSize96dpi
+		size = SizeFrom96DPI(tw.imageList.imageSize96dpi, dpi)
 	} else {
-		size = Size{16, 16}
+		size = SizeFrom96DPI(Size{16, 16}, dpi)
 	}
 
 	iml, err := NewImageListForDPI(size, maskColor, dpi)
@@ -673,7 +673,7 @@ func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
 	if image != nil {
 		if tw.imageList == nil {
 			dpi := tw.DPI()
-			if tw.imageList, err = NewImageListForDPI(Size{16, 16}, 0, dpi); err != nil {
+			if tw.imageList, err = NewImageListForDPI(SizeFrom96DPI(Size{16, 16}, dpi), 0, dpi); err != nil {
 				return
 			}
 

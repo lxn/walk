@@ -34,12 +34,10 @@ func NewImageList(imageSize96dpi Size, maskColor Color) (*ImageList, error) {
 }
 
 // NewImageListForDPI creates an empty image list at given DPI.
-func NewImageListForDPI(imageSize Size, maskColor Color, dpi int) (*ImageList, error) {
-	size := SizeFrom96DPI(imageSize, dpi)
-
+func NewImageListForDPI(imageSize SizePixels, maskColor Color, dpi int) (*ImageList, error) {
 	hIml := win.ImageList_Create(
-		int32(size.Width),
-		int32(size.Height),
+		int32(imageSize.Width),
+		int32(imageSize.Height),
 		win.ILC_MASK|win.ILC_COLOR32,
 		8,
 		8)
@@ -50,7 +48,7 @@ func NewImageListForDPI(imageSize Size, maskColor Color, dpi int) (*ImageList, e
 	return &ImageList{
 		hIml:                     hIml,
 		maskColor:                maskColor,
-		imageSize96dpi:           imageSize,
+		imageSize96dpi:           SizeTo96DPI(imageSize, dpi),
 		colorMaskedBitmap2Index:  make(map[*Bitmap]int),
 		bitmapMaskedBitmap2Index: make(map[bitmapMaskedBitmap]int),
 	}, nil

@@ -10,7 +10,7 @@ import (
 	"github.com/lxn/win"
 )
 
-// Rectangle defines upper left corner with width and height region in 1/96".
+// Rectangle defines upper left corner with width and height region in 1/96" units.
 type Rectangle struct {
 	X, Y, Width, Height int
 }

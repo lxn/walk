@@ -112,7 +112,7 @@ func (iv *ImageView) SetImage(image Image) error {
 		return nil
 	}
 
-	var oldSize, newSize Size
+	var oldSize, newSize Size // in 1/96" units
 	if iv.image != nil {
 		oldSize = iv.image.Size()
 	}

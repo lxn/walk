@@ -73,8 +73,8 @@ func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 
 	if lb := layout.asLayoutBase(); lb != nil {
 		clib.alignment = lb.alignment
-		clib.margins = lb.margins96dpi
-		clib.spacing = lb.spacing96dpi
+		clib.margins96dpi = lb.margins96dpi
+		clib.spacing96dpi = lb.spacing96dpi
 	}
 
 	if len(clib.children) == 0 {
@@ -636,10 +636,10 @@ func (lib *LayoutItemBase) Visible() bool {
 
 type ContainerLayoutItemBase struct {
 	LayoutItemBase
-	children  []LayoutItem
-	margins   Margins
-	spacing   int
-	alignment Alignment2D
+	children     []LayoutItem
+	margins96dpi Margins
+	spacing96dpi int
+	alignment    Alignment2D
 }
 
 func (clib *ContainerLayoutItemBase) AsContainerLayoutItemBase() *ContainerLayoutItemBase {
