@@ -145,7 +145,8 @@ type GeometricPen struct {
 	width96dpi int
 }
 
-func NewGeometricPen(style PenStyle, width96dpi int, brush Brush) (*GeometricPen, error) {
+// NewGeometricPen prepares new geometric pen. width parameter is specified in 1/96" units.
+func NewGeometricPen(style PenStyle, width int, brush Brush) (*GeometricPen, error) {
 	if brush == nil {
 		return nil, newError("brush cannot be nil")
 	}
@@ -154,7 +155,7 @@ func NewGeometricPen(style PenStyle, width96dpi int, brush Brush) (*GeometricPen
 
 	return &GeometricPen{
 		style:      style,
-		width96dpi: width96dpi,
+		width96dpi: width,
 		brush:      brush,
 	}, nil
 }

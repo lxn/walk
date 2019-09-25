@@ -26,11 +26,12 @@ type bitmapMaskedBitmap struct {
 	mask   *Bitmap
 }
 
-// NewImageList creates an empty image list at 96dpi.
+// NewImageList creates an empty image list at 96dpi. imageSize parameter is specified in
+// 1/96" units.
 //
 // Deprecated: Newer applications should use NewImageListForDPI.
-func NewImageList(imageSize96dpi Size, maskColor Color) (*ImageList, error) {
-	return NewImageListForDPI(SizeFrom96DPI(imageSize96dpi, 96), maskColor, 96)
+func NewImageList(imageSize Size, maskColor Color) (*ImageList, error) {
+	return NewImageListForDPI(SizeFrom96DPI(imageSize, 96), maskColor, 96)
 }
 
 // NewImageListForDPI creates an empty image list at given DPI.

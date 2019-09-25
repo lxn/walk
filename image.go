@@ -71,12 +71,15 @@ type PaintFuncImage struct {
 	dispose   func()
 }
 
-func NewPaintFuncImage(size96dpi Size, paint func(canvas *Canvas, bounds RectanglePixels) error) *PaintFuncImage {
-	return &PaintFuncImage{size96dpi: size96dpi, paint: paint}
+// NewPaintFuncImage creates new PaintFuncImage struct. size parameter is specified in 1/96" units.
+func NewPaintFuncImage(size Size, paint func(canvas *Canvas, bounds RectanglePixels) error) *PaintFuncImage {
+	return &PaintFuncImage{size96dpi: size, paint: paint}
 }
 
-func NewPaintFuncImageWithDispose(size96dpi Size, paint func(canvas *Canvas, bounds RectanglePixels) error, dispose func()) *PaintFuncImage {
-	return &PaintFuncImage{size96dpi: size96dpi, paint: paint, dispose: dispose}
+// NewPaintFuncImageWithDispose creates new PaintFuncImage struct. size parameter is specified in
+// 1/96" units.
+func NewPaintFuncImageWithDispose(size Size, paint func(canvas *Canvas, bounds RectanglePixels) error, dispose func()) *PaintFuncImage {
+	return &PaintFuncImage{size96dpi: size, paint: paint, dispose: dispose}
 }
 
 func (pfi *PaintFuncImage) draw(hdc win.HDC, location PointPixels) error {
