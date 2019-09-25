@@ -62,8 +62,8 @@ const (
 
 type Brush interface {
 	Dispose()
-	handle() win.HBRUSH      // TODO: BitmapBrush is DPI-specific: handle() => handleForDPI()
-	logbrush() *win.LOGBRUSH // TODO: BitmapBrush is DPI-specific: logbrush() => logbrushForDPI()
+	handle() win.HBRUSH
+	logbrush() *win.LOGBRUSH
 	attachWindow(wb *WindowBase)
 	detachWindow(wb *WindowBase)
 	simple() bool
@@ -426,7 +426,7 @@ func (b *GradientBrush) create(size SizePixels) (*BitmapBrush, error) {
 		size.Width = 1
 	}
 
-	bitmap, err := NewBitmapForDPI(size, screenDPI()) // TODO: DPI
+	bitmap, err := NewBitmapForDPI(size, 96) // Size is in native pixels and bitmap is used for brush only => DPI is not used anywhere.
 	if err != nil {
 		return nil, err
 	}
