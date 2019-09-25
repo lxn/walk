@@ -135,7 +135,8 @@ func (gb *GroupBox) ClientBoundsPixels() RectanglePixels {
 		cb.Height -= s.Height
 	}
 
-	return RectanglePixels{cb.X + 1, cb.Y + gb.headerHeight, cb.Width - 2, cb.Height - gb.headerHeight - 2}
+	padding := gb.IntFrom96DPI(1)
+	return RectanglePixels{cb.X + padding, cb.Y + gb.headerHeight, cb.Width - 2*padding, cb.Height - gb.headerHeight - 2*padding}
 }
 
 func (gb *GroupBox) updateHeaderHeight() {
@@ -356,7 +357,7 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				s := createLayoutItemForWidget(gb.checkBox).(MinSizer).MinSize()
 				var x Pixel
 				if l := gb.Layout(); l != nil {
-					x = IntFrom96DPI(l.Margins().HNear, gb.DPI())
+					x = gb.IntFrom96DPI(l.Margins().HNear)
 				} else {
 					x = gb.headerHeight * 2 / 3
 				}
@@ -373,7 +374,7 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 }
 
 func (gb *GroupBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
-	compositePos := PointPixels{1, gb.headerHeight}
+	compositePos := PointPixels{gb.IntFrom96DPI(1), gb.headerHeight}
 	if gb.Checkable() {
 		idealSize := gb.checkBox.idealSize()
 
