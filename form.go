@@ -8,6 +8,7 @@ package walk
 
 import (
 	"fmt"
+	"math"
 	"sync"
 	"syscall"
 	"time"
@@ -519,13 +520,20 @@ func (fb *FormBase) SetIcon(icon Image) error {
 	var hIconSmall, hIconBig uintptr
 
 	if icon != nil {
-		smallIcon, err := iconCache.Icon(icon, fb.DPI())
+		dpi := fb.DPI()
+		size96dpi := icon.Size()
+		scale := float64(dpi) / float64(size96dpi.Height)
+
+		smallHeight96dpi := int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))
+		smallDPI := int(math.Round(float64(smallHeight96dpi) * scale))
+		smallIcon, err := iconCache.Icon(icon, smallDPI)
 		if err != nil {
 			return err
 		}
-		hIconSmall = uintptr(smallIcon.handleForDPI(fb.DPI()))
+		hIconSmall = uintptr(smallIcon.handleForDPI(smallDPI))
 
-		bigDPI := int(48.0 / float64(icon.Size().Width) * 96.0)
+		bigHeight96dpi := int(win.GetSystemMetricsForDpi(win.SM_CYICON, 96))
+		bigDPI := int(math.Round(float64(bigHeight96dpi) * scale))
 		bigIcon, err := iconCache.Icon(icon, bigDPI)
 		if err != nil {
 			return err
