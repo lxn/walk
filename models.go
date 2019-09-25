@@ -333,8 +333,7 @@ func (cs *CellStyle) Bounds() Rectangle {
 func (cs *CellStyle) Canvas() *Canvas {
 	if cs.canvas == nil && cs.hdc != 0 {
 		cs.canvas, _ = newCanvasFromHDC(cs.hdc)
-		cs.canvas.dpix = cs.dpi
-		cs.canvas.dpiy = cs.dpi
+		cs.canvas.dpi = cs.dpi
 	}
 
 	return cs.canvas
@@ -387,8 +386,7 @@ func (lis *ListItemStyle) Bounds() Rectangle {
 func (lis *ListItemStyle) Canvas() *Canvas {
 	if lis.canvas == nil && lis.hdc != 0 {
 		lis.canvas, _ = newCanvasFromHDC(lis.hdc)
-		lis.canvas.dpix = lis.dpi
-		lis.canvas.dpiy = lis.dpi
+		lis.canvas.dpi = lis.dpi
 	}
 
 	return lis.canvas

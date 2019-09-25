@@ -55,8 +55,7 @@ type Canvas struct {
 	hdc                 win.HDC
 	hBmpStock           win.HBITMAP
 	window              Window
-	dpix                int
-	dpiy                int
+	dpi                 int
 	bitmap              *Bitmap
 	recordingMetafile   *Metafile
 	measureTextMetafile *Metafile
@@ -85,7 +84,7 @@ func NewCanvasFromImage(image Image) (*Canvas, error) {
 
 		succeeded = true
 
-		return (&Canvas{hdc: hdc, hBmpStock: hBmpStock, bitmap: img, dpix: img.dpi, dpiy: img.dpi}).init()
+		return (&Canvas{hdc: hdc, hBmpStock: hBmpStock, bitmap: img, dpi: img.dpi}).init()
 
 	case *Metafile:
 		c, err := newCanvasFromHDC(img.hdc)
@@ -119,9 +118,8 @@ func newCanvasFromHDC(hdc win.HDC) (*Canvas, error) {
 }
 
 func (c *Canvas) init() (*Canvas, error) {
-	if c.dpix == 0 || c.dpiy == 0 {
-		c.dpix = dpiForHDC(c.hdc)
-		c.dpiy = c.dpix
+	if c.dpi == 0 {
+		c.dpi = dpiForHDC(c.hdc)
 	}
 
 	if win.SetBkMode(c.hdc, win.TRANSPARENT) == 0 {
@@ -169,7 +167,7 @@ func (c *Canvas) DPI() int {
 		return c.window.DPI()
 	}
 
-	return c.dpix
+	return c.dpi
 }
 
 func (c *Canvas) withGdiObj(handle win.HGDIOBJ, f func() error) error {

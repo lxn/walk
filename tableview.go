@@ -381,8 +381,7 @@ func (tv *TableView) applyFont(font *Font) {
 func (tv *TableView) ApplyDPI(dpi int) {
 	tv.style.dpi = dpi
 	if tv.style.canvas != nil {
-		tv.style.canvas.dpix = dpi
-		tv.style.canvas.dpiy = dpi
+		tv.style.canvas.dpi = dpi
 	}
 
 	tv.WidgetBase.ApplyDPI(dpi)

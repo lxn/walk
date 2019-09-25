@@ -22,7 +22,7 @@ const inchesPerMeter = 39.37008
 type Bitmap struct {
 	hBmp       win.HBITMAP
 	hPackedDIB win.HGLOBAL
-	size       SizePixels // Bitmap size in native pixels
+	size       SizePixels
 	dpi        int
 }
 
@@ -211,8 +211,7 @@ func NewBitmapFromImageWithSize(image Image, size SizePixels) (*Bitmap, error) {
 	}
 	defer canvas.Dispose()
 
-	canvas.dpix = dpi
-	canvas.dpiy = dpi
+	canvas.dpi = dpi
 
 	if err := canvas.DrawImageStretchedPixels(image, RectanglePixels{0, 0, size.Width, size.Height}); err != nil {
 		return nil, err
@@ -333,6 +332,7 @@ func (bmp *Bitmap) Dispose() {
 	}
 }
 
+// Size returns bitmap size in 1/96" units.
 func (bmp *Bitmap) Size() Size {
 	return SizeTo96DPI(bmp.size, bmp.dpi)
 }
