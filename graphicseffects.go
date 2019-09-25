@@ -27,8 +27,8 @@ type widgetGraphicsEffectBase struct {
 }
 
 func (wgeb *widgetGraphicsEffectBase) create(color Color) error {
-	// TODO: Make DPI independent.
-	bitmap, err := NewBitmapWithTransparentPixels(SizePixels{12, 12})
+	// TODO: DPI
+	bitmap, err := NewBitmapWithTransparentPixels(Size{12, 12})
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (wgeb *widgetGraphicsEffectBase) create(color Color) error {
 	}()
 
 	for i := 1; i <= 5; i++ {
-		bmp, err := NewBitmapWithTransparentPixels(SizePixels{Pixel(i*2 + 2), Pixel(i*2 + 2)})
+		bmp, err := NewBitmapWithTransparentPixels(Size{i*2 + 2, i*2 + 2})
 		if err != nil {
 			return err
 		}
@@ -71,7 +71,7 @@ func (wgeb *widgetGraphicsEffectBase) create(color Color) error {
 		}
 		defer brush.Dispose()
 
-		if err := bmpCanvas.FillRoundedRectanglePixels(brush, RectanglePixels{0, 0, Pixel(i*2 + 2), Pixel(i*2 + 2)}, SizePixels{Pixel(i * 2), Pixel(i * 2)}); err != nil {
+		if err := bmpCanvas.FillRoundedRectangle(brush, Rectangle{0, 0, i*2 + 2, i*2 + 2}, Size{i * 2, i * 2}); err != nil {
 			return err
 		}
 
@@ -79,7 +79,7 @@ func (wgeb *widgetGraphicsEffectBase) create(color Color) error {
 
 		opacity := byte(borderGlowAlpha[i-1] * 255.0)
 
-		canvas.DrawBitmapWithOpacityPixels(bmp, RectanglePixels{Pixel(5 - i), Pixel(5 - i), Pixel(i*2 + 2), Pixel(i*2 + 2)}, opacity)
+		canvas.DrawBitmapWithOpacity(bmp, Rectangle{5 - i, 5 - i, i*2 + 2, i*2 + 2}, opacity)
 	}
 
 	succeeded = true
