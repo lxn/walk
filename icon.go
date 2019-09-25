@@ -261,9 +261,7 @@ func (i *Icon) handleForDPI(dpi int) win.HICON {
 func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 	if i.dpi2hIcon == nil {
 		i.dpi2hIcon = make(map[int]win.HICON)
-	}
-
-	if handle, ok := i.dpi2hIcon[dpi]; ok {
+	} else if handle, ok := i.dpi2hIcon[dpi]; ok {
 		return handle, nil
 	}
 

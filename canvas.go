@@ -214,7 +214,7 @@ func (c *Canvas) BoundsPixels() RectanglePixels {
 }
 
 func (c *Canvas) withPen(pen Pen, f func() error) error {
-	return c.withGdiObj(win.HGDIOBJ(pen.handle()), f)
+	return c.withGdiObj(win.HGDIOBJ(pen.handleForDPI(c.dpi)), f)
 }
 
 func (c *Canvas) withBrushAndPen(brush Brush, pen Pen, f func() error) error {
