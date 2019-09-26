@@ -994,11 +994,13 @@ func (wb *WindowBase) IntTo96DPI(value int) int {
 	return IntTo96DPI(value, wb.DPI())
 }
 
-func (wb *WindowBase) MarginsFrom96DPI(value Margins) MarginsPixels {
+// MarginsFrom96DPI converts from 1/96" units to native pixels.
+func (wb *WindowBase) MarginsFrom96DPI(value Margins) Margins {
 	return MarginsFrom96DPI(value, wb.DPI())
 }
 
-func (wb *WindowBase) MarginsTo96DPI(value MarginsPixels) Margins {
+// MarginsTo96DPI converts from native pixels to 1/96" units.
+func (wb *WindowBase) MarginsTo96DPI(value Margins) Margins {
 	return MarginsTo96DPI(value, wb.DPI())
 }
 

@@ -521,6 +521,25 @@ func scaleInt(value int, scale float64) int {
 	return int(math.Round(float64(value) * scale))
 }
 
+// MarginsFrom96DPI converts from 1/96" units to native pixels.
+func MarginsFrom96DPI(value Margins, dpi int) Margins {
+	return scaleMargins(value, float64(dpi)/96.0)
+}
+
+// MarginsTo96DPI converts from native pixels to 1/96" units.
+func MarginsTo96DPI(value Margins, dpi int) Margins {
+	return scaleMargins(value, 96.0/float64(dpi))
+}
+
+func scaleMargins(value Margins, scale float64) Margins {
+	return Margins{
+		HNear: scaleInt(value.HNear, scale),
+		VNear: scaleInt(value.VNear, scale),
+		HFar:  scaleInt(value.HFar, scale),
+		VFar:  scaleInt(value.VFar, scale),
+	}
+}
+
 // PointFrom96DPI converts from 1/96" units to native pixels.
 func PointFrom96DPI(value Point, dpi int) Point {
 	return scalePoint(value, float64(dpi)/96.0)

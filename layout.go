@@ -367,50 +367,13 @@ func applyLayoutResults(results []LayoutResult, stopwatch *stopwatch) error {
 	return nil
 }
 
-// Margins define margins in 1/96" units.
+// Margins define margins in 1/96" units or native pixels.
 type Margins struct {
 	HNear, VNear, HFar, VFar int
 }
 
 func (m Margins) isZero() bool {
 	return m.HNear == 0 && m.HFar == 0 && m.VNear == 0 && m.VFar == 0
-}
-
-func scaleMargins(value Margins, scale float64) MarginsPixels {
-	return MarginsPixels{
-		HNear: scaleInt(value.HNear, scale),
-		VNear: scaleInt(value.VNear, scale),
-		HFar:  scaleInt(value.HFar, scale),
-		VFar:  scaleInt(value.VFar, scale),
-	}
-}
-
-// MarginsFrom96DPI converts from 1/96" units to native pixels.
-func MarginsFrom96DPI(value Margins, dpi int) MarginsPixels {
-	return scaleMargins(value, float64(dpi)/96.0)
-}
-
-// MarginsPixels define margins in native pixels.
-type MarginsPixels struct {
-	HNear, VNear, HFar, VFar int
-}
-
-func (m MarginsPixels) isZero() bool {
-	return m.HNear == 0 && m.HFar == 0 && m.VNear == 0 && m.VFar == 0
-}
-
-func scaleParginsPixel(value MarginsPixels, scale float64) Margins {
-	return Margins{
-		HNear: scaleInt(value.HNear, scale),
-		VNear: scaleInt(value.VNear, scale),
-		HFar:  scaleInt(value.HFar, scale),
-		VFar:  scaleInt(value.VFar, scale),
-	}
-}
-
-// MarginsTo96DPI converts from native pixels to 1/96" units.
-func MarginsTo96DPI(value MarginsPixels, dpi int) Margins {
-	return scaleParginsPixel(value, 96.0/float64(dpi))
 }
 
 type Layout interface {
@@ -428,7 +391,7 @@ type LayoutBase struct {
 	layout       Layout
 	container    Container
 	margins96dpi Margins
-	margins      MarginsPixels
+	margins      Margins // in native pixels
 	spacing96dpi int
 	spacing      int // in native pixels
 	alignment    Alignment2D
