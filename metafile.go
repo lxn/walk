@@ -107,10 +107,10 @@ func (mf *Metafile) Size() Size {
 }
 
 func (mf *Metafile) draw(hdc win.HDC, location Point) error {
-	return mf.drawStretched(hdc, RectanglePixels{location.X, location.Y, mf.size.Width, mf.size.Height})
+	return mf.drawStretched(hdc, Rectangle{location.X, location.Y, mf.size.Width, mf.size.Height})
 }
 
-func (mf *Metafile) drawStretched(hdc win.HDC, bounds RectanglePixels) error {
+func (mf *Metafile) drawStretched(hdc win.HDC, bounds Rectangle) error {
 	rc := bounds.toRECT()
 
 	if !win.PlayEnhMetaFile(hdc, mf.hemf, &rc) {

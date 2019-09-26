@@ -215,7 +215,7 @@ func NewBitmapFromImageWithSize(image Image, size Size) (*Bitmap, error) {
 
 	canvas.dpi = dpi
 
-	if err := canvas.DrawImageStretchedPixels(image, RectanglePixels{0, 0, size.Width, size.Height}); err != nil {
+	if err := canvas.DrawImageStretchedPixels(image, Rectangle{0, 0, size.Width, size.Height}); err != nil {
 		return nil, err
 	}
 
@@ -346,18 +346,21 @@ func (bmp *Bitmap) handle() win.HBITMAP {
 }
 
 func (bmp *Bitmap) draw(hdc win.HDC, location Point) error {
-	return bmp.drawStretched(hdc, RectanglePixels{X: location.X, Y: location.Y, Width: bmp.size.Width, Height: bmp.size.Height})
+	return bmp.drawStretched(hdc, Rectangle{X: location.X, Y: location.Y, Width: bmp.size.Width, Height: bmp.size.Height})
 }
 
-func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds RectanglePixels) error {
+func (bmp *Bitmap) drawStretched(hdc win.HDC, bounds Rectangle) error {
 	return bmp.alphaBlend(hdc, bounds, 255)
 }
 
-func (bmp *Bitmap) alphaBlend(hdc win.HDC, bounds RectanglePixels, opacity byte) error {
-	return bmp.alphaBlendPart(hdc, bounds, RectanglePixels{0, 0, bmp.size.Width, bmp.size.Height}, opacity)
+// alphaBlend displays bitmaps that have transparent or semitransparent pixels. bounds is represented in native pixels.
+func (bmp *Bitmap) alphaBlend(hdc win.HDC, bounds Rectangle, opacity byte) error {
+	return bmp.alphaBlendPart(hdc, bounds, Rectangle{0, 0, bmp.size.Width, bmp.size.Height}, opacity)
 }
 
-func (bmp *Bitmap) alphaBlendPart(hdc win.HDC, dst, src RectanglePixels, opacity byte) error {
+// alphaBlendPart displays bitmaps that have transparent or semitransparent pixels. dst and src are
+// represented in native pixels.
+func (bmp *Bitmap) alphaBlendPart(hdc win.HDC, dst, src Rectangle, opacity byte) error {
 	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
 		if !win.AlphaBlend(
 			hdc,
@@ -543,7 +546,7 @@ func hBitmapFromIcon(icon *Icon, size Size, dpi int) (win.HBITMAP, error) {
 	hOld := win.SelectObject(hdcMem, win.HGDIOBJ(hBmp))
 	defer win.SelectObject(hdcMem, hOld)
 
-	err := icon.drawStretched(hdcMem, RectanglePixels{Width: size.Width, Height: size.Height})
+	err := icon.drawStretched(hdcMem, Rectangle{Width: size.Width, Height: size.Height})
 	if err != nil {
 		return 0, err
 	}

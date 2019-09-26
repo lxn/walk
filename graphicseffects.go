@@ -90,7 +90,7 @@ func (wgeb *widgetGraphicsEffectBase) bitmapForDPI(dpi int) (*Bitmap, error) {
 		defer brush.Dispose()
 
 		ellipseSize := SizeFrom96DPI(Size{i * 2, i * 2}, dpi)
-		if err := bmpCanvas.FillRoundedRectanglePixels(brush, RectanglePixels{0, 0, size.Width, size.Height}, ellipseSize); err != nil {
+		if err := bmpCanvas.FillRoundedRectanglePixels(brush, Rectangle{0, 0, size.Width, size.Height}, ellipseSize); err != nil {
 			return nil, err
 		}
 
@@ -99,7 +99,7 @@ func (wgeb *widgetGraphicsEffectBase) bitmapForDPI(dpi int) (*Bitmap, error) {
 		opacity := byte(borderGlowAlpha[i-1] * 255.0)
 
 		offset := PointFrom96DPI(Point{5 - i, 5 - i}, dpi)
-		canvas.DrawBitmapWithOpacityPixels(bmp, RectanglePixels{offset.X, offset.Y, size.Width, size.Height}, opacity)
+		canvas.DrawBitmapWithOpacityPixels(bmp, Rectangle{offset.X, offset.Y, size.Width, size.Height}, opacity)
 	}
 
 	disposables.Spare()
@@ -136,14 +136,14 @@ func (bge *BorderGlowEffect) Draw(widget Widget, canvas *Canvas) error {
 	off2 := IntFrom96DPI(2, dpi)
 	off5 := IntFrom96DPI(5, dpi)
 
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X - off5, b.Y - off5, off5, off5}, RectanglePixels{0, 0, off5, off5})
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X, b.Y - off5, b.Width, off5}, RectanglePixels{off5 + off1, 0, off1, off5})
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X + b.Width, b.Y - off5, off5, off5}, RectanglePixels{off5 + off2, 0, off5, off5})
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X + b.Width, b.Y, off5, b.Height}, RectanglePixels{off5 + off2, off5 + off1, off5, off1})
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X + b.Width, b.Y + b.Height, off5, off5}, RectanglePixels{off5 + off2, off5 + off2, off5, off5})
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X, b.Y + b.Height, b.Width, off5}, RectanglePixels{off5 + off1, off5 + off2, off1, off5})
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X - off5, b.Y + b.Height, off5, off5}, RectanglePixels{0, off5 + off2, off5, off5})
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X - off5, b.Y, off5, b.Height}, RectanglePixels{0, off5 + off1, off5, off1})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X - off5, b.Y - off5, off5, off5}, Rectangle{0, 0, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X, b.Y - off5, b.Width, off5}, Rectangle{off5 + off1, 0, off1, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y - off5, off5, off5}, Rectangle{off5 + off2, 0, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y, off5, b.Height}, Rectangle{off5 + off2, off5 + off1, off5, off1})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y + b.Height, off5, off5}, Rectangle{off5 + off2, off5 + off2, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X, b.Y + b.Height, b.Width, off5}, Rectangle{off5 + off1, off5 + off2, off1, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X - off5, b.Y + b.Height, off5, off5}, Rectangle{0, off5 + off2, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X - off5, b.Y, off5, b.Height}, Rectangle{0, off5 + off1, off5, off1})
 
 	return nil
 }
@@ -176,11 +176,11 @@ func (dse *DropShadowEffect) Draw(widget Widget, canvas *Canvas) error {
 	off5 := IntFrom96DPI(5, dpi)
 	off10 := IntFrom96DPI(10, dpi)
 
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X + b.Width, b.Y + off10 - off5, off5, off5}, RectanglePixels{off5 + off2, 0, off5, off5})
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X + b.Width, b.Y + off10, off5, b.Height - off10}, RectanglePixels{off5 + off2, off5 + off1, off5, off1})
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X + b.Width, b.Y + b.Height, off5, off5}, RectanglePixels{off5 + off2, off5 + off2, off5, off5})
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X + off10, b.Y + b.Height, b.Width - off10, off5}, RectanglePixels{off5 + off1, off5 + off2, off1, off5})
-	canvas.DrawBitmapPart(bitmap, RectanglePixels{b.X + off10 - off5, b.Y + b.Height, off5, off5}, RectanglePixels{0, off5 + off2, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y + off10 - off5, off5, off5}, Rectangle{off5 + off2, 0, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y + off10, off5, b.Height - off10}, Rectangle{off5 + off2, off5 + off1, off5, off1})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y + b.Height, off5, off5}, Rectangle{off5 + off2, off5 + off2, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + off10, b.Y + b.Height, b.Width - off10, off5}, Rectangle{off5 + off1, off5 + off2, off1, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + off10 - off5, b.Y + b.Height, off5, off5}, Rectangle{0, off5 + off2, off5, off5})
 
 	return nil
 }

@@ -206,8 +206,8 @@ func (c *Canvas) Bounds() Rectangle {
 	return RectangleTo96DPI(c.BoundsPixels(), c.DPI())
 }
 
-func (c *Canvas) BoundsPixels() RectanglePixels {
-	return RectanglePixels{
+func (c *Canvas) BoundsPixels() Rectangle {
+	return Rectangle{
 		Width:  int(win.GetDeviceCaps(c.hdc, win.HORZRES)),
 		Height: int(win.GetDeviceCaps(c.hdc, win.VERTRES)),
 	}
@@ -231,7 +231,7 @@ func (c *Canvas) ellipse(brush Brush, pen Pen, bounds Rectangle, sizeCorrection 
 }
 
 // ellipsePixels draws an ellipse in native pixels.
-func (c *Canvas) ellipsePixels(brush Brush, pen Pen, bounds RectanglePixels, sizeCorrection int) error {
+func (c *Canvas) ellipsePixels(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) error {
 	return c.withBrushAndPen(brush, pen, func() error {
 		if !win.Ellipse(
 			c.hdc,
@@ -247,19 +247,27 @@ func (c *Canvas) ellipsePixels(brush Brush, pen Pen, bounds RectanglePixels, siz
 	})
 }
 
+// DrawEllipse draws an ellipse in 1/96" units.
+//
+// Deprecated: Newer applications should use DrawEllipsePixels.
 func (c *Canvas) DrawEllipse(pen Pen, bounds Rectangle) error {
 	return c.ellipse(nullBrushSingleton, pen, bounds, 0)
 }
 
-func (c *Canvas) DrawEllipsePixels(pen Pen, bounds RectanglePixels) error {
+// DrawEllipsePixels draws an ellipse in native pixels.
+func (c *Canvas) DrawEllipsePixels(pen Pen, bounds Rectangle) error {
 	return c.ellipsePixels(nullBrushSingleton, pen, bounds, 0)
 }
 
+// FillEllipse draws a filled ellipse in 1/96" units.
+//
+// Deprecated: Newer applications should use FillEllipsePixels.
 func (c *Canvas) FillEllipse(brush Brush, bounds Rectangle) error {
 	return c.ellipse(brush, nullPenSingleton, bounds, 1)
 }
 
-func (c *Canvas) FillEllipsePixels(brush Brush, bounds RectanglePixels) error {
+// FillEllipsePixels draws a filled in native pixels.
+func (c *Canvas) FillEllipsePixels(brush Brush, bounds Rectangle) error {
 	return c.ellipsePixels(brush, nullPenSingleton, bounds, 1)
 }
 
@@ -279,17 +287,21 @@ func (c *Canvas) DrawImagePixels(image Image, location Point) error {
 	return image.draw(c.hdc, location)
 }
 
+// DrawImageStretched draws image at given location in 1/96" units stretched.
+//
+// Deprecated: Newer applications should use DrawImageStretchedPixels.
 func (c *Canvas) DrawImageStretched(image Image, bounds Rectangle) error {
 	return c.DrawImageStretchedPixels(image, RectangleFrom96DPI(bounds, c.DPI()))
 }
 
-func (c *Canvas) DrawImageStretchedPixels(image Image, bounds RectanglePixels) error {
+// DrawImageStretchedPixels draws image at given location in native pixels stretched.
+func (c *Canvas) DrawImageStretchedPixels(image Image, bounds Rectangle) error {
 	if image == nil {
 		return newError("image cannot be nil")
 	}
 
 	if dsoc, ok := image.(interface {
-		drawStretchedOnCanvas(canvas *Canvas, bounds RectanglePixels) error
+		drawStretchedOnCanvas(canvas *Canvas, bounds Rectangle) error
 	}); ok {
 		return dsoc.drawStretchedOnCanvas(c, bounds)
 	}
@@ -297,11 +309,16 @@ func (c *Canvas) DrawImageStretchedPixels(image Image, bounds RectanglePixels) e
 	return image.drawStretched(c.hdc, bounds)
 }
 
+// DrawBitmapWithOpacity draws bitmap with opacity at given location in 1/96" units stretched.
+//
+// Deprecated: Newer applications should use DrawBitmapWithOpacityPixels.
 func (c *Canvas) DrawBitmapWithOpacity(bmp *Bitmap, bounds Rectangle, opacity byte) error {
 	return c.DrawBitmapWithOpacityPixels(bmp, RectangleFrom96DPI(bounds, c.DPI()), opacity)
 }
 
-func (c *Canvas) DrawBitmapWithOpacityPixels(bmp *Bitmap, bounds RectanglePixels, opacity byte) error {
+// DrawBitmapWithOpacityPixels draws bitmap with opacity at given location in native pixels
+// stretched.
+func (c *Canvas) DrawBitmapWithOpacityPixels(bmp *Bitmap, bounds Rectangle, opacity byte) error {
 	if bmp == nil {
 		return newError("bmp cannot be nil")
 	}
@@ -309,16 +326,21 @@ func (c *Canvas) DrawBitmapWithOpacityPixels(bmp *Bitmap, bounds RectanglePixels
 	return bmp.alphaBlend(c.hdc, bounds, opacity)
 }
 
-func (c *Canvas) DrawBitmapPart(bmp *Bitmap, dst, src RectanglePixels) error {
+// DrawBitmapPart draws bitmap at given location in native pixels.
+func (c *Canvas) DrawBitmapPart(bmp *Bitmap, dst, src Rectangle) error {
 	return c.DrawBitmapPartWithOpacityPixels(bmp, dst, src, 0xff)
 }
 
+// DrawBitmapPartWithOpacity draws bitmap at given location in 1/96" units.
+//
+// Deprecated: Newer applications should use DrawBitmapPartWithOpacityPixels.
 func (c *Canvas) DrawBitmapPartWithOpacity(bmp *Bitmap, dst, src Rectangle, opacity byte) error {
 	dpi := c.DPI()
 	return c.DrawBitmapPartWithOpacityPixels(bmp, RectangleFrom96DPI(dst, dpi), RectangleFrom96DPI(src, dpi), opacity)
 }
 
-func (c *Canvas) DrawBitmapPartWithOpacityPixels(bmp *Bitmap, dst, src RectanglePixels, opacity byte) error {
+// DrawBitmapPartWithOpacityPixels draws bitmap at given location in native pixels.
+func (c *Canvas) DrawBitmapPartWithOpacityPixels(bmp *Bitmap, dst, src Rectangle, opacity byte) error {
 	if bmp == nil {
 		return newError("bmp cannot be nil")
 	}
@@ -400,7 +422,7 @@ func (c *Canvas) rectangle(brush Brush, pen Pen, bounds Rectangle, sizeCorrectio
 }
 
 // rectanglePixels draws a rectangle in native pixels.
-func (c *Canvas) rectanglePixels(brush Brush, pen Pen, bounds RectanglePixels, sizeCorrection int) error {
+func (c *Canvas) rectanglePixels(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) error {
 	return c.withBrushAndPen(brush, pen, func() error {
 		if !win.Rectangle_(
 			c.hdc,
@@ -416,23 +438,27 @@ func (c *Canvas) rectanglePixels(brush Brush, pen Pen, bounds RectanglePixels, s
 	})
 }
 
+// DrawRectangle draws a rectangle in 1/96" units.
+//
+// Deprecated: Newer applications should use DrawRectanglePixels.
 func (c *Canvas) DrawRectangle(pen Pen, bounds Rectangle) error {
 	return c.rectangle(nullBrushSingleton, pen, bounds, 0)
 }
 
-func (c *Canvas) DrawRectanglePixels(pen Pen, bounds RectanglePixels) error {
+// DrawRectanglePixels draws a rectangle in native pixels.
+func (c *Canvas) DrawRectanglePixels(pen Pen, bounds Rectangle) error {
 	return c.rectanglePixels(nullBrushSingleton, pen, bounds, 0)
 }
 
+// FillRectangle draws a filled rectangle in 1/96" units.
+//
+// Deprecated: Newer applications should use FillRectanglePixels.
 func (c *Canvas) FillRectangle(brush Brush, bounds Rectangle) error {
 	return c.rectangle(brush, nullPenSingleton, bounds, 1)
 }
 
-func (c *Canvas) FillRectanglePixels(brush Brush, bounds RectanglePixels) error {
-	return c.rectanglePixels(brush, nullPenSingleton, bounds, 1)
-}
-
-func (c *Canvas) fillRectanglePixels(brush Brush, bounds RectanglePixels) error {
+// FillRectanglePixels draws a filled rectangle in native pixels.
+func (c *Canvas) FillRectanglePixels(brush Brush, bounds Rectangle) error {
 	return c.rectanglePixels(brush, nullPenSingleton, bounds, 1)
 }
 
@@ -446,7 +472,7 @@ func (c *Canvas) roundedRectangle(brush Brush, pen Pen, bounds Rectangle, ellips
 }
 
 // roundedRectanglePixels draws a rounded rectangle in native pixels.
-func (c *Canvas) roundedRectanglePixels(brush Brush, pen Pen, bounds RectanglePixels, ellipseSize Size, sizeCorrection int) error {
+func (c *Canvas) roundedRectanglePixels(brush Brush, pen Pen, bounds Rectangle, ellipseSize Size, sizeCorrection int) error {
 	return c.withBrushAndPen(brush, pen, func() error {
 		if !win.RoundRect(
 			c.hdc,
@@ -473,7 +499,7 @@ func (c *Canvas) DrawRoundedRectangle(pen Pen, bounds Rectangle, ellipseSize Siz
 }
 
 // DrawRoundedRectanglePixels draws a rounded rectangle in native pixels.
-func (c *Canvas) DrawRoundedRectanglePixels(pen Pen, bounds RectanglePixels, ellipseSize Size) error {
+func (c *Canvas) DrawRoundedRectanglePixels(pen Pen, bounds Rectangle, ellipseSize Size) error {
 	return c.roundedRectanglePixels(nullBrushSingleton, pen, bounds, ellipseSize, 0)
 }
 
@@ -487,15 +513,19 @@ func (c *Canvas) FillRoundedRectangle(brush Brush, bounds Rectangle, ellipseSize
 }
 
 // FillRoundedRectanglePixels draws a filled rounded rectangle in native pixels.
-func (c *Canvas) FillRoundedRectanglePixels(brush Brush, bounds RectanglePixels, ellipseSize Size) error {
+func (c *Canvas) FillRoundedRectanglePixels(brush Brush, bounds Rectangle, ellipseSize Size) error {
 	return c.roundedRectanglePixels(brush, nullPenSingleton, bounds, ellipseSize, 1)
 }
 
+// GradientFillRectangle draws a gradient filled rectangle in 1/96" units.
+//
+// Deprecated: Newer applications should use GradientFillRectanglePixels.
 func (c *Canvas) GradientFillRectangle(color1, color2 Color, orientation Orientation, bounds Rectangle) error {
 	return c.GradientFillRectanglePixels(color1, color2, orientation, RectangleFrom96DPI(bounds, c.DPI()))
 }
 
-func (c *Canvas) GradientFillRectanglePixels(color1, color2 Color, orientation Orientation, bounds RectanglePixels) error {
+// GradientFillRectanglePixels draws a gradient filled rectangle in native pixels.
+func (c *Canvas) GradientFillRectanglePixels(color1, color2 Color, orientation Orientation, bounds Rectangle) error {
 	vertices := [2]win.TRIVERTEX{
 		{
 			X:     int32(bounds.X),
@@ -526,11 +556,15 @@ func (c *Canvas) GradientFillRectanglePixels(color1, color2 Color, orientation O
 	return nil
 }
 
+// DrawText draws text at given location in 1/96" units.
+//
+// Deprecated: Newer applications should use DrawTextPixels.
 func (c *Canvas) DrawText(text string, font *Font, color Color, bounds Rectangle, format DrawTextFormat) error {
 	return c.DrawTextPixels(text, font, color, RectangleFrom96DPI(bounds, c.DPI()), format)
 }
 
-func (c *Canvas) DrawTextPixels(text string, font *Font, color Color, bounds RectanglePixels, format DrawTextFormat) error {
+// DrawTextPixels draws text at given location in native pixels.
+func (c *Canvas) DrawTextPixels(text string, font *Font, color Color, bounds Rectangle, format DrawTextFormat) error {
 	return c.withFontAndTextColor(font, color, func() error {
 		rect := bounds.toRECT()
 		ret := win.DrawTextEx(
@@ -567,7 +601,8 @@ func (c *Canvas) fontHeight(font *Font) (height int, err error) {
 	return
 }
 
-func (c *Canvas) measureTextForDPI(text string, font *Font, bounds RectanglePixels, format DrawTextFormat, dpi int) (boundsMeasured RectanglePixels, err error) {
+// measureTextForDPI measures text for given DPI. Input and output bounds are in native pixels.
+func (c *Canvas) measureTextForDPI(text string, font *Font, bounds Rectangle, format DrawTextFormat, dpi int) (boundsMeasured Rectangle, err error) {
 	hFont := win.HGDIOBJ(font.handleForDPI(dpi))
 	oldHandle := win.SelectObject(c.hdc, hFont)
 	if oldHandle == 0 {
@@ -595,7 +630,7 @@ func (c *Canvas) measureTextForDPI(text string, font *Font, bounds RectanglePixe
 		return
 	}
 
-	boundsMeasured = RectanglePixels{
+	boundsMeasured = Rectangle{
 		int(rect.Left),
 		int(rect.Top),
 		int(rect.Right - rect.Left),
@@ -605,9 +640,12 @@ func (c *Canvas) measureTextForDPI(text string, font *Font, bounds RectanglePixe
 	return
 }
 
+// MeasureText measures text size. Input and output bounds are in 1/96" units.
+//
+// Deprecated: Newer applications should use MeasureTextPixels.
 func (c *Canvas) MeasureText(text string, font *Font, bounds Rectangle, format DrawTextFormat) (boundsMeasured Rectangle, runesFitted int, err error) {
 	dpi := c.DPI()
-	var boundsMeasuredPixels RectanglePixels
+	var boundsMeasuredPixels Rectangle
 	boundsMeasuredPixels, runesFitted, err = c.MeasureTextPixels(text, font, RectangleFrom96DPI(bounds, dpi), format)
 	if err != nil {
 		return
@@ -616,7 +654,8 @@ func (c *Canvas) MeasureText(text string, font *Font, bounds Rectangle, format D
 	return
 }
 
-func (c *Canvas) MeasureTextPixels(text string, font *Font, bounds RectanglePixels, format DrawTextFormat) (boundsMeasured RectanglePixels, runesFitted int, err error) {
+// MeasureTextPixels measures text size. Input and output bounds are in native pixels.
+func (c *Canvas) MeasureTextPixels(text string, font *Font, bounds Rectangle, format DrawTextFormat) (boundsMeasured Rectangle, runesFitted int, err error) {
 	// HACK: We don't want to actually draw on the Canvas here, but if we use
 	// the DT_CALCRECT flag to avoid drawing, DRAWTEXTPARAMc.UiLengthDrawn will
 	// not contain a useful value. To work around this, we create an in-memory
@@ -655,7 +694,7 @@ func (c *Canvas) MeasureTextPixels(text string, font *Font, bounds RectanglePixe
 		return
 	}
 
-	boundsMeasured = RectanglePixels{
+	boundsMeasured = Rectangle{
 		int(rect.Left),
 		int(rect.Top),
 		int(rect.Right - rect.Left),

@@ -301,7 +301,7 @@ type CellStyler interface {
 type CellStyle struct {
 	row             int
 	col             int
-	bounds          RectanglePixels
+	bounds          Rectangle // in native pixels
 	hdc             win.HDC
 	dpi             int
 	canvas          *Canvas
@@ -330,7 +330,7 @@ func (cs *CellStyle) Bounds() Rectangle {
 	return RectangleTo96DPI(cs.bounds, cs.dpi)
 }
 
-func (cs *CellStyle) BoundsPixels() RectanglePixels {
+func (cs *CellStyle) BoundsPixels() Rectangle {
 	return cs.bounds
 }
 
@@ -375,7 +375,7 @@ type ListItemStyle struct {
 	index              int
 	hoverIndex         int
 	rc                 win.RECT
-	bounds             RectanglePixels
+	bounds             Rectangle // in native pixels
 	state              uint32
 	hTheme             win.HTHEME
 	hwnd               win.HWND
@@ -393,7 +393,7 @@ func (lis *ListItemStyle) Bounds() Rectangle {
 	return RectangleTo96DPI(lis.bounds, lis.dpi)
 }
 
-func (lis *ListItemStyle) BoundsPixels() RectanglePixels {
+func (lis *ListItemStyle) BoundsPixels() Rectangle {
 	return lis.bounds
 }
 
@@ -451,7 +451,7 @@ func (lis *ListItemStyle) DrawBackground() error {
 }
 
 // DrawText draws text inside given bounds specified in native pixels.
-func (lis *ListItemStyle) DrawText(text string, bounds RectanglePixels, format DrawTextFormat) error {
+func (lis *ListItemStyle) DrawText(text string, bounds Rectangle, format DrawTextFormat) error {
 	if lis.hTheme != 0 {
 		if lis.Font != nil {
 			hFontOld := win.SelectObject(lis.hdc, win.HGDIOBJ(lis.Font.handleForDPI(lis.dpi)))

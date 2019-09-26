@@ -186,14 +186,14 @@ func (wb *WidgetBase) Bounds() Rectangle {
 // decorations.
 //
 // The coordinates are relative to the parent of the Widget.
-func (wb *WidgetBase) BoundsPixels() RectanglePixels {
+func (wb *WidgetBase) BoundsPixels() Rectangle {
 	b := wb.WindowBase.BoundsPixels()
 
 	if wb.parent != nil {
 		p := b.Location().toPOINT()
 		if !win.ScreenToClient(wb.parent.Handle(), &p) {
 			newError("ScreenToClient failed")
-			return RectanglePixels{}
+			return Rectangle{}
 		}
 		b.X = int(p.X)
 		b.Y = int(p.Y)

@@ -121,7 +121,7 @@ func (gb *GroupBox) AsContainerBase() *ContainerBase {
 	return gb.composite.AsContainerBase()
 }
 
-func (gb *GroupBox) ClientBoundsPixels() RectanglePixels {
+func (gb *GroupBox) ClientBoundsPixels() Rectangle {
 	cb := windowClientBounds(gb.hWndGroupBox)
 
 	if gb.Layout() == nil {
@@ -136,7 +136,7 @@ func (gb *GroupBox) ClientBoundsPixels() RectanglePixels {
 	}
 
 	padding := gb.IntFrom96DPI(1)
-	return RectanglePixels{cb.X + padding, cb.Y + gb.headerHeight, cb.Width - 2*padding, cb.Height - gb.headerHeight - 2*padding}
+	return Rectangle{cb.X + padding, cb.Y + gb.headerHeight, cb.Width - 2*padding, cb.Height - gb.headerHeight - 2*padding}
 }
 
 func (gb *GroupBox) updateHeaderHeight() {
@@ -361,7 +361,7 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				} else {
 					x = gb.headerHeight * 2 / 3
 				}
-				gb.checkBox.SetBoundsPixels(RectanglePixels{x, gb.headerHeight, s.Width, s.Height})
+				gb.checkBox.SetBoundsPixels(Rectangle{x, gb.headerHeight, s.Width, s.Height})
 			}
 
 			gbcb := gb.ClientBoundsPixels()
@@ -434,7 +434,7 @@ func (li *groupBoxLayoutItem) PerformLayout() []LayoutResultItem {
 	return []LayoutResultItem{
 		{
 			Item:   li.children[0],
-			Bounds: RectanglePixels{X: li.compositePos.X, Y: li.compositePos.Y, Width: li.geometry.Size.Width - li.compositePos.X*2, Height: li.geometry.Size.Height - li.compositePos.Y - IntFrom96DPI(5, li.ctx.dpi)},
+			Bounds: Rectangle{X: li.compositePos.X, Y: li.compositePos.Y, Width: li.geometry.Size.Width - li.compositePos.X*2, Height: li.geometry.Size.Height - li.compositePos.Y - IntFrom96DPI(5, li.ctx.dpi)},
 		},
 	}
 }

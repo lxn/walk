@@ -174,7 +174,7 @@ func (dlg *Dialog) Show() {
 			ob := dlg.owner.BoundsPixels()
 
 			if dlg.centerInOwnerWhenRun {
-				dlg.SetBoundsPixels(fitRectToScreen(dlg.hWnd, RectanglePixels{
+				dlg.SetBoundsPixels(fitRectToScreen(dlg.hWnd, Rectangle{
 					ob.X + (ob.Width-size.Width)/2,
 					ob.Y + (ob.Height-size.Height)/2,
 					size.Width,
@@ -184,7 +184,7 @@ func (dlg *Dialog) Show() {
 		} else {
 			b := dlg.BoundsPixels()
 
-			dlg.SetBoundsPixels(RectanglePixels{b.X, b.Y, size.Width, size.Height})
+			dlg.SetBoundsPixels(Rectangle{b.X, b.Y, size.Width, size.Height})
 		}
 	}
 
@@ -193,7 +193,8 @@ func (dlg *Dialog) Show() {
 	dlg.startLayout()
 }
 
-func fitRectToScreen(hWnd win.HWND, r RectanglePixels) RectanglePixels {
+// fitRectToScreen fits rectangle to screen. Input and output rectangles are in native pixels.
+func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {
 	var mi win.MONITORINFO
 	mi.CbSize = uint32(unsafe.Sizeof(mi))
 

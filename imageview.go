@@ -35,7 +35,7 @@ type ImageView struct {
 func NewImageView(parent Container) (*ImageView, error) {
 	iv := new(ImageView)
 
-	cw, err := NewCustomWidgetPixels(parent, 0, func(canvas *Canvas, updateBounds RectanglePixels) error {
+	cw, err := NewCustomWidgetPixels(parent, 0, func(canvas *Canvas, updateBounds Rectangle) error {
 		return iv.drawImage(canvas, updateBounds)
 	})
 	if err != nil {
@@ -166,7 +166,7 @@ func (iv *ImageView) MarginChanged() *Event {
 	return iv.marginChangedPublisher.Event()
 }
 
-func (iv *ImageView) drawImage(canvas *Canvas, _ RectanglePixels) error {
+func (iv *ImageView) drawImage(canvas *Canvas, _ Rectangle) error {
 	if iv.image == nil {
 		return nil
 	}
@@ -183,7 +183,7 @@ func (iv *ImageView) drawImage(canvas *Canvas, _ RectanglePixels) error {
 
 	switch iv.mode {
 	case ImageViewModeShrink, ImageViewModeZoom, ImageViewModeStretch:
-		var bounds RectanglePixels
+		var bounds Rectangle
 
 		if iv.mode == ImageViewModeStretch {
 			bounds.X = margin
@@ -213,7 +213,7 @@ func (iv *ImageView) drawImage(canvas *Canvas, _ RectanglePixels) error {
 		win.IntersectClipRect(canvas.hdc, int32(margin), int32(margin), int32(cb.Width+margin), int32(cb.Height+margin))
 	}
 
-	var bounds RectanglePixels
+	var bounds Rectangle
 
 	switch iv.mode {
 	case ImageViewModeIdeal, ImageViewModeCorner:

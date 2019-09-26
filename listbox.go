@@ -620,7 +620,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		lb.styler.StyleItem(&lb.style)
 
 		defer func() {
-			lb.style.bounds = RectanglePixels{}
+			lb.style.bounds = Rectangle{}
 			if lb.style.canvas != nil {
 				lb.style.canvas.Dispose()
 				lb.style.canvas = nil

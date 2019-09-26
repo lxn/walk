@@ -232,7 +232,7 @@ func (sv *ScrollView) updateScrollBars() {
 	si.CbSize = uint32(unsafe.Sizeof(si))
 	si.FMask = win.SIF_PAGE | win.SIF_RANGE
 
-	newCompositeBounds := RectanglePixels{Width: compositeSize.Width, Height: compositeSize.Height}
+	newCompositeBounds := Rectangle{Width: compositeSize.Width, Height: compositeSize.Height}
 
 	if size != compositeSize {
 		dpi := uint32(sv.DPI())
@@ -439,7 +439,7 @@ func (li *scrollViewLayoutItem) PerformLayout() []LayoutResultItem {
 	return []LayoutResultItem{
 		{
 			Item:   composite,
-			Bounds: RectanglePixels{x, y, s.Width, s.Height},
+			Bounds: Rectangle{x, y, s.Width, s.Height},
 		},
 	}
 }

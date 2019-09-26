@@ -659,7 +659,7 @@ func (li *gridLayoutItem) PerformLayout() []LayoutResultItem {
 			}
 		}
 
-		items = append(items, LayoutResultItem{Item: item, Bounds: RectanglePixels{X: x, Y: y, Width: w, Height: h}})
+		items = append(items, LayoutResultItem{Item: item, Bounds: Rectangle{X: x, Y: y, Width: w, Height: h}})
 	}
 
 	return items

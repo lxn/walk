@@ -1948,7 +1948,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 				if styler := tv.styler; styler != nil && image == nil {
 					tv.style.row = row
 					tv.style.col = col
-					tv.style.bounds = RectanglePixels{}
+					tv.style.bounds = Rectangle{}
 					tv.style.dpi = tv.DPI()
 					tv.style.Image = nil
 
@@ -2010,7 +2010,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						tv.styler.StyleCell(&tv.style)
 
 						defer func() {
-							tv.style.bounds = RectanglePixels{}
+							tv.style.bounds = Rectangle{}
 							if tv.style.canvas != nil {
 								tv.style.canvas.Dispose()
 								tv.style.canvas = nil
@@ -2091,7 +2091,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 							defer brush.Dispose()
 
 							canvas, _ := newCanvasFromHDC(nmlvcd.Nmcd.Hdc)
-							canvas.fillRectanglePixels(brush, rectangleFromRECT(nmlvcd.Nmcd.Rc))
+							canvas.FillRectanglePixels(brush, rectangleFromRECT(nmlvcd.Nmcd.Rc))
 						}
 					}
 
@@ -2322,7 +2322,7 @@ func tableViewHdrWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 					tv.styler.StyleCell(&tv.style)
 
 					defer func() {
-						tv.style.bounds = RectanglePixels{}
+						tv.style.bounds = Rectangle{}
 						if tv.style.canvas != nil {
 							tv.style.canvas.Dispose()
 							tv.style.canvas = nil

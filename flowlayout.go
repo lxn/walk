@@ -109,7 +109,7 @@ func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
 	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
 	margins := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
 
-	bounds := RectanglePixels{Width: size.Width}
+	bounds := Rectangle{Width: size.Width}
 
 	sections := li.sectionsForPrimarySize(size.Width)
 
@@ -171,7 +171,7 @@ func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
 
 func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
 	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
-	bounds := RectanglePixels{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
+	bounds := Rectangle{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
 
 	sections := li.sectionsForPrimarySize(bounds.Width)
 

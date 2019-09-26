@@ -186,7 +186,7 @@ func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 		return min
 	}
 
-	bounds := RectanglePixels{Width: size.Width, Height: size.Height}
+	bounds := Rectangle{Width: size.Width, Height: size.Height}
 
 	items := boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, bounds, li.margins96dpi, li.spacing96dpi, li.hwnd2StretchFactor)
 
@@ -232,7 +232,7 @@ func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 }
 
 func (li *boxLayoutItem) PerformLayout() []LayoutResultItem {
-	cb := RectanglePixels{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
+	cb := Rectangle{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
 	return boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, cb, li.margins96dpi, li.spacing96dpi, li.hwnd2StretchFactor)
 }
 
@@ -285,7 +285,8 @@ func boxLayoutFlags(orientation Orientation, children []LayoutItem) LayoutFlags 
 	return flags
 }
 
-func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientation Orientation, alignment Alignment2D, bounds RectanglePixels, margins96dpi Margins, spacing96dpi int, hwnd2StretchFactor map[win.HWND]int) []LayoutResultItem {
+// boxLayoutItems lays out items. bounds parameter is in native pixels.
+func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientation Orientation, alignment Alignment2D, bounds Rectangle, margins96dpi Margins, spacing96dpi int, hwnd2StretchFactor map[win.HWND]int) []LayoutResultItem {
 	if len(items) == 0 {
 		return nil
 	}
@@ -538,7 +539,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 		p1 += s1 + spacing
 
-		results = append(results, LayoutResultItem{Item: item, Bounds: RectanglePixels{X: x, Y: y, Width: w, Height: h}})
+		results = append(results, LayoutResultItem{Item: item, Bounds: Rectangle{X: x, Y: y, Width: w, Height: h}})
 	}
 
 	return results

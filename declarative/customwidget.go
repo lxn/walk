@@ -59,7 +59,7 @@ type CustomWidget struct {
 	ClearsBackground    bool
 	InvalidatesOnResize bool
 	Paint               walk.PaintFunc
-	PaintPixels         walk.PaintFuncPixels
+	PaintPixels         walk.PaintFunc
 	PaintMode           PaintMode
 	Style               uint32
 }

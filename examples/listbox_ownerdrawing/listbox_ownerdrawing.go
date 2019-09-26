@@ -165,7 +165,7 @@ func (s *Styler) ItemHeight(index int, width int) int {
 	wd := widthDPI{width, dpi}
 	wsPerLine, ok := s.widthDPI2WsPerLine[wd]
 	if !ok {
-		bounds, _, err := canvas.MeasureTextPixels("W", (*s.lb).Font(), walk.RectanglePixels{Width: 9999999}, walk.TextCalcRect)
+		bounds, _, err := canvas.MeasureTextPixels("W", (*s.lb).Font(), walk.Rectangle{Width: 9999999}, walk.TextCalcRect)
 		if err != nil {
 			return 0
 		}
@@ -178,7 +178,7 @@ func (s *Styler) ItemHeight(index int, width int) int {
 		return stampSize.Height + marginV*2
 	}
 
-	bounds, _, err := canvas.MeasureTextPixels(msg, (*s.lb).Font(), walk.RectanglePixels{Width: width - marginH*4 - lineW - stampSize.Width, Height: 255}, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
+	bounds, _, err := canvas.MeasureTextPixels(msg, (*s.lb).Font(), walk.Rectangle{Width: width - marginH*4 - lineW - stampSize.Width, Height: 255}, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
 	if err != nil {
 		return 0
 	}
@@ -238,7 +238,7 @@ func (s *Styler) StampSize() walk.Size {
 			return walk.Size{}
 		}
 
-		bounds, _, err := canvas.MeasureTextPixels("Jan _2 20:04:05.000", (*s.lb).Font(), walk.RectanglePixels{Width: 9999999}, walk.TextCalcRect)
+		bounds, _, err := canvas.MeasureTextPixels("Jan _2 20:04:05.000", (*s.lb).Font(), walk.Rectangle{Width: 9999999}, walk.TextCalcRect)
 		if err != nil {
 			return walk.Size{}
 		}

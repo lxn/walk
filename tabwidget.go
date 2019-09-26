@@ -236,11 +236,12 @@ func (tw *TabWidget) resizePages() {
 	}
 }
 
-func (tw *TabWidget) pageBounds() RectanglePixels {
+// pageBounds returns page bounds in native pixels.
+func (tw *TabWidget) pageBounds() Rectangle {
 	var r win.RECT
 	if !win.GetWindowRect(tw.hWndTab, &r) {
 		lastError("GetWindowRect")
-		return RectanglePixels{}
+		return Rectangle{}
 	}
 
 	p := win.POINT{
@@ -249,7 +250,7 @@ func (tw *TabWidget) pageBounds() RectanglePixels {
 	}
 	if !win.ScreenToClient(tw.hWnd, &p) {
 		newError("ScreenToClient failed")
-		return RectanglePixels{}
+		return Rectangle{}
 	}
 
 	r = win.RECT{
@@ -261,7 +262,7 @@ func (tw *TabWidget) pageBounds() RectanglePixels {
 	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
 	// TODO: Should 2px adjustment be in 1/96" units or native pixels?
-	return RectanglePixels{
+	return Rectangle{
 		int(r.Left - 2),
 		int(r.Top),
 		int(r.Right - r.Left + 2),
@@ -811,10 +812,11 @@ func (li *tabWidgetLayoutItem) PerformLayout() []LayoutResultItem {
 	if li.currentIndex > -1 {
 		page := li.children[li.currentIndex]
 
+		// TODO: Should 1px adjustment be in 1/96" units or native pixels?
 		return []LayoutResultItem{
 			{
 				Item:   page,
-				Bounds: RectanglePixels{X: li.pagePos.X, Y: li.pagePos.Y, Width: li.geometry.Size.Width - li.pagePos.X*2 - 1, Height: li.geometry.Size.Height - li.pagePos.Y - 2},
+				Bounds: Rectangle{X: li.pagePos.X, Y: li.pagePos.Y, Width: li.geometry.Size.Width - li.pagePos.X*2 - 1, Height: li.geometry.Size.Height - li.pagePos.Y - 2},
 			},
 		}
 	}

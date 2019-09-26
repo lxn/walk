@@ -54,7 +54,7 @@ type Window interface {
 	// For a Form, like *MainWindow or *Dialog, the rectangle is in screen
 	// coordinates, for a child Window the coordinates are relative to its
 	// parent.
-	BoundsPixels() RectanglePixels
+	BoundsPixels() Rectangle
 
 	// BoundsChanged returns an *Event that you can attach to for handling bounds
 	// changed events for the Window.
@@ -69,7 +69,7 @@ type Window interface {
 
 	// ClientBoundsPixels returns the inner bounding box rectangle of the Window,
 	// excluding decorations.
-	ClientBoundsPixels() RectanglePixels
+	ClientBoundsPixels() Rectangle
 
 	// ContextMenu returns the context menu of the Window.
 	//
@@ -230,7 +230,7 @@ type Window interface {
 	// For a Form, like *MainWindow or *Dialog, the rectangle is in screen
 	// coordinates, for a child Window the coordinates are relative to its
 	// parent.
-	SetBoundsPixels(value RectanglePixels) error
+	SetBoundsPixels(value Rectangle) error
 
 	// SetClientSize sets the size of the inner bounding box of the Window,
 	// excluding decorations.
@@ -1014,11 +1014,13 @@ func (wb *WindowBase) PointTo96DPI(value Point) Point {
 	return PointTo96DPI(value, wb.DPI())
 }
 
-func (wb *WindowBase) RectangleFrom96DPI(value Rectangle) RectanglePixels {
+// RectangleFrom96DPI converts from 1/96" units to native pixels.
+func (wb *WindowBase) RectangleFrom96DPI(value Rectangle) Rectangle {
 	return RectangleFrom96DPI(value, wb.DPI())
 }
 
-func (wb *WindowBase) RectangleTo96DPI(value RectanglePixels) Rectangle {
+// RectangleTo96DPI converts from native pixels to 1/96" units.
+func (wb *WindowBase) RectangleTo96DPI(value Rectangle) Rectangle {
 	return RectangleTo96DPI(value, wb.DPI())
 }
 
@@ -1341,12 +1343,12 @@ func (wb *WindowBase) SetBounds(bounds Rectangle) error {
 // decorations.
 //
 // The coordinates are relative to the screen.
-func (wb *WindowBase) BoundsPixels() RectanglePixels {
+func (wb *WindowBase) BoundsPixels() Rectangle {
 	var r win.RECT
 
 	if !win.GetWindowRect(wb.hWnd, &r) {
 		lastError("GetWindowRect")
-		return RectanglePixels{}
+		return Rectangle{}
 	}
 
 	return rectangleFromRECT(r)
@@ -1357,7 +1359,7 @@ func (wb *WindowBase) BoundsPixels() RectanglePixels {
 //
 // For a Form, like *MainWindow or *Dialog, the rectangle is in screen
 // coordinates, for a child Window the coordinates are relative to its parent.
-func (wb *WindowBase) SetBoundsPixels(bounds RectanglePixels) error {
+func (wb *WindowBase) SetBoundsPixels(bounds Rectangle) error {
 	if !win.MoveWindow(
 		wb.hWnd,
 		int32(bounds.X),
@@ -1563,7 +1565,7 @@ func calculateTextSize(text string, font *Font, dpi int, width int, hwnd win.HWN
 		}
 		defer canvas.Dispose()
 
-		bounds, err := canvas.measureTextForDPI(text, font, RectanglePixels{Width: width, Height: 9999999}, 0, dpi)
+		bounds, err := canvas.measureTextForDPI(text, font, Rectangle{Width: width, Height: 9999999}, 0, dpi)
 		if err != nil {
 			return size
 		}
@@ -1744,12 +1746,13 @@ func windowTrimToClientBounds(hwnd win.HWND, pt *win.POINT) {
 	}
 }
 
-func windowClientBounds(hwnd win.HWND) RectanglePixels {
+// windowClientBounds returns window client bounds in native pixels.
+func windowClientBounds(hwnd win.HWND) Rectangle {
 	var r win.RECT
 
 	if !win.GetClientRect(hwnd, &r) {
 		lastError("GetClientRect")
-		return RectanglePixels{}
+		return Rectangle{}
 	}
 
 	return rectangleFromRECT(r)
@@ -1763,7 +1766,7 @@ func (wb *WindowBase) ClientBounds() Rectangle {
 
 // ClientBoundsPixels returns the inner bounding box rectangle of the *WindowBase,
 // excluding decorations.
-func (wb *WindowBase) ClientBoundsPixels() RectanglePixels {
+func (wb *WindowBase) ClientBoundsPixels() Rectangle {
 	return windowClientBounds(wb.hWnd)
 }
 

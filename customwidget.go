@@ -20,16 +20,8 @@ func init() {
 	})
 }
 
-// PaintFunc paints custom widget content. updateBounds is specified in 1/96".
-//
-// Deprecated: PaintFunc is taking updateBounds Rectangle (96dpi) parameter for backward
-// compatibility with clients. On high-DPI displays this is too sparse and may incur a thin
-// unpainted edge around control due to rounding errors. Newer applications should use
-// PaintFuncPixels.
+// PaintFunc paints custom widget content. updateBounds is specified in 1/96" or native pixels.
 type PaintFunc func(canvas *Canvas, updateBounds Rectangle) error
-
-// PaintFuncPixels paints custom widget content. updateBounds is specified in native pixels.
-type PaintFuncPixels func(canvas *Canvas, updateBounds RectanglePixels) error
 
 type PaintMode int
 
@@ -41,8 +33,8 @@ const (
 
 type CustomWidget struct {
 	WidgetBase
-	paint               PaintFunc
-	paintPixels         PaintFuncPixels
+	paint               PaintFunc // in 1/96" units
+	paintPixels         PaintFunc // in native pixels
 	invalidatesOnResize bool
 	paintMode           PaintMode
 }
@@ -63,7 +55,7 @@ func NewCustomWidget(parent Container, style uint, paint PaintFunc) (*CustomWidg
 }
 
 // NewCustomWidgetPixels creates and initializes a new custom draw widget.
-func NewCustomWidgetPixels(parent Container, style uint, paintPixels PaintFuncPixels) (*CustomWidget, error) {
+func NewCustomWidgetPixels(parent Container, style uint, paintPixels PaintFunc) (*CustomWidget, error) {
 	cw := &CustomWidget{paintPixels: paintPixels}
 	err := cw.init(parent, style)
 	if err != nil {
@@ -190,7 +182,8 @@ func (cw *CustomWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintpt
 	return cw.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func (cw *CustomWidget) bufferedPaint(canvas *Canvas, updateBounds RectanglePixels) error {
+// bufferedPaint draws widget on a memory buffer. updateBounds are in native pixels.
+func (cw *CustomWidget) bufferedPaint(canvas *Canvas, updateBounds Rectangle) error {
 	hdc := win.CreateCompatibleDC(canvas.hdc)
 	if hdc == 0 {
 		return newError("CreateCompatibleDC failed")

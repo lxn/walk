@@ -728,7 +728,7 @@ type LayoutResult struct {
 
 type LayoutResultItem struct {
 	Item   LayoutItem
-	Bounds RectanglePixels
+	Bounds Rectangle // in native pixels
 }
 
 func shouldLayoutItem(item LayoutItem) bool {

@@ -18,7 +18,7 @@ type Image interface {
 	draw(hdc win.HDC, location Point) error
 
 	// drawStretched draws image streched to given bounds in native pixels.
-	drawStretched(hdc win.HDC, bounds RectanglePixels) error
+	drawStretched(hdc win.HDC, bounds Rectangle) error
 
 	Dispose()
 
@@ -71,18 +71,19 @@ func NewImageFromFileForDPI(filePath string, dpi int) (Image, error) {
 
 type PaintFuncImage struct {
 	size96dpi Size
-	paint     func(canvas *Canvas, bounds RectanglePixels) error
+	paint     func(canvas *Canvas, bounds Rectangle) error // in native pixels
 	dispose   func()
 }
 
 // NewPaintFuncImage creates new PaintFuncImage struct. size parameter is specified in 1/96" units.
-func NewPaintFuncImage(size Size, paint func(canvas *Canvas, bounds RectanglePixels) error) *PaintFuncImage {
+// paint function accepts bounds in native pixels.
+func NewPaintFuncImage(size Size, paint func(canvas *Canvas, bounds Rectangle) error) *PaintFuncImage {
 	return &PaintFuncImage{size96dpi: size, paint: paint}
 }
 
 // NewPaintFuncImageWithDispose creates new PaintFuncImage struct. size parameter is specified in
-// 1/96" units.
-func NewPaintFuncImageWithDispose(size Size, paint func(canvas *Canvas, bounds RectanglePixels) error, dispose func()) *PaintFuncImage {
+// 1/96" units. paint function accepts bounds in native pixels.
+func NewPaintFuncImageWithDispose(size Size, paint func(canvas *Canvas, bounds Rectangle) error, dispose func()) *PaintFuncImage {
 	return &PaintFuncImage{size96dpi: size, paint: paint, dispose: dispose}
 }
 
@@ -90,10 +91,10 @@ func (pfi *PaintFuncImage) draw(hdc win.HDC, location Point) error {
 	dpi := dpiForHDC(hdc)
 	size := SizeFrom96DPI(pfi.size96dpi, dpi)
 
-	return pfi.drawStretched(hdc, RectanglePixels{location.X, location.Y, size.Width, size.Height})
+	return pfi.drawStretched(hdc, Rectangle{location.X, location.Y, size.Width, size.Height})
 }
 
-func (pfi *PaintFuncImage) drawStretched(hdc win.HDC, bounds RectanglePixels) error {
+func (pfi *PaintFuncImage) drawStretched(hdc win.HDC, bounds Rectangle) error {
 	canvas, err := newCanvasFromHDC(hdc)
 	if err != nil {
 		return err
@@ -103,7 +104,8 @@ func (pfi *PaintFuncImage) drawStretched(hdc win.HDC, bounds RectanglePixels) er
 	return pfi.drawStretchedOnCanvas(canvas, bounds)
 }
 
-func (pfi *PaintFuncImage) drawStretchedOnCanvas(canvas *Canvas, bounds RectanglePixels) error {
+// drawStretchedOnCanvas draws streched on canvas with bounds in native pixels.
+func (pfi *PaintFuncImage) drawStretchedOnCanvas(canvas *Canvas, bounds Rectangle) error {
 	return pfi.paint(canvas, bounds)
 }
 

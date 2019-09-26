@@ -8,9 +8,7 @@ package walk
 
 import (
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -116,7 +114,7 @@ func (mw *MainWindow) StatusBar() *StatusBar {
 	return mw.statusBar
 }
 
-func (mw *MainWindow) ClientBoundsPixels() RectanglePixels {
+func (mw *MainWindow) ClientBoundsPixels() Rectangle {
 	bounds := mw.FormBase.ClientBoundsPixels()
 
 	if mw.toolBar != nil && mw.toolBar.Actions().Len() > 0 {
@@ -223,10 +221,10 @@ func (mw *MainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		cb := mw.ClientBoundsPixels()
 
 		if mw.toolBar != nil {
-			mw.toolBar.SetBoundsPixels(RectanglePixels{0, 0, cb.Width, mw.toolBar.HeightPixels()})
+			mw.toolBar.SetBoundsPixels(Rectangle{0, 0, cb.Width, mw.toolBar.HeightPixels()})
 		}
 
-		mw.statusBar.SetBoundsPixels(RectanglePixels{0, cb.Y + cb.Height, cb.Width, mw.statusBar.HeightPixels()})
+		mw.statusBar.SetBoundsPixels(Rectangle{0, cb.Y + cb.Height, cb.Width, mw.statusBar.HeightPixels()})
 
 	case win.WM_INITMENUPOPUP:
 		mw.menu.updateItemsWithImageForWindow(mw)

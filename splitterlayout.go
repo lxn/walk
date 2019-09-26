@@ -264,7 +264,7 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 	margins := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
 	handleWidthPixels := IntFrom96DPI(li.handleWidth96dpi, li.ctx.dpi)
 	sizes := make([]int, len(li.children))
-	cb := RectanglePixels{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
+	cb := Rectangle{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
 	cb.X += margins.HNear
 	cb.Y += margins.HFar
 	cb.Width -= margins.HNear + margins.HFar
@@ -443,7 +443,7 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 			x, y, w, h = margins.HNear, p1, space2, s1
 		}
 
-		resultItems = append(resultItems, LayoutResultItem{Item: item, Bounds: RectanglePixels{x, y, w, h}})
+		resultItems = append(resultItems, LayoutResultItem{Item: item, Bounds: Rectangle{x, y, w, h}})
 
 		p1 += s1
 	}

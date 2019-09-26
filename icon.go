@@ -323,10 +323,10 @@ func (i *Icon) draw(hdc win.HDC, location Point) error {
 	dpi := dpiForHDC(hdc)
 	size := SizeFrom96DPI(i.size96dpi, dpi)
 
-	return i.drawStretched(hdc, RectanglePixels{location.X, location.Y, size.Width, size.Height})
+	return i.drawStretched(hdc, Rectangle{location.X, location.Y, size.Width, size.Height})
 }
 
-func (i *Icon) drawStretched(hdc win.HDC, bounds RectanglePixels) error {
+func (i *Icon) drawStretched(hdc win.HDC, bounds Rectangle) error {
 	dpi := int(float64(bounds.Width) / float64(i.size96dpi.Width) * 96.0)
 
 	hIcon := i.handleForDPI(dpi)

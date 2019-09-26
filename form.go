@@ -194,7 +194,7 @@ func (fb *FormBase) SetLayout(value Layout) error {
 	return fb.clientComposite.SetLayout(value)
 }
 
-func (fb *FormBase) SetBoundsPixels(bounds RectanglePixels) error {
+func (fb *FormBase) SetBoundsPixels(bounds Rectangle) error {
 	if layout := fb.Layout(); layout != nil {
 		layoutItem := CreateLayoutItemsForContainer(fb)
 		minSize := fb.sizeFromClientSizePixels(layoutItem.MinSizeForSize(bounds.Size()))
@@ -687,7 +687,7 @@ func (fb *FormBase) startLayout() bool {
 	cb := fb.window.ClientBoundsPixels()
 	cs := fb.clientSizeFromSizePixels(fb.proposedSize)
 
-	fb.clientComposite.SetBoundsPixels(RectanglePixels{cb.X, cb.Y, cs.Width, cs.Height})
+	fb.clientComposite.SetBoundsPixels(Rectangle{cb.X, cb.Y, cs.Width, cs.Height})
 
 	cli := CreateLayoutItemsForContainer(fb)
 	cli.Geometry().ClientSize = cs

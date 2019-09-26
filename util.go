@@ -557,6 +557,25 @@ func scalePoint(value Point, scale float64) Point {
 	}
 }
 
+// RectangleFrom96DPI converts from 1/96" units to native pixels.
+func RectangleFrom96DPI(value Rectangle, dpi int) Rectangle {
+	return scaleRectangle(value, float64(dpi)/96.0)
+}
+
+// RectangleTo96DPI converts from native pixels to 1/96" units.
+func RectangleTo96DPI(value Rectangle, dpi int) Rectangle {
+	return scaleRectangle(value, 96.0/float64(dpi))
+}
+
+func scaleRectangle(value Rectangle, scale float64) Rectangle {
+	return Rectangle{
+		X:      scaleInt(value.X, scale),
+		Y:      scaleInt(value.Y, scale),
+		Width:  scaleInt(value.Width, scale),
+		Height: scaleInt(value.Height, scale),
+	}
+}
+
 // SizeFrom96DPI converts from 1/96" units to native pixels.
 func SizeFrom96DPI(value Size, dpi int) Size {
 	return scaleSize(value, float64(dpi)/96.0)
