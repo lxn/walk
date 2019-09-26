@@ -10,8 +10,8 @@ import (
 	"github.com/lxn/win"
 )
 
-// Rectangle defines upper left corner with width and height region in 1/96" units or native
-// pixels.
+// Rectangle defines upper left corner with width and height region in 1/96" units, or native
+// pixels, or grid rows and columns.
 type Rectangle struct {
 	X, Y, Width, Height int
 }
@@ -70,9 +70,4 @@ func (r Rectangle) toRECT() win.RECT {
 		int32(r.X + r.Width),
 		int32(r.Y + r.Height),
 	}
-}
-
-// RectangleGrid measures X and Y of the rectangular area upper left corner, width and height in grid rows and columns.
-type RectangleGrid struct {
-	X, Y, Width, Height int
 }

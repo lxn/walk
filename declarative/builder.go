@@ -310,7 +310,7 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 					b.col += columnSpan
 				}
 
-				r := walk.RectangleGrid{column, row, columnSpan, rowSpan}
+				r := walk.Rectangle{column, row, columnSpan, rowSpan}
 
 				if err := l.SetRange(widget, r); err != nil {
 					return err

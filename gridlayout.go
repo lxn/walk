@@ -173,8 +173,8 @@ func (l *GridLayout) SetColumnStretchFactor(column, factor int) error {
 	return nil
 }
 
-func rangeFromGridLayoutWidgetInfo(info *gridLayoutWidgetInfo) RectangleGrid {
-	return RectangleGrid{
+func rangeFromGridLayoutWidgetInfo(info *gridLayoutWidgetInfo) Rectangle {
+	return Rectangle{
 		X:      info.cell.column,
 		Y:      info.cell.row,
 		Width:  info.spanHorz,
@@ -182,7 +182,7 @@ func rangeFromGridLayoutWidgetInfo(info *gridLayoutWidgetInfo) RectangleGrid {
 	}
 }
 
-func (l *GridLayout) setWidgetOnCells(widget Widget, r RectangleGrid) {
+func (l *GridLayout) setWidgetOnCells(widget Widget, r Rectangle) {
 	var wb *WidgetBase
 	if widget != nil {
 		wb = widget.AsWidgetBase()
@@ -195,9 +195,9 @@ func (l *GridLayout) setWidgetOnCells(widget Widget, r RectangleGrid) {
 	}
 }
 
-func (l *GridLayout) Range(widget Widget) (r RectangleGrid, ok bool) {
+func (l *GridLayout) Range(widget Widget) (r Rectangle, ok bool) {
 	if widget == nil {
-		return RectangleGrid{}, false
+		return Rectangle{}, false
 	}
 
 	info := l.widgetBase2Info[widget.AsWidgetBase()]
@@ -205,13 +205,13 @@ func (l *GridLayout) Range(widget Widget) (r RectangleGrid, ok bool) {
 	if info == nil ||
 		l.container == nil ||
 		!l.container.Children().containsHandle(widget.Handle()) {
-		return RectangleGrid{}, false
+		return Rectangle{}, false
 	}
 
 	return rangeFromGridLayoutWidgetInfo(info), true
 }
 
-func (l *GridLayout) SetRange(widget Widget, r RectangleGrid) error {
+func (l *GridLayout) SetRange(widget Widget, r Rectangle) error {
 	if widget == nil {
 		return newError("widget required")
 	}
