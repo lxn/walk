@@ -65,8 +65,8 @@ func (pb *ProgressBar) SetMarqueeMode(marqueeMode bool) error {
 
 func (pb *ProgressBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	return &progressBarLayoutItem{
-		idealSize: pb.dialogBaseUnitsToPixels(SizeDBU{50, 14}),
-		minSize:   pb.dialogBaseUnitsToPixels(SizeDBU{10, 14}),
+		idealSize: pb.dialogBaseUnitsToPixels(Size{50, 14}),
+		minSize:   pb.dialogBaseUnitsToPixels(Size{10, 14}),
 	}
 }
 

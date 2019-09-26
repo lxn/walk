@@ -177,7 +177,7 @@ func (*Slider) NeedsWmSize() bool {
 func (sl *Slider) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	return &sliderLayoutItem{
 		layoutFlags: sl.layoutFlags,
-		idealSize:   sl.dialogBaseUnitsToPixels(SizeDBU{15, 15}),
+		idealSize:   sl.dialogBaseUnitsToPixels(Size{15, 15}),
 	}
 }
 

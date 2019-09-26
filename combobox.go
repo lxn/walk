@@ -701,7 +701,7 @@ func (cb *ComboBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		layoutFlags = GrowableHorz
 	}
 
-	defaultSize := cb.dialogBaseUnitsToPixels(SizeDBU{30, 12})
+	defaultSize := cb.dialogBaseUnitsToPixels(Size{30, 12})
 
 	if cb.model != nil && cb.maxItemTextWidth <= 0 {
 		cb.maxItemTextWidth = cb.calculateMaxItemTextWidth()

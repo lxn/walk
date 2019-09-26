@@ -224,7 +224,7 @@ func (b *Button) idealSize() Size {
 
 	b.SendMessage(win.BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
 
-	return maxSize(sizeFromSIZE(s), b.dialogBaseUnitsToPixels(SizeDBU{50, 14}))
+	return maxSize(sizeFromSIZE(s), b.dialogBaseUnitsToPixels(Size{50, 14}))
 }
 
 func (b *Button) CreateLayoutItem(ctx *LayoutContext) LayoutItem {

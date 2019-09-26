@@ -8,7 +8,7 @@ package walk
 
 import "github.com/lxn/win"
 
-// Size defines width and height in 1/96" units or native pixels.
+// Size defines width and height in 1/96" units or native pixels, or dialog base units.
 type Size struct {
 	Width, Height int
 }
@@ -61,9 +61,4 @@ func sizeFromRECT(r win.RECT) Size {
 		Width:  int(r.Right - r.Left),
 		Height: int(r.Bottom - r.Top),
 	}
-}
-
-// SizeDBU defines width and height in dialog base units.
-type SizeDBU struct {
-	Width, Height int
 }

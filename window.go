@@ -1491,7 +1491,7 @@ func (wb *WindowBase) dialogBaseUnits() Size {
 }
 
 // dialogBaseUnitsToPixels returns size in dialog based units in native pixels.
-func (wb *WindowBase) dialogBaseUnitsToPixels(dlus SizeDBU) (pixels Size) {
+func (wb *WindowBase) dialogBaseUnitsToPixels(dlus Size) (pixels Size) {
 	base := wb.dialogBaseUnits()
 
 	return Size{

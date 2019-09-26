@@ -242,7 +242,7 @@ func (le *LineEdit) SetReadOnly(readOnly bool) error {
 
 // sizeHintForLimit returns size hint for given limit in native pixels
 func (le *LineEdit) sizeHintForLimit(limit int) (size Size) {
-	size = le.dialogBaseUnitsToPixels(SizeDBU{50, 12})
+	size = le.dialogBaseUnitsToPixels(Size{50, 12})
 	le.initCharWidth()
 	n := le.MaxLength()
 	if n > limit {

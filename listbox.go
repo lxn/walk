@@ -469,7 +469,7 @@ func (lb *ListBox) calculateMaxItemTextWidth() int {
 
 // idealSize returns listbox ideal size in native pixels.
 func (lb *ListBox) idealSize() Size {
-	defaultSize := lb.dialogBaseUnitsToPixels(SizeDBU{50, 12})
+	defaultSize := lb.dialogBaseUnitsToPixels(Size{50, 12})
 
 	if lb.maxItemTextWidth <= 0 {
 		lb.maxItemTextWidth = lb.calculateMaxItemTextWidth()

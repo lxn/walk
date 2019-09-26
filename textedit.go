@@ -75,7 +75,7 @@ func (te *TextEdit) applyFont(font *Font) {
 
 func (te *TextEdit) updateMargins() {
 	// 56 works at least from 96 to 192 DPI, so until a better solution comes up, this is it.
-	defaultSize := te.dialogBaseUnitsToPixels(SizeDBU{56, 12})
+	defaultSize := te.dialogBaseUnitsToPixels(Size{56, 12})
 
 	var rc win.RECT
 	te.SendMessage(win.EM_GETRECT, 0, uintptr(unsafe.Pointer(&rc)))
@@ -331,7 +331,7 @@ func (te *TextEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		text:                    te.Text(),
 		font:                    te.Font(),
 		minWidth:                te.calculateTextSizeImpl("W").Width,
-		nonCompactHeightMinSize: te.dialogBaseUnitsToPixels(SizeDBU{20, 12}),
+		nonCompactHeightMinSize: te.dialogBaseUnitsToPixels(Size{20, 12}),
 	}
 }
 
