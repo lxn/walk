@@ -213,19 +213,21 @@ func (iv *ImageView) drawImage(canvas *Canvas, _ RectanglePixels) error {
 		win.IntersectClipRect(canvas.hdc, int32(margin), int32(margin), int32(cb.Width+margin), int32(cb.Height+margin))
 	}
 
-	var pos PointPixels
+	var bounds RectanglePixels
 
 	switch iv.mode {
 	case ImageViewModeIdeal, ImageViewModeCorner:
-		pos.X = margin
-		pos.Y = margin
+		bounds.X = margin
+		bounds.Y = margin
 
 	case ImageViewModeCenter:
-		pos.X = margin + (cb.Width-s.Width)/2
-		pos.Y = margin + (cb.Height-s.Height)/2
+		bounds.X = margin + (cb.Width-s.Width)/2
+		bounds.Y = margin + (cb.Height-s.Height)/2
 	}
+	bounds.Width = s.Width
+	bounds.Height = s.Height
 
-	return canvas.DrawImagePixels(iv.image, pos)
+	return canvas.DrawImageStretchedPixels(iv.image, bounds)
 }
 
 func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
@@ -240,11 +242,10 @@ func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	var minSize SizePixels
 	if iv.mode == ImageViewModeIdeal {
 		if iv.image != nil {
-			m2 := iv.margin96dpi * 2
-			s := iv.image.Size()
-			s.Width += m2
-			s.Height += m2
-			idealSize = SizeFrom96DPI(s, dpi)
+			idealSize = SizeFrom96DPI(iv.image.Size(), dpi)
+			margin2 := IntFrom96DPI(iv.margin96dpi, dpi) * 2
+			idealSize.Width += margin2
+			idealSize.Height += margin2
 		}
 
 		minSize = idealSize
