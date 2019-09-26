@@ -298,7 +298,7 @@ func (tvc *TableViewColumn) Width() int {
 		return tvc.width
 	}
 
-	return IntTo96DPI(int(tvc.sendMessage(win.LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0)), tvc.tv.DPI())
+	return tvc.tv.IntTo96DPI(int(tvc.sendMessage(win.LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0)))
 }
 
 // SetWidth sets the width of the column in pixels.

@@ -9,7 +9,9 @@ package walk
 import (
 	"syscall"
 	"unsafe"
+)
 
+import (
 	"github.com/lxn/win"
 )
 

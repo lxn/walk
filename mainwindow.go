@@ -8,7 +8,9 @@ package walk
 
 import (
 	"unsafe"
+)
 
+import (
 	"github.com/lxn/win"
 )
 

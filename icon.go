@@ -130,7 +130,7 @@ func NewIconFromSysDLL(dllBaseName string, index int) (*Icon, error) {
 
 // NewIconFromSysDLLWithSize returns a new Icon, as identified by
 // index of the desired size from the system DLL identified by dllBaseName.
-func NewIconFromSysDLLWithSize(dllBaseName string, index int, size int) (*Icon, error) {
+func NewIconFromSysDLLWithSize(dllBaseName string, index, size int) (*Icon, error) {
 	system32, err := windows.GetSystemDirectory()
 	if err != nil {
 		return nil, err
@@ -145,7 +145,7 @@ func NewIconExtractedFromFile(filePath string, index, _ int) (*Icon, error) {
 }
 
 // NewIconExtractedFromFileWithSize returns a new Icon, as identified by index of the desired size from filePath.
-func NewIconExtractedFromFileWithSize(filePath string, index int, size int) (*Icon, error) {
+func NewIconExtractedFromFileWithSize(filePath string, index, size int) (*Icon, error) {
 	return checkNewIcon(&Icon{filePath: filePath, index: index, hasIndex: true, size96dpi: Size{size, size}})
 }
 
@@ -417,7 +417,7 @@ func sizeFromHICON(hIcon win.HICON) (Size, error) {
 	return Size{int(bi.BmiHeader.BiWidth), int(bi.BmiHeader.BiHeight)}, nil
 }
 
-// Return default small icon size in 1/92" units.
+// defaultIconSize returns default small icon size in 1/92" units.
 func defaultIconSize() Size {
 	return Size{int(win.GetSystemMetricsForDpi(win.SM_CXSMICON, 96)), int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))}
 }

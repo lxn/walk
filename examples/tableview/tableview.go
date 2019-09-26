@@ -10,9 +10,10 @@ import (
 	"sort"
 	"strings"
 	"time"
+)
 
+import (
 	"github.com/lxn/walk"
-
 	. "github.com/lxn/walk/declarative"
 )
 

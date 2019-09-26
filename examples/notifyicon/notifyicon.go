@@ -6,7 +6,9 @@ package main
 
 import (
 	"log"
+)
 
+import (
 	"github.com/lxn/walk"
 )
 

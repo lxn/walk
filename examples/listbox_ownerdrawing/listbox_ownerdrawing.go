@@ -141,7 +141,7 @@ const (
 	lineW96dpi   int = 1
 )
 
-func (s *Styler) ItemHeight(index int, width int) int {
+func (s *Styler) ItemHeight(index, width int) int {
 	dpi := (*s.lb).DPI()
 	marginH := walk.IntFrom96DPI(marginH96dpi, dpi)
 	marginV := walk.IntFrom96DPI(marginV96dpi, dpi)
@@ -169,7 +169,7 @@ func (s *Styler) ItemHeight(index int, width int) int {
 		if err != nil {
 			return 0
 		}
-		wsPerLine = int((width - marginH*4 - lineW - stampSize.Width) / bounds.Width)
+		wsPerLine = (width - marginH*4 - lineW - stampSize.Width) / bounds.Width
 		s.widthDPI2WsPerLine[wd] = wsPerLine
 	}
 

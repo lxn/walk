@@ -77,12 +77,12 @@ func NewMyWidget(parent walk.Container) (*MyWidget, error) {
 }
 
 func (*MyWidget) CreateLayoutItem(ctx *walk.LayoutContext) walk.LayoutItem {
-	return &myWidgetLayoutItem{idealSize: walk.Size{50, 50}}
+	return &myWidgetLayoutItem{idealSize: walk.SizeFrom96DPI(walk.Size{50, 50}, ctx.DPI())}
 }
 
 type myWidgetLayoutItem struct {
 	walk.LayoutItemBase
-	idealSize walk.Size
+	idealSize walk.Size // in native pixels
 }
 
 func (li *myWidgetLayoutItem) LayoutFlags() walk.LayoutFlags {
@@ -90,7 +90,7 @@ func (li *myWidgetLayoutItem) LayoutFlags() walk.LayoutFlags {
 }
 
 func (li *myWidgetLayoutItem) IdealSize() walk.Size {
-	return walk.SizeFrom96DPI(li.idealSize, li.Context().DPI())
+	return li.idealSize
 }
 
 func (w *MyWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {

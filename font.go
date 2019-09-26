@@ -8,7 +8,9 @@ package walk
 
 import (
 	"syscall"
+)
 
+import (
 	"github.com/lxn/win"
 )
 

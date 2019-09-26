@@ -556,7 +556,7 @@ func (l gridLayoutSectionInfoList) Less(i, j int) bool {
 			minDiff := l[i].minSize - l[j].minSize
 
 			if minDiff == 0 {
-				return int(l[i].maxSize)/l[i].stretch < int(l[j].maxSize)/l[j].stretch
+				return l[i].maxSize/l[i].stretch < l[j].maxSize/l[j].stretch
 			}
 
 			return minDiff > 0

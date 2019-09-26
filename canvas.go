@@ -380,6 +380,7 @@ func (c *Canvas) DrawPolyline(pen Pen, points []Point) error {
 	}
 
 	dpi := c.DPI()
+
 	pts := make([]win.POINT, len(points))
 	for i, p := range points {
 		pts[i] = PointFrom96DPI(p, dpi).toPOINT()
