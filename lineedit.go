@@ -32,7 +32,7 @@ type LineEdit struct {
 	readOnlyChangedPublisher EventPublisher
 	textChangedPublisher     EventPublisher
 	charWidthFont            *Font
-	charWidth                Pixel
+	charWidth                int // in native pixels
 	textColor                Color
 }
 
@@ -247,7 +247,7 @@ func (le *LineEdit) sizeHintForLimit(limit int) (size SizePixels) {
 	if n > limit {
 		n = limit
 	}
-	size.Width = Pixel(int(le.charWidth) * (n + 1))
+	size.Width = le.charWidth * (n + 1)
 	return
 }
 
@@ -275,7 +275,7 @@ func (le *LineEdit) initCharWidth() {
 		newError("GetTextExtentPoint32 failed")
 		return
 	}
-	le.charWidth = Pixel(s.CX)
+	le.charWidth = int(s.CX)
 }
 
 func (le *LineEdit) EditingFinished() *Event {

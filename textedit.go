@@ -85,9 +85,9 @@ func (te *TextEdit) updateMargins() {
 		if width == 0 {
 			width = defaultSize.Width
 		}
-		te.margins.Width = width - Pixel(rc.Right-rc.Left)
+		te.margins.Width = width - int(rc.Right-rc.Left)
 	} else {
-		te.margins.Width = Pixel(rc.Left) * 2
+		te.margins.Width = int(rc.Left) * 2
 	}
 
 	lineHeight := te.calculateTextSizeImpl("gM").Height
@@ -325,7 +325,7 @@ func (te *TextEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	}
 
 	return &textEditLayoutItem{
-		width2Height:            make(map[Pixel]Pixel),
+		width2Height:            make(map[int]int),
 		compactHeight:           te.compactHeight,
 		margins:                 te.margins,
 		text:                    te.Text(),
@@ -338,12 +338,12 @@ func (te *TextEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type textEditLayoutItem struct {
 	LayoutItemBase
 	mutex                   sync.Mutex
-	width2Height            map[Pixel]Pixel
+	width2Height            map[int]int // in native pixels
 	nonCompactHeightMinSize SizePixels
 	margins                 SizePixels
 	text                    string
 	font                    *Font
-	minWidth                Pixel
+	minWidth                int // in native pixels
 	compactHeight           bool
 }
 
@@ -376,7 +376,7 @@ func (li *textEditLayoutItem) HasHeightForWidth() bool {
 	return li.compactHeight
 }
 
-func (li *textEditLayoutItem) HeightForWidth(width Pixel) Pixel {
+func (li *textEditLayoutItem) HeightForWidth(width int) int {
 	li.mutex.Lock()
 	defer li.mutex.Unlock()
 

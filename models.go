@@ -355,11 +355,11 @@ type ListItemStyler interface {
 	ItemHeightDependsOnWidth() bool
 
 	// DefaultItemHeight returns the initial height in native pixels for any item.
-	DefaultItemHeight() Pixel
+	DefaultItemHeight() int
 
 	// ItemHeight is called for each item to retrieve the height of the item. width parameter and
 	// return value are specified in native pixels.
-	ItemHeight(index int, width Pixel) Pixel
+	ItemHeight(index int, width int) int
 
 	// StyleItem is called for each item to pick up item style information.
 	StyleItem(style *ListItemStyle)

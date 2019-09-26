@@ -35,31 +35,31 @@ func RectangleFrom96DPI(value Rectangle, dpi int) RectanglePixels {
 
 // RectanglePixels defines upper left corner with width and height region in native pixels.
 type RectanglePixels struct {
-	X, Y, Width, Height Pixel
+	X, Y, Width, Height int
 }
 
 func rectangleFromRECT(r win.RECT) RectanglePixels {
 	return RectanglePixels{
-		X:      Pixel(r.Left),
-		Y:      Pixel(r.Top),
-		Width:  Pixel(r.Right - r.Left),
-		Height: Pixel(r.Bottom - r.Top),
+		X:      int(r.Left),
+		Y:      int(r.Top),
+		Width:  int(r.Right - r.Left),
+		Height: int(r.Bottom - r.Top),
 	}
 }
 
-func (r RectanglePixels) Left() Pixel {
+func (r RectanglePixels) Left() int {
 	return r.X
 }
 
-func (r RectanglePixels) Top() Pixel {
+func (r RectanglePixels) Top() int {
 	return r.Y
 }
 
-func (r RectanglePixels) Right() Pixel {
+func (r RectanglePixels) Right() int {
 	return r.X + r.Width - 1
 }
 
-func (r RectanglePixels) Bottom() Pixel {
+func (r RectanglePixels) Bottom() int {
 	return r.Y + r.Height - 1
 }
 
@@ -96,10 +96,10 @@ func (r RectanglePixels) toRECT() win.RECT {
 
 func scaleRectanglePixels(value RectanglePixels, scale float64) Rectangle {
 	return Rectangle{
-		X:      scalePixel(value.X, scale),
-		Y:      scalePixel(value.Y, scale),
-		Width:  scalePixel(value.Width, scale),
-		Height: scalePixel(value.Height, scale),
+		X:      scaleInt(value.X, scale),
+		Y:      scaleInt(value.Y, scale),
+		Width:  scaleInt(value.Width, scale),
+		Height: scaleInt(value.Height, scale),
 	}
 }
 

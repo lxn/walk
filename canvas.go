@@ -208,8 +208,8 @@ func (c *Canvas) Bounds() Rectangle {
 
 func (c *Canvas) BoundsPixels() RectanglePixels {
 	return RectanglePixels{
-		Width:  Pixel(win.GetDeviceCaps(c.hdc, win.HORZRES)),
-		Height: Pixel(win.GetDeviceCaps(c.hdc, win.VERTRES)),
+		Width:  int(win.GetDeviceCaps(c.hdc, win.HORZRES)),
+		Height: int(win.GetDeviceCaps(c.hdc, win.VERTRES)),
 	}
 }
 
@@ -223,11 +223,15 @@ func (c *Canvas) withBrushAndPen(brush Brush, pen Pen, f func() error) error {
 	})
 }
 
-func (c *Canvas) ellipse(brush Brush, pen Pen, bounds Rectangle, sizeCorrection Pixel) error {
+// ellipse draws an ellipse in 1/96" units. sizeCorrection parameter is in native pixels.
+//
+// Deprecated: Newer applications should use ellipsePixels.
+func (c *Canvas) ellipse(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) error {
 	return c.ellipsePixels(brush, pen, RectangleFrom96DPI(bounds, c.DPI()), sizeCorrection)
 }
 
-func (c *Canvas) ellipsePixels(brush Brush, pen Pen, bounds RectanglePixels, sizeCorrection Pixel) error {
+// ellipsePixels draws an ellipse in native pixels.
+func (c *Canvas) ellipsePixels(brush Brush, pen Pen, bounds RectanglePixels, sizeCorrection int) error {
 	return c.withBrushAndPen(brush, pen, func() error {
 		if !win.Ellipse(
 			c.hdc,
@@ -376,11 +380,15 @@ func (c *Canvas) DrawPolylinePixels(pen Pen, points []PointPixels) error {
 	})
 }
 
-func (c *Canvas) rectangle(brush Brush, pen Pen, bounds Rectangle, sizeCorrection Pixel) error {
+// rectangle draws a rectangle in 1/96" units. sizeCorrection parameter is in native pixels.
+//
+// Deprecated: Newer applications should use rectanglePixels.
+func (c *Canvas) rectangle(brush Brush, pen Pen, bounds Rectangle, sizeCorrection int) error {
 	return c.rectanglePixels(brush, pen, RectangleFrom96DPI(bounds, c.DPI()), sizeCorrection)
 }
 
-func (c *Canvas) rectanglePixels(brush Brush, pen Pen, bounds RectanglePixels, sizeCorrection Pixel) error {
+// rectanglePixels draws a rectangle in native pixels.
+func (c *Canvas) rectanglePixels(brush Brush, pen Pen, bounds RectanglePixels, sizeCorrection int) error {
 	return c.withBrushAndPen(brush, pen, func() error {
 		if !win.Rectangle_(
 			c.hdc,
@@ -416,12 +424,17 @@ func (c *Canvas) fillRectanglePixels(brush Brush, bounds RectanglePixels) error 
 	return c.rectanglePixels(brush, nullPenSingleton, bounds, 1)
 }
 
-func (c *Canvas) roundedRectangle(brush Brush, pen Pen, bounds Rectangle, ellipseSize Size, sizeCorrection Pixel) error {
+// roundedRectangle draws a rounded rectangle in 1/96" units. sizeCorrection parameter is in native
+// pixels.
+//
+// Deprecated: Newer applications should use roundedRectanglePixels.
+func (c *Canvas) roundedRectangle(brush Brush, pen Pen, bounds Rectangle, ellipseSize Size, sizeCorrection int) error {
 	dpi := c.DPI()
 	return c.roundedRectanglePixels(brush, pen, RectangleFrom96DPI(bounds, dpi), SizeFrom96DPI(ellipseSize, dpi), sizeCorrection)
 }
 
-func (c *Canvas) roundedRectanglePixels(brush Brush, pen Pen, bounds RectanglePixels, ellipseSize SizePixels, sizeCorrection Pixel) error {
+// roundedRectanglePixels draws a rounded rectangle in native pixels.
+func (c *Canvas) roundedRectanglePixels(brush Brush, pen Pen, bounds RectanglePixels, ellipseSize SizePixels, sizeCorrection int) error {
 	return c.withBrushAndPen(brush, pen, func() error {
 		if !win.RoundRect(
 			c.hdc,
@@ -512,14 +525,15 @@ func (c *Canvas) DrawTextPixels(text string, font *Font, color Color, bounds Rec
 	})
 }
 
-func (c *Canvas) fontHeight(font *Font) (height Pixel, err error) {
+// fontHeight returns font height in native pixels.
+func (c *Canvas) fontHeight(font *Font) (height int, err error) {
 	err = c.withFontAndTextColor(font, 0, func() error {
 		var size win.SIZE
 		if !win.GetTextExtentPoint32(c.hdc, gM, 2, &size) {
 			return newError("GetTextExtentPoint32 failed")
 		}
 
-		height = Pixel(size.CY)
+		height = int(size.CY)
 		if height == 0 {
 			return newError("invalid font height")
 		}
@@ -559,10 +573,10 @@ func (c *Canvas) measureTextForDPI(text string, font *Font, bounds RectanglePixe
 	}
 
 	boundsMeasured = RectanglePixels{
-		Pixel(rect.Left),
-		Pixel(rect.Top),
-		Pixel(rect.Right - rect.Left),
-		Pixel(height),
+		int(rect.Left),
+		int(rect.Top),
+		int(rect.Right - rect.Left),
+		int(height),
 	}
 
 	return
@@ -619,10 +633,10 @@ func (c *Canvas) MeasureTextPixels(text string, font *Font, bounds RectanglePixe
 	}
 
 	boundsMeasured = RectanglePixels{
-		Pixel(rect.Left),
-		Pixel(rect.Top),
-		Pixel(rect.Right - rect.Left),
-		Pixel(height),
+		int(rect.Left),
+		int(rect.Top),
+		int(rect.Right - rect.Left),
+		int(height),
 	}
 	runesFitted = int(params.UiLengthDrawn)
 

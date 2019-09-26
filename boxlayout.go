@@ -116,8 +116,8 @@ func (l *BoxLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 
 type boxLayoutItemInfo struct {
 	index   int
-	minSize Pixel
-	maxSize Pixel
+	minSize int // in native pixels
+	maxSize int // in native pixels
 	stretch int
 	greedy  bool
 	item    LayoutItem
@@ -174,7 +174,7 @@ func (li *boxLayoutItem) MinSize() SizePixels {
 	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
-func (li *boxLayoutItem) HeightForWidth(width Pixel) Pixel {
+func (li *boxLayoutItem) HeightForWidth(width int) int {
 	return li.MinSizeForSize(SizePixels{width, li.geometry.ClientSize.Height}).Height
 }
 
@@ -194,7 +194,7 @@ func (li *boxLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
 	s := SizePixels{margins.HNear + margins.HFar, margins.VNear + margins.VFar}
 
-	var maxSecondary Pixel
+	var maxSecondary int
 	for _, item := range items {
 		min := li.MinSizeEffectiveForChild(item.Item)
 
@@ -206,21 +206,21 @@ func (li *boxLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 		item.Bounds.Width = min.Width
 
 		if li.orientation == Horizontal {
-			maxSecondary = maxPixel(maxSecondary, item.Bounds.Height)
+			maxSecondary = maxi(maxSecondary, item.Bounds.Height)
 
 			s.Width += item.Bounds.Width
 		} else {
-			maxSecondary = maxPixel(maxSecondary, item.Bounds.Width)
+			maxSecondary = maxi(maxSecondary, item.Bounds.Width)
 
 			s.Height += item.Bounds.Height
 		}
 	}
 
 	if li.orientation == Horizontal {
-		s.Width += Pixel((len(items) - 1) * int(spacing))
+		s.Width += (len(items) - 1) * spacing
 		s.Height += maxSecondary
 	} else {
-		s.Height += Pixel((len(items) - 1) * int(spacing))
+		s.Height += (len(items) - 1) * spacing
 		s.Width += maxSecondary
 	}
 
@@ -298,11 +298,11 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 	var greedySpacerCount int
 	var stretchFactorsTotal [3]int
 	stretchFactors := make([]int, len(items))
-	var minSizesRemaining Pixel
-	minSizes := make([]Pixel, len(items))
-	maxSizes := make([]Pixel, len(items))
-	sizes := make([]Pixel, len(items))
-	prefSizes2 := make([]Pixel, len(items))
+	var minSizesRemaining int
+	minSizes := make([]int, len(items))
+	maxSizes := make([]int, len(items))
+	sizes := make([]int, len(items))
+	prefSizes2 := make([]int, len(items))
 	growable2 := make([]bool, len(items))
 	sortedItemInfo := boxLayoutItemInfoList(make([]boxLayoutItemInfo, len(items)))
 
@@ -388,7 +388,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 	sort.Stable(sortedItemInfo)
 
-	var start1, start2, space1, space2 Pixel
+	var start1, start2, space1, space2 int
 	if orientation == Horizontal {
 		start1 = bounds.X + margins.HNear
 		start2 = bounds.Y + margins.VNear
@@ -401,7 +401,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 		space2 = bounds.Width - margins.HNear - margins.HFar
 	}
 
-	spacingRemaining := Pixel(int(spacing) * (len(items) - 1))
+	spacingRemaining := spacing * (len(items) - 1)
 
 	offsets := [3]int{0, greedyNonSpacerCount, greedyNonSpacerCount + greedySpacerCount}
 	counts := [3]int{greedyNonSpacerCount, greedySpacerCount, len(items) - greedyNonSpacerCount - greedySpacerCount}
@@ -420,7 +420,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 			if min < max {
 				excessSpace := float64(space1 - minSizesRemaining - spacingRemaining)
-				size += Pixel(excessSpace * float64(stretch) / float64(stretchFactorsRemaining))
+				size += int(excessSpace * float64(stretch) / float64(stretchFactorsRemaining))
 				if size < min {
 					size = min
 				} else if size > max {
@@ -440,13 +440,13 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 	results := make([]LayoutResultItem, 0, len(items))
 
 	excessTotal := space1 - minSizesRemaining - spacingRemaining
-	excessShare := Pixel(int(excessTotal) / len(items))
-	halfExcessShare := Pixel(int(excessTotal) / (len(items) * 2))
+	excessShare := excessTotal / len(items)
+	halfExcessShare := excessTotal / (len(items) * 2)
 	p1 := start1
 	for i, item := range items {
 		s1 := sizes[i]
 
-		var s2 Pixel
+		var s2 int
 		if hfw, ok := item.(HeightForWidther); ok && orientation == Horizontal && hfw.HasHeightForWidth() {
 			s2 = hfw.HeightForWidth(s1)
 		} else if growable2[i] {
@@ -460,7 +460,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 			align = alignment
 		}
 
-		var x, y, w, h, p2 Pixel
+		var x, y, w, h, p2 int
 		if orientation == Horizontal {
 			switch align {
 			case AlignHNearVNear, AlignHNearVCenter, AlignHNearVFar:

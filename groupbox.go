@@ -26,7 +26,7 @@ type GroupBox struct {
 	hWndGroupBox          win.HWND
 	checkBox              *CheckBox
 	composite             *Composite
-	headerHeight          Pixel
+	headerHeight          int // in native pixels
 	titleChangedPublisher EventPublisher
 }
 
@@ -355,7 +355,7 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 			if gb.Checkable() {
 				s := createLayoutItemForWidget(gb.checkBox).(MinSizer).MinSize()
-				var x Pixel
+				var x int
 				if l := gb.Layout(); l != nil {
 					x = gb.IntFrom96DPI(l.Margins().HNear)
 				} else {
@@ -420,7 +420,7 @@ func (li *groupBoxLayoutItem) HasHeightForWidth() bool {
 	return li.children[0].(HeightForWidther).HasHeightForWidth()
 }
 
-func (li *groupBoxLayoutItem) HeightForWidth(width Pixel) Pixel {
+func (li *groupBoxLayoutItem) HeightForWidth(width int) int {
 	return li.children[0].(HeightForWidther).HeightForWidth(width-li.compositePos.X*2) + li.compositePos.Y + IntFrom96DPI(5, li.ctx.dpi)
 }
 

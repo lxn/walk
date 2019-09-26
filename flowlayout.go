@@ -80,8 +80,8 @@ type flowLayoutItem struct {
 
 type flowLayoutSection struct {
 	items            []flowLayoutSectionItem
-	primarySpaceLeft Pixel
-	secondaryMinSize Pixel
+	primarySpaceLeft int // in native pixels
+	secondaryMinSize int // in native pixels
 }
 
 type flowLayoutSectionItem struct {
@@ -97,7 +97,7 @@ func (li *flowLayoutItem) MinSize() SizePixels {
 	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
-func (li *flowLayoutItem) HeightForWidth(width Pixel) Pixel {
+func (li *flowLayoutItem) HeightForWidth(width int) int {
 	return li.MinSizeForSize(SizePixels{width, li.geometry.ClientSize.Height}).Height
 }
 
@@ -114,18 +114,18 @@ func (li *flowLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 	sections := li.sectionsForPrimarySize(size.Width)
 
 	var s SizePixels
-	var maxPrimary Pixel
+	var maxPrimary int
 
 	for i, section := range sections {
 		var items []LayoutItem
-		var sectionMinWidth Pixel
+		var sectionMinWidth int
 		for _, sectionItem := range section.items {
 			items = append(items, sectionItem.item)
 
 			sectionMinWidth += sectionItem.minSize.Width
 		}
-		sectionMinWidth += Pixel((len(section.items) - 1) * int(spacing))
-		maxPrimary = maxPixel(maxPrimary, sectionMinWidth)
+		sectionMinWidth += (len(section.items) - 1) * spacing
+		maxPrimary = maxi(maxPrimary, sectionMinWidth)
 
 		bounds.Height = section.secondaryMinSize
 
@@ -139,7 +139,7 @@ func (li *flowLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 
 		layoutItems := boxLayoutItems(li, items, Horizontal, li.alignment, bounds, margins96dpi, li.spacing96dpi, li.hwnd2StretchFactor)
 
-		var maxSecondary Pixel
+		var maxSecondary int
 
 		for _, item := range layoutItems {
 			if hfw, ok := item.Item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
@@ -149,7 +149,7 @@ func (li *flowLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 				item.Bounds.Height = min.Height
 			}
 
-			maxSecondary = maxPixel(maxSecondary, item.Bounds.Height)
+			maxSecondary = maxi(maxSecondary, item.Bounds.Height)
 		}
 
 		s.Height += maxSecondary
@@ -160,7 +160,7 @@ func (li *flowLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 	s.Width = maxPrimary
 
 	s.Width += margins.HNear + margins.HFar
-	s.Height += margins.VNear + margins.VFar + Pixel((len(sections)-1)*int(spacing))
+	s.Height += margins.VNear + margins.VFar + (len(sections)-1)*spacing
 
 	if s.Width > 0 && s.Height > 0 {
 		li.size2MinSize[size] = s
@@ -197,7 +197,7 @@ func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
 
 		margins := MarginsFrom96DPI(margins96dpi, li.ctx.dpi)
 
-		var maxSecondary Pixel
+		var maxSecondary int
 
 		for _, item := range layoutItems {
 			if hfw, ok := item.Item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
@@ -206,7 +206,7 @@ func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
 				item.Bounds.Height = li.MinSizeEffectiveForChild(item.Item).Height
 			}
 
-			maxSecondary = maxPixel(maxSecondary, item.Bounds.Height)
+			maxSecondary = maxi(maxSecondary, item.Bounds.Height)
 		}
 
 		bounds.Height = maxSecondary + margins.VNear + margins.VFar
@@ -219,7 +219,8 @@ func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
 	return resultItems
 }
 
-func (li *flowLayoutItem) sectionsForPrimarySize(primarySize Pixel) []flowLayoutSection {
+// sectionsForPrimarySize calculates sections for primary width in native pixels.
+func (li *flowLayoutItem) sectionsForPrimarySize(primarySize int) []flowLayoutSection {
 	margins := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
 	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
 
@@ -254,7 +255,7 @@ func (li *flowLayoutItem) sectionsForPrimarySize(primarySize Pixel) []flowLayout
 			}
 			section.primarySpaceLeft -= sectionItem.minSize.Width
 
-			section.secondaryMinSize = maxPixel(section.secondaryMinSize, sectionItem.minSize.Height)
+			section.secondaryMinSize = maxi(section.secondaryMinSize, sectionItem.minSize.Height)
 		}
 
 		if section.primarySpaceLeft < sectionItem.minSize.Width && len(section.items) == 0 {

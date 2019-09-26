@@ -28,7 +28,7 @@ func main() {
 		model:               model,
 		dpi2StampSize:       make(map[int]walk.SizePixels),
 		widthDPI2WsPerLine:  make(map[widthDPI]int),
-		textWidthDPI2Height: make(map[textWidthDPI]walk.Pixel),
+		textWidthDPI2Height: make(map[textWidthDPI]int),
 	}
 
 	if err := (MainWindow{
@@ -104,13 +104,13 @@ type logEntry struct {
 }
 
 type widthDPI struct {
-	width walk.Pixel
+	width int // in native pixels
 	dpi   int
 }
 
 type textWidthDPI struct {
 	text  string
-	width walk.Pixel
+	width int // in native pixels
 	dpi   int
 }
 
@@ -121,14 +121,14 @@ type Styler struct {
 	font                *walk.Font
 	dpi2StampSize       map[int]walk.SizePixels
 	widthDPI2WsPerLine  map[widthDPI]int
-	textWidthDPI2Height map[textWidthDPI]walk.Pixel
+	textWidthDPI2Height map[textWidthDPI]int // in native pixels
 }
 
 func (s *Styler) ItemHeightDependsOnWidth() bool {
 	return true
 }
 
-func (s *Styler) DefaultItemHeight() walk.Pixel {
+func (s *Styler) DefaultItemHeight() int {
 	dpi := (*s.lb).DPI()
 	marginV := walk.IntFrom96DPI(marginV96dpi, dpi)
 
@@ -141,7 +141,7 @@ const (
 	lineW96dpi   int = 1
 )
 
-func (s *Styler) ItemHeight(index int, width walk.Pixel) walk.Pixel {
+func (s *Styler) ItemHeight(index int, width int) int {
 	dpi := (*s.lb).DPI()
 	marginH := walk.IntFrom96DPI(marginH96dpi, dpi)
 	marginV := walk.IntFrom96DPI(marginV96dpi, dpi)

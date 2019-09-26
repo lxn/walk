@@ -250,7 +250,7 @@ func (s *Splitter) RestoreState() error {
 		s.SetSuspended(false)
 	}()
 
-	var space Pixel
+	var space int
 	size := s.ClientBoundsPixels().Size()
 	if s.Orientation() == Horizontal {
 		space = size.Width
@@ -278,8 +278,8 @@ func (s *Splitter) RestoreState() error {
 			}
 
 			item := layout.hwnd2Item[widget.Handle()]
-			item.size = Pixel(size)
-			item.oldExplicitSize = Pixel(size)
+			item.size = size
+			item.oldExplicitSize = size
 		}
 	}
 
@@ -401,7 +401,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 				err = s.children.Insert(handleIndex, handle)
 				if err == nil {
 					// FIXME: These handlers will be leaked, if widgets get removed.
-					handle.MouseDown().Attach(func(x, y Pixel, button MouseButton) {
+					handle.MouseDown().Attach(func(x, y int, button MouseButton) {
 						if button != LeftButton {
 							return
 						}
@@ -411,7 +411,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						handle.SetBackground(splitterHandleDraggingBrush)
 					})
 
-					handle.MouseMove().Attach(func(x, y Pixel, button MouseButton) {
+					handle.MouseMove().Attach(func(x, y int, button MouseButton) {
 						if s.draggedHandle == nil {
 							return
 						}
@@ -481,7 +481,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						s.draggedHandle.Invalidate()
 					})
 
-					handle.MouseUp().Attach(func(x, y Pixel, button MouseButton) {
+					handle.MouseUp().Attach(func(x, y int, button MouseButton) {
 						if s.draggedHandle == nil {
 							return
 						}
@@ -510,8 +510,8 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						bp := prev.BoundsPixels()
 						bn := next.BoundsPixels()
 
-						var sizePrev Pixel
-						var sizeNext Pixel
+						var sizePrev int
+						var sizeNext int
 
 						if s.Orientation() == Horizontal {
 							bp.Width = bh.X - bp.X

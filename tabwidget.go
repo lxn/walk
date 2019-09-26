@@ -260,11 +260,12 @@ func (tw *TabWidget) pageBounds() RectanglePixels {
 	}
 	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
+	// TODO: Should 2px adjustment be in 1/96" units or native pixels?
 	return RectanglePixels{
-		Pixel(r.Left - 2),
-		Pixel(r.Top),
-		Pixel(r.Right - r.Left + 2),
-		Pixel(r.Bottom - r.Top),
+		int(r.Left - 2),
+		int(r.Top),
+		int(r.Right - r.Left + 2),
+		int(r.Bottom - r.Top),
 	}
 }
 
@@ -748,8 +749,8 @@ func (li *tabWidgetLayoutItem) MinSize() SizePixels {
 		if ms, ok := page.(MinSizer); ok {
 			s := ms.MinSize()
 
-			min.Width = maxPixel(min.Width, s.Width)
-			min.Height = maxPixel(min.Height, s.Height)
+			min.Width = maxi(min.Width, s.Width)
+			min.Height = maxi(min.Height, s.Height)
 		}
 	}
 
@@ -779,12 +780,12 @@ func (li *tabWidgetLayoutItem) HasHeightForWidth() bool {
 	return false
 }
 
-func (li *tabWidgetLayoutItem) HeightForWidth(width Pixel) Pixel {
+func (li *tabWidgetLayoutItem) HeightForWidth(width int) int {
 	if len(li.children) == 0 {
 		return 0
 	}
 
-	var height Pixel
+	var height int
 	margin := li.geometry.Size
 	pageSize := li.children[0].Geometry().Size
 
@@ -795,7 +796,7 @@ func (li *tabWidgetLayoutItem) HeightForWidth(width Pixel) Pixel {
 		if hfw, ok := page.(HeightForWidther); ok && hfw.HasHeightForWidth() {
 			h := hfw.HeightForWidth(width + margin.Width)
 
-			height = maxPixel(height, h)
+			height = maxi(height, h)
 		}
 	}
 

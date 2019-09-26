@@ -31,9 +31,9 @@ type ListBox struct {
 	itemChangedHandlerHandle        int
 	itemsInsertedHandlerHandle      int
 	itemsRemovedHandlerHandle       int
-	maxItemTextWidth                Pixel
-	lastWidth                       Pixel
-	lastWidthsMeasuredFor           []Pixel
+	maxItemTextWidth                int   // in native pixels
+	lastWidth                       int   // in native pixels
+	lastWidthsMeasuredFor           []int // in native pixels
 	currentIndexChangedPublisher    EventPublisher
 	selectedIndexesChangedPublisher EventPublisher
 	itemActivatedPublisher          EventPublisher
@@ -206,7 +206,7 @@ func (lb *ListBox) resetItems() error {
 
 	count := lb.model.ItemCount()
 
-	lb.lastWidthsMeasuredFor = make([]Pixel, count)
+	lb.lastWidthsMeasuredFor = make([]int, count)
 
 	for i := 0; i < count; i++ {
 		if err := lb.insertItemAt(i); err != nil {
@@ -238,8 +238,8 @@ func (lb *ListBox) ensureVisibleItemsHeightUpToDate() error {
 	count := lb.model.ItemCount()
 	var rc win.RECT
 	lb.SendMessage(win.LB_GETITEMRECT, uintptr(offset), uintptr(unsafe.Pointer(&rc)))
-	width := Pixel(rc.Right - rc.Left)
-	offsetTop := Pixel(rc.Top)
+	width := int(rc.Right - rc.Left)
+	offsetTop := int(rc.Top)
 	lbHeight := lb.HeightPixels()
 
 	var pastBottomCount int
@@ -250,7 +250,7 @@ func (lb *ListBox) ensureVisibleItemsHeightUpToDate() error {
 
 		lb.SendMessage(win.LB_GETITEMRECT, uintptr(i), uintptr(unsafe.Pointer(&rc)))
 
-		if Pixel(rc.Top)-offsetTop > lbHeight {
+		if int(rc.Top)-offsetTop > lbHeight {
 			if pastBottomCount++; pastBottomCount > 10 {
 				break
 			}
@@ -284,7 +284,7 @@ func (lb *ListBox) attachModel() {
 		if lb.styler != nil {
 			var rc win.RECT
 			lb.SendMessage(win.LB_GETITEMRECT, uintptr(index), uintptr(unsafe.Pointer(&rc)))
-			width := Pixel(rc.Right - rc.Left)
+			width := int(rc.Right - rc.Left)
 			height := lb.styler.ItemHeight(index, width)
 
 			lb.SendMessage(win.LB_SETITEMHEIGHT, uintptr(index), uintptr(height))
@@ -306,7 +306,7 @@ func (lb *ListBox) attachModel() {
 			lb.insertItemAt(i)
 		}
 
-		lb.lastWidthsMeasuredFor = append(lb.lastWidthsMeasuredFor[:from], append(make([]Pixel, to-from+1), lb.lastWidthsMeasuredFor[from:]...)...)
+		lb.lastWidthsMeasuredFor = append(lb.lastWidthsMeasuredFor[:from], append(make([]int, to-from+1), lb.lastWidthsMeasuredFor[from:]...)...)
 
 		lb.ensureVisibleItemsHeightUpToDate()
 	})
@@ -433,7 +433,8 @@ func (lb *ListBox) SetPrecision(value int) {
 	lb.precision = value
 }
 
-func (lb *ListBox) calculateMaxItemTextWidth() Pixel {
+// calculateMaxItemTextWidth returns maximum item text width in native pixels.
+func (lb *ListBox) calculateMaxItemTextWidth() int {
 	hdc := win.GetDC(lb.hWnd)
 	if hdc == 0 {
 		newError("GetDC failed")
@@ -444,7 +445,7 @@ func (lb *ListBox) calculateMaxItemTextWidth() Pixel {
 	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(lb.Font().handleForDPI(0)))
 	defer win.SelectObject(hdc, hFontOld)
 
-	var maxWidth Pixel
+	var maxWidth int
 
 	if lb.model == nil {
 		return -1
@@ -460,7 +461,7 @@ func (lb *ListBox) calculateMaxItemTextWidth() Pixel {
 			return -1
 		}
 
-		maxWidth = maxPixel(maxWidth, Pixel(s.CX))
+		maxWidth = maxi(maxWidth, int(s.CX))
 	}
 
 	return maxWidth
@@ -474,7 +475,7 @@ func (lb *ListBox) idealSize() SizePixels {
 	}
 
 	// FIXME: Use GetThemePartSize instead of guessing
-	w := maxPixel(defaultSize.Width, lb.maxItemTextWidth+IntFrom96DPI(24, lb.DPI()))
+	w := maxi(defaultSize.Width, lb.maxItemTextWidth+IntFrom96DPI(24, lb.DPI()))
 	h := defaultSize.Height + 1
 
 	return SizePixels{w, h}
@@ -485,7 +486,7 @@ func (lb *ListBox) ItemVisible(index int) bool {
 	var rc win.RECT
 	lb.SendMessage(win.LB_GETITEMRECT, uintptr(index), uintptr(unsafe.Pointer(&rc)))
 
-	return index >= topIndex && Pixel(rc.Top) < lb.HeightPixels()
+	return index >= topIndex && int(rc.Top) < lb.HeightPixels()
 }
 
 func (lb *ListBox) EnsureItemVisible(index int) {
@@ -639,7 +640,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 			width := lb.WidthPixels()
 			if width != lb.lastWidth {
 				lb.lastWidth = width
-				lb.lastWidthsMeasuredFor = make([]Pixel, lb.model.ItemCount())
+				lb.lastWidthsMeasuredFor = make([]int, lb.model.ItemCount())
 			}
 		}
 

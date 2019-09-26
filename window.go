@@ -137,7 +137,7 @@ type Window interface {
 	Height() int
 
 	// HeightPixels returns the outer height of the Window, including decorations.
-	HeightPixels() Pixel
+	HeightPixels() int
 
 	// Invalidate schedules a full repaint of the Window.
 	Invalidate() error
@@ -263,7 +263,7 @@ type Window interface {
 	SetHeight(value int) error
 
 	// SetHeightPixels sets the outer height of the Window, including decorations.
-	SetHeightPixels(value Pixel) error
+	SetHeightPixels(value int) error
 
 	// SetMinMaxSize sets the minimum and maximum outer size of the Window,
 	// including decorations.
@@ -309,7 +309,7 @@ type Window interface {
 	SetWidth(value int) error
 
 	// SetWidthPixels sets the outer width of the Window, including decorations.
-	SetWidthPixels(value Pixel) error
+	SetWidthPixels(value int) error
 
 	// SetX sets the x coordinate of the Window, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
@@ -319,7 +319,7 @@ type Window interface {
 	// SetXPixels sets the x coordinate of the Window, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Windows.
-	SetXPixels(value Pixel) error
+	SetXPixels(value int) error
 
 	// SetY sets the y coordinate of the Window, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
@@ -329,7 +329,7 @@ type Window interface {
 	// SetYPixels sets the y coordinate of the Window, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Windows.
-	SetYPixels(value Pixel) error
+	SetYPixels(value int) error
 
 	// Size returns the outer size of the Window, including decorations.
 	Size() Size
@@ -360,7 +360,7 @@ type Window interface {
 	Width() int
 
 	// WidthPixels returns the outer width of the Window, including decorations.
-	WidthPixels() Pixel
+	WidthPixels() int
 
 	// WndProc is the window procedure of the window.
 	//
@@ -376,7 +376,7 @@ type Window interface {
 	// XPixels returns the x coordinate of the Window, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Windows.
-	XPixels() Pixel
+	XPixels() int
 
 	// Y returns the y coordinate of the Window, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
@@ -386,11 +386,11 @@ type Window interface {
 	// YPixels returns the y coordinate of the Window, relative to the screen for
 	// RootWidgets like *MainWindow or *Dialog and relative to the parent for
 	// child Windows.
-	YPixels() Pixel
+	YPixels() int
 }
 
 type calcTextSizeInfo struct {
-	width Pixel
+	width int // in native pixels
 	font  fontInfo
 	text  string
 	dpi   int
@@ -891,7 +891,7 @@ func (wb *WindowBase) ContextMenuLocation() PointPixels {
 	if !win.GetWindowRect(wb.hWnd, &rc) {
 		return PointPixels{}
 	}
-	return PointPixels{Pixel(rc.Left+rc.Right) / 2, Pixel(rc.Top+rc.Bottom) / 2}
+	return PointPixels{int(rc.Left+rc.Right) / 2, int(rc.Top+rc.Bottom) / 2}
 }
 
 // ShortcutActions returns the list of actions that will be triggered if their
@@ -984,11 +984,13 @@ func (wb *WindowBase) ApplyDPI(dpi int) {
 	}
 }
 
-func (wb *WindowBase) IntFrom96DPI(value int) Pixel {
+// IntFrom96DPI converts from 1/96" units to native pixels.
+func (wb *WindowBase) IntFrom96DPI(value int) int {
 	return IntFrom96DPI(value, wb.DPI())
 }
 
-func (wb *WindowBase) IntTo96DPI(value Pixel) int {
+// IntTo96DPI converts from native pixels to 1/96" units.
+func (wb *WindowBase) IntTo96DPI(value int) int {
 	return IntTo96DPI(value, wb.DPI())
 }
 
@@ -1472,7 +1474,7 @@ func (wb *WindowBase) dialogBaseUnits() SizePixels {
 		newError("GetTextExtentPoint32 failed")
 	}
 
-	s := SizePixels{Pixel((size.CX/26 + 1) / 2), Pixel(tm.TmHeight)}
+	s := SizePixels{int((size.CX/26 + 1) / 2), int(tm.TmHeight)}
 
 	fontInfoAndDPI2DialogBaseUnits[fi] = s
 
@@ -1483,8 +1485,8 @@ func (wb *WindowBase) dialogBaseUnitsToPixels(dlus SizeDBU) (pixels SizePixels) 
 	base := wb.dialogBaseUnits()
 
 	return SizePixels{
-		Pixel(win.MulDiv(int32(dlus.Width), int32(base.Width), 4)),
-		Pixel(win.MulDiv(int32(dlus.Height), int32(base.Height), 8)),
+		int(win.MulDiv(int32(dlus.Width), int32(base.Width), 4)),
+		int(win.MulDiv(int32(dlus.Height), int32(base.Height), 8)),
 	}
 }
 
@@ -1492,7 +1494,8 @@ func (wb *WindowBase) calculateTextSizeImpl(text string) SizePixels {
 	return wb.calculateTextSizeImplForWidth(text, 0)
 }
 
-func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width Pixel) SizePixels {
+// calculateTextSizeImplForWidth calculates text size for specified width in native pixels.
+func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) SizePixels {
 	font := wb.window.Font()
 
 	dpi := wb.DPI()
@@ -1528,11 +1531,13 @@ func (wb *WindowBase) calculateTextSize() SizePixels {
 	return wb.calculateTextSizeForWidth(0)
 }
 
-func (wb *WindowBase) calculateTextSizeForWidth(width Pixel) SizePixels {
+// calculateTextSizeForWidth calculates text size for specified width in native pixels.
+func (wb *WindowBase) calculateTextSizeForWidth(width int) SizePixels {
 	return wb.calculateTextSizeImplForWidth(wb.text(), width)
 }
 
-func calculateTextSize(text string, font *Font, dpi int, width Pixel, hwnd win.HWND) SizePixels {
+// calculateTextSize calculates text size at specified DPI and for width in native pixels.
+func calculateTextSize(text string, font *Font, dpi int, width int, hwnd win.HWND) SizePixels {
 	hdc := win.GetDC(hwnd)
 	if hdc == 0 {
 		newError("GetDC failed")
@@ -1569,8 +1574,8 @@ func calculateTextSize(text string, font *Font, dpi int, width Pixel, hwnd win.H
 				return SizePixels{}
 			}
 
-			size.Width = maxPixel(size.Width, Pixel(s.CX))
-			size.Height += Pixel(s.CY)
+			size.Width = maxi(size.Width, int(s.CX))
+			size.Height += int(s.CY)
 		}
 	}
 
@@ -1609,7 +1614,7 @@ func (wb *WindowBase) X() int {
 // XPixels returns the x coordinate of the *WindowBase, relative to the screen for
 // RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Windows.
-func (wb *WindowBase) XPixels() Pixel {
+func (wb *WindowBase) XPixels() int {
 	return wb.window.BoundsPixels().X
 }
 
@@ -1623,7 +1628,7 @@ func (wb *WindowBase) SetX(value int) error {
 // SetXPixels sets the x coordinate of the *WindowBase, relative to the screen for
 // RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Windows.
-func (wb *WindowBase) SetXPixels(value Pixel) error {
+func (wb *WindowBase) SetXPixels(value int) error {
 	bounds := wb.window.BoundsPixels()
 	bounds.X = value
 
@@ -1640,7 +1645,7 @@ func (wb *WindowBase) Y() int {
 // YPixels returns the y coordinate of the *WindowBase, relative to the screen for
 // RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Windows.
-func (wb *WindowBase) YPixels() Pixel {
+func (wb *WindowBase) YPixels() int {
 	return wb.window.BoundsPixels().Y
 }
 
@@ -1654,7 +1659,7 @@ func (wb *WindowBase) SetY(value int) error {
 // SetYPixels sets the y coordinate of the *WindowBase, relative to the screen for
 // RootWidgets like *MainWindow or *Dialog and relative to the parent for
 // child Windows.
-func (wb *WindowBase) SetYPixels(value Pixel) error {
+func (wb *WindowBase) SetYPixels(value int) error {
 	bounds := wb.window.BoundsPixels()
 	bounds.Y = value
 
@@ -1667,7 +1672,7 @@ func (wb *WindowBase) Width() int {
 }
 
 // WidthPixels returns the outer width of the *WindowBase, including decorations.
-func (wb *WindowBase) WidthPixels() Pixel {
+func (wb *WindowBase) WidthPixels() int {
 	return wb.window.BoundsPixels().Width
 }
 
@@ -1677,7 +1682,7 @@ func (wb *WindowBase) SetWidth(value int) error {
 }
 
 // SetWidthPixels sets the outer width of the *WindowBase, including decorations.
-func (wb *WindowBase) SetWidthPixels(value Pixel) error {
+func (wb *WindowBase) SetWidthPixels(value int) error {
 	bounds := wb.window.BoundsPixels()
 	bounds.Width = value
 
@@ -1690,7 +1695,7 @@ func (wb *WindowBase) Height() int {
 }
 
 // HeightPixels returns the outer height of the *WindowBase, including decorations.
-func (wb *WindowBase) HeightPixels() Pixel {
+func (wb *WindowBase) HeightPixels() int {
 	return wb.window.BoundsPixels().Height
 }
 
@@ -1700,7 +1705,7 @@ func (wb *WindowBase) SetHeight(value int) error {
 }
 
 // SetHeightPixels sets the outer height of the *WindowBase, including decorations.
-func (wb *WindowBase) SetHeightPixels(value Pixel) error {
+func (wb *WindowBase) SetHeightPixels(value int) error {
 	bounds := wb.window.BoundsPixels()
 	bounds.Height = value
 
@@ -1943,8 +1948,8 @@ func (wb *WindowBase) MouseWheel() *MouseEvent {
 }
 
 func (wb *WindowBase) publishMouseEvent(publisher *MouseEventPublisher, msg uint32, wParam, lParam uintptr) {
-	x := Pixel(win.GET_X_LPARAM(lParam))
-	y := Pixel(win.GET_Y_LPARAM(lParam))
+	x := int(win.GET_X_LPARAM(lParam))
+	y := int(win.GET_Y_LPARAM(lParam))
 
 	var button MouseButton
 	switch msg {
@@ -1965,8 +1970,8 @@ func (wb *WindowBase) publishMouseEvent(publisher *MouseEventPublisher, msg uint
 }
 
 func (wb *WindowBase) publishMouseWheelEvent(publisher *MouseEventPublisher, wParam, lParam uintptr) {
-	x := Pixel(win.GET_X_LPARAM(lParam))
-	y := Pixel(win.GET_Y_LPARAM(lParam))
+	x := int(win.GET_X_LPARAM(lParam))
+	y := int(win.GET_Y_LPARAM(lParam))
 	button := MouseButton(uint32(wParam))
 
 	publisher.Publish(x, y, button)
@@ -2382,7 +2387,7 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			if widget, ok := wb.window.(Widget); ok {
 				wb := widget.AsWidgetBase()
 				wb.geometry.Size = wb.window.SizePixels()
-				wb.geometry.ClientSize = SizePixels{Pixel(wp.Cx), Pixel(wp.Cy)}
+				wb.geometry.ClientSize = SizePixels{int(wp.Cx), int(wp.Cy)}
 
 				wb.invalidateBorderInParent()
 			}

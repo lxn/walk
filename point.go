@@ -27,7 +27,7 @@ func PointFrom96DPI(value Point, dpi int) PointPixels {
 
 // PointPixels defines 2D coordinate in native pixels.
 type PointPixels struct {
-	X, Y Pixel
+	X, Y int
 }
 
 func (p PointPixels) toPOINT() win.POINT {
@@ -39,15 +39,15 @@ func (p PointPixels) toPOINT() win.POINT {
 
 func pointPixelsFromPOINT(p win.POINT) PointPixels {
 	return PointPixels{
-		X: Pixel(p.X),
-		Y: Pixel(p.Y),
+		X: int(p.X),
+		Y: int(p.Y),
 	}
 }
 
 func scalePointPixels(value PointPixels, scale float64) Point {
 	return Point{
-		X: scalePixel(value.X, scale),
-		Y: scalePixel(value.Y, scale),
+		X: scaleInt(value.X, scale),
+		Y: scaleInt(value.Y, scale),
 	}
 }
 

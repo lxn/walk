@@ -8,6 +8,7 @@ package walk
 
 import (
 	"bytes"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -504,4 +505,18 @@ func dpiForHDC(hdc win.HDC) int {
 	}
 
 	return int(win.GetDeviceCaps(hdc, win.LOGPIXELSX))
+}
+
+// IntFrom96DPI converts from 1/96" units to native pixels.
+func IntFrom96DPI(value, dpi int) int {
+	return scaleInt(value, float64(dpi)/96.0)
+}
+
+// IntTo96DPI converts from native pixels to 1/96" units.
+func IntTo96DPI(value, dpi int) int {
+	return scaleInt(value, 96.0/float64(dpi))
+}
+
+func scaleInt(value int, scale float64) int {
+	return int(math.Round(float64(value) * scale))
 }

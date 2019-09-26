@@ -421,8 +421,8 @@ func newBitmapFromHBITMAP(hBmp win.HBITMAP, dpi int) (bmp *Bitmap, err error) {
 		hBmp:       hBmp,
 		hPackedDIB: hPackedDIB,
 		size: SizePixels{
-			Pixel(bmih.BiWidth),
-			Pixel(bmih.BiHeight),
+			int(bmih.BiWidth),
+			int(bmih.BiHeight),
 		},
 		dpi: dpi,
 	}, nil

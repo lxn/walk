@@ -6,9 +6,7 @@ package main
 
 import (
 	"log"
-)
 
-import (
 	"github.com/lxn/walk"
 )
 
@@ -42,7 +40,7 @@ func main() {
 	}
 
 	// When the left mouse button is pressed, bring up our balloon.
-	ni.MouseDown().Attach(func(x, y walk.Pixel, button walk.MouseButton) {
+	ni.MouseDown().Attach(func(x, y int, button walk.MouseButton) {
 		if button != walk.LeftButton {
 			return
 		}

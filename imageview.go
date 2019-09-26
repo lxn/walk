@@ -201,8 +201,8 @@ func (iv *ImageView) drawImage(canvas *Canvas, _ RectanglePixels) error {
 				scale = 1.0
 			}
 
-			bounds.Width = Pixel(float64(s.Width) * scale)
-			bounds.Height = Pixel(float64(s.Height) * scale)
+			bounds.Width = int(float64(s.Width) * scale)
+			bounds.Height = int(float64(s.Height) * scale)
 			bounds.X = margin + (cb.Width-bounds.Width)/2
 			bounds.Y = margin + (cb.Height-bounds.Height)/2
 		}

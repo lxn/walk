@@ -392,7 +392,7 @@ func MarginsFrom96DPI(value Margins, dpi int) MarginsPixels {
 
 // MarginsPixels define margins in native pixels.
 type MarginsPixels struct {
-	HNear, VNear, HFar, VFar Pixel
+	HNear, VNear, HFar, VFar int
 }
 
 func (m MarginsPixels) isZero() bool {
@@ -401,10 +401,10 @@ func (m MarginsPixels) isZero() bool {
 
 func scaleParginsPixel(value MarginsPixels, scale float64) Margins {
 	return Margins{
-		HNear: scalePixel(value.HNear, scale),
-		VNear: scalePixel(value.VNear, scale),
-		HFar:  scalePixel(value.HFar, scale),
-		VFar:  scalePixel(value.VFar, scale),
+		HNear: scaleInt(value.HNear, scale),
+		VNear: scaleInt(value.VNear, scale),
+		HFar:  scaleInt(value.HFar, scale),
+		VFar:  scaleInt(value.VFar, scale),
 	}
 }
 
@@ -430,7 +430,7 @@ type LayoutBase struct {
 	margins96dpi Margins
 	margins      MarginsPixels
 	spacing96dpi int
-	spacing      Pixel
+	spacing      int // in native pixels
 	alignment    Alignment2D
 	resetNeeded  bool
 	dirty        bool
@@ -561,7 +561,10 @@ type MinSizeForSizer interface {
 
 type HeightForWidther interface {
 	HasHeightForWidth() bool
-	HeightForWidth(width Pixel) Pixel
+
+	// HeightForWidth returns appropriate height if element has given width. width parameter and
+	// return value are in native pixels.
+	HeightForWidth(width int) int
 }
 
 type LayoutContext struct {

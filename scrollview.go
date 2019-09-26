@@ -237,8 +237,8 @@ func (sv *ScrollView) updateScrollBars() {
 	if size != compositeSize {
 		dpi := uint32(sv.DPI())
 
-		vsbw := Pixel(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, dpi))
-		hsbh := Pixel(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, dpi))
+		vsbw := int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, dpi))
+		hsbh := int(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, dpi))
 
 		if size.Width < compositeSize.Width && size.Height < compositeSize.Height {
 			size.Width -= vsbw
@@ -259,7 +259,8 @@ func (sv *ScrollView) updateScrollBars() {
 	sv.composite.SetBoundsPixels(newCompositeBounds)
 }
 
-func (sv *ScrollView) scroll(sb int32, cmd uint16) Pixel {
+// scroll scrolls and returns new position in native pixels.
+func (sv *ScrollView) scroll(sb int32, cmd uint16) int {
 	var pos int32
 	var si win.SCROLLINFO
 	si.CbSize = uint32(unsafe.Sizeof(si))
@@ -271,10 +272,10 @@ func (sv *ScrollView) scroll(sb int32, cmd uint16) Pixel {
 
 	switch cmd {
 	case win.SB_LINELEFT: // == win.SB_LINEUP
-		pos -= 20
+		pos -= 20 // TODO: DPI
 
 	case win.SB_LINERIGHT: // == win.SB_LINEDOWN
-		pos += 20
+		pos += 20 // TODO: DPI
 
 	case win.SB_PAGELEFT: // == win.SB_PAGEUP
 		pos -= int32(si.NPage)
@@ -297,7 +298,7 @@ func (sv *ScrollView) scroll(sb int32, cmd uint16) Pixel {
 	si.NPos = pos
 	win.SetScrollInfo(sv.hWnd, sb, &si, true)
 
-	return -Pixel(pos)
+	return -int(pos)
 }
 
 func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
@@ -331,7 +332,7 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 			maxSizePixels := SizeFrom96DPI(sv.maxSize, ctx.dpi)
 			if svli.idealSize.Width > sv.geometry.ClientSize.Width && sv.geometry.ClientSize.Width > 0 && sv.maxSize.Width == 0 ||
 				svli.idealSize.Width > maxSizePixels.Width && maxSizePixels.Width > 0 {
-				svli.sbSize.Height = Pixel(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(ctx.dpi)))
+				svli.sbSize.Height = int(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(ctx.dpi)))
 				svli.idealSize.Height += svli.sbSize.Height
 			}
 
@@ -346,7 +347,7 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 			maxSizePixels := SizeFrom96DPI(sv.maxSize, ctx.dpi)
 			if svli.idealSize.Height > sv.geometry.ClientSize.Height && sv.geometry.ClientSize.Height > 0 && sv.maxSize.Height == 0 ||
 				svli.idealSize.Height > maxSizePixels.Height && maxSizePixels.Height > 0 {
-				svli.sbSize.Width = Pixel(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))
+				svli.sbSize.Width = int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))
 				svli.idealSize.Width += svli.sbSize.Width
 			}
 
@@ -397,7 +398,7 @@ func (li *scrollViewLayoutItem) HasHeightForWidth() bool {
 	return false
 }
 
-func (li *scrollViewLayoutItem) HeightForWidth(width Pixel) Pixel {
+func (li *scrollViewLayoutItem) HeightForWidth(width int) int {
 	return 0
 }
 
@@ -415,7 +416,7 @@ func (li *scrollViewLayoutItem) PerformLayout() []LayoutResultItem {
 				clientSize.Width = minSize.Width
 				minSize = composite.(MinSizeForSizer).MinSizeForSize(clientSize)
 			} else {
-				clientSize.Width -= Pixel(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(li.ctx.dpi)))
+				clientSize.Width -= int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(li.ctx.dpi)))
 				minSize = composite.(MinSizeForSizer).MinSizeForSize(clientSize)
 				if minSize.Width > clientSize.Width {
 					clientSize.Width = minSize.Width
@@ -427,12 +428,12 @@ func (li *scrollViewLayoutItem) PerformLayout() []LayoutResultItem {
 
 	s := maxSizePixels(minSize, clientSize)
 
-	var x, y Pixel
+	var x, y int
 	if clientSize.Width < minSize.Width {
-		x = -Pixel(float64(minSize.Width) * li.scrollX)
+		x = -int(float64(minSize.Width) * li.scrollX)
 	}
 	if clientSize.Height < minSize.Height {
-		y = -Pixel(float64(minSize.Height) * li.scrollY)
+		y = -int(float64(minSize.Height) * li.scrollY)
 	}
 
 	return []LayoutResultItem{

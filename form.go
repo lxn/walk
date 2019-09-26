@@ -760,8 +760,8 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		minSizePixels := SizeFrom96DPI(fb.minSize, fb.DPI())
 
 		mmi.PtMinTrackSize = PointPixels{
-			maxPixel(min.Width, minSizePixels.Width),
-			maxPixel(min.Height, minSizePixels.Height),
+			maxi(min.Width, minSizePixels.Width),
+			maxi(min.Height, minSizePixels.Height),
 		}.toPOINT()
 		return 0
 
@@ -790,7 +790,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			break
 		}
 
-		fb.proposedSize = SizePixels{Pixel(wp.Cx), Pixel(wp.Cy)}
+		fb.proposedSize = SizePixels{int(wp.Cx), int(wp.Cy)}
 
 		const performingLayoutSubject = "*FormBase.WndProc - WM_WINDOWPOSCHANGED - full layout from sizing loop"
 

@@ -195,8 +195,8 @@ func (wb *WidgetBase) BoundsPixels() RectanglePixels {
 			newError("ScreenToClient failed")
 			return RectanglePixels{}
 		}
-		b.X = Pixel(p.X)
-		b.Y = Pixel(p.Y)
+		b.X = int(p.X)
+		b.Y = int(p.Y)
 	}
 
 	return b

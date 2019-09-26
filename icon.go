@@ -163,7 +163,7 @@ func NewIconFromImageForDPI(im image.Image, dpi int) (ic *Icon, err error) {
 		return nil, err
 	}
 	b := im.Bounds()
-	return newIconFromHICONAndSize(hIcon, SizeTo96DPI(SizePixels{Pixel(b.Dx()), Pixel(b.Dy())}, dpi), dpi), nil
+	return newIconFromHICONAndSize(hIcon, SizeTo96DPI(SizePixels{b.Dx(), b.Dy()}, dpi), dpi), nil
 }
 
 // NewIconFromImageWithSize returns a new Icon of the given size, using the specified Image as source.
@@ -363,7 +363,7 @@ func createAlphaCursorOrIconFromImage(im image.Image, hotspot image.Point, fIcon
 	}
 	defer bmp.Dispose()
 
-	return createAlphaCursorOrIconFromBitmap(bmp, PointPixels{Pixel(hotspot.X), Pixel(hotspot.Y)}, fIcon)
+	return createAlphaCursorOrIconFromBitmap(bmp, PointPixels{hotspot.X, hotspot.Y}, fIcon)
 }
 
 func createAlphaCursorOrIconFromBitmap(bmp *Bitmap, hotspot PointPixels, fIcon bool) (win.HICON, error) {
@@ -411,7 +411,7 @@ func sizeFromHICON(hIcon win.HICON) (SizePixels, error) {
 		return SizePixels{}, newError("GetObject")
 	}
 
-	return SizePixels{Pixel(bi.BmiHeader.BiWidth), Pixel(bi.BmiHeader.BiHeight)}, nil
+	return SizePixels{int(bi.BmiHeader.BiWidth), int(bi.BmiHeader.BiHeight)}, nil
 }
 
 // Return default small icon size in 1/92" units.

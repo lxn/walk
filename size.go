@@ -63,20 +63,20 @@ func SizeFrom96DPI(value Size, dpi int) SizePixels {
 
 // SizePixels defines width and height in native pixels.
 type SizePixels struct {
-	Width, Height Pixel
+	Width, Height int
 }
 
 func sizeFromSIZE(s win.SIZE) SizePixels {
 	return SizePixels{
-		Width:  Pixel(s.CX),
-		Height: Pixel(s.CY),
+		Width:  int(s.CX),
+		Height: int(s.CY),
 	}
 }
 
 func sizeFromRECT(r win.RECT) SizePixels {
 	return SizePixels{
-		Width:  Pixel(r.Right - r.Left),
-		Height: Pixel(r.Bottom - r.Top),
+		Width:  int(r.Right - r.Left),
+		Height: int(r.Bottom - r.Top),
 	}
 }
 
@@ -118,8 +118,8 @@ func maxSizePixels(a, b SizePixels) SizePixels {
 
 func scaleSizePixels(value SizePixels, scale float64) Size {
 	return Size{
-		Width:  scalePixel(value.Width, scale),
-		Height: scalePixel(value.Height, scale),
+		Width:  scaleInt(value.Width, scale),
+		Height: scaleInt(value.Height, scale),
 	}
 }
 
@@ -130,5 +130,5 @@ func SizeTo96DPI(value SizePixels, dpi int) Size {
 
 // SizeDBU defines width and height in dialog base units.
 type SizeDBU struct {
-	Width, Height PixelDBU
+	Width, Height int
 }

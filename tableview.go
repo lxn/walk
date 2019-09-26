@@ -44,8 +44,8 @@ const (
 
 type TableViewCfg struct {
 	Style              uint32
-	CustomHeaderHeight int
-	CustomRowHeight    int
+	CustomHeaderHeight int // in native pixels?
+	CustomRowHeight    int // in native pixels?
 }
 
 // TableView is a model based widget for record centric, tabular data.
@@ -111,8 +111,8 @@ type TableView struct {
 	sortedColumnIndex                  int
 	sortOrder                          SortOrder
 	formActivatingHandle               int
-	customHeaderHeight                 int
-	customRowHeight                    int
+	customHeaderHeight                 int // in native pixels?
+	customRowHeight                    int // in native pixels?
 	scrolling                          bool
 	inSetCurrentIndex                  bool
 	inMouseEvent                       bool
@@ -2451,9 +2451,9 @@ func (tv *TableView) updateLVSizesWithSpecialCare(needSpecialCare bool) {
 
 	win.MoveWindow(tv.hwndNormalLV, int32(widthPixels), 0, int32(cb.Width-widthPixels), int32(cb.Height), true)
 
-	var sbh Pixel
+	var sbh int
 	if hasWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.WS_HSCROLL) {
-		sbh = Pixel(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(dpi)))
+		sbh = int(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(dpi)))
 	}
 
 	win.MoveWindow(tv.hwndFrozenLV, 0, 0, int32(widthPixels), int32(cb.Height-sbh), true)

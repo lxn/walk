@@ -524,10 +524,10 @@ func (tb *ToolBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	dpi := tb.DPI()
 	width := IntFrom96DPI(tb.defaultButtonWidth, dpi)
 	if width == 0 {
-		width = Pixel(win.LOWORD(buttonSize))
+		width = int(win.LOWORD(buttonSize))
 	}
 
-	height := Pixel(win.HIWORD(buttonSize))
+	height := int(win.HIWORD(buttonSize))
 
 	var size win.SIZE
 	var wp uintptr
@@ -545,9 +545,9 @@ func (tb *ToolBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 	if win.FALSE != tb.SendMessage(win.TB_GETIDEALSIZE, wp, uintptr(unsafe.Pointer(&size))) {
 		if wp == win.TRUE {
-			height = Pixel(size.CY)
+			height = int(size.CY)
 		} else {
-			width = Pixel(size.CX)
+			width = int(size.CX)
 		}
 	}
 
