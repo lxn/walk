@@ -354,11 +354,12 @@ type ListItemStyler interface {
 	// ItemHeightDependsOnWidth returns whether item height depends on width.
 	ItemHeightDependsOnWidth() bool
 
-	// DefaultItemHeight returns the initial height for any item.
-	DefaultItemHeight() int
+	// DefaultItemHeight returns the initial height in native pixels for any item.
+	DefaultItemHeight() Pixel
 
-	// ItemHeight is called for each item to retrieve the height of the item.
-	ItemHeight(index int, width int) int
+	// ItemHeight is called for each item to retrieve the height of the item. width parameter and
+	// return value are specified in native pixels.
+	ItemHeight(index int, width Pixel) Pixel
 
 	// StyleItem is called for each item to pick up item style information.
 	StyleItem(style *ListItemStyle)
@@ -449,6 +450,7 @@ func (lis *ListItemStyle) DrawBackground() error {
 	return nil
 }
 
+// DrawText draws text inside given bounds specified in native pixels.
 func (lis *ListItemStyle) DrawText(text string, bounds RectanglePixels, format DrawTextFormat) error {
 	if lis.hTheme != 0 {
 		if lis.Font != nil {

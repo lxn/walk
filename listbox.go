@@ -233,13 +233,12 @@ func (lb *ListBox) ensureVisibleItemsHeightUpToDate() error {
 		defer lb.SetSuspended(false)
 	}
 
-	dpi := lb.DPI()
 	topIndex := int(lb.SendMessage(win.LB_GETTOPINDEX, 0, 0))
 	offset := maxi(0, topIndex-10)
 	count := lb.model.ItemCount()
 	var rc win.RECT
 	lb.SendMessage(win.LB_GETITEMRECT, uintptr(offset), uintptr(unsafe.Pointer(&rc)))
-	width := IntTo96DPI(Pixel(rc.Right-rc.Left), dpi)
+	width := Pixel(rc.Right - rc.Left)
 	offsetTop := Pixel(rc.Top)
 	lbHeight := lb.HeightPixels()
 
@@ -257,7 +256,7 @@ func (lb *ListBox) ensureVisibleItemsHeightUpToDate() error {
 			}
 		}
 
-		height := IntFrom96DPI(lb.styler.ItemHeight(i, width), dpi)
+		height := lb.styler.ItemHeight(i, width)
 
 		lb.SendMessage(win.LB_SETITEMHEIGHT, uintptr(i), uintptr(height))
 
@@ -285,9 +284,8 @@ func (lb *ListBox) attachModel() {
 		if lb.styler != nil {
 			var rc win.RECT
 			lb.SendMessage(win.LB_GETITEMRECT, uintptr(index), uintptr(unsafe.Pointer(&rc)))
-			dpi := lb.DPI()
-			width := IntTo96DPI(Pixel(rc.Right-rc.Left), dpi)
-			height := IntFrom96DPI(lb.styler.ItemHeight(index, width), dpi)
+			width := Pixel(rc.Right - rc.Left)
+			height := lb.styler.ItemHeight(index, width)
 
 			lb.SendMessage(win.LB_SETITEMHEIGHT, uintptr(index), uintptr(height))
 
@@ -558,7 +556,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 
 		mis := (*win.MEASUREITEMSTRUCT)(unsafe.Pointer(lParam))
 
-		mis.ItemHeight = uint32(IntFrom96DPI(lb.styler.DefaultItemHeight(), lb.DPI()))
+		mis.ItemHeight = uint32(lb.styler.DefaultItemHeight())
 
 		return win.TRUE
 

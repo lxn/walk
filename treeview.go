@@ -265,10 +265,12 @@ func (tv *TreeView) ItemAt(x, y Pixel) TreeItem {
 	return nil
 }
 
+// ItemHeight returns the height of each item in native pixels.
 func (tv *TreeView) ItemHeight() Pixel {
 	return Pixel(tv.SendMessage(win.TVM_GETITEMHEIGHT, 0, 0))
 }
 
+// SetItemHeight sets the height of the tree-view items in native pixels.
 func (tv *TreeView) SetItemHeight(height Pixel) {
 	tv.SendMessage(win.TVM_SETITEMHEIGHT, uintptr(height), 0)
 }
