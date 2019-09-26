@@ -421,8 +421,8 @@ type WindowBase struct {
 	mouseWheelPublisher       MouseEventPublisher
 	boundsChangedPublisher    EventPublisher
 	sizeChangedPublisher      EventPublisher
-	maxSize                   Size
-	minSize                   Size
+	maxSize96dpi              Size
+	minSize96dpi              Size
 	background                Brush
 	cursor                    Cursor
 	name2Property             map[string]Property
@@ -1380,7 +1380,7 @@ func (wb *WindowBase) SetBoundsPixels(bounds Rectangle) error {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MinSize() Size {
-	return wb.minSize
+	return wb.minSize96dpi
 }
 
 // MinSizePixels returns the minimum allowed outer size for the *WindowBase, including
@@ -1389,7 +1389,7 @@ func (wb *WindowBase) MinSize() Size {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MinSizePixels() Size {
-	return wb.SizeFrom96DPI(wb.minSize)
+	return wb.SizeFrom96DPI(wb.minSize96dpi)
 }
 
 // MaxSize returns the maximum allowed outer size for the *WindowBase, including
@@ -1398,7 +1398,7 @@ func (wb *WindowBase) MinSizePixels() Size {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MaxSize() Size {
-	return wb.maxSize
+	return wb.maxSize96dpi
 }
 
 // MaxSizePixels returns the maximum allowed outer size for the *WindowBase, including
@@ -1407,7 +1407,7 @@ func (wb *WindowBase) MaxSize() Size {
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
 func (wb *WindowBase) MaxSizePixels() Size {
-	return wb.SizeFrom96DPI(wb.maxSize)
+	return wb.SizeFrom96DPI(wb.maxSize96dpi)
 }
 
 // SetMinMaxSize sets the minimum and maximum outer size of the *WindowBase,
@@ -1422,8 +1422,8 @@ func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
 		max.Height > 0 && max.Height < min.Height {
 		return newError("max must be greater as or equal to min")
 	}
-	wb.minSize = min
-	wb.maxSize = max
+	wb.minSize96dpi = min
+	wb.maxSize96dpi = max
 	return nil
 }
 

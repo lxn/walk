@@ -364,7 +364,7 @@ func (fb *FormBase) Run() int {
 	fb.SetBoundsPixels(fb.BoundsPixels())
 
 	if fb.proposedSize == (Size{}) {
-		fb.proposedSize = maxSize(SizeFrom96DPI(fb.minSize, fb.DPI()), fb.SizePixels())
+		fb.proposedSize = maxSize(SizeFrom96DPI(fb.minSize96dpi, fb.DPI()), fb.SizePixels())
 		if !fb.Suspended() {
 			fb.startLayout()
 		}
@@ -560,7 +560,7 @@ func (fb *FormBase) Hide() {
 }
 
 func (fb *FormBase) Show() {
-	fb.proposedSize = maxSize(SizeFrom96DPI(fb.minSize, fb.DPI()), fb.SizePixels())
+	fb.proposedSize = maxSize(SizeFrom96DPI(fb.minSize96dpi, fb.DPI()), fb.SizePixels())
 
 	if p, ok := fb.window.(Persistable); ok && p.Persistent() && App().Settings() != nil {
 		p.RestoreState()
@@ -757,7 +757,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			}
 		}
 
-		minSize := SizeFrom96DPI(fb.minSize, fb.DPI())
+		minSize := SizeFrom96DPI(fb.minSize96dpi, fb.DPI())
 
 		mmi.PtMinTrackSize = Point{
 			maxi(min.Width, minSize.Width),

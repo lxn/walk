@@ -329,8 +329,8 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		svli.layoutFlags |= ShrinkableHorz | GrowableHorz | GreedyHorz
 
 		if !v {
-			maxSize := SizeFrom96DPI(sv.maxSize, ctx.dpi)
-			if svli.idealSize.Width > sv.geometry.ClientSize.Width && sv.geometry.ClientSize.Width > 0 && sv.maxSize.Width == 0 ||
+			maxSize := SizeFrom96DPI(sv.maxSize96dpi, ctx.dpi)
+			if svli.idealSize.Width > sv.geometry.ClientSize.Width && sv.geometry.ClientSize.Width > 0 && maxSize.Width == 0 ||
 				svli.idealSize.Width > maxSize.Width && maxSize.Width > 0 {
 				svli.sbSize.Height = int(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(ctx.dpi)))
 				svli.idealSize.Height += svli.sbSize.Height
@@ -344,8 +344,8 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		svli.layoutFlags |= GreedyVert | GrowableVert | ShrinkableVert
 
 		if !h {
-			maxSize := SizeFrom96DPI(sv.maxSize, ctx.dpi)
-			if svli.idealSize.Height > sv.geometry.ClientSize.Height && sv.geometry.ClientSize.Height > 0 && sv.maxSize.Height == 0 ||
+			maxSize := SizeFrom96DPI(sv.maxSize96dpi, ctx.dpi)
+			if svli.idealSize.Height > sv.geometry.ClientSize.Height && sv.geometry.ClientSize.Height > 0 && maxSize.Height == 0 ||
 				svli.idealSize.Height > maxSize.Height && maxSize.Height > 0 {
 				svli.sbSize.Width = int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))
 				svli.idealSize.Width += svli.sbSize.Width
