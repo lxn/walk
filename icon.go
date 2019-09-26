@@ -17,14 +17,6 @@ import (
 	"github.com/lxn/win"
 )
 
-var defaultIconSize96dpi Size
-
-func init() {
-	AppendToWalkInit(func() {
-		defaultIconSize96dpi = Size{int(win.GetSystemMetricsForDpi(win.SM_CXSMICON, 96)), int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))}
-	})
-}
-
 // Icon is a bitmap that supports transparency and combining multiple
 // variants of an image in different resolutions.
 type Icon struct {
@@ -85,7 +77,7 @@ func IconShield() *Icon {
 }
 
 func stockIcon(id uintptr) *Icon {
-	return &Icon{res: win.MAKEINTRESOURCE(id), size96dpi: defaultIconSize96dpi, isStock: true}
+	return &Icon{res: win.MAKEINTRESOURCE(id), size96dpi: defaultIconSize(), isStock: true}
 }
 
 // NewIconFromFile returns a new Icon, using the specified icon image file and default size.
@@ -96,7 +88,7 @@ func NewIconFromFile(filePath string) (*Icon, error) {
 // NewIconFromFileWithSize returns a new Icon, using the specified icon image file and size.
 func NewIconFromFileWithSize(filePath string, size Size) (*Icon, error) {
 	if size.Width == 0 || size.Height == 0 {
-		size = defaultIconSize96dpi
+		size = defaultIconSize()
 	}
 
 	return checkNewIcon(&Icon{filePath: filePath, size96dpi: size})
@@ -124,7 +116,7 @@ func NewIconFromResourceIdWithSize(id int, size Size) (*Icon, error) {
 
 func newIconFromResource(res *uint16, size Size) (*Icon, error) {
 	if size.Width == 0 || size.Height == 0 {
-		size = defaultIconSize96dpi
+		size = defaultIconSize()
 	}
 
 	return checkNewIcon(&Icon{res: res, size96dpi: size})
@@ -278,7 +270,7 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 	var size SizePixels
 	if size.Width == 0 || size.Height == 0 {
 		flags |= win.LR_DEFAULTSIZE
-		size = SizeFrom96DPI(defaultIconSize96dpi, dpi)
+		size = SizeFrom96DPI(defaultIconSize(), dpi)
 	} else {
 		size = SizeFrom96DPI(i.size96dpi, dpi)
 	}
@@ -420,4 +412,9 @@ func sizeFromHICON(hIcon win.HICON) (SizePixels, error) {
 	}
 
 	return SizePixels{Pixel(bi.BmiHeader.BiWidth), Pixel(bi.BmiHeader.BiHeight)}, nil
+}
+
+// Return default small icon size in 1/92" units.
+func defaultIconSize() Size {
+	return Size{int(win.GetSystemMetricsForDpi(win.SM_CXSMICON, 96)), int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))}
 }
