@@ -32,7 +32,7 @@ func init() {
 type Splitter struct {
 	ContainerBase
 	handleWidth   int
-	mouseDownPos  PointPixels
+	mouseDownPos  Point // in native pixels
 	draggedHandle *splitterHandle
 	persistent    bool
 	removing      bool
@@ -407,7 +407,7 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						}
 
 						s.draggedHandle = handle
-						s.mouseDownPos = PointPixels{x, y}
+						s.mouseDownPos = Point{x, y}
 						handle.SetBackground(splitterHandleDraggingBrush)
 					})
 

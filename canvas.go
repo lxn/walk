@@ -263,11 +263,15 @@ func (c *Canvas) FillEllipsePixels(brush Brush, bounds RectanglePixels) error {
 	return c.ellipsePixels(brush, nullPenSingleton, bounds, 1)
 }
 
+// DrawImage draws image at given location (upper left) in 1/96" units unstretched.
+//
+// Deprecated: Newer applications should use DrawImagePixels.
 func (c *Canvas) DrawImage(image Image, location Point) error {
 	return c.DrawImagePixels(image, PointFrom96DPI(location, c.DPI()))
 }
 
-func (c *Canvas) DrawImagePixels(image Image, location PointPixels) error {
+// DrawImagePixels draws image at given location (upper left) in native pixels unstretched.
+func (c *Canvas) DrawImagePixels(image Image, location Point) error {
 	if image == nil {
 		return newError("image cannot be nil")
 	}
@@ -322,12 +326,16 @@ func (c *Canvas) DrawBitmapPartWithOpacityPixels(bmp *Bitmap, dst, src Rectangle
 	return bmp.alphaBlendPart(c.hdc, dst, src, opacity)
 }
 
+// DrawLine draws a line between two points in 1/96" units.
+//
+// Deprecated: Newer applications should use DrawLinePixels.
 func (c *Canvas) DrawLine(pen Pen, from, to Point) error {
 	dpi := c.DPI()
 	return c.DrawLinePixels(pen, PointFrom96DPI(from, dpi), PointFrom96DPI(to, dpi))
 }
 
-func (c *Canvas) DrawLinePixels(pen Pen, from, to PointPixels) error {
+// DrawLinePixels draws a line between two points in native pixels.
+func (c *Canvas) DrawLinePixels(pen Pen, from, to Point) error {
 	if !win.MoveToEx(c.hdc, int(from.X), int(from.Y), nil) {
 		return newError("MoveToEx failed")
 	}
@@ -341,6 +349,9 @@ func (c *Canvas) DrawLinePixels(pen Pen, from, to PointPixels) error {
 	})
 }
 
+// DrawLine draws a line between given points in 1/96" units.
+//
+// Deprecated: Newer applications should use DrawLinePixels.
 func (c *Canvas) DrawPolyline(pen Pen, points []Point) error {
 	if len(points) < 1 {
 		return nil
@@ -361,7 +372,8 @@ func (c *Canvas) DrawPolyline(pen Pen, points []Point) error {
 	})
 }
 
-func (c *Canvas) DrawPolylinePixels(pen Pen, points []PointPixels) error {
+// DrawPolylinePixels draws a line between given points in native pixels.
+func (c *Canvas) DrawPolylinePixels(pen Pen, points []Point) error {
 	if len(points) < 1 {
 		return nil
 	}

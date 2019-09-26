@@ -255,7 +255,7 @@ func (tv *TreeView) handleForItem(item TreeItem) (win.HTREEITEM, error) {
 
 // ItemAt determines the location of the specified point in native pixels relative to the client area of a tree-view control.
 func (tv *TreeView) ItemAt(x, y int) TreeItem {
-	hti := win.TVHITTESTINFO{Pt: PointPixels{x, y}.toPOINT()}
+	hti := win.TVHITTESTINFO{Pt: Point{x, y}.toPOINT()}
 
 	tv.SendMessage(win.TVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
 

@@ -520,3 +520,20 @@ func IntTo96DPI(value, dpi int) int {
 func scaleInt(value int, scale float64) int {
 	return int(math.Round(float64(value) * scale))
 }
+
+// PointFrom96DPI converts from 1/96" units to native pixels.
+func PointFrom96DPI(value Point, dpi int) Point {
+	return scalePoint(value, float64(dpi)/96.0)
+}
+
+// PointTo96DPI converts from native pixels to 1/96" units.
+func PointTo96DPI(value Point, dpi int) Point {
+	return scalePoint(value, 96.0/float64(dpi))
+}
+
+func scalePoint(value Point, scale float64) Point {
+	return Point{
+		X: scaleInt(value.X, scale),
+		Y: scaleInt(value.Y, scale),
+	}
+}

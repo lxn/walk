@@ -185,7 +185,7 @@ func newIconFromImageForDPI(image Image, dpi int) (*Icon, error) {
 		return nil, err
 	}
 
-	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, PointPixels{}, true)
+	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, Point{}, true)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func newIconFromImageForDPI(image Image, dpi int) (*Icon, error) {
 
 // NewIconFromBitmap returns a new Icon, using the specified Bitmap as source.
 func NewIconFromBitmap(bmp *Bitmap) (ic *Icon, err error) {
-	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, PointPixels{}, true)
+	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, Point{}, true)
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +318,7 @@ func (i *Icon) Dispose() {
 	}
 }
 
-func (i *Icon) draw(hdc win.HDC, location PointPixels) error {
+func (i *Icon) draw(hdc win.HDC, location Point) error {
 	dpi := dpiForHDC(hdc)
 	size := SizeFrom96DPI(i.size96dpi, dpi)
 
@@ -363,10 +363,11 @@ func createAlphaCursorOrIconFromImage(im image.Image, hotspot image.Point, fIcon
 	}
 	defer bmp.Dispose()
 
-	return createAlphaCursorOrIconFromBitmap(bmp, PointPixels{hotspot.X, hotspot.Y}, fIcon)
+	return createAlphaCursorOrIconFromBitmap(bmp, Point{hotspot.X, hotspot.Y}, fIcon)
 }
 
-func createAlphaCursorOrIconFromBitmap(bmp *Bitmap, hotspot PointPixels, fIcon bool) (win.HICON, error) {
+// createAlphaCursorOrIconFromBitmap creates a cursor/icon from a bitmap. hotspot coordinates are in native pixels.
+func createAlphaCursorOrIconFromBitmap(bmp *Bitmap, hotspot Point, fIcon bool) (win.HICON, error) {
 	// Create an empty mask bitmap.
 	hMonoBitmap := win.CreateBitmap(int32(bmp.size.Width), int32(bmp.size.Height), 1, 1, nil)
 	if hMonoBitmap == 0 {

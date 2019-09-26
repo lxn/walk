@@ -14,8 +14,12 @@ import (
 )
 
 type Image interface {
-	draw(hdc win.HDC, location PointPixels) error
+	// draw draws image at location (upper left) in native pixels unstreched.
+	draw(hdc win.HDC, location Point) error
+
+	// drawStretched draws image streched to given bounds in native pixels.
 	drawStretched(hdc win.HDC, bounds RectanglePixels) error
+
 	Dispose()
 
 	// Size returns image size in 1/96" units.
@@ -82,7 +86,7 @@ func NewPaintFuncImageWithDispose(size Size, paint func(canvas *Canvas, bounds R
 	return &PaintFuncImage{size96dpi: size, paint: paint, dispose: dispose}
 }
 
-func (pfi *PaintFuncImage) draw(hdc win.HDC, location PointPixels) error {
+func (pfi *PaintFuncImage) draw(hdc win.HDC, location Point) error {
 	dpi := dpiForHDC(hdc)
 	size := SizeFrom96DPI(pfi.size96dpi, dpi)
 

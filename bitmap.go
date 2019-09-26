@@ -341,7 +341,7 @@ func (bmp *Bitmap) handle() win.HBITMAP {
 	return bmp.hBmp
 }
 
-func (bmp *Bitmap) draw(hdc win.HDC, location PointPixels) error {
+func (bmp *Bitmap) draw(hdc win.HDC, location Point) error {
 	return bmp.drawStretched(hdc, RectanglePixels{X: location.X, Y: location.Y, Width: bmp.size.Width, Height: bmp.size.Height})
 }
 

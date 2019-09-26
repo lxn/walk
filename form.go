@@ -285,7 +285,7 @@ func (fb *FormBase) SetContextMenu(contextMenu *Menu) {
 	fb.clientComposite.SetContextMenu(contextMenu)
 }
 
-func (fb *FormBase) ContextMenuLocation() PointPixels {
+func (fb *FormBase) ContextMenuLocation() Point {
 	return fb.clientComposite.ContextMenuLocation()
 }
 
@@ -759,7 +759,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		minSizePixels := SizeFrom96DPI(fb.minSize, fb.DPI())
 
-		mmi.PtMinTrackSize = PointPixels{
+		mmi.PtMinTrackSize = Point{
 			maxi(min.Width, minSizePixels.Width),
 			maxi(min.Height, minSizePixels.Height),
 		}.toPOINT()

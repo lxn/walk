@@ -273,8 +273,8 @@ func (te *TextEdit) SetTextColor(c Color) {
 	te.Invalidate()
 }
 
-// ContextMenuLocation returns carret position in screen coordinates.
-func (te *TextEdit) ContextMenuLocation() PointPixels {
+// ContextMenuLocation returns carret position in screen coordinates in native pixels.
+func (te *TextEdit) ContextMenuLocation() Point {
 	idx := int(te.SendMessage(win.EM_GETCARETINDEX, 0, 0))
 	if idx < 0 {
 		start, end := te.TextSelection()

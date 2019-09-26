@@ -720,7 +720,7 @@ func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type tabWidgetLayoutItem struct {
 	ContainerLayoutItemBase
-	pagePos      PointPixels
+	pagePos      Point // in native pixels
 	currentIndex int
 }
 

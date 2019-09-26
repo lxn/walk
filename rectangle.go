@@ -63,11 +63,11 @@ func (r RectanglePixels) Bottom() int {
 	return r.Y + r.Height - 1
 }
 
-func (r RectanglePixels) Location() PointPixels {
-	return PointPixels{r.X, r.Y}
+func (r RectanglePixels) Location() Point {
+	return Point{r.X, r.Y}
 }
 
-func (r *RectanglePixels) SetLocation(p PointPixels) RectanglePixels {
+func (r *RectanglePixels) SetLocation(p Point) RectanglePixels {
 	r.X = p.X
 	r.Y = p.Y
 

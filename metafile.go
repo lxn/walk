@@ -106,7 +106,7 @@ func (mf *Metafile) Size() Size {
 	return SizeTo96DPI(mf.size, mf.dpi)
 }
 
-func (mf *Metafile) draw(hdc win.HDC, location PointPixels) error {
+func (mf *Metafile) draw(hdc win.HDC, location Point) error {
 	return mf.drawStretched(hdc, RectanglePixels{location.X, location.Y, mf.size.Width, mf.size.Height})
 }
 

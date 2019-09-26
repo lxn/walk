@@ -374,7 +374,7 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 }
 
 func (gb *GroupBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
-	compositePos := PointPixels{gb.IntFrom96DPI(1), gb.headerHeight}
+	compositePos := Point{gb.IntFrom96DPI(1), gb.headerHeight}
 	if gb.Checkable() {
 		idealSize := gb.checkBox.idealSize()
 
@@ -396,7 +396,7 @@ func (gb *GroupBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type groupBoxLayoutItem struct {
 	ContainerLayoutItemBase
-	compositePos PointPixels
+	compositePos Point // in native pixels
 	title        string
 }
 

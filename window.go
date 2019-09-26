@@ -76,10 +76,10 @@ type Window interface {
 	// By default this is nil.
 	ContextMenu() *Menu
 
-	// ContextMenuLocation returns the context menu suggested location in screen
-	// coordinates. This method is called when context menu is invoked using
-	// keyboard and mouse coordinates are not available.
-	ContextMenuLocation() PointPixels
+	// ContextMenuLocation returns the context menu suggested location in screen coordinates in
+	// native pixels. This method is called when context menu is invoked using keyboard and mouse
+	// coordinates are not available.
+	ContextMenuLocation() Point
 
 	// CreateCanvas creates and returns a *Canvas that can be used to draw
 	// inside the ClientBoundsPixels of the Window.
@@ -885,13 +885,13 @@ func (wb *WindowBase) SetContextMenu(value *Menu) {
 	wb.contextMenu = value
 }
 
-// ContextMenuLocation returns the the *WindowBase center in screen coordinates.
-func (wb *WindowBase) ContextMenuLocation() PointPixels {
+// ContextMenuLocation returns the the *WindowBase center in screen coordinates in native pixels.
+func (wb *WindowBase) ContextMenuLocation() Point {
 	var rc win.RECT
 	if !win.GetWindowRect(wb.hWnd, &rc) {
-		return PointPixels{}
+		return Point{}
 	}
-	return PointPixels{int(rc.Left+rc.Right) / 2, int(rc.Top+rc.Bottom) / 2}
+	return Point{int(rc.Left+rc.Right) / 2, int(rc.Top+rc.Bottom) / 2}
 }
 
 // ShortcutActions returns the list of actions that will be triggered if their
@@ -1002,11 +1002,13 @@ func (wb *WindowBase) MarginsTo96DPI(value MarginsPixels) Margins {
 	return MarginsTo96DPI(value, wb.DPI())
 }
 
-func (wb *WindowBase) PointFrom96DPI(value Point) PointPixels {
+// PointFrom96DPI converts from 1/96" units to native pixels.
+func (wb *WindowBase) PointFrom96DPI(value Point) Point {
 	return PointFrom96DPI(value, wb.DPI())
 }
 
-func (wb *WindowBase) PointTo96DPI(value PointPixels) Point {
+// PointTo96DPI converts from native pixels to 1/96" units.
+func (wb *WindowBase) PointTo96DPI(value Point) Point {
 	return PointTo96DPI(value, wb.DPI())
 }
 
