@@ -163,9 +163,9 @@ func (dlg *Dialog) Show() {
 	}
 
 	if !willRestore {
-		var size SizePixels
+		var size Size
 		if layout := dlg.Layout(); layout != nil {
-			size = maxSizePixels(dlg.clientComposite.MinSizeHint(), dlg.MinSizePixels())
+			size = maxSize(dlg.clientComposite.MinSizeHint(), dlg.MinSizePixels())
 		} else {
 			size = dlg.SizePixels()
 		}

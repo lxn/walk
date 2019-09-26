@@ -218,12 +218,13 @@ func (b *Button) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 	return b.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-func (b *Button) idealSize() SizePixels {
+// idealSize returns ideal button size in native pixels.
+func (b *Button) idealSize() Size {
 	var s win.SIZE
 
 	b.SendMessage(win.BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
 
-	return maxSizePixels(sizeFromSIZE(s), b.dialogBaseUnitsToPixels(SizeDBU{50, 14}))
+	return maxSize(sizeFromSIZE(s), b.dialogBaseUnitsToPixels(SizeDBU{50, 14}))
 }
 
 func (b *Button) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
@@ -234,17 +235,17 @@ func (b *Button) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type buttonLayoutItem struct {
 	LayoutItemBase
-	idealSize SizePixels
+	idealSize Size // in native pixels
 }
 
 func (li *buttonLayoutItem) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (li *buttonLayoutItem) IdealSize() SizePixels {
+func (li *buttonLayoutItem) IdealSize() Size {
 	return li.MinSize()
 }
 
-func (li *buttonLayoutItem) MinSize() SizePixels {
+func (li *buttonLayoutItem) MinSize() Size {
 	return li.idealSize
 }

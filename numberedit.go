@@ -418,19 +418,19 @@ func (ne *NumberEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type numberEditLayoutItem struct {
 	LayoutItemBase
-	idealSize SizePixels
-	minSize   SizePixels
+	idealSize Size // in native pixels
+	minSize   Size // in native pixels
 }
 
 func (*numberEditLayoutItem) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | GrowableHorz
 }
 
-func (li *numberEditLayoutItem) IdealSize() SizePixels {
+func (li *numberEditLayoutItem) IdealSize() Size {
 	return li.idealSize
 }
 
-func (li *numberEditLayoutItem) MinSize() SizePixels {
+func (li *numberEditLayoutItem) MinSize() Size {
 	return li.minSize
 }
 

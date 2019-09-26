@@ -121,7 +121,7 @@ func (tw *TabWidget) ApplyDPI(dpi int) {
 	tw.WidgetBase.ApplyDPI(dpi)
 
 	var maskColor Color
-	var size SizePixels
+	var size Size
 	if tw.imageList != nil {
 		maskColor = tw.imageList.maskColor
 		size = SizeFrom96DPI(tw.imageList.imageSize96dpi, dpi)
@@ -738,12 +738,12 @@ func (li *tabWidgetLayoutItem) LayoutFlags() LayoutFlags {
 	return flags
 }
 
-func (li *tabWidgetLayoutItem) MinSize() SizePixels {
+func (li *tabWidgetLayoutItem) MinSize() Size {
 	if len(li.children) == 0 {
 		return li.IdealSize()
 	}
 
-	var min SizePixels
+	var min Size
 
 	for _, page := range li.children {
 		if ms, ok := page.(MinSizer); ok {
@@ -757,12 +757,12 @@ func (li *tabWidgetLayoutItem) MinSize() SizePixels {
 	s := li.geometry.Size
 	ps := li.children[0].Geometry().Size
 
-	size := SizePixels{s.Width - ps.Width + min.Width, s.Height - ps.Height + min.Height}
+	size := Size{s.Width - ps.Width + min.Width, s.Height - ps.Height + min.Height}
 
 	return size
 }
 
-func (li *tabWidgetLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
+func (li *tabWidgetLayoutItem) MinSizeForSize(size Size) Size {
 	return li.MinSize()
 }
 
@@ -803,7 +803,7 @@ func (li *tabWidgetLayoutItem) HeightForWidth(width int) int {
 	return height + margin.Height
 }
 
-func (li *tabWidgetLayoutItem) IdealSize() SizePixels {
+func (li *tabWidgetLayoutItem) IdealSize() Size {
 	return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
 }
 

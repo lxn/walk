@@ -131,8 +131,8 @@ func (*statusBarLayoutItem) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (*statusBarLayoutItem) IdealSize() SizePixels {
-	return SizePixels{}
+func (*statusBarLayoutItem) IdealSize() Size {
+	return Size{}
 }
 
 // StatusBarItem represents a section of a StatusBar that can have its own icon,

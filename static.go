@@ -170,7 +170,7 @@ func (s *static) setText(text string) (changed bool, err error) {
 
 	s.RequestLayout()
 
-	if s.BoundsPixels().Size() == size && size != (SizePixels{}) {
+	if s.BoundsPixels().Size() == size && size != (Size{}) {
 		s.updateStaticBounds()
 	}
 
@@ -215,7 +215,7 @@ func (s *static) updateStaticBounds() {
 	cb := s.ClientBoundsPixels()
 
 	if format&TextVCenter != 0 || format&TextBottom != 0 {
-		var size SizePixels
+		var size Size
 		if _, ok := s.window.(HeightForWidther); ok {
 			size = s.calculateTextSizeForWidth(cb.Width)
 		} else {
@@ -287,17 +287,17 @@ func (s *static) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type staticLayoutItem struct {
 	LayoutItemBase
 	layoutFlags LayoutFlags
-	idealSize   SizePixels
+	idealSize   Size // in native pixels
 }
 
 func (li *staticLayoutItem) LayoutFlags() LayoutFlags {
 	return li.layoutFlags
 }
 
-func (li *staticLayoutItem) IdealSize() SizePixels {
+func (li *staticLayoutItem) IdealSize() Size {
 	return li.idealSize
 }
 
-func (li *staticLayoutItem) MinSize() SizePixels {
+func (li *staticLayoutItem) MinSize() Size {
 	return li.idealSize
 }

@@ -404,7 +404,7 @@ func (li *groupBoxLayoutItem) LayoutFlags() LayoutFlags {
 	return li.children[0].LayoutFlags()
 }
 
-func (li *groupBoxLayoutItem) MinSize() SizePixels {
+func (li *groupBoxLayoutItem) MinSize() Size {
 	min := li.children[0].(MinSizer).MinSize()
 	min.Width += li.compositePos.X * 2
 	min.Height += li.compositePos.Y + IntFrom96DPI(5, li.ctx.dpi)
@@ -412,7 +412,7 @@ func (li *groupBoxLayoutItem) MinSize() SizePixels {
 	return min
 }
 
-func (li *groupBoxLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
+func (li *groupBoxLayoutItem) MinSizeForSize(size Size) Size {
 	return li.MinSize()
 }
 
@@ -424,7 +424,7 @@ func (li *groupBoxLayoutItem) HeightForWidth(width int) int {
 	return li.children[0].(HeightForWidther).HeightForWidth(width-li.compositePos.X*2) + li.compositePos.Y + IntFrom96DPI(5, li.ctx.dpi)
 }
 
-func (li *groupBoxLayoutItem) IdealSize() SizePixels {
+func (li *groupBoxLayoutItem) IdealSize() Size {
 	size := li.children[0].(IdealSizer).IdealSize()
 	size.Height += li.compositePos.Y
 	return size

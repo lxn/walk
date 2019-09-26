@@ -239,7 +239,7 @@ func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	dpi := iv.DPI()
 	idealSize := SizeFrom96DPI(Size{100, 100}, dpi)
 
-	var minSize SizePixels
+	var minSize Size
 	if iv.mode == ImageViewModeIdeal {
 		if iv.image != nil {
 			idealSize = SizeFrom96DPI(iv.image.Size(), dpi)
@@ -251,7 +251,7 @@ func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		minSize = idealSize
 	} else {
 		s := IntFrom96DPI(iv.margin96dpi, dpi)*2 + 1
-		minSize = SizePixels{s, s}
+		minSize = Size{s, s}
 	}
 
 	return &imageViewLayoutItem{
@@ -264,18 +264,18 @@ func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type imageViewLayoutItem struct {
 	LayoutItemBase
 	layoutFlags LayoutFlags
-	idealSize   SizePixels
-	minSize     SizePixels
+	idealSize   Size // in native pixels
+	minSize     Size // in native pixels
 }
 
 func (li *imageViewLayoutItem) LayoutFlags() LayoutFlags {
 	return li.layoutFlags
 }
 
-func (li *imageViewLayoutItem) IdealSize() SizePixels {
+func (li *imageViewLayoutItem) IdealSize() Size {
 	return li.idealSize
 }
 
-func (li *imageViewLayoutItem) MinSize() SizePixels {
+func (li *imageViewLayoutItem) MinSize() Size {
 	return li.minSize
 }

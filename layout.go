@@ -158,7 +158,8 @@ func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, la
 	return
 }
 
-func layoutTree(root ContainerLayoutItem, size SizePixels, cancel chan struct{}, done chan []LayoutResult, stopwatch *stopwatch) {
+// layoutTree lays out tree. size parameter is in native pixels.
+func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done chan []LayoutResult, stopwatch *stopwatch) {
 	const minSizeCacheSubject = "layoutTree - populating min size cache"
 
 	if stopwatch != nil {
@@ -208,8 +209,8 @@ func layoutTree(root ContainerLayoutItem, size SizePixels, cancel chan struct{},
 
 		var wg sync.WaitGroup
 
-		var layoutSubtree func(container ContainerLayoutItem, size SizePixels)
-		layoutSubtree = func(container ContainerLayoutItem, size SizePixels) {
+		var layoutSubtree func(container ContainerLayoutItem, size Size)
+		layoutSubtree = func(container ContainerLayoutItem, size Size) {
 			wg.Add(1)
 
 			go func() {
@@ -511,15 +512,18 @@ func (l *LayoutBase) SetAlignment(alignment Alignment2D) error {
 }
 
 type IdealSizer interface {
-	IdealSize() SizePixels
+	// IdealSize returns ideal window size in native pixels.
+	IdealSize() Size
 }
 
 type MinSizer interface {
-	MinSize() SizePixels
+	// MinSize returns minimum window size in native pixels.
+	MinSize() Size
 }
 
 type MinSizeForSizer interface {
-	MinSizeForSize(size SizePixels) SizePixels
+	// MinSize returns minimum window size for given size. Both sizes are in native pixels.
+	MinSizeForSize(size Size) Size
 }
 
 type HeightForWidther interface {
@@ -531,7 +535,7 @@ type HeightForWidther interface {
 }
 
 type LayoutContext struct {
-	layoutItem2MinSizeEffective map[LayoutItem]SizePixels
+	layoutItem2MinSizeEffective map[LayoutItem]Size // in native pixels
 	dpi                         int
 }
 
@@ -541,7 +545,7 @@ func (ctx *LayoutContext) DPI() int {
 
 func newLayoutContext(handle win.HWND) *LayoutContext {
 	return &LayoutContext{
-		layoutItem2MinSizeEffective: make(map[LayoutItem]SizePixels),
+		layoutItem2MinSizeEffective: make(map[LayoutItem]Size),
 		dpi:                         int(win.GetDpiForWindow(handle)),
 	}
 }
@@ -562,7 +566,10 @@ type ContainerLayoutItem interface {
 	MinSizeForSizer
 	HeightForWidther
 	AsContainerLayoutItemBase() *ContainerLayoutItemBase
-	MinSizeEffectiveForChild(child LayoutItem) SizePixels
+
+	// MinSizeEffectiveForChild returns minimum effective size for a child in native pixels.
+	MinSizeEffectiveForChild(child LayoutItem) Size
+
 	PerformLayout() []LayoutResultItem
 	Children() []LayoutItem
 	containsHandle(handle win.HWND) bool
@@ -614,7 +621,7 @@ func (clib *ContainerLayoutItemBase) AsContainerLayoutItemBase() *ContainerLayou
 
 var clibMinSizeEffectiveForChildMutex sync.Mutex
 
-func (clib *ContainerLayoutItemBase) MinSizeEffectiveForChild(child LayoutItem) SizePixels {
+func (clib *ContainerLayoutItemBase) MinSizeEffectiveForChild(child LayoutItem) Size {
 	// NOTE: This map is pre-populated in startLayoutTree before performing layout.
 	// For other usages it is not pre-populated and we assume this method will then
 	// be called from the main goroutine exclusively.
@@ -696,21 +703,21 @@ func (*greedyLayoutItem) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | GrowableHorz | GreedyHorz | ShrinkableVert | GrowableVert | GreedyVert
 }
 
-func (li *greedyLayoutItem) IdealSize() SizePixels {
+func (li *greedyLayoutItem) IdealSize() Size {
 	return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
 }
 
-func (li *greedyLayoutItem) MinSize() SizePixels {
+func (li *greedyLayoutItem) MinSize() Size {
 	return SizeFrom96DPI(Size{50, 50}, li.ctx.dpi)
 }
 
 type Geometry struct {
 	Alignment                   Alignment2D
-	MinSize                     SizePixels
-	MaxSize                     SizePixels
-	IdealSize                   SizePixels
-	Size                        SizePixels
-	ClientSize                  SizePixels
+	MinSize                     Size // in native pixels
+	MaxSize                     Size // in native pixels
+	IdealSize                   Size // in native pixels
+	Size                        Size // in native pixels
+	ClientSize                  Size // in native pixels
 	ConsumingSpaceWhenInvisible bool
 }
 
@@ -744,7 +751,7 @@ func itemsToLayout(allItems []LayoutItem) []LayoutItem {
 			continue
 		}
 
-		var idealSize SizePixels
+		var idealSize Size
 		if hfw, ok := item.(HeightForWidther); !ok || !hfw.HasHeightForWidth() {
 			if is, ok := item.(IdealSizer); ok {
 				idealSize = is.IdealSize()
@@ -778,17 +785,18 @@ func anyVisibleItemInHierarchy(item LayoutItem) bool {
 	return false
 }
 
-func minSizeEffective(item LayoutItem) SizePixels {
+// minSizeEffective returns minimum effective size in native pixels
+func minSizeEffective(item LayoutItem) Size {
 	geometry := item.Geometry()
 
-	var s SizePixels
+	var s Size
 	if msh, ok := item.(MinSizer); ok {
 		s = msh.MinSize()
 	} else if is, ok := item.(IdealSizer); ok {
 		s = is.IdealSize()
 	}
 
-	size := maxSizePixels(geometry.MinSize, s)
+	size := maxSize(geometry.MinSize, s)
 
 	max := geometry.MaxSize
 	if max.Width > 0 && size.Width > max.Width {

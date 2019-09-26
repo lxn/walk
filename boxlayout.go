@@ -102,7 +102,7 @@ func (l *BoxLayout) SetStretchFactor(widget Widget, factor int) error {
 
 func (l *BoxLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 	li := &boxLayoutItem{
-		size2MinSize:       make(map[SizePixels]SizePixels),
+		size2MinSize:       make(map[Size]Size),
 		orientation:        l.orientation,
 		hwnd2StretchFactor: make(map[win.HWND]int),
 	}
@@ -157,7 +157,7 @@ func (l boxLayoutItemInfoList) Swap(i, j int) {
 type boxLayoutItem struct {
 	ContainerLayoutItemBase
 	mutex              sync.Mutex
-	size2MinSize       map[SizePixels]SizePixels
+	size2MinSize       map[Size]Size // in native pixels
 	orientation        Orientation
 	hwnd2StretchFactor map[win.HWND]int
 }
@@ -166,19 +166,19 @@ func (li *boxLayoutItem) LayoutFlags() LayoutFlags {
 	return boxLayoutFlags(li.orientation, li.children)
 }
 
-func (li *boxLayoutItem) IdealSize() SizePixels {
+func (li *boxLayoutItem) IdealSize() Size {
 	return li.MinSize()
 }
 
-func (li *boxLayoutItem) MinSize() SizePixels {
+func (li *boxLayoutItem) MinSize() Size {
 	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
 func (li *boxLayoutItem) HeightForWidth(width int) int {
-	return li.MinSizeForSize(SizePixels{width, li.geometry.ClientSize.Height}).Height
+	return li.MinSizeForSize(Size{width, li.geometry.ClientSize.Height}).Height
 }
 
-func (li *boxLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
+func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 	li.mutex.Lock()
 	defer li.mutex.Unlock()
 
@@ -192,7 +192,7 @@ func (li *boxLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 
 	margins := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
 	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
-	s := SizePixels{margins.HNear + margins.HFar, margins.VNear + margins.VFar}
+	s := Size{margins.HNear + margins.HFar, margins.VNear + margins.VFar}
 
 	var maxSecondary int
 	for _, item := range items {
@@ -318,7 +318,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 		flags := item.LayoutFlags()
 
 		max := geometry.MaxSize
-		var pref SizePixels
+		var pref Size
 		if hfw, ok := item.(HeightForWidther); !ok || !hfw.HasHeightForWidth() {
 			if is, ok := item.(IdealSizer); ok {
 				pref = is.IdealSize()

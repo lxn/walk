@@ -98,8 +98,8 @@ func (li *splitterHandleLayoutItem) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | GrowableHorz | GreedyHorz
 }
 
-func (li *splitterHandleLayoutItem) IdealSize() SizePixels {
-	var size SizePixels
+func (li *splitterHandleLayoutItem) IdealSize() Size {
+	var size Size
 	dpi := int(win.GetDpiForWindow(li.handle))
 
 	if li.orientation == Horizontal {
@@ -111,6 +111,6 @@ func (li *splitterHandleLayoutItem) IdealSize() SizePixels {
 	return size
 }
 
-func (li *splitterHandleLayoutItem) MinSize() SizePixels {
+func (li *splitterHandleLayoutItem) MinSize() Size {
 	return li.IdealSize()
 }

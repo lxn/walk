@@ -169,7 +169,7 @@ type Window interface {
 	//
 	// For child windows, this is only relevant when the parent of the Window
 	// has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
-	MaxSizePixels() SizePixels
+	MaxSizePixels() Size
 
 	// MinSize returns the minimum allowed outer size for the Window, including
 	// decorations.
@@ -183,7 +183,7 @@ type Window interface {
 	//
 	// For child windows, this is only relevant when the parent of the Window
 	// has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
-	MinSizePixels() SizePixels
+	MinSizePixels() Size
 
 	// MouseDown returns a *MouseEvent that you can attach to for handling
 	// mouse down events for the Window.
@@ -238,7 +238,7 @@ type Window interface {
 
 	// SetClientSizePixels sets the size of the inner bounding box of the Window,
 	// excluding decorations.
-	SetClientSizePixels(value SizePixels) error
+	SetClientSizePixels(value Size) error
 
 	// SetContextMenu sets the context menu of the Window.
 	SetContextMenu(value *Menu)
@@ -274,8 +274,8 @@ type Window interface {
 	// SetMinMaxSizePixels sets the minimum and maximum outer size of the Window,
 	// including decorations.
 	//
-	// Use walk.SizePixels{} to make the respective limit be ignored.
-	SetMinMaxSizePixels(min, max SizePixels) error
+	// Use walk.Size{} to make the respective limit be ignored.
+	SetMinMaxSizePixels(min, max Size) error
 
 	// SetName sets the name of the Window.
 	//
@@ -292,7 +292,7 @@ type Window interface {
 	SetSize(value Size) error
 
 	// SetSizePixels sets the outer size of the Window, including decorations.
-	SetSizePixels(value SizePixels) error
+	SetSizePixels(value Size) error
 
 	// SetSuspended sets if the Window is suspended for layout and repainting
 	// purposes.
@@ -335,7 +335,7 @@ type Window interface {
 	Size() Size
 
 	// SizePixels returns the outer size of the Window, including decorations.
-	SizePixels() SizePixels
+	SizePixels() Size
 
 	// SizeChanged returns an *Event that you can attach to for handling size
 	// changed events for the Window.
@@ -432,7 +432,7 @@ type WindowBase struct {
 	visibleChangedPublisher   EventPublisher
 	focusedProperty           Property
 	focusedChangedPublisher   EventPublisher
-	calcTextSizeInfo2TextSize map[calcTextSizeInfo]SizePixels
+	calcTextSizeInfo2TextSize map[calcTextSizeInfo]Size // in native pixels
 	suspended                 bool
 	visible                   bool
 	enabled                   bool
@@ -539,7 +539,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 	wb.window = window
 	wb.enabled = true
 	wb.visible = style&win.WS_VISIBLE != 0
-	wb.calcTextSizeInfo2TextSize = make(map[calcTextSizeInfo]SizePixels)
+	wb.calcTextSizeInfo2TextSize = make(map[calcTextSizeInfo]Size)
 	wb.name2Property = make(map[string]Property)
 
 	var hwndParent win.HWND
@@ -1022,11 +1022,13 @@ func (wb *WindowBase) RectangleTo96DPI(value RectanglePixels) Rectangle {
 	return RectangleTo96DPI(value, wb.DPI())
 }
 
-func (wb *WindowBase) SizeFrom96DPI(value Size) SizePixels {
+// SizeFrom96DPI converts from 1/96" units to native pixels.
+func (wb *WindowBase) SizeFrom96DPI(value Size) Size {
 	return SizeFrom96DPI(value, wb.DPI())
 }
 
-func (wb *WindowBase) SizeTo96DPI(value SizePixels) Size {
+// SizeTo96DPI converts from native pixels to 1/96" units.
+func (wb *WindowBase) SizeTo96DPI(value Size) Size {
 	return SizeTo96DPI(value, wb.DPI())
 }
 
@@ -1384,7 +1386,7 @@ func (wb *WindowBase) MinSize() Size {
 //
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
-func (wb *WindowBase) MinSizePixels() SizePixels {
+func (wb *WindowBase) MinSizePixels() Size {
 	return wb.SizeFrom96DPI(wb.minSize)
 }
 
@@ -1402,7 +1404,7 @@ func (wb *WindowBase) MaxSize() Size {
 //
 // For child windows, this is only relevant when the parent of the *WindowBase
 // has a Layout. RootWidgets, like *MainWindow and *Dialog, also honor this.
-func (wb *WindowBase) MaxSizePixels() SizePixels {
+func (wb *WindowBase) MaxSizePixels() Size {
 	return wb.SizeFrom96DPI(wb.maxSize)
 }
 
@@ -1426,8 +1428,8 @@ func (wb *WindowBase) SetMinMaxSize(min, max Size) error {
 // SetMinMaxSizePixels sets the minimum and maximum outer size of the *WindowBase,
 // including decorations.
 //
-// Use walk.SizePixels{} to make the respective limit be ignored.
-func (wb *WindowBase) SetMinMaxSizePixels(min, max SizePixels) error {
+// Use walk.Size{} to make the respective limit be ignored.
+func (wb *WindowBase) SetMinMaxSizePixels(min, max Size) error {
 	dpi := wb.DPI()
 	return wb.SetMinMaxSize(SizeTo96DPI(min, dpi), SizeTo96DPI(max, dpi))
 }
@@ -1439,10 +1441,11 @@ type fontInfoAndDPI struct {
 
 var (
 	dialogBaseUnitsUTF16StringPtr  *uint16
-	fontInfoAndDPI2DialogBaseUnits = make(map[fontInfoAndDPI]SizePixels)
+	fontInfoAndDPI2DialogBaseUnits = make(map[fontInfoAndDPI]Size)
 )
 
-func (wb *WindowBase) dialogBaseUnits() SizePixels {
+// dialogBaseUnits returns dialog unit base size in native pixels.
+func (wb *WindowBase) dialogBaseUnits() Size {
 	// The window may use a font different from that in WindowBase,
 	// like e.g. NumberEdit does, so we try to use the right one.
 	font := wb.window.Font()
@@ -1478,28 +1481,30 @@ func (wb *WindowBase) dialogBaseUnits() SizePixels {
 		newError("GetTextExtentPoint32 failed")
 	}
 
-	s := SizePixels{int((size.CX/26 + 1) / 2), int(tm.TmHeight)}
+	s := Size{int((size.CX/26 + 1) / 2), int(tm.TmHeight)}
 
 	fontInfoAndDPI2DialogBaseUnits[fi] = s
 
 	return s
 }
 
-func (wb *WindowBase) dialogBaseUnitsToPixels(dlus SizeDBU) (pixels SizePixels) {
+// dialogBaseUnitsToPixels returns size in dialog based units in native pixels.
+func (wb *WindowBase) dialogBaseUnitsToPixels(dlus SizeDBU) (pixels Size) {
 	base := wb.dialogBaseUnits()
 
-	return SizePixels{
+	return Size{
 		int(win.MulDiv(int32(dlus.Width), int32(base.Width), 4)),
 		int(win.MulDiv(int32(dlus.Height), int32(base.Height), 8)),
 	}
 }
 
-func (wb *WindowBase) calculateTextSizeImpl(text string) SizePixels {
+// calculateTextSizeImpl returns text size in native pixels.
+func (wb *WindowBase) calculateTextSizeImpl(text string) Size {
 	return wb.calculateTextSizeImplForWidth(text, 0)
 }
 
 // calculateTextSizeImplForWidth calculates text size for specified width in native pixels.
-func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) SizePixels {
+func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size {
 	font := wb.window.Font()
 
 	dpi := wb.DPI()
@@ -1531,25 +1536,26 @@ func (wb *WindowBase) calculateTextSizeImplForWidth(text string, width int) Size
 	return size
 }
 
-func (wb *WindowBase) calculateTextSize() SizePixels {
+// calculateTextSize calculates text size in native pixels.
+func (wb *WindowBase) calculateTextSize() Size {
 	return wb.calculateTextSizeForWidth(0)
 }
 
 // calculateTextSizeForWidth calculates text size for specified width in native pixels.
-func (wb *WindowBase) calculateTextSizeForWidth(width int) SizePixels {
+func (wb *WindowBase) calculateTextSizeForWidth(width int) Size {
 	return wb.calculateTextSizeImplForWidth(wb.text(), width)
 }
 
 // calculateTextSize calculates text size at specified DPI and for width in native pixels.
-func calculateTextSize(text string, font *Font, dpi int, width int, hwnd win.HWND) SizePixels {
+func calculateTextSize(text string, font *Font, dpi int, width int, hwnd win.HWND) Size {
 	hdc := win.GetDC(hwnd)
 	if hdc == 0 {
 		newError("GetDC failed")
-		return SizePixels{}
+		return Size{}
 	}
 	defer win.ReleaseDC(hwnd, hdc)
 
-	var size SizePixels
+	var size Size
 	if width > 0 {
 		canvas, err := newCanvasFromHDC(hdc)
 		if err != nil {
@@ -1575,7 +1581,7 @@ func calculateTextSize(text string, font *Font, dpi int, width int, hwnd win.HWN
 
 			if !win.GetTextExtentPoint32(hdc, &str[0], int32(len(str)-1), &s) {
 				newError("GetTextExtentPoint32 failed")
-				return SizePixels{}
+				return Size{}
 			}
 
 			size.Width = maxi(size.Width, int(s.CX))
@@ -1592,7 +1598,7 @@ func (wb *WindowBase) Size() Size {
 }
 
 // SizePixels returns the outer size of the *WindowBase, including decorations.
-func (wb *WindowBase) SizePixels() SizePixels {
+func (wb *WindowBase) SizePixels() Size {
 	return wb.window.BoundsPixels().Size()
 }
 
@@ -1602,7 +1608,7 @@ func (wb *WindowBase) SetSize(size Size) error {
 }
 
 // SetSizePixels sets the outer size of the *WindowBase, including decorations.
-func (wb *WindowBase) SetSizePixels(size SizePixels) error {
+func (wb *WindowBase) SetSizePixels(size Size) error {
 	bounds := wb.window.BoundsPixels()
 
 	return wb.SetBoundsPixels(bounds.SetSize(size))
@@ -1761,22 +1767,24 @@ func (wb *WindowBase) ClientBoundsPixels() RectanglePixels {
 	return windowClientBounds(wb.hWnd)
 }
 
-func (wb *WindowBase) sizeFromClientSizePixels(clientSize SizePixels) SizePixels {
+// sizeFromClientSizePixels calculates size from client size in native pixels.
+func (wb *WindowBase) sizeFromClientSizePixels(clientSize Size) Size {
 	window := wb.window
 	s := window.SizePixels()
 	cs := window.ClientBoundsPixels().Size()
-	ncs := SizePixels{s.Width - cs.Width, s.Height - cs.Height}
+	ncs := Size{s.Width - cs.Width, s.Height - cs.Height}
 
-	return SizePixels{clientSize.Width + ncs.Width, clientSize.Height + ncs.Height}
+	return Size{clientSize.Width + ncs.Width, clientSize.Height + ncs.Height}
 }
 
-func (wb *WindowBase) clientSizeFromSizePixels(size SizePixels) SizePixels {
+// clientSizeFromSizePixels calculates client size from size in native pixels.
+func (wb *WindowBase) clientSizeFromSizePixels(size Size) Size {
 	window := wb.window
 	s := window.SizePixels()
 	cs := window.ClientBoundsPixels().Size()
-	ncs := SizePixels{s.Width - cs.Width, s.Height - cs.Height}
+	ncs := Size{s.Width - cs.Width, s.Height - cs.Height}
 
-	return SizePixels{size.Width - ncs.Width, size.Height - ncs.Height}
+	return Size{size.Width - ncs.Width, size.Height - ncs.Height}
 }
 
 // SetClientSize sets the size of the inner bounding box of the *WindowBase,
@@ -1787,7 +1795,7 @@ func (wb *WindowBase) SetClientSize(value Size) error {
 
 // SetClientSizePixels sets the size of the inner bounding box of the *WindowBase,
 // excluding decorations.
-func (wb *WindowBase) SetClientSizePixels(value SizePixels) error {
+func (wb *WindowBase) SetClientSizePixels(value Size) error {
 	return wb.SetSizePixels(wb.sizeFromClientSizePixels(value))
 }
 
@@ -2391,7 +2399,7 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			if widget, ok := wb.window.(Widget); ok {
 				wb := widget.AsWidgetBase()
 				wb.geometry.Size = wb.window.SizePixels()
-				wb.geometry.ClientSize = SizePixels{int(wp.Cx), int(wp.Cy)}
+				wb.geometry.ClientSize = Size{int(wp.Cx), int(wp.Cy)}
 
 				wb.invalidateBorderInParent()
 			}

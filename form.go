@@ -91,7 +91,7 @@ type FormBase struct {
 	progressIndicator           *ProgressIndicator
 	icon                        Image
 	prevFocusHWnd               win.HWND
-	proposedSize                SizePixels
+	proposedSize                Size // in native pixels
 	closeReason                 CloseReason
 	inSizingLoop                bool
 	startingLayoutViaSizingLoop bool
@@ -363,8 +363,8 @@ func (fb *FormBase) Run() int {
 
 	fb.SetBoundsPixels(fb.BoundsPixels())
 
-	if fb.proposedSize == (SizePixels{}) {
-		fb.proposedSize = maxSizePixels(SizeFrom96DPI(fb.minSize, fb.DPI()), fb.SizePixels())
+	if fb.proposedSize == (Size{}) {
+		fb.proposedSize = maxSize(SizeFrom96DPI(fb.minSize, fb.DPI()), fb.SizePixels())
 		if !fb.Suspended() {
 			fb.startLayout()
 		}
@@ -560,7 +560,7 @@ func (fb *FormBase) Hide() {
 }
 
 func (fb *FormBase) Show() {
-	fb.proposedSize = maxSizePixels(SizeFrom96DPI(fb.minSize, fb.DPI()), fb.SizePixels())
+	fb.proposedSize = maxSize(SizeFrom96DPI(fb.minSize, fb.DPI()), fb.SizePixels())
 
 	if p, ok := fb.window.(Persistable); ok && p.Persistent() && App().Settings() != nil {
 		p.RestoreState()
@@ -740,13 +740,13 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		return fb.clientComposite.WndProc(hwnd, msg, wParam, lParam)
 
 	case win.WM_GETMINMAXINFO:
-		if fb.Suspended() || fb.proposedSize == (SizePixels{}) {
+		if fb.Suspended() || fb.proposedSize == (Size{}) {
 			break
 		}
 
 		mmi := (*win.MINMAXINFO)(unsafe.Pointer(lParam))
 
-		var min SizePixels
+		var min Size
 		if layout := fb.clientComposite.layout; layout != nil {
 			size := fb.clientSizeFromSizePixels(fb.proposedSize)
 			layoutItem := CreateLayoutItemsForContainer(fb)
@@ -757,11 +757,11 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			}
 		}
 
-		minSizePixels := SizeFrom96DPI(fb.minSize, fb.DPI())
+		minSize := SizeFrom96DPI(fb.minSize, fb.DPI())
 
 		mmi.PtMinTrackSize = Point{
-			maxi(min.Width, minSizePixels.Width),
-			maxi(min.Height, minSizePixels.Height),
+			maxi(min.Width, minSize.Width),
+			maxi(min.Height, minSize.Height),
 		}.toPOINT()
 		return 0
 
@@ -790,7 +790,7 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			break
 		}
 
-		fb.proposedSize = SizePixels{int(wp.Cx), int(wp.Cy)}
+		fb.proposedSize = Size{int(wp.Cx), int(wp.Cy)}
 
 		const performingLayoutSubject = "*FormBase.WndProc - WM_WINDOWPOSCHANGED - full layout from sizing loop"
 

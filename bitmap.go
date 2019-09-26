@@ -22,7 +22,7 @@ const inchesPerMeter = 39.37007874
 type Bitmap struct {
 	hBmp       win.HBITMAP
 	hPackedDIB win.HGLOBAL
-	size       SizePixels
+	size       Size // in native pixels
 	dpi        int
 }
 
@@ -39,7 +39,7 @@ func BitmapFrom(src interface{}, dpi int) (*Bitmap, error) {
 	return iconCache.Bitmap(img, dpi)
 }
 
-// NewBitmap creates an opaque bitmap with given size at screen DPI.
+// NewBitmap creates an opaque bitmap with given size in 1/96" units at screen DPI.
 //
 // Deprecated: Newer applications should use NewBitmapForDPI.
 func NewBitmap(size Size) (*Bitmap, error) {
@@ -47,12 +47,12 @@ func NewBitmap(size Size) (*Bitmap, error) {
 	return newBitmap(SizeFrom96DPI(size, dpi), false, dpi)
 }
 
-// NewBitmapForDPI creates an opaque bitmap with given size and DPI.
-func NewBitmapForDPI(size SizePixels, dpi int) (*Bitmap, error) {
+// NewBitmapForDPI creates an opaque bitmap with given size in native pixels and DPI.
+func NewBitmapForDPI(size Size, dpi int) (*Bitmap, error) {
 	return newBitmap(size, false, dpi)
 }
 
-// NewBitmapWithTransparentPixels creates a transparent bitmap with given size at screen DPI.
+// NewBitmapWithTransparentPixels creates a transparent bitmap with given size in 1/96" units at screen DPI.
 //
 // Deprecated: Newer applications should use NewBitmapWithTransparentPixelsForDPI.
 func NewBitmapWithTransparentPixels(size Size) (*Bitmap, error) {
@@ -60,12 +60,13 @@ func NewBitmapWithTransparentPixels(size Size) (*Bitmap, error) {
 	return newBitmap(SizeFrom96DPI(size, dpi), true, dpi)
 }
 
-// NewBitmapWithTransparentPixelsForDPI creates a transparent bitmap with given size and DPI.
-func NewBitmapWithTransparentPixelsForDPI(size SizePixels, dpi int) (*Bitmap, error) {
+// NewBitmapWithTransparentPixelsForDPI creates a transparent bitmap with given size in native pixels and DPI.
+func NewBitmapWithTransparentPixelsForDPI(size Size, dpi int) (*Bitmap, error) {
 	return newBitmap(size, true, dpi)
 }
 
-func newBitmap(size SizePixels, transparent bool, dpi int) (bmp *Bitmap, err error) {
+// newBitmap creates a bitmap with given size in native pixels and DPI.
+func newBitmap(size Size, transparent bool, dpi int) (bmp *Bitmap, err error) {
 	err = withCompatibleDC(func(hdc win.HDC) error {
 		bufSize := int(size.Width * size.Height * 4)
 
@@ -194,7 +195,8 @@ func newBitmapFromResource(res *uint16, dpi int) (bm *Bitmap, err error) {
 	return
 }
 
-func NewBitmapFromImageWithSize(image Image, size SizePixels) (*Bitmap, error) {
+// NewBitmapFromImageWithSize creates a bitmap with given size in native units and paints the image on it streched.
+func NewBitmapFromImageWithSize(image Image, size Size) (*Bitmap, error) {
 	var disposables Disposables
 	defer disposables.Treat()
 
@@ -231,15 +233,17 @@ func NewBitmapFromWindow(window Window) (*Bitmap, error) {
 	return newBitmapFromHBITMAP(hBmp, window.DPI())
 }
 
-// NewBitmapFromIcon creates a new bitmap with given size and 96dpi and paints the icon on it.
+// NewBitmapFromIcon creates a new bitmap with given size in native pixels and 96dpi and paints the
+// icon on it.
 //
 // Deprecated: Newer applications should use NewBitmapFromIconForDPI.
-func NewBitmapFromIcon(icon *Icon, size SizePixels) (*Bitmap, error) {
+func NewBitmapFromIcon(icon *Icon, size Size) (*Bitmap, error) {
 	return NewBitmapFromIconForDPI(icon, size, 96)
 }
 
-// NewBitmapFromIconForDPI creates a new bitmap with given size and DPI and paints the icon on it.
-func NewBitmapFromIconForDPI(icon *Icon, size SizePixels, dpi int) (*Bitmap, error) {
+// NewBitmapFromIconForDPI creates a new bitmap with given size in native pixels and DPI and paints
+// the icon on it.
+func NewBitmapFromIconForDPI(icon *Icon, size Size, dpi int) (*Bitmap, error) {
 	hBmp, err := hBitmapFromIcon(icon, size, dpi)
 	if err != nil {
 		return nil, err
@@ -420,7 +424,7 @@ func newBitmapFromHBITMAP(hBmp win.HBITMAP, dpi int) (bmp *Bitmap, err error) {
 	return &Bitmap{
 		hBmp:       hBmp,
 		hPackedDIB: hPackedDIB,
-		size: SizePixels{
+		size: Size{
 			int(bmih.BiWidth),
 			int(bmih.BiHeight),
 		},
@@ -501,7 +505,9 @@ func hBitmapFromWindow(window Window) (win.HBITMAP, error) {
 	return hBmp, nil
 }
 
-func hBitmapFromIcon(icon *Icon, size SizePixels, dpi int) (win.HBITMAP, error) {
+// hBitmapFromIcon creates a new win.HBITMAP with given size in native pixels and DPI, and paints
+// the icon on it stretched.
+func hBitmapFromIcon(icon *Icon, size Size, dpi int) (win.HBITMAP, error) {
 	hdc := win.GetDC(0)
 	defer win.ReleaseDC(0, hdc)
 

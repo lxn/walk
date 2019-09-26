@@ -19,7 +19,7 @@ const milimeterPerMeter = 1000.0
 type Metafile struct {
 	hdc  win.HDC
 	hemf win.HENHMETAFILE
-	size SizePixels
+	size Size // in native pixels
 	dpi  int
 }
 

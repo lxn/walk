@@ -60,10 +60,10 @@ func (li *separatorLayoutItem) LayoutFlags() LayoutFlags {
 	return li.layoutFlags
 }
 
-func (li *separatorLayoutItem) IdealSize() SizePixels {
+func (li *separatorLayoutItem) IdealSize() Size {
 	return li.MinSize()
 }
 
-func (li *separatorLayoutItem) MinSize() SizePixels {
+func (li *separatorLayoutItem) MinSize() Size {
 	return SizeFrom96DPI(Size{2, 2}, li.ctx.dpi)
 }

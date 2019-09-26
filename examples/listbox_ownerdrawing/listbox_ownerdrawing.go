@@ -26,7 +26,7 @@ func main() {
 	styler := &Styler{
 		lb:                  &lb,
 		model:               model,
-		dpi2StampSize:       make(map[int]walk.SizePixels),
+		dpi2StampSize:       make(map[int]walk.Size),
 		widthDPI2WsPerLine:  make(map[widthDPI]int),
 		textWidthDPI2Height: make(map[textWidthDPI]int),
 	}
@@ -119,7 +119,7 @@ type Styler struct {
 	canvas              *walk.Canvas
 	model               *logModel
 	font                *walk.Font
-	dpi2StampSize       map[int]walk.SizePixels
+	dpi2StampSize       map[int]walk.Size
 	widthDPI2WsPerLine  map[widthDPI]int
 	textWidthDPI2Height map[textWidthDPI]int // in native pixels
 }
@@ -228,19 +228,19 @@ func (s *Styler) StyleItem(style *walk.ListItemStyle) {
 	}
 }
 
-func (s *Styler) StampSize() walk.SizePixels {
+func (s *Styler) StampSize() walk.Size {
 	dpi := (*s.lb).DPI()
 
 	stampSize, ok := s.dpi2StampSize[dpi]
 	if !ok {
 		canvas, err := s.Canvas()
 		if err != nil {
-			return walk.SizePixels{}
+			return walk.Size{}
 		}
 
 		bounds, _, err := canvas.MeasureTextPixels("Jan _2 20:04:05.000", (*s.lb).Font(), walk.RectanglePixels{Width: 9999999}, walk.TextCalcRect)
 		if err != nil {
-			return walk.SizePixels{}
+			return walk.Size{}
 		}
 
 		stampSize = bounds.Size()

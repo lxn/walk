@@ -85,10 +85,10 @@ func (li *spacerLayoutItem) LayoutFlags() LayoutFlags {
 	return li.layoutFlags
 }
 
-func (li *spacerLayoutItem) IdealSize() SizePixels {
+func (li *spacerLayoutItem) IdealSize() Size {
 	return SizeFrom96DPI(li.idealSize96dpi, li.ctx.dpi)
 }
 
-func (li *spacerLayoutItem) MinSize() SizePixels {
+func (li *spacerLayoutItem) MinSize() Size {
 	return SizeFrom96DPI(li.idealSize96dpi, li.ctx.dpi)
 }

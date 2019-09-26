@@ -446,7 +446,7 @@ func (c *Canvas) roundedRectangle(brush Brush, pen Pen, bounds Rectangle, ellips
 }
 
 // roundedRectanglePixels draws a rounded rectangle in native pixels.
-func (c *Canvas) roundedRectanglePixels(brush Brush, pen Pen, bounds RectanglePixels, ellipseSize SizePixels, sizeCorrection int) error {
+func (c *Canvas) roundedRectanglePixels(brush Brush, pen Pen, bounds RectanglePixels, ellipseSize Size, sizeCorrection int) error {
 	return c.withBrushAndPen(brush, pen, func() error {
 		if !win.RoundRect(
 			c.hdc,
@@ -464,19 +464,30 @@ func (c *Canvas) roundedRectanglePixels(brush Brush, pen Pen, bounds RectanglePi
 	})
 }
 
+// DrawRoundedRectangle draws a rounded rectangle in 1/96" units. sizeCorrection parameter is in native
+// pixels.
+//
+// Deprecated: Newer applications should use DrawRoundedRectanglePixels.
 func (c *Canvas) DrawRoundedRectangle(pen Pen, bounds Rectangle, ellipseSize Size) error {
 	return c.roundedRectangle(nullBrushSingleton, pen, bounds, ellipseSize, 0)
 }
 
-func (c *Canvas) DrawRoundedRectanglePixels(pen Pen, bounds RectanglePixels, ellipseSize SizePixels) error {
+// DrawRoundedRectanglePixels draws a rounded rectangle in native pixels.
+func (c *Canvas) DrawRoundedRectanglePixels(pen Pen, bounds RectanglePixels, ellipseSize Size) error {
 	return c.roundedRectanglePixels(nullBrushSingleton, pen, bounds, ellipseSize, 0)
 }
 
+// FillRoundedRectangle draws a filled rounded rectangle in 1/96" units. sizeCorrection parameter
+// is in native
+// pixels.
+//
+// Deprecated: Newer applications should use FillRoundedRectanglePixels.
 func (c *Canvas) FillRoundedRectangle(brush Brush, bounds Rectangle, ellipseSize Size) error {
 	return c.roundedRectangle(brush, nullPenSingleton, bounds, ellipseSize, 1)
 }
 
-func (c *Canvas) FillRoundedRectanglePixels(brush Brush, bounds RectanglePixels, ellipseSize SizePixels) error {
+// FillRoundedRectanglePixels draws a filled rounded rectangle in native pixels.
+func (c *Canvas) FillRoundedRectanglePixels(brush Brush, bounds RectanglePixels, ellipseSize Size) error {
 	return c.roundedRectanglePixels(brush, nullPenSingleton, bounds, ellipseSize, 1)
 }
 

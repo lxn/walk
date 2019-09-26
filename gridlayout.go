@@ -26,7 +26,7 @@ type gridLayoutWidgetInfo struct {
 	cell     *gridLayoutCell
 	spanHorz int
 	spanVert int
-	minSize  SizePixels
+	minSize  Size // in native pixels
 }
 
 type GridLayout struct {
@@ -304,7 +304,7 @@ func (l *GridLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 		ContainerLayoutItemBase: ContainerLayoutItemBase{
 			children: children,
 		},
-		size2MinSize:         make(map[SizePixels]SizePixels),
+		size2MinSize:         make(map[Size]Size),
 		rowStretchFactors:    append([]int(nil), l.rowStretchFactors...),
 		columnStretchFactors: append([]int(nil), l.columnStretchFactors...),
 		item2Info:            item2Info,
@@ -315,19 +315,19 @@ func (l *GridLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 type gridLayoutItem struct {
 	ContainerLayoutItemBase
 	mutex                sync.Mutex
-	size2MinSize         map[SizePixels]SizePixels
+	size2MinSize         map[Size]Size // in native pixels
 	rowStretchFactors    []int
 	columnStretchFactors []int
 	item2Info            map[LayoutItem]*gridLayoutItemInfo
 	cells                [][]gridLayoutItemCell
-	minSize              SizePixels
+	minSize              Size // in native pixels
 }
 
 type gridLayoutItemInfo struct {
 	cell     *gridLayoutItemCell
 	spanHorz int
 	spanVert int
-	minSize  SizePixels
+	minSize  Size // in native pixels
 }
 
 type gridLayoutItemCell struct {
@@ -373,25 +373,25 @@ func (li *gridLayoutItem) LayoutFlags() LayoutFlags {
 	return flags
 }
 
-func (li *gridLayoutItem) IdealSize() SizePixels {
+func (li *gridLayoutItem) IdealSize() Size {
 	return li.MinSize()
 }
 
-func (li *gridLayoutItem) MinSize() SizePixels {
+func (li *gridLayoutItem) MinSize() Size {
 	if len(li.cells) == 0 {
-		return SizePixels{}
+		return Size{}
 	}
 
 	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
 func (li *gridLayoutItem) HeightForWidth(width int) int {
-	return li.MinSizeForSize(SizePixels{width, li.geometry.ClientSize.Height}).Height
+	return li.MinSizeForSize(Size{width, li.geometry.ClientSize.Height}).Height
 }
 
-func (li *gridLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
+func (li *gridLayoutItem) MinSizeForSize(size Size) Size {
 	if len(li.cells) == 0 {
-		return SizePixels{}
+		return Size{}
 	}
 
 	li.mutex.Lock()
@@ -493,10 +493,10 @@ func (li *gridLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 	}
 
 	if width > 0 && height > 0 {
-		li.size2MinSize[size] = SizePixels{width, height}
+		li.size2MinSize[size] = Size{width, height}
 	}
 
-	return SizePixels{width, height}
+	return Size{width, height}
 }
 
 // spannedWidth returns spanned width in native pixels.
@@ -607,7 +607,7 @@ func (li *gridLayoutItem) PerformLayout() []LayoutResultItem {
 		h := height
 
 		if lf := item.LayoutFlags(); lf&GrowableHorz == 0 || lf&GrowableVert == 0 {
-			var s SizePixels
+			var s Size
 			if hfw, ok := item.(HeightForWidther); !ok || !hfw.HasHeightForWidth() {
 				if is, ok := item.(IdealSizer); ok {
 					s = is.IdealSize()
@@ -712,7 +712,7 @@ func (li *gridLayoutItem) sectionSizesForSpace(orientation Orientation, space in
 
 			max := item.Geometry().MaxSize
 
-			var pref SizePixels
+			var pref Size
 			if hfw, ok := item.(HeightForWidther); !ok || !hfw.HasHeightForWidth() {
 				if is, ok := item.(IdealSizer); ok {
 					pref = is.IdealSize()

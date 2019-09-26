@@ -184,17 +184,17 @@ func (sl *Slider) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type sliderLayoutItem struct {
 	LayoutItemBase
 	layoutFlags LayoutFlags
-	idealSize   SizePixels
+	idealSize   Size // in native pixels
 }
 
 func (li *sliderLayoutItem) LayoutFlags() LayoutFlags {
 	return li.layoutFlags
 }
 
-func (li *sliderLayoutItem) IdealSize() SizePixels {
+func (li *sliderLayoutItem) IdealSize() Size {
 	return li.idealSize
 }
 
-func (li *sliderLayoutItem) MinSize() SizePixels {
+func (li *sliderLayoutItem) MinSize() Size {
 	return li.idealSize
 }

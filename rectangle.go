@@ -74,11 +74,11 @@ func (r *RectanglePixels) SetLocation(p Point) RectanglePixels {
 	return *r
 }
 
-func (r RectanglePixels) Size() SizePixels {
-	return SizePixels{r.Width, r.Height}
+func (r RectanglePixels) Size() Size {
+	return Size{r.Width, r.Height}
 }
 
-func (r *RectanglePixels) SetSize(s SizePixels) RectanglePixels {
+func (r *RectanglePixels) SetSize(s Size) RectanglePixels {
 	r.Width = s.Width
 	r.Height = s.Height
 

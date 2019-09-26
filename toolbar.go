@@ -100,7 +100,7 @@ func (tb *ToolBar) ApplyDPI(dpi int) {
 	tb.WidgetBase.ApplyDPI(dpi)
 
 	var maskColor Color
-	var size SizePixels
+	var size Size
 	if tb.imageList != nil {
 		maskColor = tb.imageList.maskColor
 		size = SizeFrom96DPI(tb.imageList.imageSize96dpi, dpi)
@@ -553,24 +553,24 @@ func (tb *ToolBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 	return &toolBarLayoutItem{
 		layoutFlags: layoutFlags,
-		idealSize:   SizePixels{width, height},
+		idealSize:   Size{width, height},
 	}
 }
 
 type toolBarLayoutItem struct {
 	LayoutItemBase
 	layoutFlags LayoutFlags
-	idealSize   SizePixels
+	idealSize   Size // in native pixels
 }
 
 func (li *toolBarLayoutItem) LayoutFlags() LayoutFlags {
 	return li.layoutFlags
 }
 
-func (li *toolBarLayoutItem) IdealSize() SizePixels {
+func (li *toolBarLayoutItem) IdealSize() Size {
 	return li.idealSize
 }
 
-func (li *toolBarLayoutItem) MinSize() SizePixels {
+func (li *toolBarLayoutItem) MinSize() Size {
 	return li.idealSize
 }

@@ -51,17 +51,17 @@ func (tb *ToolButton) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type toolButtonLayoutItem struct {
 	LayoutItemBase
-	idealSize SizePixels
+	idealSize Size // in native pixels
 }
 
 func (*toolButtonLayoutItem) LayoutFlags() LayoutFlags {
 	return 0
 }
 
-func (tb *toolButtonLayoutItem) IdealSize() SizePixels {
+func (tb *toolButtonLayoutItem) IdealSize() Size {
 	return tb.idealSize
 }
 
-func (tb *toolButtonLayoutItem) MinSize() SizePixels {
+func (tb *toolButtonLayoutItem) MinSize() Size {
 	return tb.idealSize
 }

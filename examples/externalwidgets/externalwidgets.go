@@ -89,7 +89,7 @@ func (li *myWidgetLayoutItem) LayoutFlags() walk.LayoutFlags {
 	return 0
 }
 
-func (li *myWidgetLayoutItem) IdealSize() walk.SizePixels {
+func (li *myWidgetLayoutItem) IdealSize() walk.Size {
 	return walk.SizeFrom96DPI(li.idealSize, li.Context().DPI())
 }
 

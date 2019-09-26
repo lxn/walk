@@ -62,9 +62,9 @@ type Widget interface {
 	// Widget wants to be treated by Layout implementations.
 	LayoutFlags() LayoutFlags
 
-	// MinSizeHint returns the minimum outer size, including decorations, that
+	// MinSizeHint returns the minimum outer size in native pixels, including decorations, that
 	// makes sense for the respective type of Widget.
-	MinSizeHint() SizePixels
+	MinSizeHint() Size
 
 	// Parent returns the Container of the Widget.
 	Parent() Container
@@ -83,8 +83,8 @@ type Widget interface {
 	// SetToolTipText sets the tool tip text of the Widget.
 	SetToolTipText(s string) error
 
-	// SizeHint returns the preferred size for the respective type of Widget.
-	SizeHint() SizePixels
+	// SizeHint returns the preferred size in native pixels for the respective type of Widget.
+	SizeHint() Size
 
 	// ToolTipText returns the tool tip text of the Widget.
 	ToolTipText() string
@@ -513,18 +513,18 @@ func (wb *WidgetBase) LayoutFlags() LayoutFlags {
 	return createLayoutItemForWidget(wb.window.(Widget)).LayoutFlags()
 }
 
-func (wb *WidgetBase) SizeHint() SizePixels {
+func (wb *WidgetBase) SizeHint() Size {
 	if is, ok := createLayoutItemForWidget(wb.window.(Widget)).(IdealSizer); ok {
 		return is.IdealSize()
 	}
 
-	return SizePixels{}
+	return Size{}
 }
 
-func (wb *WidgetBase) MinSizeHint() SizePixels {
+func (wb *WidgetBase) MinSizeHint() Size {
 	if ms, ok := createLayoutItemForWidget(wb.window.(Widget)).(MinSizer); ok {
 		return ms.MinSize()
 	}
 
-	return SizePixels{}
+	return Size{}
 }

@@ -240,7 +240,8 @@ func (le *LineEdit) SetReadOnly(readOnly bool) error {
 	return nil
 }
 
-func (le *LineEdit) sizeHintForLimit(limit int) (size SizePixels) {
+// sizeHintForLimit returns size hint for given limit in native pixels
+func (le *LineEdit) sizeHintForLimit(limit int) (size Size) {
 	size = le.dialogBaseUnitsToPixels(SizeDBU{50, 12})
 	le.initCharWidth()
 	n := le.MaxLength()
@@ -359,18 +360,18 @@ func (le *LineEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type lineEditLayoutItem struct {
 	LayoutItemBase
 	layoutFlags LayoutFlags
-	idealSize   SizePixels
-	minSize     SizePixels
+	idealSize   Size // in native pixels
+	minSize     Size // in native pixels
 }
 
 func (li *lineEditLayoutItem) LayoutFlags() LayoutFlags {
 	return li.layoutFlags
 }
 
-func (li *lineEditLayoutItem) IdealSize() SizePixels {
+func (li *lineEditLayoutItem) IdealSize() Size {
 	return li.idealSize
 }
 
-func (li *lineEditLayoutItem) MinSize() SizePixels {
+func (li *lineEditLayoutItem) MinSize() Size {
 	return li.minSize
 }

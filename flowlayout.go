@@ -61,7 +61,7 @@ func (l *FlowLayout) SetStretchFactor(widget Widget, factor int) error {
 
 func (l *FlowLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 	li := &flowLayoutItem{
-		size2MinSize:       make(map[SizePixels]SizePixels),
+		size2MinSize:       make(map[Size]Size),
 		hwnd2StretchFactor: make(map[win.HWND]int),
 	}
 
@@ -74,7 +74,7 @@ func (l *FlowLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 
 type flowLayoutItem struct {
 	ContainerLayoutItemBase
-	size2MinSize       map[SizePixels]SizePixels
+	size2MinSize       map[Size]Size // in native pixels
 	hwnd2StretchFactor map[win.HWND]int
 }
 
@@ -86,22 +86,22 @@ type flowLayoutSection struct {
 
 type flowLayoutSectionItem struct {
 	item    LayoutItem
-	minSize SizePixels
+	minSize Size // in native pixels
 }
 
 func (*flowLayoutItem) LayoutFlags() LayoutFlags {
 	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 }
 
-func (li *flowLayoutItem) MinSize() SizePixels {
+func (li *flowLayoutItem) MinSize() Size {
 	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
 func (li *flowLayoutItem) HeightForWidth(width int) int {
-	return li.MinSizeForSize(SizePixels{width, li.geometry.ClientSize.Height}).Height
+	return li.MinSizeForSize(Size{width, li.geometry.ClientSize.Height}).Height
 }
 
-func (li *flowLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
+func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
 	if min, ok := li.size2MinSize[size]; ok {
 		return min
 	}
@@ -113,7 +113,7 @@ func (li *flowLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
 
 	sections := li.sectionsForPrimarySize(size.Width)
 
-	var s SizePixels
+	var s Size
 	var maxPrimary int
 
 	for i, section := range sections {

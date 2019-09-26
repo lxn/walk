@@ -163,11 +163,12 @@ func NewIconFromImageForDPI(im image.Image, dpi int) (ic *Icon, err error) {
 		return nil, err
 	}
 	b := im.Bounds()
-	return newIconFromHICONAndSize(hIcon, SizeTo96DPI(SizePixels{b.Dx(), b.Dy()}, dpi), dpi), nil
+	return newIconFromHICONAndSize(hIcon, SizeTo96DPI(Size{b.Dx(), b.Dy()}, dpi), dpi), nil
 }
 
-// NewIconFromImageWithSize returns a new Icon of the given size, using the specified Image as source.
-func NewIconFromImageWithSize(image Image, size SizePixels) (*Icon, error) {
+// NewIconFromImageWithSize returns a new Icon of the given size in native pixels, using the
+// specified Image as source.
+func NewIconFromImageWithSize(image Image, size Size) (*Icon, error) {
 	bmp, err := NewBitmapFromImageWithSize(image, size)
 	if err != nil {
 		return nil, err
@@ -267,7 +268,7 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 		name = i.res
 	}
 
-	var size SizePixels
+	var size Size
 	if size.Width == 0 || size.Height == 0 {
 		flags |= win.LR_DEFAULTSIZE
 		size = SizeFrom96DPI(defaultIconSize(), dpi)
@@ -390,12 +391,13 @@ func createAlphaCursorOrIconFromBitmap(bmp *Bitmap, hotspot Point, fIcon bool) (
 	return hIconOrCursor, nil
 }
 
-func sizeFromHICON(hIcon win.HICON) (SizePixels, error) {
+// sizeFromHICON returns icon size in native pixels.
+func sizeFromHICON(hIcon win.HICON) (Size, error) {
 	var ii win.ICONINFO
 	var bi win.BITMAPINFO
 
 	if !win.GetIconInfo(hIcon, &ii) {
-		return SizePixels{}, lastError("GetIconInfo")
+		return Size{}, lastError("GetIconInfo")
 	}
 	defer win.DeleteObject(win.HGDIOBJ(ii.HbmMask))
 
@@ -409,10 +411,10 @@ func sizeFromHICON(hIcon win.HICON) (SizePixels, error) {
 	}
 
 	if 0 == win.GetObject(win.HGDIOBJ(hBmp), unsafe.Sizeof(bi), unsafe.Pointer(&bi)) {
-		return SizePixels{}, newError("GetObject")
+		return Size{}, newError("GetObject")
 	}
 
-	return SizePixels{int(bi.BmiHeader.BiWidth), int(bi.BmiHeader.BiHeight)}, nil
+	return Size{int(bi.BmiHeader.BiWidth), int(bi.BmiHeader.BiHeight)}, nil
 }
 
 // Return default small icon size in 1/92" units.

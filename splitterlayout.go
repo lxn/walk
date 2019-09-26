@@ -212,17 +212,17 @@ func (li *splitterContainerLayoutItem) LayoutFlags() LayoutFlags {
 	return boxLayoutFlags(li.orientation, li.children)
 }
 
-func (li *splitterContainerLayoutItem) MinSize() SizePixels {
+func (li *splitterContainerLayoutItem) MinSize() Size {
 	return li.MinSizeForSize(li.geometry.ClientSize)
 }
 
 func (li *splitterContainerLayoutItem) HeightForWidth(width int) int {
-	return li.MinSizeForSize(SizePixels{width, li.geometry.ClientSize.Height}).Height
+	return li.MinSizeForSize(Size{width, li.geometry.ClientSize.Height}).Height
 }
 
-func (li *splitterContainerLayoutItem) MinSizeForSize(size SizePixels) SizePixels {
+func (li *splitterContainerLayoutItem) MinSizeForSize(size Size) Size {
 	marginsPixels := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
-	margins := SizePixels{marginsPixels.HNear + marginsPixels.HFar, marginsPixels.VNear + marginsPixels.VFar}
+	margins := Size{marginsPixels.HNear + marginsPixels.HFar, marginsPixels.VNear + marginsPixels.VFar}
 	s := margins
 
 	for _, item := range li.children {
@@ -230,7 +230,7 @@ func (li *splitterContainerLayoutItem) MinSizeForSize(size SizePixels) SizePixel
 			continue
 		}
 
-		var cur SizePixels
+		var cur Size
 
 		if sli, ok := li.hwnd2Item[item.Handle()]; ok && li.anyNonFixed && sli.fixed {
 			cur = item.Geometry().Size
@@ -322,7 +322,7 @@ func (li *splitterContainerLayoutItem) PerformLayout() []LayoutResultItem {
 			}
 
 			size := slItem.size
-			var idealSize SizePixels
+			var idealSize Size
 			if hfw, ok := item.(HeightForWidther); ok && li.orientation == Vertical && hfw.HasHeightForWidth() {
 				idealSize.Height = hfw.HeightForWidth(space2)
 			} else {

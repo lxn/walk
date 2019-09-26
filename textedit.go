@@ -20,7 +20,7 @@ type TextEdit struct {
 	textChangedPublisher     EventPublisher
 	textColor                Color
 	compactHeight            bool
-	margins                  SizePixels
+	margins                  Size // in native pixels
 	lastHeight               int
 	origWordbreakProcPtr     uintptr
 }
@@ -339,8 +339,8 @@ type textEditLayoutItem struct {
 	LayoutItemBase
 	mutex                   sync.Mutex
 	width2Height            map[int]int // in native pixels
-	nonCompactHeightMinSize SizePixels
-	margins                 SizePixels
+	nonCompactHeightMinSize Size        // in native pixels
+	margins                 Size        // in native pixels
 	text                    string
 	font                    *Font
 	minWidth                int // in native pixels
@@ -355,7 +355,7 @@ func (li *textEditLayoutItem) LayoutFlags() LayoutFlags {
 	return flags
 }
 
-func (li *textEditLayoutItem) IdealSize() SizePixels {
+func (li *textEditLayoutItem) IdealSize() Size {
 	if li.compactHeight {
 		return li.MinSize()
 	} else {
@@ -363,10 +363,10 @@ func (li *textEditLayoutItem) IdealSize() SizePixels {
 	}
 }
 
-func (li *textEditLayoutItem) MinSize() SizePixels {
+func (li *textEditLayoutItem) MinSize() Size {
 	if li.compactHeight {
 		width := IntFrom96DPI(100, li.ctx.dpi)
-		return SizePixels{width, li.HeightForWidth(width)}
+		return Size{width, li.HeightForWidth(width)}
 	} else {
 		return li.nonCompactHeightMinSize
 	}
