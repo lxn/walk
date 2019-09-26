@@ -8,7 +8,6 @@ package walk
 
 import (
 	"image"
-	"math"
 	"path/filepath"
 	"syscall"
 	"unsafe"
@@ -182,8 +181,7 @@ func NewIconFromImageWithSize(image Image, size SizePixels) (*Icon, error) {
 		return nil, err
 	}
 
-	dpi := int(math.Round(float64(size.Width) / float64(image.Size().Width) * 96.0))
-	return NewIconFromBitmapForDPI(bmp, dpi)
+	return NewIconFromBitmap(bmp)
 }
 
 func newIconFromImageForDPI(image Image, dpi int) (*Icon, error) {
@@ -203,20 +201,13 @@ func newIconFromImageForDPI(image Image, dpi int) (*Icon, error) {
 	return &Icon{dpi2hIcon: map[int]win.HICON{dpi: hIcon}, size96dpi: size96dpi}, nil
 }
 
-// NewIconFromBitmap returns a new Icon at screen DPI, using the specified Bitmap as source.
-//
-// Deprecated: Newer applications should use NewIconFromBitmapForDPI.
+// NewIconFromBitmap returns a new Icon, using the specified Bitmap as source.
 func NewIconFromBitmap(bmp *Bitmap) (ic *Icon, err error) {
-	return NewIconFromBitmapForDPI(bmp, screenDPI())
-}
-
-// NewIconFromBitmapForDPI returns a new Icon at given DPI, using the specified Bitmap as source.
-func NewIconFromBitmapForDPI(bmp *Bitmap, dpi int) (ic *Icon, err error) {
 	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, PointPixels{}, true)
 	if err != nil {
 		return nil, err
 	}
-	return newIconFromHICONAndSize(hIcon, bmp.Size(), dpi), nil
+	return newIconFromHICONAndSize(hIcon, bmp.Size(), bmp.dpi), nil
 }
 
 // NewIconFromHICON returns a new Icon at 96dpi, using the specified win.HICON as source.
