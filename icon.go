@@ -346,6 +346,18 @@ func (i *Icon) drawStretched(hdc win.HDC, bounds RectanglePixels) error {
 	dpi := int(float64(bounds.Width) / float64(i.size96dpi.Width) * 96.0)
 
 	hIcon := i.handleForDPI(dpi)
+	if hIcon == 0 {
+		var dpiAvailMax int
+		for dpiAvail, handle := range i.dpi2hIcon {
+			if dpiAvail > dpiAvailMax {
+				hIcon = handle
+				dpiAvailMax = dpiAvail
+			}
+			if dpiAvail > dpi {
+				break
+			}
+		}
+	}
 
 	if !win.DrawIconEx(hdc, int32(bounds.X), int32(bounds.Y), hIcon, int32(bounds.Width), int32(bounds.Height), 0, 0, win.DI_NORMAL) {
 		return lastError("DrawIconEx")
