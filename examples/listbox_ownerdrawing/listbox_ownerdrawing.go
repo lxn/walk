@@ -28,7 +28,7 @@ func main() {
 		model:               model,
 		dpi2StampSize:       make(map[int]walk.SizePixels),
 		widthDPI2WsPerLine:  make(map[widthDPI]int),
-		textWidthDPI2Height: make(map[textWidthDPI]int),
+		textWidthDPI2Height: make(map[textWidthDPI]walk.Pixel),
 	}
 
 	if err := (MainWindow{
@@ -104,13 +104,13 @@ type logEntry struct {
 }
 
 type widthDPI struct {
-	width int
+	width walk.Pixel
 	dpi   int
 }
 
 type textWidthDPI struct {
 	text  string
-	width int
+	width walk.Pixel
 	dpi   int
 }
 
@@ -121,25 +121,31 @@ type Styler struct {
 	font                *walk.Font
 	dpi2StampSize       map[int]walk.SizePixels
 	widthDPI2WsPerLine  map[widthDPI]int
-	textWidthDPI2Height map[textWidthDPI]int
+	textWidthDPI2Height map[textWidthDPI]walk.Pixel
 }
 
 func (s *Styler) ItemHeightDependsOnWidth() bool {
 	return true
 }
 
-func (s *Styler) DefaultItemHeight() int {
+func (s *Styler) DefaultItemHeight() walk.Pixel {
+	dpi := (*s.lb).DPI()
+	marginV := walk.IntFrom96DPI(marginV96dpi, dpi)
+
 	return s.StampSize().Height + marginV*2
 }
 
 const (
-	marginH int = 6
-	marginV int = 2
-	lineW   int = 1
+	marginH96dpi int = 6
+	marginV96dpi int = 2
+	lineW96dpi   int = 1
 )
 
-func (s *Styler) ItemHeight(index int, width int) int {
+func (s *Styler) ItemHeight(index int, width walk.Pixel) walk.Pixel {
 	dpi := (*s.lb).DPI()
+	marginH := walk.IntFrom96DPI(marginH96dpi, dpi)
+	marginV := walk.IntFrom96DPI(marginV96dpi, dpi)
+	lineW := walk.IntFrom96DPI(lineW96dpi, dpi)
 
 	msg := s.model.items[index].message
 
@@ -159,11 +165,11 @@ func (s *Styler) ItemHeight(index int, width int) int {
 	wd := widthDPI{width, dpi}
 	wsPerLine, ok := s.widthDPI2WsPerLine[wd]
 	if !ok {
-		bounds, _, err := canvas.MeasureText("W", (*s.lb).Font(), walk.Rectangle{Width: 9999999}, walk.TextCalcRect)
+		bounds, _, err := canvas.MeasureTextPixels("W", (*s.lb).Font(), walk.RectanglePixels{Width: 9999999}, walk.TextCalcRect)
 		if err != nil {
 			return 0
 		}
-		wsPerLine = (width - marginH*4 - lineW - stampSize.Width) / bounds.Width
+		wsPerLine = int((width - marginH*4 - lineW - stampSize.Width) / bounds.Width)
 		s.widthDPI2WsPerLine[wd] = wsPerLine
 	}
 
@@ -172,7 +178,7 @@ func (s *Styler) ItemHeight(index int, width int) int {
 		return stampSize.Height + marginV*2
 	}
 
-	bounds, _, err := canvas.MeasureText(msg, (*s.lb).Font(), walk.Rectangle{Width: width - marginH*4 - lineW - stampSize.Width, Height: 255}, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
+	bounds, _, err := canvas.MeasureTextPixels(msg, (*s.lb).Font(), walk.RectanglePixels{Width: width - marginH*4 - lineW - stampSize.Width, Height: 255}, walk.TextEditControl|walk.TextWordbreak|walk.TextEndEllipsis)
 	if err != nil {
 		return 0
 	}
@@ -197,7 +203,12 @@ func (s *Styler) StyleItem(style *walk.ListItemStyle) {
 		}
 		defer pen.Dispose()
 
-		b := style.Bounds()
+		dpi := (*s.lb).DPI()
+		marginH := walk.IntFrom96DPI(marginH96dpi, dpi)
+		marginV := walk.IntFrom96DPI(marginV96dpi, dpi)
+		lineW := walk.IntFrom96DPI(lineW96dpi, dpi)
+
+		b := style.BoundsPixels()
 		b.X += marginH
 		b.Y += marginV
 
@@ -208,7 +219,7 @@ func (s *Styler) StyleItem(style *walk.ListItemStyle) {
 		stampSize := s.StampSize()
 
 		x := b.X + stampSize.Width + marginH + lineW
-		canvas.DrawLine(pen, walk.Point{x, b.Y - marginV}, walk.Point{x, b.Y - marginV + b.Height})
+		canvas.DrawLinePixels(pen, walk.PointPixels{x, b.Y - marginV}, walk.PointPixels{x, b.Y - marginV + b.Height})
 
 		b.X += stampSize.Width + marginH*2 + lineW
 		b.Width -= stampSize.Width + marginH*4 + lineW
@@ -227,7 +238,7 @@ func (s *Styler) StampSize() walk.SizePixels {
 			return walk.SizePixels{}
 		}
 
-		bounds, _, err := canvas.MeasureText("Jan _2 20:04:05.000", (*s.lb).Font(), walk.Rectangle{Width: 9999999}, walk.TextCalcRect)
+		bounds, _, err := canvas.MeasureTextPixels("Jan _2 20:04:05.000", (*s.lb).Font(), walk.RectanglePixels{Width: 9999999}, walk.TextCalcRect)
 		if err != nil {
 			return walk.SizePixels{}
 		}
