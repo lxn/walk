@@ -195,15 +195,10 @@ func newIconFromImageForDPI(image Image, dpi int) (*Icon, error) {
 		return nil, err
 	}
 
-	var disposables Disposables
-	defer disposables.Treat()
-
 	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, PointPixels{}, true)
 	if err != nil {
 		return nil, err
 	}
-
-	disposables.Spare()
 
 	return &Icon{dpi2hIcon: map[int]win.HICON{dpi: hIcon}, size96dpi: size96dpi}, nil
 }
