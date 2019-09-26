@@ -187,7 +187,6 @@ func (mpmw *MultiPageMainWindow) setCurrentAction(action *walk.Action) error {
 	defer func() {
 		if !mpmw.pageCom.IsDisposed() {
 			mpmw.pageCom.RestoreState()
-			mpmw.pageCom.Layout().Update(false)
 		}
 	}()
 
