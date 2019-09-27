@@ -34,6 +34,7 @@ type Dialog struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
+	Accessibility      Accessibility
 
 	// Container
 
@@ -95,6 +96,7 @@ func (d Dialog) Create(owner walk.Form) error {
 		RightToLeftReading: d.RightToLeftReading,
 		ToolTipText:        "",
 		Visible:            d.Visible,
+		Accessibility:      d.Accessibility,
 
 		// Container
 		Children:   d.Children,

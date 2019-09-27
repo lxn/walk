@@ -33,6 +33,7 @@ type HSplitter struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
+	Accessibility      Accessibility
 
 	// Widget
 
@@ -105,6 +106,7 @@ type VSplitter struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
+	Accessibility      Accessibility
 
 	// Widget
 

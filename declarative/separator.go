@@ -33,6 +33,7 @@ type HSeparator struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
+	Accessibility      Accessibility
 
 	// Widget
 
@@ -85,6 +86,7 @@ type VSeparator struct {
 	Persistent       bool
 	ToolTipText      Property
 	Visible          Property
+	Accessibility      Accessibility
 
 	// Widget
 

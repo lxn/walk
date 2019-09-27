@@ -41,6 +41,7 @@ type CustomWidget struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
+	Accessibility      Accessibility
 
 	// Widget
 

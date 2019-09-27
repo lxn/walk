@@ -137,6 +137,7 @@ type formInfo struct {
 	RightToLeftReading bool
 	ToolTipText        string
 	Visible            Property
+	Accessibility      Accessibility
 
 	// Container
 

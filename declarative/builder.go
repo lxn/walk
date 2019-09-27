@@ -144,6 +144,9 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 
 	b.declWidgets = append(b.declWidgets, declWidget{d, w})
 
+	// Window
+	b.initAccessibility(d, w)
+
 	// Widget
 	if name := b.string("Name"); name != "" {
 		w.SetName(name)
@@ -443,6 +446,56 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	}
 
 	succeeded = true
+
+	return nil
+}
+
+func (b *Builder) initAccessibility(d Widget, w walk.Window) error {
+	accessibility := b.widgetValue.FieldByName("Accessibility")
+
+	if accessibility.IsValid() {
+		a := accessibility.Interface().(Accessibility)
+
+		if value, ok := a.Accelerator.(string); ok {
+			w.Accessibility().SetAccelerator(value)
+		}
+
+		if value, ok := a.DefaultAction.(string); ok {
+			w.Accessibility().SetDefaultAction(value)
+		}
+
+		if value, ok := a.Description.(string); ok {
+			w.Accessibility().SetDescription(value)
+		}
+
+		if value, ok := a.Help.(string); ok {
+			w.Accessibility().SetHelp(value)
+		}
+
+		if value, ok := a.Name.(string); ok {
+			w.Accessibility().SetName(value)
+		}
+
+		if value, ok := a.Role.(AccRole); ok {
+			w.Accessibility().SetRole(walk.AccRole(value))
+		}
+
+		if value, ok := a.RoleMap.(string); ok {
+			w.Accessibility().SetRoleMap(value)
+		}
+
+		if value, ok := a.State.(AccState); ok {
+			w.Accessibility().SetState(walk.AccState(value))
+		}
+
+		if value, ok := a.StateMap.(string); ok {
+			w.Accessibility().SetStateMap(value)
+		}
+
+		if value, ok := a.ValueMap.(string); ok {
+			w.Accessibility().SetValueMap(value)
+		}
+	}
 
 	return nil
 }

@@ -35,6 +35,10 @@ type Window interface {
 	// struct that implements most operations common to all windows.
 	AsWindowBase() *WindowBase
 
+	// Accessibility returns the accessibility object used to set Dynamic Annotation properties of the
+	// window.
+	Accessibility() *Accessibility
+
 	// Background returns the background Brush of the Window.
 	//
 	// By default this is nil.

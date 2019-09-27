@@ -32,6 +32,7 @@ type MainWindow struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
+	Accessibility      Accessibility
 
 	// Container
 
@@ -88,6 +89,7 @@ func (mw MainWindow) Create() error {
 		OnSizeChanged:      mw.OnSizeChanged,
 		RightToLeftReading: mw.RightToLeftReading,
 		Visible:            mw.Visible,
+		Accessibility:      mw.Accessibility,
 
 		// Container
 		Children:   mw.Children,
