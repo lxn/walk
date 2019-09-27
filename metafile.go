@@ -14,7 +14,7 @@ import (
 	"github.com/lxn/win"
 )
 
-const milimeterPerMeter = 1000.0
+const milimeterPerMeter float64 = 1000.0
 
 type Metafile struct {
 	hdc  win.HDC

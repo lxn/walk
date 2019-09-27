@@ -17,7 +17,7 @@ import (
 	"github.com/lxn/win"
 )
 
-const inchesPerMeter = 39.37007874
+const inchesPerMeter float64 = 39.37007874
 
 type Bitmap struct {
 	hBmp       win.HBITMAP
