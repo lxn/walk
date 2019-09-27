@@ -20,7 +20,7 @@ type Metafile struct {
 	hdc  win.HDC
 	hemf win.HENHMETAFILE
 	size Size // in native pixels
-	dpi  int
+	dpi  Size
 }
 
 func NewMetafile(referenceCanvas *Canvas) (*Metafile, error) {
@@ -77,7 +77,11 @@ func (mf *Metafile) readSizeFromHeader() error {
 	}
 
 	mf.size = sizeFromRECT(hdr.RclBounds)
-	mf.dpi = int(math.Round(float64(hdr.SzlDevice.CY) / float64(hdr.SzlMillimeters.CY) * milimeterPerMeter / inchesPerMeter))
+	scale := milimeterPerMeter / inchesPerMeter
+	mf.dpi = Size{
+		int(math.Round(float64(hdr.SzlDevice.CX) / float64(hdr.SzlMillimeters.CX) * scale)),
+		int(math.Round(float64(hdr.SzlDevice.CY) / float64(hdr.SzlMillimeters.CY) * scale)),
+	}
 
 	return nil
 }
@@ -103,7 +107,7 @@ func (mf *Metafile) ensureFinished() error {
 
 // Size returns image size in 1/96" units.
 func (mf *Metafile) Size() Size {
-	return SizeTo96DPI(mf.size, mf.dpi)
+	return SizeTo96DPI2(mf.size, mf.dpi)
 }
 
 func (mf *Metafile) draw(hdc win.HDC, location Point) error {
