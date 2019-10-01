@@ -13,6 +13,7 @@ import (
 type ProgressBar struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool

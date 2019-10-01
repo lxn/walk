@@ -13,6 +13,7 @@ import (
 type Dialog struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool
@@ -95,6 +96,7 @@ func (d Dialog) Create(owner walk.Form) error {
 		RightToLeftReading: d.RightToLeftReading,
 		ToolTipText:        "",
 		Visible:            d.Visible,
+		Accessibility:      d.Accessibility,
 
 		// Container
 		Children:   d.Children,

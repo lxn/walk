@@ -14,6 +14,7 @@ import (
 type GradientComposite struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool

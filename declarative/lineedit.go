@@ -21,6 +21,7 @@ const (
 type LineEdit struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool

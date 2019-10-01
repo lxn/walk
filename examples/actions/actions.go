@@ -140,6 +140,9 @@ func main() {
 				Name:    "enabledCB",
 				Text:    "Open / Special Enabled",
 				Checked: true,
+				Accessibility: Accessibility{
+					Help: "Enables Open and Special",
+				},
 			},
 			CheckBox{
 				Name:    "openHiddenCB",
@@ -157,6 +160,9 @@ func main() {
 					} else {
 						toggleSpecialModePB.SetText("Enable Special Mode")
 					}
+				},
+				Accessibility: Accessibility{
+					Help: "Toggles special mode",
 				},
 			},
 		},

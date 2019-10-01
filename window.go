@@ -35,6 +35,10 @@ type Window interface {
 	// struct that implements most operations common to all windows.
 	AsWindowBase() *WindowBase
 
+	// Accessibility returns the accessibility object used to set Dynamic Annotation properties of the
+	// window.
+	Accessibility() *Accessibility
+
 	// Background returns the background Brush of the Window.
 	//
 	// By default this is nil.
@@ -436,6 +440,7 @@ type WindowBase struct {
 	suspended                 bool
 	visible                   bool
 	enabled                   bool
+	acc                       *Accessibility
 }
 
 var (
@@ -767,6 +772,15 @@ func ensureWindowLongBits(hwnd win.HWND, index int32, bits uint32, set bool) err
 	return setAndClearWindowLongBits(hwnd, index, setBits, clearBits)
 }
 
+// Accessibility returns the accessibility object used to set Dynamic Annotation properties of the
+// window.
+func (wb *WindowBase) Accessibility() *Accessibility {
+	if wb.acc == nil {
+		wb.acc = &Accessibility{wb: wb}
+	}
+	return wb.acc
+}
+
 // Handle returns the window handle of the Window.
 func (wb *WindowBase) Handle() win.HWND {
 	return wb.hWnd
@@ -858,6 +872,7 @@ func (wb *WindowBase) Dispose() {
 	}
 
 	if hWnd != 0 {
+		wb.group.accClearHwndProps(wb.hWnd)
 		wb.group.Done()
 	}
 }

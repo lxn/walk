@@ -11,6 +11,7 @@ import "github.com/lxn/walk"
 type MainWindow struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool
@@ -88,6 +89,7 @@ func (mw MainWindow) Create() error {
 		OnSizeChanged:      mw.OnSizeChanged,
 		RightToLeftReading: mw.RightToLeftReading,
 		Visible:            mw.Visible,
+		Accessibility:      mw.Accessibility,
 
 		// Container
 		Children:   mw.Children,

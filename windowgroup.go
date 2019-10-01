@@ -8,6 +8,9 @@ package walk
 
 import (
 	"sync"
+	"unsafe"
+
+	"github.com/lxn/win"
 )
 
 // The global window group manager instance.
@@ -84,13 +87,15 @@ func (m *windowGroupManager) removeGroup(threadID uint32) {
 // the group. When the number of references reaches zero, the
 // group is disposed of.
 type WindowGroup struct {
-	refs       int // Tracks the number of windows that rely on this group
-	ignored    int // Tracks the number of refs created by the group itself
-	threadID   uint32
-	completion func(uint32) // Used to tell the window group manager to remove this group
-	removed    bool         // Has this group been removed from its manager? (used for race detection)
-	toolTip    *ToolTip
-	activeForm Form
+	refs            int // Tracks the number of windows that rely on this group
+	ignored         int // Tracks the number of refs created by the group itself
+	threadID        uint32
+	completion      func(uint32) // Used to tell the window group manager to remove this group
+	removed         bool         // Has this group been removed from its manager? (used for race detection)
+	toolTip         *ToolTip
+	activeForm      Form
+	oleInit         bool
+	accPropServices *win.IAccPropServices
 
 	syncMutex       sync.Mutex
 	syncFuncs       []func()       // Functions queued to run on the group's thread
@@ -102,9 +107,12 @@ type WindowGroup struct {
 //
 // The completion function will be called when the group is disposed of.
 func newWindowGroup(threadID uint32, completion func(uint32)) *WindowGroup {
+	hr := win.OleInitialize()
+
 	return &WindowGroup{
 		threadID:   threadID,
 		completion: completion,
+		oleInit:    hr == win.S_OK || hr == win.S_FALSE,
 	}
 }
 
@@ -116,6 +124,44 @@ func (g *WindowGroup) ThreadID() uint32 {
 // Refs returns the current number of references to the group.
 func (g *WindowGroup) Refs() int {
 	return g.refs
+}
+
+// AccessibilityServices returns an instance of CLSID_AccPropServices class.
+func (g *WindowGroup) accessibilityServices() *win.IAccPropServices {
+	if g.accPropServices != nil {
+		return g.accPropServices
+	}
+
+	var accPropServices *win.IAccPropServices
+	hr := win.CoCreateInstance(&win.CLSID_AccPropServices, nil, win.CLSCTX_ALL, &win.IID_IAccPropServices, (*unsafe.Pointer)(unsafe.Pointer(&accPropServices)))
+	if win.FAILED(hr) {
+		return nil
+	}
+
+	g.accPropServices = accPropServices
+	return accPropServices
+}
+
+// accPropIds is a static list of accessibility properties user (may) set for a window
+// and we should clear when the window is disposed.
+var accPropIds = []win.MSAAPROPID{
+	win.PROPID_ACC_DEFAULTACTION,
+	win.PROPID_ACC_DESCRIPTION,
+	win.PROPID_ACC_HELP,
+	win.PROPID_ACC_KEYBOARDSHORTCUT,
+	win.PROPID_ACC_NAME,
+	win.PROPID_ACC_ROLE,
+	win.PROPID_ACC_ROLEMAP,
+	win.PROPID_ACC_STATE,
+	win.PROPID_ACC_STATEMAP,
+	win.PROPID_ACC_VALUEMAP,
+}
+
+// accClearHwndProps clears all window properties for Dynamic Annotation to release resources.
+func (g *WindowGroup) accClearHwndProps(hwnd win.HWND) {
+	if g.accPropServices != nil {
+		g.accPropServices.ClearHwndProps(hwnd, win.OBJID_CLIENT, win.CHILDID_SELF, accPropIds)
+	}
 }
 
 // Add changes the group's reference counter by delta, which may be negative.
@@ -256,6 +302,16 @@ func (g *WindowGroup) ignore(delta int) {
 
 // dispose releases any resources consumed by the group.
 func (g *WindowGroup) dispose() {
+	if g.accPropServices != nil {
+		g.accPropServices.Release()
+		g.accPropServices = nil
+	}
+
+	if g.oleInit {
+		win.OleUninitialize()
+		g.oleInit = false
+	}
+
 	if g.toolTip != nil {
 		g.toolTip.Dispose()
 		g.toolTip = nil
