@@ -456,44 +456,44 @@ func (b *Builder) initAccessibility(d Widget, w walk.Window) error {
 	if accessibility.IsValid() {
 		a := accessibility.Interface().(Accessibility)
 
-		if value, ok := a.Accelerator.(string); ok {
-			w.Accessibility().SetAccelerator(value)
+		if a.Accelerator != "" {
+			w.Accessibility().SetAccelerator(a.Accelerator)
 		}
 
-		if value, ok := a.DefaultAction.(string); ok {
-			w.Accessibility().SetDefaultAction(value)
+		if a.DefaultAction != "" {
+			w.Accessibility().SetDefaultAction(a.DefaultAction)
 		}
 
-		if value, ok := a.Description.(string); ok {
-			w.Accessibility().SetDescription(value)
+		if a.Description != "" {
+			w.Accessibility().SetDescription(a.Description)
 		}
 
-		if value, ok := a.Help.(string); ok {
-			w.Accessibility().SetHelp(value)
+		if a.Help != "" {
+			w.Accessibility().SetHelp(a.Help)
 		}
 
-		if value, ok := a.Name.(string); ok {
-			w.Accessibility().SetName(value)
+		if a.Name != "" {
+			w.Accessibility().SetName(a.Name)
 		}
 
-		if value, ok := a.Role.(AccRole); ok {
-			w.Accessibility().SetRole(walk.AccRole(value))
+		if a.Role > 0 {
+			w.Accessibility().SetRole(walk.AccRole(a.Role))
 		}
 
-		if value, ok := a.RoleMap.(string); ok {
-			w.Accessibility().SetRoleMap(value)
+		if a.RoleMap != "" {
+			w.Accessibility().SetRoleMap(a.RoleMap)
 		}
 
-		if value, ok := a.State.(AccState); ok {
-			w.Accessibility().SetState(walk.AccState(value))
+		if a.State > 0 {
+			w.Accessibility().SetState(walk.AccState(a.State))
 		}
 
-		if value, ok := a.StateMap.(string); ok {
-			w.Accessibility().SetStateMap(value)
+		if a.StateMap != "" {
+			w.Accessibility().SetStateMap(a.StateMap)
 		}
 
-		if value, ok := a.ValueMap.(string); ok {
-			w.Accessibility().SetValueMap(value)
+		if a.ValueMap != "" {
+			w.Accessibility().SetValueMap(a.ValueMap)
 		}
 	}
 

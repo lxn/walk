@@ -124,14 +124,14 @@ const (
 
 // Accessibility properties
 type Accessibility struct {
-	Accelerator   Property
-	DefaultAction Property
-	Description   Property
-	Help          Property
-	Name          Property
-	Role          Property
-	RoleMap       Property
-	State         Property
-	StateMap      Property
-	ValueMap      Property
+	Accelerator   string
+	DefaultAction string
+	Description   string
+	Help          string
+	Name          string
+	Role          AccRole
+	RoleMap       string
+	State         AccState
+	StateMap      string
+	ValueMap      string
 }
