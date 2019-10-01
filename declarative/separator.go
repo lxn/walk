@@ -13,6 +13,7 @@ import (
 type HSeparator struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool
@@ -33,7 +34,6 @@ type HSeparator struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
-	Accessibility      Accessibility
 
 	// Widget
 
@@ -69,6 +69,7 @@ func (s HSeparator) Create(builder *Builder) error {
 type VSeparator struct {
 	// Window
 
+	Accessibility      Accessibility
 	ContextMenuItems []MenuItem
 	Enabled          Property
 	Font             Font
@@ -86,7 +87,6 @@ type VSeparator struct {
 	Persistent       bool
 	ToolTipText      Property
 	Visible          Property
-	Accessibility      Accessibility
 
 	// Widget
 

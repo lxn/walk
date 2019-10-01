@@ -17,6 +17,7 @@ import (
 type DateEdit struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool
@@ -37,7 +38,6 @@ type DateEdit struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
-	Accessibility      Accessibility
 
 	// Widget
 

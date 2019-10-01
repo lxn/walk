@@ -24,6 +24,7 @@ const (
 type ImageView struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool
@@ -44,7 +45,6 @@ type ImageView struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
-	Accessibility      Accessibility
 
 	// Widget
 

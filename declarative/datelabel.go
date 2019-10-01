@@ -13,6 +13,7 @@ import (
 type DateLabel struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool
@@ -33,7 +34,6 @@ type DateLabel struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
-	Accessibility      Accessibility
 
 	// Widget
 

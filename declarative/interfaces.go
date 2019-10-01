@@ -118,6 +118,7 @@ func (ToolTipErrorPresenter) Create() (walk.ErrorPresenter, error) {
 type formInfo struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool
@@ -137,7 +138,6 @@ type formInfo struct {
 	RightToLeftReading bool
 	ToolTipText        string
 	Visible            Property
-	Accessibility      Accessibility
 
 	// Container
 

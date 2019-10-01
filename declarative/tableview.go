@@ -14,6 +14,7 @@ import (
 type TableView struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool
@@ -34,7 +35,6 @@ type TableView struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
-	Accessibility      Accessibility
 
 	// Widget
 

@@ -13,6 +13,7 @@ import (
 type HSplitter struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool
@@ -33,7 +34,6 @@ type HSplitter struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
-	Accessibility      Accessibility
 
 	// Widget
 
@@ -87,6 +87,7 @@ func (s HSplitter) Create(builder *Builder) error {
 type VSplitter struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	Enabled            Property
@@ -106,7 +107,6 @@ type VSplitter struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
-	Accessibility      Accessibility
 
 	// Widget
 

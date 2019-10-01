@@ -11,6 +11,7 @@ import "github.com/lxn/walk"
 type MainWindow struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool
@@ -32,7 +33,6 @@ type MainWindow struct {
 	RightToLeftReading bool
 	ToolTipText        Property
 	Visible            Property
-	Accessibility      Accessibility
 
 	// Container
 
