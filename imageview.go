@@ -239,9 +239,6 @@ func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	dpi := iv.DPI()
 	idealSize := SizeFrom96DPI(Size{100, 100}, dpi)
 
-	// TODO: Convert margin to native pixels separately. Otherwise, rounding might render different results
-	// at 144dpi (i.e. 1.5x)
-
 	var minSize Size
 	if iv.mode == ImageViewModeIdeal {
 		if iv.image != nil {
