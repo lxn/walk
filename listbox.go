@@ -442,7 +442,7 @@ func (lb *ListBox) calculateMaxItemTextWidth() int {
 	}
 	defer win.ReleaseDC(lb.hWnd, hdc)
 
-	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(lb.Font().handleForDPI(0)))
+	hFontOld := win.SelectObject(hdc, win.HGDIOBJ(lb.Font().handleForDPI(lb.DPI())))
 	defer win.SelectObject(hdc, hFontOld)
 
 	var maxWidth int

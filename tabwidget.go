@@ -67,7 +67,8 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 	win.SetWindowLongPtr(tw.hWndTab, win.GWLP_USERDATA, uintptr(unsafe.Pointer(tw)))
 	tw.tabOrigWndProcPtr = win.SetWindowLongPtr(tw.hWndTab, win.GWLP_WNDPROC, tabWidgetTabWndProcPtr)
 
-	win.SendMessage(tw.hWndTab, win.WM_SETFONT, uintptr(defaultFont.handleForDPI(0)), 1)
+	dpi := int(win.GetDpiForWindow(tw.hWndTab))
+	win.SendMessage(tw.hWndTab, win.WM_SETFONT, uintptr(defaultFont.handleForDPI(dpi)), 1)
 
 	tw.applyFont(tw.Font())
 

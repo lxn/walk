@@ -2102,7 +2102,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 
 				case win.CDDS_ITEMPREPAINT | win.CDDS_SUBITEM:
 					if tv.itemFont != nil {
-						win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(tv.itemFont.handleForDPI(0)))
+						win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(tv.itemFont.handleForDPI(tv.DPI())))
 					}
 
 					if applyCellStyle() == win.CDRF_SKIPDEFAULT && win.IsAppThemed() {
