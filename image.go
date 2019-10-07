@@ -70,21 +70,34 @@ func NewImageFromFileForDPI(filePath string, dpi int) (Image, error) {
 }
 
 type PaintFuncImage struct {
-	size96dpi Size
-	paint     func(canvas *Canvas, bounds Rectangle) error // in native pixels
-	dispose   func()
+	size96dpi   Size
+	paint       PaintFunc // in 1/96" units
+	paintPixels PaintFunc // in native pixels
+	dispose     func()
 }
 
-// NewPaintFuncImage creates new PaintFuncImage struct. size parameter is specified in 1/96" units.
-// paint function accepts bounds in native pixels.
+// NewPaintFuncImage creates new PaintFuncImage struct. size parameter and paint function bounds
+// parameter are specified in 1/96" units.
 func NewPaintFuncImage(size Size, paint func(canvas *Canvas, bounds Rectangle) error) *PaintFuncImage {
 	return &PaintFuncImage{size96dpi: size, paint: paint}
 }
 
-// NewPaintFuncImageWithDispose creates new PaintFuncImage struct. size parameter is specified in
-// 1/96" units. paint function accepts bounds in native pixels.
+// NewPaintFuncImagePixels creates new PaintFuncImage struct. size parameter is specified in 1/96"
+// units. paint function bounds parameter is specified in native pixels.
+func NewPaintFuncImagePixels(size Size, paint func(canvas *Canvas, bounds Rectangle) error) *PaintFuncImage {
+	return &PaintFuncImage{size96dpi: size, paintPixels: paint}
+}
+
+// NewPaintFuncImageWithDispose creates new PaintFuncImage struct. size parameter and paint
+// function bounds parameter are specified in 1/96" units.
 func NewPaintFuncImageWithDispose(size Size, paint func(canvas *Canvas, bounds Rectangle) error, dispose func()) *PaintFuncImage {
 	return &PaintFuncImage{size96dpi: size, paint: paint, dispose: dispose}
+}
+
+// NewPaintFuncImagePixelsWithDispose creates new PaintFuncImage struct. size parameter is
+// specified in 1/96" units. paint function bounds parameter is specified in native pixels.
+func NewPaintFuncImagePixelsWithDispose(size Size, paint func(canvas *Canvas, bounds Rectangle) error, dispose func()) *PaintFuncImage {
+	return &PaintFuncImage{size96dpi: size, paintPixels: paint, dispose: dispose}
 }
 
 func (pfi *PaintFuncImage) draw(hdc win.HDC, location Point) error {
@@ -101,12 +114,18 @@ func (pfi *PaintFuncImage) drawStretched(hdc win.HDC, bounds Rectangle) error {
 	}
 	defer canvas.Dispose()
 
-	return pfi.drawStretchedOnCanvas(canvas, bounds)
+	return pfi.drawStretchedOnCanvasPixels(canvas, bounds)
 }
 
-// drawStretchedOnCanvas draws streched on canvas with bounds in native pixels.
-func (pfi *PaintFuncImage) drawStretchedOnCanvas(canvas *Canvas, bounds Rectangle) error {
-	return pfi.paint(canvas, bounds)
+func (pfi *PaintFuncImage) drawStretchedOnCanvasPixels(canvas *Canvas, bounds Rectangle) error {
+	if pfi.paintPixels != nil {
+		return pfi.paintPixels(canvas, bounds)
+	}
+	if pfi.paint != nil {
+		return pfi.paint(canvas, RectangleTo96DPI(bounds, canvas.DPI()))
+	}
+
+	return newError("paint(Pixels) func is nil")
 }
 
 func (pfi *PaintFuncImage) Dispose() {
