@@ -225,7 +225,7 @@ func newIconFromHICONAndSize(hIcon win.HICON, size Size, dpi int) *Icon {
 }
 
 func checkNewIcon(icon *Icon) (*Icon, error) {
-	if _, err := icon.handleForDPIWithError(screenDPI()); err != nil {
+	if _, err := icon.handleForDPIWithError(96); err != nil {
 		return nil, err
 	}
 
