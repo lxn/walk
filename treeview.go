@@ -171,6 +171,7 @@ func (tv *TreeView) SetModel(model TreeModel) error {
 
 		tv.itemInsertedEventHandlerHandle = model.ItemInserted().Attach(func(item TreeItem) {
 			tv.SetSuspended(true)
+			defer tv.SetSuspended(false)
 
 			var hInsertAfter win.HTREEITEM
 			parent := item.Parent()
@@ -187,8 +188,6 @@ func (tv *TreeView) SetModel(model TreeModel) error {
 			if _, err := tv.insertItemAfter(item, hInsertAfter); err != nil {
 				return
 			}
-
-			tv.SetSuspended(false)
 		})
 
 		tv.itemRemovedEventHandlerHandle = model.ItemRemoved().Attach(func(item TreeItem) {
@@ -587,7 +586,15 @@ func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				(*buf)[max-1] = 0
 			}
 			if nmtvdi.Item.Mask&win.TVIF_CHILDREN != 0 {
-				nmtvdi.Item.CChildren = int32(item.ChildCount())
+				if hc, ok := item.(HasChilder); ok {
+					if hc.HasChild() {
+						nmtvdi.Item.CChildren = 1
+					} else {
+						nmtvdi.Item.CChildren = 0
+					}
+				} else {
+					nmtvdi.Item.CChildren = int32(item.ChildCount())
+				}
 			}
 
 		case win.TVN_ITEMEXPANDING:

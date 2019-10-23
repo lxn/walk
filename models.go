@@ -597,6 +597,12 @@ type TreeItem interface {
 	ChildAt(index int) TreeItem
 }
 
+// HasChilder enables widgets like TreeView to determine if an item has any
+// child, without enforcing to fully count all children.
+type HasChilder interface {
+	HasChild() bool
+}
+
 // TreeModel provides widgets like TreeView with item data.
 type TreeModel interface {
 	// LazyPopulation returns if the model prefers on-demand population.
