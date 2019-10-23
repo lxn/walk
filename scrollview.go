@@ -272,10 +272,10 @@ func (sv *ScrollView) scroll(sb int32, cmd uint16) int {
 
 	switch cmd {
 	case win.SB_LINELEFT: // == win.SB_LINEUP
-		pos -= 20 // TODO: DPI?
+		pos -= int32(sv.IntFrom96DPI(20))
 
 	case win.SB_LINERIGHT: // == win.SB_LINEDOWN
-		pos += 20 // TODO: DPI?
+		pos += int32(sv.IntFrom96DPI(20))
 
 	case win.SB_PAGELEFT: // == win.SB_PAGEUP
 		pos -= int32(si.NPage)

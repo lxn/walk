@@ -262,11 +262,12 @@ func (tw *TabWidget) pageBounds() Rectangle {
 	}
 	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
-	// TODO: Should 2px adjustment be in 1/96" units or native pixels?
+	adjustment := int32(tw.IntFrom96DPI(2))
+
 	return Rectangle{
-		int(r.Left - 2),
+		int(r.Left - adjustment),
 		int(r.Top),
-		int(r.Right - r.Left + 2),
+		int(r.Right - r.Left + adjustment),
 		int(r.Bottom - r.Top),
 	}
 }
@@ -817,7 +818,7 @@ func (li *tabWidgetLayoutItem) PerformLayout() []LayoutResultItem {
 		return []LayoutResultItem{
 			{
 				Item:   page,
-				Bounds: Rectangle{X: li.pagePos.X, Y: li.pagePos.Y, Width: li.geometry.Size.Width - li.pagePos.X*2 - 1, Height: li.geometry.Size.Height - li.pagePos.Y - 2},
+				Bounds: Rectangle{X: li.pagePos.X, Y: li.pagePos.Y, Width: li.geometry.Size.Width - li.pagePos.X*2 - IntFrom96DPI(1, li.ctx.dpi), Height: li.geometry.Size.Height - li.pagePos.Y - IntFrom96DPI(2, li.ctx.dpi)},
 			},
 		}
 	}
