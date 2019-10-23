@@ -262,8 +262,7 @@ func (tw *TabWidget) pageBounds() Rectangle {
 	}
 	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
-	adjustment := int32(tw.IntFrom96DPI(2))
-
+	adjustment := 2 * int32(tw.IntFrom96DPI(1))
 	return Rectangle{
 		int(r.Left - adjustment),
 		int(r.Top),
@@ -389,6 +388,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 			var rc win.RECT
 
+			adjustment := SizeFrom96DPI(Size{1, 1}, dpi).toSIZE()
 			count := tw.pages.Len()
 			for i := 0; i < count; i++ {
 				if 0 == win.SendMessage(hwnd, win.TCM_GETITEMRECT, uintptr(i), uintptr(unsafe.Pointer(&rc))) {
@@ -396,12 +396,12 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 				}
 
 				if i == tw.currentIndex {
-					rc.Left -= 2
-					rc.Top -= 2
-					rc.Right += 2
+					rc.Left -= 2 * adjustment.CX
+					rc.Top -= 2 * adjustment.CY
+					rc.Right += 2 * adjustment.CX
 				} else {
 					if i == count-1 && themed {
-						rc.Right -= 2
+						rc.Right -= 2 * adjustment.CX
 					}
 				}
 
@@ -434,18 +434,19 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 					break
 				}
 
-				hRgn := win.CreateRectRgn(rc.Left, rc.Top, rc.Right, rc.Bottom+2)
+				adjustment := SizeFrom96DPI(Size{6, 1}, dpi).toSIZE()
+				hRgn := win.CreateRectRgn(rc.Left, rc.Top, rc.Right, rc.Bottom+2*adjustment.CY)
 				defer win.DeleteObject(win.HGDIOBJ(hRgn))
 				if !win.FillRgn(canvas.hdc, hRgn, bg.handle()) {
 					break
 				}
 
 				if page.image != nil {
-					x := rc.Left + 6
+					x := rc.Left + adjustment.CX
 					y := rc.Top
-					s := int32(16)
+					s := int32(IntFrom96DPI(16, dpi))
 
-					bmp, err := iconCache.Bitmap(page.image, tw.DPI())
+					bmp, err := iconCache.Bitmap(page.image, dpi)
 					if err == nil {
 						if imageCanvas, err := NewCanvasFromImage(bmp); err == nil {
 							defer imageCanvas.Dispose()
@@ -458,12 +459,12 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 							}
 						}
 
-						rc.Left += s + 6
+						rc.Left += s + adjustment.CX
 					}
 				}
 
-				rc.Left += 6
-				rc.Top += 1
+				rc.Left += adjustment.CX
+				rc.Top += adjustment.CY
 
 				title := syscall.StringToUTF16(page.title)
 
@@ -471,7 +472,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 					hTheme := win.OpenThemeData(hwnd, syscall.StringToUTF16Ptr("tab"))
 					defer win.CloseThemeData(hTheme)
 
-					options := win.DTTOPTS{DwFlags: win.DTT_GLOWSIZE, IGlowSize: 3}
+					options := win.DTTOPTS{DwFlags: win.DTT_GLOWSIZE, IGlowSize: int32(IntFrom96DPI(3, dpi))}
 					options.DwSize = uint32(unsafe.Sizeof(options))
 					if hr := win.DrawThemeTextEx(hTheme, canvas.hdc, 0, win.TIS_SELECTED, &title[0], int32(len(title)), 0, &rc, &options); !win.SUCCEEDED(hr) {
 						break
@@ -814,11 +815,16 @@ func (li *tabWidgetLayoutItem) PerformLayout() []LayoutResultItem {
 	if li.currentIndex > -1 {
 		page := li.children[li.currentIndex]
 
-		// TODO: Should 1px adjustment be in 1/96" units or native pixels?
+		adjustment := IntFrom96DPI(1, li.ctx.dpi)
 		return []LayoutResultItem{
 			{
-				Item:   page,
-				Bounds: Rectangle{X: li.pagePos.X, Y: li.pagePos.Y, Width: li.geometry.Size.Width - li.pagePos.X*2 - IntFrom96DPI(1, li.ctx.dpi), Height: li.geometry.Size.Height - li.pagePos.Y - IntFrom96DPI(2, li.ctx.dpi)},
+				Item: page,
+				Bounds: Rectangle{
+					X:      li.pagePos.X,
+					Y:      li.pagePos.Y,
+					Width:  li.geometry.Size.Width - li.pagePos.X*2 - adjustment,
+					Height: li.geometry.Size.Height - li.pagePos.Y - 2*adjustment,
+				},
 			},
 		}
 	}
