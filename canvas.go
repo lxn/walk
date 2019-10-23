@@ -8,6 +8,7 @@ package walk
 
 import (
 	"syscall"
+	"unicode/utf8"
 	"unsafe"
 
 	"github.com/lxn/win"
@@ -657,8 +658,37 @@ func (c *Canvas) MeasureText(text string, font *Font, bounds Rectangle, format D
 
 // MeasureTextPixels measures text size. Input and output bounds are in native pixels.
 func (c *Canvas) MeasureTextPixels(text string, font *Font, bounds Rectangle, format DrawTextFormat) (boundsMeasured Rectangle, runesFitted int, err error) {
+	boundsMeasured, _, runesFitted, err = c.measureAndModifyTextPixels(text, font, bounds, format)
+	return
+}
+
+// MeasureAndModifyTextPixels measures text size and also supports modification
+// of the text which occurs if it does not fit into the specified bounds.
+//
+// Input and output bounds are in native pixels.
+func (c *Canvas) MeasureAndModifyTextPixels(text string, font *Font, bounds Rectangle, format DrawTextFormat) (boundsMeasured Rectangle, textDisplayed string, err error) {
+	var textPtr *uint16
+	var runesFitted int
+	if boundsMeasured, textPtr, runesFitted, err = c.measureAndModifyTextPixels(text, font, bounds, format|TextModifyString); err != nil {
+		return
+	}
+
+	if runesFitted == utf8.RuneCountInString(text) {
+		textDisplayed = text
+	} else {
+		if format&(TextEndEllipsis|TextPathEllipsis) != 0 {
+			textDisplayed = win.UTF16PtrToString(textPtr)
+		} else {
+			textDisplayed = string(([]rune)(text)[:runesFitted])
+		}
+	}
+
+	return
+}
+
+func (c *Canvas) measureAndModifyTextPixels(text string, font *Font, bounds Rectangle, format DrawTextFormat) (boundsMeasured Rectangle, textPtr *uint16, runesFitted int, err error) {
 	// HACK: We don't want to actually draw on the Canvas here, but if we use
-	// the DT_CALCRECT flag to avoid drawing, DRAWTEXTPARAMc.UiLengthDrawn will
+	// the DT_CALCRECT flag to avoid drawing, params.UiLengthDrawn will
 	// not contain a useful value. To work around this, we create an in-memory
 	// metafile and draw into that instead.
 	if c.measureTextMetafile == nil {
@@ -701,6 +731,7 @@ func (c *Canvas) MeasureTextPixels(text string, font *Font, bounds Rectangle, fo
 		int(rect.Right - rect.Left),
 		int(height),
 	}
+	textPtr = strPtr
 	runesFitted = int(params.UiLengthDrawn)
 
 	return
