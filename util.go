@@ -172,7 +172,7 @@ func FormatFloat(f float64, prec int) string {
 }
 
 func FormatFloatGrouped(f float64, prec int) string {
-	return formatFloatString(strconv.FormatFloat(f, 'f', prec, 64), prec, true)
+	return formatFloatString(strconv.FormatFloat(f, 'f', maxi(1, prec), 64), prec, true)
 }
 
 func formatBigRat(r *big.Rat, prec int) string {
@@ -203,7 +203,7 @@ func formatFloatString(s string, prec int, grouped bool) string {
 		s = s[1:]
 	}
 
-	intLen := len(s) - prec - 1
+	intLen := len(s) - maxi(1, prec) - 1
 
 	n := intLen % 3
 	if n != 0 {
@@ -218,7 +218,13 @@ func formatFloatString(s string, prec int, grouped bool) string {
 
 	b.WriteString(s[intLen:])
 
-	return b.String()
+	s = b.String()
+
+	if prec == 0 {
+		s = s[:len(s)-2]
+	}
+
+	return s
 }
 
 func applyEnabledToDescendants(window Window, enabled bool) {
