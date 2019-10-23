@@ -44,8 +44,8 @@ const (
 
 type TableViewCfg struct {
 	Style              uint32
-	CustomHeaderHeight int
-	CustomRowHeight    int
+	CustomHeaderHeight int // in native pixels?
+	CustomRowHeight    int // in native pixels?
 }
 
 // TableView is a model based widget for record centric, tabular data.
@@ -111,8 +111,8 @@ type TableView struct {
 	sortedColumnIndex                  int
 	sortOrder                          SortOrder
 	formActivatingHandle               int
-	customHeaderHeight                 int
-	customRowHeight                    int
+	customHeaderHeight                 int // in native pixels?
+	customRowHeight                    int // in native pixels?
 	scrolling                          bool
 	inSetCurrentIndex                  bool
 	inMouseEvent                       bool
@@ -381,8 +381,7 @@ func (tv *TableView) applyFont(font *Font) {
 func (tv *TableView) ApplyDPI(dpi int) {
 	tv.style.dpi = dpi
 	if tv.style.canvas != nil {
-		tv.style.canvas.dpix = dpi
-		tv.style.canvas.dpiy = dpi
+		tv.style.canvas.dpi = dpi
 	}
 
 	tv.WidgetBase.ApplyDPI(dpi)
@@ -393,7 +392,7 @@ func (tv *TableView) ApplyDPI(dpi int) {
 
 	tv.disposeImageListAndCaches()
 
-	if bmp, err := NewBitmap(tv.SizeFrom96DPI(Size{16, 16})); err == nil {
+	if bmp, err := NewBitmapForDPI(SizeFrom96DPI(Size{16, 16}, dpi), dpi); err == nil {
 		tv.applyImageListForImage(bmp)
 		bmp.Dispose()
 	}
@@ -525,7 +524,7 @@ func (tv *TableView) SetColumnsSizable(b bool) error {
 	return nil
 }
 
-// ContextMenuLocation returns selected item position in screen coordinates.
+// ContextMenuLocation returns selected item position in screen coordinates in native pixels.
 func (tv *TableView) ContextMenuLocation() Point {
 	idx := win.SendMessage(tv.hwndNormalLV, win.LVM_GETSELECTIONMARK, 0, 0)
 	rc := win.RECT{Left: win.LVIR_BOUNDS}
@@ -541,7 +540,7 @@ func (tv *TableView) ContextMenuLocation() Point {
 	pt.X = rc.Bottom
 	windowTrimToClientBounds(tv.hwndNormalLV, &pt)
 	win.ClientToScreen(tv.hwndNormalLV, &pt)
-	return Point{int(pt.X), int(pt.Y)}
+	return pointPixelsFromPOINT(pt)
 }
 
 // SortableByHeaderClick returns if the user can change sorting by clicking the header.
@@ -1950,6 +1949,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 					tv.style.row = row
 					tv.style.col = col
 					tv.style.bounds = Rectangle{}
+					tv.style.dpi = tv.DPI()
 					tv.style.Image = nil
 
 					styler.StyleCell(&tv.style)
@@ -1995,9 +1995,12 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 
 				applyCellStyle := func() int {
 					if tv.styler != nil {
+						dpi := tv.DPI()
+
 						tv.style.row = row
 						tv.style.col = col
-						tv.style.bounds = tv.RectangleTo96DPI(rectangleFromRECT(nmlvcd.Nmcd.Rc))
+						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc)
+						tv.style.dpi = dpi
 						tv.style.hdc = nmlvcd.Nmcd.Hdc
 						tv.style.BackgroundColor = tv.itemBGColor
 						tv.style.TextColor = tv.itemTextColor
@@ -2023,7 +2026,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						nmlvcd.ClrText = win.COLORREF(tv.style.TextColor)
 
 						if font := tv.style.Font; font != nil {
-							win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(tv.DPI())))
+							win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(dpi)))
 						}
 					}
 
@@ -2057,7 +2060,8 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 					if tv.styler != nil {
 						tv.style.row = row
 						tv.style.col = -1
-						tv.style.bounds = tv.RectangleTo96DPI(rectangleFromRECT(nmlvcd.Nmcd.Rc))
+						tv.style.bounds = rectangleFromRECT(nmlvcd.Nmcd.Rc)
+						tv.style.dpi = tv.DPI()
 						tv.style.hdc = 0
 						tv.style.Font = nil
 						tv.style.Image = nil
@@ -2087,7 +2091,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 							defer brush.Dispose()
 
 							canvas, _ := newCanvasFromHDC(nmlvcd.Nmcd.Hdc)
-							canvas.fillRectanglePixels(brush, rectangleFromRECT(nmlvcd.Nmcd.Rc))
+							canvas.FillRectanglePixels(brush, rectangleFromRECT(nmlvcd.Nmcd.Rc))
 						}
 					}
 
@@ -2098,7 +2102,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 
 				case win.CDDS_ITEMPREPAINT | win.CDDS_SUBITEM:
 					if tv.itemFont != nil {
-						win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(tv.itemFont.handleForDPI(0)))
+						win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(tv.itemFont.handleForDPI(tv.DPI())))
 					}
 
 					if applyCellStyle() == win.CDRF_SKIPDEFAULT && win.IsAppThemed() {
@@ -2309,7 +2313,8 @@ func tableViewHdrWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 				if tv.styler != nil && col > -1 {
 					tv.style.row = -1
 					tv.style.col = col
-					tv.style.bounds = tv.RectangleTo96DPI(rectangleFromRECT(nmcd.Rc))
+					tv.style.bounds = rectangleFromRECT(nmcd.Rc)
+					tv.style.dpi = tv.DPI()
 					tv.style.hdc = nmcd.Hdc
 					tv.style.TextColor = tv.themeNormalTextColor
 					tv.style.Font = nil
@@ -2439,18 +2444,19 @@ func (tv *TableView) updateLVSizesWithSpecialCare(needSpecialCare bool) {
 		}
 	}
 
-	width = tv.IntFrom96DPI(width)
+	dpi := tv.DPI()
+	widthPixels := IntFrom96DPI(width, dpi)
 
 	cb := tv.ClientBoundsPixels()
 
-	win.MoveWindow(tv.hwndNormalLV, int32(width), 0, int32(cb.Width-width), int32(cb.Height), true)
+	win.MoveWindow(tv.hwndNormalLV, int32(widthPixels), 0, int32(cb.Width-widthPixels), int32(cb.Height), true)
 
 	var sbh int
 	if hasWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.WS_HSCROLL) {
-		sbh = int(win.GetSystemMetrics(win.SM_CYHSCROLL))
+		sbh = int(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(dpi)))
 	}
 
-	win.MoveWindow(tv.hwndFrozenLV, 0, 0, int32(width), int32(cb.Height-sbh), true)
+	win.MoveWindow(tv.hwndFrozenLV, 0, 0, int32(widthPixels), int32(cb.Height-sbh), true)
 
 	if needSpecialCare {
 		tv.updateLVSizesNeedsSpecialCare = true

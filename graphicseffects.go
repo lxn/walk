@@ -6,9 +6,7 @@
 
 package walk
 
-import (
-	"math"
-)
+import "math"
 
 var (
 	borderGlowAlpha = []float64{0.2, 0.1, 0.075, 0.05, 0.075}
@@ -22,78 +20,93 @@ type WidgetGraphicsEffect interface {
 }
 
 type widgetGraphicsEffectBase struct {
-	color  Color
-	bitmap *Bitmap
+	color      Color
+	dpi2Bitmap map[int]*Bitmap
 }
 
 func (wgeb *widgetGraphicsEffectBase) create(color Color) error {
-	bitmap, err := NewBitmapWithTransparentPixels(Size{12, 12})
-	if err != nil {
-		return err
+	wgeb.color = color
+	return nil
+}
+
+func (wgeb *widgetGraphicsEffectBase) Dispose() {
+	if len(wgeb.dpi2Bitmap) == 0 {
+		return
 	}
+
+	for dpi, bitmap := range wgeb.dpi2Bitmap {
+		bitmap.Dispose()
+		delete(wgeb.dpi2Bitmap, dpi)
+	}
+}
+
+func (wgeb *widgetGraphicsEffectBase) bitmapForDPI(dpi int) (*Bitmap, error) {
+	if wgeb.dpi2Bitmap == nil {
+		wgeb.dpi2Bitmap = make(map[int]*Bitmap)
+	} else if bitmap, ok := wgeb.dpi2Bitmap[dpi]; ok {
+		return bitmap, nil
+	}
+
+	var disposables Disposables
+	defer disposables.Treat()
+
+	bitmap, err := NewBitmapWithTransparentPixelsForDPI(SizeFrom96DPI(Size{12, 12}, dpi), dpi)
+	if err != nil {
+		return nil, err
+	}
+	disposables.Add(bitmap)
 
 	canvas, err := NewCanvasFromImage(bitmap)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer canvas.Dispose()
 
-	var succeeded bool
-	defer func() {
-		if !succeeded {
-			bitmap.Dispose()
-		}
-	}()
-
 	for i := 1; i <= 5; i++ {
-		bmp, err := NewBitmapWithTransparentPixels(Size{i*2 + 2, i*2 + 2})
+		size := SizeFrom96DPI(Size{i*2 + 2, i*2 + 2}, dpi)
+
+		bmp, err := NewBitmapWithTransparentPixelsForDPI(size, dpi)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer bmp.Dispose()
 
 		bmpCanvas, err := NewCanvasFromImage(bmp)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer bmpCanvas.Dispose()
 
 		color := RGB(
-			byte(math.Min(1.0, float64(color.R())/255.0-0.1+0.1*float64(i))*255.0),
-			byte(math.Min(1.0, float64(color.G())/255.0-0.1+0.1*float64(i))*255.0),
-			byte(math.Min(1.0, float64(color.B())/255.0-0.1+0.1*float64(i))*255.0),
+			byte(math.Min(1.0, float64(wgeb.color.R())/255.0-0.1+0.1*float64(i))*255.0),
+			byte(math.Min(1.0, float64(wgeb.color.G())/255.0-0.1+0.1*float64(i))*255.0),
+			byte(math.Min(1.0, float64(wgeb.color.B())/255.0-0.1+0.1*float64(i))*255.0),
 		)
 
 		brush, err := NewSolidColorBrush(color)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer brush.Dispose()
 
-		if err := bmpCanvas.FillRoundedRectangle(brush, Rectangle{0, 0, i*2 + 2, i*2 + 2}, Size{i * 2, i * 2}); err != nil {
-			return err
+		ellipseSize := SizeFrom96DPI(Size{i * 2, i * 2}, dpi)
+		if err := bmpCanvas.FillRoundedRectanglePixels(brush, Rectangle{0, 0, size.Width, size.Height}, ellipseSize); err != nil {
+			return nil, err
 		}
 
 		bmpCanvas.Dispose()
 
 		opacity := byte(borderGlowAlpha[i-1] * 255.0)
 
-		canvas.DrawBitmapWithOpacity(bmp, Rectangle{5 - i, 5 - i, i*2 + 2, i*2 + 2}, opacity)
+		offset := PointFrom96DPI(Point{5 - i, 5 - i}, dpi)
+		canvas.DrawBitmapWithOpacityPixels(bmp, Rectangle{offset.X, offset.Y, size.Width, size.Height}, opacity)
 	}
 
-	succeeded = true
+	disposables.Spare()
 
-	wgeb.color = color
-	wgeb.bitmap = bitmap
+	wgeb.dpi2Bitmap[dpi] = bitmap
 
-	return nil
-}
-
-func (wgeb *widgetGraphicsEffectBase) Dispose() {
-	if wgeb.bitmap != nil {
-		wgeb.bitmap.Dispose()
-		wgeb.bitmap = nil
-	}
+	return bitmap, nil
 }
 
 type BorderGlowEffect struct {
@@ -113,14 +126,24 @@ func NewBorderGlowEffect(color Color) (*BorderGlowEffect, error) {
 func (bge *BorderGlowEffect) Draw(widget Widget, canvas *Canvas) error {
 	b := widget.BoundsPixels()
 
-	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X - 5, b.Y - 5, 5, 5}, Rectangle{0, 0, 5, 5})
-	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X, b.Y - 5, b.Width, 5}, Rectangle{5 + 1, 0, 1, 5})
-	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X + b.Width, b.Y - 5, 5, 5}, Rectangle{5 + 2, 0, 5, 5})
-	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X + b.Width, b.Y, 5, b.Height}, Rectangle{5 + 2, 5 + 1, 5, 1})
-	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X + b.Width, b.Y + b.Height, 5, 5}, Rectangle{5 + 2, 5 + 2, 5, 5})
-	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X, b.Y + b.Height, b.Width, 5}, Rectangle{5 + 1, 5 + 2, 1, 5})
-	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X - 5, b.Y + b.Height, 5, 5}, Rectangle{0, 5 + 2, 5, 5})
-	canvas.DrawBitmapPart(bge.bitmap, Rectangle{b.X - 5, b.Y, 5, b.Height}, Rectangle{0, 5 + 1, 5, 1})
+	dpi := canvas.DPI()
+	bitmap, err := bge.bitmapForDPI(dpi)
+	if err != nil {
+		return err
+	}
+
+	off1 := IntFrom96DPI(1, dpi)
+	off2 := IntFrom96DPI(2, dpi)
+	off5 := IntFrom96DPI(5, dpi)
+
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X - off5, b.Y - off5, off5, off5}, Rectangle{0, 0, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X, b.Y - off5, b.Width, off5}, Rectangle{off5 + off1, 0, off1, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y - off5, off5, off5}, Rectangle{off5 + off2, 0, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y, off5, b.Height}, Rectangle{off5 + off2, off5 + off1, off5, off1})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y + b.Height, off5, off5}, Rectangle{off5 + off2, off5 + off2, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X, b.Y + b.Height, b.Width, off5}, Rectangle{off5 + off1, off5 + off2, off1, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X - off5, b.Y + b.Height, off5, off5}, Rectangle{0, off5 + off2, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X - off5, b.Y, off5, b.Height}, Rectangle{0, off5 + off1, off5, off1})
 
 	return nil
 }
@@ -142,11 +165,22 @@ func NewDropShadowEffect(color Color) (*DropShadowEffect, error) {
 func (dse *DropShadowEffect) Draw(widget Widget, canvas *Canvas) error {
 	b := widget.BoundsPixels()
 
-	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + b.Width, b.Y + 10 - 5, 5, 5}, Rectangle{5 + 2, 0, 5, 5})
-	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + b.Width, b.Y + 10, 5, b.Height - 10}, Rectangle{5 + 2, 5 + 1, 5, 1})
-	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + b.Width, b.Y + b.Height, 5, 5}, Rectangle{5 + 2, 5 + 2, 5, 5})
-	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + 10, b.Y + b.Height, b.Width - 10, 5}, Rectangle{5 + 1, 5 + 2, 1, 5})
-	canvas.DrawBitmapPart(dse.bitmap, Rectangle{b.X + 10 - 5, b.Y + b.Height, 5, 5}, Rectangle{0, 5 + 2, 5, 5})
+	dpi := canvas.DPI()
+	bitmap, err := dse.bitmapForDPI(dpi)
+	if err != nil {
+		return err
+	}
+
+	off1 := IntFrom96DPI(1, dpi)
+	off2 := IntFrom96DPI(2, dpi)
+	off5 := IntFrom96DPI(5, dpi)
+	off10 := IntFrom96DPI(10, dpi)
+
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y + off10 - off5, off5, off5}, Rectangle{off5 + off2, 0, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y + off10, off5, b.Height - off10}, Rectangle{off5 + off2, off5 + off1, off5, off1})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + b.Width, b.Y + b.Height, off5, off5}, Rectangle{off5 + off2, off5 + off2, off5, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + off10, b.Y + b.Height, b.Width - off10, off5}, Rectangle{off5 + off1, off5 + off2, off1, off5})
+	canvas.DrawBitmapPart(bitmap, Rectangle{b.X + off10 - off5, b.Y + b.Height, off5, off5}, Rectangle{0, off5 + off2, off5, off5})
 
 	return nil
 }

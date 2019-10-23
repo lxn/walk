@@ -287,7 +287,7 @@ func (s *static) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type staticLayoutItem struct {
 	LayoutItemBase
 	layoutFlags LayoutFlags
-	idealSize   Size
+	idealSize   Size // in native pixels
 }
 
 func (li *staticLayoutItem) LayoutFlags() LayoutFlags {

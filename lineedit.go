@@ -34,7 +34,7 @@ type LineEdit struct {
 	readOnlyChangedPublisher EventPublisher
 	textChangedPublisher     EventPublisher
 	charWidthFont            *Font
-	charWidth                int
+	charWidth                int // in native pixels
 	textColor                Color
 }
 
@@ -242,6 +242,7 @@ func (le *LineEdit) SetReadOnly(readOnly bool) error {
 	return nil
 }
 
+// sizeHintForLimit returns size hint for given limit in native pixels
 func (le *LineEdit) sizeHintForLimit(limit int) (size Size) {
 	size = le.dialogBaseUnitsToPixels(Size{50, 12})
 	le.initCharWidth()
@@ -361,8 +362,8 @@ func (le *LineEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type lineEditLayoutItem struct {
 	LayoutItemBase
 	layoutFlags LayoutFlags
-	idealSize   Size
-	minSize     Size
+	idealSize   Size // in native pixels
+	minSize     Size // in native pixels
 }
 
 func (li *lineEditLayoutItem) LayoutFlags() LayoutFlags {

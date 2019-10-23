@@ -26,23 +26,20 @@ type bitmapMaskedBitmap struct {
 	mask   *Bitmap
 }
 
+// NewImageList creates an empty image list at 96dpi. imageSize parameter is specified in 1/96"
+// units.
+//
+// Deprecated: Newer applications should use NewImageListForDPI.
 func NewImageList(imageSize Size, maskColor Color) (*ImageList, error) {
-	hDC := win.GetDC(0)
-	defer win.ReleaseDC(0, hDC)
-
-	dpi := int(win.GetDeviceCaps(hDC, win.LOGPIXELSX))
-
-	return newImageList(imageSize, maskColor, dpi)
+	return NewImageListForDPI(SizeFrom96DPI(imageSize, 96), maskColor, 96)
 }
 
-func newImageList(imageSize Size, maskColor Color, dpi int) (*ImageList, error) {
-	scale := float64(dpi) / 96.0
-	width := int32(float64(imageSize.Width) * scale)
-	height := int32(float64(imageSize.Height) * scale)
-
+// NewImageListForDPI creates an empty image list for image size at given DPI. imageSize is
+// specified in native pixels.
+func NewImageListForDPI(imageSize Size, maskColor Color, dpi int) (*ImageList, error) {
 	hIml := win.ImageList_Create(
-		width,
-		height,
+		int32(imageSize.Width),
+		int32(imageSize.Height),
 		win.ILC_MASK|win.ILC_COLOR32,
 		8,
 		8)
@@ -53,7 +50,7 @@ func newImageList(imageSize Size, maskColor Color, dpi int) (*ImageList, error) 
 	return &ImageList{
 		hIml:                     hIml,
 		maskColor:                maskColor,
-		imageSize96dpi:           imageSize,
+		imageSize96dpi:           SizeTo96DPI(imageSize, dpi),
 		colorMaskedBitmap2Index:  make(map[*Bitmap]int),
 		bitmapMaskedBitmap2Index: make(map[bitmapMaskedBitmap]int),
 	}, nil
@@ -133,9 +130,8 @@ func imageListForImage(image interface{}, dpi int) (hIml win.HIMAGELIST, isSysIm
 		_, hIml = iconIndexAndHImlForFilePath(filePath)
 		isSysIml = hIml != 0
 	} else {
-		scale := float64(dpi) / 96.0
-		w := int32(float64(win.GetSystemMetrics(win.SM_CXSMICON)) * scale)
-		h := int32(float64(win.GetSystemMetrics(win.SM_CYSMICON)) * scale)
+		w := int32(win.GetSystemMetricsForDpi(win.SM_CXSMICON, uint32(dpi)))
+		h := int32(win.GetSystemMetricsForDpi(win.SM_CYSMICON, uint32(dpi)))
 
 		hIml = win.ImageList_Create(w, h, win.ILC_MASK|win.ILC_COLOR32, 8, 8)
 		if hIml == 0 {

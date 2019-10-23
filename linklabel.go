@@ -220,16 +220,16 @@ func (lll *LinkLabelLink) setState(state uint32, set bool) error {
 
 func (ll *LinkLabel) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	var s win.SIZE
-	ll.SendMessage(win.LM_GETIDEALSIZE, uintptr(ll.maxSize.Width), uintptr(unsafe.Pointer(&s)))
+	ll.SendMessage(win.LM_GETIDEALSIZE, uintptr(ll.IntFrom96DPI(ll.maxSize96dpi.Width)), uintptr(unsafe.Pointer(&s)))
 
 	return &linkLabelLayoutItem{
-		idealSize: Size{int(s.CX), int(s.CY)},
+		idealSize: sizeFromSIZE(s),
 	}
 }
 
 type linkLabelLayoutItem struct {
 	LayoutItemBase
-	idealSize Size
+	idealSize Size // in native pixels
 }
 
 func (*linkLabelLayoutItem) LayoutFlags() LayoutFlags {

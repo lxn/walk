@@ -67,7 +67,8 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 	win.SetWindowLongPtr(tw.hWndTab, win.GWLP_USERDATA, uintptr(unsafe.Pointer(tw)))
 	tw.tabOrigWndProcPtr = win.SetWindowLongPtr(tw.hWndTab, win.GWLP_WNDPROC, tabWidgetTabWndProcPtr)
 
-	win.SendMessage(tw.hWndTab, win.WM_SETFONT, uintptr(defaultFont.handleForDPI(0)), 1)
+	dpi := int(win.GetDpiForWindow(tw.hWndTab))
+	win.SendMessage(tw.hWndTab, win.WM_SETFONT, uintptr(defaultFont.handleForDPI(dpi)), 1)
 
 	tw.applyFont(tw.Font())
 
@@ -124,12 +125,12 @@ func (tw *TabWidget) ApplyDPI(dpi int) {
 	var size Size
 	if tw.imageList != nil {
 		maskColor = tw.imageList.maskColor
-		size = tw.imageList.imageSize96dpi
+		size = SizeFrom96DPI(tw.imageList.imageSize96dpi, dpi)
 	} else {
-		size = Size{16, 16}
+		size = SizeFrom96DPI(Size{16, 16}, dpi)
 	}
 
-	iml, err := newImageList(size, maskColor, dpi)
+	iml, err := NewImageListForDPI(size, maskColor, dpi)
 	if err != nil {
 		return
 	}
@@ -236,6 +237,7 @@ func (tw *TabWidget) resizePages() {
 	}
 }
 
+// pageBounds returns page bounds in native pixels.
 func (tw *TabWidget) pageBounds() Rectangle {
 	var r win.RECT
 	if !win.GetWindowRect(tw.hWndTab, &r) {
@@ -260,6 +262,7 @@ func (tw *TabWidget) pageBounds() Rectangle {
 	}
 	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
+	// TODO: Should 2px adjustment be in 1/96" units or native pixels?
 	return Rectangle{
 		int(r.Left - 2),
 		int(r.Top),
@@ -348,7 +351,8 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 		cb := tw.ClientBoundsPixels()
 
-		bitmap, err := NewBitmap(cb.Size())
+		dpi := tw.DPI()
+		bitmap, err := NewBitmapForDPI(cb.Size(), dpi)
 		if err != nil {
 			break
 		}
@@ -363,7 +367,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 		themed := win.IsAppThemed()
 
 		if !themed {
-			if err := canvas.FillRectangle(sysColorBtnFaceBrush, cb); err != nil {
+			if err := canvas.FillRectanglePixels(sysColorBtnFaceBrush, cb); err != nil {
 				break
 			}
 		}
@@ -671,7 +675,8 @@ func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
 	index = -1
 	if image != nil {
 		if tw.imageList == nil {
-			if tw.imageList, err = newImageList(Size{16, 16}, 0, tw.DPI()); err != nil {
+			dpi := tw.DPI()
+			if tw.imageList, err = NewImageListForDPI(SizeFrom96DPI(Size{16, 16}, dpi), 0, dpi); err != nil {
 				return
 			}
 
@@ -692,7 +697,7 @@ func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	bounds := tw.pageBounds()
 
 	li := &tabWidgetLayoutItem{
-		pagePos:      Point{bounds.X, bounds.Y},
+		pagePos:      bounds.Location(),
 		currentIndex: tw.CurrentIndex(),
 	}
 
@@ -717,7 +722,7 @@ func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type tabWidgetLayoutItem struct {
 	ContainerLayoutItemBase
-	pagePos      Point
+	pagePos      Point // in native pixels
 	currentIndex int
 }
 
@@ -808,6 +813,7 @@ func (li *tabWidgetLayoutItem) PerformLayout() []LayoutResultItem {
 	if li.currentIndex > -1 {
 		page := li.children[li.currentIndex]
 
+		// TODO: Should 1px adjustment be in 1/96" units or native pixels?
 		return []LayoutResultItem{
 			{
 				Item:   page,

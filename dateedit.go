@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
-)
 
-import "github.com/lxn/win"
+	"github.com/lxn/win"
+)
 
 type DateEdit struct {
 	WidgetBase
@@ -256,7 +256,7 @@ func (de *DateEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type dateEditLayoutItem struct {
 	LayoutItemBase
-	idealSize Size
+	idealSize Size // in native pixels
 }
 
 func (*dateEditLayoutItem) LayoutFlags() LayoutFlags {

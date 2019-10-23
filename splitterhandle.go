@@ -100,11 +100,12 @@ func (li *splitterHandleLayoutItem) LayoutFlags() LayoutFlags {
 
 func (li *splitterHandleLayoutItem) IdealSize() Size {
 	var size Size
+	dpi := int(win.GetDpiForWindow(li.handle))
 
 	if li.orientation == Horizontal {
-		size.Width = li.handleWidth
+		size.Width = IntFrom96DPI(li.handleWidth, dpi)
 	} else {
-		size.Height = li.handleWidth
+		size.Height = IntFrom96DPI(li.handleWidth, dpi)
 	}
 
 	return size

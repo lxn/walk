@@ -84,10 +84,10 @@ func (tl *TextLabel) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type textLabelLayoutItem struct {
 	LayoutItemBase
 	mutex        sync.Mutex
-	width2Height map[int]int
+	width2Height map[int]int // in native pixels
 	text         string
 	font         *Font
-	minWidth     int
+	minWidth     int // in native pixels
 }
 
 func (*textLabelLayoutItem) LayoutFlags() LayoutFlags {

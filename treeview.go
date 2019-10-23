@@ -253,8 +253,9 @@ func (tv *TreeView) handleForItem(item TreeItem) (win.HTREEITEM, error) {
 	return 0, newError("invalid item")
 }
 
+// ItemAt determines the location of the specified point in native pixels relative to the client area of a tree-view control.
 func (tv *TreeView) ItemAt(x, y int) TreeItem {
-	hti := win.TVHITTESTINFO{Pt: win.POINT{int32(x), int32(y)}}
+	hti := win.TVHITTESTINFO{Pt: Point{x, y}.toPOINT()}
 
 	tv.SendMessage(win.TVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
 
@@ -265,10 +266,12 @@ func (tv *TreeView) ItemAt(x, y int) TreeItem {
 	return nil
 }
 
+// ItemHeight returns the height of each item in native pixels.
 func (tv *TreeView) ItemHeight() int {
 	return int(tv.SendMessage(win.TVM_GETITEMHEIGHT, 0, 0))
 }
 
+// SetItemHeight sets the height of the tree-view items in native pixels.
 func (tv *TreeView) SetItemHeight(height int) {
 	tv.SendMessage(win.TVM_SETITEMHEIGHT, uintptr(height), 0)
 }

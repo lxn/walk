@@ -109,6 +109,8 @@ func (m *Menu) initMenuItemInfoFromAction(mii *win.MENUITEMINFO, action *Action)
 			dpi = m.getDPI()
 		} else if m.window != nil {
 			dpi = m.window.DPI()
+		} else {
+			dpi = screenDPI()
 		}
 		if bmp, err := iconCache.Bitmap(action.image, dpi); err == nil {
 			mii.HbmpItem = bmp.hBmp

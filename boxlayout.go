@@ -116,8 +116,8 @@ func (l *BoxLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 
 type boxLayoutItemInfo struct {
 	index   int
-	minSize int
-	maxSize int
+	minSize int // in native pixels
+	maxSize int // in native pixels
 	stretch int
 	greedy  bool
 	item    LayoutItem
@@ -157,7 +157,7 @@ func (l boxLayoutItemInfoList) Swap(i, j int) {
 type boxLayoutItem struct {
 	ContainerLayoutItemBase
 	mutex              sync.Mutex
-	size2MinSize       map[Size]Size
+	size2MinSize       map[Size]Size // in native pixels
 	orientation        Orientation
 	hwnd2StretchFactor map[win.HWND]int
 }
@@ -188,9 +188,11 @@ func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 
 	bounds := Rectangle{Width: size.Width, Height: size.Height}
 
-	items := boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, bounds, li.margins, li.spacing, li.hwnd2StretchFactor)
+	items := boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, bounds, li.margins96dpi, li.spacing96dpi, li.hwnd2StretchFactor)
 
-	s := Size{li.margins.HNear + li.margins.HFar, li.margins.VNear + li.margins.VFar}
+	margins := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
+	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
+	s := Size{margins.HNear + margins.HFar, margins.VNear + margins.VFar}
 
 	var maxSecondary int
 	for _, item := range items {
@@ -215,10 +217,10 @@ func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 	}
 
 	if li.orientation == Horizontal {
-		s.Width += (len(items) - 1) * li.spacing
+		s.Width += (len(items) - 1) * spacing
 		s.Height += maxSecondary
 	} else {
-		s.Height += (len(items) - 1) * li.spacing
+		s.Height += (len(items) - 1) * spacing
 		s.Width += maxSecondary
 	}
 
@@ -231,7 +233,7 @@ func (li *boxLayoutItem) MinSizeForSize(size Size) Size {
 
 func (li *boxLayoutItem) PerformLayout() []LayoutResultItem {
 	cb := Rectangle{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
-	return boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, cb, li.margins, li.spacing, li.hwnd2StretchFactor)
+	return boxLayoutItems(li, itemsToLayout(li.children), li.orientation, li.alignment, cb, li.margins96dpi, li.spacing96dpi, li.hwnd2StretchFactor)
 }
 
 func boxLayoutFlags(orientation Orientation, children []LayoutItem) LayoutFlags {
@@ -283,10 +285,15 @@ func boxLayoutFlags(orientation Orientation, children []LayoutItem) LayoutFlags 
 	return flags
 }
 
-func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientation Orientation, alignment Alignment2D, bounds Rectangle, margins Margins, spacing int, hwnd2StretchFactor map[win.HWND]int) []LayoutResultItem {
+// boxLayoutItems lays out items. bounds parameter is in native pixels.
+func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientation Orientation, alignment Alignment2D, bounds Rectangle, margins96dpi Margins, spacing96dpi int, hwnd2StretchFactor map[win.HWND]int) []LayoutResultItem {
 	if len(items) == 0 {
 		return nil
 	}
+
+	dpi := container.Context().dpi
+	margins := MarginsFrom96DPI(margins96dpi, dpi)
+	spacing := IntFrom96DPI(spacing96dpi, dpi)
 
 	var greedyNonSpacerCount int
 	var greedySpacerCount int

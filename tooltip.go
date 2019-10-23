@@ -127,7 +127,7 @@ func (tt *ToolTip) track(tool Widget) error {
 
 	b := tool.BoundsPixels()
 
-	p := win.POINT{X: 0, Y: int32(b.Y + b.Height)}
+	p := Point{0, b.Y + b.Height}.toPOINT()
 	if form.RightToLeftLayout() {
 		p.X = int32(b.X - b.Width/2)
 	} else {

@@ -35,7 +35,7 @@ type ImageView struct {
 func NewImageView(parent Container) (*ImageView, error) {
 	iv := new(ImageView)
 
-	cw, err := NewCustomWidget(parent, 0, func(canvas *Canvas, updateBounds Rectangle) error {
+	cw, err := NewCustomWidgetPixels(parent, 0, func(canvas *Canvas, updateBounds Rectangle) error {
 		return iv.drawImage(canvas, updateBounds)
 	})
 	if err != nil {
@@ -112,7 +112,7 @@ func (iv *ImageView) SetImage(image Image) error {
 		return nil
 	}
 
-	var oldSize, newSize Size
+	var oldSize, newSize Size // in 1/96" units
 	if iv.image != nil {
 		oldSize = iv.image.Size()
 	}
@@ -173,12 +173,13 @@ func (iv *ImageView) drawImage(canvas *Canvas, _ Rectangle) error {
 
 	cb := iv.ClientBoundsPixels()
 
-	margin := iv.IntFrom96DPI(iv.margin96dpi)
+	dpi := iv.DPI()
+	margin := IntFrom96DPI(iv.margin96dpi, dpi)
 
 	cb.Width -= margin * 2
 	cb.Height -= margin * 2
 
-	s := iv.SizeFrom96DPI(iv.image.Size())
+	s := SizeFrom96DPI(iv.image.Size(), dpi)
 
 	switch iv.mode {
 	case ImageViewModeShrink, ImageViewModeZoom, ImageViewModeStretch:
@@ -206,25 +207,27 @@ func (iv *ImageView) drawImage(canvas *Canvas, _ Rectangle) error {
 			bounds.Y = margin + (cb.Height-bounds.Height)/2
 		}
 
-		return canvas.DrawImageStretched(iv.image, RectangleTo96DPI(bounds, iv.DPI()))
+		return canvas.DrawImageStretchedPixels(iv.image, bounds)
 
 	case ImageViewModeCorner, ImageViewModeCenter:
 		win.IntersectClipRect(canvas.hdc, int32(margin), int32(margin), int32(cb.Width+margin), int32(cb.Height+margin))
 	}
 
-	var pos Point
+	var bounds Rectangle
 
 	switch iv.mode {
 	case ImageViewModeIdeal, ImageViewModeCorner:
-		pos.X = margin
-		pos.Y = margin
+		bounds.X = margin
+		bounds.Y = margin
 
 	case ImageViewModeCenter:
-		pos.X = margin + (cb.Width-s.Width)/2
-		pos.Y = margin + (cb.Height-s.Height)/2
+		bounds.X = margin + (cb.Width-s.Width)/2
+		bounds.Y = margin + (cb.Height-s.Height)/2
 	}
+	bounds.Width = s.Width
+	bounds.Height = s.Height
 
-	return canvas.DrawImage(iv.image, PointTo96DPI(pos, iv.DPI()))
+	return canvas.DrawImageStretchedPixels(iv.image, bounds)
 }
 
 func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
@@ -233,21 +236,21 @@ func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		layoutFlags = ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
 	}
 
-	idealSize := iv.SizeFrom96DPI(Size{100, 100})
+	dpi := iv.DPI()
+	idealSize := SizeFrom96DPI(Size{100, 100}, dpi)
 
 	var minSize Size
 	if iv.mode == ImageViewModeIdeal {
 		if iv.image != nil {
-			m2 := iv.IntFrom96DPI(iv.margin96dpi) * 2
-			s := iv.SizeFrom96DPI(iv.image.Size())
-			s.Width += m2
-			s.Height += m2
-			idealSize = s
+			idealSize = SizeFrom96DPI(iv.image.Size(), dpi)
+			margin2 := IntFrom96DPI(iv.margin96dpi, dpi) * 2
+			idealSize.Width += margin2
+			idealSize.Height += margin2
 		}
 
 		minSize = idealSize
 	} else {
-		s := iv.IntFrom96DPI(iv.margin96dpi)*2 + 1
+		s := IntFrom96DPI(iv.margin96dpi, dpi)*2 + 1
 		minSize = Size{s, s}
 	}
 
@@ -261,8 +264,8 @@ func (iv *ImageView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type imageViewLayoutItem struct {
 	LayoutItemBase
 	layoutFlags LayoutFlags
-	idealSize   Size
-	minSize     Size
+	idealSize   Size // in native pixels
+	minSize     Size // in native pixels
 }
 
 func (li *imageViewLayoutItem) LayoutFlags() LayoutFlags {

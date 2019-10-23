@@ -64,6 +64,6 @@ func (li *separatorLayoutItem) IdealSize() Size {
 	return li.MinSize()
 }
 
-func (*separatorLayoutItem) MinSize() Size {
-	return Size{2, 2}
+func (li *separatorLayoutItem) MinSize() Size {
+	return SizeFrom96DPI(Size{2, 2}, li.ctx.dpi)
 }

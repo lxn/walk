@@ -60,12 +60,19 @@ type CustomWidget struct {
 	ClearsBackground    bool
 	InvalidatesOnResize bool
 	Paint               walk.PaintFunc
+	PaintPixels         walk.PaintFunc
 	PaintMode           PaintMode
 	Style               uint32
 }
 
 func (cw CustomWidget) Create(builder *Builder) error {
-	w, err := walk.NewCustomWidget(builder.Parent(), uint(cw.Style), cw.Paint)
+	var w *walk.CustomWidget
+	var err error
+	if cw.PaintPixels != nil {
+		w, err = walk.NewCustomWidgetPixels(builder.Parent(), uint(cw.Style), cw.PaintPixels)
+	} else {
+		w, err = walk.NewCustomWidget(builder.Parent(), uint(cw.Style), cw.Paint)
+	}
 	if err != nil {
 		return err
 	}

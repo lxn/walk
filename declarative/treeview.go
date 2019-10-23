@@ -68,7 +68,7 @@ func (tv TreeView) Create(builder *Builder) error {
 
 	return builder.InitWidget(tv, w, func() error {
 		if tv.ItemHeight > 0 {
-			w.SetItemHeight(tv.ItemHeight)
+			w.SetItemHeight(w.IntFrom96DPI(tv.ItemHeight)) // VERIFY: Item height should resize on DPI change.
 		}
 
 		if err := w.SetModel(tv.Model); err != nil {

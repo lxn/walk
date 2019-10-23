@@ -8,6 +8,7 @@ package walk
 
 import (
 	"fmt"
+	"math"
 	"sync"
 	"syscall"
 	"time"
@@ -90,7 +91,7 @@ type FormBase struct {
 	progressIndicator           *ProgressIndicator
 	icon                        Image
 	prevFocusHWnd               win.HWND
-	proposedSize                Size
+	proposedSize                Size // in native pixels
 	closeReason                 CloseReason
 	inSizingLoop                bool
 	startingLayoutViaSizingLoop bool
@@ -363,7 +364,7 @@ func (fb *FormBase) Run() int {
 	fb.SetBoundsPixels(fb.BoundsPixels())
 
 	if fb.proposedSize == (Size{}) {
-		fb.proposedSize = maxSize(fb.minSize, fb.SizePixels())
+		fb.proposedSize = maxSize(SizeFrom96DPI(fb.minSize96dpi, fb.DPI()), fb.SizePixels())
 		if !fb.Suspended() {
 			fb.startLayout()
 		}
@@ -519,13 +520,20 @@ func (fb *FormBase) SetIcon(icon Image) error {
 	var hIconSmall, hIconBig uintptr
 
 	if icon != nil {
-		smallIcon, err := iconCache.Icon(icon, fb.DPI())
+		dpi := fb.DPI()
+		size96dpi := icon.Size()
+		scale := float64(dpi) / float64(size96dpi.Height)
+
+		smallHeight96dpi := int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))
+		smallDPI := int(math.Round(float64(smallHeight96dpi) * scale))
+		smallIcon, err := iconCache.Icon(icon, smallDPI)
 		if err != nil {
 			return err
 		}
-		hIconSmall = uintptr(smallIcon.handleForDPI(fb.DPI()))
+		hIconSmall = uintptr(smallIcon.handleForDPI(smallDPI))
 
-		bigDPI := int(48.0 / float64(icon.Size().Width) * 96.0)
+		bigHeight96dpi := int(win.GetSystemMetricsForDpi(win.SM_CYICON, 96))
+		bigDPI := int(math.Round(float64(bigHeight96dpi) * scale))
 		bigIcon, err := iconCache.Icon(icon, bigDPI)
 		if err != nil {
 			return err
@@ -552,7 +560,7 @@ func (fb *FormBase) Hide() {
 }
 
 func (fb *FormBase) Show() {
-	fb.proposedSize = maxSize(fb.minSize, fb.SizePixels())
+	fb.proposedSize = maxSize(SizeFrom96DPI(fb.minSize96dpi, fb.DPI()), fb.SizePixels())
 
 	if p, ok := fb.window.(Persistable); ok && p.Persistent() && App().Settings() != nil {
 		p.RestoreState()
@@ -749,10 +757,12 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			}
 		}
 
-		mmi.PtMinTrackSize = win.POINT{
-			int32(maxi(min.Width, fb.minSize.Width)),
-			int32(maxi(min.Height, fb.minSize.Height)),
-		}
+		minSize := SizeFrom96DPI(fb.minSize96dpi, fb.DPI())
+
+		mmi.PtMinTrackSize = Point{
+			maxi(min.Width, minSize.Width),
+			maxi(min.Height, minSize.Height),
+		}.toPOINT()
 		return 0
 
 	case win.WM_NOTIFY:

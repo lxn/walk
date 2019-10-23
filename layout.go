@@ -54,7 +54,7 @@ func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 	var clib *ContainerLayoutItemBase
 
 	layout := container.Layout()
-	if layout == nil && container.Children().Len() == 0 {
+	if layout == nil || container.Children().Len() == 0 {
 		layout = NewHBoxLayout()
 		layout.SetMargins(Margins{})
 	}
@@ -73,8 +73,8 @@ func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 
 	if lb := layout.asLayoutBase(); lb != nil {
 		clib.alignment = lb.alignment
-		clib.margins = lb.margins
-		clib.spacing = lb.spacing
+		clib.margins96dpi = lb.margins96dpi
+		clib.spacing96dpi = lb.spacing96dpi
 	}
 
 	if len(clib.children) == 0 {
@@ -158,6 +158,7 @@ func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, la
 	return
 }
 
+// layoutTree lays out tree. size parameter is in native pixels.
 func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done chan []LayoutResult, stopwatch *stopwatch) {
 	const minSizeCacheSubject = "layoutTree - populating min size cache"
 
@@ -367,6 +368,7 @@ func applyLayoutResults(results []LayoutResult, stopwatch *stopwatch) error {
 	return nil
 }
 
+// Margins define margins in 1/96" units or native pixels.
 type Margins struct {
 	HNear, VNear, HFar, VFar int
 }
@@ -390,9 +392,9 @@ type LayoutBase struct {
 	layout       Layout
 	container    Container
 	margins96dpi Margins
-	margins      Margins
+	margins      Margins // in native pixels
 	spacing96dpi int
-	spacing      int
+	spacing      int // in native pixels
 	alignment    Alignment2D
 	resetNeeded  bool
 	dirty        bool
@@ -479,13 +481,13 @@ func (l *LayoutBase) SetSpacing(value int) error {
 
 func (l *LayoutBase) updateMargins() {
 	if l.container != nil {
-		l.margins = l.container.AsWindowBase().MarginsFrom96DPI(l.margins96dpi)
+		l.margins = MarginsFrom96DPI(l.margins96dpi, l.container.AsWindowBase().DPI())
 	}
 }
 
 func (l *LayoutBase) updateSpacing() {
 	if l.container != nil {
-		l.spacing = l.container.AsWindowBase().IntFrom96DPI(l.spacing96dpi)
+		l.spacing = IntFrom96DPI(l.spacing96dpi, l.container.AsWindowBase().DPI())
 	}
 }
 
@@ -510,24 +512,30 @@ func (l *LayoutBase) SetAlignment(alignment Alignment2D) error {
 }
 
 type IdealSizer interface {
+	// IdealSize returns ideal window size in native pixels.
 	IdealSize() Size
 }
 
 type MinSizer interface {
+	// MinSize returns minimum window size in native pixels.
 	MinSize() Size
 }
 
 type MinSizeForSizer interface {
+	// MinSize returns minimum window size for given size. Both sizes are in native pixels.
 	MinSizeForSize(size Size) Size
 }
 
 type HeightForWidther interface {
 	HasHeightForWidth() bool
+
+	// HeightForWidth returns appropriate height if element has given width. width parameter and
+	// return value are in native pixels.
 	HeightForWidth(width int) int
 }
 
 type LayoutContext struct {
-	layoutItem2MinSizeEffective map[LayoutItem]Size
+	layoutItem2MinSizeEffective map[LayoutItem]Size // in native pixels
 	dpi                         int
 }
 
@@ -558,7 +566,10 @@ type ContainerLayoutItem interface {
 	MinSizeForSizer
 	HeightForWidther
 	AsContainerLayoutItemBase() *ContainerLayoutItemBase
+
+	// MinSizeEffectiveForChild returns minimum effective size for a child in native pixels.
 	MinSizeEffectiveForChild(child LayoutItem) Size
+
 	PerformLayout() []LayoutResultItem
 	Children() []LayoutItem
 	containsHandle(handle win.HWND) bool
@@ -598,10 +609,10 @@ func (lib *LayoutItemBase) Visible() bool {
 
 type ContainerLayoutItemBase struct {
 	LayoutItemBase
-	children  []LayoutItem
-	margins   Margins
-	spacing   int
-	alignment Alignment2D
+	children     []LayoutItem
+	margins96dpi Margins
+	spacing96dpi int
+	alignment    Alignment2D
 }
 
 func (clib *ContainerLayoutItemBase) AsContainerLayoutItemBase() *ContainerLayoutItemBase {
@@ -702,11 +713,11 @@ func (li *greedyLayoutItem) MinSize() Size {
 
 type Geometry struct {
 	Alignment                   Alignment2D
-	MinSize                     Size
-	MaxSize                     Size
-	IdealSize                   Size
-	Size                        Size
-	ClientSize                  Size
+	MinSize                     Size // in native pixels
+	MaxSize                     Size // in native pixels
+	IdealSize                   Size // in native pixels
+	Size                        Size // in native pixels
+	ClientSize                  Size // in native pixels
 	ConsumingSpaceWhenInvisible bool
 }
 
@@ -717,7 +728,7 @@ type LayoutResult struct {
 
 type LayoutResultItem struct {
 	Item   LayoutItem
-	Bounds Rectangle
+	Bounds Rectangle // in native pixels
 }
 
 func shouldLayoutItem(item LayoutItem) bool {
@@ -774,6 +785,7 @@ func anyVisibleItemInHierarchy(item LayoutItem) bool {
 	return false
 }
 
+// minSizeEffective returns minimum effective size in native pixels
 func minSizeEffective(item LayoutItem) Size {
 	geometry := item.Geometry()
 

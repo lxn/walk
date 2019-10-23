@@ -175,13 +175,13 @@ func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 		switch msg {
 		case win.WM_HSCROLL:
-			sv.composite.SetX(sv.IntTo96DPI(sv.scroll(win.SB_HORZ, win.LOWORD(uint32(wParam)))))
+			sv.composite.SetXPixels(sv.scroll(win.SB_HORZ, win.LOWORD(uint32(wParam))))
 			if wParam == win.SB_ENDSCROLL {
 				avoidBGArtifacts()
 			}
 
 		case win.WM_VSCROLL:
-			sv.composite.SetY(sv.IntTo96DPI(sv.scroll(win.SB_VERT, win.LOWORD(uint32(wParam)))))
+			sv.composite.SetYPixels(sv.scroll(win.SB_VERT, win.LOWORD(uint32(wParam))))
 			if wParam == win.SB_ENDSCROLL {
 				avoidBGArtifacts()
 			}
@@ -198,7 +198,7 @@ func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 				cmd = win.SB_LINEUP
 			}
 
-			sv.composite.SetY(sv.IntTo96DPI(sv.scroll(win.SB_VERT, cmd)))
+			sv.composite.SetYPixels(sv.scroll(win.SB_VERT, cmd))
 			avoidBGArtifacts()
 
 			return 0
@@ -259,6 +259,7 @@ func (sv *ScrollView) updateScrollBars() {
 	sv.composite.SetBoundsPixels(newCompositeBounds)
 }
 
+// scroll scrolls and returns new position in native pixels.
 func (sv *ScrollView) scroll(sb int32, cmd uint16) int {
 	var pos int32
 	var si win.SCROLLINFO
@@ -271,10 +272,10 @@ func (sv *ScrollView) scroll(sb int32, cmd uint16) int {
 
 	switch cmd {
 	case win.SB_LINELEFT: // == win.SB_LINEUP
-		pos -= 20
+		pos -= 20 // TODO: DPI?
 
 	case win.SB_LINERIGHT: // == win.SB_LINEDOWN
-		pos += 20
+		pos += 20 // TODO: DPI?
 
 	case win.SB_PAGELEFT: // == win.SB_PAGEUP
 		pos -= int32(si.NPage)
@@ -313,7 +314,8 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 				// To retain the previous behavior with box layouts, we add a fake spacer at the end.
 				// Maybe this should just be an option.
 				box.children = append(box.children, &spacerLayoutItem{
-					layoutFlags: ShrinkableHorz | ShrinkableVert | GrowableVert | GreedyVert,
+					LayoutItemBase: LayoutItemBase{ctx: ctx},
+					layoutFlags:    ShrinkableHorz | ShrinkableVert | GrowableVert | GreedyVert,
 				})
 			}
 		}
@@ -327,8 +329,9 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		svli.layoutFlags |= ShrinkableHorz | GrowableHorz | GreedyHorz
 
 		if !v {
-			if svli.idealSize.Width > sv.geometry.ClientSize.Width && sv.geometry.ClientSize.Width > 0 && sv.maxSize.Width == 0 ||
-				svli.idealSize.Width > sv.maxSize.Width && sv.maxSize.Width > 0 {
+			maxSize := SizeFrom96DPI(sv.maxSize96dpi, ctx.dpi)
+			if svli.idealSize.Width > sv.geometry.ClientSize.Width && sv.geometry.ClientSize.Width > 0 && maxSize.Width == 0 ||
+				svli.idealSize.Width > maxSize.Width && maxSize.Width > 0 {
 				svli.sbSize.Height = int(win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, uint32(ctx.dpi)))
 				svli.idealSize.Height += svli.sbSize.Height
 			}
@@ -341,8 +344,9 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		svli.layoutFlags |= GreedyVert | GrowableVert | ShrinkableVert
 
 		if !h {
-			if svli.idealSize.Height > sv.geometry.ClientSize.Height && sv.geometry.ClientSize.Height > 0 && sv.maxSize.Height == 0 ||
-				svli.idealSize.Height > sv.maxSize.Height && sv.maxSize.Height > 0 {
+			maxSize := SizeFrom96DPI(sv.maxSize96dpi, ctx.dpi)
+			if svli.idealSize.Height > sv.geometry.ClientSize.Height && sv.geometry.ClientSize.Height > 0 && maxSize.Height == 0 ||
+				svli.idealSize.Height > maxSize.Height && maxSize.Height > 0 {
 				svli.sbSize.Width = int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))
 				svli.idealSize.Width += svli.sbSize.Width
 			}
@@ -366,9 +370,9 @@ func (sv *ScrollView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type scrollViewLayoutItem struct {
 	ContainerLayoutItemBase
-	idealSize   Size
-	minSize     Size
-	sbSize      Size
+	idealSize   Size // in native pixels
+	minSize     Size // in native pixels
+	sbSize      Size // in native pixels
 	layoutFlags LayoutFlags
 	scrollX     float64
 	scrollY     float64

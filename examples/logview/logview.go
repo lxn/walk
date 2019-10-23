@@ -40,16 +40,8 @@ func NewLogView(parent walk.Container) (*LogView, error) {
 	return lv, nil
 }
 
-func (*LogView) LayoutFlags() walk.LayoutFlags {
-	return walk.ShrinkableHorz | walk.ShrinkableVert | walk.GrowableHorz | walk.GrowableVert | walk.GreedyHorz | walk.GreedyVert
-}
-
-func (*LogView) MinSizeHint() walk.Size {
-	return walk.Size{20, 12}
-}
-
-func (*LogView) SizeHint() walk.Size {
-	return walk.Size{100, 100}
+func (*LogView) CreateLayoutItem(ctx *walk.LayoutContext) walk.LayoutItem {
+	return walk.NewGreedyLayoutItem()
 }
 
 func (lv *LogView) setTextSelection(start, end int) {

@@ -213,7 +213,7 @@ func (gc *GradientComposite) updateBackground() error {
 		bounds.Height = 1
 	}
 
-	bmp, err := NewBitmap(bounds.Size())
+	bmp, err := NewBitmapForDPI(bounds.Size(), gc.DPI())
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func (gc *GradientComposite) updateBackground() error {
 		orientation = Horizontal
 	}
 
-	if err := canvas.GradientFillRectangle(gc.color1, gc.color2, orientation, bounds); err != nil {
+	if err := canvas.GradientFillRectanglePixels(gc.color1, gc.color2, orientation, bounds); err != nil {
 		return err
 	}
 

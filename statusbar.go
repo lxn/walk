@@ -76,10 +76,12 @@ func (sb *StatusBar) update() error {
 func (sb *StatusBar) updateParts() error {
 	items := sb.items.items
 
+	dpi := sb.DPI()
+
 	rightEdges := make([]int32, len(items))
 	var right int32
 	for i, item := range items {
-		right += int32(sb.IntFrom96DPI(item.width))
+		right += int32(IntFrom96DPI(item.width, dpi))
 		rightEdges[i] = right
 	}
 	var rep *int32

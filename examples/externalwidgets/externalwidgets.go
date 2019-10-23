@@ -82,7 +82,7 @@ func (*MyWidget) CreateLayoutItem(ctx *walk.LayoutContext) walk.LayoutItem {
 
 type myWidgetLayoutItem struct {
 	walk.LayoutItemBase
-	idealSize walk.Size
+	idealSize walk.Size // in native pixels
 }
 
 func (li *myWidgetLayoutItem) LayoutFlags() walk.LayoutFlags {

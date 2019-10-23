@@ -414,6 +414,7 @@ func (*GradientBrush) simple() bool {
 	return false
 }
 
+// create creates a gradient brush at given size in native pixels.
 func (b *GradientBrush) create(size Size) (*BitmapBrush, error) {
 	var disposables Disposables
 	defer disposables.Treat()
@@ -426,7 +427,7 @@ func (b *GradientBrush) create(size Size) (*BitmapBrush, error) {
 		size.Width = 1
 	}
 
-	bitmap, err := NewBitmap(size)
+	bitmap, err := NewBitmapForDPI(size, 96) // Size is in native pixels and bitmap is used for brush only => DPI is not used anywhere.
 	if err != nil {
 		return nil, err
 	}

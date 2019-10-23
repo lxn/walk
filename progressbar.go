@@ -72,8 +72,8 @@ func (pb *ProgressBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type progressBarLayoutItem struct {
 	LayoutItemBase
-	idealSize Size
-	minSize   Size
+	idealSize Size // in native pixels
+	minSize   Size // in native pixels
 }
 
 func (*progressBarLayoutItem) LayoutFlags() LayoutFlags {

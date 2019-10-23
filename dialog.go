@@ -193,6 +193,7 @@ func (dlg *Dialog) Show() {
 	dlg.startLayout()
 }
 
+// fitRectToScreen fits rectangle to screen. Input and output rectangles are in native pixels.
 func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {
 	var mi win.MONITORINFO
 	mi.CbSize = uint32(unsafe.Sizeof(mi))
@@ -205,7 +206,8 @@ func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {
 
 	mon := rectangleFromRECT(mi.RcWork)
 
-	mon.Height -= int(win.GetSystemMetrics(win.SM_CYCAPTION))
+	dpi := win.GetDpiForWindow(hWnd)
+	mon.Height -= int(win.GetSystemMetricsForDpi(win.SM_CYCAPTION, dpi))
 
 	if r.Width <= mon.Width {
 		switch {

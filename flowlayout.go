@@ -74,19 +74,19 @@ func (l *FlowLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 
 type flowLayoutItem struct {
 	ContainerLayoutItemBase
-	size2MinSize       map[Size]Size
+	size2MinSize       map[Size]Size // in native pixels
 	hwnd2StretchFactor map[win.HWND]int
 }
 
 type flowLayoutSection struct {
 	items            []flowLayoutSectionItem
-	primarySpaceLeft int
-	secondaryMinSize int
+	primarySpaceLeft int // in native pixels
+	secondaryMinSize int // in native pixels
 }
 
 type flowLayoutSectionItem struct {
 	item    LayoutItem
-	minSize Size
+	minSize Size // in native pixels
 }
 
 func (*flowLayoutItem) LayoutFlags() LayoutFlags {
@@ -106,6 +106,9 @@ func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
 		return min
 	}
 
+	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
+	margins := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
+
 	bounds := Rectangle{Width: size.Width}
 
 	sections := li.sectionsForPrimarySize(size.Width)
@@ -121,20 +124,20 @@ func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
 
 			sectionMinWidth += sectionItem.minSize.Width
 		}
-		sectionMinWidth += (len(section.items) - 1) * li.spacing
+		sectionMinWidth += (len(section.items) - 1) * spacing
 		maxPrimary = maxi(maxPrimary, sectionMinWidth)
 
 		bounds.Height = section.secondaryMinSize
 
-		margins := li.margins
+		margins96dpi := li.margins96dpi
 		if i > 0 {
-			margins.VNear = 0
+			margins96dpi.VNear = 0
 		}
 		if i < len(sections)-1 {
-			margins.VFar = 0
+			margins96dpi.VFar = 0
 		}
 
-		layoutItems := boxLayoutItems(li, items, Horizontal, li.alignment, bounds, margins, li.spacing, li.hwnd2StretchFactor)
+		layoutItems := boxLayoutItems(li, items, Horizontal, li.alignment, bounds, margins96dpi, li.spacing96dpi, li.hwnd2StretchFactor)
 
 		var maxSecondary int
 
@@ -151,13 +154,13 @@ func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
 
 		s.Height += maxSecondary
 
-		bounds.Y += maxSecondary + li.spacing
+		bounds.Y += maxSecondary + spacing
 	}
 
 	s.Width = maxPrimary
 
-	s.Width += li.margins.HNear + li.margins.HFar
-	s.Height += li.margins.VNear + li.margins.VFar + (len(sections)-1)*li.spacing
+	s.Width += margins.HNear + margins.HFar
+	s.Height += margins.VNear + margins.VFar + (len(sections)-1)*spacing
 
 	if s.Width > 0 && s.Height > 0 {
 		li.size2MinSize[size] = s
@@ -167,6 +170,7 @@ func (li *flowLayoutItem) MinSizeForSize(size Size) Size {
 }
 
 func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
+	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
 	bounds := Rectangle{Width: li.geometry.ClientSize.Width, Height: li.geometry.ClientSize.Height}
 
 	sections := li.sectionsForPrimarySize(bounds.Width)
@@ -181,15 +185,17 @@ func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
 
 		bounds.Height = section.secondaryMinSize
 
-		margins := li.margins
+		margins96dpi := li.margins96dpi
 		if i > 0 {
-			margins.VNear = 0
+			margins96dpi.VNear = 0
 		}
 		if i < len(sections)-1 {
-			margins.VFar = 0
+			margins96dpi.VFar = 0
 		}
 
-		layoutItems := boxLayoutItems(li, items, Horizontal, li.alignment, bounds, margins, li.spacing, li.hwnd2StretchFactor)
+		layoutItems := boxLayoutItems(li, items, Horizontal, li.alignment, bounds, margins96dpi, li.spacing96dpi, li.hwnd2StretchFactor)
+
+		margins := MarginsFrom96DPI(margins96dpi, li.ctx.dpi)
 
 		var maxSecondary int
 
@@ -205,25 +211,29 @@ func (li *flowLayoutItem) PerformLayout() []LayoutResultItem {
 
 		bounds.Height = maxSecondary + margins.VNear + margins.VFar
 
-		resultItems = append(resultItems, boxLayoutItems(li, items, Horizontal, li.alignment, bounds, margins, li.spacing, li.hwnd2StretchFactor)...)
+		resultItems = append(resultItems, boxLayoutItems(li, items, Horizontal, li.alignment, bounds, margins96dpi, li.spacing96dpi, li.hwnd2StretchFactor)...)
 
-		bounds.Y += bounds.Height + li.spacing
+		bounds.Y += bounds.Height + spacing
 	}
 
 	return resultItems
 }
 
+// sectionsForPrimarySize calculates sections for primary width in native pixels.
 func (li *flowLayoutItem) sectionsForPrimarySize(primarySize int) []flowLayoutSection {
+	margins := MarginsFrom96DPI(li.margins96dpi, li.ctx.dpi)
+	spacing := IntFrom96DPI(li.spacing96dpi, li.ctx.dpi)
+
 	var sections []flowLayoutSection
 
 	section := flowLayoutSection{
-		primarySpaceLeft: primarySize - li.margins.HNear - li.margins.HFar,
+		primarySpaceLeft: primarySize - margins.HNear - margins.HFar,
 	}
 
 	addSection := func() {
 		sections = append(sections, section)
 		section.items = nil
-		section.primarySpaceLeft = primarySize - li.margins.HNear - li.margins.HFar
+		section.primarySpaceLeft = primarySize - margins.HNear - margins.HFar
 		section.secondaryMinSize = 0
 	}
 
@@ -241,7 +251,7 @@ func (li *flowLayoutItem) sectionsForPrimarySize(primarySize int) []flowLayoutSe
 		addItem := func() {
 			section.items = append(section.items, sectionItem)
 			if len(section.items) > 1 {
-				section.primarySpaceLeft -= li.spacing
+				section.primarySpaceLeft -= spacing
 			}
 			section.primarySpaceLeft -= sectionItem.minSize.Width
 
@@ -251,7 +261,7 @@ func (li *flowLayoutItem) sectionsForPrimarySize(primarySize int) []flowLayoutSe
 		if section.primarySpaceLeft < sectionItem.minSize.Width && len(section.items) == 0 {
 			addItem()
 			addSection()
-		} else if section.primarySpaceLeft < li.spacing+sectionItem.minSize.Width && len(section.items) > 0 {
+		} else if section.primarySpaceLeft < spacing+sectionItem.minSize.Width && len(section.items) > 0 {
 			addSection()
 			addItem()
 		} else {
@@ -264,8 +274,8 @@ func (li *flowLayoutItem) sectionsForPrimarySize(primarySize int) []flowLayoutSe
 	}
 
 	if len(sections) > 0 {
-		sections[0].secondaryMinSize += li.margins.VNear
-		sections[len(sections)-1].secondaryMinSize += li.margins.VFar
+		sections[0].secondaryMinSize += margins.VNear
+		sections[len(sections)-1].secondaryMinSize += margins.VFar
 	}
 
 	return sections
