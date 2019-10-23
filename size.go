@@ -15,6 +15,13 @@ type Size struct {
 	Width, Height int
 }
 
+func (s Size) toSIZE() win.SIZE {
+	return win.SIZE{
+		CX: int32(s.Width),
+		CY: int32(s.Height),
+	}
+}
+
 func minSize(a, b Size) Size {
 	var s Size
 
