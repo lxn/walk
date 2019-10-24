@@ -15,10 +15,12 @@ import (
 
 type ImageList struct {
 	hIml                     win.HIMAGELIST
+	dpi                      int
 	maskColor                Color
 	imageSize96dpi           Size
 	colorMaskedBitmap2Index  map[*Bitmap]int
 	bitmapMaskedBitmap2Index map[bitmapMaskedBitmap]int
+	icon2Index               map[*Icon]int32
 }
 
 type bitmapMaskedBitmap struct {
@@ -49,10 +51,12 @@ func NewImageListForDPI(imageSize Size, maskColor Color, dpi int) (*ImageList, e
 
 	return &ImageList{
 		hIml:                     hIml,
+		dpi:                      dpi,
 		maskColor:                maskColor,
 		imageSize96dpi:           SizeTo96DPI(imageSize, dpi),
 		colorMaskedBitmap2Index:  make(map[*Bitmap]int),
 		bitmapMaskedBitmap2Index: make(map[bitmapMaskedBitmap]int),
+		icon2Index:               make(map[*Icon]int32),
 	}, nil
 }
 
@@ -106,6 +110,45 @@ func (il *ImageList) AddMasked(bitmap *Bitmap) (int32, error) {
 	il.colorMaskedBitmap2Index[bitmap] = int(index)
 
 	return index, nil
+}
+
+func (il *ImageList) AddIcon(icon *Icon) (int32, error) {
+	if icon == nil {
+		return 0, newError("icon cannot be nil")
+	}
+
+	if index, ok := il.icon2Index[icon]; ok {
+		return index, nil
+	}
+
+	index := win.ImageList_ReplaceIcon(il.hIml, -1, icon.handleForDPI(il.dpi))
+	if index == -1 {
+		return 0, newError("ImageList_ReplaceIcon failed")
+	}
+
+	il.icon2Index[icon] = index
+
+	return index, nil
+}
+
+func (il *ImageList) AddImage(image interface{}) (int32, error) {
+	switch image.(type) {
+	case ExtractableIcon, *Icon:
+		icon, err := IconFrom(image, il.dpi)
+		if err != nil {
+			return 0, err
+		}
+
+		return il.AddIcon(icon)
+
+	default:
+		bmp, err := BitmapFrom(image, il.dpi)
+		if err != nil {
+			return 0, err
+		}
+
+		return il.AddMasked(bmp)
+	}
 }
 
 func (il *ImageList) Dispose() {
