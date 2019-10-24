@@ -39,6 +39,7 @@ func createLayoutItemForWidgetWithContext(widget Widget, ctx *LayoutContext) Lay
 	lib.geometry.Alignment = widget.Alignment()
 	lib.geometry.MinSize = widget.MinSizePixels()
 	lib.geometry.MaxSize = widget.MaxSizePixels()
+	lib.geometry.ConsumingSpaceWhenInvisible = widget.AlwaysConsumeSpace()
 
 	return item
 }
@@ -68,8 +69,10 @@ func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 	clib = containerItem.AsContainerLayoutItemBase()
 	clib.ctx = ctx
 	clib.handle = container.Handle()
-	clib.visible = container.AsContainerBase().visible
-	clib.geometry = container.AsContainerBase().geometry
+	cb := container.AsContainerBase()
+	clib.visible = cb.visible
+	clib.geometry = cb.geometry
+	clib.geometry.ConsumingSpaceWhenInvisible = cb.AlwaysConsumeSpace()
 
 	if lb := layout.asLayoutBase(); lb != nil {
 		clib.alignment = lb.alignment
