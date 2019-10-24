@@ -240,7 +240,7 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 	tb.imageList = value
 }
 
-func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
+func (tb *ToolBar) imageIndex(image Image) (imageIndex int32, err error) {
 	if tb.imageList == nil {
 		dpi := tb.DPI()
 		iml, err := NewImageListForDPI(SizeFrom96DPI(Size{16, 16}, dpi), 0, dpi)
@@ -253,7 +253,7 @@ func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
 
 	imageIndex = -1
 	if image != nil {
-		if imageIndex, err = tb.imageList.AddMasked(image); err != nil {
+		if imageIndex, err = tb.imageList.AddImage(image); err != nil {
 			return
 		}
 	}
@@ -265,9 +265,6 @@ func (tb *ToolBar) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 	switch msg {
 	case win.WM_MOUSEMOVE, win.WM_MOUSELEAVE, win.WM_LBUTTONDOWN:
 		tb.Invalidate()
-
-	// case win.WM_PAINT:
-	// 	tb.Invalidate()
 
 	case win.WM_COMMAND:
 		switch win.HIWORD(uint32(wParam)) {
@@ -365,13 +362,7 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 	}
 
 	if tb.buttonStyle != ToolBarButtonTextOnly {
-		var bmp *Bitmap
-
-		if action.image != nil {
-			bmp, _ = iconCache.Bitmap(action.image, tb.DPI())
-		}
-
-		if *image, err = tb.imageIndex(bmp); err != nil {
+		if *image, err = tb.imageIndex(action.image); err != nil {
 			return err
 		}
 	}
@@ -417,6 +408,8 @@ func (tb *ToolBar) onActionChanged(action *Action) error {
 
 		return newError("SendMessage(TB_SETBUTTONINFO) failed")
 	}
+
+	tb.RequestLayout()
 
 	return nil
 }
