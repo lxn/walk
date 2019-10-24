@@ -172,15 +172,24 @@ func addToActionList(list *walk.ActionList, actions []*walk.Action) error {
 	return nil
 }
 
-func setActionImage(action *walk.Action, image interface{}, dpi int) error {
-	bmp, err := walk.BitmapFrom(image, dpi)
-	if err != nil {
-		return err
-	}
-
+func setActionImage(action *walk.Action, image interface{}, dpi int) (err error) {
 	var img walk.Image
-	if bmp != nil {
-		img = bmp
+
+	switch image.(type) {
+	case *walk.Bitmap:
+		if img, err = walk.BitmapFrom(image, dpi); err != nil {
+			return
+		}
+
+	case walk.ExtractableIcon, *walk.Icon:
+		if img, err = walk.IconFrom(image, dpi); err != nil {
+			return
+		}
+
+	default:
+		if img, err = walk.ImageFrom(image); err != nil {
+			return
+		}
 	}
 
 	return action.SetImage(img)
