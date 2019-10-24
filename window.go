@@ -1833,7 +1833,7 @@ func (wb *WindowBase) RequestLayout() {
 				visible = window.AsWindowBase().visible
 			}
 
-			if !visible || window.Suspended() {
+			if !visible && window != wb.window || window.Suspended() {
 				return
 			}
 
