@@ -16,8 +16,9 @@ import (
 type Orientation byte
 
 const (
-	Horizontal Orientation = iota
-	Vertical
+	NoOrientation Orientation = 0
+	Horizontal = 1 << 0
+	Vertical = 1 << 1
 )
 
 type BoxLayout struct {

@@ -121,6 +121,7 @@ type TableView struct {
 	focused                            bool
 	ignoreNowhere                      bool
 	updateLVSizesNeedsSpecialCare      bool
+	scrollbarOrientation               Orientation
 }
 
 // NewTableView creates and returns a *TableView as child of the specified
@@ -144,6 +145,7 @@ func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error
 		formActivatingHandle: -1,
 		customHeaderHeight:   cfg.CustomHeaderHeight,
 		customRowHeight:      cfg.CustomRowHeight,
+		scrollbarOrientation: Horizontal | Vertical,
 	}
 
 	tv.columns = newTableViewColumnList(tv)
@@ -1749,6 +1751,17 @@ func tableViewFrozenLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr
 func tableViewNormalLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 	tv := (*TableView)(unsafe.Pointer(windowFromHandle(win.GetParent(hwnd)).AsWindowBase()))
 
+	var off uint32 = win.WS_HSCROLL | win.WS_VSCROLL
+	if tv.scrollbarOrientation&Horizontal != 0 {
+		off &^= win.WS_HSCROLL
+	}
+	if tv.scrollbarOrientation&Vertical != 0 {
+		off &^= win.WS_VSCROLL
+	}
+	if off != 0 {
+		ensureWindowLongBits(hwnd, win.GWL_STYLE, off, false)
+	}
+
 	switch msg {
 	case win.WM_LBUTTONDOWN, win.WM_RBUTTONDOWN:
 		win.SetFocus(tv.hwndFrozenLV)
@@ -2474,4 +2487,12 @@ func (tv *TableView) updateLVSizesWithSpecialCare(needSpecialCare bool) {
 
 func (*TableView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	return NewGreedyLayoutItem()
+}
+
+func (tv *TableView) SetScrollbarOrientation(orientation Orientation) {
+	tv.scrollbarOrientation = orientation
+}
+
+func (tv *TableView) ScrollbarOrientation() Orientation {
+	return tv.scrollbarOrientation
 }
