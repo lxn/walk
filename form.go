@@ -522,18 +522,17 @@ func (fb *FormBase) SetIcon(icon Image) error {
 	if icon != nil {
 		dpi := fb.DPI()
 		size96dpi := icon.Size()
-		scale := float64(dpi) / float64(size96dpi.Height)
 
-		smallHeight96dpi := int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))
-		smallDPI := int(math.Round(float64(smallHeight96dpi) * scale))
+		smallHeight := int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, uint32(dpi)))
+		smallDPI := int(math.Round(float64(smallHeight) / float64(size96dpi.Height) * 96.0))
 		smallIcon, err := iconCache.Icon(icon, smallDPI)
 		if err != nil {
 			return err
 		}
 		hIconSmall = uintptr(smallIcon.handleForDPI(smallDPI))
 
-		bigHeight96dpi := int(win.GetSystemMetricsForDpi(win.SM_CYICON, 96))
-		bigDPI := int(math.Round(float64(bigHeight96dpi) * scale))
+		bigHeight := int(win.GetSystemMetricsForDpi(win.SM_CYICON, uint32(dpi)))
+		bigDPI := int(math.Round(float64(bigHeight) / float64(size96dpi.Height) * 96.0))
 		bigIcon, err := iconCache.Icon(icon, bigDPI)
 		if err != nil {
 			return err
