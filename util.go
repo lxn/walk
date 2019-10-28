@@ -598,21 +598,3 @@ func scaleSize(value Size, scale float64) Size {
 		Height: scaleInt(value.Height, scale),
 	}
 }
-
-// SizeFrom96DPI2 converts from 1/96" units to native pixels. This version assumes different
-// horizontal and vertical DPI.
-func SizeFrom96DPI2(value Size, dpi Size) Size {
-	return Size{
-		Width:  scaleInt(value.Width, float64(dpi.Width)/96.0),
-		Height: scaleInt(value.Height, float64(dpi.Height)/96.0),
-	}
-}
-
-// SizeTo96DPI2 converts from native pixels to 1/96" units. This version assumes different
-// horizontal and vertical DPI.
-func SizeTo96DPI2(value Size, dpi Size) Size {
-	return Size{
-		Width:  scaleInt(value.Width, 96.0/float64(dpi.Width)),
-		Height: scaleInt(value.Height, 96.0/float64(dpi.Height)),
-	}
-}

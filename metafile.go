@@ -107,7 +107,10 @@ func (mf *Metafile) ensureFinished() error {
 
 // Size returns image size in 1/96" units.
 func (mf *Metafile) Size() Size {
-	return SizeTo96DPI2(mf.size, mf.dpi)
+	return Size{
+		Width:  scaleInt(mf.size.Width, 96.0/float64(mf.dpi.Width)),
+		Height: scaleInt(mf.size.Height, 96.0/float64(mf.dpi.Height)),
+	}
 }
 
 func (mf *Metafile) draw(hdc win.HDC, location Point) error {
