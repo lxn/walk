@@ -680,7 +680,15 @@ func (tv *TableView) UpdateItem(index int) error {
 			return err
 		}
 
-		return tv.Invalidate()
+		first := win.SendMessage(tv.hwndNormalLV, win.LVM_GETTOPINDEX, 0, 0)
+		last := first + win.SendMessage(tv.hwndNormalLV, win.LVM_GETCOUNTPERPAGE, 0, 0) + 1
+
+		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_REDRAWITEMS, first, last) {
+			return newError("LVM_REDRAWITEMS")
+		}
+		if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_REDRAWITEMS, first, last) {
+			return newError("LVM_REDRAWITEMS")
+		}
 	} else {
 		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_UPDATE, uintptr(index), 0) {
 			return newError("LVM_UPDATE")
@@ -744,7 +752,6 @@ func (tv *TableView) attachModel() {
 		tv.sortChangedHandlerHandle = sorter.SortChanged().Attach(func() {
 			col := sorter.SortedColumn()
 			tv.setSortIcon(col, sorter.SortOrder())
-			tv.Invalidate()
 		})
 	}
 }
