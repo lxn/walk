@@ -142,6 +142,10 @@ type TableModel interface {
 	// changed.
 	RowChanged() *IntEvent
 
+	// RowsChanged returns the event that the model should publish when a
+	// contiguous range of items was changed.
+	RowsChanged() *IntRangeEvent
+
 	// RowsInserted returns the event that the model should publish when a
 	// contiguous range of items was inserted. If the model supports sorting, it
 	// is assumed to be sorted before the model publishes the event.
@@ -157,6 +161,7 @@ type TableModel interface {
 type TableModelBase struct {
 	rowsResetPublisher    EventPublisher
 	rowChangedPublisher   IntEventPublisher
+	rowsChangedPublisher  IntRangeEventPublisher
 	rowsInsertedPublisher IntRangeEventPublisher
 	rowsRemovedPublisher  IntRangeEventPublisher
 }
@@ -167,6 +172,10 @@ func (tmb *TableModelBase) RowsReset() *Event {
 
 func (tmb *TableModelBase) RowChanged() *IntEvent {
 	return tmb.rowChangedPublisher.Event()
+}
+
+func (tmb *TableModelBase) RowsChanged() *IntRangeEvent {
+	return tmb.rowsChangedPublisher.Event()
 }
 
 func (tmb *TableModelBase) RowsInserted() *IntRangeEvent {
@@ -183,6 +192,10 @@ func (tmb *TableModelBase) PublishRowsReset() {
 
 func (tmb *TableModelBase) PublishRowChanged(row int) {
 	tmb.rowChangedPublisher.Publish(row)
+}
+
+func (tmb *TableModelBase) PublishRowsChanged(from, to int) {
+	tmb.rowsChangedPublisher.Publish(from, to)
 }
 
 func (tmb *TableModelBase) PublishRowsInserted(from, to int) {
@@ -206,6 +219,10 @@ type ReflectTableModel interface {
 	// RowChanged returns the event that the model should publish when an item
 	// was changed.
 	RowChanged() *IntEvent
+
+	// RowsChanged returns the event that the model should publish when a
+	// contiguous range of items was changed.
+	RowsChanged() *IntRangeEvent
 
 	// RowsInserted returns the event that the model should publish when a
 	// contiguous range of items was inserted. If the model supports sorting, it

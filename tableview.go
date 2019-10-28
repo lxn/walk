@@ -77,6 +77,7 @@ type TableView struct {
 	filePath2IconIndex                 map[string]int32
 	rowsResetHandlerHandle             int
 	rowChangedHandlerHandle            int
+	rowsChangedHandlerHandle           int
 	rowsInsertedHandlerHandle          int
 	rowsRemovedHandlerHandle           int
 	sortChangedHandlerHandle           int
@@ -679,16 +680,6 @@ func (tv *TableView) UpdateItem(index int) error {
 		if err := s.Sort(s.SortedColumn(), s.SortOrder()); err != nil {
 			return err
 		}
-
-		first := win.SendMessage(tv.hwndNormalLV, win.LVM_GETTOPINDEX, 0, 0)
-		last := first + win.SendMessage(tv.hwndNormalLV, win.LVM_GETCOUNTPERPAGE, 0, 0) + 1
-
-		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_REDRAWITEMS, first, last) {
-			return newError("LVM_REDRAWITEMS")
-		}
-		if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_REDRAWITEMS, first, last) {
-			return newError("LVM_REDRAWITEMS")
-		}
 	} else {
 		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_UPDATE, uintptr(index), 0) {
 			return newError("LVM_UPDATE")
@@ -712,6 +703,16 @@ func (tv *TableView) attachModel() {
 
 	tv.rowChangedHandlerHandle = tv.model.RowChanged().Attach(func(row int) {
 		tv.UpdateItem(row)
+	})
+
+	tv.rowsChangedHandlerHandle = tv.model.RowsChanged().Attach(func(from, to int) {
+		if s, ok := tv.model.(Sorter); ok {
+			s.Sort(s.SortedColumn(), s.SortOrder())
+		} else {
+			first, last := uintptr(from), uintptr(to)
+			win.SendMessage(tv.hwndFrozenLV, win.LVM_REDRAWITEMS, first, last)
+			win.SendMessage(tv.hwndNormalLV, win.LVM_REDRAWITEMS, first, last)
+		}
 	})
 
 	tv.rowsInsertedHandlerHandle = tv.model.RowsInserted().Attach(func(from, to int) {
@@ -752,6 +753,11 @@ func (tv *TableView) attachModel() {
 		tv.sortChangedHandlerHandle = sorter.SortChanged().Attach(func() {
 			col := sorter.SortedColumn()
 			tv.setSortIcon(col, sorter.SortOrder())
+
+			first := win.SendMessage(tv.hwndNormalLV, win.LVM_GETTOPINDEX, 0, 0)
+			last := first + win.SendMessage(tv.hwndNormalLV, win.LVM_GETCOUNTPERPAGE, 0, 0) + 1
+			win.SendMessage(tv.hwndFrozenLV, win.LVM_REDRAWITEMS, first, last)
+			win.SendMessage(tv.hwndNormalLV, win.LVM_REDRAWITEMS, first, last)
 		})
 	}
 }
