@@ -1414,7 +1414,31 @@ func (tv *TableView) StretchLastColumn() error {
 		return nil
 	}
 
-	if 0 == win.SendMessage(tv.hwndNormalLV, win.LVM_SETCOLUMNWIDTH, uintptr(colCount-1), win.LVSCW_AUTOSIZE_USEHEADER) {
+	var hwnd win.HWND
+	if tv.visibleColumnCount()-tv.visibleFrozenColumnCount() == 0 {
+		hwnd = tv.hwndFrozenLV
+	} else {
+		hwnd = tv.hwndNormalLV
+	}
+
+	width := tv.ClientBoundsPixels().Width
+	lastIndexInLV := -1
+	var lastIndexInLVWidth int
+	for _, tvc := range tv.columns.items {
+		colWidth := tvc.Width()
+		if index := tvc.indexInListView(); int(index) > lastIndexInLV {
+			lastIndexInLV = int(index)
+			lastIndexInLVWidth = colWidth
+		}
+		width -= colWidth
+	}
+	width += lastIndexInLVWidth
+
+	if hasWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.WS_VSCROLL) {
+		width -= int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(tv.DPI())))
+	}
+
+	if 0 == win.SendMessage(hwnd, win.LVM_SETCOLUMNWIDTH, uintptr(colCount-1), uintptr(width)) {
 		return newError("LVM_SETCOLUMNWIDTH failed")
 	}
 
