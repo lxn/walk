@@ -302,9 +302,9 @@ func (c *Canvas) DrawImageStretchedPixels(image Image, bounds Rectangle) error {
 	}
 
 	if dsoc, ok := image.(interface {
-		drawStretchedOnCanvas(canvas *Canvas, bounds Rectangle) error
+		drawStretchedOnCanvasPixels(canvas *Canvas, bounds Rectangle) error
 	}); ok {
-		return dsoc.drawStretchedOnCanvas(c, bounds)
+		return dsoc.drawStretchedOnCanvasPixels(c, bounds)
 	}
 
 	return image.drawStretched(c.hdc, bounds)
