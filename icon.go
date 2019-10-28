@@ -17,6 +17,8 @@ import (
 	"github.com/lxn/win"
 )
 
+var defaultIconSize96dpi = Size{16, 16}
+
 // Icon is a bitmap that supports transparency and combining multiple
 // variants of an image in different resolutions.
 type Icon struct {
@@ -77,7 +79,7 @@ func IconShield() *Icon {
 }
 
 func stockIcon(id uintptr) *Icon {
-	return &Icon{res: win.MAKEINTRESOURCE(id), size96dpi: defaultIconSize(), isStock: true}
+	return &Icon{res: win.MAKEINTRESOURCE(id), size96dpi: defaultIconSize96dpi, isStock: true}
 }
 
 // NewIconFromFile returns a new Icon, using the specified icon image file and default size.
@@ -88,7 +90,7 @@ func NewIconFromFile(filePath string) (*Icon, error) {
 // NewIconFromFileWithSize returns a new Icon, using the specified icon image file and size.
 func NewIconFromFileWithSize(filePath string, size Size) (*Icon, error) {
 	if size.Width == 0 || size.Height == 0 {
-		size = defaultIconSize()
+		size = defaultIconSize96dpi
 	}
 
 	return checkNewIcon(&Icon{filePath: filePath, size96dpi: size})
@@ -116,7 +118,7 @@ func NewIconFromResourceIdWithSize(id int, size Size) (*Icon, error) {
 
 func newIconFromResource(res *uint16, size Size) (*Icon, error) {
 	if size.Width == 0 || size.Height == 0 {
-		size = defaultIconSize()
+		size = defaultIconSize96dpi
 	}
 
 	return checkNewIcon(&Icon{res: res, size96dpi: size})
@@ -271,7 +273,7 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 	var size Size
 	if i.size96dpi.Width == 0 || i.size96dpi.Height == 0 {
 		flags |= win.LR_DEFAULTSIZE
-		size = SizeFrom96DPI(defaultIconSize(), dpi)
+		size = SizeFrom96DPI(defaultIconSize96dpi, dpi)
 	} else {
 		size = SizeFrom96DPI(i.size96dpi, dpi)
 	}
@@ -415,9 +417,4 @@ func sizeFromHICON(hIcon win.HICON) (Size, error) {
 	}
 
 	return Size{int(bi.BmiHeader.BiWidth), int(bi.BmiHeader.BiHeight)}, nil
-}
-
-// defaultIconSize returns default small icon size in 1/92" units.
-func defaultIconSize() Size {
-	return Size{int(win.GetSystemMetricsForDpi(win.SM_CXSMICON, 96)), int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))}
 }
