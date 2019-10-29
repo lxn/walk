@@ -118,7 +118,7 @@ type TableView struct {
 	inSetCurrentIndex                  bool
 	inMouseEvent                       bool
 	hasFrozenColumn                    bool
-	inEraseBkgnd                       bool
+	busyStretchingLastColumn           bool
 	focused                            bool
 	ignoreNowhere                      bool
 	updateLVSizesNeedsSpecialCare      bool
@@ -1415,7 +1415,7 @@ func (tv *TableView) StretchLastColumn() error {
 	}
 
 	var hwnd win.HWND
-	if tv.visibleColumnCount()-tv.visibleFrozenColumnCount() == 0 {
+	if colCount-tv.visibleFrozenColumnCount() == 0 {
 		hwnd = tv.hwndFrozenLV
 	} else {
 		hwnd = tv.hwndNormalLV
@@ -1425,7 +1425,7 @@ func (tv *TableView) StretchLastColumn() error {
 	lastIndexInLV := -1
 	var lastIndexInLVWidth int
 	for _, tvc := range tv.columns.items {
-		colWidth := tvc.Width()
+		colWidth := tv.IntFrom96DPI(tvc.Width())
 		if index := tvc.indexInListView(); int(index) > lastIndexInLV {
 			lastIndexInLV = int(index)
 			lastIndexInLVWidth = colWidth
@@ -1824,15 +1824,16 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 		hwndOther = tv.hwndFrozenLV
 	}
 
+	if tv.lastColumnStretched && !tv.busyStretchingLastColumn && tv.visibleColumnCount()-tv.visibleFrozenColumnCount() > 0 == (hwnd == tv.hwndNormalLV) {
+		tv.busyStretchingLastColumn = true
+		defer func() {
+			tv.busyStretchingLastColumn = false
+		}()
+		tv.StretchLastColumn()
+	}
+
 	switch msg {
 	case win.WM_ERASEBKGND:
-		if tv.lastColumnStretched && !tv.inEraseBkgnd {
-			tv.inEraseBkgnd = true
-			defer func() {
-				tv.inEraseBkgnd = false
-			}()
-			tv.StretchLastColumn()
-		}
 		return 1
 
 	case win.WM_GETDLGCODE:
