@@ -551,7 +551,12 @@ func (c *Canvas) GradientFillRectanglePixels(color1, color2 Color, orientation O
 		LowerRight: 1,
 	}
 
-	if !win.GradientFill(c.hdc, &vertices[0], 2, unsafe.Pointer(&indices), 1, uint32(orientation)) {
+	var o uint32
+	if orientation == Vertical {
+		o = 1
+	}
+
+	if !win.GradientFill(c.hdc, &vertices[0], 2, unsafe.Pointer(&indices), 1, o) {
 		return newError("GradientFill failed")
 	}
 
