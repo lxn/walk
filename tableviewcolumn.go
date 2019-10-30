@@ -298,7 +298,17 @@ func (tvc *TableViewColumn) Width() int {
 		return tvc.width
 	}
 
-	return tvc.tv.IntTo96DPI(int(tvc.sendMessage(win.LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0)))
+	// We call win.SendMessage instead of tvc.sendMessage here, because some
+	// call inside the latter interferes with scrolling via scroll bar button
+	// when *TableViewColumn.Width is called from *TableView.StretchLastColumn.
+	var hwnd win.HWND
+	if tvc.frozen {
+		hwnd = tvc.tv.hwndFrozenLV
+	} else {
+		hwnd = tvc.tv.hwndNormalLV
+	}
+
+	return tvc.tv.IntTo96DPI(int(win.SendMessage(hwnd, win.LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0)))
 }
 
 // SetWidth sets the width of the column in pixels.

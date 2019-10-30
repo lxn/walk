@@ -1415,31 +1415,52 @@ func (tv *TableView) StretchLastColumn() error {
 	}
 
 	var hwnd win.HWND
-	if colCount-tv.visibleFrozenColumnCount() == 0 {
+	frozenColCount := tv.visibleFrozenColumnCount()
+	if colCount-frozenColCount == 0 {
 		hwnd = tv.hwndFrozenLV
+		colCount = frozenColCount
 	} else {
 		hwnd = tv.hwndNormalLV
+		colCount -= frozenColCount
 	}
 
-	width := tv.ClientBoundsPixels().Width
-	lastIndexInLV := -1
-	var lastIndexInLVWidth int
-	for _, tvc := range tv.columns.items {
-		colWidth := tv.IntFrom96DPI(tvc.Width())
-		if index := tvc.indexInListView(); int(index) > lastIndexInLV {
-			lastIndexInLV = int(index)
-			lastIndexInLVWidth = colWidth
+	var lp uintptr
+	if tv.scrollbarOrientation&Horizontal != 0 {
+		lp = win.LVSCW_AUTOSIZE_USEHEADER
+	} else {
+		width := tv.ClientBoundsPixels().Width
+
+		lastIndexInLV := -1
+		var lastIndexInLVWidth int
+
+		for _, tvc := range tv.columns.items {
+			var offset int
+			if !tvc.Frozen() {
+				offset = frozenColCount
+			}
+
+			colWidth := tv.IntFrom96DPI(tvc.Width())
+			width -= colWidth
+
+			if index := int32(offset) + tvc.indexInListView(); int(index) > lastIndexInLV {
+				lastIndexInLV = int(index)
+				lastIndexInLVWidth = colWidth
+			}
 		}
-		width -= colWidth
-	}
-	width += lastIndexInLVWidth
 
-	if hasWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.WS_VSCROLL) {
-		width -= int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(tv.DPI())))
+		width += lastIndexInLVWidth
+
+		if hasWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.WS_VSCROLL) {
+			width -= int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(tv.DPI())))
+		}
+
+		lp = uintptr(maxi(0, width))
 	}
 
-	if 0 == win.SendMessage(hwnd, win.LVM_SETCOLUMNWIDTH, uintptr(colCount-1), uintptr(width)) {
-		return newError("LVM_SETCOLUMNWIDTH failed")
+	if lp > 0 {
+		if 0 == win.SendMessage(hwnd, win.LVM_SETCOLUMNWIDTH, uintptr(colCount-1), lp) {
+			return newError("LVM_SETCOLUMNWIDTH failed")
+		}
 	}
 
 	return nil
@@ -1824,17 +1845,20 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 		hwndOther = tv.hwndFrozenLV
 	}
 
-	if tv.lastColumnStretched && !tv.busyStretchingLastColumn && tv.visibleColumnCount()-tv.visibleFrozenColumnCount() > 0 == (hwnd == tv.hwndNormalLV) {
-		tv.busyStretchingLastColumn = true
-		defer func() {
-			tv.busyStretchingLastColumn = false
-		}()
-		tv.StretchLastColumn()
-	}
+	var maybeStretchLastColumn bool
 
 	switch msg {
 	case win.WM_ERASEBKGND:
-		return 1
+		maybeStretchLastColumn = true
+
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lp))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
+		maybeStretchLastColumn = int(wp.Cx) < tv.WidthPixels()
 
 	case win.WM_GETDLGCODE:
 		if wp == win.VK_RETURN {
@@ -2327,6 +2351,22 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 	case win.WM_MOUSEWHEEL:
 		fixXInLP()
 		tv.publishMouseWheelEvent(&tv.mouseWheelPublisher, wp, lpFixed)
+	}
+
+	if maybeStretchLastColumn {
+		if tv.lastColumnStretched && !tv.busyStretchingLastColumn {
+			if normalVisColCount := tv.visibleColumnCount() - tv.visibleFrozenColumnCount(); normalVisColCount == 0 || normalVisColCount > 0 == (hwnd == tv.hwndNormalLV) {
+				tv.busyStretchingLastColumn = true
+				defer func() {
+					tv.busyStretchingLastColumn = false
+				}()
+				tv.StretchLastColumn()
+			}
+		}
+
+		if msg == win.WM_ERASEBKGND {
+			return 1
+		}
 	}
 
 	return win.CallWindowProc(origWndProcPtr, hwnd, msg, wp, lp)
