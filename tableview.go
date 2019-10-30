@@ -561,27 +561,11 @@ func (tv *TableView) HeaderHidden() bool {
 
 // SetHeaderHidden sets whether the column header is hidden.
 func (tv *TableView) SetHeaderHidden(hidden bool) error {
-	updateStyle := func(hwnd win.HWND) error {
-		style := win.GetWindowLong(hwnd, win.GWL_STYLE)
-
-		if hidden {
-			style |= win.LVS_NOCOLUMNHEADER
-		} else {
-			style &^= win.LVS_NOCOLUMNHEADER
-		}
-
-		if 0 == win.SetWindowLong(hwnd, win.GWL_STYLE, style) {
-			return lastError("SetWindowLong(GWL_STYLE)")
-		}
-
-		return nil
-	}
-
-	if err := updateStyle(tv.hwndFrozenLV); err != nil {
+	if err := ensureWindowLongBits(tv.hwndFrozenLV, win.GWL_STYLE, win.LVS_NOCOLUMNHEADER, hidden); err != nil {
 		return err
 	}
 
-	return updateStyle(tv.hwndNormalLV)
+	return ensureWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.LVS_NOCOLUMNHEADER, hidden)
 }
 
 // AlternatingRowBG returns the alternating row background.
