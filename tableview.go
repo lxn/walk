@@ -1809,17 +1809,6 @@ func tableViewFrozenLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr
 func tableViewNormalLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 	tv := (*TableView)(unsafe.Pointer(windowFromHandle(win.GetParent(hwnd)).AsWindowBase()))
 
-	var off uint32 = win.WS_HSCROLL | win.WS_VSCROLL
-	if tv.scrollbarOrientation&Horizontal != 0 {
-		off &^= win.WS_HSCROLL
-	}
-	if tv.scrollbarOrientation&Vertical != 0 {
-		off &^= win.WS_VSCROLL
-	}
-	if off != 0 {
-		ensureWindowLongBits(hwnd, win.GWL_STYLE, off, false)
-	}
-
 	switch msg {
 	case win.WM_LBUTTONDOWN, win.WM_RBUTTONDOWN:
 		win.SetFocus(tv.hwndFrozenLV)
@@ -1834,7 +1823,20 @@ func tableViewNormalLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr
 		tv.maybePublishFocusChanged(hwnd, msg, wp)
 	}
 
-	return tv.lvWndProc(tv.normalLVOrigWndProcPtr, hwnd, msg, wp, lp)
+	result := tv.lvWndProc(tv.normalLVOrigWndProcPtr, hwnd, msg, wp, lp)
+
+	var off uint32 = win.WS_HSCROLL | win.WS_VSCROLL
+	if tv.scrollbarOrientation&Horizontal != 0 {
+		off &^= win.WS_HSCROLL
+	}
+	if tv.scrollbarOrientation&Vertical != 0 {
+		off &^= win.WS_VSCROLL
+	}
+	if off != 0 {
+		ensureWindowLongBits(hwnd, win.GWL_STYLE, off, false)
+	}
+
+	return result
 }
 
 func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
