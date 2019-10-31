@@ -386,6 +386,7 @@ func (li *textEditLayoutItem) HeightForWidth(width int) int {
 
 	size := calculateTextSize(li.text, li.font, li.ctx.dpi, width-li.margins.Width, li.handle)
 	size.Height += li.margins.Height
+	size.Height = maxi(size.Height, li.nonCompactHeightMinSize.Height)
 
 	li.width2Height[width] = size.Height
 
