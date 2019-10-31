@@ -246,7 +246,6 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 
 	var hInst win.HINSTANCE
 	var name *uint16
-	var flags uint32
 	if i.filePath != "" {
 		absFilePath, err := filepath.Abs(i.filePath)
 		if err != nil {
@@ -254,12 +253,8 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 		}
 
 		name = syscall.StringToUTF16Ptr(absFilePath)
-
-		flags |= win.LR_LOADFROMFILE
 	} else {
-		if i.isStock {
-			flags |= win.LR_SHARED
-		} else {
+		if !i.isStock {
 			if hInst = win.GetModuleHandle(nil); hInst == 0 {
 				return 0, lastError("GetModuleHandle")
 			}
@@ -270,7 +265,6 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 
 	var size Size
 	if i.size96dpi.Width == 0 || i.size96dpi.Height == 0 {
-		flags |= win.LR_DEFAULTSIZE
 		size = SizeFrom96DPI(defaultIconSize(), dpi)
 	} else {
 		size = SizeFrom96DPI(i.size96dpi, dpi)
@@ -290,15 +284,14 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 			return 0, newError("SHDefExtractIcon")
 		}
 	} else {
-		hIcon = win.HICON(win.LoadImage(
+		hr := win.HICON(win.LoadIconWithScaleDown(
 			hInst,
 			name,
-			win.IMAGE_ICON,
 			int32(size.Width),
 			int32(size.Height),
-			flags))
-		if hIcon == 0 {
-			return 0, lastError("LoadImage")
+			&hIcon))
+		if hr < 0 || hIcon == 0 {
+			return 0, lastError("LoadIconWithScaleDown")
 		}
 	}
 
