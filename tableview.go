@@ -114,6 +114,7 @@ type TableView struct {
 	formActivatingHandle               int
 	customHeaderHeight                 int // in native pixels?
 	customRowHeight                    int // in native pixels?
+	dpiOfPrevStretchLastColumn         int
 	scrolling                          bool
 	inSetCurrentIndex                  bool
 	inMouseEvent                       bool
@@ -1446,6 +1447,12 @@ func (tv *TableView) StretchLastColumn() error {
 	if lp > 0 {
 		if 0 == win.SendMessage(hwnd, win.LVM_SETCOLUMNWIDTH, uintptr(colCount-1), lp) {
 			return newError("LVM_SETCOLUMNWIDTH failed")
+		}
+
+		if dpi := tv.DPI(); dpi != tv.dpiOfPrevStretchLastColumn {
+			tv.dpiOfPrevStretchLastColumn = dpi
+
+			tv.Invalidate()
 		}
 	}
 
