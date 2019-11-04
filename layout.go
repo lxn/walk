@@ -136,7 +136,7 @@ func startLayoutPerformer(form Form) (performLayout chan ContainerLayoutItem, la
 				if sizing {
 					layoutResults <- results
 				} else {
-					form.AsFormBase().synchronizeLayout(results, stopwatch)
+					form.AsFormBase().synchronizeLayout(&formLayoutResult{form, stopwatch, results})
 				}
 
 			case sizing = <-inSizeLoop:
@@ -722,6 +722,12 @@ type Geometry struct {
 	Size                        Size // in native pixels
 	ClientSize                  Size // in native pixels
 	ConsumingSpaceWhenInvisible bool
+}
+
+type formLayoutResult struct {
+	form      Form
+	stopwatch *stopwatch
+	results   []LayoutResult
 }
 
 type LayoutResult struct {

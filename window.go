@@ -2032,8 +2032,8 @@ func (wb *WindowBase) Synchronize(f func()) {
 //
 // Any previously queued layout computations that have not yet been applied
 // will be replaced.
-func (wb *WindowBase) synchronizeLayout(results []LayoutResult, stopwatch *stopwatch) {
-	wb.group.SynchronizeLayout(results, stopwatch)
+func (wb *WindowBase) synchronizeLayout(result *formLayoutResult) {
+	wb.group.synchronizeLayout(result)
 
 	win.PostMessage(wb.hWnd, syncMsgId, 0, 0)
 }

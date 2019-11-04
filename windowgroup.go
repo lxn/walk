@@ -97,10 +97,9 @@ type WindowGroup struct {
 	oleInit         bool
 	accPropServices *win.IAccPropServices
 
-	syncMutex       sync.Mutex
-	syncFuncs       []func()       // Functions queued to run on the group's thread
-	layoutResults   []LayoutResult // Layout computations queued for application on the group's thread
-	layoutStopwatch *stopwatch     // Timing information for the layout computations
+	syncMutex           sync.Mutex
+	syncFuncs           []func()                   // Functions queued to run on the group's thread
+	layoutResultsByForm map[Form]*formLayoutResult // Layout computations queued for application on the group's thread
 }
 
 // newWindowGroup returns a new window group for the given thread ID.
@@ -110,9 +109,10 @@ func newWindowGroup(threadID uint32, completion func(uint32)) *WindowGroup {
 	hr := win.OleInitialize()
 
 	return &WindowGroup{
-		threadID:   threadID,
-		completion: completion,
-		oleInit:    hr == win.S_OK || hr == win.S_FALSE,
+		threadID:            threadID,
+		completion:          completion,
+		oleInit:             hr == win.S_OK || hr == win.S_FALSE,
+		layoutResultsByForm: make(map[Form]*formLayoutResult),
 	}
 }
 
@@ -198,22 +198,21 @@ func (g *WindowGroup) Synchronize(f func()) {
 	g.syncFuncs = append(g.syncFuncs, f)
 }
 
-// SynchronizeLayout causes the given layout computations to be applied
+// synchronizeLayout causes the given layout computations to be applied
 // later by the message loop running on the group's thread.
 //
-// Any previously queued layout computations that have not yet been applied
-// will be replaced.
+// Any previously queued layout computations for the affected form that
+// have not yet been applied will be replaced.
 //
-// SynchronizeLayout can be called from any thread.
-func (g *WindowGroup) SynchronizeLayout(results []LayoutResult, stopwatch *stopwatch) {
+// synchronizeLayout can be called from any thread.
+func (g *WindowGroup) synchronizeLayout(result *formLayoutResult) {
 	g.syncMutex.Lock()
-	g.layoutResults = results
-	g.layoutStopwatch = stopwatch
+	g.layoutResultsByForm[result.form] = result
 	g.syncMutex.Unlock()
 }
 
 // RunSynchronized runs all of the function calls queued by Synchronize
-// and applies any layout changes queued by SynchronizeLayoutResults.
+// and applies any layout changes queued by synchronizeLayout.
 //
 // RunSynchronized must be called by the group's thread.
 func (g *WindowGroup) RunSynchronized() {
@@ -221,14 +220,16 @@ func (g *WindowGroup) RunSynchronized() {
 	// if a callback itself calls Synchronize()...
 	g.syncMutex.Lock()
 	funcs := g.syncFuncs
-	results, stopwatch := g.layoutResults, g.layoutStopwatch
+	var results []*formLayoutResult
+	for _, result := range g.layoutResultsByForm {
+		results = append(results, result)
+		delete(g.layoutResultsByForm, result.form)
+	}
 	g.syncFuncs = nil
-	g.layoutResults = nil
-	g.layoutStopwatch = nil
 	g.syncMutex.Unlock()
 
-	if len(results) > 0 {
-		applyLayoutResults(results, stopwatch)
+	for _, result := range results {
+		applyLayoutResults(result.results, result.stopwatch)
 	}
 	for _, f := range funcs {
 		f()
