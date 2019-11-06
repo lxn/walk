@@ -151,6 +151,14 @@ func (il *ImageList) AddImage(image interface{}) (int32, error) {
 	}
 }
 
+func (il *ImageList) DrawPixels(canvas *Canvas, index int, bounds Rectangle) error {
+	if !win.ImageList_DrawEx(il.hIml, int32(index), canvas.hdc, int32(bounds.X), int32(bounds.Y), int32(bounds.Width), int32(bounds.Height), win.CLR_DEFAULT, win.CLR_DEFAULT, win.ILD_NORMAL) {
+		return newError("ImageList_DrawEx")
+	}
+
+	return nil
+}
+
 func (il *ImageList) Dispose() {
 	if il.hIml != 0 {
 		win.ImageList_Destroy(il.hIml)
