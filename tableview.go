@@ -659,6 +659,13 @@ func (tv *TableView) Invalidate() error {
 	return tv.WidgetBase.Invalidate()
 }
 
+func (tv *TableView) redrawItems() {
+	first := win.SendMessage(tv.hwndNormalLV, win.LVM_GETTOPINDEX, 0, 0)
+	last := first + win.SendMessage(tv.hwndNormalLV, win.LVM_GETCOUNTPERPAGE, 0, 0) + 1
+	win.SendMessage(tv.hwndFrozenLV, win.LVM_REDRAWITEMS, first, last)
+	win.SendMessage(tv.hwndNormalLV, win.LVM_REDRAWITEMS, first, last)
+}
+
 // UpdateItem ensures the item at index will be redrawn.
 //
 // If the model supports sorting, it will be resorted.
@@ -741,10 +748,7 @@ func (tv *TableView) attachModel() {
 			col := sorter.SortedColumn()
 			tv.setSortIcon(col, sorter.SortOrder())
 
-			first := win.SendMessage(tv.hwndNormalLV, win.LVM_GETTOPINDEX, 0, 0)
-			last := first + win.SendMessage(tv.hwndNormalLV, win.LVM_GETCOUNTPERPAGE, 0, 0) + 1
-			win.SendMessage(tv.hwndFrozenLV, win.LVM_REDRAWITEMS, first, last)
-			win.SendMessage(tv.hwndNormalLV, win.LVM_REDRAWITEMS, first, last)
+			tv.redrawItems()
 		})
 	}
 }
@@ -2470,6 +2474,23 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr 
 		}
 
 		tv.updateLVSizes()
+
+		// FIXME: The InvalidateRect and redrawItems calls below prevent
+		// painting glitches on resize. Though this seems to work reasonably
+		// well, in the long run we would like to find the root cause of this
+		// issue and come up with a better fix.
+		dpi := uint32(tv.DPI())
+		var rc win.RECT
+
+		vsbWidth := win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, dpi)
+		rc = win.RECT{wp.Cx - vsbWidth - 1, 0, wp.Cx, wp.Cy}
+		win.InvalidateRect(tv.hWnd, &rc, true)
+
+		hsbHeight := win.GetSystemMetricsForDpi(win.SM_CYHSCROLL, dpi)
+		rc = win.RECT{0, wp.Cy - hsbHeight - 1, wp.Cx, wp.Cy}
+		win.InvalidateRect(tv.hWnd, &rc, true)
+
+		tv.redrawItems()
 
 	case win.WM_TIMER:
 		if !win.KillTimer(tv.hWnd, wp) {
