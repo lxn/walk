@@ -93,14 +93,6 @@ func (rb *RadioButton) radioButton() *RadioButton {
 	return rb
 }
 
-func (*RadioButton) LayoutFlags() LayoutFlags {
-	return 0
-}
-
-func (rb *RadioButton) SizeHint() Size {
-	return rb.MinSizeHint()
-}
-
 func (rb *RadioButton) TextOnLeftSide() bool {
 	return rb.hasStyleBits(win.BS_LEFTTEXT)
 }

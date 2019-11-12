@@ -25,24 +25,18 @@ const (
 )
 
 var (
-	screenDPIX  int
-	screenDPIY  int
 	defaultFont *Font
 	knownFonts  = make(map[fontInfo]*Font)
 )
 
 func init() {
-	// Retrieve screen DPI
-	hDC := win.GetDC(0)
-	defer win.ReleaseDC(0, hDC)
-	screenDPIX = int(win.GetDeviceCaps(hDC, win.LOGPIXELSX))
-	screenDPIY = int(win.GetDeviceCaps(hDC, win.LOGPIXELSY))
-
-	// Initialize default font
-	var err error
-	if defaultFont, err = NewFont("MS Shell Dlg 2", 8, 0); err != nil {
-		panic("failed to create default font")
-	}
+	AppendToWalkInit(func() {
+		// Initialize default font
+		var err error
+		if defaultFont, err = NewFont("MS Shell Dlg 2", 8, 0); err != nil {
+			panic("failed to create default font")
+		}
+	})
 }
 
 type fontInfo struct {
@@ -80,7 +74,6 @@ func NewFont(family string, pointSize int, style FontStyle) (*Font, error) {
 		family:    family,
 		pointSize: pointSize,
 		style:     style,
-		dpi2hFont: make(map[int]win.HFONT),
 	}
 
 	knownFonts[fi] = font
@@ -116,7 +109,7 @@ func newFontFromLOGFONT(lf *win.LOGFONT, dpi int) (*Font, error) {
 	return NewFont(family, pointSize, style)
 }
 
-func (f *Font) createForDPI(dpi int) win.HFONT {
+func (f *Font) createForDPI(dpi int) (win.HFONT, error) {
 	var lf win.LOGFONT
 
 	lf.LfHeight = -win.MulDiv(int32(f.pointSize), int32(dpi), 72)
@@ -144,7 +137,12 @@ func (f *Font) createForDPI(dpi int) win.HFONT {
 	dest := lf.LfFaceName[:]
 	copy(dest, src)
 
-	return win.CreateFontIndirect(&lf)
+	hFont := win.CreateFontIndirect(&lf)
+	if hFont == 0 {
+		return 0, newError("CreateFontIndirect failed")
+	}
+
+	return hFont, nil
 }
 
 // Bold returns if text drawn using the Font appears with
@@ -158,11 +156,12 @@ func (f *Font) Bold() bool {
 // The Font can no longer be used for drawing operations or with GUI widgets
 // after calling this method. It is safe to call Dispose multiple times.
 func (f *Font) Dispose() {
-	for dpi, hFont := range f.dpi2hFont {
-		if dpi != 0 {
-			win.DeleteObject(win.HGDIOBJ(hFont))
-		}
+	if len(f.dpi2hFont) == 0 {
+		return
+	}
 
+	for dpi, hFont := range f.dpi2hFont {
+		win.DeleteObject(win.HGDIOBJ(hFont))
 		delete(f.dpi2hFont, dpi)
 	}
 }
@@ -179,24 +178,19 @@ func (f *Font) Italic() bool {
 
 // HandleForDPI returns the os resource handle of the font for the specified
 // DPI value.
-//
-// A value of 0 returns a HFONT suitable for the screen.
 func (f *Font) handleForDPI(dpi int) win.HFONT {
-	if len(f.dpi2hFont) == 0 {
-		hFont := f.createForDPI(screenDPIY)
-		if hFont == 0 {
-			return 0
-		}
-
-		f.dpi2hFont[screenDPIY] = hFont
-		f.dpi2hFont[0] = hFont // Make HFONT for screen easier accessible.
+	if f.dpi2hFont == nil {
+		f.dpi2hFont = make(map[int]win.HFONT)
+	} else if handle, ok := f.dpi2hFont[dpi]; ok {
+		return handle
 	}
 
-	hFont := f.dpi2hFont[dpi]
-	if hFont == 0 {
-		hFont = f.createForDPI(dpi)
-		f.dpi2hFont[dpi] = hFont
+	hFont, err := f.createForDPI(dpi)
+	if err != nil {
+		return 0
 	}
+
+	f.dpi2hFont[dpi] = hFont
 
 	return hFont
 }
@@ -219,4 +213,10 @@ func (f *Font) Underline() bool {
 // PointSize returns the size of the Font in point units.
 func (f *Font) PointSize() int {
 	return f.pointSize
+}
+
+func screenDPI() int {
+	hDC := win.GetDC(0)
+	defer win.ReleaseDC(0, hDC)
+	return int(win.GetDeviceCaps(hDC, win.LOGPIXELSY))
 }

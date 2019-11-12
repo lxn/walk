@@ -31,7 +31,9 @@ const (
 const dialogWindowClass = `\o/ Walk_Dialog_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(dialogWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(dialogWindowClass)
+	})
 }
 
 type dialogish interface {
@@ -154,34 +156,44 @@ func (dlg *Dialog) Close(result int) {
 }
 
 func (dlg *Dialog) Show() {
-	if dlg.owner != nil {
+	var willRestore bool
+	if dlg.Persistent() {
+		state, _ := dlg.ReadState()
+		willRestore = state != ""
+	}
+
+	if !willRestore {
 		var size Size
 		if layout := dlg.Layout(); layout != nil {
-			size = layout.MinSize()
-			min := dlg.MinSizePixels()
-			size.Width = maxi(size.Width, min.Width)
-			size.Height = maxi(size.Height, min.Height)
+			size = maxSize(dlg.clientComposite.MinSizeHint(), dlg.MinSizePixels())
 		} else {
 			size = dlg.SizePixels()
 		}
 
-		ob := dlg.owner.BoundsPixels()
+		if dlg.owner != nil {
+			ob := dlg.owner.BoundsPixels()
 
-		if dlg.centerInOwnerWhenRun {
-			dlg.SetBoundsPixels(fitRectToScreen(dlg.hWnd, Rectangle{
-				ob.X + (ob.Width-size.Width)/2,
-				ob.Y + (ob.Height-size.Height)/2,
-				size.Width,
-				size.Height,
-			}))
+			if dlg.centerInOwnerWhenRun {
+				dlg.SetBoundsPixels(fitRectToScreen(dlg.hWnd, Rectangle{
+					ob.X + (ob.Width-size.Width)/2,
+					ob.Y + (ob.Height-size.Height)/2,
+					size.Width,
+					size.Height,
+				}))
+			}
+		} else {
+			b := dlg.BoundsPixels()
+
+			dlg.SetBoundsPixels(Rectangle{b.X, b.Y, size.Width, size.Height})
 		}
-	} else {
-		dlg.SetBoundsPixels(dlg.BoundsPixels())
 	}
 
 	dlg.FormBase.Show()
+
+	dlg.startLayout()
 }
 
+// fitRectToScreen fits rectangle to screen. Input and output rectangles are in native pixels.
 func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {
 	var mi win.MONITORINFO
 	mi.CbSize = uint32(unsafe.Sizeof(mi))
@@ -194,7 +206,8 @@ func fitRectToScreen(hWnd win.HWND, r Rectangle) Rectangle {
 
 	mon := rectangleFromRECT(mi.RcWork)
 
-	mon.Height -= int(win.GetSystemMetrics(win.SM_CYCAPTION))
+	dpi := win.GetDpiForWindow(hWnd)
+	mon.Height -= int(win.GetSystemMetricsForDpi(win.SM_CYCAPTION, dpi))
 
 	if r.Width <= mon.Width {
 		switch {
@@ -223,4 +236,25 @@ func (dlg *Dialog) Run() int {
 	dlg.FormBase.Run()
 
 	return dlg.result
+}
+
+func (dlg *Dialog) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+	switch msg {
+	case win.WM_COMMAND:
+		if win.HIWORD(uint32(wParam)) == 0 {
+			switch win.LOWORD(uint32(wParam)) {
+			case DlgCmdOK:
+				if dlg.defaultButton != nil {
+					dlg.defaultButton.raiseClicked()
+				}
+
+			case DlgCmdCancel:
+				if dlg.cancelButton != nil {
+					dlg.cancelButton.raiseClicked()
+				}
+			}
+		}
+	}
+
+	return dlg.FormBase.WndProc(hwnd, msg, wParam, lParam)
 }

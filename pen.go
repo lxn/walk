@@ -40,9 +40,11 @@ const (
 )
 
 type Pen interface {
-	handle() win.HPEN
+	handleForDPI(dpi int) win.HPEN
 	Dispose()
 	Style() PenStyle
+
+	// Width returns pen width in 1/96" units.
 	Width() int
 }
 
@@ -69,7 +71,7 @@ func (p *nullPen) Dispose() {
 	}
 }
 
-func (p *nullPen) handle() win.HPEN {
+func (p *nullPen) handleForDPI(dpi int) win.HPEN {
 	return p.hPen
 }
 
@@ -81,7 +83,13 @@ func (p *nullPen) Width() int {
 	return 0
 }
 
-var nullPenSingleton Pen = newNullPen()
+var nullPenSingleton Pen
+
+func init() {
+	AppendToWalkInit(func() {
+		nullPenSingleton = newNullPen()
+	})
+}
 
 func NullPen() Pen {
 	return nullPenSingleton
@@ -114,7 +122,7 @@ func (p *CosmeticPen) Dispose() {
 	}
 }
 
-func (p *CosmeticPen) handle() win.HPEN {
+func (p *CosmeticPen) handleForDPI(dpi int) win.HPEN {
 	return p.hPen
 }
 
@@ -131,12 +139,13 @@ func (p *CosmeticPen) Width() int {
 }
 
 type GeometricPen struct {
-	hPen  win.HPEN
-	style PenStyle
-	brush Brush
-	width int
+	dpi2hPen   map[int]win.HPEN
+	style      PenStyle
+	brush      Brush
+	width96dpi int
 }
 
+// NewGeometricPen prepares new geometric pen. width parameter is specified in 1/96" units.
 func NewGeometricPen(style PenStyle, width int, brush Brush) (*GeometricPen, error) {
 	if brush == nil {
 		return nil, newError("brush cannot be nil")
@@ -144,37 +153,56 @@ func NewGeometricPen(style PenStyle, width int, brush Brush) (*GeometricPen, err
 
 	style |= win.PS_GEOMETRIC
 
-	hPen := win.ExtCreatePen(uint32(style), uint32(width), brush.logbrush(), 0, nil)
-	if hPen == 0 {
-		return nil, newError("ExtCreatePen failed")
-	}
-
 	return &GeometricPen{
-		hPen:  hPen,
-		style: style,
-		width: width,
-		brush: brush,
+		style:      style,
+		width96dpi: width,
+		brush:      brush,
 	}, nil
 }
 
 func (p *GeometricPen) Dispose() {
-	if p.hPen != 0 {
-		win.DeleteObject(win.HGDIOBJ(p.hPen))
+	if len(p.dpi2hPen) == 0 {
+		return
+	}
 
-		p.hPen = 0
+	for dpi, hPen := range p.dpi2hPen {
+		win.DeleteObject(win.HGDIOBJ(hPen))
+		delete(p.dpi2hPen, dpi)
 	}
 }
 
-func (p *GeometricPen) handle() win.HPEN {
-	return p.hPen
+func (p *GeometricPen) handleForDPI(dpi int) win.HPEN {
+	hPen, _ := p.handleForDPIWithError(dpi)
+	return hPen
+}
+
+func (p *GeometricPen) handleForDPIWithError(dpi int) (win.HPEN, error) {
+	if p.dpi2hPen == nil {
+		p.dpi2hPen = make(map[int]win.HPEN)
+	} else if handle, ok := p.dpi2hPen[dpi]; ok {
+		return handle, nil
+	}
+
+	hPen := win.ExtCreatePen(
+		uint32(p.style),
+		uint32(IntFrom96DPI(p.width96dpi, dpi)),
+		p.brush.logbrush(), 0, nil)
+	if hPen == 0 {
+		return 0, newError("ExtCreatePen failed")
+	}
+
+	p.dpi2hPen[dpi] = hPen
+
+	return hPen, nil
 }
 
 func (p *GeometricPen) Style() PenStyle {
 	return p.style
 }
 
+// Width returns pen width in 1/96" units.
 func (p *GeometricPen) Width() int {
-	return p.width
+	return p.width96dpi
 }
 
 func (p *GeometricPen) Brush() Brush {

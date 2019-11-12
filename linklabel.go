@@ -45,18 +45,6 @@ func NewLinkLabel(parent Container) (*LinkLabel, error) {
 	return ll, nil
 }
 
-func (ll *LinkLabel) MinSizeHint() Size {
-	var s win.SIZE
-
-	ll.SendMessage(win.LM_GETIDEALSIZE, uintptr(ll.maxSize.Width), uintptr(unsafe.Pointer(&s)))
-
-	return Size{int(s.CX), int(s.CY)}
-}
-
-func (ll *LinkLabel) SizeHint() Size {
-	return ll.MinSizeHint()
-}
-
 func (ll *LinkLabel) Text() string {
 	return ll.text()
 }
@@ -70,7 +58,9 @@ func (ll *LinkLabel) SetText(value string) error {
 		return err
 	}
 
-	return ll.updateParentLayout()
+	ll.RequestLayout()
+
+	return nil
 }
 
 func (ll *LinkLabel) LinkActivated() *LinkLabelLinkEvent {
@@ -100,7 +90,13 @@ func (ll *LinkLabel) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 	case win.WM_SETTEXT:
 		ll.textChangedPublisher.Publish()
 
-	case win.WM_SIZE, win.WM_SIZING:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		ll.Invalidate()
 	}
 
@@ -220,4 +216,30 @@ func (lll *LinkLabelLink) setState(state uint32, set bool) error {
 	}
 
 	return nil
+}
+
+func (ll *LinkLabel) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	var s win.SIZE
+	ll.SendMessage(win.LM_GETIDEALSIZE, uintptr(ll.IntFrom96DPI(ll.maxSize96dpi.Width)), uintptr(unsafe.Pointer(&s)))
+
+	return &linkLabelLayoutItem{
+		idealSize: sizeFromSIZE(s),
+	}
+}
+
+type linkLabelLayoutItem struct {
+	LayoutItemBase
+	idealSize Size // in native pixels
+}
+
+func (*linkLabelLayoutItem) LayoutFlags() LayoutFlags {
+	return 0
+}
+
+func (li *linkLabelLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *linkLabelLayoutItem) MinSize() Size {
+	return li.idealSize
 }

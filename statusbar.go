@@ -39,16 +39,6 @@ func NewStatusBar(parent Container) (*StatusBar, error) {
 	return sb, nil
 }
 
-// LayoutFlags returns information useful to a Layout implementation.
-func (*StatusBar) LayoutFlags() LayoutFlags {
-	return 0
-}
-
-// SizeHint returns information useful to a Layout implementation.
-func (sb *StatusBar) SizeHint() Size {
-	return Size{}
-}
-
 // Items returns the list of items in the StatusBar.
 func (sb *StatusBar) Items() *StatusBarItemList {
 	return sb.items
@@ -58,7 +48,7 @@ func (sb *StatusBar) Items() *StatusBarItemList {
 func (sb *StatusBar) SetVisible(visible bool) {
 	sb.WidgetBase.SetVisible(visible)
 
-	sb.Parent().SendMessage(win.WM_SIZE, 0, 0)
+	sb.RequestLayout()
 }
 
 func (sb *StatusBar) ApplyDPI(dpi int) {
@@ -86,10 +76,12 @@ func (sb *StatusBar) update() error {
 func (sb *StatusBar) updateParts() error {
 	items := sb.items.items
 
+	dpi := sb.DPI()
+
 	rightEdges := make([]int32, len(items))
 	var right int32
 	for i, item := range items {
-		right += int32(sb.IntFrom96DPI(item.width))
+		right += int32(IntFrom96DPI(item.width, dpi))
 		rightEdges[i] = right
 	}
 	var rep *int32
@@ -127,6 +119,22 @@ func (sb *StatusBar) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 	}
 
 	return sb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (*StatusBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return new(statusBarLayoutItem)
+}
+
+type statusBarLayoutItem struct {
+	LayoutItemBase
+}
+
+func (*statusBarLayoutItem) LayoutFlags() LayoutFlags {
+	return 0
+}
+
+func (*statusBarLayoutItem) IdealSize() Size {
+	return Size{}
 }
 
 // StatusBarItem represents a section of a StatusBar that can have its own icon,

@@ -37,21 +37,21 @@ func (p *EventPublisher) Event() *Event {
 }
 
 func (p *EventPublisher) Publish() {
-	events := inProgressEventsByForm[appSingleton.activeForm]
-	events = append(events, &p.event)
-	inProgressEventsByForm[appSingleton.activeForm] = events
-
-	defer func() {
-		events = events[:len(events)-1]
-		if len(events) == 0 {
-			delete(inProgressEventsByForm, appSingleton.activeForm)
-		} else {
-			inProgressEventsByForm[appSingleton.activeForm] = events
-			return
-		}
-
-		performScheduledLayouts()
-	}()
+	// This is a kludge to find the form that the event publisher is
+	// affiliated with. It's only necessary because the event publisher
+	// doesn't keep a pointer to the form on its own, and the call
+	// to Publish isn't providing it either.
+	if form := App().ActiveForm(); form != nil {
+		fb := form.AsFormBase()
+		fb.inProgressEventCount++
+		defer func() {
+			fb.inProgressEventCount--
+			if fb.inProgressEventCount == 0 && fb.layoutScheduled {
+				fb.layoutScheduled = false
+				fb.startLayout()
+			}
+		}()
+	}
 
 	for _, handler := range p.event.handlers {
 		if handler != nil {

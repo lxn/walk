@@ -167,7 +167,7 @@ func (db *DataBinder) SetBoundWidgets(boundWidgets []Widget) {
 					if db.autoSubmitDelay > 0 {
 						if db.autoSubmitTimer == nil {
 							db.autoSubmitTimer = time.AfterFunc(db.autoSubmitDelay, func() {
-								synchronize(func() {
+								widget.Synchronize(func() {
 									db.Submit()
 								})
 							})

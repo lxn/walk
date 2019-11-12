@@ -8,10 +8,6 @@ package declarative
 
 import (
 	"fmt"
-)
-
-import (
-	"strconv"
 
 	"github.com/lxn/walk"
 )
@@ -43,7 +39,7 @@ func (a Action) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, e
 	if err := action.SetText(a.Text); err != nil {
 		return nil, err
 	}
-	if err := setActionImage(action, a.Image); err != nil {
+	if err := setActionImage(action, a.Image, builder.dpi); err != nil {
 		return nil, err
 	}
 
@@ -120,7 +116,7 @@ func (m Menu) createAction(builder *Builder, menu *walk.Menu) (*walk.Action, err
 	if err := action.SetText(m.Text); err != nil {
 		return nil, err
 	}
-	if err := setActionImage(action, m.Image); err != nil {
+	if err := setActionImage(action, m.Image, builder.dpi); err != nil {
 		return nil, err
 	}
 
@@ -176,32 +172,27 @@ func addToActionList(list *walk.ActionList, actions []*walk.Action) error {
 	return nil
 }
 
-func setActionImage(action *walk.Action, image interface{}) (err error) {
-	var bm *walk.Bitmap
+func setActionImage(action *walk.Action, image interface{}, dpi int) (err error) {
+	var img walk.Image
 
-	switch image := image.(type) {
-	case nil:
-		return nil
-
+	switch image.(type) {
 	case *walk.Bitmap:
-		bm = image
-
-	case int:
-		var err error
-		if bm, err = walk.Resources.Bitmap(strconv.Itoa(image)); err != nil {
-			return err
+		if img, err = walk.BitmapFrom(image, dpi); err != nil {
+			return
 		}
 
-	case string:
-		if bm, err = walk.Resources.Bitmap(image); err != nil {
+	case walk.ExtractableIcon, *walk.Icon:
+		if img, err = walk.IconFrom(image, dpi); err != nil {
 			return
 		}
 
 	default:
-		return walk.ErrInvalidType
+		if img, err = walk.ImageFrom(image); err != nil {
+			return
+		}
 	}
 
-	return action.SetImage(bm)
+	return action.SetImage(img)
 }
 
 func setActionBoolOrCondition(setBool func(bool) error, setCond func(walk.Condition), value Property, path string, builder *Builder) error {

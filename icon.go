@@ -17,12 +17,6 @@ import (
 	"github.com/lxn/win"
 )
 
-var defaultIconSize Size
-
-func init() {
-	defaultIconSize = Size{int(win.GetSystemMetricsForDpi(win.SM_CXSMICON, 96)), int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))}
-}
-
 // Icon is a bitmap that supports transparency and combining multiple
 // variants of an image in different resolutions.
 type Icon struct {
@@ -33,6 +27,25 @@ type Icon struct {
 	size96dpi Size
 	isStock   bool
 	hasIndex  bool
+}
+
+type ExtractableIcon interface {
+	FilePath_() string
+	Index_() int
+	Size_() int
+}
+
+func IconFrom(src interface{}, dpi int) (*Icon, error) {
+	if src == nil {
+		return nil, nil
+	}
+
+	img, err := ImageFrom(src)
+	if err != nil {
+		return nil, err
+	}
+
+	return iconCache.Icon(img, dpi)
 }
 
 func IconApplication() *Icon {
@@ -64,7 +77,7 @@ func IconShield() *Icon {
 }
 
 func stockIcon(id uintptr) *Icon {
-	return &Icon{res: win.MAKEINTRESOURCE(id), size96dpi: defaultIconSize, isStock: true}
+	return &Icon{res: win.MAKEINTRESOURCE(id), size96dpi: defaultIconSize(), isStock: true}
 }
 
 // NewIconFromFile returns a new Icon, using the specified icon image file and default size.
@@ -75,7 +88,7 @@ func NewIconFromFile(filePath string) (*Icon, error) {
 // NewIconFromFileWithSize returns a new Icon, using the specified icon image file and size.
 func NewIconFromFileWithSize(filePath string, size Size) (*Icon, error) {
 	if size.Width == 0 || size.Height == 0 {
-		size = defaultIconSize
+		size = defaultIconSize()
 	}
 
 	return checkNewIcon(&Icon{filePath: filePath, size96dpi: size})
@@ -103,7 +116,7 @@ func NewIconFromResourceIdWithSize(id int, size Size) (*Icon, error) {
 
 func newIconFromResource(res *uint16, size Size) (*Icon, error) {
 	if size.Width == 0 || size.Height == 0 {
-		size = defaultIconSize
+		size = defaultIconSize()
 	}
 
 	return checkNewIcon(&Icon{res: res, size96dpi: size})
@@ -127,7 +140,7 @@ func NewIconFromSysDLLWithSize(dllBaseName string, index, size int) (*Icon, erro
 }
 
 // NewIconExtractedFromFile returns a new Icon, as identified by index of size 16x16 from filePath.
-func NewIconExtractedFromFile(filePath string, index, size int) (*Icon, error) {
+func NewIconExtractedFromFile(filePath string, index, _ int) (*Icon, error) {
 	return checkNewIcon(&Icon{filePath: filePath, index: index, hasIndex: true, size96dpi: Size{16, 16}})
 }
 
@@ -136,17 +149,25 @@ func NewIconExtractedFromFileWithSize(filePath string, index, size int) (*Icon, 
 	return checkNewIcon(&Icon{filePath: filePath, index: index, hasIndex: true, size96dpi: Size{size, size}})
 }
 
-// NewIconFromImage returns a new Icon, using the specified image.Image as source.
+// NewIconFromImage returns a new Icon at 96dpi, using the specified image.Image as source.
+//
+// Deprecated: Newer applications should use NewIconFromImageForDPI.
 func NewIconFromImage(im image.Image) (ic *Icon, err error) {
+	return NewIconFromImageForDPI(im, 96)
+}
+
+// NewIconFromImageForDPI returns a new Icon at given DPI, using the specified image.Image as source.
+func NewIconFromImageForDPI(im image.Image, dpi int) (ic *Icon, err error) {
 	hIcon, err := createAlphaCursorOrIconFromImage(im, image.Pt(0, 0), true)
 	if err != nil {
 		return nil, err
 	}
 	b := im.Bounds()
-	return newIconFromHICONAndSize(hIcon, Size{b.Dx(), b.Dy()}), nil
+	return newIconFromHICONAndSize(hIcon, SizeTo96DPI(Size{b.Dx(), b.Dy()}, dpi), dpi), nil
 }
 
-// NewIconFromImageWithSize returns a new Icon of the given size, using the specified Image as source.
+// NewIconFromImageWithSize returns a new Icon of the given size in native pixels, using the
+// specified Image as source.
 func NewIconFromImageWithSize(image Image, size Size) (*Icon, error) {
 	bmp, err := NewBitmapFromImageWithSize(image, size)
 	if err != nil {
@@ -157,24 +178,20 @@ func NewIconFromImageWithSize(image Image, size Size) (*Icon, error) {
 }
 
 func newIconFromImageForDPI(image Image, dpi int) (*Icon, error) {
-	sizePixels := SizeFrom96DPI(image.Size(), dpi)
+	size96dpi := image.Size()
+	size := SizeFrom96DPI(size96dpi, dpi)
 
-	bmp, err := NewBitmapFromImageWithSize(image, sizePixels)
+	bmp, err := NewBitmapFromImageWithSize(image, size)
 	if err != nil {
 		return nil, err
 	}
-
-	var disposables Disposables
-	defer disposables.Treat()
 
 	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, Point{}, true)
 	if err != nil {
 		return nil, err
 	}
 
-	disposables.Spare()
-
-	return &Icon{dpi2hIcon: map[int]win.HICON{dpi: hIcon}, size96dpi: image.Size()}, nil
+	return &Icon{dpi2hIcon: map[int]win.HICON{dpi: hIcon}, size96dpi: size96dpi}, nil
 }
 
 // NewIconFromBitmap returns a new Icon, using the specified Bitmap as source.
@@ -183,33 +200,32 @@ func NewIconFromBitmap(bmp *Bitmap) (ic *Icon, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return newIconFromHICONAndSize(hIcon, bmp.Size()), nil
+	return newIconFromHICONAndSize(hIcon, bmp.Size(), bmp.dpi), nil
 }
 
-func newIconFromBitmap(bmp *Bitmap) (ic *Icon, err error) {
-	hIcon, err := createAlphaCursorOrIconFromBitmap(bmp, Point{}, true)
-	if err != nil {
-		return nil, err
-	}
-	return newIconFromHICONAndSize(hIcon, bmp.Size()), nil
-}
-
-// NewIconFromHICON returns a new Icon, using the specified win.HICON as source.
+// NewIconFromHICON returns a new Icon at 96dpi, using the specified win.HICON as source.
+//
+// Deprecated: Newer applications should use NewIconFromHICONForDPI.
 func NewIconFromHICON(hIcon win.HICON) (ic *Icon, err error) {
+	return NewIconFromHICONForDPI(hIcon, 96)
+}
+
+// NewIconFromHICONForDPI returns a new Icon at given DPI, using the specified win.HICON as source.
+func NewIconFromHICONForDPI(hIcon win.HICON, dpi int) (ic *Icon, err error) {
 	s, err := sizeFromHICON(hIcon)
 	if err != nil {
 		return nil, err
 	}
 
-	return newIconFromHICONAndSize(hIcon, Size{s, s}), nil
+	return newIconFromHICONAndSize(hIcon, SizeTo96DPI(s, dpi), dpi), nil
 }
 
-func newIconFromHICONAndSize(hIcon win.HICON, size Size) *Icon {
-	return &Icon{dpi2hIcon: map[int]win.HICON{96: hIcon}, size96dpi: size}
+func newIconFromHICONAndSize(hIcon win.HICON, size Size, dpi int) *Icon {
+	return &Icon{dpi2hIcon: map[int]win.HICON{dpi: hIcon}, size96dpi: size}
 }
 
 func checkNewIcon(icon *Icon) (*Icon, error) {
-	if _, err := icon.handleForDPIWithError(int(win.GetDpiForWindow(0))); err != nil {
+	if _, err := icon.handleForDPIWithError(96); err != nil {
 		return nil, err
 	}
 
@@ -224,15 +240,12 @@ func (i *Icon) handleForDPI(dpi int) win.HICON {
 func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 	if i.dpi2hIcon == nil {
 		i.dpi2hIcon = make(map[int]win.HICON)
-	}
-
-	if handle, ok := i.dpi2hIcon[dpi]; ok {
+	} else if handle, ok := i.dpi2hIcon[dpi]; ok {
 		return handle, nil
 	}
 
 	var hInst win.HINSTANCE
 	var name *uint16
-	var flags uint32
 	if i.filePath != "" {
 		absFilePath, err := filepath.Abs(i.filePath)
 		if err != nil {
@@ -240,25 +253,21 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 		}
 
 		name = syscall.StringToUTF16Ptr(absFilePath)
-
-		flags |= win.LR_LOADFROMFILE
 	} else {
-		if hInst = win.GetModuleHandle(nil); hInst == 0 {
-			return 0, lastError("GetModuleHandle")
+		if !i.isStock {
+			if hInst = win.GetModuleHandle(nil); hInst == 0 {
+				return 0, lastError("GetModuleHandle")
+			}
 		}
 
 		name = i.res
 	}
 
-	scale := float64(dpi) / 96.0
-	size := Size{
-		Width:  int(float64(i.size96dpi.Width) * scale),
-		Height: int(float64(i.size96dpi.Height) * scale),
-	}
-
-	if size.Width == 0 || size.Height == 0 {
-		flags |= win.LR_DEFAULTSIZE
-		size = defaultIconSize
+	var size Size
+	if i.size96dpi.Width == 0 || i.size96dpi.Height == 0 {
+		size = SizeFrom96DPI(defaultIconSize(), dpi)
+	} else {
+		size = SizeFrom96DPI(i.size96dpi, dpi)
 	}
 
 	var hIcon win.HICON
@@ -275,15 +284,14 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 			return 0, newError("SHDefExtractIcon")
 		}
 	} else {
-		hIcon = win.HICON(win.LoadImage(
+		hr := win.HICON(win.LoadIconWithScaleDown(
 			hInst,
 			name,
-			win.IMAGE_ICON,
 			int32(size.Width),
 			int32(size.Height),
-			flags))
-		if hIcon == 0 {
-			return 0, lastError("LoadImage")
+			&hIcon))
+		if hr < 0 || hIcon == 0 {
+			return 0, lastError("LoadIconWithScaleDown")
 		}
 	}
 
@@ -315,6 +323,18 @@ func (i *Icon) drawStretched(hdc win.HDC, bounds Rectangle) error {
 	dpi := int(float64(bounds.Width) / float64(i.size96dpi.Width) * 96.0)
 
 	hIcon := i.handleForDPI(dpi)
+	if hIcon == 0 {
+		var dpiAvailMax int
+		for dpiAvail, handle := range i.dpi2hIcon {
+			if dpiAvail > dpiAvailMax {
+				hIcon = handle
+				dpiAvailMax = dpiAvail
+			}
+			if dpiAvail > dpi {
+				break
+			}
+		}
+	}
 
 	if !win.DrawIconEx(hdc, int32(bounds.X), int32(bounds.Y), hIcon, int32(bounds.Width), int32(bounds.Height), 0, 0, win.DI_NORMAL) {
 		return lastError("DrawIconEx")
@@ -323,7 +343,7 @@ func (i *Icon) drawStretched(hdc win.HDC, bounds Rectangle) error {
 	return nil
 }
 
-// Size returns the size of the Icon.
+// Size returns icon size in 1/96" units.
 func (i *Icon) Size() Size {
 	return i.size96dpi
 }
@@ -340,10 +360,10 @@ func createAlphaCursorOrIconFromImage(im image.Image, hotspot image.Point, fIcon
 	return createAlphaCursorOrIconFromBitmap(bmp, Point{hotspot.X, hotspot.Y}, fIcon)
 }
 
+// createAlphaCursorOrIconFromBitmap creates a cursor/icon from a bitmap. hotspot coordinates are in native pixels.
 func createAlphaCursorOrIconFromBitmap(bmp *Bitmap, hotspot Point, fIcon bool) (win.HICON, error) {
 	// Create an empty mask bitmap.
-	size := bmp.Size()
-	hMonoBitmap := win.CreateBitmap(int32(size.Width), int32(size.Height), 1, 1, nil)
+	hMonoBitmap := win.CreateBitmap(int32(bmp.size.Width), int32(bmp.size.Height), 1, 1, nil)
 	if hMonoBitmap == 0 {
 		return 0, newError("CreateBitmap failed")
 	}
@@ -364,12 +384,13 @@ func createAlphaCursorOrIconFromBitmap(bmp *Bitmap, hotspot Point, fIcon bool) (
 	return hIconOrCursor, nil
 }
 
-func sizeFromHICON(hIcon win.HICON) (int, error) {
+// sizeFromHICON returns icon size in native pixels.
+func sizeFromHICON(hIcon win.HICON) (Size, error) {
 	var ii win.ICONINFO
 	var bi win.BITMAPINFO
 
 	if !win.GetIconInfo(hIcon, &ii) {
-		return 0, lastError("GetIconInfo")
+		return Size{}, lastError("GetIconInfo")
 	}
 	defer win.DeleteObject(win.HGDIOBJ(ii.HbmMask))
 
@@ -383,8 +404,13 @@ func sizeFromHICON(hIcon win.HICON) (int, error) {
 	}
 
 	if 0 == win.GetObject(win.HGDIOBJ(hBmp), unsafe.Sizeof(bi), unsafe.Pointer(&bi)) {
-		return 0, newError("GetObject")
+		return Size{}, newError("GetObject")
 	}
 
-	return int(bi.BmiHeader.BiWidth), nil
+	return Size{int(bi.BmiHeader.BiWidth), int(bi.BmiHeader.BiHeight)}, nil
+}
+
+// defaultIconSize returns default small icon size in 1/92" units.
+func defaultIconSize() Size {
+	return Size{int(win.GetSystemMetricsForDpi(win.SM_CXSMICON, 96)), int(win.GetSystemMetricsForDpi(win.SM_CYSMICON, 96))}
 }

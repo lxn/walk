@@ -17,7 +17,9 @@ import (
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(mainWindowWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(mainWindowWindowClass)
+	})
 }
 
 type MainWindow struct {
@@ -135,9 +137,7 @@ func (mw *MainWindow) SetVisible(visible bool) {
 	if visible {
 		win.DrawMenuBar(mw.hWnd)
 
-		if mw.clientComposite.layout != nil {
-			mw.clientComposite.layout.Update(false)
-		}
+		mw.clientComposite.RequestLayout()
 	}
 
 	mw.FormBase.SetVisible(visible)
@@ -213,7 +213,13 @@ func (mw *MainWindow) SetFullscreen(fullscreen bool) error {
 
 func (mw *MainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case win.WM_SIZE, win.WM_SIZING:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		cb := mw.ClientBoundsPixels()
 
 		if mw.toolBar != nil {

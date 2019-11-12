@@ -7,6 +7,8 @@
 package declarative
 
 import (
+	"path/filepath"
+
 	"github.com/lxn/walk"
 )
 
@@ -39,6 +41,35 @@ func Bind(expression string, validators ...Validator) Property {
 	}
 
 	return bd
+}
+
+type SysDLLIcon struct {
+	FileName string
+	Index    int
+	Size     int
+}
+
+func (sdi SysDLLIcon) FilePath_() string {
+	root, _ := walk.SystemPath()
+
+	name := sdi.FileName
+	if filepath.Ext(name) == "" {
+		name += ".dll"
+	}
+
+	return filepath.Join(root, name)
+}
+
+func (sdi SysDLLIcon) Index_() int {
+	return sdi.Index
+}
+
+func (sdi SysDLLIcon) Size_() int {
+	if sdi.Size == 0 {
+		return 16
+	}
+
+	return sdi.Size
 }
 
 type Brush interface {
@@ -87,6 +118,7 @@ func (ToolTipErrorPresenter) Create() (walk.ErrorPresenter, error) {
 type formInfo struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool

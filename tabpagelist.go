@@ -108,9 +108,7 @@ func (l *TabPageList) Insert(index int, item *TabPage) error {
 		}
 	}
 
-	if item.Layout() != nil {
-		item.Layout().Update(false)
-	}
+	item.RequestLayout()
 
 	return nil
 }

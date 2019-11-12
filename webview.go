@@ -19,7 +19,9 @@ import (
 const webViewWindowClass = `\o/ Walk_WebView_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(webViewWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(webViewWindowClass)
+	})
 }
 
 type WebView struct {
@@ -217,14 +219,6 @@ func (wv *WebView) Dispose() {
 	}
 
 	wv.WidgetBase.Dispose()
-}
-
-func (*WebView) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
-}
-
-func (*WebView) SizeHint() Size {
-	return Size{100, 100}
 }
 
 func (wv *WebView) URL() (url string, err error) {
@@ -498,7 +492,13 @@ func (wv *WebView) inPlaceActiveObjectSetFocus() win.HRESULT {
 
 func (wv *WebView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case win.WM_SIZE, win.WM_SIZING:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		if wv.clientSite.inPlaceSite.inPlaceFrame.webView == nil {
 			break
 		}
@@ -510,4 +510,8 @@ func (wv *WebView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 	}
 
 	return wv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (wv *WebView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return NewGreedyLayoutItem()
 }

@@ -18,17 +18,19 @@ import (
 var webViewIOleClientSiteVtbl *win.IOleClientSiteVtbl
 
 func init() {
-	webViewIOleClientSiteVtbl = &win.IOleClientSiteVtbl{
-		syscall.NewCallback(webView_IOleClientSite_QueryInterface),
-		syscall.NewCallback(webView_IOleClientSite_AddRef),
-		syscall.NewCallback(webView_IOleClientSite_Release),
-		syscall.NewCallback(webView_IOleClientSite_SaveObject),
-		syscall.NewCallback(webView_IOleClientSite_GetMoniker),
-		syscall.NewCallback(webView_IOleClientSite_GetContainer),
-		syscall.NewCallback(webView_IOleClientSite_ShowObject),
-		syscall.NewCallback(webView_IOleClientSite_OnShowWindow),
-		syscall.NewCallback(webView_IOleClientSite_RequestNewObjectLayout),
-	}
+	AppendToWalkInit(func() {
+		webViewIOleClientSiteVtbl = &win.IOleClientSiteVtbl{
+			syscall.NewCallback(webView_IOleClientSite_QueryInterface),
+			syscall.NewCallback(webView_IOleClientSite_AddRef),
+			syscall.NewCallback(webView_IOleClientSite_Release),
+			syscall.NewCallback(webView_IOleClientSite_SaveObject),
+			syscall.NewCallback(webView_IOleClientSite_GetMoniker),
+			syscall.NewCallback(webView_IOleClientSite_GetContainer),
+			syscall.NewCallback(webView_IOleClientSite_ShowObject),
+			syscall.NewCallback(webView_IOleClientSite_OnShowWindow),
+			syscall.NewCallback(webView_IOleClientSite_RequestNewObjectLayout),
+		}
+	})
 }
 
 type webViewIOleClientSite struct {

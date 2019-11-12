@@ -20,18 +20,9 @@ import (
 // 1024 instead.
 const maxToolTipTextLen = 1024 // including NUL terminator
 
-func init() {
-	var err error
-	if globalToolTip, err = NewToolTip(); err != nil {
-		panic(err)
-	}
-}
-
 type ToolTip struct {
 	WindowBase
 }
-
-var globalToolTip *ToolTip
 
 func NewToolTip() (*ToolTip, error) {
 	tt, err := newToolTip(0)
@@ -68,14 +59,6 @@ func newToolTip(style uint32) (*ToolTip, error) {
 	succeeded = true
 
 	return tt, nil
-}
-
-func (*ToolTip) LayoutFlags() LayoutFlags {
-	return 0
-}
-
-func (tt *ToolTip) SizeHint() Size {
-	return Size{0, 0}
 }
 
 func (tt *ToolTip) Title() string {
@@ -144,7 +127,7 @@ func (tt *ToolTip) track(tool Widget) error {
 
 	b := tool.BoundsPixels()
 
-	p := win.POINT{X: 0, Y: int32(b.Y + b.Height)}
+	p := Point{0, b.Y + b.Height}.toPOINT()
 	if form.RightToLeftLayout() {
 		p.X = int32(b.X - b.Width/2)
 	} else {

@@ -11,6 +11,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"unsafe"
 
 	"github.com/lxn/win"
 )
@@ -20,16 +21,18 @@ const splitterWindowClass = `\o/ Walk_Splitter_Class \o/`
 var splitterHandleDraggingBrush *SolidColorBrush
 
 func init() {
-	MustRegisterWindowClass(splitterWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(splitterWindowClass)
 
-	splitterHandleDraggingBrush, _ = NewSolidColorBrush(Color(win.GetSysColor(win.COLOR_BTNSHADOW)))
-	splitterHandleDraggingBrush.wb2info = map[*WindowBase]*windowBrushInfo{nil: nil}
+		splitterHandleDraggingBrush, _ = NewSolidColorBrush(Color(win.GetSysColor(win.COLOR_BTNSHADOW)))
+		splitterHandleDraggingBrush.wb2info = map[*WindowBase]*windowBrushInfo{nil: nil}
+	})
 }
 
 type Splitter struct {
 	ContainerBase
 	handleWidth   int
-	mouseDownPos  Point
+	mouseDownPos  Point // in native pixels
 	draggedHandle *splitterHandle
 	persistent    bool
 	removing      bool
@@ -83,14 +86,6 @@ func NewVSplitter(parent Container) (*Splitter, error) {
 	return newSplitter(parent, Vertical)
 }
 
-func (s *Splitter) LayoutFlags() LayoutFlags {
-	return s.layout.LayoutFlags()
-}
-
-func (s *Splitter) SizeHint() Size {
-	return Size{100, 100}
-}
-
 func (s *Splitter) SetLayout(value Layout) error {
 	return newError("not supported")
 }
@@ -110,7 +105,9 @@ func (s *Splitter) SetHandleWidth(value int) error {
 
 	s.handleWidth = value
 
-	return s.layout.Update(false)
+	s.RequestLayout()
+
+	return nil
 }
 
 func (s *Splitter) Orientation() Orientation {
@@ -253,7 +250,14 @@ func (s *Splitter) RestoreState() error {
 		s.SetSuspended(false)
 	}()
 
-	regularSpace := layout.spaceForRegularWidgets()
+	var space int
+	size := s.ClientBoundsPixels().Size()
+	if s.Orientation() == Horizontal {
+		space = size.Width
+	} else {
+		space = size.Height
+	}
+	regularSpace := space - layout.spaceUnavailableToRegularWidgets()
 
 	for i, wb := range s.children.items {
 		widget := wb.window.(Widget)
@@ -277,8 +281,10 @@ func (s *Splitter) RestoreState() error {
 			item.size = size
 			item.oldExplicitSize = size
 		}
+	}
 
-		if persistable, ok := widget.(Persistable); ok {
+	for _, wb := range s.children.items {
+		if persistable, ok := wb.window.(Persistable); ok {
 			if err := persistable.RestoreState(); err != nil {
 				return err
 			}
@@ -300,7 +306,7 @@ func (s *Splitter) SetFixed(widget Widget, fixed bool) error {
 
 	item.fixed = fixed
 
-	if b := widget.BoundsPixels(); fixed && b.Width == 0 || b.Height == 0 {
+	if b := widget.BoundsPixels(); fixed && item.size == 0 && (b.Width == 0 || b.Height == 0) {
 		b.Width, b.Height = 100, 100
 		widget.SetBoundsPixels(b)
 		item.size = 100
@@ -311,8 +317,15 @@ func (s *Splitter) SetFixed(widget Widget, fixed bool) error {
 
 func (s *Splitter) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case win.WM_SIZE:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		layout := s.layout.(*splitterLayout)
+		layout.resetNeeded = false
 		for _, item := range layout.hwnd2Item {
 			item.oldExplicitSize = 0
 		}
@@ -345,9 +358,16 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 		layout := s.Layout().(*splitterLayout)
 		item := &splitterLayoutItem{stretchFactor: 1, wasVisible: true}
 		layout.hwnd2Item[widget.Handle()] = item
+
+		layout.resetNeeded = true
+		if !layout.suspended && widget.AsWidgetBase().visible {
+			s.RequestLayout()
+		}
+
 		item.visibleChangedHandle = widget.VisibleChanged().Attach(func() {
 			if !layout.suspended && widget.AsWidgetBase().visible != item.wasVisible {
-				layout.Update(true)
+				layout.resetNeeded = true
+				s.RequestLayout()
 			}
 		})
 
@@ -401,11 +421,14 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 
 						prev := closestVisibleWidget(handleIndex, -1)
 						bp := prev.BoundsPixels()
-						msep := minSizeEffective(prev)
+						msep := minSizeEffective(createLayoutItemForWidget(prev))
 
 						next := closestVisibleWidget(handleIndex, 1)
 						bn := next.BoundsPixels()
-						msen := minSizeEffective(next)
+						msen := minSizeEffective(createLayoutItemForWidget(next))
+
+						dpi := s.draggedHandle.DPI()
+						handleWidth := IntFrom96DPI(s.handleWidth, dpi)
 
 						if s.Orientation() == Horizontal {
 							xh := s.draggedHandle.XPixels()
@@ -413,8 +436,8 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 							xnew := xh + x - s.mouseDownPos.X
 							if xnew < bp.X+msep.Width {
 								xnew = bp.X + msep.Width
-							} else if xnew >= bn.X+bn.Width-msen.Width-s.handleWidth {
-								xnew = bn.X + bn.Width - msen.Width - s.handleWidth
+							} else if xnew >= bn.X+bn.Width-msen.Width-handleWidth {
+								xnew = bn.X + bn.Width - msen.Width - handleWidth
 							}
 
 							if e := s.draggedHandle.SetXPixels(xnew); e != nil {
@@ -426,8 +449,8 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 							ynew := yh + y - s.mouseDownPos.Y
 							if ynew < bp.Y+msep.Height {
 								ynew = bp.Y + msep.Height
-							} else if ynew >= bn.Y+bn.Height-msen.Height-s.handleWidth {
-								ynew = bn.Y + bn.Height - msen.Height - s.handleWidth
+							} else if ynew >= bn.Y+bn.Height-msen.Height-handleWidth {
+								ynew = bn.Y + bn.Height - msen.Height - handleWidth
 							}
 
 							if e := s.draggedHandle.SetYPixels(ynew); e != nil {
@@ -462,6 +485,8 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 						if s.draggedHandle == nil {
 							return
 						}
+
+						defer s.RequestLayout()
 
 						dragHandle := s.draggedHandle
 
@@ -500,14 +525,6 @@ func (s *Splitter) onInsertedWidget(index int, widget Widget) (err error) {
 							bn.Y = bh.Y + bh.Height
 							sizePrev = bp.Height
 							sizeNext = bn.Height
-						}
-
-						if e := prev.SetBoundsPixels(bp); e != nil {
-							return
-						}
-
-						if e := next.SetBoundsPixels(bn); e != nil {
-							return
 						}
 
 						layout := s.Layout().(*splitterLayout)
@@ -575,7 +592,8 @@ func (s *Splitter) onRemovedWidget(index int, widget Widget) (err error) {
 					item.keepSize = false
 				}
 
-				s.layout.Update(true)
+				sl.resetNeeded = true
+				s.RequestLayout()
 
 				handle.Dispose()
 			}
@@ -595,4 +613,8 @@ func (s *Splitter) onClearingWidgets() (err error) {
 
 func (s *Splitter) onClearedWidgets() (err error) {
 	panic("not implemented")
+}
+
+func (s *Splitter) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return s.layout.CreateLayoutItem(ctx)
 }

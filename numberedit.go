@@ -21,7 +21,9 @@ import (
 const numberEditWindowClass = `\o/ Walk_NumberEdit_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(numberEditWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(numberEditWindowClass)
+	})
 }
 
 // NumberEdit is a widget that is suited to edit numeric values.
@@ -147,26 +149,6 @@ func (ne *NumberEdit) applyFont(font *Font) {
 	}
 
 	ne.edit.applyFont(font)
-}
-
-// LayoutFlags returns information that is mainly interesting to Layout
-// implementations.
-func (*NumberEdit) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | GrowableHorz
-}
-
-// MinSizeHint returns information that is mainly interesting to Layout
-// implementations.
-func (ne *NumberEdit) MinSizeHint() Size {
-	return ne.dialogBaseUnitsToPixels(Size{20, 12})
-}
-
-// SizeHint returns information that is mainly interesting to Layout
-// implementations.
-func (ne *NumberEdit) SizeHint() Size {
-	return ne.dialogBaseUnitsToPixels(Size{50, 12})
-	//	s := ne.dialogBaseUnitsToPixels(Size{50, 12})
-	//	return Size{s.Width, maxi(s.Height, 22)}
 }
 
 // Decimals returns the number of decimal places in the NumberEdit.
@@ -392,6 +374,10 @@ func (ne *NumberEdit) SetTextColor(c Color) {
 	ne.edit.SetTextColor(c)
 }
 
+func (*NumberEdit) NeedsWmSize() bool {
+	return true
+}
+
 // WndProc is the window procedure of the NumberEdit.
 //
 // When implementing your own WndProc to add or modify behavior, call the
@@ -403,7 +389,13 @@ func (ne *NumberEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			return hBrush
 		}
 
-	case win.WM_SIZE, win.WM_SIZING:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		if ne.edit == nil {
 			break
 		}
@@ -415,6 +407,31 @@ func (ne *NumberEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	}
 
 	return ne.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (ne *NumberEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return &numberEditLayoutItem{
+		idealSize: ne.dialogBaseUnitsToPixels(Size{50, 12}),
+		minSize:   ne.dialogBaseUnitsToPixels(Size{20, 12}),
+	}
+}
+
+type numberEditLayoutItem struct {
+	LayoutItemBase
+	idealSize Size // in native pixels
+	minSize   Size // in native pixels
+}
+
+func (*numberEditLayoutItem) LayoutFlags() LayoutFlags {
+	return ShrinkableHorz | GrowableHorz
+}
+
+func (li *numberEditLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *numberEditLayoutItem) MinSize() Size {
+	return li.minSize
 }
 
 type numberLineEdit struct {

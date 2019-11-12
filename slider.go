@@ -74,18 +74,6 @@ func NewSliderWithCfg(parent Container, cfg *SliderCfg) (*Slider, error) {
 	return sl, nil
 }
 
-func (sl *Slider) LayoutFlags() LayoutFlags {
-	return sl.layoutFlags
-}
-
-func (sl *Slider) SizeHint() Size {
-	return sl.MinSizeHint()
-}
-
-func (sl *Slider) MinSizeHint() Size {
-	return sl.dialogBaseUnitsToPixels(Size{20, 20})
-}
-
 func (sl *Slider) MinValue() int {
 	return int(sl.SendMessage(win.TBM_GETRANGEMIN, 0, 0))
 }
@@ -180,4 +168,33 @@ func (sl *Slider) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uin
 		return 0
 	}
 	return sl.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (*Slider) NeedsWmSize() bool {
+	return true
+}
+
+func (sl *Slider) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return &sliderLayoutItem{
+		layoutFlags: sl.layoutFlags,
+		idealSize:   sl.dialogBaseUnitsToPixels(Size{15, 15}),
+	}
+}
+
+type sliderLayoutItem struct {
+	LayoutItemBase
+	layoutFlags LayoutFlags
+	idealSize   Size // in native pixels
+}
+
+func (li *sliderLayoutItem) LayoutFlags() LayoutFlags {
+	return li.layoutFlags
+}
+
+func (li *sliderLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *sliderLayoutItem) MinSize() Size {
+	return li.idealSize
 }

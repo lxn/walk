@@ -53,9 +53,9 @@ func RunMainWindow() error {
 		Layout:  VBox{MarginsZero: true},
 		Children: []Widget{
 			TableView{
-				Name: "tableView", // Name is needed for settings persistence
-				AlternatingRowBGColor: walk.RGB(255, 255, 200),
-				ColumnsOrderable:      true,
+				Name:             "tableView", // Name is needed for settings persistence
+				AlternatingRowBG: true,
+				ColumnsOrderable: true,
 				Columns: []TableViewColumn{
 					// Name is needed for settings persistence
 					{Name: "#", DataMember: "Index"}, // Use DataMember, if names differ

@@ -13,6 +13,7 @@ import (
 type HSplitter struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	DoubleBuffering    bool
@@ -86,6 +87,7 @@ func (s HSplitter) Create(builder *Builder) error {
 type VSplitter struct {
 	// Window
 
+	Accessibility      Accessibility
 	Background         Brush
 	ContextMenuItems   []MenuItem
 	Enabled            Property

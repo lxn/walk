@@ -8,16 +8,20 @@ package walk
 
 import (
 	"syscall"
+	"unsafe"
 
 	"github.com/lxn/win"
 )
 
 const staticWindowClass = `\o/ Walk_Static_Class \o/`
 
-var staticWndProcPtr = syscall.NewCallback(staticWndProc)
+var staticWndProcPtr uintptr
 
 func init() {
-	MustRegisterWindowClass(staticWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(staticWindowClass)
+		staticWndProcPtr = syscall.NewCallback(staticWndProc)
+	})
 }
 
 type static struct {
@@ -76,22 +80,6 @@ func (s *static) Dispose() {
 	}
 
 	s.WidgetBase.Dispose()
-}
-
-func (s *static) LayoutFlags() LayoutFlags {
-	if s.textAlignment1D() == AlignNear {
-		return 0
-	}
-
-	return GrowableHorz
-}
-
-func (s *static) MinSizeHint() Size {
-	return s.calculateTextSizeForWidth(0)
-}
-
-func (s *static) SizeHint() Size {
-	return s.MinSizeHint()
 }
 
 func (s *static) applyEnabled(enabled bool) {
@@ -180,9 +168,7 @@ func (s *static) setText(text string) (changed bool, err error) {
 
 	size := s.BoundsPixels().Size()
 
-	if err := s.updateParentLayout(); err != nil {
-		return false, err
-	}
+	s.RequestLayout()
 
 	if s.BoundsPixels().Size() == size && size != (Size{}) {
 		s.updateStaticBounds()
@@ -257,7 +243,13 @@ func (s *static) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 			return hBrush
 		}
 
-	case win.WM_SIZE:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lp))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		s.updateStaticBounds()
 	}
 
@@ -278,4 +270,34 @@ func staticWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 	}
 
 	return win.CallWindowProc(s.origStaticWndProcPtr, hwnd, msg, wp, lp)
+}
+
+func (s *static) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	var layoutFlags LayoutFlags
+	if s.textAlignment1D() != AlignNear {
+		layoutFlags = GrowableHorz
+	}
+
+	return &staticLayoutItem{
+		layoutFlags: layoutFlags,
+		idealSize:   s.calculateTextSize(),
+	}
+}
+
+type staticLayoutItem struct {
+	LayoutItemBase
+	layoutFlags LayoutFlags
+	idealSize   Size // in native pixels
+}
+
+func (li *staticLayoutItem) LayoutFlags() LayoutFlags {
+	return li.layoutFlags
+}
+
+func (li *staticLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *staticLayoutItem) MinSize() Size {
+	return li.idealSize
 }

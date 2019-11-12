@@ -34,18 +34,6 @@ func NewToolButton(parent Container) (*ToolButton, error) {
 	return tb, nil
 }
 
-func (*ToolButton) LayoutFlags() LayoutFlags {
-	return 0
-}
-
-func (tb *ToolButton) MinSizeHint() Size {
-	return tb.SizeHint()
-}
-
-func (tb *ToolButton) SizeHint() Size {
-	return tb.dialogBaseUnitsToPixels(Size{16, 12})
-}
-
 func (tb *ToolButton) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_GETDLGCODE:
@@ -53,4 +41,27 @@ func (tb *ToolButton) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 	}
 
 	return tb.Button.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (tb *ToolButton) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return &toolButtonLayoutItem{
+		idealSize: tb.dialogBaseUnitsToPixels(Size{16, 12}),
+	}
+}
+
+type toolButtonLayoutItem struct {
+	LayoutItemBase
+	idealSize Size // in native pixels
+}
+
+func (*toolButtonLayoutItem) LayoutFlags() LayoutFlags {
+	return 0
+}
+
+func (tb *toolButtonLayoutItem) IdealSize() Size {
+	return tb.idealSize
+}
+
+func (tb *toolButtonLayoutItem) MinSize() Size {
+	return tb.idealSize
 }

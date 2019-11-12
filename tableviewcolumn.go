@@ -298,7 +298,17 @@ func (tvc *TableViewColumn) Width() int {
 		return tvc.width
 	}
 
-	return tvc.tv.IntTo96DPI(int(tvc.sendMessage(win.LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0)))
+	// We call win.SendMessage instead of tvc.sendMessage here, because some
+	// call inside the latter interferes with scrolling via scroll bar button
+	// when *TableViewColumn.Width is called from *TableView.StretchLastColumn.
+	var hwnd win.HWND
+	if tvc.frozen {
+		hwnd = tvc.tv.hwndFrozenLV
+	} else {
+		hwnd = tvc.tv.hwndNormalLV
+	}
+
+	return tvc.tv.IntTo96DPI(int(win.SendMessage(hwnd, win.LVM_GETCOLUMNWIDTH, uintptr(tvc.indexInListView()), 0)))
 }
 
 // SetWidth sets the width of the column in pixels.
@@ -372,15 +382,15 @@ func (tvc *TableViewColumn) create() error {
 
 	index := tvc.indexInListView()
 
+	dpi := tvc.tv.DPI()
 	lvc.Mask = win.LVCF_FMT | win.LVCF_WIDTH | win.LVCF_TEXT | win.LVCF_SUBITEM
 	lvc.ISubItem = index
 	lvc.PszText = syscall.StringToUTF16Ptr(tvc.TitleEffective())
 	if tvc.width > 0 {
-		lvc.Cx = int32(tvc.width)
+		lvc.Cx = int32(IntFrom96DPI(tvc.width, dpi))
 	} else {
-		lvc.Cx = 100
+		lvc.Cx = int32(IntFrom96DPI(100, dpi))
 	}
-	lvc.Cx = int32(tvc.tv.IntFrom96DPI(int(lvc.Cx)))
 
 	switch tvc.alignment {
 	case AlignCenter:
@@ -432,10 +442,13 @@ func (tvc *TableViewColumn) update() error {
 func (tvc *TableViewColumn) getLVCOLUMN() *win.LVCOLUMN {
 	var lvc win.LVCOLUMN
 
-	width := tvc.width
+	dpi := 96
 	if tvc.tv != nil {
-		width = tvc.tv.IntFrom96DPI(width)
+		dpi = tvc.tv.DPI()
+	} else {
+		dpi = screenDPI()
 	}
+	width := IntFrom96DPI(tvc.width, dpi)
 
 	lvc.Mask = win.LVCF_FMT | win.LVCF_WIDTH | win.LVCF_TEXT | win.LVCF_SUBITEM
 	lvc.ISubItem = int32(tvc.indexInListView())

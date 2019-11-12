@@ -6,10 +6,9 @@ package main
 
 import (
 	"log"
-)
 
-import (
 	"github.com/lxn/walk"
+
 	. "github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
 )
@@ -17,7 +16,9 @@ import (
 const myWidgetWindowClass = "MyWidget Class"
 
 func init() {
-	walk.MustRegisterWindowClass(myWidgetWindowClass)
+	walk.AppendToWalkInit(func() {
+		walk.MustRegisterWindowClass(myWidgetWindowClass)
+	})
 }
 
 func main() {
@@ -75,8 +76,21 @@ func NewMyWidget(parent walk.Container) (*MyWidget, error) {
 	return w, nil
 }
 
-func (*MyWidget) MinSizeHint() walk.Size {
-	return walk.Size{50, 50}
+func (*MyWidget) CreateLayoutItem(ctx *walk.LayoutContext) walk.LayoutItem {
+	return &myWidgetLayoutItem{idealSize: walk.SizeFrom96DPI(walk.Size{50, 50}, ctx.DPI())}
+}
+
+type myWidgetLayoutItem struct {
+	walk.LayoutItemBase
+	idealSize walk.Size // in native pixels
+}
+
+func (li *myWidgetLayoutItem) LayoutFlags() walk.LayoutFlags {
+	return 0
+}
+
+func (li *myWidgetLayoutItem) IdealSize() walk.Size {
+	return li.idealSize
 }
 
 func (w *MyWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {

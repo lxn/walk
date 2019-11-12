@@ -29,18 +29,6 @@ func NewProgressBar(parent Container) (*ProgressBar, error) {
 	return pb, nil
 }
 
-func (*ProgressBar) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | GrowableHorz | GreedyHorz
-}
-
-func (pb *ProgressBar) MinSizeHint() Size {
-	return pb.dialogBaseUnitsToPixels(Size{10, 14})
-}
-
-func (pb *ProgressBar) SizeHint() Size {
-	return pb.dialogBaseUnitsToPixels(Size{50, 14})
-}
-
 func (pb *ProgressBar) MinValue() int {
 	return int(pb.SendMessage(win.PBM_GETRANGE, 1, 0))
 }
@@ -73,4 +61,29 @@ func (pb *ProgressBar) SetMarqueeMode(marqueeMode bool) error {
 	pb.SendMessage(win.PBM_SETMARQUEE, uintptr(win.BoolToBOOL(marqueeMode)), 0)
 
 	return nil
+}
+
+func (pb *ProgressBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return &progressBarLayoutItem{
+		idealSize: pb.dialogBaseUnitsToPixels(Size{50, 14}),
+		minSize:   pb.dialogBaseUnitsToPixels(Size{10, 14}),
+	}
+}
+
+type progressBarLayoutItem struct {
+	LayoutItemBase
+	idealSize Size // in native pixels
+	minSize   Size // in native pixels
+}
+
+func (*progressBarLayoutItem) LayoutFlags() LayoutFlags {
+	return ShrinkableHorz | GrowableHorz | GreedyHorz
+}
+
+func (li *progressBarLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *progressBarLayoutItem) MinSize() Size {
+	return li.minSize
 }

@@ -30,7 +30,6 @@ type ToolBar struct {
 	defaultButtonWidth int
 	maxTextRows        int
 	buttonStyle        ToolBarButtonStyle
-	action2bitmap      map[*Action]*Bitmap
 }
 
 func NewToolBarWithOrientationAndButtonStyle(parent Container, orientation Orientation, buttonStyle ToolBarButtonStyle) (*ToolBar, error) {
@@ -46,8 +45,7 @@ func NewToolBarWithOrientationAndButtonStyle(parent Container, orientation Orien
 	}
 
 	tb := &ToolBar{
-		buttonStyle:   buttonStyle,
-		action2bitmap: make(map[*Action]*Bitmap),
+		buttonStyle: buttonStyle,
 	}
 	tb.actions = newActionList(tb)
 
@@ -79,52 +77,15 @@ func NewVerticalToolBar(parent Container) (*ToolBar, error) {
 	return NewToolBarWithOrientationAndButtonStyle(parent, Vertical, ToolBarButtonImageAboveText)
 }
 
-func (tb *ToolBar) LayoutFlags() LayoutFlags {
-	if tb.Orientation() == Vertical {
-		return ShrinkableVert | GrowableVert | GreedyVert
+func (tb *ToolBar) Dispose() {
+	tb.WidgetBase.Dispose()
+
+	tb.actions.Clear()
+
+	if tb.imageList != nil {
+		tb.imageList.Dispose()
+		tb.imageList = nil
 	}
-
-	// FIXME: Since reimplementation of BoxLayout we must return 0 here,
-	// otherwise the ToolBar contained in MainWindow will eat half the space.
-	return 0 //ShrinkableHorz | GrowableHorz
-}
-
-func (tb *ToolBar) MinSizeHint() Size {
-	return tb.SizeHint()
-}
-
-func (tb *ToolBar) SizeHint() Size {
-	if tb.actions.Len() == 0 {
-		return Size{}
-	}
-
-	buttonSize := uint32(tb.SendMessage(win.TB_GETBUTTONSIZE, 0, 0))
-
-	width := tb.defaultButtonWidth
-	if width == 0 {
-		width = int(win.LOWORD(buttonSize))
-	}
-
-	height := int(win.HIWORD(buttonSize))
-
-	var size win.SIZE
-	var wp uintptr
-
-	if tb.Orientation() == Vertical {
-		wp = win.TRUE
-	} else {
-		wp = win.FALSE
-	}
-
-	if win.FALSE != tb.SendMessage(win.TB_GETIDEALSIZE, wp, uintptr(unsafe.Pointer(&size))) {
-		if wp == win.TRUE {
-			height = int(size.CY)
-		} else {
-			width = int(size.CX)
-		}
-	}
-
-	return Size{width, height}
 }
 
 func (tb *ToolBar) applyFont(font *Font) {
@@ -132,7 +93,7 @@ func (tb *ToolBar) applyFont(font *Font) {
 
 	tb.applyDefaultButtonWidth()
 
-	tb.updateParentLayout()
+	tb.RequestLayout()
 }
 
 func (tb *ToolBar) ApplyDPI(dpi int) {
@@ -142,12 +103,12 @@ func (tb *ToolBar) ApplyDPI(dpi int) {
 	var size Size
 	if tb.imageList != nil {
 		maskColor = tb.imageList.maskColor
-		size = tb.imageList.imageSize96dpi
+		size = SizeFrom96DPI(tb.imageList.imageSize96dpi, dpi)
 	} else {
-		size = Size{16, 16}
+		size = SizeFrom96DPI(Size{16, 16}, dpi)
 	}
 
-	iml, err := newImageList(size, maskColor, dpi)
+	iml, err := NewImageListForDPI(size, maskColor, dpi)
 	if err != nil {
 		return
 	}
@@ -189,7 +150,8 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 		return nil
 	}
 
-	width := tb.IntFrom96DPI(tb.defaultButtonWidth)
+	dpi := tb.DPI()
+	width := IntFrom96DPI(tb.defaultButtonWidth, dpi)
 
 	lParam := uintptr(win.MAKELONG(uint16(width), uint16(width)))
 	if 0 == tb.SendMessage(win.TB_SETBUTTONWIDTH, 0, lParam) {
@@ -199,7 +161,7 @@ func (tb *ToolBar) applyDefaultButtonWidth() error {
 	size := uint32(tb.SendMessage(win.TB_GETBUTTONSIZE, 0, 0))
 	height := win.HIWORD(size)
 
-	lParam = uintptr(win.MAKELONG(uint16(tb.defaultButtonWidth), height))
+	lParam = uintptr(win.MAKELONG(uint16(width), height))
 	if win.FALSE == tb.SendMessage(win.TB_SETBUTTONSIZE, 0, lParam) {
 		return newError("SendMessage(TB_SETBUTTONSIZE)")
 	}
@@ -278,9 +240,10 @@ func (tb *ToolBar) SetImageList(value *ImageList) {
 	tb.imageList = value
 }
 
-func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
+func (tb *ToolBar) imageIndex(image Image) (imageIndex int32, err error) {
 	if tb.imageList == nil {
-		iml, err := newImageList(Size{16, 16}, 0, tb.DPI())
+		dpi := tb.DPI()
+		iml, err := NewImageListForDPI(SizeFrom96DPI(Size{16, 16}, dpi), 0, dpi)
 		if err != nil {
 			return 0, err
 		}
@@ -290,7 +253,7 @@ func (tb *ToolBar) imageIndex(image *Bitmap) (imageIndex int32, err error) {
 
 	imageIndex = -1
 	if image != nil {
-		if imageIndex, err = tb.imageList.AddMasked(image); err != nil {
+		if imageIndex, err = tb.imageList.AddImage(image); err != nil {
 			return
 		}
 	}
@@ -302,9 +265,6 @@ func (tb *ToolBar) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 	switch msg {
 	case win.WM_MOUSEMOVE, win.WM_MOUSELEAVE, win.WM_LBUTTONDOWN:
 		tb.Invalidate()
-
-	// case win.WM_PAINT:
-	// 	tb.Invalidate()
 
 	case win.WM_COMMAND:
 		switch win.HIWORD(uint32(wParam)) {
@@ -348,6 +308,15 @@ func (tb *ToolBar) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 				return win.TBDDRET_DEFAULT
 			}
 		}
+
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
+		tb.SendMessage(win.TB_AUTOSIZE, 0, 0)
 	}
 
 	return tb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
@@ -393,13 +362,7 @@ func (tb *ToolBar) initButtonForAction(action *Action, state, style *byte, image
 	}
 
 	if tb.buttonStyle != ToolBarButtonTextOnly {
-		var bmp *Bitmap
-
-		if action.image != nil {
-			bmp, _ = iconCache.Bitmap(action.image, tb.DPI())
-		}
-
-		if *image, err = tb.imageIndex(bmp); err != nil {
+		if *image, err = tb.imageIndex(action.image); err != nil {
 			return err
 		}
 	}
@@ -445,6 +408,8 @@ func (tb *ToolBar) onActionChanged(action *Action) error {
 
 		return newError("SendMessage(TB_SETBUTTONINFO) failed")
 	}
+
+	tb.RequestLayout()
 
 	return nil
 }
@@ -505,7 +470,7 @@ func (tb *ToolBar) insertAction(action *Action, visibleChanged bool) (err error)
 
 	tb.SendMessage(win.TB_AUTOSIZE, 0, 0)
 
-	tb.updateParentLayout()
+	tb.RequestLayout()
 
 	return
 }
@@ -521,7 +486,7 @@ func (tb *ToolBar) removeAction(action *Action, visibleChanged bool) error {
 		return newError("SendMessage(TB_DELETEBUTTON) failed")
 	}
 
-	tb.updateParentLayout()
+	tb.RequestLayout()
 
 	return nil
 }
@@ -544,4 +509,61 @@ func (tb *ToolBar) onClearingActions() error {
 	}
 
 	return nil
+}
+
+func (tb *ToolBar) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	buttonSize := uint32(tb.SendMessage(win.TB_GETBUTTONSIZE, 0, 0))
+
+	dpi := tb.DPI()
+	width := IntFrom96DPI(tb.defaultButtonWidth, dpi)
+	if width == 0 {
+		width = int(win.LOWORD(buttonSize))
+	}
+
+	height := int(win.HIWORD(buttonSize))
+
+	var size win.SIZE
+	var wp uintptr
+	var layoutFlags LayoutFlags
+
+	if tb.Orientation() == Vertical {
+		wp = win.TRUE
+		layoutFlags = ShrinkableVert | GrowableVert | GreedyVert
+	} else {
+		wp = win.FALSE
+		// FIXME: Since reimplementation of BoxLayout we must use 0 here,
+		// otherwise the ToolBar contained in MainWindow will eat half the space.
+		//layoutFlags = ShrinkableHorz | GrowableHorz
+	}
+
+	if win.FALSE != tb.SendMessage(win.TB_GETIDEALSIZE, wp, uintptr(unsafe.Pointer(&size))) {
+		if wp == win.TRUE {
+			height = int(size.CY)
+		} else {
+			width = int(size.CX)
+		}
+	}
+
+	return &toolBarLayoutItem{
+		layoutFlags: layoutFlags,
+		idealSize:   Size{width, height},
+	}
+}
+
+type toolBarLayoutItem struct {
+	LayoutItemBase
+	layoutFlags LayoutFlags
+	idealSize   Size // in native pixels
+}
+
+func (li *toolBarLayoutItem) LayoutFlags() LayoutFlags {
+	return li.layoutFlags
+}
+
+func (li *toolBarLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *toolBarLayoutItem) MinSize() Size {
+	return li.idealSize
 }

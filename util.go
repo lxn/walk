@@ -28,17 +28,19 @@ var (
 )
 
 func init() {
-	var buf [4]uint16
+	AppendToWalkInit(func() {
+		var buf [4]uint16
 
-	win.GetLocaleInfo(win.LOCALE_USER_DEFAULT, win.LOCALE_SDECIMAL, &buf[0], int32(len(buf)))
-	decimalSepB = byte(buf[0])
-	decimalSepS = syscall.UTF16ToString(buf[0:1])
-	decimalSepUint16 = buf[0]
+		win.GetLocaleInfo(win.LOCALE_USER_DEFAULT, win.LOCALE_SDECIMAL, &buf[0], int32(len(buf)))
+		decimalSepB = byte(buf[0])
+		decimalSepS = syscall.UTF16ToString(buf[0:1])
+		decimalSepUint16 = buf[0]
 
-	win.GetLocaleInfo(win.LOCALE_USER_DEFAULT, win.LOCALE_STHOUSAND, &buf[0], int32(len(buf)))
-	groupSepB = byte(buf[0])
-	groupSepS = syscall.UTF16ToString(buf[0:1])
-	groupSepUint16 = buf[0]
+		win.GetLocaleInfo(win.LOCALE_USER_DEFAULT, win.LOCALE_STHOUSAND, &buf[0], int32(len(buf)))
+		groupSepB = byte(buf[0])
+		groupSepS = syscall.UTF16ToString(buf[0:1])
+		groupSepUint16 = buf[0]
+	})
 }
 
 func maxi(a, b int) int {
@@ -170,7 +172,7 @@ func FormatFloat(f float64, prec int) string {
 }
 
 func FormatFloatGrouped(f float64, prec int) string {
-	return formatFloatString(strconv.FormatFloat(f, 'f', prec, 64), prec, true)
+	return formatFloatString(strconv.FormatFloat(f, 'f', maxi(1, prec), 64), prec, true)
 }
 
 func formatBigRat(r *big.Rat, prec int) string {
@@ -201,7 +203,7 @@ func formatFloatString(s string, prec int, grouped bool) string {
 		s = s[1:]
 	}
 
-	intLen := len(s) - prec - 1
+	intLen := len(s) - maxi(1, prec) - 1
 
 	n := intLen % 3
 	if n != 0 {
@@ -216,7 +218,13 @@ func formatFloatString(s string, prec int, grouped bool) string {
 
 	b.WriteString(s[intLen:])
 
-	return b.String()
+	s = b.String()
+
+	if prec == 0 {
+		s = s[:len(s)-2]
+	}
+
+	return s
 }
 
 func applyEnabledToDescendants(window Window, enabled bool) {
@@ -505,10 +513,12 @@ func dpiForHDC(hdc win.HDC) int {
 	return int(win.GetDeviceCaps(hdc, win.LOGPIXELSX))
 }
 
+// IntFrom96DPI converts from 1/96" units to native pixels.
 func IntFrom96DPI(value, dpi int) int {
 	return scaleInt(value, float64(dpi)/96.0)
 }
 
+// IntTo96DPI converts from native pixels to 1/96" units.
 func IntTo96DPI(value, dpi int) int {
 	return scaleInt(value, 96.0/float64(dpi))
 }
@@ -517,66 +527,74 @@ func scaleInt(value int, scale float64) int {
 	return int(math.Round(float64(value) * scale))
 }
 
+// MarginsFrom96DPI converts from 1/96" units to native pixels.
 func MarginsFrom96DPI(value Margins, dpi int) Margins {
 	return scaleMargins(value, float64(dpi)/96.0)
 }
 
+// MarginsTo96DPI converts from native pixels to 1/96" units.
 func MarginsTo96DPI(value Margins, dpi int) Margins {
 	return scaleMargins(value, 96.0/float64(dpi))
 }
 
 func scaleMargins(value Margins, scale float64) Margins {
 	return Margins{
-		HNear: int(math.Round(float64(value.HNear) * scale)),
-		VNear: int(math.Round(float64(value.VNear) * scale)),
-		HFar:  int(math.Round(float64(value.HFar) * scale)),
-		VFar:  int(math.Round(float64(value.VFar) * scale)),
+		HNear: scaleInt(value.HNear, scale),
+		VNear: scaleInt(value.VNear, scale),
+		HFar:  scaleInt(value.HFar, scale),
+		VFar:  scaleInt(value.VFar, scale),
 	}
 }
 
+// PointFrom96DPI converts from 1/96" units to native pixels.
 func PointFrom96DPI(value Point, dpi int) Point {
 	return scalePoint(value, float64(dpi)/96.0)
 }
 
+// PointTo96DPI converts from native pixels to 1/96" units.
 func PointTo96DPI(value Point, dpi int) Point {
 	return scalePoint(value, 96.0/float64(dpi))
 }
 
 func scalePoint(value Point, scale float64) Point {
 	return Point{
-		X: int(math.Round(float64(value.X) * scale)),
-		Y: int(math.Round(float64(value.Y) * scale)),
+		X: scaleInt(value.X, scale),
+		Y: scaleInt(value.Y, scale),
 	}
 }
 
+// RectangleFrom96DPI converts from 1/96" units to native pixels.
 func RectangleFrom96DPI(value Rectangle, dpi int) Rectangle {
 	return scaleRectangle(value, float64(dpi)/96.0)
 }
 
+// RectangleTo96DPI converts from native pixels to 1/96" units.
 func RectangleTo96DPI(value Rectangle, dpi int) Rectangle {
 	return scaleRectangle(value, 96.0/float64(dpi))
 }
 
 func scaleRectangle(value Rectangle, scale float64) Rectangle {
 	return Rectangle{
-		X:      int(math.Round(float64(value.X) * scale)),
-		Y:      int(math.Round(float64(value.Y) * scale)),
-		Width:  int(math.Round(float64(value.Width) * scale)),
-		Height: int(math.Round(float64(value.Height) * scale)),
+		X:      scaleInt(value.X, scale),
+		Y:      scaleInt(value.Y, scale),
+		Width:  scaleInt(value.Width, scale),
+		Height: scaleInt(value.Height, scale),
 	}
 }
 
+// SizeFrom96DPI converts from 1/96" units to native pixels.
 func SizeFrom96DPI(value Size, dpi int) Size {
 	return scaleSize(value, float64(dpi)/96.0)
 }
 
+// SizeTo96DPI converts from native pixels to 1/96" units.
 func SizeTo96DPI(value Size, dpi int) Size {
 	return scaleSize(value, 96.0/float64(dpi))
 }
 
 func scaleSize(value Size, scale float64) Size {
 	return Size{
-		Width:  int(math.Round(float64(value.Width) * scale)),
-		Height: int(math.Round(float64(value.Height) * scale)),
+		Width:  scaleInt(value.Width, scale),
+		Height: scaleInt(value.Height, scale),
 	}
 }

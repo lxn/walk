@@ -9,19 +9,21 @@ package walk
 const spacerWindowClass = `\o/ Walk_Spacer_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(spacerWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(spacerWindowClass)
+	})
 }
 
 type Spacer struct {
 	WidgetBase
-	sizeHint          Size
+	sizeHint96dpi     Size
 	layoutFlags       LayoutFlags
 	greedyLocallyOnly bool
 }
 
 type SpacerCfg struct {
 	LayoutFlags       LayoutFlags
-	SizeHint          Size
+	SizeHint          Size // in 1/96" units
 	GreedyLocallyOnly bool
 }
 
@@ -29,10 +31,10 @@ func NewSpacerWithCfg(parent Container, cfg *SpacerCfg) (*Spacer, error) {
 	return newSpacer(parent, cfg.LayoutFlags, cfg.SizeHint, cfg.GreedyLocallyOnly)
 }
 
-func newSpacer(parent Container, layoutFlags LayoutFlags, sizeHint Size, greedyLocallyOnly bool) (*Spacer, error) {
+func newSpacer(parent Container, layoutFlags LayoutFlags, sizeHint96dpi Size, greedyLocallyOnly bool) (*Spacer, error) {
 	s := &Spacer{
 		layoutFlags:       layoutFlags,
-		sizeHint:          sizeHint,
+		sizeHint96dpi:     sizeHint96dpi,
 		greedyLocallyOnly: greedyLocallyOnly,
 	}
 
@@ -64,14 +66,29 @@ func NewVSpacerFixed(parent Container, height int) (*Spacer, error) {
 	return newSpacer(parent, 0, Size{0, height}, false)
 }
 
-func (s *Spacer) LayoutFlags() LayoutFlags {
-	return s.layoutFlags
+func (s *Spacer) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return &spacerLayoutItem{
+		idealSize96dpi:    s.sizeHint96dpi,
+		layoutFlags:       s.layoutFlags,
+		greedyLocallyOnly: s.greedyLocallyOnly,
+	}
 }
 
-func (s *Spacer) MinSizeHint() Size {
-	return s.sizeHint
+type spacerLayoutItem struct {
+	LayoutItemBase
+	idealSize96dpi    Size
+	layoutFlags       LayoutFlags
+	greedyLocallyOnly bool
 }
 
-func (s *Spacer) SizeHint() Size {
-	return s.sizeHint
+func (li *spacerLayoutItem) LayoutFlags() LayoutFlags {
+	return li.layoutFlags
+}
+
+func (li *spacerLayoutItem) IdealSize() Size {
+	return SizeFrom96DPI(li.idealSize96dpi, li.ctx.dpi)
+}
+
+func (li *spacerLayoutItem) MinSize() Size {
+	return SizeFrom96DPI(li.idealSize96dpi, li.ctx.dpi)
 }

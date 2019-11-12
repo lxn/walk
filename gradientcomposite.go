@@ -7,6 +7,8 @@
 package walk
 
 import (
+	"unsafe"
+
 	"github.com/lxn/win"
 )
 
@@ -211,7 +213,7 @@ func (gc *GradientComposite) updateBackground() error {
 		bounds.Height = 1
 	}
 
-	bmp, err := NewBitmap(bounds.Size())
+	bmp, err := NewBitmapForDPI(bounds.Size(), gc.DPI())
 	if err != nil {
 		return err
 	}
@@ -234,7 +236,7 @@ func (gc *GradientComposite) updateBackground() error {
 		orientation = Horizontal
 	}
 
-	if err := canvas.GradientFillRectangle(gc.color1, gc.color2, orientation, bounds); err != nil {
+	if err := canvas.GradientFillRectanglePixels(gc.color1, gc.color2, orientation, bounds); err != nil {
 		return err
 	}
 
@@ -261,7 +263,13 @@ func (gc *GradientComposite) Dispose() {
 
 func (gc *GradientComposite) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case win.WM_SIZE, win.WM_SIZING:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		size := gc.ClientBoundsPixels().Size()
 		if gc.brush != nil && gc.brush.bitmap.size == size {
 			break

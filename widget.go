@@ -50,8 +50,10 @@ type Widget interface {
 	// AsWidgetBase returns a *WidgetBase that implements Widget.
 	AsWidgetBase() *WidgetBase
 
-	// Form returns the root ancestor Form of the Widget.
-	Form() Form
+	// CreateLayoutItem creates and returns a new LayoutItem specific to the
+	// concrete Widget type, that carries all data and logic required to layout
+	// the Widget.
+	CreateLayoutItem(ctx *LayoutContext) LayoutItem
 
 	// GraphicsEffects returns a list of WidgetGraphicsEffects that are applied to the Widget.
 	GraphicsEffects() *WidgetGraphicsEffectList
@@ -60,7 +62,7 @@ type Widget interface {
 	// Widget wants to be treated by Layout implementations.
 	LayoutFlags() LayoutFlags
 
-	// MinSizeHint returns the minimum outer Size, including decorations, that
+	// MinSizeHint returns the minimum outer size in native pixels, including decorations, that
 	// makes sense for the respective type of Widget.
 	MinSizeHint() Size
 
@@ -81,7 +83,7 @@ type Widget interface {
 	// SetToolTipText sets the tool tip text of the Widget.
 	SetToolTipText(s string) error
 
-	// SizeHint returns the preferred Size for the respective type of Widget.
+	// SizeHint returns the preferred size in native pixels for the respective type of Widget.
 	SizeHint() Size
 
 	// ToolTipText returns the tool tip text of the Widget.
@@ -90,7 +92,7 @@ type Widget interface {
 
 type WidgetBase struct {
 	WindowBase
-	form                        Form
+	geometry                    Geometry
 	parent                      Container
 	toolTipTextProperty         Property
 	toolTipTextChangedPublisher EventPublisher
@@ -128,7 +130,11 @@ func InitWidget(widget Widget, parent Window, className string, style, exStyle u
 func (wb *WidgetBase) init(widget Widget) error {
 	wb.graphicsEffects = newWidgetGraphicsEffectList(wb)
 
-	if err := globalToolTip.AddTool(wb); err != nil {
+	tt, err := wb.group.CreateToolTip()
+	if err != nil {
+		return err
+	}
+	if err := tt.AddTool(wb.window.(Widget)); err != nil {
 		return err
 	}
 
@@ -152,7 +158,13 @@ func (wb *WidgetBase) Dispose() {
 		return
 	}
 
-	globalToolTip.RemoveTool(wb)
+	if wb.parent != nil && win.GetParent(wb.hWnd) == wb.parent.Handle() {
+		wb.SetParent(nil)
+	}
+
+	if tt := wb.group.ToolTip(); tt != nil {
+		tt.RemoveTool(wb.window.(Widget))
+	}
 
 	wb.WindowBase.Dispose()
 }
@@ -162,7 +174,7 @@ func (wb *WidgetBase) AsWidgetBase() *WidgetBase {
 	return wb
 }
 
-// Bounds returns the outer bounding box Rectangle of the WidgetBase, including
+// Bounds returns the outer bounding box rectangle of the WidgetBase, including
 // decorations.
 //
 // The coordinates are relative to the parent of the Widget.
@@ -170,7 +182,7 @@ func (wb *WidgetBase) Bounds() Rectangle {
 	return wb.RectangleTo96DPI(wb.BoundsPixels())
 }
 
-// BoundsPixels returns the outer bounding box Rectangle of the WidgetBase, including
+// BoundsPixels returns the outer bounding box rectangle of the WidgetBase, including
 // decorations.
 //
 // The coordinates are relative to the parent of the Widget.
@@ -178,7 +190,7 @@ func (wb *WidgetBase) BoundsPixels() Rectangle {
 	b := wb.WindowBase.BoundsPixels()
 
 	if wb.parent != nil {
-		p := win.POINT{int32(b.X), int32(b.Y)}
+		p := b.Location().toPOINT()
 		if !win.ScreenToClient(wb.parent.Handle(), &p) {
 			newError("ScreenToClient failed")
 			return Rectangle{}
@@ -226,16 +238,7 @@ func (wb *WidgetBase) Font() *Font {
 func (wb *WidgetBase) applyFont(font *Font) {
 	wb.WindowBase.applyFont(font)
 
-	wb.updateParentLayout()
-}
-
-// Form returns the root ancestor Form of the Widget.
-func (wb *WidgetBase) Form() Form {
-	if wb.form == nil {
-		wb.form = ancestor(wb)
-	}
-
-	return wb.form
+	wb.RequestLayout()
 }
 
 // Alignment return the alignment ot the *WidgetBase.
@@ -252,26 +255,20 @@ func (wb *WidgetBase) SetAlignment(alignment Alignment2D) error {
 
 		wb.alignment = alignment
 
-		wb.updateParentLayout()
+		wb.RequestLayout()
 	}
 
 	return nil
 }
 
-// LayoutFlags returns a combination of LayoutFlags that specify how the
-// WidgetBase wants to be treated by Layout implementations.
-func (wb *WidgetBase) LayoutFlags() LayoutFlags {
-	return 0
-}
-
-// SetMinMaxSize sets the minimum and maximum outer Size of the *WidgetBase,
+// SetMinMaxSize sets the minimum and maximum outer size of the *WidgetBase,
 // including decorations.
 //
 // Use walk.Size{} to make the respective limit be ignored.
 func (wb *WidgetBase) SetMinMaxSize(min, max Size) (err error) {
 	err = wb.WindowBase.SetMinMaxSize(min, max)
 
-	wb.updateParentLayout()
+	wb.RequestLayout()
 
 	return
 }
@@ -287,13 +284,9 @@ func (wb *WidgetBase) AlwaysConsumeSpace() bool {
 func (wb *WidgetBase) SetAlwaysConsumeSpace(b bool) error {
 	wb.alwaysConsumeSpace = b
 
-	return wb.updateParentLayout()
-}
+	wb.RequestLayout()
 
-// MinSizeHint returns the minimum outer Size, including decorations, that
-// makes sense for the respective type of Widget.
-func (wb *WidgetBase) MinSizeHint() Size {
-	return Size{10, 10}
+	return nil
 }
 
 // Parent returns the Container of the WidgetBase.
@@ -339,9 +332,7 @@ func (wb *WidgetBase) SetParent(parent Container) (err error) {
 		}
 
 		if cb := parent.AsContainerBase(); cb != nil {
-			if win.SetWindowLong(wb.hWnd, win.GWL_ID, cb.NextChildID()) == 0 {
-				return lastError("SetWindowLong")
-			}
+			win.SetWindowLong(wb.hWnd, win.GWL_ID, cb.NextChildID())
 		}
 	}
 
@@ -402,21 +393,20 @@ func (wb *WidgetBase) ForEachAncestor(f func(window Window) bool) {
 	}
 }
 
-// SizeHint returns a default Size that should be "overidden" by a concrete
-// Widget type.
-func (wb *WidgetBase) SizeHint() Size {
-	return wb.window.(Widget).MinSizeHint()
-}
-
 // ToolTipText returns the tool tip text of the WidgetBase.
 func (wb *WidgetBase) ToolTipText() string {
-	return globalToolTip.Text(wb.window.(Widget))
+	if tt := wb.group.ToolTip(); tt != nil {
+		return tt.Text(wb.window.(Widget))
+	}
+	return ""
 }
 
 // SetToolTipText sets the tool tip text of the WidgetBase.
 func (wb *WidgetBase) SetToolTipText(s string) error {
-	if err := globalToolTip.SetText(wb.window.(Widget), s); err != nil {
-		return err
+	if tt := wb.group.ToolTip(); tt != nil {
+		if err := tt.SetText(wb.window.(Widget), s); err != nil {
+			return err
+		}
 	}
 
 	wb.toolTipTextChangedPublisher.Publish()
@@ -448,6 +438,10 @@ func (wb *WidgetBase) onClearedGraphicsEffects() error {
 }
 
 func (wb *WidgetBase) invalidateBorderInParent() {
+	if !wb.hasActiveGraphicsEffects() {
+		return
+	}
+
 	if wb.parent != nil && wb.parent.Layout() != nil {
 		b := wb.BoundsPixels().toRECT()
 		s := int32(wb.parent.Layout().Spacing())
@@ -468,6 +462,24 @@ func (wb *WidgetBase) invalidateBorderInParent() {
 	}
 }
 
+func (wb *WidgetBase) hasActiveGraphicsEffects() bool {
+	if wb.graphicsEffects == nil {
+		return false
+	}
+
+	count := wb.graphicsEffects.Len()
+
+	for _, gfx := range [...]WidgetGraphicsEffect{FocusEffect, InteractionEffect, ValidationErrorEffect} {
+		if wb.graphicsEffects.Contains(gfx) {
+			if gfx == nil {
+				count--
+			}
+		}
+	}
+
+	return count > 0
+}
+
 func (wb *WidgetBase) hasComplexBackground() bool {
 	if bg := wb.window.Background(); bg != nil && !bg.simple() {
 		return false
@@ -486,80 +498,6 @@ func (wb *WidgetBase) hasComplexBackground() bool {
 	return complex
 }
 
-func (wb *WidgetBase) updateParentLayout() error {
-	return wb.updateParentLayoutWithReset(false)
-}
-
-func (wb *WidgetBase) updateParentLayoutWithReset(reset bool) error {
-	parent := wb.window.(Widget).Parent()
-
-	if parent == nil || parent.Layout() == nil {
-		return nil
-	}
-
-	if lb, ok := parent.Layout().(interface{ asLayoutBase() *LayoutBase }); ok {
-		lb.asLayoutBase().dirty = true
-	}
-
-	return wb.updateParentLayoutWithResetRecursive(reset)
-}
-
-func (wb *WidgetBase) updateParentLayoutWithResetRecursive(reset bool) error {
-	if form := wb.Form(); form == nil || form.Suspended() {
-		return nil
-	}
-
-	parent := wb.window.(Widget).Parent()
-
-	if parent == nil || parent.Layout() == nil {
-		return nil
-	}
-
-	layout := parent.Layout()
-
-	updateLayoutAndMaybeInvalidateBorder := func() {
-		layout.Update(reset)
-
-		if FocusEffect != nil {
-			if focusedWnd := windowFromHandle(win.GetFocus()); focusedWnd != nil && win.GetParent(focusedWnd.Handle()) == parent.Handle() {
-				focusedWnd.(Widget).AsWidgetBase().invalidateBorderInParent()
-			}
-		}
-	}
-
-	if !formResizeScheduled || len(inProgressEventsByForm[appSingleton.activeForm]) == 0 {
-		switch wnd := parent.(type) {
-		case *ScrollView:
-			ifContainerIsScrollViewDoCoolSpecialLayoutStuff(layout)
-			wnd.updateCompositeSize()
-			updateLayoutAndMaybeInvalidateBorder()
-			return nil
-
-		case Widget:
-			return wnd.AsWidgetBase().updateParentLayoutWithResetRecursive(reset)
-
-		case Form:
-			if len(inProgressEventsByForm[appSingleton.activeForm]) > 0 {
-				formResizeScheduled = true
-			} else {
-				bounds := wnd.BoundsPixels()
-
-				if wnd.AsFormBase().fixedSize() {
-					bounds.Width, bounds.Height = 0, 0
-				}
-
-				wnd.SetBoundsPixels(bounds)
-
-				return nil
-			}
-		}
-	}
-
-	updateLayoutAndMaybeInvalidateBorder()
-
-	return nil
-}
-
 func ancestor(w Widget) Form {
 	if w == nil {
 		return nil
@@ -571,16 +509,22 @@ func ancestor(w Widget) Form {
 	return rw
 }
 
-func minSizeEffective(w Widget) Size {
-	s := maxSize(w.MinSizePixels(), w.MinSizeHint())
+func (wb *WidgetBase) LayoutFlags() LayoutFlags {
+	return createLayoutItemForWidget(wb.window.(Widget)).LayoutFlags()
+}
 
-	max := w.MaxSizePixels()
-	if max.Width > 0 && s.Width > max.Width {
-		s.Width = max.Width
-	}
-	if max.Height > 0 && s.Height > max.Height {
-		s.Height = max.Height
+func (wb *WidgetBase) SizeHint() Size {
+	if is, ok := createLayoutItemForWidget(wb.window.(Widget)).(IdealSizer); ok {
+		return is.IdealSize()
 	}
 
-	return s
+	return Size{}
+}
+
+func (wb *WidgetBase) MinSizeHint() Size {
+	if ms, ok := createLayoutItemForWidget(wb.window.(Widget)).(MinSizer); ok {
+		return ms.MinSize()
+	}
+
+	return Size{}
 }

@@ -17,7 +17,10 @@ import (
 const tabWidgetWindowClass = `\o/ Walk_TabWidget_Class \o/`
 
 func init() {
-	MustRegisterWindowClass(tabWidgetWindowClass)
+	AppendToWalkInit(func() {
+		MustRegisterWindowClass(tabWidgetWindowClass)
+		tabWidgetTabWndProcPtr = syscall.NewCallback(tabWidgetTabWndProc)
+	})
 }
 
 type TabWidget struct {
@@ -64,7 +67,8 @@ func NewTabWidget(parent Container) (*TabWidget, error) {
 	win.SetWindowLongPtr(tw.hWndTab, win.GWLP_USERDATA, uintptr(unsafe.Pointer(tw)))
 	tw.tabOrigWndProcPtr = win.SetWindowLongPtr(tw.hWndTab, win.GWLP_WNDPROC, tabWidgetTabWndProcPtr)
 
-	win.SendMessage(tw.hWndTab, win.WM_SETFONT, uintptr(defaultFont.handleForDPI(0)), 1)
+	dpi := int(win.GetDpiForWindow(tw.hWndTab))
+	win.SendMessage(tw.hWndTab, win.WM_SETFONT, uintptr(defaultFont.handleForDPI(dpi)), 1)
 
 	tw.applyFont(tw.Font())
 
@@ -97,67 +101,6 @@ func (tw *TabWidget) Dispose() {
 	}
 }
 
-func (tw *TabWidget) LayoutFlags() LayoutFlags {
-	if tw.pages.Len() == 0 {
-		return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
-	}
-
-	var flags LayoutFlags
-
-	for i := tw.pages.Len() - 1; i >= 0; i-- {
-		flags |= tw.pages.At(i).LayoutFlags()
-	}
-
-	return flags
-}
-
-func (tw *TabWidget) MinSizeHint() Size {
-	if tw.pages.Len() == 0 {
-		return tw.SizeHint()
-	}
-
-	var min Size
-
-	for i := tw.pages.Len() - 1; i >= 0; i-- {
-		s := tw.pages.At(i).MinSizeHint()
-
-		min.Width = maxi(min.Width, s.Width)
-		min.Height = maxi(min.Height, s.Height)
-	}
-
-	b := tw.BoundsPixels()
-	pb := tw.pages.At(0).BoundsPixels()
-
-	size := Size{b.Width - pb.Width + min.Width, b.Height - pb.Height + min.Height}
-
-	return size
-}
-
-func (tw *TabWidget) HeightForWidth(width int) int {
-	if tw.pages.Len() == 0 {
-		return 0
-	}
-
-	var height int
-	margin := tw.SizePixels()
-	pageSize := tw.pages.At(0).SizePixels()
-
-	margin.Width -= pageSize.Width
-	margin.Height -= pageSize.Height
-
-	for i := tw.pages.Len() - 1; i >= 0; i-- {
-		h := tw.pages.At(i).HeightForWidth(width + margin.Width)
-
-		height = maxi(height, h)
-	}
-
-	return height + margin.Height
-}
-
-func (tw *TabWidget) SizeHint() Size {
-	return Size{100, 100}
-}
-
 func (tw *TabWidget) applyEnabled(enabled bool) {
 	tw.WidgetBase.applyEnabled(enabled)
 
@@ -182,12 +125,12 @@ func (tw *TabWidget) ApplyDPI(dpi int) {
 	var size Size
 	if tw.imageList != nil {
 		maskColor = tw.imageList.maskColor
-		size = tw.imageList.imageSize96dpi
+		size = SizeFrom96DPI(tw.imageList.imageSize96dpi, dpi)
 	} else {
-		size = Size{16, 16}
+		size = SizeFrom96DPI(Size{16, 16}, dpi)
 	}
 
-	iml, err := newImageList(size, maskColor, dpi)
+	iml, err := NewImageListForDPI(size, maskColor, dpi)
 	if err != nil {
 		return
 	}
@@ -287,10 +230,19 @@ func (tw *TabWidget) RestoreState() error {
 }
 
 func (tw *TabWidget) resizePages() {
+	bounds := tw.pageBounds()
+
+	for _, page := range tw.pages.items {
+		page.SetBoundsPixels(bounds)
+	}
+}
+
+// pageBounds returns page bounds in native pixels.
+func (tw *TabWidget) pageBounds() Rectangle {
 	var r win.RECT
 	if !win.GetWindowRect(tw.hWndTab, &r) {
 		lastError("GetWindowRect")
-		return
+		return Rectangle{}
 	}
 
 	p := win.POINT{
@@ -299,7 +251,7 @@ func (tw *TabWidget) resizePages() {
 	}
 	if !win.ScreenToClient(tw.hWnd, &p) {
 		newError("ScreenToClient failed")
-		return
+		return Rectangle{}
 	}
 
 	r = win.RECT{
@@ -310,23 +262,17 @@ func (tw *TabWidget) resizePages() {
 	}
 	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 0, uintptr(unsafe.Pointer(&r)))
 
-	for _, page := range tw.pages.items {
-		if err := page.SetBoundsPixels(
-			Rectangle{
-				int(r.Left - 2),
-				int(r.Top),
-				int(r.Right - r.Left + 2),
-				int(r.Bottom - r.Top),
-			}); err != nil {
-
-			return
-		}
+	adjustment := 2 * int32(tw.IntFrom96DPI(1))
+	return Rectangle{
+		int(r.Left - adjustment),
+		int(r.Top),
+		int(r.Right - r.Left + adjustment),
+		int(r.Bottom - r.Top),
 	}
 }
 
-func (tw *TabWidget) onResize(lParam uintptr) {
-	r := win.RECT{0, 0, win.GET_X_LPARAM(lParam), win.GET_Y_LPARAM(lParam)}
-	if !win.MoveWindow(tw.hWndTab, r.Left, r.Top, r.Right-r.Left, r.Bottom-r.Top, true) {
+func (tw *TabWidget) onResize(width, height int32) {
+	if !win.MoveWindow(tw.hWndTab, 0, 0, width, height, true) {
 		lastError("MoveWindow")
 		return
 	}
@@ -347,6 +293,7 @@ func (tw *TabWidget) onSelChange() {
 	if tw.currentIndex > -1 && tw.currentIndex < pageCount {
 		page := tw.pages.At(tw.currentIndex)
 		page.SetVisible(true)
+		tw.RequestLayout()
 		page.Invalidate()
 		tw.pages.At(tw.currentIndex).focusFirstCandidateDescendant()
 	}
@@ -362,11 +309,14 @@ func (tw *TabWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 		case win.WM_ERASEBKGND:
 			return 1
 
-		//case win.WM_PAINT:
-		//	return 0
+		case win.WM_WINDOWPOSCHANGED:
+			wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
 
-		case win.WM_SIZE, win.WM_SIZING:
-			tw.onResize(lParam)
+			if wp.Flags&win.SWP_NOSIZE != 0 {
+				break
+			}
+
+			tw.onResize(wp.Cx, wp.Cy)
 
 		case win.WM_NOTIFY:
 			nmhdr := (*win.NMHDR)(unsafe.Pointer(lParam))
@@ -381,7 +331,7 @@ func (tw *TabWidget) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) 
 	return tw.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 }
 
-var tabWidgetTabWndProcPtr = syscall.NewCallback(tabWidgetTabWndProc)
+var tabWidgetTabWndProcPtr uintptr
 
 func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	tw := (*TabWidget)(unsafe.Pointer(win.GetWindowLongPtr(hwnd, win.GWLP_USERDATA)))
@@ -401,7 +351,8 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 		cb := tw.ClientBoundsPixels()
 
-		bitmap, err := NewBitmap(cb.Size())
+		dpi := tw.DPI()
+		bitmap, err := NewBitmapForDPI(cb.Size(), dpi)
 		if err != nil {
 			break
 		}
@@ -416,7 +367,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 		themed := win.IsAppThemed()
 
 		if !themed {
-			if err := canvas.FillRectangle(sysColorBtnFaceBrush, cb); err != nil {
+			if err := canvas.FillRectanglePixels(sysColorBtnFaceBrush, cb); err != nil {
 				break
 			}
 		}
@@ -437,6 +388,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 			var rc win.RECT
 
+			adjustment := SizeFrom96DPI(Size{1, 1}, dpi).toSIZE()
 			count := tw.pages.Len()
 			for i := 0; i < count; i++ {
 				if 0 == win.SendMessage(hwnd, win.TCM_GETITEMRECT, uintptr(i), uintptr(unsafe.Pointer(&rc))) {
@@ -444,12 +396,12 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 				}
 
 				if i == tw.currentIndex {
-					rc.Left -= 2
-					rc.Top -= 2
-					rc.Right += 2
+					rc.Left -= 2 * adjustment.CX
+					rc.Top -= 2 * adjustment.CY
+					rc.Right += 2 * adjustment.CX
 				} else {
 					if i == count-1 && themed {
-						rc.Right -= 2
+						rc.Right -= 2 * adjustment.CX
 					}
 				}
 
@@ -482,18 +434,19 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 					break
 				}
 
-				hRgn := win.CreateRectRgn(rc.Left, rc.Top, rc.Right, rc.Bottom+2)
+				adjustment := SizeFrom96DPI(Size{6, 1}, dpi).toSIZE()
+				hRgn := win.CreateRectRgn(rc.Left, rc.Top, rc.Right, rc.Bottom+2*adjustment.CY)
 				defer win.DeleteObject(win.HGDIOBJ(hRgn))
 				if !win.FillRgn(canvas.hdc, hRgn, bg.handle()) {
 					break
 				}
 
 				if page.image != nil {
-					x := rc.Left + 6
+					x := rc.Left + adjustment.CX
 					y := rc.Top
-					s := int32(16)
+					s := int32(IntFrom96DPI(16, dpi))
 
-					bmp, err := iconCache.Bitmap(page.image, tw.DPI())
+					bmp, err := iconCache.Bitmap(page.image, dpi)
 					if err == nil {
 						if imageCanvas, err := NewCanvasFromImage(bmp); err == nil {
 							defer imageCanvas.Dispose()
@@ -506,12 +459,12 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 							}
 						}
 
-						rc.Left += s + 6
+						rc.Left += s + adjustment.CX
 					}
 				}
 
-				rc.Left += 6
-				rc.Top += 1
+				rc.Left += adjustment.CX
+				rc.Top += adjustment.CY
 
 				title := syscall.StringToUTF16(page.title)
 
@@ -519,7 +472,7 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 					hTheme := win.OpenThemeData(hwnd, syscall.StringToUTF16Ptr("tab"))
 					defer win.CloseThemeData(hTheme)
 
-					options := win.DTTOPTS{DwFlags: win.DTT_GLOWSIZE, IGlowSize: 3}
+					options := win.DTTOPTS{DwFlags: win.DTT_GLOWSIZE, IGlowSize: int32(IntFrom96DPI(3, dpi))}
 					options.DwSize = uint32(unsafe.Sizeof(options))
 					if hr := win.DrawThemeTextEx(hTheme, canvas.hdc, 0, win.TIS_SELECTED, &title[0], int32(len(title)), 0, &rc, &options); !win.SUCCEEDED(hr) {
 						break
@@ -537,6 +490,26 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 		}
 
 		return 0
+
+	case win.WM_LBUTTONDOWN:
+		x := win.GET_X_LPARAM(lParam)
+		y := win.GET_Y_LPARAM(lParam)
+
+		hti := win.TCHITTESTINFO{
+			Pt: win.POINT{x, y},
+		}
+
+		i := int(win.SendMessage(hwnd, win.TCM_HITTEST, 0, uintptr(unsafe.Pointer(&hti))))
+
+		if i == -1 {
+			break
+		}
+
+		ret := win.CallWindowProc(tw.tabOrigWndProcPtr, hwnd, msg, wParam, lParam)
+
+		tw.pages.At(i).focusFirstCandidateDescendant()
+
+		return ret
 	}
 
 	return win.CallWindowProc(tw.tabOrigWndProcPtr, hwnd, msg, wParam, lParam)
@@ -704,7 +677,8 @@ func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
 	index = -1
 	if image != nil {
 		if tw.imageList == nil {
-			if tw.imageList, err = newImageList(Size{16, 16}, 0, tw.DPI()); err != nil {
+			dpi := tw.DPI()
+			if tw.imageList, err = NewImageListForDPI(SizeFrom96DPI(Size{16, 16}, dpi), 0, dpi); err != nil {
 				return
 			}
 
@@ -717,4 +691,143 @@ func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
 	}
 
 	return
+}
+
+func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	pages := make([]LayoutItem, tw.pages.Len())
+
+	bounds := tw.pageBounds()
+
+	li := &tabWidgetLayoutItem{
+		pagePos:      bounds.Location(),
+		currentIndex: tw.CurrentIndex(),
+	}
+
+	for i := tw.pages.Len() - 1; i >= 0; i-- {
+		var page LayoutItem
+		if p := tw.pages.At(i); p.Layout() != nil {
+			page = CreateLayoutItemsForContainerWithContext(p, ctx)
+		} else {
+			page = NewGreedyLayoutItem()
+		}
+
+		lib := page.AsLayoutItemBase()
+		lib.ctx = ctx
+		lib.parent = li
+		pages[i] = page
+	}
+
+	li.children = pages
+
+	return li
+}
+
+type tabWidgetLayoutItem struct {
+	ContainerLayoutItemBase
+	pagePos      Point // in native pixels
+	currentIndex int
+}
+
+func (li *tabWidgetLayoutItem) LayoutFlags() LayoutFlags {
+	if len(li.children) == 0 {
+		return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
+	}
+
+	var flags LayoutFlags
+
+	for _, page := range li.children {
+		flags |= page.LayoutFlags()
+	}
+
+	return flags
+}
+
+func (li *tabWidgetLayoutItem) MinSize() Size {
+	if len(li.children) == 0 {
+		return li.IdealSize()
+	}
+
+	var min Size
+
+	for _, page := range li.children {
+		if ms, ok := page.(MinSizer); ok {
+			s := ms.MinSize()
+
+			min.Width = maxi(min.Width, s.Width)
+			min.Height = maxi(min.Height, s.Height)
+		}
+	}
+
+	s := li.geometry.Size
+	ps := li.children[0].Geometry().Size
+
+	size := Size{s.Width - ps.Width + min.Width, s.Height - ps.Height + min.Height}
+
+	return size
+}
+
+func (li *tabWidgetLayoutItem) MinSizeForSize(size Size) Size {
+	return li.MinSize()
+}
+
+func (li *tabWidgetLayoutItem) HasHeightForWidth() bool {
+	if len(li.children) == 0 {
+		return false
+	}
+
+	for _, page := range li.children {
+		if hfw, ok := page.(HeightForWidther); ok && hfw.HasHeightForWidth() {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (li *tabWidgetLayoutItem) HeightForWidth(width int) int {
+	if len(li.children) == 0 {
+		return 0
+	}
+
+	var height int
+	margin := li.geometry.Size
+	pageSize := li.children[0].Geometry().Size
+
+	margin.Width -= pageSize.Width
+	margin.Height -= pageSize.Height
+
+	for _, page := range li.children {
+		if hfw, ok := page.(HeightForWidther); ok && hfw.HasHeightForWidth() {
+			h := hfw.HeightForWidth(width + margin.Width)
+
+			height = maxi(height, h)
+		}
+	}
+
+	return height + margin.Height
+}
+
+func (li *tabWidgetLayoutItem) IdealSize() Size {
+	return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
+}
+
+func (li *tabWidgetLayoutItem) PerformLayout() []LayoutResultItem {
+	if li.currentIndex > -1 {
+		page := li.children[li.currentIndex]
+
+		adjustment := IntFrom96DPI(1, li.ctx.dpi)
+		return []LayoutResultItem{
+			{
+				Item: page,
+				Bounds: Rectangle{
+					X:      li.pagePos.X,
+					Y:      li.pagePos.Y,
+					Width:  li.geometry.Size.Width - li.pagePos.X*2 - adjustment,
+					Height: li.geometry.Size.Height - li.pagePos.Y - 2*adjustment,
+				},
+			},
+		}
+	}
+
+	return nil
 }

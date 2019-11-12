@@ -7,8 +7,9 @@
 package declarative
 
 import (
-	"github.com/lxn/walk"
 	"strconv"
+
+	"github.com/lxn/walk"
 )
 
 type TransparentBrush struct {
@@ -70,4 +71,20 @@ type GradientBrush struct {
 
 func (gb GradientBrush) Create() (walk.Brush, error) {
 	return walk.NewGradientBrush(gb.Vertexes, gb.Triangles)
+}
+
+type HorizontalGradientBrush struct {
+	Stops []walk.GradientStop
+}
+
+func (hgb HorizontalGradientBrush) Create() (walk.Brush, error) {
+	return walk.NewHorizontalGradientBrush(hgb.Stops)
+}
+
+type VerticalGradientBrush struct {
+	Stops []walk.GradientStop
+}
+
+func (vgb VerticalGradientBrush) Create() (walk.Brush, error) {
+	return walk.NewVerticalGradientBrush(vgb.Stops)
 }

@@ -8,12 +8,9 @@ package declarative
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"regexp"
-)
-
-import (
-	"log"
 	"strings"
 
 	"github.com/lxn/walk"
@@ -22,8 +19,14 @@ import (
 
 var (
 	conditionsByName = make(map[string]walk.Condition)
-	propertyRE       = regexp.MustCompile("[A-Za-z]+[0-9A-Za-z]*(\\.[A-Za-z]+[0-9A-Za-z]*)+")
+	propertyRE       *regexp.Regexp
 )
+
+func init() {
+	walk.AppendToWalkInit(func() {
+		propertyRE = regexp.MustCompile("[A-Za-z]+[0-9A-Za-z]*(\\.[A-Za-z]+[0-9A-Za-z]*)+")
+	})
+}
 
 func MustRegisterCondition(name string, condition walk.Condition) {
 	if name == "" {
@@ -45,6 +48,7 @@ type declWidget struct {
 }
 
 type Builder struct {
+	dpi                      int
 	level                    int
 	rows                     int
 	columns                  int
@@ -62,7 +66,14 @@ type Builder struct {
 }
 
 func NewBuilder(parent walk.Container) *Builder {
+	var dpi int
+
+	if parent != nil {
+		dpi = parent.DPI()
+	}
+
 	return &Builder{
+		dpi:                      dpi,
 		parent:                   parent,
 		name2Window:              make(map[string]walk.Window),
 		name2DataBinder:          make(map[string]*walk.DataBinder),
@@ -113,6 +124,9 @@ func (b *Builder) deferBuildActions(actionList *walk.ActionList, items []MenuIte
 }
 
 func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) error {
+	if b.dpi == 0 {
+		b.dpi = w.DPI()
+	}
 	oldWidgetValue := b.widgetValue
 	b.widgetValue = reflect.ValueOf(d)
 	b.level++
@@ -129,6 +143,9 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	}()
 
 	b.declWidgets = append(b.declWidgets, declWidget{d, w})
+
+	// Window
+	b.initAccessibility(d, w)
 
 	// Widget
 	if name := b.string("Name"); name != "" {
@@ -429,6 +446,56 @@ func (b *Builder) InitWidget(d Widget, w walk.Window, customInit func() error) e
 	}
 
 	succeeded = true
+
+	return nil
+}
+
+func (b *Builder) initAccessibility(d Widget, w walk.Window) error {
+	accessibility := b.widgetValue.FieldByName("Accessibility")
+
+	if accessibility.IsValid() {
+		a := accessibility.Interface().(Accessibility)
+
+		if a.Accelerator != "" {
+			w.Accessibility().SetAccelerator(a.Accelerator)
+		}
+
+		if a.DefaultAction != "" {
+			w.Accessibility().SetDefaultAction(a.DefaultAction)
+		}
+
+		if a.Description != "" {
+			w.Accessibility().SetDescription(a.Description)
+		}
+
+		if a.Help != "" {
+			w.Accessibility().SetHelp(a.Help)
+		}
+
+		if a.Name != "" {
+			w.Accessibility().SetName(a.Name)
+		}
+
+		if a.Role > 0 {
+			w.Accessibility().SetRole(walk.AccRole(a.Role))
+		}
+
+		if a.RoleMap != "" {
+			w.Accessibility().SetRoleMap(a.RoleMap)
+		}
+
+		if a.State > 0 {
+			w.Accessibility().SetState(walk.AccState(a.State))
+		}
+
+		if a.StateMap != "" {
+			w.Accessibility().SetStateMap(a.StateMap)
+		}
+
+		if a.ValueMap != "" {
+			w.Accessibility().SetValueMap(a.ValueMap)
+		}
+	}
 
 	return nil
 }

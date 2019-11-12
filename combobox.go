@@ -31,7 +31,7 @@ type ComboBox struct {
 	itemChangedHandlerHandle     int
 	itemsInsertedHandlerHandle   int
 	itemsRemovedHandlerHandle    int
-	maxItemTextWidth             int
+	maxItemTextWidth             int // in native pixels
 	prevCurIndex                 int
 	selChangeIndex               int
 	maxLength                    int
@@ -43,7 +43,13 @@ type ComboBox struct {
 	persistent                   bool
 }
 
-var comboBoxEditWndProcPtr = syscall.NewCallback(comboBoxEditWndProc)
+var comboBoxEditWndProcPtr uintptr
+
+func init() {
+	AppendToWalkInit(func() {
+		comboBoxEditWndProcPtr = syscall.NewCallback(comboBoxEditWndProc)
+	})
+}
 
 func comboBoxEditWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	cb := (*ComboBox)(unsafe.Pointer(win.GetWindowLongPtr(hwnd, win.GWLP_USERDATA)))
@@ -228,38 +234,12 @@ func newComboBoxWithStyle(parent Container, style uint32) (*ComboBox, error) {
 	return cb, nil
 }
 
-func (cb *ComboBox) LayoutFlags() LayoutFlags {
-	if cb.Editable() {
-		return GrowableHorz | GreedyHorz
-	}
-
-	return GrowableHorz
-}
-
-func (cb *ComboBox) MinSizeHint() Size {
-	defaultSize := cb.dialogBaseUnitsToPixels(Size{30, 12})
-
-	if cb.model != nil && cb.maxItemTextWidth <= 0 {
-		cb.maxItemTextWidth = cb.calculateMaxItemTextWidth()
-	}
-
-	// FIXME: Use GetThemePartSize instead of guessing
-	w := maxi(defaultSize.Width, cb.maxItemTextWidth+int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(cb.DPI())))+8)
-	h := defaultSize.Height + 1
-
-	return Size{w, h}
-}
-
-func (cb *ComboBox) SizeHint() Size {
-	return cb.MinSizeHint()
-}
-
 func (cb *ComboBox) applyFont(font *Font) {
 	cb.WidgetBase.applyFont(font)
 
 	if cb.model != nil {
 		cb.maxItemTextWidth = cb.calculateMaxItemTextWidth()
-		cb.updateParentLayout()
+		cb.RequestLayout()
 	}
 }
 
@@ -330,7 +310,7 @@ func (cb *ComboBox) resetItems() error {
 		}
 	}
 
-	cb.updateParentLayout()
+	cb.RequestLayout()
 
 	return nil
 }
@@ -534,6 +514,7 @@ func (cb *ComboBox) SetMaxLength(value int) {
 	cb.maxLength = value
 }
 
+// calculateMaxItemTextWidth returns maximum item text width in native pixels.
 func (cb *ComboBox) calculateMaxItemTextWidth() int {
 	hdc := win.GetDC(cb.hWnd)
 	if hdc == 0 {
@@ -689,7 +670,13 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 			return 0
 		}
 
-	case win.WM_SIZE:
+	case win.WM_WINDOWPOSCHANGED:
+		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+
+		if wp.Flags&win.SWP_NOSIZE != 0 {
+			break
+		}
+
 		if cb.Editable() {
 			result := cb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
 
@@ -700,4 +687,50 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	}
 
 	return cb.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (*ComboBox) NeedsWmSize() bool {
+	return true
+}
+
+func (cb *ComboBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	var layoutFlags LayoutFlags
+	if cb.Editable() {
+		layoutFlags = GrowableHorz | GreedyHorz
+	} else {
+		layoutFlags = GrowableHorz
+	}
+
+	defaultSize := cb.dialogBaseUnitsToPixels(Size{30, 12})
+
+	if cb.model != nil && cb.maxItemTextWidth <= 0 {
+		cb.maxItemTextWidth = cb.calculateMaxItemTextWidth()
+	}
+
+	// FIXME: Use GetThemePartSize instead of guessing
+	w := maxi(defaultSize.Width, cb.maxItemTextWidth+int(win.GetSystemMetricsForDpi(win.SM_CXVSCROLL, uint32(ctx.dpi)))+8)
+	h := defaultSize.Height + 1
+
+	return &comboBoxLayoutItem{
+		layoutFlags: layoutFlags,
+		idealSize:   Size{w, h},
+	}
+}
+
+type comboBoxLayoutItem struct {
+	LayoutItemBase
+	layoutFlags LayoutFlags
+	idealSize   Size // in native pixels
+}
+
+func (li *comboBoxLayoutItem) LayoutFlags() LayoutFlags {
+	return li.layoutFlags
+}
+
+func (li *comboBoxLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *comboBoxLayoutItem) MinSize() Size {
+	return li.idealSize
 }

@@ -20,20 +20,22 @@ type treeViewItemInfo struct {
 
 type TreeView struct {
 	WidgetBase
-	model                         TreeModel
-	lazyPopulation                bool
-	itemsResetEventHandlerHandle  int
-	itemChangedEventHandlerHandle int
-	item2Info                     map[TreeItem]*treeViewItemInfo
-	handle2Item                   map[win.HTREEITEM]TreeItem
-	currItem                      TreeItem
-	hIml                          win.HIMAGELIST
-	usingSysIml                   bool
-	imageUintptr2Index            map[uintptr]int32
-	filePath2IconIndex            map[string]int32
-	expandedChangedPublisher      TreeItemEventPublisher
-	currentItemChangedPublisher   EventPublisher
-	itemActivatedPublisher        EventPublisher
+	model                          TreeModel
+	lazyPopulation                 bool
+	itemsResetEventHandlerHandle   int
+	itemChangedEventHandlerHandle  int
+	itemInsertedEventHandlerHandle int
+	itemRemovedEventHandlerHandle  int
+	item2Info                      map[TreeItem]*treeViewItemInfo
+	handle2Item                    map[win.HTREEITEM]TreeItem
+	currItem                       TreeItem
+	hIml                           win.HIMAGELIST
+	usingSysIml                    bool
+	imageUintptr2Index             map[uintptr]int32
+	filePath2IconIndex             map[string]int32
+	expandedChangedPublisher       TreeItemEventPublisher
+	currentItemChangedPublisher    EventPublisher
+	itemActivatedPublisher         EventPublisher
 }
 
 func NewTreeView(parent Container) (*TreeView, error) {
@@ -97,14 +99,6 @@ func NewTreeView(parent Container) (*TreeView, error) {
 	return tv, nil
 }
 
-func (*TreeView) LayoutFlags() LayoutFlags {
-	return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert | GreedyHorz | GreedyVert
-}
-
-func (tv *TreeView) SizeHint() Size {
-	return tv.dialogBaseUnitsToPixels(Size{100, 100})
-}
-
 func (tv *TreeView) Dispose() {
 	tv.WidgetBase.Dispose()
 
@@ -137,6 +131,8 @@ func (tv *TreeView) SetModel(model TreeModel) error {
 	if tv.model != nil {
 		tv.model.ItemsReset().Detach(tv.itemsResetEventHandlerHandle)
 		tv.model.ItemChanged().Detach(tv.itemChangedEventHandlerHandle)
+		tv.model.ItemInserted().Detach(tv.itemInsertedEventHandlerHandle)
+		tv.model.ItemRemoved().Detach(tv.itemRemovedEventHandlerHandle)
 
 		tv.disposeImageListAndCaches()
 	}
@@ -172,6 +168,33 @@ func (tv *TreeView) SetModel(model TreeModel) error {
 				return
 			}
 		})
+
+		tv.itemInsertedEventHandlerHandle = model.ItemInserted().Attach(func(item TreeItem) {
+			tv.SetSuspended(true)
+			defer tv.SetSuspended(false)
+
+			var hInsertAfter win.HTREEITEM
+			parent := item.Parent()
+			for i := parent.ChildCount() - 1; i >= 0; i-- {
+				if parent.ChildAt(i) == item {
+					if i > 0 {
+						hInsertAfter = tv.item2Info[parent.ChildAt(i-1)].handle
+					} else {
+						hInsertAfter = win.TVI_FIRST
+					}
+				}
+			}
+
+			if _, err := tv.insertItemAfter(item, hInsertAfter); err != nil {
+				return
+			}
+		})
+
+		tv.itemRemovedEventHandlerHandle = model.ItemRemoved().Attach(func(item TreeItem) {
+			if err := tv.removeItem(item); err != nil {
+				return
+			}
+		})
 	}
 
 	return tv.resetItems()
@@ -192,13 +215,9 @@ func (tv *TreeView) SetCurrentItem(item TreeItem) error {
 		}
 	}
 
-	var handle win.HTREEITEM
-	if item != nil {
-		if info := tv.item2Info[item]; info == nil {
-			return newError("invalid item")
-		} else {
-			handle = info.handle
-		}
+	handle, err := tv.handleForItem(item)
+	if err != nil {
+		return err
 	}
 
 	if 0 == tv.SendMessage(win.TVM_SELECTITEM, win.TVGN_CARET, uintptr(handle)) {
@@ -210,8 +229,32 @@ func (tv *TreeView) SetCurrentItem(item TreeItem) error {
 	return nil
 }
 
+func (tv *TreeView) EnsureVisible(item TreeItem) error {
+	handle, err := tv.handleForItem(item)
+	if err != nil {
+		return err
+	}
+
+	tv.SendMessage(win.TVM_ENSUREVISIBLE, 0, uintptr(handle))
+
+	return nil
+}
+
+func (tv *TreeView) handleForItem(item TreeItem) (win.HTREEITEM, error) {
+	if item != nil {
+		if info := tv.item2Info[item]; info == nil {
+			return 0, newError("invalid item")
+		} else {
+			return info.handle, nil
+		}
+	}
+
+	return 0, newError("invalid item")
+}
+
+// ItemAt determines the location of the specified point in native pixels relative to the client area of a tree-view control.
 func (tv *TreeView) ItemAt(x, y int) TreeItem {
-	hti := win.TVHITTESTINFO{Pt: win.POINT{int32(x), int32(y)}}
+	hti := win.TVHITTESTINFO{Pt: Point{x, y}.toPOINT()}
 
 	tv.SendMessage(win.TVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
 
@@ -222,10 +265,12 @@ func (tv *TreeView) ItemAt(x, y int) TreeItem {
 	return nil
 }
 
+// ItemHeight returns the height of each item in native pixels.
 func (tv *TreeView) ItemHeight() int {
 	return int(tv.SendMessage(win.TVM_GETITEMHEIGHT, 0, 0))
 }
 
+// SetItemHeight sets the height of the tree-view items in native pixels.
 func (tv *TreeView) SetItemHeight(height int) {
 	tv.SendMessage(win.TVM_SETITEMHEIGHT, uintptr(height), 0)
 }
@@ -262,7 +307,7 @@ func (tv *TreeView) clearItems() error {
 
 func (tv *TreeView) insertRoots() error {
 	for i := tv.model.RootCount() - 1; i >= 0; i-- {
-		if _, err := tv.insertItem(i, tv.model.RootAt(i)); err != nil {
+		if _, err := tv.insertItem(tv.model.RootAt(i)); err != nil {
 			return err
 		}
 	}
@@ -317,7 +362,11 @@ func (tv *TreeView) setTVITEMImageInfo(tvi *win.TVITEM, item TreeItem) {
 	}
 }
 
-func (tv *TreeView) insertItem(index int, item TreeItem) (win.HTREEITEM, error) {
+func (tv *TreeView) insertItem(item TreeItem) (win.HTREEITEM, error) {
+	return tv.insertItemAfter(item, win.TVI_FIRST)
+}
+
+func (tv *TreeView) insertItemAfter(item TreeItem, hInsertAfter win.HTREEITEM) (win.HTREEITEM, error) {
 	var tvins win.TVINSERTSTRUCT
 	tvi := &tvins.Item
 
@@ -339,7 +388,7 @@ func (tv *TreeView) insertItem(index int, item TreeItem) (win.HTREEITEM, error) 
 		tvins.HParent = info.handle
 	}
 
-	tvins.HInsertAfter = win.TVI_FIRST
+	tvins.HInsertAfter = hInsertAfter
 
 	hItem := win.HTREEITEM(tv.SendMessage(win.TVM_INSERTITEM, 0, uintptr(unsafe.Pointer(&tvins))))
 	if hItem == 0 {
@@ -363,7 +412,7 @@ func (tv *TreeView) insertChildren(parent TreeItem) error {
 	for i := parent.ChildCount() - 1; i >= 0; i-- {
 		child := parent.ChildAt(i)
 
-		if handle, err := tv.insertItem(i, child); err != nil {
+		if handle, err := tv.insertItem(child); err != nil {
 			return err
 		} else {
 			info.child2Handle[child] = handle
@@ -537,7 +586,15 @@ func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				(*buf)[max-1] = 0
 			}
 			if nmtvdi.Item.Mask&win.TVIF_CHILDREN != 0 {
-				nmtvdi.Item.CChildren = int32(item.ChildCount())
+				if hc, ok := item.(HasChilder); ok {
+					if hc.HasChild() {
+						nmtvdi.Item.CChildren = 1
+					} else {
+						nmtvdi.Item.CChildren = 0
+					}
+				} else {
+					nmtvdi.Item.CChildren = int32(item.ChildCount())
+				}
 			}
 
 		case win.TVN_ITEMEXPANDING:
@@ -588,4 +645,12 @@ func (tv *TreeView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	}
 
 	return tv.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (*TreeView) NeedsWmSize() bool {
+	return true
+}
+
+func (tv *TreeView) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return NewGreedyLayoutItem()
 }

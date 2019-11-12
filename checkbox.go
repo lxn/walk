@@ -20,7 +20,7 @@ const (
 	CheckIndeterminate CheckState = win.BST_INDETERMINATE
 )
 
-var checkBoxCheckSize Size
+var checkBoxCheckSize Size // in native pixels
 
 type CheckBox struct {
 	Button
@@ -58,14 +58,6 @@ func NewCheckBox(parent Container) (*CheckBox, error) {
 		cb.CheckStateChanged()))
 
 	return cb, nil
-}
-
-func (*CheckBox) LayoutFlags() LayoutFlags {
-	return 0
-}
-
-func (cb *CheckBox) SizeHint() Size {
-	return cb.MinSizeHint()
 }
 
 func (cb *CheckBox) TextOnLeftSide() bool {

@@ -38,18 +38,32 @@ func newSeparator(parent Container, vertical bool) (*Separator, error) {
 	return s, nil
 }
 
-func (s *Separator) LayoutFlags() LayoutFlags {
+func (s *Separator) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	var layoutFlags LayoutFlags
 	if s.vertical {
-		return GrowableHorz | GreedyHorz
+		layoutFlags = GrowableHorz | GreedyHorz
 	} else {
-		return GrowableVert | GreedyVert
+		layoutFlags = GrowableVert | GreedyVert
+	}
+
+	return &separatorLayoutItem{
+		layoutFlags: layoutFlags,
 	}
 }
 
-func (s *Separator) MinSizeHint() Size {
-	return Size{2, 2}
+type separatorLayoutItem struct {
+	LayoutItemBase
+	layoutFlags LayoutFlags
 }
 
-func (s *Separator) SizeHint() Size {
-	return s.MinSizeHint()
+func (li *separatorLayoutItem) LayoutFlags() LayoutFlags {
+	return li.layoutFlags
+}
+
+func (li *separatorLayoutItem) IdealSize() Size {
+	return li.MinSize()
+}
+
+func (li *separatorLayoutItem) MinSize() Size {
+	return SizeFrom96DPI(Size{2, 2}, li.ctx.dpi)
 }

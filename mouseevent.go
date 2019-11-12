@@ -18,6 +18,7 @@ const (
 	MiddleButton MouseButton = win.MK_MBUTTON
 )
 
+// MouseEventHandler is called for mouse events. x and y are measured in native pixels.
 type MouseEventHandler func(x, y int, button MouseButton)
 
 type MouseEvent struct {
@@ -48,6 +49,7 @@ func (p *MouseEventPublisher) Event() *MouseEvent {
 	return &p.event
 }
 
+// Publish publishes mouse event. x and y are measured in native pixels.
 func (p *MouseEventPublisher) Publish(x, y int, button MouseButton) {
 	for _, handler := range p.event.handlers {
 		if handler != nil {

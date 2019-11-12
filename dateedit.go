@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
-)
 
-import "github.com/lxn/win"
+	"github.com/lxn/win"
+)
 
 type DateEdit struct {
 	WidgetBase
@@ -58,18 +58,6 @@ func NewDateEdit(parent Container) (*DateEdit, error) {
 
 func NewDateEditWithNoneOption(parent Container) (*DateEdit, error) {
 	return newDateEdit(parent, win.DTS_SHOWNONE)
-}
-
-func (*DateEdit) LayoutFlags() LayoutFlags {
-	return GrowableHorz
-}
-
-func (de *DateEdit) MinSizeHint() Size {
-	return de.dialogBaseUnitsToPixels(Size{80, 12})
-}
-
-func (de *DateEdit) SizeHint() Size {
-	return de.MinSizeHint()
 }
 
 func (de *DateEdit) systemTimeToTime(st *win.SYSTEMTIME) time.Time {
@@ -254,4 +242,31 @@ func (de *DateEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 	}
 
 	return de.WidgetBase.WndProc(hwnd, msg, wParam, lParam)
+}
+
+func (*DateEdit) NeedsWmSize() bool {
+	return true
+}
+
+func (de *DateEdit) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
+	return &dateEditLayoutItem{
+		idealSize: de.dialogBaseUnitsToPixels(Size{80, 12}),
+	}
+}
+
+type dateEditLayoutItem struct {
+	LayoutItemBase
+	idealSize Size // in native pixels
+}
+
+func (*dateEditLayoutItem) LayoutFlags() LayoutFlags {
+	return GrowableHorz
+}
+
+func (li *dateEditLayoutItem) IdealSize() Size {
+	return li.idealSize
+}
+
+func (li *dateEditLayoutItem) MinSize() Size {
+	return li.idealSize
 }
