@@ -6,26 +6,39 @@
 
 package walk
 
+type cancelEventHandlerInfo struct {
+	handler CancelEventHandler
+	once    bool
+}
+
 type CancelEventHandler func(canceled *bool)
 
 type CancelEvent struct {
-	handlers []CancelEventHandler
+	handlers []cancelEventHandlerInfo
 }
 
 func (e *CancelEvent) Attach(handler CancelEventHandler) int {
+	handlerInfo := cancelEventHandlerInfo{handler, false}
+
 	for i, h := range e.handlers {
-		if h == nil {
-			e.handlers[i] = handler
+		if h.handler == nil {
+			e.handlers[i] = handlerInfo
 			return i
 		}
 	}
 
-	e.handlers = append(e.handlers, handler)
+	e.handlers = append(e.handlers, handlerInfo)
+
 	return len(e.handlers) - 1
 }
 
 func (e *CancelEvent) Detach(handle int) {
-	e.handlers[handle] = nil
+	e.handlers[handle].handler = nil
+}
+
+func (e *CancelEvent) Once(handler CancelEventHandler) {
+	i := e.Attach(handler)
+	e.handlers[i].once = true
 }
 
 type CancelEventPublisher struct {
@@ -37,9 +50,13 @@ func (p *CancelEventPublisher) Event() *CancelEvent {
 }
 
 func (p *CancelEventPublisher) Publish(canceled *bool) {
-	for _, handler := range p.event.handlers {
-		if handler != nil {
-			handler(canceled)
+	for i, h := range p.event.handlers {
+		if h.handler != nil {
+			h.handler(canceled)
+
+			if h.once {
+				p.event.Detach(i)
+			}
 		}
 	}
 }

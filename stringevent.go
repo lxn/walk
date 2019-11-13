@@ -6,26 +6,39 @@
 
 package walk
 
+type stringEventHandlerInfo struct {
+	handler StringEventHandler
+	once    bool
+}
+
 type StringEventHandler func(s string)
 
 type StringEvent struct {
-	handlers []StringEventHandler
+	handlers []stringEventHandlerInfo
 }
 
 func (e *StringEvent) Attach(handler StringEventHandler) int {
+	handlerInfo := stringEventHandlerInfo{handler, false}
+
 	for i, h := range e.handlers {
-		if h == nil {
-			e.handlers[i] = handler
+		if h.handler == nil {
+			e.handlers[i] = handlerInfo
 			return i
 		}
 	}
 
-	e.handlers = append(e.handlers, handler)
+	e.handlers = append(e.handlers, handlerInfo)
+
 	return len(e.handlers) - 1
 }
 
 func (e *StringEvent) Detach(handle int) {
-	e.handlers[handle] = nil
+	e.handlers[handle].handler = nil
+}
+
+func (e *StringEvent) Once(handler StringEventHandler) {
+	i := e.Attach(handler)
+	e.handlers[i].once = true
 }
 
 type StringEventPublisher struct {
@@ -37,9 +50,13 @@ func (p *StringEventPublisher) Event() *StringEvent {
 }
 
 func (p *StringEventPublisher) Publish(s string) {
-	for _, handler := range p.event.handlers {
-		if handler != nil {
-			handler(s)
+	for i, h := range p.event.handlers {
+		if h.handler != nil {
+			h.handler(s)
+
+			if h.once {
+				p.event.Detach(i)
+			}
 		}
 	}
 }

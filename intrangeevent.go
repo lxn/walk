@@ -6,26 +6,39 @@
 
 package walk
 
+type intRangeEventHandlerInfo struct {
+	handler IntRangeEventHandler
+	once    bool
+}
+
 type IntRangeEventHandler func(from, to int)
 
 type IntRangeEvent struct {
-	handlers []IntRangeEventHandler
+	handlers []intRangeEventHandlerInfo
 }
 
 func (e *IntRangeEvent) Attach(handler IntRangeEventHandler) int {
+	handlerInfo := intRangeEventHandlerInfo{handler, false}
+
 	for i, h := range e.handlers {
-		if h == nil {
-			e.handlers[i] = handler
+		if h.handler == nil {
+			e.handlers[i] = handlerInfo
 			return i
 		}
 	}
 
-	e.handlers = append(e.handlers, handler)
+	e.handlers = append(e.handlers, handlerInfo)
+
 	return len(e.handlers) - 1
 }
 
 func (e *IntRangeEvent) Detach(handle int) {
-	e.handlers[handle] = nil
+	e.handlers[handle].handler = nil
+}
+
+func (e *IntRangeEvent) Once(handler IntRangeEventHandler) {
+	i := e.Attach(handler)
+	e.handlers[i].once = true
 }
 
 type IntRangeEventPublisher struct {
@@ -37,9 +50,13 @@ func (p *IntRangeEventPublisher) Event() *IntRangeEvent {
 }
 
 func (p *IntRangeEventPublisher) Publish(from, to int) {
-	for _, handler := range p.event.handlers {
-		if handler != nil {
-			handler(from, to)
+	for i, h := range p.event.handlers {
+		if h.handler != nil {
+			h.handler(from, to)
+
+			if h.once {
+				p.event.Detach(i)
+			}
 		}
 	}
 }
