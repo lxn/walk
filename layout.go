@@ -292,6 +292,8 @@ func applyLayoutResults(results []LayoutResult, stopwatch *stopwatch) error {
 		defer stopwatch.Stop(subject)
 	}
 
+	var form Form
+
 	for _, result := range results {
 		if len(result.items) == 0 {
 			continue
@@ -316,6 +318,16 @@ func applyLayoutResults(results []LayoutResult, stopwatch *stopwatch) error {
 				window := windowFromHandle(ri.Item.Handle())
 				if window == nil {
 					continue
+				}
+
+				if form == nil {
+					if form = window.Form(); form != nil {
+						defer func() {
+							if focusedWindow := windowFromHandle(win.GetFocus()); focusedWindow == nil || focusedWindow == form || focusedWindow.Form() != form {
+								form.AsFormBase().clientComposite.focusFirstCandidateDescendant()
+							}
+						}()
+					}
 				}
 
 				widget := window.(Widget)

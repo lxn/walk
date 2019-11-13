@@ -356,8 +356,6 @@ func (fb *FormBase) Run() int {
 		defer invalidateDescendentBorders()
 	}
 
-	fb.clientComposite.focusFirstCandidateDescendant()
-
 	fb.started = true
 	fb.startingPublisher.Publish()
 
