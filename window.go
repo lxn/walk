@@ -360,6 +360,10 @@ type Window interface {
 	// visible changed events for the Window.
 	VisibleChanged() *Event
 
+	// VisibleChanging returns an Event that you can attach to for handling
+	// visible changing events for the Window.
+	VisibleChanging() *Event
+
 	// Width returns the outer width of the Window, including decorations.
 	Width() int
 
@@ -433,6 +437,7 @@ type WindowBase struct {
 	enabledProperty           Property
 	enabledChangedPublisher   EventPublisher
 	visibleProperty           Property
+	visibleChangingPublisher  EventPublisher
 	visibleChangedPublisher   EventPublisher
 	focusedProperty           Property
 	focusedChangedPublisher   EventPublisher
@@ -1287,19 +1292,24 @@ func (wb *WindowBase) Visible() bool {
 
 // SetVisible sets if the *WindowBase is visible.
 func (wb *WindowBase) SetVisible(visible bool) {
-	old := wb.Visible()
-
-	setWindowVisible(wb.hWnd, visible)
+	wasVisible := wb.visible
 
 	wb.visible = visible
 
-	walkDescendants(wb.window, func(w Window) bool {
-		w.AsWindowBase().visibleChangedPublisher.Publish()
+	if visible != wasVisible {
+		walkDescendants(wb.window, func(w Window) bool {
+			w.AsWindowBase().visibleChangingPublisher.Publish()
 
-		return true
-	})
+			return true
+		})
+	}
 
-	if visible == old {
+	form := wb.Form()
+	if form != nil && (form.AsWindowBase() == wb || !form.AsFormBase().changingVisibleTakesEffectAfterLayout) {
+		setWindowVisible(wb.hWnd, visible)
+	}
+
+	if visible == wasVisible {
 		return
 	}
 
@@ -1309,7 +1319,23 @@ func (wb *WindowBase) SetVisible(visible bool) {
 		wb.RequestLayout()
 	}
 
-	wb.visibleChangedPublisher.Publish()
+	if form != nil && !form.AsFormBase().changingVisibleTakesEffectAfterLayout {
+		wb.publishDescendantsVisibleChanged()
+	}
+}
+
+func (wb *WindowBase) publishDescendantsVisibleChanged() {
+	walkDescendants(wb.window, func(w Window) bool {
+		w.AsWindowBase().visibleChangedPublisher.Publish()
+
+		return true
+	})
+}
+
+// VisibleChanging returns an Event that you can attach to for handling
+// visible changing events for the Window.
+func (wb *WindowBase) VisibleChanging() *Event {
+	return wb.visibleChangingPublisher.Event()
 }
 
 // VisibleChanged returns an Event that you can attach to for handling

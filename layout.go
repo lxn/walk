@@ -34,8 +34,9 @@ func createLayoutItemForWidgetWithContext(widget Widget, ctx *LayoutContext) Lay
 	lib := item.AsLayoutItemBase()
 	lib.ctx = ctx
 	lib.handle = widget.Handle()
-	lib.visible = widget.AsWidgetBase().visible
-	lib.geometry = widget.AsWidgetBase().geometry
+	wb := widget.AsWidgetBase()
+	lib.visible = wb.visible
+	lib.geometry = wb.geometry
 	lib.geometry.Alignment = widget.Alignment()
 	lib.geometry.MinSize = widget.MinSizePixels()
 	lib.geometry.MaxSize = widget.MaxSizePixels()
@@ -85,7 +86,8 @@ func CreateLayoutItemsForContainerWithContext(container Container, ctx *LayoutCo
 		count := children.Len()
 
 		for i := 0; i < count; i++ {
-			item := createLayoutItemForWidgetWithContext(children.At(i), ctx)
+			child := children.At(i)
+			item := createLayoutItemForWidgetWithContext(child, ctx)
 			if item != nil {
 				lib := item.AsLayoutItemBase()
 				lib.ctx = ctx
@@ -172,24 +174,29 @@ func layoutTree(root ContainerLayoutItem, size Size, cancel chan struct{}, done 
 	// Populate some caches now, so we later need only read access to them from multiple goroutines.
 	ctx := root.Context()
 
-	populateContextForItem := func(item LayoutItem) {
+	populateContextForItem := func(item LayoutItem, parent *ContainerLayoutItemBase) {
 		ctx.layoutItem2MinSizeEffective[item] = minSizeEffective(item)
+
+		if lib := item.AsLayoutItemBase(); parent != nil && !lib.visible {
+			parent.windowsToHide = append(parent.windowsToHide, lib.handle)
+		}
 	}
 
 	var populateContextForContainer func(container ContainerLayoutItem)
 	populateContextForContainer = func(container ContainerLayoutItem) {
-		for _, child := range container.AsContainerLayoutItemBase().children {
+		clib := container.AsContainerLayoutItemBase()
+
+		for _, child := range clib.children {
 			if cli, ok := child.(ContainerLayoutItem); ok {
 				populateContextForContainer(cli)
-			} else {
-				populateContextForItem(child)
 			}
-		}
 
-		populateContextForItem(container)
+			populateContextForItem(child, clib)
+		}
 	}
 
 	populateContextForContainer(root)
+	populateContextForItem(root, nil)
 
 	if stopwatch != nil {
 		stopwatch.Stop(minSizeCacheSubject)
@@ -293,10 +300,17 @@ func applyLayoutResults(results []LayoutResult, stopwatch *stopwatch) error {
 	}
 
 	var form Form
+	var applyingVisible bool
 
 	for _, result := range results {
-		if len(result.items) == 0 {
+		wnd := windowFromHandle(result.container.Handle())
+		if wnd == nil || len(result.items) == 0 {
 			continue
+		}
+
+		if form == nil {
+			form = wnd.Form()
+			applyingVisible = form.AsFormBase().changingVisibleTakesEffectAfterLayout
 		}
 
 		hdwp := win.BeginDeferWindowPos(int32(len(result.items)))
@@ -305,12 +319,36 @@ func applyLayoutResults(results []LayoutResult, stopwatch *stopwatch) error {
 		}
 
 		var maybeInvalidate bool
-		if wnd := windowFromHandle(result.container.Handle()); wnd != nil {
-			if ctr, ok := wnd.(Container); ok {
-				if cb := ctr.AsContainerBase(); cb != nil {
-					maybeInvalidate = cb.hasComplexBackground()
-				}
+		if ctr, ok := wnd.(Container); ok {
+			if cb := ctr.AsContainerBase(); cb != nil {
+				maybeInvalidate = cb.hasComplexBackground()
 			}
+		}
+
+		for _, hwnd := range result.container.AsContainerLayoutItemBase().windowsToHide {
+			window := windowFromHandle(hwnd)
+
+			if window == nil {
+				continue
+			}
+
+			if hdwp = win.DeferWindowPos(hdwp, hwnd, 0, 0, 0, 0, 0,
+				win.SWP_HIDEWINDOW|win.SWP_NOACTIVATE|win.SWP_NOMOVE|win.SWP_NOSIZE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER); hdwp == 0 {
+
+				return lastError("DeferWindowPos")
+			}
+
+			if wb := window.AsWindowBase(); applyingVisible && wb.hasStyleBits(win.WS_VISIBLE) {
+				defer wb.publishDescendantsVisibleChanged()
+			}
+
+			widget := window.(Widget)
+
+			if widget.GraphicsEffects().Len() == 0 {
+				continue
+			}
+
+			widget.AsWidgetBase().invalidateBorderInParent()
 		}
 
 		for _, ri := range result.items {
@@ -332,25 +370,29 @@ func applyLayoutResults(results []LayoutResult, stopwatch *stopwatch) error {
 
 				widget := window.(Widget)
 
-				oldBounds := widget.BoundsPixels()
+				if wb := window.AsWindowBase(); applyingVisible && !wb.hasStyleBits(win.WS_VISIBLE) {
+					defer wb.publishDescendantsVisibleChanged()
+				} else {
+					oldBounds := widget.BoundsPixels()
 
-				if ri.Bounds == oldBounds {
-					continue
-				}
-
-				if ri.Bounds.X == oldBounds.X && ri.Bounds.Y == oldBounds.Y && ri.Bounds.Width == oldBounds.Width {
-					if _, ok := widget.(*ComboBox); ok {
-						if ri.Bounds.Height == oldBounds.Height+1 {
-							continue
-						}
-					} else if ri.Bounds.Height == oldBounds.Height {
+					if ri.Bounds == oldBounds {
 						continue
 					}
-				}
 
-				if maybeInvalidate {
-					if ri.Bounds.Width == oldBounds.Width && ri.Bounds.Height == oldBounds.Height && (ri.Bounds.X != oldBounds.X || ri.Bounds.Y != oldBounds.Y) {
-						widget.Invalidate()
+					if ri.Bounds.X == oldBounds.X && ri.Bounds.Y == oldBounds.Y && ri.Bounds.Width == oldBounds.Width {
+						if _, ok := widget.(*ComboBox); ok {
+							if ri.Bounds.Height == oldBounds.Height+1 {
+								continue
+							}
+						} else if ri.Bounds.Height == oldBounds.Height {
+							continue
+						}
+					}
+
+					if maybeInvalidate {
+						if ri.Bounds.Width == oldBounds.Width && ri.Bounds.Height == oldBounds.Height && (ri.Bounds.X != oldBounds.X || ri.Bounds.Y != oldBounds.Y) {
+							widget.Invalidate()
+						}
 					}
 				}
 
@@ -362,7 +404,7 @@ func applyLayoutResults(results []LayoutResult, stopwatch *stopwatch) error {
 					int32(ri.Bounds.Y),
 					int32(ri.Bounds.Width),
 					int32(ri.Bounds.Height),
-					win.SWP_NOACTIVATE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER); hdwp == 0 {
+					win.SWP_NOACTIVATE|win.SWP_NOOWNERZORDER|win.SWP_NOZORDER|win.SWP_SHOWWINDOW); hdwp == 0 {
 
 					return lastError("DeferWindowPos")
 				}
@@ -624,10 +666,11 @@ func (lib *LayoutItemBase) Visible() bool {
 
 type ContainerLayoutItemBase struct {
 	LayoutItemBase
-	children     []LayoutItem
-	margins96dpi Margins
-	spacing96dpi int
-	alignment    Alignment2D
+	windowsToHide []win.HWND
+	children      []LayoutItem
+	margins96dpi  Margins
+	spacing96dpi  int
+	alignment     Alignment2D
 }
 
 func (clib *ContainerLayoutItemBase) AsContainerLayoutItemBase() *ContainerLayoutItemBase {

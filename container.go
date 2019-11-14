@@ -244,7 +244,7 @@ func (cb *ContainerBase) doPaint() error {
 			}
 		}
 
-		if widget != nil && widget.Parent() != nil && widget.Parent().Handle() == cb.hWnd {
+		if widget != nil && widget.AsWidgetBase().visible && widget.Parent() != nil && widget.Parent().Handle() == cb.hWnd {
 			for _, effect := range widget.GraphicsEffects().items {
 				if effect == FocusEffect {
 					b := widget.BoundsPixels().toRECT()

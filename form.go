@@ -73,31 +73,32 @@ type Form interface {
 
 type FormBase struct {
 	WindowBase
-	clientComposite             *Composite
-	owner                       Form
-	stopwatch                   *stopwatch
-	inProgressEventCount        int
-	performLayout               chan ContainerLayoutItem
-	layoutResults               chan []LayoutResult
-	inSizeLoop                  chan bool
-	updateStopwatch             chan *stopwatch
-	quitLayoutPerformer         chan struct{}
-	closingPublisher            CloseEventPublisher
-	activatingPublisher         EventPublisher
-	deactivatingPublisher       EventPublisher
-	startingPublisher           EventPublisher
-	titleChangedPublisher       EventPublisher
-	iconChangedPublisher        EventPublisher
-	progressIndicator           *ProgressIndicator
-	icon                        Image
-	prevFocusHWnd               win.HWND
-	proposedSize                Size // in native pixels
-	closeReason                 CloseReason
-	inSizingLoop                bool
-	startingLayoutViaSizingLoop bool
-	isInRestoreState            bool
-	started                     bool
-	layoutScheduled             bool
+	clientComposite                       *Composite
+	owner                                 Form
+	stopwatch                             *stopwatch
+	inProgressEventCount                  int
+	performLayout                         chan ContainerLayoutItem
+	layoutResults                         chan []LayoutResult
+	inSizeLoop                            chan bool
+	updateStopwatch                       chan *stopwatch
+	quitLayoutPerformer                   chan struct{}
+	closingPublisher                      CloseEventPublisher
+	activatingPublisher                   EventPublisher
+	deactivatingPublisher                 EventPublisher
+	startingPublisher                     EventPublisher
+	titleChangedPublisher                 EventPublisher
+	iconChangedPublisher                  EventPublisher
+	progressIndicator                     *ProgressIndicator
+	icon                                  Image
+	prevFocusHWnd                         win.HWND
+	proposedSize                          Size // in native pixels
+	closeReason                           CloseReason
+	inSizingLoop                          bool
+	startingLayoutViaSizingLoop           bool
+	isInRestoreState                      bool
+	started                               bool
+	layoutScheduled                       bool
+	changingVisibleTakesEffectAfterLayout bool
 }
 
 func (fb *FormBase) init(form Form) error {
@@ -336,6 +337,18 @@ func (fb *FormBase) RightToLeftLayout() bool {
 // FormBase increase from right to left.
 func (fb *FormBase) SetRightToLeftLayout(rtl bool) error {
 	return fb.ensureExtendedStyleBits(win.WS_EX_LAYOUTRTL, rtl)
+}
+
+// ChangingVisibleTakesEffectAfterLayout returns whether changing visibility of
+// widgets contained in the FormBase will only take effect after layout.
+func (fb *FormBase) ChangingVisibleTakesEffectAfterLayout() bool {
+	return fb.changingVisibleTakesEffectAfterLayout
+}
+
+// SetChangingVisibleTakesEffectAfterLayout sets whether changing visibility of
+// widgets contained in the FormBase will only take effect after layout.
+func (fb *FormBase) SetChangingVisibleTakesEffectAfterLayout(value bool) {
+	fb.changingVisibleTakesEffectAfterLayout = value
 }
 
 func (fb *FormBase) Run() int {
