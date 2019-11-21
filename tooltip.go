@@ -9,9 +9,7 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -110,9 +108,7 @@ func (tt *ToolTip) track(tool Widget) error {
 	}
 	// HACK: We may have to delay this until the form is fully up to avoid glitches.
 	if !form.AsFormBase().started {
-		var handle int
-		handle = form.Starting().Attach(func() {
-			form.Starting().Detach(handle)
+		form.Starting().Once(func() {
 			tt.track(tool)
 		})
 		return nil
@@ -169,7 +165,10 @@ func (tt *ToolTip) addTrackedTool(tool Widget) error {
 }
 
 func (tt *ToolTip) addTool(tool Widget, track bool) error {
-	hwnd := tool.Handle()
+	hwnd := tt.hwndForTool(tool)
+	if hwnd == 0 {
+		return nil
+	}
 
 	var ti win.TOOLINFO
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
@@ -190,7 +189,7 @@ func (tt *ToolTip) addTool(tool Widget, track bool) error {
 }
 
 func (tt *ToolTip) RemoveTool(tool Widget) error {
-	hwnd := tool.Handle()
+	hwnd := tt.hwndForTool(tool)
 
 	var ti win.TOOLINFO
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
@@ -241,7 +240,7 @@ func (tt *ToolTip) toolInfo(tool Widget) *win.TOOLINFO {
 	var ti win.TOOLINFO
 	var buf [maxToolTipTextLen]uint16
 
-	hwnd := tool.Handle()
+	hwnd := tt.hwndForTool(tool)
 
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
 	ti.Hwnd = hwnd
@@ -253,4 +252,12 @@ func (tt *ToolTip) toolInfo(tool Widget) *win.TOOLINFO {
 	}
 
 	return &ti
+}
+
+func (*ToolTip) hwndForTool(tool Widget) win.HWND {
+	if hftt, ok := tool.(interface{ handleForToolTip() win.HWND }); ok {
+		return hftt.handleForToolTip()
+	}
+
+	return tool.Handle()
 }
