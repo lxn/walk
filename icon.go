@@ -246,18 +246,21 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 
 	var hInst win.HINSTANCE
 	var name *uint16
+	var flags uint32
 	if i.filePath != "" {
 		absFilePath, err := filepath.Abs(i.filePath)
 		if err != nil {
 			return 0, err
 		}
-
+		flags |= win.LR_LOADFROMFILE
 		name = syscall.StringToUTF16Ptr(absFilePath)
 	} else {
 		if !i.isStock {
 			if hInst = win.GetModuleHandle(nil); hInst == 0 {
 				return 0, lastError("GetModuleHandle")
 			}
+		} else {
+			flags |= win.LR_SHARED
 		}
 
 		name = i.res
@@ -265,6 +268,7 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 
 	var size Size
 	if i.size96dpi.Width == 0 || i.size96dpi.Height == 0 {
+		flags |= win.LR_DEFAULTSIZE
 		size = SizeFrom96DPI(defaultIconSize(), dpi)
 	} else {
 		size = SizeFrom96DPI(i.size96dpi, dpi)
@@ -291,7 +295,16 @@ func (i *Icon) handleForDPIWithError(dpi int) (win.HICON, error) {
 			int32(size.Height),
 			&hIcon))
 		if hr < 0 || hIcon == 0 {
-			return 0, lastError("LoadIconWithScaleDown")
+			hIcon = win.HICON(win.LoadImage(
+				hInst,
+				name,
+				win.IMAGE_ICON,
+				int32(size.Width),
+				int32(size.Height),
+				flags))
+			if hIcon == 0 {
+				return 0, lastError("LoadIconWithScaleDown & LoadImage")
+			}
 		}
 	}
 
