@@ -681,10 +681,17 @@ func (fb *FormBase) startLayout() bool {
 		return false
 	}
 
-	cb := fb.window.ClientBoundsPixels()
 	cs := fb.clientSizeFromSizePixels(fb.proposedSize)
+	min := CreateLayoutItemsForContainer(fb.clientComposite).MinSizeForSize(fb.proposedSize)
 
-	fb.clientComposite.SetBoundsPixels(Rectangle{cb.X, cb.Y, cs.Width, cs.Height})
+	if cs.Width < min.Width || cs.Height < min.Height {
+		cs = maxSize(cs, min)
+		size := fb.sizeFromClientSizePixels(cs)
+		fb.SetSizePixels(size)
+		fb.Invalidate()
+	}
+
+	fb.clientComposite.SetBoundsPixels(Rectangle{Width: cs.Width, Height: cs.Height})
 
 	cli := CreateLayoutItemsForContainer(fb)
 	cli.Geometry().ClientSize = cs
@@ -838,7 +845,9 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		fb.SetSuspended(wasSuspended)
 
 		rc := (*win.RECT)(unsafe.Pointer(lParam))
-		fb.window.SetBoundsPixels(rectangleFromRECT(*rc))
+		bounds := rectangleFromRECT(*rc)
+		fb.proposedSize = bounds.Size()
+		fb.window.SetBoundsPixels(bounds)
 
 		fb.SetIcon(fb.icon)
 
