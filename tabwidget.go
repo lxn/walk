@@ -808,7 +808,7 @@ func (li *tabWidgetLayoutItem) HeightForWidth(width int) int {
 }
 
 func (li *tabWidgetLayoutItem) IdealSize() Size {
-	return SizeFrom96DPI(Size{100, 100}, li.ctx.dpi)
+	return li.MinSize()
 }
 
 func (li *tabWidgetLayoutItem) PerformLayout() []LayoutResultItem {
