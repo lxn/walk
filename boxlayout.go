@@ -240,49 +240,26 @@ func (li *boxLayoutItem) PerformLayout() []LayoutResultItem {
 }
 
 func boxLayoutFlags(orientation Orientation, children []LayoutItem) LayoutFlags {
-	var flags LayoutFlags
-	var hasNonShrinkableHorz bool
-	var hasNonShrinkableVert bool
-
 	if len(children) == 0 {
 		return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert
-	} else {
-		for i := 0; i < len(children); i++ {
-			item := children[i]
-
-			if _, ok := item.(*splitterHandleLayoutItem); ok || !shouldLayoutItem(item) {
-				continue
-			}
-
-			if s, ok := item.(*spacerLayoutItem); ok {
-				if s.greedyLocallyOnly {
-					continue
-				}
-			}
-
-			f := item.LayoutFlags()
-			flags |= f
-			if f&ShrinkableHorz == 0 {
-				hasNonShrinkableHorz = true
-			}
-			if f&ShrinkableVert == 0 {
-				hasNonShrinkableVert = true
-			}
-		}
 	}
 
-	if orientation == Horizontal {
-		flags |= GrowableHorz
+	var flags LayoutFlags
+	for i := 0; i < len(children); i++ {
+		item := children[i]
 
-		if hasNonShrinkableVert {
-			flags &^= ShrinkableVert
+		if _, ok := item.(*splitterHandleLayoutItem); ok || !shouldLayoutItem(item) {
+			continue
 		}
-	} else {
-		flags |= GrowableVert
 
-		if hasNonShrinkableHorz {
-			flags &^= ShrinkableHorz
+		if s, ok := item.(*spacerLayoutItem); ok {
+			if s.greedyLocallyOnly {
+				continue
+			}
 		}
+
+		f := item.LayoutFlags()
+		flags |= f
 	}
 
 	return flags
