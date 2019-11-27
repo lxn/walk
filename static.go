@@ -174,13 +174,7 @@ func (s *static) setText(text string) (changed bool, err error) {
 		return false, err
 	}
 
-	size := s.BoundsPixels().Size()
-
 	s.RequestLayout()
-
-	if s.BoundsPixels().Size() == size && size != (Size{}) {
-		s.updateStaticBounds()
-	}
 
 	return true, nil
 }
