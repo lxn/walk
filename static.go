@@ -294,7 +294,7 @@ func staticWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 			Message: msg,
 			WParam:  wp,
 			LParam:  lp,
-			Pt:      win.POINT{int32(win.LOWORD(uint32(lp))), int32(win.HIWORD(uint32(lp)))},
+			Pt:      win.POINT{int32(win.GET_X_LPARAM(lp)), int32(win.GET_Y_LPARAM(lp))},
 		}
 
 		return s.group.toolTip.SendMessage(win.TTM_RELAYEVENT, 0, uintptr(unsafe.Pointer(&m)))
