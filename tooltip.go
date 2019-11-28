@@ -114,7 +114,7 @@ func (tt *ToolTip) track(tool Widget) error {
 		return nil
 	}
 
-	ti := tt.toolInfo(tool)
+	ti := tt.toolInfo(tool.Handle())
 	if ti == nil {
 		return newError("unknown tool")
 	}
@@ -146,7 +146,7 @@ func (tt *ToolTip) track(tool Widget) error {
 }
 
 func (tt *ToolTip) untrack(tool Widget) error {
-	ti := tt.toolInfo(tool)
+	ti := tt.toolInfo(tool.Handle())
 	if ti == nil {
 		return newError("unknown tool")
 	}
@@ -157,15 +157,14 @@ func (tt *ToolTip) untrack(tool Widget) error {
 }
 
 func (tt *ToolTip) AddTool(tool Widget) error {
-	return tt.addTool(tool, false)
+	return tt.addTool(tt.hwndForTool(tool), false)
 }
 
 func (tt *ToolTip) addTrackedTool(tool Widget) error {
-	return tt.addTool(tool, true)
+	return tt.addTool(tt.hwndForTool(tool), true)
 }
 
-func (tt *ToolTip) addTool(tool Widget, track bool) error {
-	hwnd := tt.hwndForTool(tool)
+func (tt *ToolTip) addTool(hwnd win.HWND, track bool) error {
 	if hwnd == 0 {
 		return nil
 	}
@@ -189,8 +188,10 @@ func (tt *ToolTip) addTool(tool Widget, track bool) error {
 }
 
 func (tt *ToolTip) RemoveTool(tool Widget) error {
-	hwnd := tt.hwndForTool(tool)
+	return tt.removeTool(tt.hwndForTool(tool))
+}
 
+func (tt *ToolTip) removeTool(hwnd win.HWND) error {
 	var ti win.TOOLINFO
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
 	ti.Hwnd = hwnd
@@ -202,7 +203,11 @@ func (tt *ToolTip) RemoveTool(tool Widget) error {
 }
 
 func (tt *ToolTip) Text(tool Widget) string {
-	ti := tt.toolInfo(tool)
+	return tt.text(tt.hwndForTool(tool))
+}
+
+func (tt *ToolTip) text(hwnd win.HWND) string {
+	ti := tt.toolInfo(hwnd)
 	if ti == nil {
 		return ""
 	}
@@ -211,7 +216,11 @@ func (tt *ToolTip) Text(tool Widget) string {
 }
 
 func (tt *ToolTip) SetText(tool Widget, text string) error {
-	ti := tt.toolInfo(tool)
+	return tt.setText(tt.hwndForTool(tool), text)
+}
+
+func (tt *ToolTip) setText(hwnd win.HWND, text string) error {
+	ti := tt.toolInfo(hwnd)
 	if ti == nil {
 		return newError("unknown tool")
 	}
@@ -236,11 +245,9 @@ func (tt *ToolTip) SetText(tool Widget, text string) error {
 	return nil
 }
 
-func (tt *ToolTip) toolInfo(tool Widget) *win.TOOLINFO {
+func (tt *ToolTip) toolInfo(hwnd win.HWND) *win.TOOLINFO {
 	var ti win.TOOLINFO
 	var buf [maxToolTipTextLen]uint16
-
-	hwnd := tt.hwndForTool(tool)
 
 	ti.CbSize = uint32(unsafe.Sizeof(ti))
 	ti.Hwnd = hwnd
