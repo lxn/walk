@@ -116,15 +116,15 @@ func (dlg *FileDialog) show(owner Form, fun func(ofn *win.OPENFILENAME) bool, fl
 }
 
 func (dlg *FileDialog) ShowOpen(owner Form) (accepted bool, err error) {
-	return dlg.show(owner, win.GetOpenFileName, 0)
+	return dlg.show(owner, win.GetOpenFileName, win.OFN_NOCHANGEDIR)
 }
 
 func (dlg *FileDialog) ShowOpenMultiple(owner Form) (accepted bool, err error) {
-	return dlg.show(owner, win.GetOpenFileName, win.OFN_ALLOWMULTISELECT|win.OFN_EXPLORER)
+	return dlg.show(owner, win.GetOpenFileName, win.OFN_ALLOWMULTISELECT|win.OFN_EXPLORER|win.OFN_NOCHANGEDIR)
 }
 
 func (dlg *FileDialog) ShowSave(owner Form) (accepted bool, err error) {
-	return dlg.show(owner, win.GetSaveFileName, 0)
+	return dlg.show(owner, win.GetSaveFileName, win.OFN_NOCHANGEDIR)
 }
 
 func pathFromPIDL(pidl uintptr) (string, error) {
