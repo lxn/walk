@@ -621,6 +621,7 @@ func (li *gridLayoutItem) PerformLayout() []LayoutResultItem {
 			if lf&GrowableHorz == 0 {
 				w = s.Width
 			}
+			w = mini(w, width)
 
 			if hfw, ok := item.(HeightForWidther); ok && hfw.HasHeightForWidth() {
 				h = hfw.HeightForWidth(w)
@@ -632,6 +633,7 @@ func (li *gridLayoutItem) PerformLayout() []LayoutResultItem {
 					h = s.Height
 				}
 			}
+			h = mini(h, height)
 		}
 
 		alignment := item.Geometry().Alignment

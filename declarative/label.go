@@ -10,6 +10,14 @@ import (
 	"github.com/lxn/walk"
 )
 
+type EllipsisMode int
+
+const (
+	EllipsisNone = EllipsisMode(walk.EllipsisNone)
+	EllipsisEnd  = EllipsisMode(walk.EllipsisEnd)
+	EllipsisPath = EllipsisMode(walk.EllipsisPath)
+)
+
 type Label struct {
 	// Window
 
@@ -49,6 +57,7 @@ type Label struct {
 	// Label
 
 	AssignTo      **walk.Label
+	EllipsisMode  EllipsisMode
 	Text          Property
 	TextAlignment Alignment1D
 	TextColor     walk.Color
@@ -65,6 +74,10 @@ func (l Label) Create(builder *Builder) error {
 	}
 
 	return builder.InitWidget(l, w, func() error {
+		if err := w.SetEllipsisMode(walk.EllipsisMode(l.EllipsisMode)); err != nil {
+			return err
+		}
+
 		if err := w.SetTextAlignment(walk.Alignment1D(l.TextAlignment)); err != nil {
 			return err
 		}

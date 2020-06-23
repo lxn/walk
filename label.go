@@ -6,6 +6,16 @@
 
 package walk
 
+import "github.com/lxn/win"
+
+type EllipsisMode int
+
+const (
+	EllipsisNone EllipsisMode = 0
+	EllipsisEnd               = EllipsisMode(win.SS_ENDELLIPSIS)
+	EllipsisPath              = EllipsisMode(win.SS_PATHELLIPSIS)
+)
+
 type Label struct {
 	static
 	textChangedPublisher EventPublisher
@@ -38,6 +48,26 @@ func NewLabelWithStyle(parent Container, style uint32) (*Label, error) {
 
 func (l *Label) asStatic() *static {
 	return &l.static
+}
+
+func (l *Label) EllipsisMode() EllipsisMode {
+	return EllipsisMode(win.GetWindowLong(l.hwndStatic, win.GWL_STYLE) & (win.SS_ENDELLIPSIS | win.SS_PATHELLIPSIS))
+}
+
+func (l *Label) SetEllipsisMode(mode EllipsisMode) error {
+	oldMode := l.EllipsisMode()
+
+	if mode == oldMode {
+		return nil
+	}
+
+	if err := setAndClearWindowLongBits(l.hwndStatic, win.GWL_STYLE, uint32(mode), uint32(oldMode)); err != nil {
+		return err
+	}
+
+	l.RequestLayout()
+
+	return nil
 }
 
 func (l *Label) TextAlignment() Alignment1D {

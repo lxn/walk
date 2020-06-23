@@ -147,6 +147,10 @@ func newReflectTableModel(dataSource interface{}) (TableModel, error) {
 			}
 		})
 
+		rtm.RowsChanged().Attach(func(from, to int) {
+			m.PublishRowsChanged(from, to)
+		})
+
 		rtm.RowsInserted().Attach(func(from, to int) {
 			m.items = rtm.Items()
 			m.value = reflect.ValueOf(m.items)

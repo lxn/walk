@@ -7,6 +7,7 @@
 package walk
 
 import (
+	"math"
 	"sort"
 	"sync"
 
@@ -17,8 +18,8 @@ type Orientation byte
 
 const (
 	NoOrientation Orientation = 0
-	Horizontal = 1 << 0
-	Vertical = 1 << 1
+	Horizontal                = 1 << 0
+	Vertical                  = 1 << 1
 )
 
 type BoxLayout struct {
@@ -116,12 +117,13 @@ func (l *BoxLayout) CreateLayoutItem(ctx *LayoutContext) ContainerLayoutItem {
 }
 
 type boxLayoutItemInfo struct {
-	index   int
-	minSize int // in native pixels
-	maxSize int // in native pixels
-	stretch int
-	greedy  bool
-	item    LayoutItem
+	item     LayoutItem
+	index    int
+	prefSize int // in native pixels
+	minSize  int // in native pixels
+	maxSize  int // in native pixels
+	stretch  int
+	greedy   bool
 }
 
 type boxLayoutItemInfoList []boxLayoutItemInfo
@@ -238,49 +240,26 @@ func (li *boxLayoutItem) PerformLayout() []LayoutResultItem {
 }
 
 func boxLayoutFlags(orientation Orientation, children []LayoutItem) LayoutFlags {
-	var flags LayoutFlags
-	var hasNonShrinkableHorz bool
-	var hasNonShrinkableVert bool
-
 	if len(children) == 0 {
 		return ShrinkableHorz | ShrinkableVert | GrowableHorz | GrowableVert
-	} else {
-		for i := 0; i < len(children); i++ {
-			item := children[i]
-
-			if _, ok := item.(*splitterHandleLayoutItem); ok || !shouldLayoutItem(item) {
-				continue
-			}
-
-			if s, ok := item.(*spacerLayoutItem); ok {
-				if s.greedyLocallyOnly {
-					continue
-				}
-			}
-
-			f := item.LayoutFlags()
-			flags |= f
-			if f&ShrinkableHorz == 0 {
-				hasNonShrinkableHorz = true
-			}
-			if f&ShrinkableVert == 0 {
-				hasNonShrinkableVert = true
-			}
-		}
 	}
 
-	if orientation == Horizontal {
-		flags |= GrowableHorz
+	var flags LayoutFlags
+	for i := 0; i < len(children); i++ {
+		item := children[i]
 
-		if hasNonShrinkableVert {
-			flags &^= ShrinkableVert
+		if _, ok := item.(*splitterHandleLayoutItem); ok || !shouldLayoutItem(item) {
+			continue
 		}
-	} else {
-		flags |= GrowableVert
 
-		if hasNonShrinkableHorz {
-			flags &^= ShrinkableHorz
+		if s, ok := item.(*spacerLayoutItem); ok {
+			if s.greedyLocallyOnly {
+				continue
+			}
 		}
+
+		f := item.LayoutFlags()
+		flags |= f
 	}
 
 	return flags
@@ -305,6 +284,9 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 	maxSizes := make([]int, len(items))
 	sizes := make([]int, len(items))
 	prefSizes2 := make([]int, len(items))
+	var shrinkableAmount1Total int
+	shrinkableAmount1 := make([]int, len(items))
+	shrinkable2 := make([]bool, len(items))
 	growable2 := make([]bool, len(items))
 	sortedItemInfo := boxLayoutItemInfoList(make([]boxLayoutItemInfo, len(items)))
 
@@ -342,6 +324,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 			prefSizes2[i] = pref.Height
 
+			sortedItemInfo[i].prefSize = pref.Width
 			sortedItemInfo[i].greedy = flags&GreedyHorz > 0
 		} else {
 			growable2[i] = flags&GrowableHorz > 0
@@ -364,6 +347,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 			prefSizes2[i] = pref.Width
 
+			sortedItemInfo[i].prefSize = pref.Height
 			sortedItemInfo[i].greedy = flags&GreedyVert > 0
 		}
 
@@ -373,7 +357,20 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 		sortedItemInfo[i].stretch = sf
 		sortedItemInfo[i].item = item
 
-		minSizesRemaining += minSizes[i]
+		if orientation == Horizontal && flags&(ShrinkableHorz|GrowableHorz|GreedyHorz) == ShrinkableHorz ||
+			orientation == Vertical && flags&(ShrinkableVert|GrowableVert|GreedyVert) == ShrinkableVert {
+			if amount := sortedItemInfo[i].prefSize - minSizes[i]; amount > 0 {
+				shrinkableAmount1[i] = amount
+				shrinkableAmount1Total += amount
+			}
+		}
+		shrinkable2[i] = orientation == Horizontal && flags&ShrinkableVert != 0 || orientation == Vertical && flags&ShrinkableHorz != 0
+
+		if shrinkableAmount1[i] > 0 {
+			minSizesRemaining += sortedItemInfo[i].prefSize
+		} else {
+			minSizesRemaining += minSizes[i]
+		}
 
 		if sortedItemInfo[i].greedy {
 			if _, isSpacer := item.(*spacerLayoutItem); !isSpacer {
@@ -404,6 +401,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 	}
 
 	spacingRemaining := spacing * (len(items) - 1)
+	excess := float64(space1 - minSizesRemaining - spacingRemaining)
 
 	offsets := [3]int{0, greedyNonSpacerCount, greedyNonSpacerCount + greedySpacerCount}
 	counts := [3]int{greedyNonSpacerCount, greedySpacerCount, len(items) - greedyNonSpacerCount - greedySpacerCount}
@@ -418,11 +416,21 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 			stretch := stretchFactors[k]
 			min := info.minSize
 			max := info.maxSize
-			size := min
+			var size int
+			var corrected bool
+			if shrinkableAmount1[k] > 0 {
+				size = info.prefSize
+				if excess < 0.0 {
+					size -= mini(shrinkableAmount1[k], int(math.Round(-excess/float64(shrinkableAmount1Total)*float64(shrinkableAmount1[k]))))
+					corrected = true
+				}
+			} else {
+				size = min
+			}
 
-			if min < max {
+			if !corrected && min < max {
 				excessSpace := float64(space1 - minSizesRemaining - spacingRemaining)
-				size += int(excessSpace * float64(stretch) / float64(stretchFactorsRemaining))
+				size += int(math.Round(excessSpace * float64(stretch) / float64(stretchFactorsRemaining)))
 				if size < min {
 					size = min
 				} else if size > max {
@@ -432,7 +440,11 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 
 			sizes[k] = size
 
-			minSizesRemaining -= min
+			if shrinkableAmount1[k] > 0 {
+				minSizesRemaining -= info.prefSize
+			} else {
+				minSizesRemaining -= min
+			}
 			stretchFactorsRemaining -= stretch
 			space1 -= (size + spacing)
 			spacingRemaining -= spacing
@@ -451,7 +463,7 @@ func boxLayoutItems(container ContainerLayoutItem, items []LayoutItem, orientati
 		var s2 int
 		if hfw, ok := item.(HeightForWidther); ok && orientation == Horizontal && hfw.HasHeightForWidth() {
 			s2 = hfw.HeightForWidth(s1)
-		} else if growable2[i] {
+		} else if shrinkable2[i] || growable2[i] {
 			s2 = space2
 		} else {
 			s2 = prefSizes2[i]

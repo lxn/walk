@@ -6,26 +6,39 @@
 
 package walk
 
+type errorEventHandlerInfo struct {
+	handler ErrorEventHandler
+	once    bool
+}
+
 type ErrorEventHandler func(err error)
 
 type ErrorEvent struct {
-	handlers []ErrorEventHandler
+	handlers []errorEventHandlerInfo
 }
 
 func (e *ErrorEvent) Attach(handler ErrorEventHandler) int {
+	handlerInfo := errorEventHandlerInfo{handler, false}
+
 	for i, h := range e.handlers {
-		if h == nil {
-			e.handlers[i] = handler
+		if h.handler == nil {
+			e.handlers[i] = handlerInfo
 			return i
 		}
 	}
 
-	e.handlers = append(e.handlers, handler)
+	e.handlers = append(e.handlers, handlerInfo)
+
 	return len(e.handlers) - 1
 }
 
 func (e *ErrorEvent) Detach(handle int) {
-	e.handlers[handle] = nil
+	e.handlers[handle].handler = nil
+}
+
+func (e *ErrorEvent) Once(handler ErrorEventHandler) {
+	i := e.Attach(handler)
+	e.handlers[i].once = true
 }
 
 type ErrorEventPublisher struct {
@@ -37,9 +50,13 @@ func (p *ErrorEventPublisher) Event() *ErrorEvent {
 }
 
 func (p *ErrorEventPublisher) Publish(err error) {
-	for _, handler := range p.event.handlers {
-		if handler != nil {
-			handler(err)
+	for i, h := range p.event.handlers {
+		if h.handler != nil {
+			h.handler(err)
+
+			if h.once {
+				p.event.Detach(i)
+			}
 		}
 	}
 }

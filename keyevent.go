@@ -6,26 +6,39 @@
 
 package walk
 
+type keyEventHandlerInfo struct {
+	handler KeyEventHandler
+	once    bool
+}
+
 type KeyEventHandler func(key Key)
 
 type KeyEvent struct {
-	handlers []KeyEventHandler
+	handlers []keyEventHandlerInfo
 }
 
 func (e *KeyEvent) Attach(handler KeyEventHandler) int {
+	handlerInfo := keyEventHandlerInfo{handler, false}
+
 	for i, h := range e.handlers {
-		if h == nil {
-			e.handlers[i] = handler
+		if h.handler == nil {
+			e.handlers[i] = handlerInfo
 			return i
 		}
 	}
 
-	e.handlers = append(e.handlers, handler)
+	e.handlers = append(e.handlers, handlerInfo)
+
 	return len(e.handlers) - 1
 }
 
 func (e *KeyEvent) Detach(handle int) {
-	e.handlers[handle] = nil
+	e.handlers[handle].handler = nil
+}
+
+func (e *KeyEvent) Once(handler KeyEventHandler) {
+	i := e.Attach(handler)
+	e.handlers[i].once = true
 }
 
 type KeyEventPublisher struct {
@@ -37,9 +50,13 @@ func (p *KeyEventPublisher) Event() *KeyEvent {
 }
 
 func (p *KeyEventPublisher) Publish(key Key) {
-	for _, handler := range p.event.handlers {
-		if handler != nil {
-			handler(key)
+	for i, h := range p.event.handlers {
+		if h.handler != nil {
+			h.handler(key)
+
+			if h.once {
+				p.event.Detach(i)
+			}
 		}
 	}
 }
