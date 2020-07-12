@@ -209,7 +209,7 @@ func webView_DWebBrowserEvents2_Invoke(
 		eventData := &WebViewNewWindowEventData{
 			ppDisp:         (*rgvargPtr)[4].MustPPDispatch(),
 			cancel:         (*rgvargPtr)[3].MustPBool(),
-			dwFlags:        (*rgvargPtr)[2].MustULong(),
+			dwFlags:        (*rgvargPtr)[2].MustLong(),
 			bstrUrlContext: (*rgvargPtr)[1].MustBSTR(),
 			bstrUrl:        (*rgvargPtr)[0].MustBSTR(),
 		}
