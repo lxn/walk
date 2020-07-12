@@ -230,7 +230,7 @@ func (p *WebViewNavigatedErrorEventPublisher) Publish(eventData *WebViewNavigate
 type WebViewNewWindowEventData struct {
 	ppDisp         **win.IDispatch
 	cancel         *win.VARIANT_BOOL
-	dwFlags        uint32
+	dwFlags        int32
 	bstrUrlContext *uint16
 	bstrUrl        *uint16
 }
@@ -258,7 +258,7 @@ func (eventData *WebViewNewWindowEventData) SetCanceled(value bool) {
 	}
 }
 
-func (eventData *WebViewNewWindowEventData) Flags() uint32 {
+func (eventData *WebViewNewWindowEventData) Flags() int32 {
 	return eventData.dwFlags
 }
 

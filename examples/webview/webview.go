@@ -7,8 +7,8 @@ package main
 import (
 	"strings"
 
-	"github.com/lxn/walk"
-	. "github.com/lxn/walk/declarative"
+	"github.com/terryliu/walk"
+	. "github.com/terryliu/walk/declarative"
 )
 
 func main() {
@@ -33,7 +33,7 @@ func main() {
 			WebView{
 				AssignTo: &wv,
 				Name:     "wv",
-				URL:      "https://github.com/lxn/walk",
+				URL:      "https://github.com/terryliu/walk",
 			},
 		},
 		Functions: map[string]func(args ...interface{}) (interface{}, error){
