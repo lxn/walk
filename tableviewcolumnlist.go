@@ -27,6 +27,18 @@ func (l *TableViewColumnList) At(index int) *TableViewColumn {
 	return l.items[index]
 }
 
+// ByName returns the TableViewColumn identified by name, or nil, if no column
+// of that name is contained in the TableViewColumnList.
+func (l *TableViewColumnList) ByName(name string) *TableViewColumn {
+	for _, tvc := range l.items {
+		if tvc.name == name {
+			return tvc
+		}
+	}
+
+	return nil
+}
+
 // Clear removes all TableViewColumns from the list.
 func (l *TableViewColumnList) Clear() error {
 	for _ = range l.items {

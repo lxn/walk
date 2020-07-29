@@ -365,6 +365,13 @@ func (cs *CellStyle) Canvas() *Canvas {
 	return cs.canvas
 }
 
+// IDProvider is the interface that must be implemented by models to enable
+// widgets like TableView to attempt keeping the current item when the model
+// publishes a reset event.
+type IDProvider interface {
+	ID(index int) interface{}
+}
+
 // ListItemStyler is the interface that must be implemented to provide a list
 // widget like ListBox with item display style information.
 type ListItemStyler interface {
