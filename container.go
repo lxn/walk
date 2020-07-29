@@ -50,6 +50,14 @@ func (cb *ContainerBase) applyEnabled(enabled bool) {
 	cb.WidgetBase.applyEnabled(enabled)
 
 	applyEnabledToDescendants(cb.window.(Widget), enabled)
+
+	if InteractionEffect != nil {
+		for _, wb := range cb.children.items {
+			if wb.GraphicsEffects().Contains(InteractionEffect) {
+				wb.invalidateBorderInParent()
+			}
+		}
+	}
 }
 
 func (cb *ContainerBase) applyFont(font *Font) {
