@@ -34,6 +34,10 @@ func LocalAppDataPath() (string, error) {
 	return knownFolderPath(win.CSIDL_LOCAL_APPDATA)
 }
 
+func PersonalPath() (string, error) {
+	return knownFolderPath(win.CSIDL_PERSONAL)
+}
+
 func SystemPath() (string, error) {
 	return knownFolderPath(win.CSIDL_SYSTEM)
 }
