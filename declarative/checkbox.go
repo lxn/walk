@@ -83,7 +83,7 @@ func (cb CheckBox) Create(builder *Builder) error {
 			return err
 		}
 
-		if cb.Tristate && cb.CheckState == nil {
+		if _, isBindData := cb.CheckState.(bindData); cb.Tristate && (cb.CheckState == nil || isBindData) {
 			w.SetCheckState(walk.CheckIndeterminate)
 		}
 
