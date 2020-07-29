@@ -1167,7 +1167,7 @@ func (wb *WindowBase) SetSuspended(suspend bool) {
 
 	wb.suspended = suspend
 
-	if !suspend {
+	if !suspend && wb.visible {
 		wb.Invalidate()
 		wb.RequestLayout()
 	}
