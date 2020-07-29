@@ -40,7 +40,7 @@ func newToolTip(style uint32) (*ToolTip, error) {
 		tt,
 		nil,
 		"tooltips_class32",
-		win.WS_DISABLED|win.WS_POPUP|win.TTS_ALWAYSTIP|style,
+		win.WS_DISABLED|win.WS_POPUP|win.TTS_ALWAYSTIP|win.TTS_NOPREFIX|style,
 		0); err != nil {
 		return nil, err
 	}
