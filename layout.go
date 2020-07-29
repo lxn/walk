@@ -323,7 +323,11 @@ func applyLayoutResults(results []LayoutResult, stopwatch *stopwatch) error {
 				if form == nil {
 					if form = window.Form(); form != nil {
 						defer func() {
-							if focusedWindow := windowFromHandle(win.GetFocus()); focusedWindow == nil || focusedWindow == form || focusedWindow.Form() != form {
+							hwndFocused := win.GetFocus()
+							hwndForm := win.GetAncestor(hwndFocused, win.GA_ROOT)
+							activeForm, _ := windowFromHandle(hwndForm).(Form)
+
+							if hwndFocused == 0 || form.Handle() == hwndFocused || activeForm != window.Form() {
 								form.AsFormBase().clientComposite.focusFirstCandidateDescendant()
 							}
 						}()
