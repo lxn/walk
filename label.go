@@ -28,7 +28,7 @@ func NewLabel(parent Container) (*Label, error) {
 func NewLabelWithStyle(parent Container, style uint32) (*Label, error) {
 	l := new(Label)
 
-	if err := l.init(l, parent); err != nil {
+	if err := l.init(l, parent, style); err != nil {
 		return nil, err
 	}
 

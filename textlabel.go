@@ -22,7 +22,7 @@ func NewTextLabel(parent Container) (*TextLabel, error) {
 func NewTextLabelWithStyle(parent Container, style uint32) (*TextLabel, error) {
 	tl := new(TextLabel)
 
-	if err := tl.init(tl, parent); err != nil {
+	if err := tl.init(tl, parent, style); err != nil {
 		return nil, err
 	}
 

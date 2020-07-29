@@ -8,6 +8,7 @@ package declarative
 
 import (
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type Alignment2D uint
@@ -68,12 +69,18 @@ type TextLabel struct {
 	// Text
 
 	AssignTo      **walk.TextLabel
+	NoPrefix      bool
 	TextAlignment Alignment2D
 	Text          Property
 }
 
 func (tl TextLabel) Create(builder *Builder) error {
-	w, err := walk.NewTextLabel(builder.Parent())
+	var style uint32
+	if tl.NoPrefix {
+		style |= win.SS_NOPREFIX
+	}
+
+	w, err := walk.NewTextLabelWithStyle(builder.Parent(), style)
 	if err != nil {
 		return err
 	}

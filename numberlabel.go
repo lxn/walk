@@ -23,7 +23,7 @@ type NumberLabel struct {
 func NewNumberLabel(parent Container) (*NumberLabel, error) {
 	nl := new(NumberLabel)
 
-	if err := nl.init(nl, parent); err != nil {
+	if err := nl.init(nl, parent, 0); err != nil {
 		return nil, err
 	}
 
