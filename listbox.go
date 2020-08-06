@@ -166,8 +166,6 @@ func (lb *ListBox) itemString(index int) string {
 	default:
 		return fmt.Sprintf(lb.format, val)
 	}
-
-	panic("unreachable")
 }
 
 //insert one item from list model
@@ -263,7 +261,7 @@ func (lb *ListBox) ensureVisibleItemsHeightUpToDate() error {
 		lb.lastWidthsMeasuredFor[i] = lb.lastWidth
 	}
 
-	lb.SendMessage(win.LB_SETTOPINDEX, uintptr(topIndex), 0)
+	lb.EnsureItemVisible(topIndex)
 
 	return nil
 }
@@ -647,6 +645,8 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 
 		lb.ensureVisibleItemsHeightUpToDate()
 
+		return win.CallWindowProc(lb.origWndProcPtr, hwnd, msg, wParam, lParam)
+
 	case win.WM_VSCROLL:
 		lb.ensureVisibleItemsHeightUpToDate()
 
@@ -657,6 +657,10 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		lb.Invalidate()
 
 	case win.WM_MOUSEMOVE:
+		if lb.styler == nil {
+			break
+		}
+
 		if !lb.trackingMouseEvent {
 			var tme win.TRACKMOUSEEVENT
 			tme.CbSize = uint32(unsafe.Sizeof(tme))
@@ -696,6 +700,10 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		}
 
 	case win.WM_MOUSELEAVE:
+		if lb.styler == nil {
+			break
+		}
+
 		lb.trackingMouseEvent = false
 
 		index := lb.style.hoverIndex
