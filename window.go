@@ -452,6 +452,7 @@ var (
 func init() {
 	AppendToWalkInit(func() {
 		forEachDescendantCallbackPtr = syscall.NewCallback(forEachDescendant)
+		forEachDescendantRawCallbackPtr = syscall.NewCallback(forEachDescendantRaw)
 		dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
 	})
 }
@@ -1259,7 +1260,7 @@ func (wb *WindowBase) Form() Form {
 }
 
 func forEachDescendant(hwnd win.HWND, lParam uintptr) uintptr {
-	if window := windowFromHandle(hwnd); window != nil && forEachDescendantCallback(window.(Widget)) {
+	if window := windowFromHandle(hwnd); window == nil || forEachDescendantCallback(window.(Widget)) {
 		return 1
 	}
 
@@ -1278,6 +1279,28 @@ func (wb *WindowBase) ForEachDescendant(f func(widget Widget) bool) {
 	}()
 
 	win.EnumChildWindows(wb.hWnd, forEachDescendantCallbackPtr, 0)
+}
+
+func forEachDescendantRaw(hwnd win.HWND, lParam uintptr) uintptr {
+	if forEachDescendantRawCallback(hwnd, lParam) {
+		return 1
+	}
+
+	return 0
+}
+
+var (
+	forEachDescendantRawCallbackPtr uintptr
+	forEachDescendantRawCallback    func(hwnd win.HWND, lParam uintptr) bool
+)
+
+func (wb *WindowBase) forEachDescendantRaw(lParam uintptr, f func(hwnd win.HWND, lParam uintptr) bool) {
+	forEachDescendantRawCallback = f
+	defer func() {
+		forEachDescendantRawCallback = nil
+	}()
+
+	win.EnumChildWindows(wb.hWnd, forEachDescendantRawCallbackPtr, lParam)
 }
 
 // Visible returns if the *WindowBase is visible.

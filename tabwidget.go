@@ -295,7 +295,17 @@ func (tw *TabWidget) onSelChange() {
 		page.SetVisible(true)
 		tw.RequestLayout()
 		page.Invalidate()
-		tw.pages.At(tw.currentIndex).focusFirstCandidateDescendant()
+
+		var containsFocus bool
+		tw.forEachDescendantRaw(uintptr(win.GetFocus()), func(hwnd win.HWND, lParam uintptr) bool {
+			if hwnd == win.HWND(lParam) {
+				containsFocus = true
+			}
+			return !containsFocus
+		})
+		if containsFocus {
+			tw.pages.At(tw.currentIndex).focusFirstCandidateDescendant()
+		}
 	}
 
 	tw.Invalidate()
@@ -490,26 +500,6 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 		}
 
 		return 0
-
-	case win.WM_LBUTTONDOWN:
-		x := win.GET_X_LPARAM(lParam)
-		y := win.GET_Y_LPARAM(lParam)
-
-		hti := win.TCHITTESTINFO{
-			Pt: win.POINT{x, y},
-		}
-
-		i := int(win.SendMessage(hwnd, win.TCM_HITTEST, 0, uintptr(unsafe.Pointer(&hti))))
-
-		if i == -1 {
-			break
-		}
-
-		ret := win.CallWindowProc(tw.tabOrigWndProcPtr, hwnd, msg, wParam, lParam)
-
-		tw.pages.At(i).focusFirstCandidateDescendant()
-
-		return ret
 	}
 
 	return win.CallWindowProc(tw.tabOrigWndProcPtr, hwnd, msg, wParam, lParam)
