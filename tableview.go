@@ -1921,7 +1921,7 @@ func tableViewNormalLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr
 		win.SetFocus(tv.hwndFrozenLV)
 
 	case win.WM_SETFOCUS:
-		tv.WndProc(tv.hWnd, msg, wp, lp)
+		tv.invalidateBorderInParent()
 		tv.maybePublishFocusChanged(hwnd, msg, wp)
 
 	case win.WM_KILLFOCUS:
@@ -2667,7 +2667,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr 
 		ensureWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.LVS_OWNERDRAWFIXED, false)
 
 	case win.WM_SETFOCUS:
-		win.SetFocus(tv.hwndNormalLV)
+		win.SetFocus(tv.hwndFrozenLV)
 
 	case win.WM_DESTROY:
 		// As we subclass all windows of system classes, we prevented the
