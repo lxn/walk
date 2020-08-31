@@ -933,10 +933,10 @@ func (tv *TableView) setItemCount() error {
 		count = tv.model.RowCount()
 	}
 
-	if 0 == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOSCROLL) {
+	if 0 == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOINVALIDATEALL|win.LVSICF_NOSCROLL) {
 		return newError("SendMessage(LVM_SETITEMCOUNT)")
 	}
-	if 0 == win.SendMessage(tv.hwndNormalLV, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOSCROLL) {
+	if 0 == win.SendMessage(tv.hwndNormalLV, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOINVALIDATEALL|win.LVSICF_NOSCROLL) {
 		return newError("SendMessage(LVM_SETITEMCOUNT)")
 	}
 
@@ -1896,9 +1896,10 @@ func (tv *TableView) maybePublishFocusChanged(hwnd win.HWND, msg uint32, wp uint
 func tableViewFrozenLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 	tv := (*TableView)(unsafe.Pointer(windowFromHandle(win.GetParent(hwnd)).AsWindowBase()))
 
-	ensureWindowLongBits(hwnd, win.GWL_STYLE, win.WS_HSCROLL|win.WS_VSCROLL, false)
-
 	switch msg {
+	case win.WM_NCCALCSIZE:
+		ensureWindowLongBits(hwnd, win.GWL_STYLE, win.WS_HSCROLL|win.WS_VSCROLL, false)
+
 	case win.WM_SETFOCUS:
 		win.SetFocus(tv.hwndNormalLV)
 		tv.maybePublishFocusChanged(hwnd, msg, wp)
