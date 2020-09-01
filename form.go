@@ -691,7 +691,9 @@ func (fb *FormBase) startLayout() bool {
 		fb.Invalidate()
 	}
 
-	fb.clientComposite.SetBoundsPixels(Rectangle{Width: cs.Width, Height: cs.Height})
+	cbp := fb.window.ClientBoundsPixels()
+
+	fb.clientComposite.SetBoundsPixels(Rectangle{Y: cbp.Y, Width: cs.Width, Height: cs.Height})
 
 	cli := CreateLayoutItemsForContainer(fb)
 	cli.Geometry().ClientSize = cs
