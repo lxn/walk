@@ -734,7 +734,7 @@ func (li *tabWidgetLayoutItem) LayoutFlags() LayoutFlags {
 
 func (li *tabWidgetLayoutItem) MinSize() Size {
 	if len(li.children) == 0 {
-		return li.IdealSize()
+		return Size{}
 	}
 
 	var min Size
