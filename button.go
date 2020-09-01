@@ -220,11 +220,16 @@ func (b *Button) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 
 // idealSize returns ideal button size in native pixels.
 func (b *Button) idealSize() Size {
-	var s win.SIZE
+	min := b.dialogBaseUnitsToPixels(Size{50, 14})
 
+	if b.Text() == "" {
+		return min
+	}
+
+	var s win.SIZE
 	b.SendMessage(win.BCM_GETIDEALSIZE, 0, uintptr(unsafe.Pointer(&s)))
 
-	return maxSize(sizeFromSIZE(s), b.dialogBaseUnitsToPixels(Size{50, 14}))
+	return maxSize(sizeFromSIZE(s), min)
 }
 
 func (b *Button) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
