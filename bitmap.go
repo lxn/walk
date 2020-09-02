@@ -285,29 +285,34 @@ func (bmp *Bitmap) ToImage() (*image.RGBA, error) {
 	return img, nil
 }
 
-func (bmp *Bitmap) postProcess() {
+func (bmp *Bitmap) postProcess() error {
 	var bi win.BITMAPINFO
 	bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
 
 	hdc := win.GetDC(0)
 	if hdc == 0 {
-		return
+		return newError("GetDC")
 	}
 	defer win.ReleaseDC(0, hdc)
 
 	if ret := win.GetDIBits(hdc, bmp.hBmp, 0, 0, nil, &bi, win.DIB_RGB_COLORS); ret == 0 {
-		return
+		return newError("GetDIBits #1")
 	}
 
-	buf := make([]byte, bi.BmiHeader.BiSizeImage)
+	hBuf := win.GlobalAlloc(win.GHND, uintptr(bi.BmiHeader.BiSizeImage))
+	defer win.GlobalFree(hBuf)
+	buf := (*[2 << 32]byte)(win.GlobalLock(hBuf))
+	defer win.GlobalUnlock(hBuf)
+
 	bi.BmiHeader.BiCompression = win.BI_RGB
 	if ret := win.GetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS); ret == 0 {
-		return
+		return newError("GetDIBits #2")
 	}
 
 	win.GdiFlush()
 
-	for i := 0; i < len(buf); i += 4 {
+	count := int(bi.BmiHeader.BiSizeImage)
+	for i := 0; i < count; i += 4 {
 		switch buf[i+3] {
 		case 0x00:
 			// The pixel has been drawn to by GDI, so we make it fully opaque.
@@ -320,8 +325,10 @@ func (bmp *Bitmap) postProcess() {
 	}
 
 	if 0 == win.SetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS) {
-		return
+		return newError("SetDIBits")
 	}
+
+	return nil
 }
 
 func (bmp *Bitmap) Dispose() {
