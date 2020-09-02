@@ -20,11 +20,20 @@ import (
 const inchesPerMeter float64 = 39.37007874
 
 type Bitmap struct {
-	hBmp       win.HBITMAP
-	hPackedDIB win.HGLOBAL
-	size       Size // in native pixels
-	dpi        int
+	hBmp               win.HBITMAP
+	hPackedDIB         win.HGLOBAL
+	size               Size // in native pixels
+	dpi                int
+	transparencyStatus transparencyStatus
 }
+
+type transparencyStatus byte
+
+const (
+	transparencyUnknown transparencyStatus = iota
+	transparencyOpaque
+	transparencyTransparent
+)
 
 func BitmapFrom(src interface{}, dpi int) (*Bitmap, error) {
 	if src == nil {
@@ -285,7 +294,60 @@ func (bmp *Bitmap) ToImage() (*image.RGBA, error) {
 	return img, nil
 }
 
+func (bmp *Bitmap) hasTransparency() (bool, error) {
+	if bmp.transparencyStatus == transparencyUnknown {
+		if err := bmp.withPixels(func(bi *win.BITMAPINFO, hdc win.HDC, pixels *[2 << 30]dibPixel, pixelsLen int) error {
+			for i := 0; i < pixelsLen; i++ {
+				if pixels[i].A == 0x00 {
+					bmp.transparencyStatus = transparencyTransparent
+					break
+				}
+			}
+
+			return nil
+		}); err != nil {
+			return false, err
+		}
+
+		if bmp.transparencyStatus == transparencyUnknown {
+			bmp.transparencyStatus = transparencyOpaque
+		}
+	}
+
+	return bmp.transparencyStatus == transparencyTransparent, nil
+}
+
 func (bmp *Bitmap) postProcess() error {
+	return bmp.withPixels(func(bi *win.BITMAPINFO, hdc win.HDC, pixels *[2 << 30]dibPixel, pixelsLen int) error {
+		for i := 0; i < pixelsLen; i++ {
+			switch pixels[i].A {
+			case 0x00:
+				// The pixel has been drawn to by GDI, so we make it fully opaque.
+				pixels[i].A = 0xff
+
+			case 0x01:
+				// The pixel has not been drawn to by GDI, so we make it fully transparent.
+				pixels[i].A = 0x00
+				bmp.transparencyStatus = transparencyTransparent
+			}
+		}
+
+		if 0 == win.SetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &pixels[0].B, bi, win.DIB_RGB_COLORS) {
+			return newError("SetDIBits")
+		}
+
+		return nil
+	})
+}
+
+type dibPixel struct {
+	B byte
+	G byte
+	R byte
+	A byte
+}
+
+func (bmp *Bitmap) withPixels(f func(bi *win.BITMAPINFO, hdc win.HDC, pixels *[2 << 30]dibPixel, pixelsLen int) error) error {
 	var bi win.BITMAPINFO
 	bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
 
@@ -299,36 +361,19 @@ func (bmp *Bitmap) postProcess() error {
 		return newError("GetDIBits #1")
 	}
 
-	hBuf := win.GlobalAlloc(win.GHND, uintptr(bi.BmiHeader.BiSizeImage))
-	defer win.GlobalFree(hBuf)
-	buf := (*[2 << 32]byte)(win.GlobalLock(hBuf))
-	defer win.GlobalUnlock(hBuf)
+	hPixels := win.GlobalAlloc(win.GHND, uintptr(bi.BmiHeader.BiSizeImage))
+	defer win.GlobalFree(hPixels)
+	pixels := (*[2 << 30]dibPixel)(win.GlobalLock(hPixels))
+	defer win.GlobalUnlock(hPixels)
 
 	bi.BmiHeader.BiCompression = win.BI_RGB
-	if ret := win.GetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS); ret == 0 {
+	if ret := win.GetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &pixels[0].B, &bi, win.DIB_RGB_COLORS); ret == 0 {
 		return newError("GetDIBits #2")
 	}
 
 	win.GdiFlush()
 
-	count := int(bi.BmiHeader.BiSizeImage)
-	for i := 0; i < count; i += 4 {
-		switch buf[i+3] {
-		case 0x00:
-			// The pixel has been drawn to by GDI, so we make it fully opaque.
-			buf[i+3] = 0xff
-
-		case 0x01:
-			// The pixel has not been drawn to by GDI, so we make it fully transparent.
-			buf[i+3] = 0x00
-		}
-	}
-
-	if 0 == win.SetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &buf[0], &bi, win.DIB_RGB_COLORS) {
-		return newError("SetDIBits")
-	}
-
-	return nil
+	return f(&bi, hdc, pixels, int(bi.BmiHeader.BiSizeImage)/4)
 }
 
 func (bmp *Bitmap) Dispose() {
@@ -369,6 +414,37 @@ func (bmp *Bitmap) alphaBlend(hdc win.HDC, bounds Rectangle, opacity byte) error
 // represented in native pixels.
 func (bmp *Bitmap) alphaBlendPart(hdc win.HDC, dst, src Rectangle, opacity byte) error {
 	return bmp.withSelectedIntoMemDC(func(hdcMem win.HDC) error {
+		if opacity == 255 && (dst.Width != src.Width || dst.Height != src.Height) {
+			transparent, err := bmp.hasTransparency()
+			if err != nil {
+				return err
+			}
+
+			if !transparent {
+				if 0 == win.SetStretchBltMode(hdc, win.HALFTONE) {
+					return newError("SetStretchBltMode")
+				}
+
+				if !win.StretchBlt(
+					hdc,
+					int32(dst.X),
+					int32(dst.Y),
+					int32(dst.Width),
+					int32(dst.Height),
+					hdcMem,
+					int32(src.X),
+					int32(src.Y),
+					int32(src.Width),
+					int32(src.Height),
+					win.SRCCOPY,
+				) {
+					return newError("StretchBlt failed")
+				}
+
+				return nil
+			}
+		}
+
 		if !win.AlphaBlend(
 			hdc,
 			int32(dst.X),
@@ -380,8 +456,8 @@ func (bmp *Bitmap) alphaBlendPart(hdc win.HDC, dst, src Rectangle, opacity byte)
 			int32(src.Y),
 			int32(src.Width),
 			int32(src.Height),
-			win.BLENDFUNCTION{AlphaFormat: win.AC_SRC_ALPHA, SourceConstantAlpha: opacity}) {
-
+			win.BLENDFUNCTION{AlphaFormat: win.AC_SRC_ALPHA, SourceConstantAlpha: opacity},
+		) {
 			return newError("AlphaBlend failed")
 		}
 
