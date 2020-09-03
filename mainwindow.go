@@ -8,9 +8,7 @@ package walk
 
 import (
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -20,6 +18,11 @@ func init() {
 	AppendToWalkInit(func() {
 		MustRegisterWindowClass(mainWindowWindowClass)
 	})
+}
+
+type MainWindowCfg struct {
+	Name   string
+	Bounds Rectangle
 }
 
 type MainWindow struct {
@@ -35,16 +38,20 @@ func NewMainWindow() (*MainWindow, error) {
 }
 
 func NewMainWindowWithName(name string) (*MainWindow, error) {
+	return NewMainWindowWithCfg(&MainWindowCfg{Name: name})
+}
+
+func NewMainWindowWithCfg(cfg *MainWindowCfg) (*MainWindow, error) {
 	mw := new(MainWindow)
-	mw.SetName(name)
+	mw.SetName(cfg.Name)
 
-	if err := InitWindow(
-		mw,
-		nil,
-		mainWindowWindowClass,
-		win.WS_OVERLAPPEDWINDOW,
-		win.WS_EX_CONTROLPARENT); err != nil {
-
+	if err := initWindowWithCfg(&windowCfg{
+		Window:    mw,
+		ClassName: mainWindowWindowClass,
+		Style:     win.WS_OVERLAPPEDWINDOW,
+		ExStyle:   win.WS_EX_CONTROLPARENT,
+		Bounds:    cfg.Bounds,
+	}); err != nil {
 		return nil, err
 	}
 

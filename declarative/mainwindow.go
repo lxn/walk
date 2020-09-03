@@ -49,6 +49,7 @@ type MainWindow struct {
 	// MainWindow
 
 	AssignTo          **walk.MainWindow
+	Bounds            Rectangle
 	Expressions       func() map[string]walk.Expression
 	Functions         map[string]func(args ...interface{}) (interface{}, error)
 	MenuItems         []MenuItem
@@ -60,7 +61,10 @@ type MainWindow struct {
 }
 
 func (mw MainWindow) Create() error {
-	w, err := walk.NewMainWindow()
+	w, err := walk.NewMainWindowWithCfg(&walk.MainWindowCfg{
+		Name:   mw.Name,
+		Bounds: mw.Bounds.toW(),
+	})
 	if err != nil {
 		return err
 	}
@@ -150,7 +154,6 @@ func (mw MainWindow) Create() error {
 				s.Clicked().Attach(sbi.OnClicked)
 			}
 			w.StatusBar().Items().Add(s)
-			w.StatusBar().SetVisible(true)
 		}
 
 		if mw.Size.Width > 0 && mw.Size.Height > 0 {
