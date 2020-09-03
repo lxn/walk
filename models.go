@@ -394,6 +394,7 @@ type ListItemStyler interface {
 type ListItemStyle struct {
 	BackgroundColor    Color
 	TextColor          Color
+	defaultTextColor   Color
 	LineColor          Color
 	Font               *Font
 	index              int
@@ -476,7 +477,7 @@ func (lis *ListItemStyle) DrawBackground() error {
 
 // DrawText draws text inside given bounds specified in native pixels.
 func (lis *ListItemStyle) DrawText(text string, bounds Rectangle, format DrawTextFormat) error {
-	if lis.hTheme != 0 {
+	if lis.hTheme != 0 && lis.TextColor == lis.defaultTextColor {
 		if lis.Font != nil {
 			hFontOld := win.SelectObject(lis.hdc, win.HGDIOBJ(lis.Font.handleForDPI(lis.dpi)))
 			defer win.SelectObject(lis.hdc, hFontOld)

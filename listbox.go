@@ -704,6 +704,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		} else {
 			lb.style.LineColor = RGB(255, 255, 255)
 		}
+		lb.style.defaultTextColor = lb.style.TextColor
 
 		lb.style.DrawBackground()
 
