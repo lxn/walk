@@ -48,17 +48,18 @@ type NumberEdit struct {
 
 	// NumberEdit
 
-	AssignTo       **walk.NumberEdit
-	Decimals       int
-	Increment      float64
-	MaxValue       float64
-	MinValue       float64
-	Prefix         Property
-	OnValueChanged walk.EventHandler
-	ReadOnly       Property
-	Suffix         Property
-	TextColor      walk.Color
-	Value          Property
+	AssignTo           **walk.NumberEdit
+	Decimals           int
+	Increment          float64
+	MaxValue           float64
+	MinValue           float64
+	Prefix             Property
+	OnValueChanged     walk.EventHandler
+	ReadOnly           Property
+	SpinButtonsVisible bool
+	Suffix             Property
+	TextColor          walk.Color
+	Value              Property
 }
 
 func (ne NumberEdit) Create(builder *Builder) error {
@@ -91,6 +92,10 @@ func (ne NumberEdit) Create(builder *Builder) error {
 			if err := w.SetRange(ne.MinValue, ne.MaxValue); err != nil {
 				return err
 			}
+		}
+
+		if err := w.SetSpinButtonsVisible(ne.SpinButtonsVisible); err != nil {
+			return err
 		}
 
 		if ne.OnValueChanged != nil {
