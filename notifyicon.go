@@ -181,9 +181,6 @@ func (ni *NotifyIcon) Dispose() error {
 		return newError("Shell_NotifyIcon")
 	}
 
-	if !win.DestroyWindow(ni.hWnd) {
-		return lastError("DestroyWindow")
-	}
 	ni.hWnd = 0
 
 	return nil
