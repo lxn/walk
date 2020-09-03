@@ -29,6 +29,7 @@ type ListBox struct {
 	format                          string
 	precision                       int
 	prevCurIndex                    int
+	currentValue                    interface{}
 	itemsResetHandlerHandle         int
 	itemChangedHandlerHandle        int
 	itemsInsertedHandlerHandle      int
@@ -231,9 +232,10 @@ func (lb *ListBox) resetItems() error {
 
 	lb.maxItemTextWidth = 0
 
-	lb.SetCurrentIndex(-1)
+	oldValue := lb.currentValue
 
 	if lb.model == nil {
+		lb.SetCurrentIndex(-1)
 		return nil
 	}
 
@@ -245,6 +247,12 @@ func (lb *ListBox) resetItems() error {
 		if err := lb.insertItemAt(i); err != nil {
 			return err
 		}
+	}
+
+	if oldValue != nil {
+		lb.Property("Value").Set(oldValue)
+	} else {
+		lb.SetCurrentIndex(-1)
 	}
 
 	if lb.styler == nil {
@@ -580,6 +588,12 @@ func (lb *ListBox) SetCurrentIndex(value int) error {
 	}
 
 	if value != lb.prevCurIndex {
+		if value == -1 {
+			lb.currentValue = nil
+		} else {
+			lb.currentValue = lb.Property("Value").Get()
+		}
+
 		lb.prevCurIndex = value
 		lb.currentIndexChangedPublisher.Publish()
 	}
@@ -795,6 +809,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		case win.LBN_SELCHANGE:
 			lb.ensureVisibleItemsHeightUpToDate()
 			lb.prevCurIndex = lb.CurrentIndex()
+			lb.currentValue = lb.Property("Value").Get()
 			lb.currentIndexChangedPublisher.Publish()
 			lb.selectedIndexesChangedPublisher.Publish()
 

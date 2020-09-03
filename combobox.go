@@ -32,6 +32,7 @@ type ComboBox struct {
 	itemsInsertedHandlerHandle   int
 	itemsRemovedHandlerHandle    int
 	maxItemTextWidth             int // in native pixels
+	currentValue                 interface{}
 	prevCurIndex                 int
 	selChangeIndex               int
 	maxLength                    int
@@ -296,9 +297,10 @@ func (cb *ComboBox) resetItems() error {
 
 	cb.maxItemTextWidth = 0
 
-	cb.SetCurrentIndex(-1)
+	oldValue := cb.currentValue
 
 	if cb.model == nil {
+		cb.SetCurrentIndex(-1)
 		return nil
 	}
 
@@ -308,6 +310,12 @@ func (cb *ComboBox) resetItems() error {
 		if err := cb.insertItemAt(i); err != nil {
 			return err
 		}
+	}
+
+	if oldValue != nil {
+		cb.Property("Value").Set(oldValue)
+	} else {
+		cb.SetCurrentIndex(-1)
 	}
 
 	cb.RequestLayout()
@@ -556,6 +564,12 @@ func (cb *ComboBox) SetCurrentIndex(value int) error {
 	}
 
 	if value != cb.prevCurIndex {
+		if value == -1 {
+			cb.currentValue = nil
+		} else {
+			cb.currentValue = cb.Property("Value").Get()
+		}
+
 		cb.prevCurIndex = value
 		cb.currentIndexChangedPublisher.Publish()
 	}
@@ -572,8 +586,19 @@ func (cb *ComboBox) Text() string {
 }
 
 func (cb *ComboBox) SetText(value string) error {
+	var oldText string
+	oldText, _ = cb.currentValue.(string)
+
 	if err := cb.setText(value); err != nil {
 		return err
+	}
+
+	if value == oldText {
+		return nil
+	}
+
+	if cb.Editable() {
+		cb.currentValue = value
 	}
 
 	cb.textChangedPublisher.Publish()
@@ -654,8 +679,11 @@ func (cb *ComboBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 
 		case win.CBN_SELENDOK:
 			if editable := cb.Editable(); editable || selIndex != cb.prevCurIndex {
+				valueProp := cb.Property("Value")
 				if editable && selIndex > -1 {
-					cb.Property("Value").Set(cb.model.Value(selIndex))
+					valueProp.Set(cb.model.Value(selIndex))
+				} else {
+					cb.currentValue = valueProp.Get()
 				}
 				cb.currentIndexChangedPublisher.Publish()
 				cb.prevCurIndex = selIndex
