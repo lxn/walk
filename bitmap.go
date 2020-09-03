@@ -363,10 +363,10 @@ func (bmp *Bitmap) withPixels(f func(bi *win.BITMAPINFO, hdc win.HDC, pixels *[m
 		return newError("GetDIBits #1")
 	}
 
-	hPixels := win.GlobalAlloc(win.GHND, uintptr(bi.BmiHeader.BiSizeImage))
+	hPixels := win.GlobalAlloc(win.GMEM_FIXED, uintptr(bi.BmiHeader.BiSizeImage))
 	defer win.GlobalFree(hPixels)
-	pixels := (*[maxPixels]bgraPixel)(win.GlobalLock(hPixels))
-	defer win.GlobalUnlock(hPixels)
+
+	pixels := (*[maxPixels]bgraPixel)(unsafe.Pointer(uintptr(hPixels)))
 
 	bi.BmiHeader.BiCompression = win.BI_RGB
 	if ret := win.GetDIBits(hdc, bmp.hBmp, 0, uint32(bi.BmiHeader.BiHeight), &pixels[0].B, &bi, win.DIB_RGB_COLORS); ret == 0 {
