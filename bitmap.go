@@ -296,7 +296,7 @@ func (bmp *Bitmap) ToImage() (*image.RGBA, error) {
 
 func (bmp *Bitmap) hasTransparency() (bool, error) {
 	if bmp.transparencyStatus == transparencyUnknown {
-		if err := bmp.withPixels(func(bi *win.BITMAPINFO, hdc win.HDC, pixels *[2 << 30]dibPixel, pixelsLen int) error {
+		if err := bmp.withPixels(func(bi *win.BITMAPINFO, hdc win.HDC, pixels *[maxPixels]bgraPixel, pixelsLen int) error {
 			for i := 0; i < pixelsLen; i++ {
 				if pixels[i].A == 0x00 {
 					bmp.transparencyStatus = transparencyTransparent
@@ -318,7 +318,7 @@ func (bmp *Bitmap) hasTransparency() (bool, error) {
 }
 
 func (bmp *Bitmap) postProcess() error {
-	return bmp.withPixels(func(bi *win.BITMAPINFO, hdc win.HDC, pixels *[2 << 30]dibPixel, pixelsLen int) error {
+	return bmp.withPixels(func(bi *win.BITMAPINFO, hdc win.HDC, pixels *[maxPixels]bgraPixel, pixelsLen int) error {
 		for i := 0; i < pixelsLen; i++ {
 			switch pixels[i].A {
 			case 0x00:
@@ -340,14 +340,16 @@ func (bmp *Bitmap) postProcess() error {
 	})
 }
 
-type dibPixel struct {
+type bgraPixel struct {
 	B byte
 	G byte
 	R byte
 	A byte
 }
 
-func (bmp *Bitmap) withPixels(f func(bi *win.BITMAPINFO, hdc win.HDC, pixels *[2 << 30]dibPixel, pixelsLen int) error) error {
+const maxPixels = 2 << 27
+
+func (bmp *Bitmap) withPixels(f func(bi *win.BITMAPINFO, hdc win.HDC, pixels *[maxPixels]bgraPixel, pixelsLen int) error) error {
 	var bi win.BITMAPINFO
 	bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(bi.BmiHeader))
 
@@ -363,7 +365,7 @@ func (bmp *Bitmap) withPixels(f func(bi *win.BITMAPINFO, hdc win.HDC, pixels *[2
 
 	hPixels := win.GlobalAlloc(win.GHND, uintptr(bi.BmiHeader.BiSizeImage))
 	defer win.GlobalFree(hPixels)
-	pixels := (*[2 << 30]dibPixel)(win.GlobalLock(hPixels))
+	pixels := (*[maxPixels]bgraPixel)(win.GlobalLock(hPixels))
 	defer win.GlobalUnlock(hPixels)
 
 	bi.BmiHeader.BiCompression = win.BI_RGB
