@@ -277,7 +277,7 @@ func (tvc *TableViewColumn) SetFrozen(frozen bool) (err error) {
 		}
 	}()
 
-	if tvc.tv != nil {
+	if tvc.tv != nil && tvc.visible {
 		if err = tvc.destroy(); err != nil {
 			return
 		}
@@ -285,7 +285,7 @@ func (tvc *TableViewColumn) SetFrozen(frozen bool) (err error) {
 
 	tvc.frozen = frozen
 
-	if tvc.tv != nil {
+	if tvc.tv != nil && tvc.visible {
 		return tvc.create()
 	}
 

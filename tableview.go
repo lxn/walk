@@ -1737,10 +1737,7 @@ func (tv *TableView) RestoreState() error {
 		name2tvcs[tvcs.Name] = tvcsRetained[len(tvcsRetained)-1]
 
 		if tvc := name2tvc[tvcs.Name]; tvc != nil {
-			if err := tvc.SetTitleOverride(tvcs.Title); err != nil {
-				return err
-			}
-			if err := tvc.SetWidth(tvcs.Width); err != nil {
+			if err := tvc.SetFrozen(tvcs.Frozen); err != nil {
 				return err
 			}
 			var visible bool
@@ -1753,7 +1750,10 @@ func (tv *TableView) RestoreState() error {
 			if err := tvc.SetVisible(tvc.visible && (visible || tvcs.Visible)); err != nil {
 				return err
 			}
-			if err := tvc.SetFrozen(tvcs.Frozen); err != nil {
+			if err := tvc.SetTitleOverride(tvcs.Title); err != nil {
+				return err
+			}
+			if err := tvc.SetWidth(tvcs.Width); err != nil {
 				return err
 			}
 		}
@@ -2701,7 +2701,7 @@ func (tv *TableView) updateLVSizes() {
 func (tv *TableView) updateLVSizesWithSpecialCare(needSpecialCare bool) {
 	var width int
 	for i := tv.columns.Len() - 1; i >= 0; i-- {
-		if col := tv.columns.At(i); col.frozen {
+		if col := tv.columns.At(i); col.frozen && col.visible {
 			width += col.Width()
 		}
 	}
