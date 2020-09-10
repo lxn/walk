@@ -2211,9 +2211,11 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						nmlvcd.ClrTextBk = win.COLORREF(tv.style.BackgroundColor)
 						nmlvcd.ClrText = win.COLORREF(tv.style.TextColor)
 
-						if font := tv.style.Font; font != nil {
-							win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(dpi)))
+						font := tv.style.Font
+						if font == nil {
+							font = tv.Font()
 						}
+						win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(dpi)))
 					}
 
 					return 0
