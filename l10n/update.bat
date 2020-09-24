@@ -1,1 +1,1 @@
-polyglot -name="walk" -dir=".." -locales="de,fr"
+polyglot -name="walk" -dir=".." -locales="de,fr,ko"
