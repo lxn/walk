@@ -104,7 +104,7 @@ func main() {
    		Layout:  VBox{},
    		Children: []Widget
            {
-           TextEdit{AssignTo: &inTE},
+           TextEdit{AssignTo: &aTextEdit},
            TextEdit{},
    	            }.Run()
 
