@@ -31,6 +31,7 @@ type TabWidget struct {
 	pages                        *TabPageList
 	currentIndex                 int
 	currentIndexChangedPublisher EventPublisher
+	nonClientSizePixels          Size
 	persistent                   bool
 }
 
@@ -513,6 +514,8 @@ func (tw *TabWidget) onPageChanged(page *TabPage) (err error) {
 		return newError("SendMessage(TCM_SETITEM) failed")
 	}
 
+	tw.updateNonClientSize()
+
 	return nil
 }
 
@@ -683,14 +686,24 @@ func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
 	return
 }
 
+func (tw *TabWidget) updateNonClientSize() {
+	rc := win.RECT{Right: 1000, Bottom: 1000}
+
+	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 1, uintptr(unsafe.Pointer(&rc)))
+
+	tw.nonClientSizePixels.Width = int(rc.Right-rc.Left) - 1000
+	tw.nonClientSizePixels.Height = int(rc.Bottom-rc.Top) - 1000
+}
+
 func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	pages := make([]LayoutItem, tw.pages.Len())
 
 	bounds := tw.pageBounds()
 
 	li := &tabWidgetLayoutItem{
-		pagePos:      bounds.Location(),
-		currentIndex: tw.CurrentIndex(),
+		pagePos:             bounds.Location(),
+		currentIndex:        tw.CurrentIndex(),
+		nonClientSizePixels: tw.nonClientSizePixels,
 	}
 
 	for i := tw.pages.Len() - 1; i >= 0; i-- {
@@ -714,8 +727,9 @@ func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type tabWidgetLayoutItem struct {
 	ContainerLayoutItemBase
-	pagePos      Point // in native pixels
-	currentIndex int
+	nonClientSizePixels Size
+	pagePos             Point // in native pixels
+	currentIndex        int
 }
 
 func (li *tabWidgetLayoutItem) LayoutFlags() LayoutFlags {
@@ -748,12 +762,7 @@ func (li *tabWidgetLayoutItem) MinSize() Size {
 		}
 	}
 
-	s := li.geometry.Size
-	ps := li.children[0].Geometry().Size
-
-	size := Size{s.Width - ps.Width + min.Width, s.Height - ps.Height + min.Height}
-
-	return size
+	return Size{min.Height + li.nonClientSizePixels.Width, min.Height + li.nonClientSizePixels.Height}
 }
 
 func (li *tabWidgetLayoutItem) MinSizeForSize(size Size) Size {
