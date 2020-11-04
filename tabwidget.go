@@ -762,7 +762,7 @@ func (li *tabWidgetLayoutItem) MinSize() Size {
 		}
 	}
 
-	return Size{min.Height + li.nonClientSizePixels.Width, min.Height + li.nonClientSizePixels.Height}
+	return Size{min.Width + li.nonClientSizePixels.Width, min.Height + li.nonClientSizePixels.Height}
 }
 
 func (li *tabWidgetLayoutItem) MinSizeForSize(size Size) Size {
