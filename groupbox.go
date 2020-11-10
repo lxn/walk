@@ -362,8 +362,6 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				}
 				gb.checkBox.SetBoundsPixels(Rectangle{x, gb.headerHeight, s.Width, s.Height})
 			}
-
-			gb.composite.SetBoundsPixels(gb.ClientBoundsPixels())
 		}
 	}
 
@@ -380,7 +378,6 @@ func (gb *GroupBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 	li := &groupBoxLayoutItem{
 		compositePos: compositePos,
-		title:        gb.Title(),
 	}
 
 	gbli := CreateLayoutItemsForContainerWithContext(gb.composite, ctx)
@@ -394,7 +391,6 @@ func (gb *GroupBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type groupBoxLayoutItem struct {
 	ContainerLayoutItemBase
 	compositePos Point // in native pixels
-	title        string
 }
 
 func (li *groupBoxLayoutItem) LayoutFlags() LayoutFlags {
@@ -404,7 +400,7 @@ func (li *groupBoxLayoutItem) LayoutFlags() LayoutFlags {
 func (li *groupBoxLayoutItem) MinSize() Size {
 	min := li.children[0].(MinSizer).MinSize()
 	min.Width += li.compositePos.X * 2
-	min.Height += li.compositePos.Y
+	min.Height += li.compositePos.Y + 2
 
 	return min
 }
@@ -431,7 +427,7 @@ func (li *groupBoxLayoutItem) PerformLayout() []LayoutResultItem {
 	return []LayoutResultItem{
 		{
 			Item:   li.children[0],
-			Bounds: Rectangle{X: li.compositePos.X, Y: li.compositePos.Y, Width: li.geometry.Size.Width - li.compositePos.X*2, Height: li.geometry.Size.Height - li.compositePos.Y},
+			Bounds: Rectangle{X: li.compositePos.X, Y: li.compositePos.Y, Width: li.geometry.Size.Width - li.compositePos.X*2, Height: li.geometry.Size.Height - li.compositePos.Y - 4},
 		},
 	}
 }
