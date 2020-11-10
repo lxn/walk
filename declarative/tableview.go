@@ -81,8 +81,10 @@ func (tvs *tvStyler) StyleCell(style *walk.CellStyle) {
 		tvs.dflt.StyleCell(style)
 	}
 
-	if styleCell := tvs.colStyleCellFuncs[style.Col()]; styleCell != nil {
-		styleCell(style)
+	if col := style.Col(); col >= 0 {
+		if styleCell := tvs.colStyleCellFuncs[col]; styleCell != nil {
+			styleCell(style)
+		}
 	}
 }
 
