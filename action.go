@@ -95,6 +95,10 @@ func (a *Action) release() {
 	}
 }
 
+func (a *Action) Menu() *Menu {
+	return a.menu
+}
+
 func (a *Action) Checkable() bool {
 	return a.checkable
 }
