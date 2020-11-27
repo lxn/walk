@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 const staticWindowClass = `\o/ Walk_Static_Class \o/`

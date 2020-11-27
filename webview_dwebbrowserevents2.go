@@ -8,13 +8,10 @@ package walk
 
 import (
 	"syscall"
-	"unsafe"
-)
-
-import (
 	"time"
+	"unsafe"
 
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 var webViewDWebBrowserEvents2Vtbl *win.DWebBrowserEvents2Vtbl

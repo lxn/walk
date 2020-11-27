@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 // DrawText format flags

@@ -8,10 +8,8 @@ package declarative
 
 import (
 	"time"
-)
 
-import (
-	"github.com/lxn/walk"
+	"github.com/xlplbo/walk"
 )
 
 type DateEdit struct {

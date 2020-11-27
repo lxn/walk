@@ -6,7 +6,7 @@
 
 package walk
 
-import "github.com/lxn/win"
+import "github.com/xlplbo/win"
 
 // Point defines 2D coordinate in 1/96" units ot native pixels.
 type Point struct {

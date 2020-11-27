@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 const clipboardWindowClass = `\o/ Walk_Clipboard_Class \o/`

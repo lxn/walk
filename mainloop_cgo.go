@@ -9,7 +9,7 @@ package walk
 import (
 	"unsafe"
 
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 // #include <windows.h>

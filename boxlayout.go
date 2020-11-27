@@ -11,7 +11,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 type Orientation byte

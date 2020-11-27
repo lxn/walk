@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lxn/walk"
-	. "github.com/lxn/walk/declarative"
-	"github.com/lxn/win"
+	"github.com/xlplbo/walk"
+	. "github.com/xlplbo/walk/declarative"
+	"github.com/xlplbo/win"
 )
 
 func main() {

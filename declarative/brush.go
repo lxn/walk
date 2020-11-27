@@ -9,7 +9,7 @@ package declarative
 import (
 	"strconv"
 
-	"github.com/lxn/walk"
+	"github.com/xlplbo/walk"
 )
 
 type TransparentBrush struct {

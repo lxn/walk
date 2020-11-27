@@ -9,10 +9,8 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 var webViewIOleClientSiteVtbl *win.IOleClientSiteVtbl

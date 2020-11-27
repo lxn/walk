@@ -9,10 +9,8 @@ package walk
 import (
 	"strings"
 	"syscall"
-)
 
-import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 type MsgBoxStyle uint

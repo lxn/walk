@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 const groupBoxWindowClass = `\o/ Walk_GroupBox_Class \o/`

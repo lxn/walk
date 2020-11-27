@@ -8,10 +8,8 @@ package walk
 
 import (
 	"syscall"
-)
 
-import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 var webViewIOleInPlaceFrameVtbl *win.IOleInPlaceFrameVtbl

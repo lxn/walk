@@ -7,7 +7,7 @@
 package walk
 
 import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 type PushButton struct {

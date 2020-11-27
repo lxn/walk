@@ -8,10 +8,8 @@ package walk
 
 import (
 	"unsafe"
-)
 
-import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 type WebViewNavigatingEventData struct {

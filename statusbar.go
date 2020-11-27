@@ -9,10 +9,8 @@ package walk
 import (
 	"syscall"
 	"unsafe"
-)
 
-import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 // StatusBar is a widget that displays status messages.

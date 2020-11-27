@@ -10,10 +10,8 @@ import (
 	"fmt"
 	"log"
 	"runtime/debug"
-)
 
-import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 var (

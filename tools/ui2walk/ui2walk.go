@@ -898,7 +898,7 @@ func generateUICode(buf *bytes.Buffer, ui *UI) error {
 		package main
 		
 		import (
-			"github.com/lxn/walk"
+			"github.com/xlplbo/walk"
 		)
 		
 		`)
@@ -1070,7 +1070,7 @@ func generateLogicCode(buf *bytes.Buffer, ui *UI) error {
 		`package main
 		
 		import (
-			"github.com/lxn/walk"
+			"github.com/xlplbo/walk"
 		)
 		
 		`)

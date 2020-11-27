@@ -11,10 +11,8 @@ import (
 	"path/filepath"
 	"syscall"
 	"unsafe"
-)
 
-import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 type FileDialog struct {

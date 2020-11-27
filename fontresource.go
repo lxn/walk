@@ -7,8 +7,9 @@
 package walk
 
 import (
-	"github.com/lxn/win"
 	"syscall"
+
+	"github.com/xlplbo/win"
 )
 
 // FontMemResource represents a font resource loaded into memory from

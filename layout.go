@@ -9,7 +9,7 @@ package walk
 import (
 	"sync"
 
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 func createLayoutItemForWidget(widget Widget) LayoutItem {

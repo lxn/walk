@@ -14,7 +14,7 @@ import (
 
 	"golang.org/x/sys/windows"
 
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 // Icon is a bitmap that supports transparency and combining multiple

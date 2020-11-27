@@ -9,7 +9,7 @@ package declarative
 import (
 	"fmt"
 
-	"github.com/lxn/walk"
+	"github.com/xlplbo/walk"
 )
 
 type Shortcut struct {

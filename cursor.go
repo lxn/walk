@@ -8,10 +8,8 @@ package walk
 
 import (
 	"image"
-)
 
-import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 type Cursor interface {

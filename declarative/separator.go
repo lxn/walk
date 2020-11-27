@@ -7,7 +7,7 @@
 package declarative
 
 import (
-	"github.com/lxn/walk"
+	"github.com/xlplbo/walk"
 )
 
 type HSeparator struct {
@@ -69,7 +69,7 @@ func (s HSeparator) Create(builder *Builder) error {
 type VSeparator struct {
 	// Window
 
-	Accessibility      Accessibility
+	Accessibility    Accessibility
 	ContextMenuItems []MenuItem
 	Enabled          Property
 	Font             Font

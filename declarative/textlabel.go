@@ -7,7 +7,7 @@
 package declarative
 
 import (
-	"github.com/lxn/walk"
+	"github.com/xlplbo/walk"
 )
 
 type Alignment2D uint

@@ -9,7 +9,7 @@ package walk
 import (
 	"strconv"
 
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 type Slider struct {

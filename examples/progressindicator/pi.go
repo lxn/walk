@@ -8,10 +8,8 @@ import (
 	"fmt"
 	"log"
 	"time"
-)
 
-import (
-	"github.com/lxn/walk"
+	"github.com/xlplbo/walk"
 )
 
 func main() {

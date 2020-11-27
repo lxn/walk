@@ -8,10 +8,8 @@ package walk
 
 import (
 	"unsafe"
-)
 
-import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 const mainWindowWindowClass = `\o/ Walk_MainWindow_Class \o/`

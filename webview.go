@@ -10,10 +10,8 @@ import (
 	"fmt"
 	"syscall"
 	"unsafe"
-)
 
-import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 const webViewWindowClass = `\o/ Walk_WebView_Class \o/`

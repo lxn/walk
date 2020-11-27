@@ -7,7 +7,7 @@
 package walk
 
 import (
-	"github.com/lxn/win"
+	"github.com/xlplbo/win"
 )
 
 // LayoutFlags specify how a Widget wants to be treated when used with a Layout.
