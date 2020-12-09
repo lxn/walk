@@ -2247,7 +2247,9 @@ func (wb *WindowBase) backgroundEffective() (Brush, Window) {
 }
 
 func (wb *WindowBase) prepareDCForBackground(hdc win.HDC, hwnd win.HWND, brushWnd Window) {
-	win.SetBkMode(hdc, win.TRANSPARENT)
+	if _, ok := brushWnd.(Container); ok {
+		win.SetBkMode(hdc, win.TRANSPARENT)
+	}
 
 	var bgRC win.RECT
 	win.GetWindowRect(brushWnd.Handle(), &bgRC)
