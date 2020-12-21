@@ -220,20 +220,27 @@ func (mw *MainWindow) SetFullscreen(fullscreen bool) error {
 
 func (mw *MainWindow) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
-	case win.WM_WINDOWPOSCHANGED:
-		wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
-
-		if wp.Flags&win.SWP_NOSIZE != 0 {
-			break
+	case win.WM_WINDOWPOSCHANGED, win.WM_SIZE:
+		if win.WM_WINDOWPOSCHANGED == msg {
+			wp := (*win.WINDOWPOS)(unsafe.Pointer(lParam))
+			if wp.Flags&win.SWP_NOSIZE != 0 {
+				break
+			}
 		}
 
 		cb := mw.ClientBoundsPixels()
 
 		if mw.toolBar != nil {
-			mw.toolBar.SetBoundsPixels(Rectangle{0, 0, cb.Width, mw.toolBar.HeightPixels()})
+			bounds := Rectangle{0, 0, cb.Width, mw.toolBar.HeightPixels()}
+			if mw.toolBar.BoundsPixels() != bounds {
+				mw.toolBar.SetBoundsPixels(bounds)
+			}
 		}
 
-		mw.statusBar.SetBoundsPixels(Rectangle{0, cb.Y + cb.Height, cb.Width, mw.statusBar.HeightPixels()})
+		bounds := Rectangle{0, cb.Y + cb.Height, cb.Width, mw.statusBar.HeightPixels()}
+		if mw.statusBar.BoundsPixels() != bounds {
+			mw.statusBar.SetBoundsPixels(bounds)
+		}
 
 	case win.WM_INITMENUPOPUP:
 		mw.menu.updateItemsWithImageForWindow(mw)
