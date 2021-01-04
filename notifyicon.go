@@ -137,6 +137,48 @@ func (ni *NotifyIcon) DPI() int {
 	return fakeWb.DPI()
 }
 
+func (ni *NotifyIcon) readdToTaskbar() error {
+	nid := win.NOTIFYICONDATA{
+		HWnd:             ni.hWnd,
+		UFlags:           win.NIF_MESSAGE | win.NIF_STATE,
+		DwState:          win.NIS_HIDDEN,
+		DwStateMask:      win.NIS_HIDDEN,
+		UCallbackMessage: notifyIconMessageId,
+	}
+	nid.CbSize = uint32(unsafe.Sizeof(nid) - unsafe.Sizeof(win.HICON(0)))
+
+	if !win.Shell_NotifyIcon(win.NIM_ADD, &nid) {
+		return newError("Shell_NotifyIcon")
+	}
+
+	// We want XP-compatible message behavior.
+	nid.UVersion = win.NOTIFYICON_VERSION
+
+	if !win.Shell_NotifyIcon(win.NIM_SETVERSION, &nid) {
+		return newError("Shell_NotifyIcon")
+	}
+
+	icon := ni.icon
+	ni.icon = nil
+	err := ni.SetIcon(icon)
+	if err != nil {
+		return err
+	}
+	visible := ni.visible
+	ni.visible = false
+	err = ni.SetVisible(visible)
+	if err != nil {
+		return err
+	}
+	tooltip := ni.toolTip
+	ni.toolTip = ""
+	err = ni.SetToolTip(tooltip)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (ni *NotifyIcon) applyDPI() {
 	dpi := ni.DPI()
 	if dpi == ni.lastDPI {
