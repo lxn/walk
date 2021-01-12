@@ -27,6 +27,9 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 	case win.WM_LBUTTONUP:
 		ni.publishMouseEvent(&ni.mouseUpPublisher, LeftButton)
 
+	case win.WM_LBUTTONDBLCLK:
+		ni.publishMouseEvent(&ni.mouseDbClickedPublisher, LeftButton)
+
 	case win.WM_RBUTTONDOWN:
 		ni.publishMouseEvent(&ni.mouseDownPublisher, RightButton)
 
@@ -34,6 +37,9 @@ func notifyIconWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) (resul
 		ni.publishMouseEvent(&ni.mouseUpPublisher, RightButton)
 
 		win.SendMessage(hwnd, msg, wParam, win.WM_CONTEXTMENU)
+
+	case win.WM_RBUTTONDBLCLK:
+		ni.publishMouseEvent(&ni.mouseDbClickedPublisher, RightButton)
 
 	case win.WM_CONTEXTMENU:
 		if ni.contextMenu.Actions().Len() == 0 {
@@ -82,6 +88,7 @@ type NotifyIcon struct {
 	mouseDownPublisher      MouseEventPublisher
 	mouseUpPublisher        MouseEventPublisher
 	messageClickedPublisher EventPublisher
+	mouseDbClickedPublisher MouseEventPublisher
 }
 
 // NewNotifyIcon creates and returns a new NotifyIcon.
@@ -415,4 +422,10 @@ func (ni *NotifyIcon) MouseUp() *MouseEvent {
 // one of its iconed variants.
 func (ni *NotifyIcon) MessageClicked() *Event {
 	return ni.messageClickedPublisher.Event()
+}
+
+// MouseDbClicked returns the event that is published when a mouse button is double clicked
+// while the cursor is over the NotifyIcon.
+func (ni *NotifyIcon) MouseDbClicked() *MouseEvent {
+	return ni.mouseDbClickedPublisher.Event()
 }
