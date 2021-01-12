@@ -49,15 +49,18 @@ func main() {
 				},
 			},
 		},
-		ToolBarItems: []MenuItem{
-			ActionRef{&openAction},
-		},
 		MinSize: Size{320, 240},
 		Size:    Size{800, 600},
 		Layout:  VBox{MarginsZero: true},
 		Children: []Widget{
 			TabWidget{
 				AssignTo: &mw.tabWidget,
+				Pages: []TabPage{
+					TabPage{
+						Layout: HBox{},
+						Name:   "placeholder",
+					},
+				},
 			},
 		},
 	}.Run()); err != nil {
@@ -146,6 +149,10 @@ func (mw *MyMainWindow) openImage() error {
 	}
 
 	succeeded = true
+
+	if mw.tabWidget.Pages().At(0).Name() == "placeholder" {
+		mw.tabWidget.Pages().Remove(mw.tabWidget.Pages().At(0))
+	}
 
 	return nil
 }
