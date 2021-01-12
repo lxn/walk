@@ -42,6 +42,13 @@ func (SelRequired) Create() (walk.Validator, error) {
 	return walk.SelectionRequiredValidator(), nil
 }
 
+type NotEmpty struct {
+}
+
+func (NotEmpty) Create() (walk.Validator, error) {
+	return walk.NotEmptyValidator(), nil
+}
+
 type dMultiValidator struct {
 	validators []Validator
 }

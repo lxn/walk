@@ -150,3 +150,21 @@ func (selectionRequiredValidator) Validate(v interface{}) error {
 
 	return nil
 }
+
+type notEmptyValidator struct {
+}
+
+var notEmptyValidatorSingleton Validator = notEmptyValidator{}
+
+func NotEmptyValidator() Validator {
+	return notEmptyValidatorSingleton
+}
+
+func (notEmptyValidator) Validate(v interface{}) error {
+	if s := v.(string); len(s) <= 0 {
+		return NewValidationError(
+			tr("Empty field", "walk"),
+			tr("Please fill out the required fields.", "walk"))
+	}
+	return nil
+}
