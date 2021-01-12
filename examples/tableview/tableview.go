@@ -39,13 +39,13 @@ func NewFooModel() *FooModel {
 	return m
 }
 
-// Called by the TableView from SetModel and every time the model publishes a
+// RowCount: Called by the TableView from SetModel and every time the model publishes a
 // RowsReset event.
 func (m *FooModel) RowCount() int {
 	return len(m.items)
 }
 
-// Called by the TableView when it needs the text to display for a given cell.
+// Value: Called by the TableView when it needs the text to display for a given cell.
 func (m *FooModel) Value(row, col int) interface{} {
 	item := m.items[row]
 
@@ -66,19 +66,19 @@ func (m *FooModel) Value(row, col int) interface{} {
 	panic("unexpected col")
 }
 
-// Called by the TableView to retrieve if a given row is checked.
+// Checked: Called by the TableView to retrieve if a given row is checked.
 func (m *FooModel) Checked(row int) bool {
 	return m.items[row].checked
 }
 
-// Called by the TableView when the user toggled the check box of a given row.
+// SetChecked: Called by the TableView when the user toggled the check box of a given row.
 func (m *FooModel) SetChecked(row int, checked bool) error {
 	m.items[row].checked = checked
 
 	return nil
 }
 
-// Called by the TableView to sort the model.
+// Sort: Called by the TableView to sort the model.
 func (m *FooModel) Sort(col int, order walk.SortOrder) error {
 	m.sortColumn, m.sortOrder = col, order
 

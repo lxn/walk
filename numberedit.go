@@ -257,7 +257,7 @@ func (ne *NumberEdit) MinValue() float64 {
 	return ne.edit.minValue
 }
 
-// MinValue returns the maximum value the NumberEdit will accept.
+// MaxValue returns the maximum value the NumberEdit will accept.
 func (ne *NumberEdit) MaxValue() float64 {
 	return ne.edit.maxValue
 }
@@ -411,7 +411,7 @@ func (ne *NumberEdit) TextColor() Color {
 	return ne.edit.TextColor()
 }
 
-// TextColor sets the Color used to draw the text of the NumberEdit.
+// SetTextColor: sets the Color used to draw the text of the NumberEdit.
 func (ne *NumberEdit) SetTextColor(c Color) {
 	ne.edit.SetTextColor(c)
 }

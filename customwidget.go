@@ -78,12 +78,12 @@ func (cw *CustomWidget) init(parent Container, style uint) error {
 	return nil
 }
 
-// deprecated, use PaintMode
+// ClearsBackground: deprecated, use PaintMode
 func (cw *CustomWidget) ClearsBackground() bool {
 	return cw.paintMode != PaintNormal
 }
 
-// deprecated, use SetPaintMode
+// SetClearsBackground: deprecated, use SetPaintMode
 func (cw *CustomWidget) SetClearsBackground(value bool) {
 	if value != cw.ClearsBackground() {
 		if value {
