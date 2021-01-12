@@ -22,7 +22,6 @@ Using Walk
 
 The preferred way to create GUIs with Walk is to use its declarative sub package,
 as illustrated in this small example:
-
 ##### `test.go`
 
 ```go
@@ -58,6 +57,59 @@ func main() {
 	}.Run()
 }
 ```
+
+   A slightly more detailed broken down example:
+   ==========
+
+   A window is created with MainWindow {}
+   Fields for 	Title ,MinSize and Layout should always be set.
+   Layouts include VBox{} (layout widgets in a top-bot list) and HBox{} (layout widgets in a left-right list) , these should be enough for a large number of cases.
+   Remember to call .Run() to open the window
+
+   ```go
+   package main
+
+   import (
+   	"github.com/lxn/walk"
+   	. "github.com/lxn/walk/declarative"
+   )
+
+   func main() {
+
+   	MainWindow{
+   		Title:   "WindowTest",
+   		MinSize: Size{600, 400},
+   		Layout:  VBox{},
+   	    }.Run()
+
+   ```
+
+   A field for Children takes a slice of Widget structs (lxn base class for UI widgets)
+   Fields  in widgets include AssignTo for data binding (Note the use of *pointer and &derefrence)
+
+   ```go
+   package main
+
+   import (
+   	"github.com/lxn/walk"
+   	. "github.com/lxn/walk/declarative"
+   )
+
+   func main() {
+   	var aTextEdit *walk.TextEdit
+
+   	MainWindow{
+   		Title:   "ChildrenTest",
+   		MinSize: Size{600, 400},
+   		Layout:  VBox{},
+   		Children: []Widget
+           {
+           TextEdit{AssignTo: &aTextEdit},
+           TextEdit{},
+   	            }.Run()
+
+   ```
+
 
 ##### Create Manifest `test.manifest`
 
