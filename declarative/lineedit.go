@@ -63,6 +63,7 @@ type LineEdit struct {
 	OnEditingFinished walk.EventHandler
 	OnTextChanged     walk.EventHandler
 	PasswordMode      bool
+	PasswordChar      rune
 	ReadOnly          Property
 	Text              Property
 	TextAlignment     Alignment1D
@@ -92,7 +93,15 @@ func (le LineEdit) Create(builder *Builder) error {
 			}
 		}
 		w.SetMaxLength(le.MaxLength)
-		w.SetPasswordMode(le.PasswordMode)
+		passwordMode := rune(0)
+		if le.PasswordMode {
+			if le.PasswordChar != 0 {
+				passwordMode = le.PasswordChar
+			} else {
+				passwordMode = -1
+			}
+		}
+		w.SetPasswordMode(passwordMode)
 
 		if err := w.SetCaseMode(walk.CaseMode(le.CaseMode)); err != nil {
 			return err
