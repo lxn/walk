@@ -22,13 +22,15 @@ func init() {
 
 type ScrollView struct {
 	WidgetBase
-	composite  *Composite
-	horizontal bool
-	vertical   bool
+	composite           *Composite
+	horizontal          bool
+	vertical            bool
+	horizontalScrollCmd uint16
+	verticalScrollCmd   uint16
 }
 
 func NewScrollView(parent Container) (*ScrollView, error) {
-	sv := &ScrollView{horizontal: true, vertical: true}
+	sv := &ScrollView{horizontal: true, vertical: true, horizontalScrollCmd: win.SB_THUMBTRACK, verticalScrollCmd: win.SB_THUMBTRACK}
 
 	if err := InitWidget(
 		sv,
@@ -88,6 +90,11 @@ func (sv *ScrollView) SetScrollbars(horizontal, vertical bool) {
 
 	sv.ensureStyleBits(win.WS_HSCROLL, horizontal)
 	sv.ensureStyleBits(win.WS_VSCROLL, vertical)
+}
+
+func (sv *ScrollView) SetScrollCmd(horizontalCmd, verticalCmd uint16) {
+	sv.horizontalScrollCmd = horizontalCmd
+	sv.verticalScrollCmd = verticalCmd
 }
 
 func (sv *ScrollView) SetSuspended(suspend bool) {
@@ -249,12 +256,12 @@ func (sv *ScrollView) updateScrollBars() {
 	si.NMax = int32(compositeSize.Width - 1)
 	si.NPage = uint32(size.Width)
 	win.SetScrollInfo(sv.hWnd, win.SB_HORZ, &si, false)
-	newCompositeBounds.X = sv.scroll(win.SB_HORZ, win.SB_THUMBPOSITION)
+	newCompositeBounds.X = sv.scroll(win.SB_HORZ, sv.horizontalScrollCmd)
 
 	si.NMax = int32(compositeSize.Height - 1)
 	si.NPage = uint32(size.Height)
 	win.SetScrollInfo(sv.hWnd, win.SB_VERT, &si, false)
-	newCompositeBounds.Y = sv.scroll(win.SB_VERT, win.SB_THUMBPOSITION)
+	newCompositeBounds.Y = sv.scroll(win.SB_VERT, sv.verticalScrollCmd)
 
 	sv.composite.SetBoundsPixels(newCompositeBounds)
 }
