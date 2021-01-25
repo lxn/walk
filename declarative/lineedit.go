@@ -13,9 +13,10 @@ import (
 type CaseMode uint32
 
 const (
-	CaseModeMixed CaseMode = CaseMode(walk.CaseModeMixed)
-	CaseModeUpper CaseMode = CaseMode(walk.CaseModeUpper)
-	CaseModeLower CaseMode = CaseMode(walk.CaseModeLower)
+	CaseModeMixed  CaseMode = CaseMode(walk.CaseModeMixed)
+	CaseModeUpper  CaseMode = CaseMode(walk.CaseModeUpper)
+	CaseModeLower  CaseMode = CaseMode(walk.CaseModeLower)
+	CaseModeNumber CaseMode = CaseMode(walk.CaseModeNumber)
 )
 
 type LineEdit struct {
