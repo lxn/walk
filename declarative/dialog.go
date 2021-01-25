@@ -132,6 +132,12 @@ func (d Dialog) Create(owner walk.Form) error {
 			}
 		}
 
+		if d.Layout == nil {
+			if err := w.SetLayout(walk.NewVBoxLayout()); err != nil {
+				return err
+			}
+		}
+
 		if d.DefaultButton != nil {
 			if err := w.SetDefaultButton(*d.DefaultButton); err != nil {
 				return err

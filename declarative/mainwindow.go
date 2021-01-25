@@ -176,6 +176,12 @@ func (mw MainWindow) Create() error {
 		// 	*mw.AssignTo = w
 		// }
 
+		if mw.Layout == nil {
+			if err := w.SetLayout(walk.NewVBoxLayout()); err != nil {
+				return err
+			}
+		}
+
 		if mw.Expressions != nil {
 			for name, expr := range mw.Expressions() {
 				builder.expressions[name] = expr
