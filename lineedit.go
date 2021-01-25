@@ -21,6 +21,7 @@ const (
 	CaseModeMixed CaseMode = iota
 	CaseModeUpper
 	CaseModeLower
+	CaseModeNumber
 )
 
 const (
@@ -203,6 +204,9 @@ func (le *LineEdit) SetCaseMode(mode CaseMode) error {
 	case CaseModeLower:
 		set = win.ES_LOWERCASE
 		clear = win.ES_UPPERCASE
+
+	case CaseModeNumber:
+		set = win.ES_NUMBER
 
 	default:
 		panic("invalid CaseMode")
