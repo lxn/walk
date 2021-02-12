@@ -32,12 +32,14 @@ var (
 
 	syncMsgId                 uint32
 	taskbarButtonCreatedMsgId uint32
+	taskbarCreatedMsgId       uint32
 )
 
 func init() {
 	AppendToWalkInit(func() {
 		syncMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("WalkSync"))
 		taskbarButtonCreatedMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("TaskbarButtonCreated"))
+		taskbarCreatedMsgId = win.RegisterWindowMessage(syscall.StringToUTF16Ptr("TaskbarCreated"))
 	})
 }
 
@@ -691,7 +693,9 @@ func (fb *FormBase) startLayout() bool {
 		fb.Invalidate()
 	}
 
-	fb.clientComposite.SetBoundsPixels(Rectangle{Width: cs.Width, Height: cs.Height})
+	cbp := fb.window.ClientBoundsPixels()
+
+	fb.clientComposite.SetBoundsPixels(Rectangle{Y: cbp.Y, Width: cs.Width, Height: cs.Height})
 
 	cli := CreateLayoutItemsForContainer(fb)
 	cli.Geometry().ClientSize = cs
@@ -878,6 +882,11 @@ func (fb *FormBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 		// Check that the OS is Win 7 or later (Win 7 is v6.1).
 		if fb.progressIndicator == nil && (major > 6 || (major == 6 && minor > 0)) {
 			fb.progressIndicator, _ = newTaskbarList3(fb.hWnd)
+		}
+
+	case taskbarCreatedMsgId:
+		for ni := range notifyIcons {
+			ni.readdToTaskbar()
 		}
 	}
 

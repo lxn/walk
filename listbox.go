@@ -19,14 +19,17 @@ import (
 
 type ListBox struct {
 	WidgetBase
+	bindingValueProvider            BindingValueProvider
 	model                           ListModel
 	providedModel                   interface{}
 	styler                          ListItemStyler
 	style                           ListItemStyle
-	dataMember                      string
+	bindingMember                   string
+	displayMember                   string
 	format                          string
 	precision                       int
 	prevCurIndex                    int
+	currentValue                    interface{}
 	itemsResetHandlerHandle         int
 	itemChangedHandlerHandle        int
 	itemsInsertedHandlerHandle      int
@@ -105,6 +108,39 @@ func NewListBoxWithStyle(parent Container, style uint32) (*ListBox, error) {
 		},
 		lb.CurrentIndexChanged()))
 
+	lb.MustRegisterProperty("Value", NewProperty(
+		func() interface{} {
+			index := lb.CurrentIndex()
+
+			if lb.bindingValueProvider == nil || index == -1 {
+				return nil
+			}
+
+			return lb.bindingValueProvider.BindingValue(index)
+		},
+		func(v interface{}) error {
+			if lb.bindingValueProvider == nil {
+				if lb.model == nil {
+					return nil
+				} else {
+					return newError("Data binding is only supported using a model that implements BindingValueProvider.")
+				}
+			}
+
+			index := -1
+
+			count := lb.model.ItemCount()
+			for i := 0; i < count; i++ {
+				if lb.bindingValueProvider.BindingValue(i) == v {
+					index = i
+					break
+				}
+			}
+
+			return lb.SetCurrentIndex(index)
+		},
+		lb.CurrentIndexChanged()))
+
 	succeeded = true
 
 	return lb, nil
@@ -166,8 +202,6 @@ func (lb *ListBox) itemString(index int) string {
 	default:
 		return fmt.Sprintf(lb.format, val)
 	}
-
-	panic("unreachable")
 }
 
 //insert one item from list model
@@ -198,9 +232,10 @@ func (lb *ListBox) resetItems() error {
 
 	lb.maxItemTextWidth = 0
 
-	lb.SetCurrentIndex(-1)
+	oldValue := lb.currentValue
 
 	if lb.model == nil {
+		lb.SetCurrentIndex(-1)
 		return nil
 	}
 
@@ -212,6 +247,12 @@ func (lb *ListBox) resetItems() error {
 		if err := lb.insertItemAt(i); err != nil {
 			return err
 		}
+	}
+
+	if oldValue != nil {
+		lb.Property("Value").Set(oldValue)
+	} else {
+		lb.SetCurrentIndex(-1)
 	}
 
 	if lb.styler == nil {
@@ -263,7 +304,7 @@ func (lb *ListBox) ensureVisibleItemsHeightUpToDate() error {
 		lb.lastWidthsMeasuredFor[i] = lb.lastWidth
 	}
 
-	lb.SendMessage(win.LB_SETTOPINDEX, uintptr(topIndex), 0)
+	lb.EnsureItemVisible(topIndex)
 
 	return nil
 }
@@ -353,7 +394,8 @@ func (lb *ListBox) SetModel(mdl interface{}) error {
 
 		if _, ok := mdl.([]string); !ok {
 			if badms, ok := model.(bindingAndDisplayMemberSetter); ok {
-				badms.setDisplayMember(lb.dataMember)
+				badms.setBindingMember(lb.bindingMember)
+				badms.setDisplayMember(lb.displayMember)
 			}
 		}
 	}
@@ -364,6 +406,7 @@ func (lb *ListBox) SetModel(mdl interface{}) error {
 	}
 
 	lb.model = model
+	lb.bindingValueProvider, _ = model.(BindingValueProvider)
 
 	if model != nil {
 		lb.attachModel()
@@ -376,42 +419,83 @@ func (lb *ListBox) SetModel(mdl interface{}) error {
 	return lb.ensureVisibleItemsHeightUpToDate()
 }
 
-// DataMember returns the member from the model of the ListBox that is displayed
-// in the ListBox.
+// BindingMember returns the member from the model of the ListBox that is bound
+// to a field of the data source managed by an associated DataBinder.
 //
 // This is only applicable to walk.ReflectListModel models and simple slices of
 // pointers to struct.
-func (lb *ListBox) DataMember() string {
-	return lb.dataMember
+func (lb *ListBox) BindingMember() string {
+	return lb.bindingMember
 }
 
-// SetDataMember sets the member from the model of the ListBox that is displayed
-// in the ListBox.
+// SetBindingMember sets the member from the model of the ListBox that is bound
+// to a field of the data source managed by an associated DataBinder.
 //
 // This is only applicable to walk.ReflectListModel models and simple slices of
 // pointers to struct.
 //
-// For a model consisting of items of type S, the type of the specified member T
-// and dataMember "Foo", this can be one of the following:
+// For a model consisting of items of type S, data source field of type T and
+// bindingMember "Foo", this can be one of the following:
 //
 //	A field		Foo T
 //	A method	func (s S) Foo() T
 //	A method	func (s S) Foo() (T, error)
 //
-// If dataMember is not a simple member name like "Foo", but a path to a
+// If bindingMember is not a simple member name like "Foo", but a path to a
 // member like "A.B.Foo", members "A" and "B" both must be one of the options
 // mentioned above, but with T having type pointer to struct.
-func (lb *ListBox) SetDataMember(dataMember string) error {
-	if dataMember != "" {
+func (lb *ListBox) SetBindingMember(bindingMember string) error {
+	if bindingMember != "" {
 		if _, ok := lb.providedModel.([]string); ok {
 			return newError("invalid for []string model")
 		}
 	}
 
-	lb.dataMember = dataMember
+	lb.bindingMember = bindingMember
 
 	if badms, ok := lb.model.(bindingAndDisplayMemberSetter); ok {
-		badms.setDisplayMember(dataMember)
+		badms.setBindingMember(bindingMember)
+	}
+
+	return nil
+}
+
+// DisplayMember returns the member from the model of the ListBox that is
+// displayed in the ListBox.
+//
+// This is only applicable to walk.ReflectListModel models and simple slices of
+// pointers to struct.
+func (lb *ListBox) DisplayMember() string {
+	return lb.displayMember
+}
+
+// SetDisplayMember sets the member from the model of the ListBox that is
+// displayed in the ListBox.
+//
+// This is only applicable to walk.ReflectListModel models and simple slices of
+// pointers to struct.
+//
+// For a model consisting of items of type S, the type of the specified member T
+// and displayMember "Foo", this can be one of the following:
+//
+//	A field		Foo T
+//	A method	func (s S) Foo() T
+//	A method	func (s S) Foo() (T, error)
+//
+// If displayMember is not a simple member name like "Foo", but a path to a
+// member like "A.B.Foo", members "A" and "B" both must be one of the options
+// mentioned above, but with T having type pointer to struct.
+func (lb *ListBox) SetDisplayMember(displayMember string) error {
+	if displayMember != "" {
+		if _, ok := lb.providedModel.([]string); ok {
+			return newError("invalid for []string model")
+		}
+	}
+
+	lb.displayMember = displayMember
+
+	if badms, ok := lb.model.(bindingAndDisplayMemberSetter); ok {
+		badms.setDisplayMember(displayMember)
 	}
 
 	return nil
@@ -504,6 +588,12 @@ func (lb *ListBox) SetCurrentIndex(value int) error {
 	}
 
 	if value != lb.prevCurIndex {
+		if value == -1 {
+			lb.currentValue = nil
+		} else {
+			lb.currentValue = lb.Property("Value").Get()
+		}
+
 		lb.prevCurIndex = value
 		lb.currentIndexChangedPublisher.Publish()
 	}
@@ -614,6 +704,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		} else {
 			lb.style.LineColor = RGB(255, 255, 255)
 		}
+		lb.style.defaultTextColor = lb.style.TextColor
 
 		lb.style.DrawBackground()
 
@@ -647,6 +738,8 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 
 		lb.ensureVisibleItemsHeightUpToDate()
 
+		return win.CallWindowProc(lb.origWndProcPtr, hwnd, msg, wParam, lParam)
+
 	case win.WM_VSCROLL:
 		lb.ensureVisibleItemsHeightUpToDate()
 
@@ -657,6 +750,10 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		lb.Invalidate()
 
 	case win.WM_MOUSEMOVE:
+		if lb.styler == nil {
+			break
+		}
+
 		if !lb.trackingMouseEvent {
 			var tme win.TRACKMOUSEEVENT
 			tme.CbSize = uint32(unsafe.Sizeof(tme))
@@ -696,6 +793,10 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		}
 
 	case win.WM_MOUSELEAVE:
+		if lb.styler == nil {
+			break
+		}
+
 		lb.trackingMouseEvent = false
 
 		index := lb.style.hoverIndex
@@ -709,6 +810,7 @@ func (lb *ListBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) ui
 		case win.LBN_SELCHANGE:
 			lb.ensureVisibleItemsHeightUpToDate()
 			lb.prevCurIndex = lb.CurrentIndex()
+			lb.currentValue = lb.Property("Value").Get()
 			lb.currentIndexChangedPublisher.Publish()
 			lb.selectedIndexesChangedPublisher.Publish()
 

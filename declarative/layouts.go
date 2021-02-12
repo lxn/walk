@@ -34,6 +34,17 @@ func (m Margins) toW() walk.Margins {
 	return walk.Margins{m.Left, m.Top, m.Right, m.Bottom}
 }
 
+type Rectangle struct {
+	X      int
+	Y      int
+	Width  int
+	Height int
+}
+
+func (r Rectangle) toW() walk.Rectangle {
+	return walk.Rectangle{r.X, r.Y, r.Width, r.Height}
+}
+
 type Size struct {
 	Width  int
 	Height int

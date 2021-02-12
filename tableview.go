@@ -124,6 +124,9 @@ type TableView struct {
 	ignoreNowhere                      bool
 	updateLVSizesNeedsSpecialCare      bool
 	scrollbarOrientation               Orientation
+	currentItemChangedPublisher        EventPublisher
+	currentItemID                      interface{}
+	restoringCurrentItemOnReset        bool
 }
 
 // NewTableView creates and returns a *TableView as child of the specified
@@ -142,12 +145,13 @@ func NewTableViewWithStyle(parent Container, style uint32) (*TableView, error) {
 // Container and with the provided additional configuration.
 func NewTableViewWithCfg(parent Container, cfg *TableViewCfg) (*TableView, error) {
 	tv := &TableView{
-		imageUintptr2Index:   make(map[uintptr]int32),
-		filePath2IconIndex:   make(map[string]int32),
-		formActivatingHandle: -1,
-		customHeaderHeight:   cfg.CustomHeaderHeight,
-		customRowHeight:      cfg.CustomRowHeight,
-		scrollbarOrientation: Horizontal | Vertical,
+		imageUintptr2Index:          make(map[uintptr]int32),
+		filePath2IconIndex:          make(map[string]int32),
+		formActivatingHandle:        -1,
+		customHeaderHeight:          cfg.CustomHeaderHeight,
+		customRowHeight:             cfg.CustomRowHeight,
+		scrollbarOrientation:        Horizontal | Vertical,
+		restoringCurrentItemOnReset: true,
 	}
 
 	tv.columns = newTableViewColumnList(tv)
@@ -692,10 +696,41 @@ func (tv *TableView) UpdateItem(index int) error {
 }
 
 func (tv *TableView) attachModel() {
+	restoreCurrentItemOrFallbackToFirst := func(ip IDProvider) {
+		if tv.itemStateChangedEventDelay == 0 {
+			defer tv.currentItemChangedPublisher.Publish()
+		} else {
+			if 0 == win.SetTimer(
+				tv.hWnd,
+				tableViewCurrentIndexChangedTimerId,
+				uint32(tv.itemStateChangedEventDelay),
+				0,
+			) {
+				lastError("SetTimer")
+			}
+		}
+
+		count := tv.model.RowCount()
+		for i := 0; i < count; i++ {
+			if ip.ID(i) == tv.currentItemID {
+				tv.SetCurrentIndex(i)
+				return
+			}
+		}
+
+		tv.SetCurrentIndex(0)
+	}
+
 	tv.rowsResetHandlerHandle = tv.model.RowsReset().Attach(func() {
 		tv.setItemCount()
 
-		tv.SetCurrentIndex(-1)
+		if ip, ok := tv.providedModel.(IDProvider); ok && tv.restoringCurrentItemOnReset {
+			if _, ok := tv.model.(Sorter); !ok {
+				restoreCurrentItemOrFallbackToFirst(ip)
+			}
+		} else {
+			tv.SetCurrentIndex(-1)
+		}
 
 		tv.itemCountChangedPublisher.Publish()
 	})
@@ -750,6 +785,10 @@ func (tv *TableView) attachModel() {
 
 	if sorter, ok := tv.model.(Sorter); ok {
 		tv.sortChangedHandlerHandle = sorter.SortChanged().Attach(func() {
+			if ip, ok := tv.providedModel.(IDProvider); ok && tv.restoringCurrentItemOnReset {
+				restoreCurrentItemOrFallbackToFirst(ip)
+			}
+
 			col := sorter.SortedColumn()
 			tv.setSortIcon(col, sorter.SortOrder())
 
@@ -894,10 +933,10 @@ func (tv *TableView) setItemCount() error {
 		count = tv.model.RowCount()
 	}
 
-	if 0 == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOSCROLL) {
+	if 0 == win.SendMessage(tv.hwndFrozenLV, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOINVALIDATEALL|win.LVSICF_NOSCROLL) {
 		return newError("SendMessage(LVM_SETITEMCOUNT)")
 	}
-	if 0 == win.SendMessage(tv.hwndNormalLV, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOSCROLL) {
+	if 0 == win.SendMessage(tv.hwndNormalLV, win.LVM_SETITEMCOUNT, uintptr(count), win.LVSICF_NOINVALIDATEALL|win.LVSICF_NOSCROLL) {
 		return newError("SendMessage(LVM_SETITEMCOUNT)")
 	}
 
@@ -1090,6 +1129,32 @@ func (tv *TableView) ItemActivated() *Event {
 	return tv.itemActivatedPublisher.Event()
 }
 
+// RestoringCurrentItemOnReset returns whether the TableView after its model
+// has been reset should attempt to restore CurrentIndex to the item that was
+// current before the reset.
+//
+// For this to work, the model must implement the IDProvider interface.
+func (tv *TableView) RestoringCurrentItemOnReset() bool {
+	return tv.restoringCurrentItemOnReset
+}
+
+// SetRestoringCurrentItemOnReset sets whether the TableView after its model
+// has been reset should attempt to restore CurrentIndex to the item that was
+// current before the reset.
+//
+// For this to work, the model must implement the IDProvider interface.
+func (tv *TableView) SetRestoringCurrentItemOnReset(restoring bool) {
+	tv.restoringCurrentItemOnReset = restoring
+}
+
+// CurrentItemChanged returns the event that is published after the current
+// item has changed.
+//
+// For this to work, the model must implement the IDProvider interface.
+func (tv *TableView) CurrentItemChanged() *Event {
+	return tv.currentItemChangedPublisher.Event()
+}
+
 // CurrentIndex returns the index of the current item, or -1 if there is no
 // current item.
 func (tv *TableView) CurrentIndex() int {
@@ -1132,7 +1197,7 @@ func (tv *TableView) SetCurrentIndex(index int) error {
 		return newError("SendMessage(LVM_SETITEMSTATE)")
 	}
 
-	if index != -1 {
+	if index > -1 {
 		if win.FALSE == win.SendMessage(tv.hwndFrozenLV, win.LVM_ENSUREVISIBLE, uintptr(index), uintptr(0)) {
 			return newError("SendMessage(LVM_ENSUREVISIBLE)")
 		}
@@ -1146,6 +1211,20 @@ func (tv *TableView) SetCurrentIndex(index int) error {
 		// Windows bug? Sometimes a second LVM_ENSUREVISIBLE is required.
 		if win.FALSE == win.SendMessage(tv.hwndNormalLV, win.LVM_ENSUREVISIBLE, uintptr(index), uintptr(0)) {
 			return newError("SendMessage(LVM_ENSUREVISIBLE)")
+		}
+
+		if ip, ok := tv.providedModel.(IDProvider); ok && tv.restoringCurrentItemOnReset {
+			if id := ip.ID(index); id != tv.currentItemID {
+				tv.currentItemID = id
+				if tv.itemStateChangedEventDelay == 0 {
+					defer tv.currentItemChangedPublisher.Publish()
+				}
+			}
+		}
+	} else {
+		tv.currentItemID = nil
+		if tv.itemStateChangedEventDelay == 0 {
+			defer tv.currentItemChangedPublisher.Publish()
 		}
 	}
 
@@ -1168,6 +1247,31 @@ func (tv *TableView) CurrentIndexChanged() *Event {
 	return tv.currentIndexChangedPublisher.Event()
 }
 
+// IndexAt returns the item index at coordinates x, y of the
+// TableView or -1, if that point is not inside any item.
+func (tv *TableView) IndexAt(x, y int) int {
+	var hti win.LVHITTESTINFO
+
+	var rc win.RECT
+	if !win.GetWindowRect(tv.hwndFrozenLV, &rc) {
+		return -1
+	}
+
+	var hwnd win.HWND
+	if x < int(rc.Right-rc.Left) {
+		hwnd = tv.hwndFrozenLV
+	} else {
+		hwnd = tv.hwndNormalLV
+	}
+
+	hti.Pt.X = int32(x)
+	hti.Pt.Y = int32(y)
+
+	win.SendMessage(hwnd, win.LVM_HITTEST, 0, uintptr(unsafe.Pointer(&hti)))
+
+	return int(hti.IItem)
+}
+
 // ItemVisible returns whether the item at position index is visible.
 func (tv *TableView) ItemVisible(index int) bool {
 	return 0 != win.SendMessage(tv.hwndNormalLV, win.LVM_ISITEMVISIBLE, uintptr(index), 0)
@@ -1178,7 +1282,8 @@ func (tv *TableView) EnsureItemVisible(index int) {
 	win.SendMessage(tv.hwndNormalLV, win.LVM_ENSUREVISIBLE, uintptr(index), 0)
 }
 
-// SelectionHiddenWithoutFocus returns whether selection indicators are visible when the TableView does not have the keyboard input focus.
+// SelectionHiddenWithoutFocus returns whether selection indicators are hidden
+// when the TableView does not have the keyboard input focus.
 func (tv *TableView) SelectionHiddenWithoutFocus() bool {
 	style := uint(win.GetWindowLong(tv.hwndNormalLV, win.GWL_STYLE))
 	if style == 0 {
@@ -1632,10 +1737,7 @@ func (tv *TableView) RestoreState() error {
 		name2tvcs[tvcs.Name] = tvcsRetained[len(tvcsRetained)-1]
 
 		if tvc := name2tvc[tvcs.Name]; tvc != nil {
-			if err := tvc.SetTitleOverride(tvcs.Title); err != nil {
-				return err
-			}
-			if err := tvc.SetWidth(tvcs.Width); err != nil {
+			if err := tvc.SetFrozen(tvcs.Frozen); err != nil {
 				return err
 			}
 			var visible bool
@@ -1648,7 +1750,10 @@ func (tv *TableView) RestoreState() error {
 			if err := tvc.SetVisible(tvc.visible && (visible || tvcs.Visible)); err != nil {
 				return err
 			}
-			if err := tvc.SetFrozen(tvcs.Frozen); err != nil {
+			if err := tvc.SetTitleOverride(tvcs.Title); err != nil {
+				return err
+			}
+			if err := tvc.SetWidth(tvcs.Width); err != nil {
 				return err
 			}
 		}
@@ -1791,9 +1896,10 @@ func (tv *TableView) maybePublishFocusChanged(hwnd win.HWND, msg uint32, wp uint
 func tableViewFrozenLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr {
 	tv := (*TableView)(unsafe.Pointer(windowFromHandle(win.GetParent(hwnd)).AsWindowBase()))
 
-	ensureWindowLongBits(hwnd, win.GWL_STYLE, win.WS_HSCROLL|win.WS_VSCROLL, false)
-
 	switch msg {
+	case win.WM_NCCALCSIZE:
+		ensureWindowLongBits(hwnd, win.GWL_STYLE, win.WS_HSCROLL|win.WS_VSCROLL, false)
+
 	case win.WM_SETFOCUS:
 		win.SetFocus(tv.hwndNormalLV)
 		tv.maybePublishFocusChanged(hwnd, msg, wp)
@@ -1816,7 +1922,7 @@ func tableViewNormalLVWndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr
 		win.SetFocus(tv.hwndFrozenLV)
 
 	case win.WM_SETFOCUS:
-		tv.WndProc(tv.hWnd, msg, wp, lp)
+		tv.invalidateBorderInParent()
 		tv.maybePublishFocusChanged(hwnd, msg, wp)
 
 	case win.WM_KILLFOCUS:
@@ -1909,6 +2015,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 			if tv.currentIndex != tv.prevIndex && tv.itemStateChangedEventDelay > 0 {
 				tv.prevIndex = tv.currentIndex
 				tv.currentIndexChangedPublisher.Publish()
+				tv.currentItemChangedPublisher.Publish()
 			}
 		}
 
@@ -2104,9 +2211,11 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 						nmlvcd.ClrTextBk = win.COLORREF(tv.style.BackgroundColor)
 						nmlvcd.ClrText = win.COLORREF(tv.style.TextColor)
 
-						if font := tv.style.Font; font != nil {
-							win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(dpi)))
+						font := tv.style.Font
+						if font == nil {
+							font = tv.Font()
 						}
+						win.SelectObject(nmlvcd.Nmcd.Hdc, win.HGDIOBJ(font.handleForDPI(dpi)))
 					}
 
 					return 0
@@ -2307,6 +2416,7 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 			if int(nmia.IItem) != tv.currentIndex {
 				tv.SetCurrentIndex(int(nmia.IItem))
 				tv.currentIndexChangedPublisher.Publish()
+				tv.currentItemChangedPublisher.Publish()
 			}
 
 			tv.itemActivatedPublisher.Publish()
@@ -2545,6 +2655,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr 
 		case tableViewCurrentIndexChangedTimerId:
 			if !tv.delayedCurrentIndexChangedCanceled {
 				tv.currentIndexChangedPublisher.Publish()
+				tv.currentItemChangedPublisher.Publish()
 			}
 
 		case tableViewSelectedIndexesChangedTimerId:
@@ -2559,7 +2670,7 @@ func (tv *TableView) WndProc(hwnd win.HWND, msg uint32, wp, lp uintptr) uintptr 
 		ensureWindowLongBits(tv.hwndNormalLV, win.GWL_STYLE, win.LVS_OWNERDRAWFIXED, false)
 
 	case win.WM_SETFOCUS:
-		win.SetFocus(tv.hwndNormalLV)
+		win.SetFocus(tv.hwndFrozenLV)
 
 	case win.WM_DESTROY:
 		// As we subclass all windows of system classes, we prevented the
@@ -2590,7 +2701,7 @@ func (tv *TableView) updateLVSizes() {
 func (tv *TableView) updateLVSizesWithSpecialCare(needSpecialCare bool) {
 	var width int
 	for i := tv.columns.Len() - 1; i >= 0; i-- {
-		if col := tv.columns.At(i); col.frozen {
+		if col := tv.columns.At(i); col.frozen && col.visible {
 			width += col.Width()
 		}
 	}

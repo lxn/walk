@@ -31,6 +31,7 @@ type TabWidget struct {
 	pages                        *TabPageList
 	currentIndex                 int
 	currentIndexChangedPublisher EventPublisher
+	nonClientSizePixels          Size
 	persistent                   bool
 }
 
@@ -295,7 +296,17 @@ func (tw *TabWidget) onSelChange() {
 		page.SetVisible(true)
 		tw.RequestLayout()
 		page.Invalidate()
-		tw.pages.At(tw.currentIndex).focusFirstCandidateDescendant()
+
+		var containsFocus bool
+		tw.forEachDescendantRaw(uintptr(win.GetFocus()), func(hwnd win.HWND, lParam uintptr) bool {
+			if hwnd == win.HWND(lParam) {
+				containsFocus = true
+			}
+			return !containsFocus
+		})
+		if containsFocus {
+			tw.pages.At(tw.currentIndex).focusFirstCandidateDescendant()
+		}
 	}
 
 	tw.Invalidate()
@@ -490,26 +501,6 @@ func tabWidgetTabWndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 		}
 
 		return 0
-
-	case win.WM_LBUTTONDOWN:
-		x := win.GET_X_LPARAM(lParam)
-		y := win.GET_Y_LPARAM(lParam)
-
-		hti := win.TCHITTESTINFO{
-			Pt: win.POINT{x, y},
-		}
-
-		i := int(win.SendMessage(hwnd, win.TCM_HITTEST, 0, uintptr(unsafe.Pointer(&hti))))
-
-		if i == -1 {
-			break
-		}
-
-		ret := win.CallWindowProc(tw.tabOrigWndProcPtr, hwnd, msg, wParam, lParam)
-
-		tw.pages.At(i).focusFirstCandidateDescendant()
-
-		return ret
 	}
 
 	return win.CallWindowProc(tw.tabOrigWndProcPtr, hwnd, msg, wParam, lParam)
@@ -522,6 +513,8 @@ func (tw *TabWidget) onPageChanged(page *TabPage) (err error) {
 	if 0 == win.SendMessage(tw.hWndTab, win.TCM_SETITEM, uintptr(index), uintptr(unsafe.Pointer(item))) {
 		return newError("SendMessage(TCM_SETITEM) failed")
 	}
+
+	tw.updateNonClientSize()
 
 	return nil
 }
@@ -693,14 +686,24 @@ func (tw *TabWidget) imageIndex(image *Bitmap) (index int32, err error) {
 	return
 }
 
+func (tw *TabWidget) updateNonClientSize() {
+	rc := win.RECT{Right: 1000, Bottom: 1000}
+
+	win.SendMessage(tw.hWndTab, win.TCM_ADJUSTRECT, 1, uintptr(unsafe.Pointer(&rc)))
+
+	tw.nonClientSizePixels.Width = int(rc.Right-rc.Left) - 1000
+	tw.nonClientSizePixels.Height = int(rc.Bottom-rc.Top) - 1000
+}
+
 func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 	pages := make([]LayoutItem, tw.pages.Len())
 
 	bounds := tw.pageBounds()
 
 	li := &tabWidgetLayoutItem{
-		pagePos:      bounds.Location(),
-		currentIndex: tw.CurrentIndex(),
+		pagePos:             bounds.Location(),
+		currentIndex:        tw.CurrentIndex(),
+		nonClientSizePixels: tw.nonClientSizePixels,
 	}
 
 	for i := tw.pages.Len() - 1; i >= 0; i-- {
@@ -724,8 +727,9 @@ func (tw *TabWidget) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 type tabWidgetLayoutItem struct {
 	ContainerLayoutItemBase
-	pagePos      Point // in native pixels
-	currentIndex int
+	nonClientSizePixels Size
+	pagePos             Point // in native pixels
+	currentIndex        int
 }
 
 func (li *tabWidgetLayoutItem) LayoutFlags() LayoutFlags {
@@ -744,7 +748,7 @@ func (li *tabWidgetLayoutItem) LayoutFlags() LayoutFlags {
 
 func (li *tabWidgetLayoutItem) MinSize() Size {
 	if len(li.children) == 0 {
-		return li.IdealSize()
+		return Size{}
 	}
 
 	var min Size
@@ -758,12 +762,7 @@ func (li *tabWidgetLayoutItem) MinSize() Size {
 		}
 	}
 
-	s := li.geometry.Size
-	ps := li.children[0].Geometry().Size
-
-	size := Size{s.Width - ps.Width + min.Width, s.Height - ps.Height + min.Height}
-
-	return size
+	return Size{min.Width + li.nonClientSizePixels.Width, min.Height + li.nonClientSizePixels.Height}
 }
 
 func (li *tabWidgetLayoutItem) MinSizeForSize(size Size) Size {

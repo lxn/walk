@@ -30,6 +30,7 @@ func init() {
 type NumberEdit struct {
 	WidgetBase
 	edit                     *numberLineEdit
+	hWndUpDown               win.HWND
 	maxValueChangedPublisher EventPublisher
 	minValueChangedPublisher EventPublisher
 	prefixChangedPublisher   EventPublisher
@@ -352,6 +353,47 @@ func (ne *NumberEdit) SetReadOnly(readOnly bool) error {
 	return ne.edit.SetReadOnly(readOnly)
 }
 
+// SpinButtonsVisible returns whether the NumberEdit appears with spin buttons.
+func (ne *NumberEdit) SpinButtonsVisible() bool {
+	return ne.hWndUpDown != 0
+}
+
+// SetSpinButtonsVisible sets whether the NumberEdit appears with spin buttons.
+func (ne *NumberEdit) SetSpinButtonsVisible(visible bool) error {
+	if visible == ne.SpinButtonsVisible() {
+		return nil
+	}
+
+	if visible {
+		ne.hWndUpDown = win.CreateWindowEx(
+			0,
+			syscall.StringToUTF16Ptr("msctls_updown32"),
+			nil,
+			win.WS_CHILD|win.WS_VISIBLE|win.UDS_ALIGNRIGHT|win.UDS_ARROWKEYS|win.UDS_HOTTRACK,
+			0,
+			0,
+			16,
+			20,
+			ne.hWnd,
+			0,
+			0,
+			nil)
+		if ne.hWndUpDown == 0 {
+			return lastError("CreateWindowEx")
+		}
+
+		win.SendMessage(ne.hWndUpDown, win.UDM_SETBUDDY, uintptr(ne.edit.hWnd), 0)
+	} else {
+		if !win.DestroyWindow(ne.hWndUpDown) {
+			return lastError("DestroyWindow")
+		}
+
+		ne.hWndUpDown = 0
+	}
+
+	return nil
+}
+
 // Background returns the background Brush of the NumberEdit.
 //
 // By default this is nil.
@@ -384,6 +426,13 @@ func (*NumberEdit) NeedsWmSize() bool {
 // WndProc of the embedded NumberEdit for messages you don't handle yourself.
 func (ne *NumberEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
+	case win.WM_NOTIFY:
+		switch ((*win.NMHDR)(unsafe.Pointer(lParam))).Code {
+		case win.UDN_DELTAPOS:
+			nmud := (*win.NMUPDOWN)(unsafe.Pointer(lParam))
+			ne.edit.incrementValue(-float64(nmud.IDelta) * ne.edit.increment)
+		}
+
 	case win.WM_CTLCOLOREDIT, win.WM_CTLCOLORSTATIC:
 		if hBrush := ne.handleWMCTLCOLOR(wParam, lParam); hBrush != 0 {
 			return hBrush
@@ -403,6 +452,10 @@ func (ne *NumberEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 		cb := ne.ClientBoundsPixels()
 		if err := ne.edit.SetBoundsPixels(cb); err != nil {
 			break
+		}
+
+		if ne.hWndUpDown != 0 {
+			win.SendMessage(ne.hWndUpDown, win.UDM_SETBUDDY, uintptr(ne.edit.hWnd), 0)
 		}
 	}
 

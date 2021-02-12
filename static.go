@@ -32,12 +32,12 @@ type static struct {
 	textColor            Color
 }
 
-func (s *static) init(widget Widget, parent Container) error {
+func (s *static) init(widget Widget, parent Container, style uint32) error {
 	if err := InitWidget(
 		widget,
 		parent,
 		staticWindowClass,
-		win.WS_VISIBLE,
+		win.WS_VISIBLE|(style&win.WS_BORDER),
 		win.WS_EX_CONTROLPARENT); err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (s *static) init(widget Widget, parent Container) error {
 		0,
 		syscall.StringToUTF16Ptr("static"),
 		nil,
-		win.WS_CHILD|win.WS_CLIPSIBLINGS|win.WS_VISIBLE|win.SS_LEFT|win.SS_NOTIFY,
+		win.WS_CHILD|win.WS_CLIPSIBLINGS|win.WS_VISIBLE|win.SS_LEFT|win.SS_NOTIFY|(style&^win.WS_BORDER),
 		win.CW_USEDEFAULT,
 		win.CW_USEDEFAULT,
 		win.CW_USEDEFAULT,
@@ -311,9 +311,16 @@ func (s *static) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 		layoutFlags = ShrinkableHorz
 	}
 
+	idealSize := s.calculateTextSize()
+	if s.hasStyleBits(win.WS_BORDER) {
+		border := s.IntFrom96DPI(1) * 2
+		idealSize.Width += border
+		idealSize.Height += border * 2
+	}
+
 	return &staticLayoutItem{
 		layoutFlags: layoutFlags,
-		idealSize:   s.calculateTextSize(),
+		idealSize:   idealSize,
 	}
 }
 

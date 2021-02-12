@@ -8,9 +8,7 @@ package declarative
 
 import (
 	"errors"
-)
 
-import (
 	"github.com/lxn/walk"
 	"github.com/lxn/win"
 )
@@ -54,7 +52,9 @@ type ListBox struct {
 	// ListBox
 
 	AssignTo                 **walk.ListBox
-	DataMember               string
+	BindingMember            string
+	CurrentIndex             Property
+	DisplayMember            string
 	Format                   string
 	ItemStyler               walk.ListItemStyler
 	Model                    interface{}
@@ -63,13 +63,16 @@ type ListBox struct {
 	OnItemActivated          walk.EventHandler
 	OnSelectedIndexesChanged walk.EventHandler
 	Precision                int
+	Value                    Property
 }
 
 func (lb ListBox) Create(builder *Builder) error {
 	var w *walk.ListBox
 	var err error
-	if _, ok := lb.Model.([]string); ok && lb.DataMember != "" {
-		return errors.New("ListBox.Create: DataMember must be empty for []string models.")
+	if _, ok := lb.Model.([]string); ok &&
+		(lb.BindingMember != "" || lb.DisplayMember != "") {
+
+		return errors.New("ListBox.Create: BindingMember and DisplayMember must be empty for []string models.")
 	}
 
 	var style uint32
@@ -97,7 +100,10 @@ func (lb ListBox) Create(builder *Builder) error {
 		w.SetFormat(lb.Format)
 		w.SetPrecision(lb.Precision)
 
-		if err := w.SetDataMember(lb.DataMember); err != nil {
+		if err := w.SetBindingMember(lb.BindingMember); err != nil {
+			return err
+		}
+		if err := w.SetDisplayMember(lb.DisplayMember); err != nil {
 			return err
 		}
 

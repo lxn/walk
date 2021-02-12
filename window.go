@@ -457,6 +457,7 @@ var (
 func init() {
 	AppendToWalkInit(func() {
 		forEachDescendantCallbackPtr = syscall.NewCallback(forEachDescendant)
+		forEachDescendantRawCallbackPtr = syscall.NewCallback(forEachDescendantRaw)
 		dialogBaseUnitsUTF16StringPtr = syscall.StringToUTF16Ptr("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
 	})
 }
@@ -526,10 +527,29 @@ func AppendToWalkInit(fn func()) {
 	walkInit = append(walkInit, fn)
 }
 
+type windowCfg struct {
+	Window    Window
+	Parent    Window
+	ClassName string
+	Style     uint32
+	ExStyle   uint32
+	Bounds    Rectangle
+}
+
 // InitWindow initializes a window.
 //
 // Widgets should be initialized using InitWidget instead.
 func InitWindow(window, parent Window, className string, style, exStyle uint32) error {
+	return initWindowWithCfg(&windowCfg{
+		Window:    window,
+		Parent:    parent,
+		ClassName: className,
+		Style:     style,
+		ExStyle:   exStyle,
+	})
+}
+
+func initWindowWithCfg(cfg *windowCfg) error {
 	// We can't use sync.Once, because tooltip.go's init also calls InitWindow, so we deadlock.
 	if atomic.CompareAndSwapUint32(&initedWalk, 0, 1) {
 		runtime.LockOSThread()
@@ -545,20 +565,20 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
-	wb := window.AsWindowBase()
-	wb.window = window
+	wb := cfg.Window.AsWindowBase()
+	wb.window = cfg.Window
 	wb.enabled = true
-	wb.visible = style&win.WS_VISIBLE != 0
+	wb.visible = cfg.Style&win.WS_VISIBLE != 0
 	wb.calcTextSizeInfo2TextSize = make(map[calcTextSizeInfo]Size)
 	wb.name2Property = make(map[string]Property)
 
 	var hwndParent win.HWND
 	var hMenu win.HMENU
-	if parent != nil {
-		hwndParent = parent.Handle()
+	if cfg.Parent != nil {
+		hwndParent = cfg.Parent.Handle()
 
-		if widget, ok := window.(Widget); ok {
-			if container, ok := parent.(Container); ok {
+		if widget, ok := cfg.Window.(Widget); ok {
+			if container, ok := cfg.Parent.(Container); ok {
 				if cb := container.AsContainerBase(); cb != nil {
 					hMenu = win.HMENU(cb.NextChildID())
 				}
@@ -572,16 +592,29 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		windowName = syscall.StringToUTF16Ptr(wb.name)
 	}
 
-	if hwnd := window.Handle(); hwnd == 0 {
+	if hwnd := cfg.Window.Handle(); hwnd == 0 {
+		var x, y, w, h int32
+		if cfg.Bounds.IsZero() {
+			x = win.CW_USEDEFAULT
+			y = win.CW_USEDEFAULT
+			w = win.CW_USEDEFAULT
+			h = win.CW_USEDEFAULT
+		} else {
+			x = int32(cfg.Bounds.X)
+			y = int32(cfg.Bounds.Y)
+			w = int32(cfg.Bounds.Width)
+			h = int32(cfg.Bounds.Height)
+		}
+
 		wb.hWnd = win.CreateWindowEx(
-			exStyle,
-			syscall.StringToUTF16Ptr(className),
+			cfg.ExStyle,
+			syscall.StringToUTF16Ptr(cfg.ClassName),
 			windowName,
-			style|win.WS_CLIPSIBLINGS,
-			win.CW_USEDEFAULT,
-			win.CW_USEDEFAULT,
-			win.CW_USEDEFAULT,
-			win.CW_USEDEFAULT,
+			cfg.Style|win.WS_CLIPSIBLINGS,
+			x,
+			y,
+			w,
+			h,
 			hwndParent,
 			hMenu,
 			0,
@@ -619,7 +652,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 
 	hwnd2WindowBase[wb.hWnd] = wb
 
-	if !registeredWindowClasses[className] {
+	if !registeredWindowClasses[cfg.ClassName] {
 		// We subclass all windows of system classes.
 		wb.origWndProcPtr = win.SetWindowLongPtr(wb.hWnd, win.GWLP_WNDPROC, defaultWndProcPtr)
 		if wb.origWndProcPtr == 0 {
@@ -629,7 +662,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 
 	SetWindowFont(wb.hWnd, defaultFont)
 
-	if form, ok := window.(Form); ok {
+	if form, ok := cfg.Window.(Form); ok {
 		if fb := form.AsFormBase(); fb != nil {
 			if err := fb.init(form); err != nil {
 				return err
@@ -637,7 +670,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 		}
 	}
 
-	if widget, ok := window.(Widget); ok {
+	if widget, ok := cfg.Window.(Widget); ok {
 		if wb := widget.AsWidgetBase(); wb != nil {
 			if err := wb.init(widget); err != nil {
 				return err
@@ -657,7 +690,7 @@ func InitWindow(window, parent Window, className string, style, exStyle uint32) 
 
 	wb.visibleProperty = NewBoolProperty(
 		func() bool {
-			return window.AsWindowBase().visible
+			return wb.visible
 		},
 		func(b bool) error {
 			wb.window.SetVisible(b)
@@ -1172,7 +1205,7 @@ func (wb *WindowBase) SetSuspended(suspend bool) {
 
 	wb.suspended = suspend
 
-	if !suspend {
+	if !suspend && wb.visible {
 		wb.Invalidate()
 		wb.RequestLayout()
 	}
@@ -1264,7 +1297,7 @@ func (wb *WindowBase) Form() Form {
 }
 
 func forEachDescendant(hwnd win.HWND, lParam uintptr) uintptr {
-	if window := windowFromHandle(hwnd); window != nil && forEachDescendantCallback(window.(Widget)) {
+	if window := windowFromHandle(hwnd); window == nil || forEachDescendantCallback(window.(Widget)) {
 		return 1
 	}
 
@@ -1283,6 +1316,28 @@ func (wb *WindowBase) ForEachDescendant(f func(widget Widget) bool) {
 	}()
 
 	win.EnumChildWindows(wb.hWnd, forEachDescendantCallbackPtr, 0)
+}
+
+func forEachDescendantRaw(hwnd win.HWND, lParam uintptr) uintptr {
+	if forEachDescendantRawCallback(hwnd, lParam) {
+		return 1
+	}
+
+	return 0
+}
+
+var (
+	forEachDescendantRawCallbackPtr uintptr
+	forEachDescendantRawCallback    func(hwnd win.HWND, lParam uintptr) bool
+)
+
+func (wb *WindowBase) forEachDescendantRaw(lParam uintptr, f func(hwnd win.HWND, lParam uintptr) bool) {
+	forEachDescendantRawCallback = f
+	defer func() {
+		forEachDescendantRawCallback = nil
+	}()
+
+	win.EnumChildWindows(wb.hWnd, forEachDescendantRawCallbackPtr, lParam)
 }
 
 // Visible returns if the *WindowBase is visible.
@@ -2207,7 +2262,9 @@ func (wb *WindowBase) backgroundEffective() (Brush, Window) {
 }
 
 func (wb *WindowBase) prepareDCForBackground(hdc win.HDC, hwnd win.HWND, brushWnd Window) {
-	win.SetBkMode(hdc, win.TRANSPARENT)
+	if _, ok := brushWnd.(Container); ok {
+		win.SetBkMode(hdc, win.TRANSPARENT)
+	}
 
 	var bgRC win.RECT
 	win.GetWindowRect(brushWnd.Handle(), &bgRC)

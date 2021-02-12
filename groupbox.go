@@ -339,12 +339,11 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				break
 			}
 
-			offset := gb.headerHeight / 4
 			wbcb := gb.WidgetBase.ClientBoundsPixels()
 			if !win.MoveWindow(
 				gb.hWndGroupBox,
 				int32(wbcb.X),
-				int32(wbcb.Y-offset),
+				int32(wbcb.Y),
 				int32(wbcb.Width),
 				int32(wbcb.Height),
 				true) {
@@ -363,10 +362,6 @@ func (gb *GroupBox) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) u
 				}
 				gb.checkBox.SetBoundsPixels(Rectangle{x, gb.headerHeight, s.Width, s.Height})
 			}
-
-			gbcb := gb.ClientBoundsPixels()
-			gbcb.Y -= offset
-			gb.composite.SetBoundsPixels(gbcb)
 		}
 	}
 
@@ -383,7 +378,6 @@ func (gb *GroupBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 
 	li := &groupBoxLayoutItem{
 		compositePos: compositePos,
-		title:        gb.Title(),
 	}
 
 	gbli := CreateLayoutItemsForContainerWithContext(gb.composite, ctx)
@@ -397,7 +391,6 @@ func (gb *GroupBox) CreateLayoutItem(ctx *LayoutContext) LayoutItem {
 type groupBoxLayoutItem struct {
 	ContainerLayoutItemBase
 	compositePos Point // in native pixels
-	title        string
 }
 
 func (li *groupBoxLayoutItem) LayoutFlags() LayoutFlags {
@@ -407,7 +400,7 @@ func (li *groupBoxLayoutItem) LayoutFlags() LayoutFlags {
 func (li *groupBoxLayoutItem) MinSize() Size {
 	min := li.children[0].(MinSizer).MinSize()
 	min.Width += li.compositePos.X * 2
-	min.Height += li.compositePos.Y + IntFrom96DPI(5, li.ctx.dpi)
+	min.Height += li.compositePos.Y + 2
 
 	return min
 }
@@ -421,7 +414,7 @@ func (li *groupBoxLayoutItem) HasHeightForWidth() bool {
 }
 
 func (li *groupBoxLayoutItem) HeightForWidth(width int) int {
-	return li.children[0].(HeightForWidther).HeightForWidth(width-li.compositePos.X*2) + li.compositePos.Y + IntFrom96DPI(5, li.ctx.dpi)
+	return li.children[0].(HeightForWidther).HeightForWidth(width-li.compositePos.X*2) + li.compositePos.Y
 }
 
 func (li *groupBoxLayoutItem) IdealSize() Size {
@@ -434,7 +427,7 @@ func (li *groupBoxLayoutItem) PerformLayout() []LayoutResultItem {
 	return []LayoutResultItem{
 		{
 			Item:   li.children[0],
-			Bounds: Rectangle{X: li.compositePos.X, Y: li.compositePos.Y, Width: li.geometry.Size.Width - li.compositePos.X*2, Height: li.geometry.Size.Height - li.compositePos.Y - IntFrom96DPI(5, li.ctx.dpi)},
+			Bounds: Rectangle{X: li.compositePos.X, Y: li.compositePos.Y, Width: li.geometry.Size.Width - li.compositePos.X*2, Height: li.geometry.Size.Height - li.compositePos.Y - 4},
 		},
 	}
 }

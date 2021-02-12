@@ -16,6 +16,10 @@ type Rectangle struct {
 	X, Y, Width, Height int
 }
 
+func (r Rectangle) IsZero() bool {
+	return r.X == 0 && r.Y == 0 && r.Width == 0 && r.Height == 0
+}
+
 func rectangleFromRECT(r win.RECT) Rectangle {
 	return Rectangle{
 		X:      int(r.Left),

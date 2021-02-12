@@ -7,6 +7,7 @@
 package walk
 
 import (
+	"log"
 	"syscall"
 	"unicode/utf8"
 	"unsafe"
@@ -144,7 +145,9 @@ func (c *Canvas) Dispose() {
 		if c.bitmap != nil {
 			win.SelectObject(c.hdc, win.HGDIOBJ(c.hBmpStock))
 			win.DeleteDC(c.hdc)
-			c.bitmap.postProcess()
+			if err := c.bitmap.postProcess(); err != nil {
+				log.Printf("*Canvas.Dispose - failed to post-process bitmap: %s", err.Error())
+			}
 		} else {
 			win.ReleaseDC(c.window.Handle(), c.hdc)
 		}

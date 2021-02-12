@@ -15,6 +15,10 @@ type Size struct {
 	Width, Height int
 }
 
+func (s Size) IsZero() bool {
+	return s.Width == 0 && s.Height == 0
+}
+
 func (s Size) toSIZE() win.SIZE {
 	return win.SIZE{
 		CX: int32(s.Width),

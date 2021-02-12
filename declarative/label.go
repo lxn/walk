@@ -8,6 +8,7 @@ package declarative
 
 import (
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type EllipsisMode int
@@ -58,13 +59,19 @@ type Label struct {
 
 	AssignTo      **walk.Label
 	EllipsisMode  EllipsisMode
+	NoPrefix      bool
 	Text          Property
 	TextAlignment Alignment1D
 	TextColor     walk.Color
 }
 
 func (l Label) Create(builder *Builder) error {
-	w, err := walk.NewLabel(builder.Parent())
+	var style uint32
+	if l.NoPrefix {
+		style |= win.SS_NOPREFIX
+	}
+
+	w, err := walk.NewLabelWithStyle(builder.Parent(), style)
 	if err != nil {
 		return err
 	}

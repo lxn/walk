@@ -481,8 +481,8 @@ func (wb *WidgetBase) hasActiveGraphicsEffects() bool {
 }
 
 func (wb *WidgetBase) hasComplexBackground() bool {
-	if bg := wb.window.Background(); bg != nil && !bg.simple() {
-		return false
+	if bg := wb.window.Background(); bg != nil && bg != nullBrushSingleton {
+		return !bg.simple()
 	}
 
 	var complex bool

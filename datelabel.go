@@ -21,7 +21,7 @@ type DateLabel struct {
 func NewDateLabel(parent Container) (*DateLabel, error) {
 	dl := new(DateLabel)
 
-	if err := dl.init(dl, parent); err != nil {
+	if err := dl.init(dl, parent, 0); err != nil {
 		return nil, err
 	}
 
