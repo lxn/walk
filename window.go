@@ -161,7 +161,11 @@ type Window interface {
 	// events for the Window.
 	KeyUp() *KeyEvent
 
-	// MaxSize returns the maximum allowed outer size for the Window, including
+	// Hotkey returns a *HotkeyEvent that you can attach to for handling global
+	// hotkey events for the Window.
+	Hotkey() *HotkeyEvent
+
+	// MaxSize returns the maximum allowed outer Size for the Window, including
 	// decorations.
 	//
 	// For child windows, this is only relevant when the parent of the Window
@@ -419,6 +423,7 @@ type WindowBase struct {
 	keyDownPublisher          KeyEventPublisher
 	keyPressPublisher         KeyEventPublisher
 	keyUpPublisher            KeyEventPublisher
+	hotkeyPublisher           HotkeyEventPublisher
 	mouseDownPublisher        MouseEventPublisher
 	mouseUpPublisher          MouseEventPublisher
 	mouseMovePublisher        MouseEventPublisher
@@ -2004,6 +2009,12 @@ func (wb *WindowBase) KeyUp() *KeyEvent {
 	return wb.keyUpPublisher.Event()
 }
 
+// Hotkey returns a *HotkeyEvent that you can attach to for handling global
+// hotkey events for the *WindowBase.
+func (wb *WindowBase) Hotkey() *HotkeyEvent {
+	return wb.hotkeyPublisher.Event()
+}
+
 // DropFiles returns a *DropFilesEvent that you can attach to for handling
 // drop file events for the *WindowBase.
 func (wb *WindowBase) DropFiles() *DropFilesEvent {
@@ -2214,6 +2225,10 @@ func (wb *WindowBase) handleKeyDown(wParam, lParam uintptr) {
 
 func (wb *WindowBase) handleKeyUp(wParam, lParam uintptr) {
 	wb.keyUpPublisher.Publish(Key(wParam))
+}
+
+func (wb *WindowBase) handleHotkey(wParam, lParam uintptr) {
+	wb.hotkeyPublisher.Publish(int(wParam))
 }
 
 func (wb *WindowBase) backgroundEffective() (Brush, Window) {
@@ -2459,6 +2474,9 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	case win.WM_KEYUP:
 		wb.handleKeyUp(wParam, lParam)
+
+	case win.WM_HOTKEY:
+		wb.handleHotkey(wParam, lParam)
 
 	case win.WM_DROPFILES:
 		wb.dropFilesPublisher.Publish(win.HDROP(wParam))

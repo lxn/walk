@@ -1,0 +1,16 @@
+* eol=lf
+
+*.cmd eol=crlf
+*.bat eol=crlf
+
+*.syso binary
+*.gif binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.eot binary
+*.pdf binary
