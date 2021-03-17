@@ -175,12 +175,16 @@ func (tv *TreeView) SetModel(model TreeModel) error {
 
 			var hInsertAfter win.HTREEITEM
 			parent := item.Parent()
-			for i := parent.ChildCount() - 1; i >= 0; i-- {
-				if parent.ChildAt(i) == item {
-					if i > 0 {
-						hInsertAfter = tv.item2Info[parent.ChildAt(i-1)].handle
-					} else {
-						hInsertAfter = win.TVI_FIRST
+			if parent == nil {
+				hInsertAfter = win.TVI_LAST
+			} else {
+				for i := parent.ChildCount() - 1; i >= 0; i-- {
+					if parent.ChildAt(i) == item {
+						if i > 0 {
+							hInsertAfter = tv.item2Info[parent.ChildAt(i-1)].handle
+						} else {
+							hInsertAfter = win.TVI_FIRST
+						}
 					}
 				}
 			}
