@@ -441,6 +441,8 @@ type WindowBase struct {
 	visible                   bool
 	enabled                   bool
 	acc                       *Accessibility
+	timerNextID               TimerID
+	timerFuncs                map[TimerID]TimerFunc
 }
 
 var (
@@ -2459,6 +2461,9 @@ func (wb *WindowBase) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 
 	case win.WM_KEYUP:
 		wb.handleKeyUp(wParam, lParam)
+
+	case win.WM_TIMER:
+		wb.handleTimer(wParam, lParam)
 
 	case win.WM_DROPFILES:
 		wb.dropFilesPublisher.Publish(win.HDROP(wParam))
