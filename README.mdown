@@ -3,7 +3,7 @@ About Walk
 
 Walk is a "Windows Application Library Kit" for the Go Programming Language.
 
-Its primarily useful for Desktop GUI development, but there is some more stuff.
+It is primarily useful for Desktop GUI development, but there is some more stuff.
 
 Setup
 =====
@@ -20,7 +20,7 @@ Now run `go get github.com/lxn/walk`
 Using Walk
 ==========
 
-The preferred way to create GUIs with Walk is to use its declarative sub package,
+The preferred way to create GUIs with Walk is to use its declarative subpackage,
 as illustrated in this small example:
 
 ##### `test.go`
@@ -92,7 +92,7 @@ In the directory containing `test.go` run
 
 	go build
 	
-To get rid of the cmd window, instead run
+To get rid of the cmd window, instead, run
 
 	go build -ldflags="-H windowsgui"
 
@@ -120,7 +120,7 @@ To embed a manifest file as a resource, you can use the [rsrc tool](https://gith
 IMPORTANT: If you don't embed a manifest as a resource, then you should not launch
 your executable before the manifest file is in place.
 If you do anyway, the program will not run properly. And worse, Windows will not
-recognize a manifest file, you later drop next to the executable. To fix this,
+recognize a manifest file, which you later drop next to the executable. To fix this,
 rebuild your executable and only launch it with a manifest file in place.
 
 CGo Optimizations
