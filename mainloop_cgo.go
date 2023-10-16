@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows && walk_use_cgo
 // +build windows,walk_use_cgo
 
 package walk
@@ -51,6 +52,6 @@ func shimRunSynchronized(fb uintptr) {
 	(*FormBase)(unsafe.Pointer(fb)).group.RunSynchronized()
 }
 
-func (fb *FormBase) mainLoop() int {
+func (fb *FormBase) mainLoop(_ context.Context) int {
 	return int(C.mainloop(C.uintptr_t(uintptr(unsafe.Pointer(&fb.hWnd))), C.uintptr_t(uintptr(unsafe.Pointer(fb)))))
 }

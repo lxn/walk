@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build windows
 // +build windows
 
 package walk
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"sync"
@@ -341,6 +343,15 @@ func (fb *FormBase) SetRightToLeftLayout(rtl bool) error {
 }
 
 func (fb *FormBase) Run() int {
+	return fb.run(context.Background())
+}
+
+// RunWithContext does the same as Run, but with the context cancellation respect.
+func (fb *FormBase) RunWithContext(ctx context.Context) int {
+	return fb.run(ctx)
+}
+
+func (fb *FormBase) run(ctx context.Context) int {
 	if fb.owner != nil {
 		win.EnableWindow(fb.owner.Handle(), false)
 
@@ -372,7 +383,7 @@ func (fb *FormBase) Run() int {
 
 	fb.SetSuspended(false)
 
-	return fb.mainLoop()
+	return fb.mainLoop(ctx)
 }
 
 func (fb *FormBase) handleKeyDown(msg *win.MSG) bool {
